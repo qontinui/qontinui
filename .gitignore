@@ -352,3 +352,5 @@ venv.bak/
 # OS
 .DS_Store
 Thumbs.db
+docs/
+CLAUDE.md
