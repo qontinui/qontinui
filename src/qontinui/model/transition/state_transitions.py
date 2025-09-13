@@ -5,7 +5,8 @@ Container for multiple state transitions.
 
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
-from ..transition.state_transition import StateTransition, TransitionType
+from ..transition.state_transition import StateTransition
+from ..transition.transition_function import TransitionType
 
 
 @dataclass

@@ -275,11 +275,11 @@ class ConfigurationManager:
         """
         return self.settings
     
-    def get_properties(self) -> BrobotProperties:
-        """Get Brobot properties.
+    def get_properties(self) -> QontinuiProperties:
+        """Get Qontinui properties.
         
         Returns:
-            BrobotProperties instance
+            QontinuiProperties instance
         """
         return self.settings.get_properties()
     

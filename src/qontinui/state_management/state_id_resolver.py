@@ -22,7 +22,7 @@ class StateIdResolver:
     
     Key responsibilities:
     - Convert state names to IDs within StateTransitions objects
-    - Process JavaStateTransition activate lists to resolve state names
+    - Process CodeStateTransition activate lists to resolve state names
     - Perform batch conversion during application initialization
     
     This service is essential for the model-based approach as it bridges the gap between 
@@ -49,7 +49,7 @@ class StateIdResolver:
         Side effects:
         - Modifies StateTransitions objects in-place
         - Sets state IDs based on registered state names
-        - Updates JavaStateTransition activate lists with IDs
+        - Updates CodeStateTransition activate lists with IDs
         
         Args:
             all_state_transitions: List of StateTransitions to process
@@ -67,7 +67,7 @@ class StateIdResolver:
         
         Conversion process:
         1. Convert the parent state name to ID if not already set
-        2. For JavaStateTransition objects, convert activate state names
+        2. For CodeStateTransition objects, convert activate state names
         3. Build parallel lists of state IDs for runtime use
         
         Prerequisites:
@@ -77,7 +77,7 @@ class StateIdResolver:
         
         Side effects:
         - Sets state_id field if currently None
-        - Populates activate ID lists in JavaStateTransition objects
+        - Populates activate ID lists in CodeStateTransition objects
         - Silently ignores unregistered state names
         
         Args:
@@ -93,7 +93,7 @@ class StateIdResolver:
         
         # Process each transition
         for transition in state_transitions.get_transitions():
-            # Check if this is a JavaStateTransition (has activate_names)
+            # Check if this is a CodeStateTransition (has activate_names)
             if hasattr(transition, 'activate_names') and hasattr(transition, 'activate'):
                 for state_to_activate in transition.activate_names:
                     state_to_activate_id = self.all_states_in_project_service.get_state_id(

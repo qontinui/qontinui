@@ -312,7 +312,7 @@ class ObjectCollectionBuilder:
             self.state_images.extend(state.get_state_images())
         return self
     
-    def with_non_shared_images(self, state: Optional[State]) -> 'ObjectCollectionBuilder':
+    def with_non_shared_images(self, state: Optional['State']) -> 'ObjectCollectionBuilder':
         """Add non-shared state images from a state.
         
         Args:
@@ -429,7 +429,7 @@ class ObjectCollectionBuilder:
         self.matches = matches
         return self
     
-    def with_match_objects_as_regions(self, *matches: Match) -> 'ObjectCollectionBuilder':
+    def with_match_objects_as_regions(self, *matches: 'Match') -> 'ObjectCollectionBuilder':
         """Add match objects as regions.
         
         Args:
@@ -448,7 +448,7 @@ class ObjectCollectionBuilder:
             )
         return self
     
-    def with_match_objects_as_state_images(self, *matches: Match) -> 'ObjectCollectionBuilder':
+    def with_match_objects_as_state_images(self, *matches: 'Match') -> 'ObjectCollectionBuilder':
         """Add match objects as state images.
         
         Args:

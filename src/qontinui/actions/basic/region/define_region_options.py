@@ -5,7 +5,7 @@ Configuration for region definition actions.
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from ..action_config import ActionConfig
+from ...action_config import ActionConfig
 
 
 class DefineAs(Enum):

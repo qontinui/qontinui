@@ -4,7 +4,7 @@ Configuration for mouse movement actions.
 """
 
 from dataclasses import dataclass
-from ..action_config import ActionConfig
+from ...action_config import ActionConfig
 
 
 @dataclass

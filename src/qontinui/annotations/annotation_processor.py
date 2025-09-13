@@ -6,33 +6,33 @@ Processes @state and @transition annotations to configure the state machine.
 from typing import Dict, List, Any, Optional, Type
 import logging
 import inspect
-from ..state_management.state import State
-from ..state_management.state_transition import StateTransition
-from ..state_management.state_service import StateService
-from ..state_management.state_transition_service import StateTransitionService
-from ..state_management.state_transitions_joint_table import StateTransitionsJointTable
+from ..model.state.state import State
+from ..model.transition.state_transition import StateTransition
+from ..model.state.state_service import StateService
+from ..model.transition.state_transition_service import StateTransitionService
+from ..model.transition.state_transitions_joint_table import StateTransitionsJointTable
 from ..state_management.initial_states import InitialStates
-from ..state_management.java_state_transition import JavaStateTransition
-from ..state_management.state_transitions import StateTransitions
+from ..navigation.transition.code_state_transition import CodeStateTransition
+from ..model.transition.state_transitions import StateTransitions
 from .state import is_state, get_state_metadata
-from .transition import is_transition, get_transition_metadata
 from .annotated_state_builder import AnnotatedStateBuilder
 from .state_registration_service import StateRegistrationService
 from .states_registered_event import StatesRegisteredEvent
+from .transition_set_processor import TransitionSetProcessor
 
 logger = logging.getLogger(__name__)
 
 
 class AnnotationProcessor:
-    """Processes @state and @transition annotations.
+    """Processes @state and @transition_set annotations.
     
     Port of AnnotationProcessor from Qontinui framework.
     
     This processor:
     1. Discovers all classes decorated with @state
     2. Registers them with the StateTransitionsJointTable
-    3. Discovers all classes decorated with @transition
-    4. Creates StateTransition objects and registers them
+    3. Discovers all classes decorated with @transition_set
+    4. Creates StateTransition objects using @from_transition and @to_transition
     5. Marks initial states as specified by @state(initial=True)
     """
     
@@ -60,7 +60,8 @@ class AnnotationProcessor:
         self.state_builder = state_builder
         self.registration_service = registration_service
         self._state_instances: Dict[Type, Any] = {}
-        self._transition_instances: Dict[Type, Any] = {}
+        # Create transition set processor for transitions
+        self.transition_set_processor = TransitionSetProcessor(joint_table, transition_service)
     
     def process_annotations(self, module: Any = None) -> StatesRegisteredEvent:
         """Process all annotations in the given module.
@@ -78,8 +79,8 @@ class AnnotationProcessor:
         # Process @state annotations
         state_map = self._process_states(module)
         
-        # Process @transition annotations
-        transition_count = self._process_transitions(state_map, module)
+        # Process @transition_set annotations (with @from_transition and @to_transition)
+        transition_count = self.transition_set_processor.process_transition_sets(module)
         
         logger.info(
             f"Brobot annotation processing complete. "
@@ -162,102 +163,6 @@ class AnnotationProcessor:
         
         return state_map
     
-    def _process_transitions(self, state_map: Dict[Type, Any], module: Any = None) -> int:
-        """Process all @transition decorated classes.
-        
-        Args:
-            state_map: Map of state classes to instances
-            module: Module to scan
-            
-        Returns:
-            Number of transitions registered
-        """
-        transition_count = 0
-        
-        # Find all transition classes
-        transition_classes = self._find_decorated_classes(module, is_transition)
-        
-        for transition_class in transition_classes:
-            # Create instance if needed
-            transition_instance = self._get_or_create_instance(transition_class)
-            if transition_instance is None:
-                logger.error(f"Failed to create instance of transition class: {transition_class.__name__}")
-                continue
-            
-            self._transition_instances[transition_class] = transition_instance
-            
-            # Get transition metadata
-            metadata = get_transition_metadata(transition_class)
-            if metadata is None:
-                continue
-            
-            # Get the transition method
-            method_name = metadata['method']
-            transition_method = getattr(transition_instance, method_name, None)
-            if transition_method is None or not callable(transition_method):
-                logger.error(
-                    f"Transition method '{method_name}' not found in class {transition_class.__name__}"
-                )
-                continue
-            
-            # Register transitions for all from/to combinations
-            for from_state in metadata['from_states']:
-                for to_state in metadata['to_states']:
-                    self._register_transition(
-                        from_state, to_state, transition_instance,
-                        transition_method, metadata['priority']
-                    )
-                    transition_count += 1
-        
-        return transition_count
-    
-    def _register_transition(self,
-                           from_state: Type,
-                           to_state: Type,
-                           transition_instance: Any,
-                           transition_method: callable,
-                           priority: int) -> None:
-        """Register a single transition.
-        
-        Args:
-            from_state: Source state class
-            to_state: Target state class
-            transition_instance: Instance of transition class
-            transition_method: Method to execute transition
-            priority: Transition priority
-        """
-        from_name = self._get_state_name(from_state)
-        to_name = self._get_state_name(to_state)
-        
-        logger.debug(f"Registering transition: {from_name} -> {to_name} (priority: {priority})")
-        
-        # Create a JavaStateTransition that delegates to the annotated method
-        def transition_function():
-            try:
-                result = transition_method()
-                if isinstance(result, bool):
-                    return result
-                elif isinstance(result, StateTransition):
-                    # For now, assume StateTransition results are handled elsewhere
-                    return True
-                return False
-            except Exception as e:
-                logger.error(f"Error executing transition from {from_name} to {to_name}", exc_info=e)
-                return False
-        
-        java_transition = JavaStateTransition.builder()\\
-            .set_function(transition_function)\\
-            .add_to_activate(to_name)\\
-            .set_score(priority)\\
-            .build()
-        
-        # Create StateTransitions container for the from state
-        state_transitions = StateTransitions.builder(from_name)\\
-            .add_transition(java_transition)\\
-            .build()
-        
-        # Add to joint table
-        self.joint_table.add_to_joint_table(state_transitions)
     
     def _get_state_name(self, state_class: Type) -> str:
         """Get the name of a state class.
@@ -335,8 +240,6 @@ class AnnotationProcessor:
         # Check if we already have an instance
         if cls in self._state_instances:
             return self._state_instances[cls]
-        if cls in self._transition_instances:
-            return self._transition_instances[cls]
         
         try:
             # Try to create instance with no arguments

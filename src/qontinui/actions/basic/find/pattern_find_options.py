@@ -171,7 +171,7 @@ class PatternFindOptions(BaseFindOptions):
                 .build())
 
 
-class PatternFindOptionsBuilder(BaseFindOptionsBuilder['PatternFindOptionsBuilder']):
+class PatternFindOptionsBuilder(BaseFindOptionsBuilder):
     """Builder for constructing PatternFindOptions with a fluent API.
     
     Port of PatternFindOptions from Qontinui framework.Builder.

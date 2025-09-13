@@ -10,7 +10,7 @@ from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
 from .highlight_options import HighlightOptions
 from ..find.find import Find
-from ....model.region import Region
+from ....model.element.region import Region
 
 
 class Highlight(ActionInterface):

@@ -6,6 +6,7 @@ Base class for all find operations with builder pattern.
 from typing import Optional, Union, List, Any
 import time
 from ..model.element import Pattern, Image, Region, Location
+from ..model.search_regions import SearchRegions
 from ..actions import FindOptions
 from .find_results import FindResults
 from .matches import Matches
@@ -89,7 +90,7 @@ class Find:
             self._target = self._target.with_similarity(similarity)
         return self
     
-    def search_region(self, region: Union[Region, SearchRegion]) -> 'Find':
+    def search_region(self, region: Union[Region, SearchRegions]) -> 'Find':
         """Set search region (fluent).
         
         Args:

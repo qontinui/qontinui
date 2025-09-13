@@ -34,7 +34,7 @@ class StateTransition(ABC):
     
     Transition implementations:
     - TaskSequenceStateTransition: Data-driven transitions using action sequences
-    - JavaStateTransition: Code-based transitions using callable functions
+    - CodeStateTransition: Code-based transitions using callable functions
     
     Key properties:
     - Activation States: Set of states that this transition activates (navigates to)

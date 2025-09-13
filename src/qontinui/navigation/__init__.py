@@ -6,13 +6,11 @@ This package handles state navigation, transitions, and path finding.
 from .transition import (
     StateTransitions,
     StateTransitionsBuilder,
-    JavaStateTransition,
-    JavaStateTransitionBuilder,
+    CodeStateTransition,
 )
 
 __all__ = [
     'StateTransitions',
     'StateTransitionsBuilder',
-    'JavaStateTransition',
-    'JavaStateTransitionBuilder',
+    'CodeStateTransition',
 ]

@@ -36,7 +36,7 @@ class VanishOptions(ActionConfig):
         return self.poll_interval
 
 
-class VanishOptionsBuilder(ActionConfigBuilder['VanishOptionsBuilder']):
+class VanishOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing VanishOptions with a fluent API.
     
     Port of VanishOptions from Qontinui framework.Builder.

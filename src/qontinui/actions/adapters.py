@@ -1,4 +1,7 @@
-"""Backend adapters for action execution following Brobot principles."""
+"""Backend adapters for action execution following Brobot principles.
+
+NO BACKWARD COMPATIBILITY: PyAutoGUI has been completely replaced with HAL.
+"""
 
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple, Any
@@ -93,20 +96,25 @@ class ActionAdapter(ABC):
         pass
 
 
-class PyAutoGUIAdapter(ActionAdapter):
-    """PyAutoGUI backend adapter with pure actions."""
+class HALAdapter(ActionAdapter):
+    """HAL backend adapter with pure actions - REPLACES PyAutoGUIAdapter."""
     
-    def __init__(self, fail_safe: bool = True, pause: float = 0.1):
-        """Initialize PyAutoGUI adapter.
+    def __init__(self):
+        """Initialize HAL adapter."""
+        from ..hal import HALFactory
+        from ..hal.interfaces import MouseButton as HALMouseButton
         
-        Args:
-            fail_safe: Enable fail-safe mode
-            pause: Pause between actions
-        """
-        import pyautogui
-        self.pg = pyautogui
-        self.pg.FAILSAFE = fail_safe
-        self.pg.PAUSE = pause
+        # Get HAL components
+        self.screen_capture = HALFactory.get_screen_capture()
+        self.input_controller = HALFactory.get_input_controller()
+        self.pattern_matcher = HALFactory.get_pattern_matcher()
+        
+        # Button mapping
+        self._button_map = {
+            'left': HALMouseButton.LEFT,
+            'right': HALMouseButton.RIGHT,
+            'middle': HALMouseButton.MIDDLE
+        }
     
     # Mouse Actions
     
@@ -114,11 +122,11 @@ class PyAutoGUIAdapter(ActionAdapter):
                    button: str = 'left') -> AdapterResult:
         """Press and hold mouse button."""
         try:
-            if x is not None and y is not None:
-                self.pg.mouseDown(x, y, button=button)
-            else:
-                self.pg.mouseDown(button=button)
-            return AdapterResult(success=True)
+            hal_button = self._button_map.get(button.lower(), self._button_map['left'])
+            success = self.input_controller.mouse_down(x, y, hal_button)
+            if success:
+                return AdapterResult(success=True)
+            return AdapterResult(success=False, error="Mouse down failed")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
@@ -126,27 +134,32 @@ class PyAutoGUIAdapter(ActionAdapter):
                  button: str = 'left') -> AdapterResult:
         """Release mouse button."""
         try:
-            if x is not None and y is not None:
-                self.pg.mouseUp(x, y, button=button)
-            else:
-                self.pg.mouseUp(button=button)
-            return AdapterResult(success=True)
+            hal_button = self._button_map.get(button.lower(), self._button_map['left'])
+            success = self.input_controller.mouse_up(x, y, hal_button)
+            if success:
+                return AdapterResult(success=True)
+            return AdapterResult(success=False, error="Mouse up failed")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
     def mouse_move(self, x: int, y: int, duration: float = 0.0) -> AdapterResult:
         """Move mouse to coordinates."""
         try:
-            self.pg.moveTo(x, y, duration=duration)
-            return AdapterResult(success=True, data=(x, y))
+            success = self.input_controller.mouse_move(x, y, duration)
+            if success:
+                return AdapterResult(success=True, data=(x, y))
+            return AdapterResult(success=False, error="Mouse move failed")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
     def mouse_click(self, x: int, y: int, button: str = 'left') -> AdapterResult:
         """Single click at position."""
         try:
-            self.pg.click(x, y, button=button)
-            return AdapterResult(success=True, data=(x, y))
+            hal_button = self._button_map.get(button.lower(), self._button_map['left'])
+            success = self.input_controller.mouse_click(x, y, hal_button)
+            if success:
+                return AdapterResult(success=True, data=(x, y))
+            return AdapterResult(success=False, error="Mouse click failed")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
@@ -154,11 +167,10 @@ class PyAutoGUIAdapter(ActionAdapter):
                     y: Optional[int] = None) -> AdapterResult:
         """Scroll mouse wheel."""
         try:
-            if x is not None and y is not None:
-                self.pg.scroll(clicks, x, y)
-            else:
-                self.pg.scroll(clicks)
-            return AdapterResult(success=True, data=clicks)
+            success = self.input_controller.mouse_scroll(clicks, x, y)
+            if success:
+                return AdapterResult(success=True, data=clicks)
+            return AdapterResult(success=False, error="Mouse scroll failed")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
@@ -167,24 +179,30 @@ class PyAutoGUIAdapter(ActionAdapter):
     def key_down(self, key: str) -> AdapterResult:
         """Press and hold key."""
         try:
-            self.pg.keyDown(key)
-            return AdapterResult(success=True, data=key)
+            success = self.input_controller.key_down(key)
+            if success:
+                return AdapterResult(success=True, data=key)
+            return AdapterResult(success=False, error="Key down failed")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
     def key_up(self, key: str) -> AdapterResult:
         """Release key."""
         try:
-            self.pg.keyUp(key)
-            return AdapterResult(success=True, data=key)
+            success = self.input_controller.key_up(key)
+            if success:
+                return AdapterResult(success=True, data=key)
+            return AdapterResult(success=False, error="Key up failed")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
     def key_press(self, key: str) -> AdapterResult:
         """Press key (down + up)."""
         try:
-            self.pg.press(key)
-            return AdapterResult(success=True, data=key)
+            success = self.input_controller.key_press(key)
+            if success:
+                return AdapterResult(success=True, data=key)
+            return AdapterResult(success=False, error="Key press failed")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
@@ -193,8 +211,10 @@ class PyAutoGUIAdapter(ActionAdapter):
         try:
             if len(char) != 1:
                 return AdapterResult(success=False, error="Must be single character")
-            self.pg.typewrite(char)
-            return AdapterResult(success=True, data=char)
+            success = self.input_controller.type_text(char)
+            if success:
+                return AdapterResult(success=True, data=char)
+            return AdapterResult(success=False, error="Type character failed")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
@@ -203,7 +223,11 @@ class PyAutoGUIAdapter(ActionAdapter):
     def capture_screen(self, region: Optional[Tuple[int, int, int, int]] = None) -> AdapterResult:
         """Capture screenshot."""
         try:
-            screenshot = self.pg.screenshot(region=region)
+            if region:
+                x, y, width, height = region
+                screenshot = self.screen_capture.capture_region(x, y, width, height)
+            else:
+                screenshot = self.screen_capture.capture_screen()
             return AdapterResult(success=True, data=screenshot)
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
@@ -211,7 +235,7 @@ class PyAutoGUIAdapter(ActionAdapter):
     def get_mouse_position(self) -> AdapterResult:
         """Get current mouse position."""
         try:
-            pos = self.pg.position()
+            pos = self.input_controller.get_mouse_position()
             return AdapterResult(success=True, data=(pos.x, pos.y))
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
@@ -219,8 +243,10 @@ class PyAutoGUIAdapter(ActionAdapter):
     def get_screen_size(self) -> AdapterResult:
         """Get screen dimensions."""
         try:
-            size = self.pg.size()
-            return AdapterResult(success=True, data=(size.width, size.height))
+            primary = self.screen_capture.get_primary_monitor()
+            if primary:
+                return AdapterResult(success=True, data=(primary.width, primary.height))
+            return AdapterResult(success=False, error="No primary monitor found")
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
 
@@ -249,7 +275,7 @@ class SeleniumAdapter(ActionAdapter):
     
     def mouse_down(self, x: Optional[int] = None, y: Optional[int] = None,
                    button: str = 'left') -> AdapterResult:
-        """Press and hold mouse button."""
+        """Press and hold mouse button in browser context."""
         try:
             if x is not None and y is not None:
                 # Move to position first
@@ -267,7 +293,7 @@ class SeleniumAdapter(ActionAdapter):
     
     def mouse_up(self, x: Optional[int] = None, y: Optional[int] = None,
                  button: str = 'left') -> AdapterResult:
-        """Release mouse button."""
+        """Release mouse button in browser context."""
         try:
             if x is not None and y is not None:
                 self.actions.move_by_offset(x, y)
@@ -279,12 +305,9 @@ class SeleniumAdapter(ActionAdapter):
             return AdapterResult(success=False, error=str(e))
     
     def mouse_move(self, x: int, y: int, duration: float = 0.0) -> AdapterResult:
-        """Move mouse to coordinates."""
+        """Move mouse in browser context."""
         try:
-            # Selenium doesn't support duration directly
-            if duration > 0:
-                time.sleep(duration)
-            
+            # Selenium doesn't support duration, move instantly
             self.actions.move_by_offset(x, y)
             self.actions.perform()
             return AdapterResult(success=True, data=(x, y))
@@ -292,7 +315,7 @@ class SeleniumAdapter(ActionAdapter):
             return AdapterResult(success=False, error=str(e))
     
     def mouse_click(self, x: int, y: int, button: str = 'left') -> AdapterResult:
-        """Single click at position."""
+        """Click in browser context."""
         try:
             self.actions.move_by_offset(x, y)
             
@@ -308,10 +331,11 @@ class SeleniumAdapter(ActionAdapter):
     
     def mouse_scroll(self, clicks: int, x: Optional[int] = None,
                     y: Optional[int] = None) -> AdapterResult:
-        """Scroll mouse wheel."""
+        """Scroll in browser context."""
         try:
-            # Selenium scrolls differently
-            self.driver.execute_script(f"window.scrollBy(0, {clicks * 100})")
+            # Execute JavaScript for scrolling
+            scroll_amount = clicks * 100  # Approximate pixels per click
+            self.driver.execute_script(f"window.scrollBy(0, {-scroll_amount})")
             return AdapterResult(success=True, data=clicks)
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
@@ -319,40 +343,40 @@ class SeleniumAdapter(ActionAdapter):
     # Keyboard Actions
     
     def key_down(self, key: str) -> AdapterResult:
-        """Press and hold key."""
+        """Press key in browser context."""
         try:
             from selenium.webdriver.common.keys import Keys
-            key_value = getattr(Keys, key.upper(), key)
-            self.actions.key_down(key_value)
+            selenium_key = getattr(Keys, key.upper(), key)
+            self.actions.key_down(selenium_key)
             self.actions.perform()
             return AdapterResult(success=True, data=key)
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
     def key_up(self, key: str) -> AdapterResult:
-        """Release key."""
+        """Release key in browser context."""
         try:
             from selenium.webdriver.common.keys import Keys
-            key_value = getattr(Keys, key.upper(), key)
-            self.actions.key_up(key_value)
+            selenium_key = getattr(Keys, key.upper(), key)
+            self.actions.key_up(selenium_key)
             self.actions.perform()
             return AdapterResult(success=True, data=key)
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
     def key_press(self, key: str) -> AdapterResult:
-        """Press key (down + up)."""
+        """Press key in browser context."""
         try:
             from selenium.webdriver.common.keys import Keys
-            key_value = getattr(Keys, key.upper(), key)
-            self.actions.send_keys(key_value)
+            selenium_key = getattr(Keys, key.upper(), key)
+            self.actions.send_keys(selenium_key)
             self.actions.perform()
             return AdapterResult(success=True, data=key)
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
     def type_character(self, char: str) -> AdapterResult:
-        """Type single character."""
+        """Type character in browser context."""
         try:
             if len(char) != 1:
                 return AdapterResult(success=False, error="Must be single character")
@@ -365,53 +389,41 @@ class SeleniumAdapter(ActionAdapter):
     # Screen Actions
     
     def capture_screen(self, region: Optional[Tuple[int, int, int, int]] = None) -> AdapterResult:
-        """Capture screenshot."""
+        """Capture browser screenshot."""
         try:
+            from PIL import Image
+            import io
+            
             screenshot = self.driver.get_screenshot_as_png()
-            return AdapterResult(success=True, data=screenshot)
+            image = Image.open(io.BytesIO(screenshot))
+            
+            if region:
+                x, y, width, height = region
+                image = image.crop((x, y, x + width, y + height))
+            
+            return AdapterResult(success=True, data=image)
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
     
     def get_mouse_position(self) -> AdapterResult:
-        """Get current mouse position (not supported in Selenium)."""
+        """Get mouse position (not supported in Selenium)."""
         return AdapterResult(
-            success=False, 
-            error="Mouse position not available in Selenium"
+            success=False,
+            error="Mouse position not available in Selenium context"
         )
     
     def get_screen_size(self) -> AdapterResult:
-        """Get screen dimensions."""
+        """Get browser window size."""
         try:
             size = self.driver.get_window_size()
-            return AdapterResult(success=True, data=(size['width'], size['height']))
+            return AdapterResult(
+                success=True,
+                data=(size['width'], size['height'])
+            )
         except Exception as e:
             return AdapterResult(success=False, error=str(e))
 
 
-class AdapterFactory:
-    """Factory for creating action adapters."""
-    
-    @staticmethod
-    def create_adapter(backend: str = "pyautogui", **kwargs) -> ActionAdapter:
-        """Create an action adapter for the specified backend.
-        
-        Args:
-            backend: Backend name ('pyautogui', 'selenium')
-            **kwargs: Backend-specific configuration
-            
-        Returns:
-            ActionAdapter instance
-            
-        Raises:
-            ValueError: If backend is not supported
-        """
-        adapters = {
-            "pyautogui": PyAutoGUIAdapter,
-            "selenium": SeleniumAdapter,
-        }
-        
-        if backend not in adapters:
-            raise ValueError(f"Unsupported backend: {backend}. Choose from: {list(adapters.keys())}")
-        
-        adapter_class = adapters[backend]
-        return adapter_class(**kwargs)
+# Alias for backward compatibility (will be removed)
+# Since we don't need backward compatibility, we can remove this
+# PyAutoGUIAdapter = HALAdapter  # REMOVED - no backward compatibility

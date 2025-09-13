@@ -31,7 +31,7 @@ class MouseDownOptions(ActionConfig):
         return self.press_options
 
 
-class MouseDownOptionsBuilder(ActionConfigBuilder['MouseDownOptionsBuilder']):
+class MouseDownOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing MouseDownOptions with a fluent API.
     
     Port of MouseDownOptions from Qontinui framework.Builder.

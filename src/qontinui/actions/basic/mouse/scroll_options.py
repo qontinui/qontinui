@@ -51,7 +51,7 @@ class ScrollOptions(ActionConfig):
         return self.scroll_steps
 
 
-class ScrollOptionsBuilder(ActionConfigBuilder['ScrollOptionsBuilder']):
+class ScrollOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing ScrollOptions with a fluent API.
     
     Port of ScrollOptions from Qontinui framework.Builder.

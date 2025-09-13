@@ -5,7 +5,7 @@ Defines regions to search within.
 
 from dataclasses import dataclass, field
 from typing import List, Optional
-from .region import Region
+from .element.region import Region
 
 
 @dataclass

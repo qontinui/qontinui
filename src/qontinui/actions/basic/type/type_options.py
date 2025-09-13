@@ -41,7 +41,7 @@ class TypeOptions(ActionConfig):
         return self.modifiers
 
 
-class TypeOptionsBuilder(ActionConfigBuilder['TypeOptionsBuilder']):
+class TypeOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing TypeOptions with a fluent API.
     
     Port of TypeOptions from Qontinui framework.Builder.

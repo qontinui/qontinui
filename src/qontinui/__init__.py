@@ -6,14 +6,10 @@ Following Brobot principles with modern Python implementation.
 __version__ = "0.1.0"
 
 # State Management
-from .state_management import (
-    QontinuiStateManager,
-    State,
-    Element,
-    Transition,
-    StateGraph,
-    StateTraversal,
-)
+from .state_management import QontinuiStateManager
+from .state_management.models import Element, Transition, StateGraph
+from .state_management.traversal import StateTraversal
+from .model.state import State
 
 # Perception Pipeline
 # TODO: Enable after installing AI dependencies (faiss, torch, transformers)
@@ -27,7 +23,6 @@ from .state_management import (
 from .model.element import (
     Location,
     Region,
-    SearchRegion,
     Image,
     Pattern,
     RGB,
@@ -35,6 +30,7 @@ from .model.element import (
     Position,
     Anchor,
 )
+from .model.search_regions import SearchRegions
 
 # Find System (Brobot-style)
 from .find import (
@@ -83,7 +79,6 @@ from .model.state import (
     StateEnum,
     StateImage,
     StateObject,
-    StateImageObject,
     StateLocation,
     StateRegion,
     StateString,
@@ -101,9 +96,7 @@ from .model.transition import (
 )
 
 # Match System (Brobot-style)
-from .model.match import (
-    MatchObject,
-)
+from .model.match import Match as MatchObject
 
 # Migration Tools
 # TODO: Enable after installing AI dependencies

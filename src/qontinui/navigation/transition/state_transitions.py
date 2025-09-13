@@ -121,18 +121,18 @@ class StateTransitions:
     def add_transition_from_function(self, transition: Callable[[], bool], *to_states: str) -> None:
         """Convenience method to add a simple function-based transition.
         
-        Creates a JavaStateTransition with the provided function and target states.
+        Creates a CodeStateTransition with the provided function and target states.
         
         Args:
             transition: Function containing transition logic
             to_states: Names of states to activate on success
         """
-        from .java_state_transition import JavaStateTransition
+        from .code_state_transition import CodeStateTransition
         
-        java_transition = JavaStateTransition()
-        java_transition.function = transition
-        java_transition.activate_names.extend(to_states)
-        self.add_transition(java_transition)
+        code_transition = CodeStateTransition()
+        code_transition.transition_function = transition
+        code_transition.activate_names = set(to_states)
+        self.add_transition(code_transition)
     
     def get_action_definition(self, to_state: int) -> Optional['TaskSequence']:
         """Retrieve the TaskSequence for transitioning to a specific state.
@@ -212,12 +212,12 @@ class StateTransitionsBuilder:
         Returns:
             This builder for method chaining
         """
-        from .java_state_transition import JavaStateTransition
+        from .code_state_transition import CodeStateTransition
         
-        java_transition = JavaStateTransition()
-        java_transition.function = transition
-        java_transition.activate_names.extend(to_states)
-        self.transitions.append(java_transition)
+        code_transition = CodeStateTransition()
+        code_transition.transition_function = transition
+        code_transition.activate_names = set(to_states)
+        self.transitions.append(code_transition)
         return self
     
     def add_transition_object(self, transition: StateTransition) -> 'StateTransitionsBuilder':
@@ -244,10 +244,10 @@ class StateTransitionsBuilder:
         Returns:
             This builder for method chaining
         """
-        from .java_state_transition import JavaStateTransition
+        from .code_state_transition import CodeStateTransition
         
-        self.transition_finish = JavaStateTransition()
-        self.transition_finish.function = transition_finish
+        self.transition_finish = CodeStateTransition()
+        self.transition_finish.transition_function = transition_finish
         return self
     
     def add_transition_finish_object(self, transition_finish: StateTransition) -> 'StateTransitionsBuilder':

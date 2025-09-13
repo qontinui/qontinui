@@ -5,7 +5,7 @@ Configuration for keyboard key press-and-hold operations.
 
 from dataclasses import dataclass, field
 from typing import List
-from ..action_config import ActionConfig
+from ...action_config import ActionConfig
 
 
 @dataclass

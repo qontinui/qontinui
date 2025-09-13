@@ -53,16 +53,16 @@ class State:
     state_text: Set[str] = field(default_factory=set)
     """Text that appears on screen as a clue to look for images in this state."""
     
-    state_images: Set['StateImage'] = field(default_factory=set)
+    state_images: List['StateImage'] = field(default_factory=list)
     """Visual patterns that identify this state."""
     
-    state_strings: Set['StateString'] = field(default_factory=set)
+    state_strings: List['StateString'] = field(default_factory=list)
     """Text input fields that can change the expected state."""
     
-    state_regions: Set['StateRegion'] = field(default_factory=set)
+    state_regions: List['StateRegion'] = field(default_factory=list)
     """Clickable/hoverable areas that can change state or retrieve text."""
     
-    state_locations: Set['StateLocation'] = field(default_factory=set)
+    state_locations: List['StateLocation'] = field(default_factory=list)
     """Specific points for precise interactions."""
     
     blocking: bool = False
@@ -111,7 +111,7 @@ class State:
             state_image: StateImage to add
         """
         state_image.owner_state_name = self.name
-        self.state_images.add(state_image)
+        self.state_images.append(state_image)
     
     def add_state_region(self, state_region: 'StateRegion') -> None:
         """Add a StateRegion to this state.
@@ -120,7 +120,7 @@ class State:
             state_region: StateRegion to add
         """
         state_region.owner_state_name = self.name
-        self.state_regions.add(state_region)
+        self.state_regions.append(state_region)
     
     def add_state_location(self, state_location: 'StateLocation') -> None:
         """Add a StateLocation to this state.
@@ -129,7 +129,7 @@ class State:
             state_location: StateLocation to add
         """
         state_location.owner_state_name = self.name
-        self.state_locations.add(state_location)
+        self.state_locations.append(state_location)
     
     def add_state_string(self, state_string: 'StateString') -> None:
         """Add a StateString to this state.
@@ -138,7 +138,7 @@ class State:
             state_string: StateString to add
         """
         state_string.owner_state_name = self.name
-        self.state_strings.add(state_string)
+        self.state_strings.append(state_string)
     
     def add_state_text(self, text: str) -> None:
         """Add state text.
@@ -253,10 +253,10 @@ class StateBuilder:
         """
         self.name = name
         self.state_text = set()
-        self.state_images = set()
-        self.state_strings = set()
-        self.state_regions = set()
-        self.state_locations = set()
+        self.state_images = []  # List instead of set for unhashable objects
+        self.state_strings = []  # List instead of set for unhashable objects
+        self.state_regions = []  # List instead of set for unhashable objects
+        self.state_locations = []  # List instead of set for unhashable objects
         self.blocking = False
         self.can_hide = set()
         self.hidden = set()
@@ -287,7 +287,7 @@ class StateBuilder:
         Returns:
             Self for chaining
         """
-        self.state_images.update(state_images)
+        self.state_images.extend(state_images)
         return self
     
     def with_strings(self, *state_strings: 'StateString') -> 'StateBuilder':
@@ -299,7 +299,7 @@ class StateBuilder:
         Returns:
             Self for chaining
         """
-        self.state_strings.update(state_strings)
+        self.state_strings.extend(state_strings)
         return self
     
     def with_regions(self, *state_regions: 'StateRegion') -> 'StateBuilder':
@@ -311,7 +311,7 @@ class StateBuilder:
         Returns:
             Self for chaining
         """
-        self.state_regions.update(state_regions)
+        self.state_regions.extend(state_regions)
         return self
     
     def with_locations(self, *state_locations: 'StateLocation') -> 'StateBuilder':
@@ -323,7 +323,7 @@ class StateBuilder:
         Returns:
             Self for chaining
         """
-        self.state_locations.update(state_locations)
+        self.state_locations.extend(state_locations)
         return self
     
     def set_blocking(self, blocking: bool) -> 'StateBuilder':

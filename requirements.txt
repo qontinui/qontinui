@@ -1,0 +1,40 @@
+# Core HAL dependencies - REPLACING PyAutoGUI
+mss>=9.0.1          # Fast screen capture
+opencv-python>=4.8.0    # Pattern matching and computer vision
+pynput>=1.7.6          # Cross-platform input control
+easyocr>=1.7.0         # OCR engine
+Pillow>=10.0.0         # Image processing
+pyautogui>=0.9.54      # Temporary for JSON executor until HAL is complete
+
+# Platform-specific dependencies (install as needed)
+# Windows
+# pywinauto>=0.6.8     # Windows UI automation
+
+# macOS  
+# pyobjc-framework-Quartz>=9.0  # macOS screen capture
+# pyobjc-framework-ApplicationServices>=9.0  # macOS accessibility
+
+# Linux
+# python-xlib>=0.33    # Linux X11 interaction
+
+# Optional enhanced features
+# tensorflow>=2.13.0   # ML-based pattern matching (optional)
+# pytesseract>=0.3.10  # Alternative OCR (optional)
+
+# Development dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.0.0
+mypy>=1.4.0
+
+# Other project dependencies
+numpy>=1.24.0
+scipy>=1.11.0
+matplotlib>=3.7.0
+pandas>=2.0.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+structlog>=23.1.0
+
+# Removed dependencies
+# pyautogui  # REMOVED - replaced by HAL

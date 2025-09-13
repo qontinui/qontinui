@@ -10,7 +10,7 @@ from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
 from .scroll_options import ScrollOptions, ScrollDirection
 from ..find.find import Find
-from ....model.location import Location
+from ....model.element.location import Location
 
 
 class Scroll(ActionInterface):

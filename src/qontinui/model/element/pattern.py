@@ -13,6 +13,7 @@ from .position import Position
 from .location import Location
 from .region import Region
 from ..match.match import Match
+from ..action.action_history import ActionHistory
 
 
 @dataclass
@@ -62,7 +63,7 @@ class Pattern:
     set_kmeans_color_profiles: bool = False
     """Whether to compute expensive color profiles."""
     
-    match_history: 'ActionHistory' = field(default_factory=lambda: ActionHistory())
+    match_history: ActionHistory = field(default_factory=lambda: ActionHistory())
     """History of matches for this pattern."""
     
     index: int = 0
@@ -82,6 +83,9 @@ class Pattern:
     
     image: Optional[Image] = None
     """The actual image data."""
+    
+    owner_state_name: str = "NULL"
+    """Name of the state that owns this pattern (for mock operations)."""
     
     @classmethod
     def from_file(cls, img_path: str) -> 'Pattern':

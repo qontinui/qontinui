@@ -1,4 +1,4 @@
-"""ActionHistory class - ported from Qontinui framework.
+"""ActionHistory class - ported from Brobot framework.
 
 Manages the complete history of actions for analysis and mocking.
 """
@@ -8,6 +8,7 @@ from typing import List, Dict, Optional, Set
 from collections import defaultdict
 from datetime import datetime, timedelta
 import statistics
+import random
 from .action_record import ActionRecord
 
 
@@ -211,6 +212,78 @@ class ActionHistory:
         if successful:
             return successful[-1]
         return records[-1]
+    
+    def get_random_snapshot(self, active_states: Optional[Set[str]] = None,
+                           action_type: str = "FIND") -> Optional[ActionRecord]:
+        """Get a random snapshot for mocking, filtered by active states.
+        
+        This is the key method for Brobot-style mocking. It returns a random
+        ActionRecord from the history, preferring records that match the
+        current active states.
+        
+        Args:
+            active_states: Set of currently active state names
+            action_type: Type of action to filter by
+            
+        Returns:
+            Random ActionRecord or None if no matches
+        """
+        if not self.records:
+            return None
+        
+        # Filter by action type
+        records = [r for r in self.records if r.get_action_type() == action_type]
+        if not records:
+            return None
+        
+        # If states provided, prefer records matching those states
+        if active_states:
+            # First try exact state matches
+            state_matches = [r for r in records if r.state_name in active_states]
+            if state_matches:
+                return random.choice(state_matches)
+            
+            # Then try records where active states overlap
+            overlap_matches = [r for r in records 
+                             if r.active_states and active_states.intersection(r.active_states)]
+            if overlap_matches:
+                return random.choice(overlap_matches)
+        
+        # Fall back to any record of the right type
+        return random.choice(records)
+    
+    def add_snapshot(self, snapshot: ActionRecord) -> None:
+        """Add a snapshot (alias for add_record for Brobot compatibility).
+        
+        Args:
+            snapshot: ActionRecord to add
+        """
+        self.add_record(snapshot)
+    
+    def get_snapshots(self) -> List[ActionRecord]:
+        """Get all snapshots (alias for records for Brobot compatibility).
+        
+        Returns:
+            List of all ActionRecords
+        """
+        return self.records
+    
+    def is_empty(self) -> bool:
+        """Check if history is empty.
+        
+        Returns:
+            True if no records exist
+        """
+        return len(self.records) == 0
+    
+    def merge(self, other: 'ActionHistory') -> None:
+        """Merge another ActionHistory into this one.
+        
+        Args:
+            other: ActionHistory to merge in
+        """
+        for record in other.records:
+            self.add_record(record)
     
     def _filter_records(self, state_name: Optional[str] = None,
                        action_type: Optional[str] = None) -> List[ActionRecord]:

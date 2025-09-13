@@ -1,0 +1,20 @@
+{
+  "source_directories": [],
+  "target_directory": "tests\\migrated",
+  "preserve_structure": true,
+  "enable_mock_migration": true,
+  "diagnostic_level": "detailed",
+  "parallel_execution": true,
+  "comparison_mode": "behavioral",
+  "java_test_patterns": [
+    "*Test.java",
+    "*Tests.java",
+    "Test*.java"
+  ],
+  "exclude_patterns": [
+    "*/target/*",
+    "*/build/*",
+    "*/.git/*",
+    "*/node_modules/*"
+  ]
+}

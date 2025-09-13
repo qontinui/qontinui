@@ -4,11 +4,10 @@ Contains state transition implementations and management.
 """
 
 from .state_transitions import StateTransitions, StateTransitionsBuilder
-from .java_state_transition import JavaStateTransition, JavaStateTransitionBuilder
+from .code_state_transition import CodeStateTransition
 
 __all__ = [
     'StateTransitions',
     'StateTransitionsBuilder', 
-    'JavaStateTransition',
-    'JavaStateTransitionBuilder',
+    'CodeStateTransition',
 ]

@@ -62,7 +62,7 @@ class ActionChainOptions(ActionConfig):
         return list(self.chained_actions)  # Return a copy to prevent modification
 
 
-class ActionChainOptionsBuilder(ActionConfigBuilder['ActionChainOptionsBuilder']):
+class ActionChainOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing ActionChainOptions with a fluent API.
     
     Port of ActionChainOptions from Qontinui framework.Builder.

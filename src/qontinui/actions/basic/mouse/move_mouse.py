@@ -10,7 +10,7 @@ from ...action_result import ActionResult
 from ...action_config import ActionConfig
 from ...object_collection import ObjectCollection
 from ..find.find import Find
-from ....model.location import Location
+from ....model.element.location import Location
 
 
 class MoveMouse(ActionInterface):

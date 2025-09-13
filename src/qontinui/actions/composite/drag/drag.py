@@ -9,7 +9,7 @@ from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
 from ...action_chain_options import ActionChainOptions, ActionChainOptionsBuilder, ChainingStrategy
 from ...basic.find.pattern_find_options import PatternFindOptions, PatternFindOptionsBuilder
-from ...basic.mouse.mouse_move_options import MouseMoveOptions, MouseMoveOptionsBuilder
+from ...basic.mouse.mouse_move_options import MouseMoveOptions
 from ...basic.mouse.mouse_down_options import MouseDownOptions, MouseDownOptionsBuilder
 from ...basic.mouse.mouse_up_options import MouseUpOptions, MouseUpOptionsBuilder
 from ...internal.execution.action_chain_executor import ActionChainExecutor

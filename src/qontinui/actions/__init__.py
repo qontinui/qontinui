@@ -9,6 +9,7 @@ from .action_type import ActionType
 from .action_config import ActionConfig, ActionConfigBuilder, Illustrate, LoggingOptions
 from .action_interface import ActionInterface
 from .action import Action
+from .action_options import FindOptions, KeyModifier
 from .verification_options import VerificationOptions, VerificationOptionsBuilder, Event
 from .repetition_options import RepetitionOptions, RepetitionOptionsBuilder
 
@@ -19,6 +20,8 @@ from .basic.find import (
 )
 from .basic.click import ClickOptions, ClickOptionsBuilder
 from .basic.type import TypeOptions, TypeOptionsBuilder
+from .basic.type.key_down_options import KeyDownOptions
+from .basic.type.key_up_options import KeyUpOptions
 from .basic.mouse import (
     MousePressOptions, MousePressOptionsBuilder, MouseButton,
     MouseMoveOptions, ScrollOptions, ScrollOptionsBuilder, Direction
@@ -26,6 +29,20 @@ from .basic.mouse import (
 
 # Import composite action options
 from .composite import DragOptions, DragOptionsBuilder
+from .composite.chains.action_chain import ActionChain
+
+# Import pure and fluent actions
+from .pure import PureActions
+from .fluent import FluentActions
+
+# Import unified Actions class
+from .actions import Actions
+
+# Import wait options
+from .basic.wait.wait import WaitOptions
+
+# Create aliases
+MoveOptions = MouseMoveOptions
 
 __all__ = [
     # Core action classes
@@ -46,6 +63,7 @@ __all__ = [
     'RepetitionOptionsBuilder',
     
     # Find options
+    'FindOptions',
     'PatternFindOptions',
     'PatternFindOptionsBuilder',
     'FindStrategy',
@@ -59,6 +77,9 @@ __all__ = [
     # Type options
     'TypeOptions',
     'TypeOptionsBuilder',
+    'KeyDownOptions',
+    'KeyUpOptions',
+    'KeyModifier',
     
     # Mouse options
     'MousePressOptions',
@@ -72,4 +93,16 @@ __all__ = [
     # Composite options
     'DragOptions',
     'DragOptionsBuilder',
+    'ActionChain',
+    
+    # Pure and fluent actions
+    'PureActions',
+    'FluentActions',
+    'Actions',
+    
+    # Wait options
+    'WaitOptions',
+    
+    # Aliases for convenience
+    'MoveOptions',  # Alias for MouseMoveOptions
 ]

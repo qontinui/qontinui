@@ -1,0 +1,123 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "name": "Simple Click Automation",
+    "description": "Example automation that clicks a button",
+    "author": "Qontinui",
+    "created": "2024-01-01T00:00:00Z",
+    "modified": "2024-01-01T00:00:00Z",
+    "tags": ["example", "test"]
+  },
+  "images": [],
+  "processes": [
+    {
+      "id": "process-1",
+      "name": "Click Process",
+      "description": "Clicks at specific coordinates",
+      "type": "sequence",
+      "actions": [
+        {
+          "id": "action-1",
+          "type": "MOVE",
+          "config": {
+            "target": {
+              "type": "coordinates",
+              "coordinates": {
+                "x": 500,
+                "y": 300
+              }
+            }
+          },
+          "timeout": 5000,
+          "retryCount": 1
+        },
+        {
+          "id": "action-2",
+          "type": "WAIT",
+          "config": {
+            "duration": 2000
+          },
+          "timeout": 5000,
+          "retryCount": 1
+        },
+        {
+          "id": "action-3",
+          "type": "CLICK",
+          "config": {
+            "target": {
+              "type": "coordinates",
+              "coordinates": {
+                "x": 500,
+                "y": 300
+              }
+            }
+          },
+          "timeout": 5000,
+          "retryCount": 3
+        }
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "state-1",
+      "name": "Initial State",
+      "description": "Starting state",
+      "identifyingImages": [],
+      "position": {"x": 100, "y": 100},
+      "isInitial": true,
+      "isFinal": false
+    },
+    {
+      "id": "state-2",
+      "name": "Final State",
+      "description": "End state",
+      "identifyingImages": [],
+      "position": {"x": 300, "y": 100},
+      "isInitial": false,
+      "isFinal": true
+    }
+  ],
+  "transitions": [
+    {
+      "id": "transition-1",
+      "type": "FromTransition",
+      "processes": ["process-1"],
+      "timeout": 10000,
+      "retryCount": 3,
+      "fromState": "state-1",
+      "toState": "state-2",
+      "staysVisible": false,
+      "activateStates": [],
+      "deactivateStates": []
+    }
+  ],
+  "settings": {
+    "execution": {
+      "defaultTimeout": 10000,
+      "defaultRetryCount": 3,
+      "actionDelay": 100,
+      "failureStrategy": "stop",
+      "headless": false
+    },
+    "recognition": {
+      "defaultThreshold": 0.9,
+      "searchAlgorithm": "template_matching",
+      "multiScaleSearch": true,
+      "colorSpace": "rgb",
+      "edgeDetection": false,
+      "ocrEnabled": false
+    },
+    "logging": {
+      "level": "info",
+      "screenshotOnError": true,
+      "consoleOutput": true,
+      "detailedMatching": false
+    },
+    "performance": {
+      "maxParallelActions": 1,
+      "cacheImages": true,
+      "optimizeSearch": true
+    }
+  }
+}

@@ -79,7 +79,7 @@ class ClickOptions(ActionConfig):
         return self.repetition_options.get_pause_between_individual_actions()
 
 
-class ClickOptionsBuilder(ActionConfigBuilder['ClickOptionsBuilder']):
+class ClickOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing ClickOptions with a fluent API.
     
     Port of ClickOptions from Qontinui framework.Builder.

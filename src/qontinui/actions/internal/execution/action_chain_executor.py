@@ -9,7 +9,7 @@ from ...object_collection import ObjectCollection
 from ...action_chain_options import ActionChainOptions, ChainingStrategy
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
-from ....model.region import Region
+from ....model.element.region import Region
 from ....model.match import Match
 from ..service.action_service import ActionService
 

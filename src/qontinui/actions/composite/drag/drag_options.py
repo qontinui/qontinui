@@ -41,7 +41,7 @@ class DragOptions(ActionConfig):
         return self.delay_after_drag
 
 
-class DragOptionsBuilder(ActionConfigBuilder['DragOptionsBuilder']):
+class DragOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing DragOptions with a fluent API.
     
     Port of DragOptions from Qontinui framework.Builder.

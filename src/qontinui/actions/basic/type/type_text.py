@@ -9,7 +9,7 @@ from ...action_type import ActionType
 from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
 from .type_options import TypeOptions
-from ....model.state_string import StateString
+from ....model.state.state_string import StateString
 
 # Default type delay
 DEFAULT_TYPE_DELAY = 0.02

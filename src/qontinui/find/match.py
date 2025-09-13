@@ -6,7 +6,7 @@ Wrapper around MatchObject with additional functionality.
 from dataclasses import dataclass
 from typing import Optional, Any
 from ..model.element import Location, Region, Pattern
-from ..model.match import MatchObject
+from ..model.match import Match as MatchObject
 from ..actions import ActionResult
 
 

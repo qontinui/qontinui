@@ -11,7 +11,7 @@ from ...object_collection import ObjectCollection
 from ..find.find import Find
 from ..find.pattern_find_options import PatternFindOptions, PatternFindOptionsBuilder
 from .click_options import ClickOptions
-from ....model.location import Location
+from ....model.element.location import Location
 from ....model.match import Match
 
 

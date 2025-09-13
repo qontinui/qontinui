@@ -31,7 +31,7 @@ class MouseUpOptions(ActionConfig):
         return self.press_options
 
 
-class MouseUpOptionsBuilder(ActionConfigBuilder['MouseUpOptionsBuilder']):
+class MouseUpOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing MouseUpOptions with a fluent API.
     
     Port of MouseUpOptions from Qontinui framework.Builder.

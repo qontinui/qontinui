@@ -50,7 +50,7 @@ class HighlightOptions(ActionConfig):
         return self.flash_times
 
 
-class HighlightOptionsBuilder(ActionConfigBuilder['HighlightOptionsBuilder']):
+class HighlightOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing HighlightOptions with a fluent API.
     
     Port of HighlightOptions from Qontinui framework.Builder.
