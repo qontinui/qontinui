@@ -3,68 +3,58 @@
 Performs mouse click operations on GUI elements.
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 from ...action_interface import ActionInterface
 from ...action_type import ActionType
 from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
-from ..find.find import Find
-from ..find.pattern_find_options import PatternFindOptions, PatternFindOptionsBuilder
 from .click_options import ClickOptions
 from ....model.element.location import Location
 from ....model.match import Match
 
 
 class Click(ActionInterface):
-    """Performs mouse click operations on GUI elements in the Qontinui framework.
-    
-    Port of Click from Qontinui framework class.
-    
-    Click is one of the most fundamental actions in GUI automation, enabling interaction 
-    with buttons, links, menus, and other clickable elements. It combines the visual 
-    recognition capabilities of Find with precise mouse control to reliably interact with 
-    GUI elements across different applications and platforms.
-    
+    """Performs ATOMIC mouse click operations on GUI elements.
+
+    Port of Click from Brobot framework class.
+
+    Click is an ATOMIC action that only performs mouse clicks on locations. It does NOT
+    search for images or patterns - that functionality is provided by Find or through
+    action chaining when using convenience methods like Action.click(StateImage).
+
+    This separation of concerns ensures:
+    - Click remains a pure, atomic action
+    - Complex behaviors are achieved through action composition
+    - Each action has a single, well-defined responsibility
+
     Click targets supported:
-    - Image Matches: Clicks on visually identified elements
-    - Regions: Clicks within defined screen areas
-    - Locations: Clicks at specific screen coordinates
-    - Previous Matches: Reuses results from earlier Find operations
-    
+    - Locations: Direct screen coordinates
+    - Regions: Clicks at region center
+    - Matches: Results from previous Find operations
+    - NOT StateImages directly (use Find first or Action.click convenience method)
+
     Advanced features:
     - Multi-click support for double-clicks, triple-clicks, etc.
     - Configurable click types (left, right, middle button)
-    - Batch clicking on multiple matches
+    - Batch clicking on multiple locations
     - Post-click mouse movement to avoid hover effects
     - Precise timing control between clicks
-    - Integration with state management for context-aware clicking
-    
-    In the model-based approach, Click actions are more than simple mouse events. They 
-    update the framework's understanding of the GUI state, track interaction history, and 
-    can trigger state transitions. This integration ensures that the automation maintains 
-    an accurate model of the application state throughout execution.
     """
-    
-    def __init__(self, 
-                 find: Optional[Find] = None,
+
+    def __init__(self,
                  click_location_once: Optional['SingleClickExecutor'] = None,
                  time: Optional['TimeProvider'] = None,
-                 after_click: Optional['PostClickHandler'] = None,
-                 action_result_factory: Optional['ActionResultFactory'] = None):
+                 after_click: Optional['PostClickHandler'] = None):
         """Initialize Click action.
-        
+
         Args:
-            find: Find action for locating targets
             click_location_once: Executor for single clicks
             time: Time provider for delays
             after_click: Handler for post-click actions
-            action_result_factory: Factory for creating action results
         """
-        self.find = find
         self.click_location_once = click_location_once
         self.time = time
         self.after_click = after_click
-        self.action_result_factory = action_result_factory
     
     def get_action_type(self) -> ActionType:
         """Return the action type.
@@ -75,63 +65,85 @@ class Click(ActionInterface):
         return ActionType.CLICK
     
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
-        """Execute click operations on all found matches up to the maximum allowed.
-        
-        This method orchestrates the complete click process:
-        1. Uses Find to locate target elements in the first ObjectCollection
-        2. Iterates through matches up to configured maximum
-        3. Performs configured number of clicks on each match
-        4. Applies pauses between clicking different matches
-        
-        The method modifies the Match objects by incrementing their "times acted on" counter,
-        which tracks interactions during this action execution.
-        
+        """Execute click operations on provided locations, regions, or existing matches.
+
+        Click is an ATOMIC action that only performs mouse clicks. It does NOT search
+        for images - that's the responsibility of Find or action chaining.
+
+        This method processes different target types:
+        - Locations: Clicks directly at the coordinates
+        - Regions: Clicks at the region center
+        - Matches: Clicks at match locations (from previous Find operations)
+        - DOES NOT process StateImages (those require Find first)
+
         Args:
-            matches: The ActionResult containing configuration and to which found matches
-                    are added. The matches collection is populated by the Find operation.
-            object_collections: The collections containing objects to find and click. Only
-                              the first collection is used for finding targets.
-                              
+            matches: The ActionResult containing configuration and any pre-existing matches
+            object_collections: Collections containing locations, regions, or matches to click
+
         Raises:
             ValueError: If matches does not contain ClickOptions configuration
         """
         # Get the configuration - expecting ClickOptions
-        action_config = matches.get_action_config()
+        action_config = matches.action_config
         if not isinstance(action_config, ClickOptions):
             raise ValueError("Click requires ClickOptions configuration")
-        
+
         click_options = action_config
-        
-        # Create a separate ActionResult for Find with PatternFindOptions
-        # This is necessary because Find expects BaseFindOptions, not ClickOptions
-        find_options = PatternFindOptionsBuilder().build()
-        
-        if self.action_result_factory:
-            find_result = self.action_result_factory.init(find_options, "Click->Find", object_collections)
-        else:
-            # Create a basic ActionResult if factory not available
-            find_result = ActionResult(find_options)
-            find_result.action_description = "Click->Find"
-        
-        # Perform find operation
-        if self.find:
-            self.find.perform(find_result, *object_collections)  # find performs only on 1st collection
-        
-        # Copy find results back to the original matches
-        matches.match_list.extend(find_result.match_list)
-        matches.set_success(find_result.is_success())
-        
-        # Find should have already limited matches based on maxMatchesToActOn
-        match_index = 0
-        for match in matches.match_list:
-            location = match.get_target()
-            self._click(location, click_options, match)
-            match_index += 1
-            # pause only between clicking different matches, not after the last match
-            if match_index < len(matches.match_list):
-                if self.time:
+        clicked_count = 0
+
+        # Process all object collections
+        for obj_collection in object_collections:
+            # Click on any existing matches in the collection
+            for match in obj_collection.get_matches():
+                location = match.target
+                if location:  # Only click if match has a target location
+                    self._click(location, click_options, match)
+                    clicked_count += 1
+                    # Pause between different targets
+                    if self.time and clicked_count < self._get_total_targets(object_collections):
+                        self.time.wait(click_options.get_pause_between_individual_actions())
+
+            # Click on any locations in the collection
+            for location in obj_collection.get_locations():
+                # Create a temporary match for tracking
+                from ....model.match import Match
+                temp_match = Match(target=location)
+                self._click(location, click_options, temp_match)
+                matches.match_list.append(temp_match)
+                clicked_count += 1
+                if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
-    
+
+            # Click on any regions in the collection (at their center)
+            for region in obj_collection.get_regions():
+                location = region.get_center()
+                from ....model.match import Match
+                temp_match = Match(target=location)
+                self._click(location, click_options, temp_match)
+                matches.match_list.append(temp_match)
+                clicked_count += 1
+                if self.time and clicked_count < self._get_total_targets(object_collections):
+                    self.time.wait(click_options.get_pause_between_individual_actions())
+
+        # Set success based on whether we clicked anything
+        matches.success = clicked_count > 0
+
+    def _get_total_targets(self, object_collections: Tuple[ObjectCollection, ...]) -> int:
+        """Count total number of clickable targets across all collections.
+
+        Args:
+            object_collections: Collections to count targets in
+
+        Returns:
+            Total number of clickable targets
+        """
+        count = 0
+        for obj_collection in object_collections:
+            count += len(obj_collection.get_matches())
+            count += len(obj_collection.get_locations())
+            count += len(obj_collection.get_regions())
+        return count
+
     def _click(self, location: Location, click_options: ClickOptions, match: Match) -> None:
         """Perform multiple clicks on a single location with configurable timing and post-click behavior.
         

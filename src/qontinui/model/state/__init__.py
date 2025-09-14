@@ -17,6 +17,7 @@ from .path import Path
 from .path_finder import PathFinder
 from .special import NullState, NullStateName, UnknownState, UnknownStateEnum
 from .state_object_metadata import StateObjectMetadata, StateObjectType
+from .initial_states import InitialStates, get_initial_states, register_initial_state, register_initial_states
 
 __all__ = [
     "State",
@@ -40,4 +41,9 @@ __all__ = [
     "NullStateName",
     "UnknownState",
     "UnknownStateEnum",
+    # Initial states
+    "InitialStates",
+    "get_initial_states",
+    "register_initial_state",
+    "register_initial_states",
 ]
