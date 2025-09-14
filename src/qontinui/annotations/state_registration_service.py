@@ -5,8 +5,8 @@ Handles registration of states with the state management system.
 
 from typing import Set
 import logging
-from ..state_management.state import State
-from ..state_management.state_service import StateService
+from ..model.state.state import State
+from ..model.state.state_service import StateService
 
 logger = logging.getLogger(__name__)
 

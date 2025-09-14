@@ -11,7 +11,7 @@ from ..model.transition.state_transition import StateTransition
 from ..model.state.state_service import StateService
 from ..model.transition.state_transition_service import StateTransitionService
 from ..model.transition.state_transitions_joint_table import StateTransitionsJointTable
-from ..state_management.initial_states import InitialStates
+from ..model.state.initial_states import InitialStates
 from ..navigation.transition.code_state_transition import CodeStateTransition
 from ..model.transition.state_transitions import StateTransitions
 from .state import is_state, get_state_metadata

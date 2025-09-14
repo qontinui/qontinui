@@ -171,7 +171,7 @@ class ApplicationLifecycleService:
         
         # Check state management
         try:
-            from ..state_management.state_memory import get_state_memory
+            from ..model.state.state_memory import get_state_memory
             state_memory = get_state_memory()
             health_status['components']['state_management'] = {
                 'status': 'healthy',

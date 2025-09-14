@@ -7,11 +7,11 @@ from dataclasses import dataclass, field
 from typing import List, Any
 import logging
 import inspect
-from ..state_management.state_image import StateImage
-from ..state_management.state_string import StateString
-from ..state_management.state_object import StateObject
-from ..state_management.state_location import StateLocation
-from ..state_management.state_region import StateRegion
+from ..model.state.state_image import StateImage
+from ..model.state.state_string import StateString
+from ..model.state.state_object import StateObject
+from ..model.state.state_location import StateLocation
+from ..model.state.state_region import StateRegion
 
 logger = logging.getLogger(__name__)
 

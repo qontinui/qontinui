@@ -12,7 +12,7 @@ from datetime import datetime
 
 from ..perception.segmentation import ScreenSegmenter
 from ..perception.vectorization import ObjectVectorizer
-from ..state_management.models import State, Element, ElementType, Transition, TransitionType
+from ..model.state.models import State, Element, ElementType, Transition, TransitionType
 
 
 logger = logging.getLogger(__name__)

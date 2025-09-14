@@ -169,7 +169,7 @@ class QontinuiShutdownHandler:
         
         try:
             # Save state memory if needed
-            from ..state_management.state_memory import get_state_memory
+            from ..model.state.state_memory import get_state_memory
             state_memory = get_state_memory()
             if state_memory:
                 # Could save state to disk here if needed

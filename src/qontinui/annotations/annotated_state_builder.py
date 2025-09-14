@@ -5,12 +5,12 @@ Builds State objects from @state annotated classes.
 
 from typing import Dict, Any, List
 import logging
-from ..state_management.state import State
-from ..state_management.state_image import StateImage
-from ..state_management.state_string import StateString
-from ..state_management.state_object import StateObject
-from ..state_management.state_location import StateLocation
-from ..state_management.state_region import StateRegion
+from ..model.state.state import State
+from ..model.state.state_image import StateImage
+from ..model.state.state_string import StateString
+from ..model.state.state_object import StateObject
+from ..model.state.state_location import StateLocation
+from ..model.state.state_region import StateRegion
 from .state_component_extractor import StateComponentExtractor
 
 logger = logging.getLogger(__name__)
