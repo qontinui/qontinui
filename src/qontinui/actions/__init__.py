@@ -10,6 +10,7 @@ from .action_config import ActionConfig, ActionConfigBuilder, Illustrate, Loggin
 from .action_interface import ActionInterface
 from .action import Action
 from .action_options import FindOptions, KeyModifier
+from .keys import Key, KeyCombo, KeyCombos
 from .verification_options import VerificationOptions, VerificationOptionsBuilder, Event
 from .repetition_options import RepetitionOptions, RepetitionOptionsBuilder
 
@@ -80,6 +81,9 @@ __all__ = [
     'KeyDownOptions',
     'KeyUpOptions',
     'KeyModifier',
+    'Key',
+    'KeyCombo',
+    'KeyCombos',
     
     # Mouse options
     'MousePressOptions',

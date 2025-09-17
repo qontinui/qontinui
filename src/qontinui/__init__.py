@@ -3,6 +3,11 @@
 Following Brobot principles with modern Python implementation.
 """
 
+# CRITICAL: Initialize DPI awareness BEFORE any other imports
+# This ensures physical resolution capture on Windows
+from .startup import PhysicalResolutionInitializer
+PhysicalResolutionInitializer.force_initialization()
+
 __version__ = "0.1.0"
 
 # State Management

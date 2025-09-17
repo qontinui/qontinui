@@ -153,9 +153,14 @@ class AnnotationProcessor:
         # Register initial states
         if initial_state_names:
             logger.info(f"Registering {len(initial_state_names)} initial states: {initial_state_names}")
-            # Add all initial states with equal probability
+            # Add initial states to the registry
             for state_name in initial_state_names:
-                self.initial_states.add_state_set(100, [state_name])
+                state = self.state_service.get_state(state_name)
+                if state:
+                    self.initial_states.add_state(state)
+                    logger.debug(f"Added {state_name} to initial states registry")
+                else:
+                    logger.warning(f"Could not find state {state_name} to add to initial states")
         else:
             logger.warning("No initial states found!")
         
