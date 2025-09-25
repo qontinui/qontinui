@@ -3,26 +3,29 @@
 This replaces Brobot's custom logging framework with a modern Python solution
 that provides structured logging, context preservation, and performance optimization.
 """
-import structlog
+
 import logging
 import sys
-from pathlib import Path
-from typing import Optional, Any, Dict, List
 from datetime import datetime
-import json
+from pathlib import Path
+from typing import Any
+
+import structlog
+
+from ..config import get_settings
 
 
 def setup_logging(
     level: str = "INFO",
-    log_file: Optional[Path] = None,
+    log_file: Path | None = None,
     structured: bool = True,
     console: bool = True,
     add_timestamp: bool = True,
     add_caller_info: bool = True,
-    colorize: bool = True
+    colorize: bool = True,
 ) -> None:
     """Configure structured logging for Qontinui.
-    
+
     Args:
         level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_file: Optional path to log file
@@ -33,31 +36,35 @@ def setup_logging(
         colorize: Colorize console output (only for non-structured)
     """
     # Build processor chain
-    processors: List[Any] = [
+    processors: list[Any] = [
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
         structlog.stdlib.PositionalArgumentsFormatter(),
     ]
-    
+
     if add_timestamp:
         processors.append(structlog.processors.TimeStamper(fmt="iso"))
-    
+
     if add_caller_info:
-        processors.append(structlog.processors.CallsiteParameterAdder(
-            parameters=[
-                structlog.processors.CallsiteParameter.FILENAME,
-                structlog.processors.CallsiteParameter.LINENO,
-                structlog.processors.CallsiteParameter.FUNC_NAME,
-            ]
-        ))
-    
-    processors.extend([
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.UnicodeDecoder(),
-    ])
-    
+        processors.append(
+            structlog.processors.CallsiteParameterAdder(
+                parameters=[
+                    structlog.processors.CallsiteParameter.FILENAME,
+                    structlog.processors.CallsiteParameter.LINENO,
+                    structlog.processors.CallsiteParameter.FUNC_NAME,
+                ]
+            )
+        )
+
+    processors.extend(
+        [
+            structlog.processors.StackInfoRenderer(),
+            structlog.processors.format_exc_info,
+            structlog.processors.UnicodeDecoder(),
+        ]
+    )
+
     # Add final renderer
     if structured:
         processors.append(structlog.processors.JSONRenderer())
@@ -66,7 +73,7 @@ def setup_logging(
             processors.append(structlog.dev.ConsoleRenderer(colors=True))
         else:
             processors.append(structlog.dev.ConsoleRenderer(colors=False))
-    
+
     # Configure structlog
     structlog.configure(
         processors=processors,
@@ -74,35 +81,32 @@ def setup_logging(
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
-    
+
     # Configure standard logging
     handlers = []
-    
+
     if console:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(logging.Formatter("%(message)s"))
         handlers.append(console_handler)
-    
+
     if log_file:
         log_file.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setFormatter(logging.Formatter("%(message)s"))
         handlers.append(file_handler)
-    
+
     logging.basicConfig(
-        format="%(message)s",
-        level=getattr(logging, level.upper()),
-        handlers=handlers,
-        force=True
+        format="%(message)s", level=getattr(logging, level.upper()), handlers=handlers, force=True
     )
 
 
 def get_logger(name: str) -> structlog.BoundLogger:
     """Get a structured logger instance.
-    
+
     Args:
         name: Logger name (typically __name__)
-        
+
     Returns:
         Structured logger instance
     """
@@ -111,10 +115,10 @@ def get_logger(name: str) -> structlog.BoundLogger:
 
 class LogContext:
     """Context manager for temporary log context."""
-    
+
     def __init__(self, logger: structlog.BoundLogger, **kwargs):
         """Initialize with logger and context.
-        
+
         Args:
             logger: Logger instance
             **kwargs: Context key-value pairs
@@ -122,12 +126,12 @@ class LogContext:
         self.logger = logger
         self.context = kwargs
         self.original_context = {}
-        
+
     def __enter__(self) -> structlog.BoundLogger:
         """Enter context and bind values."""
         self.bound_logger = self.logger.bind(**self.context)
         return self.bound_logger
-        
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit context and unbind values."""
         # Context automatically cleaned up when bound_logger goes out of scope
@@ -136,28 +140,23 @@ class LogContext:
 
 class ActionLogger:
     """Specialized logger for action execution."""
-    
-    def __init__(self, base_logger: Optional[structlog.BoundLogger] = None):
+
+    def __init__(self, base_logger: structlog.BoundLogger | None = None):
         """Initialize action logger.
-        
+
         Args:
             base_logger: Base logger to use
         """
         self.logger = base_logger or get_logger(__name__)
-        
-    def log_action_start(
-        self, 
-        action_type: str,
-        target: Any,
-        **kwargs
-    ) -> Dict[str, Any]:
+
+    def log_action_start(self, action_type: str, target: Any, **kwargs) -> dict[str, Any]:
         """Log action start.
-        
+
         Args:
             action_type: Type of action
             target: Action target
             **kwargs: Additional context
-            
+
         Returns:
             Action context dict
         """
@@ -165,25 +164,22 @@ class ActionLogger:
             "action_type": action_type,
             "target": str(target),
             "start_time": datetime.utcnow().isoformat(),
-            **kwargs
+            **kwargs,
         }
-        
-        self.logger.info(
-            "action_started",
-            **context
-        )
-        
+
+        self.logger.info("action_started", **context)
+
         return context
-        
+
     def log_action_end(
         self,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         success: bool,
         result: Any = None,
-        error: Optional[Exception] = None
+        error: Exception | None = None,
     ) -> None:
         """Log action end.
-        
+
         Args:
             context: Action context from log_action_start
             success: Whether action succeeded
@@ -193,21 +189,21 @@ class ActionLogger:
         end_time = datetime.utcnow()
         start_time = datetime.fromisoformat(context["start_time"])
         duration = (end_time - start_time).total_seconds()
-        
+
         log_data = {
             **context,
             "end_time": end_time.isoformat(),
             "duration": duration,
-            "success": success
+            "success": success,
         }
-        
+
         if result is not None:
             log_data["result"] = str(result)
-            
+
         if error:
             log_data["error"] = str(error)
             log_data["error_type"] = type(error).__name__
-            
+
         if success:
             self.logger.info("action_completed", **log_data)
         else:
@@ -216,25 +212,25 @@ class ActionLogger:
 
 class StateLogger:
     """Specialized logger for state transitions."""
-    
-    def __init__(self, base_logger: Optional[structlog.BoundLogger] = None):
+
+    def __init__(self, base_logger: structlog.BoundLogger | None = None):
         """Initialize state logger.
-        
+
         Args:
             base_logger: Base logger to use
         """
         self.logger = base_logger or get_logger(__name__)
-        
+
     def log_transition(
         self,
         from_state: str,
         to_state: str,
-        trigger: Optional[str] = None,
+        trigger: str | None = None,
         success: bool = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Log state transition.
-        
+
         Args:
             from_state: Source state
             to_state: Target state
@@ -242,30 +238,21 @@ class StateLogger:
             success: Whether transition succeeded
             **kwargs: Additional context
         """
-        log_data = {
-            "from_state": from_state,
-            "to_state": to_state,
-            "success": success,
-            **kwargs
-        }
-        
+        log_data = {"from_state": from_state, "to_state": to_state, "success": success, **kwargs}
+
         if trigger:
             log_data["trigger"] = trigger
-            
+
         if success:
             self.logger.info("state_transition", **log_data)
         else:
             self.logger.warning("state_transition_failed", **log_data)
-            
+
     def log_state_activation(
-        self,
-        state: str,
-        confidence: float,
-        method: str = "unknown",
-        **kwargs
+        self, state: str, confidence: float, method: str = "unknown", **kwargs
     ) -> None:
         """Log state activation.
-        
+
         Args:
             state: State name
             confidence: Activation confidence
@@ -273,34 +260,25 @@ class StateLogger:
             **kwargs: Additional context
         """
         self.logger.info(
-            "state_activated",
-            state=state,
-            confidence=confidence,
-            method=method,
-            **kwargs
+            "state_activated", state=state, confidence=confidence, method=method, **kwargs
         )
 
 
 class PerformanceLogger:
     """Logger for performance metrics."""
-    
-    def __init__(self, base_logger: Optional[structlog.BoundLogger] = None):
+
+    def __init__(self, base_logger: structlog.BoundLogger | None = None):
         """Initialize performance logger.
-        
+
         Args:
             base_logger: Base logger to use
         """
         self.logger = base_logger or get_logger(__name__)
-        self.metrics: Dict[str, List[float]] = {}
-        
-    def log_timing(
-        self,
-        operation: str,
-        duration: float,
-        **kwargs
-    ) -> None:
+        self.metrics: dict[str, list[float]] = {}
+
+    def log_timing(self, operation: str, duration: float, **kwargs) -> None:
         """Log operation timing.
-        
+
         Args:
             operation: Operation name
             duration: Duration in seconds
@@ -310,55 +288,40 @@ class PerformanceLogger:
         if operation not in self.metrics:
             self.metrics[operation] = []
         self.metrics[operation].append(duration)
-        
+
         # Log
-        self.logger.debug(
-            "performance_timing",
-            operation=operation,
-            duration=duration,
-            **kwargs
-        )
-        
-    def log_resource_usage(
-        self,
-        cpu_percent: float,
-        memory_mb: float,
-        **kwargs
-    ) -> None:
+        self.logger.debug("performance_timing", operation=operation, duration=duration, **kwargs)
+
+    def log_resource_usage(self, cpu_percent: float, memory_mb: float, **kwargs) -> None:
         """Log resource usage.
-        
+
         Args:
             cpu_percent: CPU usage percentage
             memory_mb: Memory usage in MB
             **kwargs: Additional context
         """
-        self.logger.debug(
-            "resource_usage",
-            cpu_percent=cpu_percent,
-            memory_mb=memory_mb,
-            **kwargs
-        )
-        
-    def get_stats(self, operation: Optional[str] = None) -> Dict[str, Any]:
+        self.logger.debug("resource_usage", cpu_percent=cpu_percent, memory_mb=memory_mb, **kwargs)
+
+    def get_stats(self, operation: str | None = None) -> dict[str, Any]:
         """Get performance statistics.
-        
+
         Args:
             operation: Optional specific operation
-            
+
         Returns:
             Statistics dict
         """
         if operation:
             if operation not in self.metrics:
                 return {}
-                
+
             values = self.metrics[operation]
             return {
                 "count": len(values),
                 "mean": sum(values) / len(values),
                 "min": min(values),
                 "max": max(values),
-                "total": sum(values)
+                "total": sum(values),
             }
         else:
             stats = {}
@@ -369,7 +332,7 @@ class PerformanceLogger:
                         "mean": sum(values) / len(values),
                         "min": min(values),
                         "max": max(values),
-                        "total": sum(values)
+                        "total": sum(values),
                     }
             return stats
 
@@ -381,14 +344,12 @@ performance_logger = PerformanceLogger()
 
 
 # Initialize logging on import with defaults
-from ..config import get_settings
-
 settings = get_settings()
-if hasattr(settings, 'log_path') and hasattr(settings, 'debug_mode'):
+if hasattr(settings, "log_path") and hasattr(settings, "debug_mode"):
     log_file = settings.log_path / f"qontinui_{datetime.now().strftime('%Y%m%d')}.log"
     setup_logging(
         level="DEBUG" if settings.debug_mode else "INFO",
         log_file=log_file,
         structured=not settings.debug_mode,  # Use readable format in debug mode
-        colorize=settings.debug_mode
+        colorize=settings.debug_mode,
     )

@@ -72,7 +72,7 @@ print(f"Code: {result.translated_code}")
 **Usage**:
 ```python
 from qontinui.test_migration.translation.hybrid_test_translator import (
-    HybridTestTranslator, 
+    HybridTestTranslator,
     TranslationStrategy
 )
 
@@ -112,26 +112,26 @@ The hybrid translator automatically selects the optimal strategy based on test c
 ```python
 def calculate_complexity(test_file):
     score = 0.0
-    
+
     # Mock usage increases complexity
     if test_file.mock_usage:
         score += 0.2 + (len(test_file.mock_usage) * 0.1)
-    
+
     # Integration tests are more complex
     if test_file.test_type == TestType.INTEGRATION:
         score += 0.3
-    
+
     # Many test methods increase complexity
     if len(test_file.test_methods) > 5:
         score += 0.2
-    
+
     # Complex method bodies
     for method in test_file.test_methods:
         if len(method.body.split('\n')) > 10:
             score += 0.1
         if 'when(' in method.body or 'verify(' in method.body:
             score += 0.2
-    
+
     return min(score, 1.0)
 ```
 
@@ -244,7 +244,7 @@ print(f"LLM success rate: {stats['llm_success_rate']:.2%}")
 # Run LLM translator tests
 python -m pytest src/qontinui/test_migration/tests/test_llm_translator.py
 
-# Run hybrid translator tests  
+# Run hybrid translator tests
 python -m pytest src/qontinui/test_migration/tests/test_hybrid_translator.py
 
 # Run demonstration

@@ -20,7 +20,7 @@ These relative imports fail because Python doesn't know the package structure wh
 ```
 cli.py
 ├── config.py ✅ (works)
-├── core.models ✅ (works)  
+├── core.models ✅ (works)
 ├── orchestrator.py
 │   ├── config.py ✅
 │   ├── core.interfaces ✅

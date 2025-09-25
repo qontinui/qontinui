@@ -4,7 +4,7 @@ This module provides abstraction over different GUI automation backends,
 allowing for flexible switching between implementations via environment variables.
 """
 
-from .factory import HALFactory
 from .config import HALConfig
+from .factory import HALFactory
 
-__all__ = ['HALFactory', 'HALConfig']
+__all__ = ["HALFactory", "HALConfig"]

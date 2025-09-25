@@ -3,9 +3,9 @@
 This package handles multi-monitor support for the automation framework.
 """
 
-from .monitor_manager import MonitorManager, MonitorInfo
+from .monitor_manager import MonitorInfo, MonitorManager
 
 __all__ = [
-    'MonitorManager',
-    'MonitorInfo',
+    "MonitorManager",
+    "MonitorInfo",
 ]

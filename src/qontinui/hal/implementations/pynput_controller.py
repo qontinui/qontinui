@@ -1,38 +1,35 @@
 """Pynput-based input controller implementation."""
 
 import time
-from typing import Union, Optional, List
-from pynput import mouse, keyboard
-from pynput.mouse import Button as PynputButton
+
+from pynput import keyboard, mouse
 from pynput.keyboard import Key as PynputKey
+from pynput.mouse import Button as PynputButton
 
-from ..interfaces.input_controller import (
-    IInputController, MouseButton, Key, MousePosition
-)
-from ..config import HALConfig
 from ...logging import get_logger
-
+from ..config import HALConfig
+from ..interfaces.input_controller import IInputController, Key, MouseButton, MousePosition
 
 logger = get_logger(__name__)
 
 
 class PynputController(IInputController):
     """Input controller implementation using Pynput.
-    
+
     Pynput provides direct system-level input control without GUI automation
     dependencies, offering better performance and reliability.
     """
-    
-    def __init__(self, config: Optional[HALConfig] = None):
+
+    def __init__(self, config: HALConfig | None = None):
         """Initialize Pynput controller.
-        
+
         Args:
             config: HAL configuration
         """
         self.config = config or HALConfig()
         self.mouse_controller = mouse.Controller()
         self.keyboard_controller = keyboard.Controller()
-        
+
         # Button mapping
         self._button_map = {
             MouseButton.LEFT: PynputButton.left,
@@ -40,14 +37,14 @@ class PynputController(IInputController):
             MouseButton.MIDDLE: PynputButton.middle,
             "left": PynputButton.left,
             "right": PynputButton.right,
-            "middle": PynputButton.middle
+            "middle": PynputButton.middle,
         }
-        
+
         # Key mapping for special keys
         self._key_map = self._build_key_map()
-        
+
         logger.info("pynput_controller_initialized")
-    
+
     def _build_key_map(self) -> dict:
         """Build mapping from Key enum to Pynput keys."""
         return {
@@ -63,7 +60,6 @@ class PynputController(IInputController):
             Key.CTRL_R: PynputKey.ctrl_r,
             Key.CMD: PynputKey.cmd,
             Key.WIN: PynputKey.cmd,  # Windows key maps to cmd
-            
             # Navigation keys
             Key.UP: PynputKey.up,
             Key.DOWN: PynputKey.down,
@@ -73,7 +69,6 @@ class PynputController(IInputController):
             Key.END: PynputKey.end,
             Key.PAGE_UP: PynputKey.page_up,
             Key.PAGE_DOWN: PynputKey.page_down,
-            
             # Action keys
             Key.ENTER: PynputKey.enter,
             Key.TAB: PynputKey.tab,
@@ -81,7 +76,6 @@ class PynputController(IInputController):
             Key.BACKSPACE: PynputKey.backspace,
             Key.DELETE: PynputKey.delete,
             Key.ESCAPE: PynputKey.esc,
-            
             # Function keys
             Key.F1: PynputKey.f1,
             Key.F2: PynputKey.f2,
@@ -96,26 +90,26 @@ class PynputController(IInputController):
             Key.F11: PynputKey.f11,
             Key.F12: PynputKey.f12,
         }
-    
-    def _get_pynput_button(self, button: Union[MouseButton, str]) -> PynputButton:
+
+    def _get_pynput_button(self, button: MouseButton | str) -> PynputButton:
         """Convert button to Pynput button.
-        
+
         Args:
             button: Button to convert
-            
+
         Returns:
             Pynput button
         """
         if isinstance(button, str):
             button = button.lower()
         return self._button_map.get(button, PynputButton.left)
-    
-    def _get_pynput_key(self, key: Union[str, Key]) -> Union[PynputKey, str]:
+
+    def _get_pynput_key(self, key: str | Key) -> PynputKey | str:
         """Convert key to Pynput key.
-        
+
         Args:
             key: Key to convert
-            
+
         Returns:
             Pynput key or string
         """
@@ -130,17 +124,17 @@ class PynputController(IInputController):
             # Return as regular character
             return key
         return key
-    
+
     # Mouse operations
-    
+
     def mouse_move(self, x: int, y: int, duration: float = 0.0) -> bool:
         """Move mouse to absolute position.
-        
+
         Args:
             x: Target X coordinate
             y: Target Y coordinate
             duration: Movement duration in seconds (0 for instant)
-            
+
         Returns:
             True if successful
         """
@@ -150,7 +144,7 @@ class PynputController(IInputController):
                 start_x, start_y = self.mouse_controller.position
                 steps = max(int(duration * 60), 1)  # 60 FPS
                 delay = duration / steps
-                
+
                 for i in range(steps + 1):
                     progress = i / steps
                     current_x = int(start_x + (x - start_x) * progress)
@@ -161,46 +155,50 @@ class PynputController(IInputController):
             else:
                 # Instant movement
                 self.mouse_controller.position = (x, y)
-            
+
             logger.debug(f"Mouse moved to ({x}, {y})")
             return True
-            
+
         except Exception as e:
             logger.error(f"Mouse move failed: {e}")
             return False
-    
-    def mouse_move_relative(self, dx: int, dy: int,
-                           duration: float = 0.0) -> bool:
+
+    def mouse_move_relative(self, dx: int, dy: int, duration: float = 0.0) -> bool:
         """Move mouse relative to current position.
-        
+
         Args:
             dx: X offset
             dy: Y offset
             duration: Movement duration in seconds
-            
+
         Returns:
             True if successful
         """
         try:
             current_x, current_y = self.mouse_controller.position
             return self.mouse_move(current_x + dx, current_y + dy, duration)
-            
+
         except Exception as e:
             logger.error(f"Relative mouse move failed: {e}")
             return False
-    
-    def mouse_click(self, x: Optional[int] = None, y: Optional[int] = None,
-                   button: MouseButton = MouseButton.LEFT,
-                   clicks: int = 1, interval: float = 0.0) -> bool:
+
+    def mouse_click(
+        self,
+        x: int | None = None,
+        y: int | None = None,
+        button: MouseButton = MouseButton.LEFT,
+        clicks: int = 1,
+        interval: float = 0.0,
+    ) -> bool:
         """Click mouse button.
-        
+
         Args:
             x: X coordinate (None for current position)
             y: Y coordinate (None for current position)
             button: Mouse button to click
             clicks: Number of clicks
             interval: Interval between clicks in seconds
-            
+
         Returns:
             True if successful
         """
@@ -208,30 +206,31 @@ class PynputController(IInputController):
             # Move to position if specified
             if x is not None and y is not None:
                 self.mouse_move(x, y)
-            
+
             pynput_button = self._get_pynput_button(button)
-            
+
             for i in range(clicks):
                 self.mouse_controller.click(pynput_button)
                 if i < clicks - 1 and interval > 0:
                     time.sleep(interval)
-            
+
             logger.debug(f"Mouse clicked {clicks} time(s) with {button}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Mouse click failed: {e}")
             return False
-    
-    def mouse_down(self, x: Optional[int] = None, y: Optional[int] = None,
-                  button: MouseButton = MouseButton.LEFT) -> bool:
+
+    def mouse_down(
+        self, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
+    ) -> bool:
         """Press and hold mouse button.
-        
+
         Args:
             x: X coordinate (None for current position)
             y: Y coordinate (None for current position)
             button: Mouse button to press
-            
+
         Returns:
             True if successful
         """
@@ -239,26 +238,27 @@ class PynputController(IInputController):
             # Move to position if specified
             if x is not None and y is not None:
                 self.mouse_move(x, y)
-            
+
             pynput_button = self._get_pynput_button(button)
             self.mouse_controller.press(pynput_button)
-            
+
             logger.debug(f"Mouse button {button} pressed")
             return True
-            
+
         except Exception as e:
             logger.error(f"Mouse down failed: {e}")
             return False
-    
-    def mouse_up(self, x: Optional[int] = None, y: Optional[int] = None,
-                button: MouseButton = MouseButton.LEFT) -> bool:
+
+    def mouse_up(
+        self, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
+    ) -> bool:
         """Release mouse button.
-        
+
         Args:
             x: X coordinate (None for current position)
             y: Y coordinate (None for current position)
             button: Mouse button to release
-            
+
         Returns:
             True if successful
         """
@@ -266,23 +266,28 @@ class PynputController(IInputController):
             # Move to position if specified
             if x is not None and y is not None:
                 self.mouse_move(x, y)
-            
+
             pynput_button = self._get_pynput_button(button)
             self.mouse_controller.release(pynput_button)
-            
+
             logger.debug(f"Mouse button {button} released")
             return True
-            
+
         except Exception as e:
             logger.error(f"Mouse up failed: {e}")
             return False
-    
-    def mouse_drag(self, start_x: int, start_y: int,
-                  end_x: int, end_y: int,
-                  button: MouseButton = MouseButton.LEFT,
-                  duration: float = 0.5) -> bool:
+
+    def mouse_drag(
+        self,
+        start_x: int,
+        start_y: int,
+        end_x: int,
+        end_y: int,
+        button: MouseButton = MouseButton.LEFT,
+        duration: float = 0.5,
+    ) -> bool:
         """Drag mouse from start to end position.
-        
+
         Args:
             start_x: Starting X coordinate
             start_y: Starting Y coordinate
@@ -290,47 +295,46 @@ class PynputController(IInputController):
             end_y: Ending Y coordinate
             button: Mouse button to hold during drag
             duration: Drag duration in seconds
-            
+
         Returns:
             True if successful
         """
         try:
             # Move to start position
             self.mouse_move(start_x, start_y)
-            
+
             # Press button
             pynput_button = self._get_pynput_button(button)
             self.mouse_controller.press(pynput_button)
-            
+
             # Move to end position
             time.sleep(0.1)  # Small delay before drag
             self.mouse_move(end_x, end_y, duration)
-            
+
             # Release button
             time.sleep(0.1)  # Small delay before release
             self.mouse_controller.release(pynput_button)
-            
+
             logger.debug(f"Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
             return True
-            
+
         except Exception as e:
             logger.error(f"Mouse drag failed: {e}")
             # Try to release button if pressed
             try:
                 self.mouse_controller.release(self._get_pynput_button(button))
-            except:
+            except Exception:
                 pass
             return False
-    
-    def mouse_scroll(self, clicks: int, x: Optional[int] = None,
-                    y: Optional[int] = None) -> bool:
+
+    def mouse_scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
         """Scroll mouse wheel.
-        
+
         Args:
             clicks: Number of scroll clicks (positive=up, negative=down)
             x: X coordinate (None for current position)
             y: Y coordinate (None for current position)
-            
+
         Returns:
             True if successful
         """
@@ -338,20 +342,20 @@ class PynputController(IInputController):
             # Move to position if specified
             if x is not None and y is not None:
                 self.mouse_move(x, y)
-            
+
             # Scroll (negative for down, positive for up)
             self.mouse_controller.scroll(0, clicks)
-            
+
             logger.debug(f"Mouse scrolled {clicks} clicks")
             return True
-            
+
         except Exception as e:
             logger.error(f"Mouse scroll failed: {e}")
             return False
-    
+
     def get_mouse_position(self) -> MousePosition:
         """Get current mouse position.
-        
+
         Returns:
             Current mouse position
         """
@@ -361,84 +365,83 @@ class PynputController(IInputController):
         except Exception as e:
             logger.error(f"Get mouse position failed: {e}")
             return MousePosition(x=0, y=0)
-    
+
     # Keyboard operations
-    
-    def key_press(self, key: Union[str, Key],
-                 presses: int = 1, interval: float = 0.0) -> bool:
+
+    def key_press(self, key: str | Key, presses: int = 1, interval: float = 0.0) -> bool:
         """Press key (down and up).
-        
+
         Args:
             key: Key to press (string or Key enum)
             presses: Number of key presses
             interval: Interval between presses in seconds
-            
+
         Returns:
             True if successful
         """
         try:
             pynput_key = self._get_pynput_key(key)
-            
+
             for i in range(presses):
                 self.keyboard_controller.press(pynput_key)
                 self.keyboard_controller.release(pynput_key)
                 if i < presses - 1 and interval > 0:
                     time.sleep(interval)
-            
+
             logger.debug(f"Key '{key}' pressed {presses} time(s)")
             return True
-            
+
         except Exception as e:
             logger.error(f"Key press failed: {e}")
             return False
-    
-    def key_down(self, key: Union[str, Key]) -> bool:
+
+    def key_down(self, key: str | Key) -> bool:
         """Press and hold key.
-        
+
         Args:
             key: Key to press down
-            
+
         Returns:
             True if successful
         """
         try:
             pynput_key = self._get_pynput_key(key)
             self.keyboard_controller.press(pynput_key)
-            
+
             logger.debug(f"Key '{key}' pressed down")
             return True
-            
+
         except Exception as e:
             logger.error(f"Key down failed: {e}")
             return False
-    
-    def key_up(self, key: Union[str, Key]) -> bool:
+
+    def key_up(self, key: str | Key) -> bool:
         """Release key.
-        
+
         Args:
             key: Key to release
-            
+
         Returns:
             True if successful
         """
         try:
             pynput_key = self._get_pynput_key(key)
             self.keyboard_controller.release(pynput_key)
-            
+
             logger.debug(f"Key '{key}' released")
             return True
-            
+
         except Exception as e:
             logger.error(f"Key up failed: {e}")
             return False
-    
+
     def type_text(self, text: str, interval: float = 0.0) -> bool:
         """Type text string.
-        
+
         Args:
             text: Text to type
             interval: Interval between characters in seconds
-            
+
         Returns:
             True if successful
         """
@@ -449,60 +452,60 @@ class PynputController(IInputController):
                     time.sleep(interval)
             else:
                 self.keyboard_controller.type(text)
-            
+
             logger.debug(f"Typed text: '{text[:20]}...' ({len(text)} chars)")
             return True
-            
+
         except Exception as e:
             logger.error(f"Type text failed: {e}")
             return False
-    
-    def hotkey(self, *keys: Union[str, Key]) -> bool:
+
+    def hotkey(self, *keys: str | Key) -> bool:
         """Press key combination.
-        
+
         Args:
             *keys: Keys to press together (e.g., 'ctrl', 'a')
-            
+
         Returns:
             True if successful
         """
         try:
             # Convert all keys
             pynput_keys = [self._get_pynput_key(k) for k in keys]
-            
+
             # Press all keys
             for key in pynput_keys:
                 self.keyboard_controller.press(key)
-            
+
             # Small delay
             time.sleep(0.05)
-            
+
             # Release all keys in reverse order
             for key in reversed(pynput_keys):
                 self.keyboard_controller.release(key)
-            
+
             logger.debug(f"Hotkey pressed: {'+'.join(str(k) for k in keys)}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Hotkey failed: {e}")
             # Try to release any pressed keys
             for key in keys:
                 try:
                     self.keyboard_controller.release(self._get_pynput_key(key))
-                except:
+                except Exception:
                     pass
             return False
-    
-    def is_key_pressed(self, key: Union[str, Key]) -> bool:
+
+    def is_key_pressed(self, key: str | Key) -> bool:
         """Check if key is currently pressed.
-        
+
         Note: Pynput doesn't provide direct key state checking,
         so this is a best-effort implementation.
-        
+
         Args:
             key: Key to check
-            
+
         Returns:
             True if key is pressed (not fully reliable)
         """
@@ -511,7 +514,7 @@ class PynputController(IInputController):
             # a way to check current key state without listening
             logger.debug("Key state checking not fully supported by pynput")
             return False
-            
+
         except Exception as e:
             logger.error(f"Key state check failed: {e}")
             return False

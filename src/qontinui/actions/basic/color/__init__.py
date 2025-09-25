@@ -4,31 +4,24 @@ Provides color-based pattern matching, classification, and analysis.
 """
 
 from .classify import Classify
-from .find_color import FindColor, ColorProfile
-from .color_find_options import (
-    ColorFindOptions,
-    ColorStrategy,
-    AreaFilteringOptions,
-    HSVBinOptions
-)
 from .color_cluster import ColorCluster, ColorClusterAnalyzer
+from .color_find_options import AreaFilteringOptions, ColorFindOptions, ColorStrategy, HSVBinOptions
 from .color_statistics import ColorStatistics, ColorStatisticsAnalyzer
+from .find_color import ColorProfile, FindColor
 
 __all__ = [
     # Main actions
-    'Classify',
-    'FindColor',
-    
+    "Classify",
+    "FindColor",
     # Options and configuration
-    'ColorFindOptions',
-    'ColorStrategy',
-    'AreaFilteringOptions',
-    'HSVBinOptions',
-    
+    "ColorFindOptions",
+    "ColorStrategy",
+    "AreaFilteringOptions",
+    "HSVBinOptions",
     # Analysis utilities
-    'ColorProfile',
-    'ColorCluster',
-    'ColorClusterAnalyzer',
-    'ColorStatistics',
-    'ColorStatisticsAnalyzer',
+    "ColorProfile",
+    "ColorCluster",
+    "ColorClusterAnalyzer",
+    "ColorStatistics",
+    "ColorStatisticsAnalyzer",
 ]

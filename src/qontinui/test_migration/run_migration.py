@@ -15,29 +15,29 @@ sys.path.insert(0, str(qontinui_src))
 # Now imports work correctly as a package
 try:
     from qontinui.test_migration.cli import TestMigrationCLI
-    
+
     def main():
         """Main entry point."""
         cli = TestMigrationCLI()
         exit_code = cli.run()
         sys.exit(exit_code)
-    
+
     if __name__ == "__main__":
         main()
-        
+
 except ImportError as e:
     print(f"Import error: {e}")
     print("Falling back to standalone CLI...")
-    
+
     # Fallback to standalone version
     sys.path.insert(0, str(migration_dir))
     from cli_standalone import StandaloneTestMigrationCLI
-    
+
     def main():
         """Fallback main entry point."""
         cli = StandaloneTestMigrationCLI()
         exit_code = cli.run()
         sys.exit(exit_code)
-    
+
     if __name__ == "__main__":
         main()

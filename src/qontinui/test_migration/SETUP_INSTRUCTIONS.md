@@ -78,19 +78,19 @@ python cli_standalone.py config --validate --input config.json
 
 ## What Works Now
 
-✅ **Test Discovery**: Finds and analyzes Java test files  
-✅ **Classification**: Identifies unit vs integration tests  
-✅ **Dependency Analysis**: Maps Java imports  
-✅ **Configuration Management**: Create and validate config files  
-✅ **Test Validation**: Run pytest on Python test files  
-✅ **Dry Run**: Preview what would be migrated  
+✅ **Test Discovery**: Finds and analyzes Java test files
+✅ **Classification**: Identifies unit vs integration tests
+✅ **Dependency Analysis**: Maps Java imports
+✅ **Configuration Management**: Create and validate config files
+✅ **Test Validation**: Run pytest on Python test files
+✅ **Dry Run**: Preview what would be migrated
 
 ## What Needs Full System
 
-❌ **Complete Migration**: Java → Python code translation  
-❌ **Mock Conversion**: Brobot → Qontinui mock migration  
-❌ **Spring Integration**: SpringBoot test patterns  
-❌ **Advanced Reporting**: HTML/PDF reports  
+❌ **Complete Migration**: Java → Python code translation
+❌ **Mock Conversion**: Brobot → Qontinui mock migration
+❌ **Spring Integration**: SpringBoot test patterns
+❌ **Advanced Reporting**: HTML/PDF reports
 
 ## Recommended Workflow
 

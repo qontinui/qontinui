@@ -3,6 +3,6 @@
 from .drag.drag_options import DragOptions, DragOptionsBuilder
 
 __all__ = [
-    'DragOptions',
-    'DragOptionsBuilder',
+    "DragOptions",
+    "DragOptionsBuilder",
 ]

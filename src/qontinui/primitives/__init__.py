@@ -4,8 +4,8 @@ Contains the most basic, primitive actions that form the foundation
 of all higher-level actions. Each primitive does exactly one thing.
 """
 
-from .mouse import MouseMove, MouseClick, MouseDrag, MouseWheel, MouseDown, MouseUp
-from .keyboard import KeyPress, KeyDown, KeyUp, TypeText
+from .keyboard import KeyDown, KeyPress, KeyUp, TypeText
+from .mouse import MouseClick, MouseDown, MouseDrag, MouseMove, MouseUp, MouseWheel
 
 __all__ = [
     # Mouse primitives
@@ -15,7 +15,6 @@ __all__ = [
     "MouseWheel",
     "MouseDown",
     "MouseUp",
-    
     # Keyboard primitives
     "KeyPress",
     "KeyDown",

@@ -2,29 +2,29 @@
 Test validation and diagnostic components.
 """
 
-from .test_failure_analyzer import TestFailureAnalyzer, FailurePattern
 from .behavior_comparator import BehaviorComparatorImpl, ComparisonResult, TestIsolationConfig
+from .coverage_tracker import (
+    CoverageMetrics,
+    CoverageTracker,
+    MigrationProgress,
+    MigrationStatus,
+    MigrationSummary,
+    TestCategory,
+    TestMapping,
+)
 from .result_validator import (
+    BehavioralEquivalenceCheck,
+    ComparisonType,
+    PerformanceMetrics,
     ResultValidator,
     ValidationComparison,
     ValidationResult,
-    ComparisonType,
-    PerformanceMetrics,
-    BehavioralEquivalenceCheck
 )
-from .coverage_tracker import (
-    CoverageTracker,
-    TestMapping,
-    MigrationStatus,
-    TestCategory,
-    MigrationProgress,
-    CoverageMetrics,
-    MigrationSummary
-)
+from .test_failure_analyzer import FailurePattern, TestFailureAnalyzer
 
 __all__ = [
     "TestFailureAnalyzer",
-    "FailurePattern", 
+    "FailurePattern",
     "BehaviorComparatorImpl",
     "ComparisonResult",
     "TestIsolationConfig",

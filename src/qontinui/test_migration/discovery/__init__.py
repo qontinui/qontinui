@@ -2,7 +2,7 @@
 Test discovery and classification components.
 """
 
-from .scanner import BrobotTestScanner
 from .classifier import TestClassifier
+from .scanner import BrobotTestScanner
 
 __all__ = ["BrobotTestScanner", "TestClassifier"]

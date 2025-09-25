@@ -7,7 +7,4 @@ graceful shutdown, resource cleanup, and lifecycle transitions.
 from .application_lifecycle_service import ApplicationLifecycleService
 from .shutdown_handler import QontinuiShutdownHandler
 
-__all__ = [
-    'ApplicationLifecycleService',
-    'QontinuiShutdownHandler'
-]
+__all__ = ["ApplicationLifecycleService", "QontinuiShutdownHandler"]

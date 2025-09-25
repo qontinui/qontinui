@@ -4,13 +4,11 @@ Core interfaces for the test migration system.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional
 
 from .models import (
     Dependency,
     FailureAnalysis,
     GuiModel,
-    MockMapping,
     MockUsage,
     TestFailure,
     TestFile,
@@ -24,7 +22,7 @@ class TestScanner(ABC):
     """Interface for scanning and discovering test files."""
 
     @abstractmethod
-    def scan_directory(self, path: Path) -> List[TestFile]:
+    def scan_directory(self, path: Path) -> list[TestFile]:
         """Scan a directory for test files."""
         pass
 
@@ -34,7 +32,7 @@ class TestScanner(ABC):
         pass
 
     @abstractmethod
-    def extract_dependencies(self, test_file: TestFile) -> List[Dependency]:
+    def extract_dependencies(self, test_file: TestFile) -> list[Dependency]:
         """Extract dependencies from a test file."""
         pass
 
@@ -62,12 +60,12 @@ class MockAnalyzer(ABC):
     """Interface for analyzing mock usage in tests."""
 
     @abstractmethod
-    def identify_mock_usage(self, test_file: TestFile) -> List[MockUsage]:
+    def identify_mock_usage(self, test_file: TestFile) -> list[MockUsage]:
         """Identify mock usage patterns in a test file."""
         pass
 
     @abstractmethod
-    def extract_gui_model(self, mock_usage: MockUsage) -> Optional[GuiModel]:
+    def extract_gui_model(self, mock_usage: MockUsage) -> GuiModel | None:
         """Extract GUI model from Brobot mock usage."""
         pass
 
@@ -124,7 +122,7 @@ class FailureAnalyzer(ABC):
         pass
 
     @abstractmethod
-    def suggest_fixes(self, analysis: FailureAnalysis) -> List[str]:
+    def suggest_fixes(self, analysis: FailureAnalysis) -> list[str]:
         """Suggest fixes for the analyzed failure."""
         pass
 

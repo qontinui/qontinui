@@ -12,7 +12,7 @@ class ScreenCaptureException(QontinuiRuntimeException):
     Port of ScreenCaptureException from Qontinui framework.
     """
 
-    def __init__(self, message: str = "Screen capture failed", cause: Exception = None):
+    def __init__(self, message: str = "Screen capture failed", cause: Exception | None = None):
         """Initialize screen capture exception.
 
         Args:

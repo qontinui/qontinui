@@ -3,44 +3,49 @@
 Entry point for executing GUI automation actions.
 """
 
-from typing import Optional, List
-from .action_interface import ActionInterface
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from ..model.state.state_image import StateImage
+
 from .action_config import ActionConfig
-from .action_result import ActionResult
-from .object_collection import ObjectCollection
 from .action_execution import ActionExecution
+from .action_result import ActionResult
 from .action_service import ActionService
+from .object_collection import ObjectCollection
 
 
 class Action:
     """Entry point for executing GUI automation actions in the Qontinui model-based framework.
-    
+
     Port of Action from Qontinui framework class.
-    
-    The Action class serves as the central dispatcher for all GUI operations, implementing 
-    the Action Model (α) described in the theoretical foundations. It processes 
-    ActionConfig to determine what operation to perform and delegates execution to the 
+
+    The Action class serves as the central dispatcher for all GUI operations, implementing
+    the Action Model (α) described in the theoretical foundations. It processes
+    ActionConfig to determine what operation to perform and delegates execution to the
     appropriate action implementation using the action function f_α.
-    
+
     Key responsibilities:
     - Parse ActionConfig to identify the requested action type
     - Route execution to Basic or Composite action implementations
     - Manage the action lifecycle and error handling
     - Return comprehensive results via ActionResult objects
-    
+
     Action types supported:
     - Basic Actions: Atomic operations like Find, Click, Type, Drag
     - Composite Actions: Complex operations that combine multiple basic actions
-    
-    This class abstracts the complexity of GUI interaction, allowing automation code to 
-    focus on what to do rather than how to do it. The model-based approach ensures actions 
+
+    This class abstracts the complexity of GUI interaction, allowing automation code to
+    focus on what to do rather than how to do it. The model-based approach ensures actions
     are executed in the context of the current State, making them more reliable and robust.
     """
-    
-    def __init__(self,
-                 action_execution: Optional[ActionExecution] = None,
-                 action_service: Optional[ActionService] = None,
-                 action_chain_executor: Optional['ActionChainExecutor'] = None):
+
+    def __init__(
+        self,
+        action_execution: ActionExecution | None = None,
+        action_service: ActionService | None = None,
+        action_chain_executor: Optional["ActionChainExecutor"] = None,
+    ):
         """Construct an Action instance with required dependencies.
 
         Uses dependency injection to wire the action execution engine, service
@@ -60,44 +65,46 @@ class Action:
         self.action_execution = action_execution or ActionExecution()
         self.action_service = action_service or ActionService()
         self.action_chain_executor = action_chain_executor
-    
-    def perform(self, 
-                action_config: ActionConfig, 
-                *object_collections: ObjectCollection) -> ActionResult:
+
+    def perform(
+        self, action_config: ActionConfig, *object_collections: ObjectCollection
+    ) -> ActionResult:
         """Execute a GUI automation action with the specified configuration and target objects.
-        
+
         This method uses the ActionConfig approach for type-safe action configuration.
-        
+
         Args:
             action_config: Configuration specifying the action type and parameters
             object_collections: Target GUI elements to act upon (images, regions, locations, etc.)
-            
+
         Returns:
             An ActionResult containing all results from the action execution
         """
         return self.perform_with_description("", action_config, *object_collections)
-    
-    def perform_with_description(self,
-                                 action_description: str,
-                                 action_config: ActionConfig,
-                                 *object_collections: ObjectCollection) -> ActionResult:
+
+    def perform_with_description(
+        self,
+        action_description: str,
+        action_config: ActionConfig,
+        *object_collections: ObjectCollection,
+    ) -> ActionResult:
         """Execute a GUI automation action with a descriptive label using ActionConfig.
-        
+
         This method uses the ActionConfig approach for type-safe action configuration,
         while still providing human-readable descriptions for debugging and logging.
-        
+
         Args:
             action_description: Human-readable description of what this action accomplishes
             action_config: Configuration specifying the action type and parameters
             object_collections: Target GUI elements to act upon
-            
+
         Returns:
             An ActionResult containing all results from the action execution
         """
         # Reset times acted on for all objects
         for obj_coll in object_collections:
             obj_coll.reset_times_acted_on()
-        
+
         # Check if this config has subsequent actions chained
         subsequent_actions = action_config.get_subsequent_actions()
         if subsequent_actions:
@@ -107,9 +114,9 @@ class Action:
                     action_config, ActionResult(), object_collections
                 )
             else:
-                print(f"Warning: Action chain executor not available for chained actions")
+                print("Warning: Action chain executor not available for chained actions")
                 return ActionResult()
-        
+
         # Single action execution
         action = self.action_service.get_action(action_config)
         if action is None:
@@ -120,8 +127,8 @@ class Action:
         return self.action_execution.perform(
             action, action_description, action_config, object_collections
         )
-    
-    def find(self, *state_images: 'StateImage') -> ActionResult:
+
+    def find(self, *state_images: "StateImage") -> ActionResult:
         """Perform a Find action with default options on the specified images.
 
         This convenience method simplifies the common case of searching for images
@@ -134,13 +141,13 @@ class Action:
         Returns:
             ActionResult containing found matches
         """
-        from .object_collection import ObjectCollectionBuilder
         from .basic.find.pattern_find_options import PatternFindOptionsBuilder
+        from .object_collection import ObjectCollectionBuilder
 
         collection = ObjectCollectionBuilder().with_images(*state_images).build()
         config = PatternFindOptionsBuilder().build()
         return self.perform(config, collection)
-    
+
     def click(self, *targets) -> ActionResult:
         """Perform a Click action with default options on the specified targets.
 
@@ -156,9 +163,9 @@ class Action:
         Returns:
             ActionResult indicating click success/failure
         """
-        from .object_collection import ObjectCollectionBuilder
         from .basic.click.click_options import ClickOptionsBuilder
         from .basic.find.pattern_find_options import PatternFindOptionsBuilder
+        from .object_collection import ObjectCollectionBuilder
 
         # Separate targets by type
         state_images = []
@@ -166,12 +173,12 @@ class Action:
         regions = []
 
         for target in targets:
-            if hasattr(target, '__class__'):
-                if target.__class__.__name__ == 'StateImage':
+            if hasattr(target, "__class__"):
+                if target.__class__.__name__ == "StateImage":
                     state_images.append(target)
-                elif target.__class__.__name__ == 'Region':
+                elif target.__class__.__name__ == "Region":
                     regions.append(target)
-                elif target.__class__.__name__ == 'Location':
+                elif target.__class__.__name__ == "Location":
                     locations.append(target)
 
         # If we have StateImages, we need to chain Find -> Click
@@ -208,21 +215,21 @@ class Action:
             collection = builder.build()
             config = ClickOptionsBuilder().build()
             return self.perform(config, collection)
-    
+
     def type_text(self, text: str) -> ActionResult:
         """Type the specified text using keyboard input.
-        
+
         This convenience method simplifies text input operations.
-        
+
         Args:
             text: Text to type
-            
+
         Returns:
             ActionResult indicating typing success/failure
         """
         from .object_collection import ObjectCollectionBuilder
-        
-        collection = ObjectCollectionBuilder().with_strings(text).build()
+
+        ObjectCollectionBuilder().with_strings(text).build()
         # Would need TypeOptions to be implemented
         # config = TypeOptions()
         # return self.perform(config, collection)
@@ -232,6 +239,8 @@ class Action:
 # Forward reference for dependencies not yet implemented
 class ActionChainExecutor:
     """Placeholder for ActionChainExecutor class."""
-    def execute_chain(self, config: ActionConfig, result: ActionResult,
-                     collections: tuple) -> ActionResult:
+
+    def execute_chain(
+        self, config: ActionConfig, result: ActionResult, collections: tuple
+    ) -> ActionResult:
         return result

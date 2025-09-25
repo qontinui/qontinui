@@ -8,19 +8,19 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .action_options import KeyModifier
+    pass
 
 
 class Key(Enum):
     """Special keyboard keys enum.
-    
+
     Similar to SikuliX's Key class, provides string representations
     of special keyboard keys for use in automation.
-    
+
     Each value is the string that should be sent to the underlying
     automation library (e.g., pyautogui, pynput) to trigger that key.
     """
-    
+
     # Navigation keys
     ENTER = "\n"
     RETURN = "\r"
@@ -28,13 +28,13 @@ class Key(Enum):
     SPACE = " "
     BACKSPACE = "\b"
     DELETE = "delete"
-    
+
     # Arrow keys
     UP = "up"
     DOWN = "down"
     LEFT = "left"
     RIGHT = "right"
-    
+
     # Modifier keys (also in KeyModifier enum for specific modifier operations)
     SHIFT = "shift"
     CTRL = "ctrl"
@@ -43,7 +43,7 @@ class Key(Enum):
     META = "meta"  # Windows/Command key
     WIN = "win"  # Windows key
     CMD = "cmd"  # Mac Command key
-    
+
     # Function keys
     F1 = "f1"
     F2 = "f2"
@@ -60,14 +60,14 @@ class Key(Enum):
     F13 = "f13"
     F14 = "f14"
     F15 = "f15"
-    
+
     # Navigation cluster
     HOME = "home"
     END = "end"
     PAGE_UP = "pageup"
     PAGE_DOWN = "pagedown"
     INSERT = "insert"
-    
+
     # Special keys
     ESC = "escape"
     ESCAPE = "escape"  # Alias
@@ -77,7 +77,7 @@ class Key(Enum):
     BREAK = "break"
     CAPS_LOCK = "capslock"
     NUM_LOCK = "numlock"
-    
+
     # Numpad keys
     NUM0 = "num0"
     NUM1 = "num1"
@@ -95,7 +95,7 @@ class Key(Enum):
     NUM_SUBTRACT = "subtract"
     NUM_DECIMAL = "decimal"
     NUM_DIVIDE = "divide"
-    
+
     # Media keys (may not be supported on all platforms)
     VOLUME_UP = "volumeup"
     VOLUME_DOWN = "volumedown"
@@ -104,7 +104,7 @@ class Key(Enum):
     MEDIA_STOP = "stop"
     MEDIA_NEXT_TRACK = "nexttrack"
     MEDIA_PREV_TRACK = "prevtrack"
-    
+
     # Browser control keys
     BROWSER_BACK = "browserback"
     BROWSER_FORWARD = "browserforward"
@@ -113,68 +113,89 @@ class Key(Enum):
     BROWSER_SEARCH = "browsersearch"
     BROWSER_FAVORITES = "browserfavorites"
     BROWSER_HOME = "browserhome"
-    
+
     # System keys
     SLEEP = "sleep"
     APPS = "apps"  # Context menu key
-    
+
     def __str__(self) -> str:
         """Return the key value as a string."""
         return self.value
-    
+
     @classmethod
-    def is_modifier(cls, key: 'Key') -> bool:
+    def is_modifier(cls, key: "Key") -> bool:
         """Check if a key is a modifier key.
-        
+
         Args:
             key: Key to check
-            
+
         Returns:
             True if the key is a modifier
         """
-        modifiers = {cls.SHIFT, cls.CTRL, cls.CONTROL, cls.ALT, 
-                    cls.META, cls.WIN, cls.CMD}
+        modifiers = {cls.SHIFT, cls.CTRL, cls.CONTROL, cls.ALT, cls.META, cls.WIN, cls.CMD}
         return key in modifiers
-    
+
     @classmethod
-    def is_function_key(cls, key: 'Key') -> bool:
+    def is_function_key(cls, key: "Key") -> bool:
         """Check if a key is a function key (F1-F15).
-        
+
         Args:
             key: Key to check
-            
+
         Returns:
             True if the key is a function key
         """
-        function_keys = {cls.F1, cls.F2, cls.F3, cls.F4, cls.F5, cls.F6,
-                        cls.F7, cls.F8, cls.F9, cls.F10, cls.F11, cls.F12,
-                        cls.F13, cls.F14, cls.F15}
+        function_keys = {
+            cls.F1,
+            cls.F2,
+            cls.F3,
+            cls.F4,
+            cls.F5,
+            cls.F6,
+            cls.F7,
+            cls.F8,
+            cls.F9,
+            cls.F10,
+            cls.F11,
+            cls.F12,
+            cls.F13,
+            cls.F14,
+            cls.F15,
+        }
         return key in function_keys
-    
+
     @classmethod
-    def is_navigation_key(cls, key: 'Key') -> bool:
+    def is_navigation_key(cls, key: "Key") -> bool:
         """Check if a key is a navigation key.
-        
+
         Args:
             key: Key to check
-            
+
         Returns:
             True if the key is a navigation key
         """
-        nav_keys = {cls.UP, cls.DOWN, cls.LEFT, cls.RIGHT,
-                   cls.HOME, cls.END, cls.PAGE_UP, cls.PAGE_DOWN}
+        nav_keys = {
+            cls.UP,
+            cls.DOWN,
+            cls.LEFT,
+            cls.RIGHT,
+            cls.HOME,
+            cls.END,
+            cls.PAGE_UP,
+            cls.PAGE_DOWN,
+        }
         return key in nav_keys
-    
+
     @classmethod
-    def from_string(cls, key_string: str) -> 'Key':
+    def from_string(cls, key_string: str) -> "Key":
         """Get a Key enum from its string representation.
-        
+
         Args:
             key_string: String representation of the key
-            
+
         Returns:
             Corresponding Key enum
-            
+
         Raises:
             ValueError: If no matching key is found
         """
@@ -183,37 +204,37 @@ class Key(Enum):
             return cls[key_string.upper()]
         except KeyError:
             pass
-        
+
         # Then try matching by value
         for key in cls:
             if key.value == key_string.lower():
                 return key
-        
+
         raise ValueError(f"No Key enum found for '{key_string}'")
 
 
 class KeyCombo:
     """Helper class for creating keyboard combinations.
-    
+
     Similar to SikuliX's approach for key combinations.
     """
-    
+
     def __init__(self, *keys):
         """Initialize a key combination.
-        
+
         Args:
             *keys: Keys or modifiers to combine
         """
         self.keys = list(keys)
         self.modifiers = []
         self.main_key = None
-        
+
         # Import KeyModifier here to avoid circular import
         try:
             from .action_options import KeyModifier
         except ImportError:
             KeyModifier = None
-        
+
         # Separate modifiers from main key
         for key in keys:
             if isinstance(key, Key) and Key.is_modifier(key):
@@ -224,7 +245,7 @@ class KeyCombo:
                 self.modifiers.append(modifier_key)
             else:
                 self.main_key = key
-    
+
     def __str__(self) -> str:
         """String representation of the key combination."""
         parts = []
@@ -233,22 +254,22 @@ class KeyCombo:
         if self.main_key:
             parts.append(str(self.main_key))
         return "+".join(parts)
-    
+
     @staticmethod
     def ctrl(key):
         """Create a Ctrl+key combination."""
         return KeyCombo(Key.CTRL, key)
-    
+
     @staticmethod
     def alt(key):
         """Create an Alt+key combination."""
         return KeyCombo(Key.ALT, key)
-    
+
     @staticmethod
     def shift(key):
         """Create a Shift+key combination."""
         return KeyCombo(Key.SHIFT, key)
-    
+
     @staticmethod
     def meta(key):
         """Create a Meta/Win/Cmd+key combination."""
@@ -258,32 +279,32 @@ class KeyCombo:
 # Common key combinations as constants (similar to SikuliX)
 class KeyCombos:
     """Common keyboard combinations as class attributes."""
-    
+
     # Text editing
-    SELECT_ALL = KeyCombo.ctrl('a')
-    COPY = KeyCombo.ctrl('c')
-    CUT = KeyCombo.ctrl('x')
-    PASTE = KeyCombo.ctrl('v')
-    UNDO = KeyCombo.ctrl('z')
-    REDO = KeyCombo.ctrl('y')
-    FIND = KeyCombo.ctrl('f')
-    REPLACE = KeyCombo.ctrl('h')
-    SAVE = KeyCombo.ctrl('s')
-    SAVE_AS = KeyCombo.ctrl(KeyCombo.shift('s'))
-    
+    SELECT_ALL = KeyCombo.ctrl("a")
+    COPY = KeyCombo.ctrl("c")
+    CUT = KeyCombo.ctrl("x")
+    PASTE = KeyCombo.ctrl("v")
+    UNDO = KeyCombo.ctrl("z")
+    REDO = KeyCombo.ctrl("y")
+    FIND = KeyCombo.ctrl("f")
+    REPLACE = KeyCombo.ctrl("h")
+    SAVE = KeyCombo.ctrl("s")
+    SAVE_AS = KeyCombo.ctrl(KeyCombo.shift("s"))
+
     # Navigation
     NEXT_TAB = KeyCombo.ctrl(Key.TAB)
     PREV_TAB = KeyCombo.ctrl(KeyCombo.shift(Key.TAB))
-    CLOSE_TAB = KeyCombo.ctrl('w')
-    NEW_TAB = KeyCombo.ctrl('t')
-    
+    CLOSE_TAB = KeyCombo.ctrl("w")
+    NEW_TAB = KeyCombo.ctrl("t")
+
     # System
     TASK_MANAGER = KeyCombo.ctrl(KeyCombo.shift(Key.ESC))
     ALT_TAB = KeyCombo.alt(Key.TAB)
     ALT_F4 = KeyCombo.alt(Key.F4)
-    
+
     # Mac specific (using meta/cmd)
-    MAC_COPY = KeyCombo.meta('c')
-    MAC_PASTE = KeyCombo.meta('v')
-    MAC_CUT = KeyCombo.meta('x')
-    MAC_QUIT = KeyCombo.meta('q')
+    MAC_COPY = KeyCombo.meta("c")
+    MAC_PASTE = KeyCombo.meta("v")
+    MAC_CUT = KeyCombo.meta("x")
+    MAC_QUIT = KeyCombo.meta("q")

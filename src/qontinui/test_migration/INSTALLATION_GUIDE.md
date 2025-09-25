@@ -18,7 +18,7 @@ This guide will help you set up and configure the Qontinui Test Migration System
 ### Python Dependencies
 The migration system uses mostly built-in Python libraries:
 - `pathlib` (built-in)
-- `argparse` (built-in) 
+- `argparse` (built-in)
 - `json` (built-in)
 - `logging` (built-in)
 - `subprocess` (built-in)
@@ -164,7 +164,7 @@ your-project/
 ```bash
 # Create directories for migrated tests
 mkdir -p qontinui/tests/migrated
-mkdir -p qontinui/tests/unit  
+mkdir -p qontinui/tests/unit
 mkdir -p qontinui/tests/integration
 mkdir -p migration_reports
 ```
@@ -335,7 +335,7 @@ For very large test suites (1000+ files):
    ```bash
    # Migrate unit tests first
    python cli.py migrate brobot/unit qontinui/tests/unit
-   
+
    # Then integration tests
    python cli.py migrate brobot/integration qontinui/tests/integration
    ```
@@ -369,7 +369,7 @@ python cli.py migrate source target --report-file migration_$(date +%Y%m%d).json
 After successful installation:
 
 1. **Read the User Guide**: `USER_GUIDE.md`
-2. **Try the Quick Reference**: `QUICK_REFERENCE.md`  
+2. **Try the Quick Reference**: `QUICK_REFERENCE.md`
 3. **Follow Migration Examples**: `MIGRATION_EXAMPLES.md`
 4. **Start with a small test migration** to familiarize yourself with the system
 5. **Create your project-specific configuration file**

@@ -2,17 +2,10 @@
 Unit tests for the TestFailureAnalyzer class.
 """
 
-import pytest
-from unittest.mock import Mock
-
-from qontinui.test_migration.core.models import (
-    FailureType,
-    SuspectedCause,
-    TestFailure,
-)
+from qontinui.test_migration.core.models import FailureType, SuspectedCause, TestFailure
 from qontinui.test_migration.validation.test_failure_analyzer import (
-    TestFailureAnalyzer,
     FailurePattern,
+    TestFailureAnalyzer,
 )
 
 
@@ -37,11 +30,11 @@ class TestTestFailureAnalyzer:
             error_message="ModuleNotFoundError: No module named 'brobot.library'",
             stack_trace="  File 'test_automation.py', line 5, in <module>\n    from brobot.library import Action",
             failure_type=FailureType.DEPENDENCY_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_migration_issue is True
         assert analysis.is_code_issue is False
         assert analysis.confidence > 0.8
@@ -56,11 +49,11 @@ class TestTestFailureAnalyzer:
             error_message="ImportError: cannot import name 'java.util.List'",
             stack_trace="  File 'test_integration.py', line 3\n    from java.util import List",
             failure_type=FailureType.DEPENDENCY_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_migration_issue is True
         assert analysis.confidence > 0.9
         assert "Java-specific import" in str(analysis.diagnostic_info)
@@ -73,11 +66,11 @@ class TestTestFailureAnalyzer:
             error_message="NameError: name '@Test' is not defined",
             stack_trace="  File 'test_user.py', line 10\n    @Test\n    ^",
             failure_type=FailureType.SYNTAX_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_migration_issue is True
         assert analysis.confidence > 0.8
         assert any("JUnit" in fix for fix in analysis.suggested_fixes)
@@ -90,11 +83,11 @@ class TestTestFailureAnalyzer:
             error_message="AttributeError: module 'unittest' has no attribute 'assertEquals'",
             stack_trace="  File 'test_math.py', line 15\n    assertEquals(expected, actual)",
             failure_type=FailureType.ASSERTION_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_migration_issue is True
         assert analysis.confidence > 0.7
         assert any("assertion" in fix.lower() for fix in analysis.suggested_fixes)
@@ -107,11 +100,11 @@ class TestTestFailureAnalyzer:
             error_message="AttributeError: 'TestClass' has no attribute 'SpringBootTest'",
             stack_trace="  File 'test_service.py', line 8\n    @SpringBootTest",
             failure_type=FailureType.DEPENDENCY_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_migration_issue is True
         assert analysis.confidence > 0.8
         assert any("Spring Boot" in fix for fix in analysis.suggested_fixes)
@@ -124,11 +117,11 @@ class TestTestFailureAnalyzer:
             error_message="AssertionError: expected 42 but was 24",
             stack_trace="  File 'test_logic.py', line 20\n    assert result == 42",
             failure_type=FailureType.ASSERTION_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_code_issue is True
         assert analysis.confidence > 0.7
         assert any("behavior" in fix.lower() for fix in analysis.suggested_fixes)
@@ -141,11 +134,11 @@ class TestTestFailureAnalyzer:
             error_message="AttributeError: 'NoneType' object has no attribute 'process'",
             stack_trace="  File 'test_objects.py', line 25\n    result.process()",
             failure_type=FailureType.RUNTIME_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_code_issue is True
         assert analysis.confidence > 0.6
         assert any("initialization" in fix.lower() for fix in analysis.suggested_fixes)
@@ -158,11 +151,11 @@ class TestTestFailureAnalyzer:
             error_message="SyntaxError: invalid syntax",
             stack_trace="  File 'test_converted.py', line 12\n    if (condition) {\n                   ^",
             failure_type=FailureType.SYNTAX_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_migration_issue is True
         assert analysis.confidence > 0.8
         assert any("syntax" in fix.lower() for fix in analysis.suggested_fixes)
@@ -175,11 +168,11 @@ class TestTestFailureAnalyzer:
             error_message="IndentationError: expected an indented block",
             stack_trace="  File 'test_indent.py', line 18\n    return result\n    ^",
             failure_type=FailureType.SYNTAX_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_migration_issue is True
         assert analysis.confidence > 0.8
         assert any("indentation" in fix.lower() for fix in analysis.suggested_fixes)
@@ -192,14 +185,17 @@ class TestTestFailureAnalyzer:
             error_message="TimeoutError: Operation timed out after 30 seconds",
             stack_trace="  File 'test_performance.py', line 30\n    result = long_running_operation()",
             failure_type=FailureType.RUNTIME_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert analysis.is_code_issue is True
         assert analysis.confidence > 0.5
-        assert any("timeout" in fix.lower() or "performance" in fix.lower() for fix in analysis.suggested_fixes)
+        assert any(
+            "timeout" in fix.lower() or "performance" in fix.lower()
+            for fix in analysis.suggested_fixes
+        )
 
     def test_is_migration_issue_method(self):
         """Test the is_migration_issue method directly."""
@@ -209,18 +205,18 @@ class TestTestFailureAnalyzer:
             error_message="ModuleNotFoundError: No module named 'brobot'",
             stack_trace="",
             failure_type=FailureType.DEPENDENCY_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         code_failure = TestFailure(
             test_name="test_code",
             test_file="test.py",
             error_message="AssertionError: expected 5 but was 3",
             stack_trace="",
             failure_type=FailureType.ASSERTION_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         assert self.analyzer.is_migration_issue(migration_failure) is True
         assert self.analyzer.is_migration_issue(code_failure) is False
 
@@ -232,18 +228,18 @@ class TestTestFailureAnalyzer:
             error_message="ImportError: cannot import name 'java.util.List'",
             stack_trace="",
             failure_type=FailureType.DEPENDENCY_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         code_failure = TestFailure(
             test_name="test_code",
             test_file="test.py",
             error_message="ValueError: invalid literal for int() with base 10: 'abc'",
             stack_trace="",
             failure_type=FailureType.RUNTIME_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         assert self.analyzer.is_code_issue(migration_failure) is False
         assert self.analyzer.is_code_issue(code_failure) is True
 
@@ -255,12 +251,12 @@ class TestTestFailureAnalyzer:
             error_message="ModuleNotFoundError: No module named 'brobot'",
             stack_trace="",
             failure_type=FailureType.DEPENDENCY_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
         fixes = self.analyzer.suggest_fixes(analysis)
-        
+
         assert len(fixes) > 0
         assert fixes == analysis.suggested_fixes
 
@@ -273,11 +269,11 @@ class TestTestFailureAnalyzer:
             error_message="Some generic error message",
             stack_trace="Generic stack trace",
             failure_type=FailureType.RUNTIME_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         # When no clear patterns match, confidence should be lower
         assert analysis.confidence < 0.8
 
@@ -289,18 +285,18 @@ class TestTestFailureAnalyzer:
             error_message="ModuleNotFoundError: No module named 'brobot'",
             stack_trace="Stack trace here",
             failure_type=FailureType.DEPENDENCY_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         assert "failure_type" in analysis.diagnostic_info
         assert "test_file" in analysis.diagnostic_info
         assert "test_name" in analysis.diagnostic_info
         assert "matched_patterns" in analysis.diagnostic_info
         assert "migration_indicators" in analysis.diagnostic_info
         assert "code_indicators" in analysis.diagnostic_info
-        
+
         assert analysis.diagnostic_info["test_file"] == "test_file.py"
         assert analysis.diagnostic_info["test_name"] == "test_diagnostic"
 
@@ -312,11 +308,11 @@ class TestTestFailureAnalyzer:
             error_message="ModuleNotFoundError: No module named 'brobot'. SyntaxError: invalid syntax",
             stack_trace="Multiple errors in stack trace",
             failure_type=FailureType.DEPENDENCY_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         # Should still identify as migration issue with high confidence
         assert analysis.is_migration_issue is True
         assert analysis.confidence > 0.8
@@ -329,9 +325,9 @@ class TestTestFailureAnalyzer:
             failure_type=FailureType.SYNTAX_ERROR,
             suspected_cause=SuspectedCause.MIGRATION_ISSUE,
             confidence=0.85,
-            description="Test pattern description"
+            description="Test pattern description",
         )
-        
+
         assert pattern.pattern == r"test_pattern"
         assert pattern.failure_type == FailureType.SYNTAX_ERROR
         assert pattern.suspected_cause == SuspectedCause.MIGRATION_ISSUE
@@ -346,11 +342,11 @@ class TestTestFailureAnalyzer:
             error_message="",
             stack_trace="",
             failure_type=FailureType.RUNTIME_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         # Should still provide some analysis even with empty messages
         assert isinstance(analysis.is_migration_issue, bool)
         assert isinstance(analysis.is_code_issue, bool)
@@ -365,11 +361,11 @@ class TestTestFailureAnalyzer:
             error_message="MODULENOTFOUNDERROR: No module named 'BROBOT'",
             stack_trace="",
             failure_type=FailureType.DEPENDENCY_ERROR,
-            suspected_cause=SuspectedCause.UNKNOWN
+            suspected_cause=SuspectedCause.UNKNOWN,
         )
-        
+
         analysis = self.analyzer.analyze_failure(failure)
-        
+
         # Should still match despite different case
         assert analysis.is_migration_issue is True
         assert analysis.confidence > 0.8

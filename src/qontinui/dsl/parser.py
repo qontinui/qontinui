@@ -1,11 +1,10 @@
 """DSL parser for Qontinui automation scripts."""
 
-from typing import Dict, List, Any, Optional
-from lark import Lark, Transformer, Tree
-from dataclasses import dataclass
-import json
 import logging
+from dataclasses import dataclass
+from typing import Any
 
+from lark import Lark, Transformer
 
 logger = logging.getLogger(__name__)
 
@@ -129,35 +128,38 @@ QONTINUI_GRAMMAR = r"""
 @dataclass
 class ParsedState:
     """Parsed state definition."""
+
     name: str
-    elements: List[Dict[str, Any]]
+    elements: list[dict[str, Any]]
     min_elements: int
-    parent: Optional[str]
-    metadata: Dict[str, Any]
+    parent: str | None
+    metadata: dict[str, Any]
 
 
 @dataclass
 class ParsedTransition:
     """Parsed transition definition."""
+
     name: str
     from_state: str
     to_state: str
     action: str
-    trigger: Optional[str]
+    trigger: str | None
     probability: float
-    conditions: List[str]
+    conditions: list[str]
 
 
 @dataclass
 class ParsedAction:
     """Parsed action command."""
+
     action_type: str
-    arguments: Dict[str, Any]
+    arguments: dict[str, Any]
 
 
 class QontinuiTransformer(Transformer):
     """Transform parsed DSL into Python objects."""
-    
+
     def __init__(self):
         super().__init__()
         self.states = {}
@@ -165,12 +167,12 @@ class QontinuiTransformer(Transformer):
         self.elements = {}
         self.variables = {}
         self.actions = []
-    
+
     def program(self, items):
         # Process all items to populate dictionaries
-        for item in items:
+        for _item in items:
             pass  # Items are processed as side effects
-        
+
         return {
             "states": self.states,
             "transitions": self.transitions,
@@ -178,26 +180,26 @@ class QontinuiTransformer(Transformer):
             "variables": self.variables,
             "actions": self.actions,
         }
-    
+
     def state_def(self, items):
         name = str(items[0])
         properties = {}
-        
+
         # Collect properties from state_body
         if len(items) > 1 and isinstance(items[1], dict):
             properties = items[1]
-        
+
         state = ParsedState(
             name=name,
             elements=properties.get("elements", []),
             min_elements=properties.get("min_elements", 1),
             parent=properties.get("parent"),
-            metadata=properties.get("metadata", {})
+            metadata=properties.get("metadata", {}),
         )
-        
+
         self.states[name] = state
         return state
-    
+
     def state_body(self, items):
         properties = {}
         for item in items:
@@ -206,7 +208,7 @@ class QontinuiTransformer(Transformer):
             elif isinstance(item, dict):
                 properties.update(item)
         return properties
-    
+
     def state_property(self, items):
         # Return tuple of (key, value) for proper handling
         if items[0] == "elements":
@@ -218,34 +220,34 @@ class QontinuiTransformer(Transformer):
         elif items[0] == "metadata":
             return ("metadata", items[1])
         return {}
-    
+
     def element_list(self, items):
         return items
-    
+
     def element_inline(self, items):
         props = {}
         for item in items:
             if isinstance(item, dict):
                 props.update(item)
         return props
-    
+
     def element_prop(self, items):
         if len(items) >= 2:
             key = str(items[0])
             value = items[1]
             return {key: value}
         return {}
-    
+
     def bbox(self, items):
         return [int(item) for item in items]
-    
+
     def transition_def(self, items):
         name = str(items[0])
         properties = {}
-        
+
         if len(items) > 1 and isinstance(items[1], dict):
             properties = items[1]
-        
+
         transition = ParsedTransition(
             name=name,
             from_state=properties.get("from"),
@@ -253,12 +255,12 @@ class QontinuiTransformer(Transformer):
             action=properties.get("action", "click"),
             trigger=properties.get("trigger"),
             probability=properties.get("probability", 1.0),
-            conditions=properties.get("conditions", [])
+            conditions=properties.get("conditions", []),
         )
-        
+
         self.transitions[name] = transition
         return transition
-    
+
     def transition_body(self, items):
         properties = {}
         for item in items:
@@ -267,7 +269,7 @@ class QontinuiTransformer(Transformer):
             elif isinstance(item, dict):
                 properties.update(item)
         return properties
-    
+
     def transition_property(self, items):
         if items[0] == "from":
             return ("from", str(items[1]))
@@ -282,25 +284,22 @@ class QontinuiTransformer(Transformer):
         elif items[0] == "conditions":
             return ("conditions", items[1])
         return {}
-    
+
     def action_def(self, items):
         action_type = str(items[0])
         args = {}
-        
+
         if len(items) > 1 and isinstance(items[1], dict):
             args = items[1]
-        
-        action = ParsedAction(
-            action_type=action_type,
-            arguments=args
-        )
-        
+
+        action = ParsedAction(action_type=action_type, arguments=args)
+
         self.actions.append(action)
         return action
-    
+
     def action_type(self, items):
         return str(items[0])
-    
+
     def action_args(self, items):
         args = {}
         for item in items:
@@ -309,68 +308,68 @@ class QontinuiTransformer(Transformer):
             elif isinstance(item, tuple):
                 args[item[0]] = item[1]
         return args
-    
+
     def element_def(self, items):
         name = str(items[0])
         props = items[1] if len(items) > 1 else {}
         self.elements[name] = props
         return {name: props}
-    
+
     def variable_def(self, items):
         name = str(items[0])
         value = items[1] if len(items) > 1 else None
-        
+
         # Extract actual value if it's a Tree
-        if hasattr(value, 'data'):
-            if value.data == 'value':
+        if hasattr(value, "data"):
+            if value.data == "value":
                 value = value.children[0] if value.children else None
-        
+
         self.variables[name] = value
         return {name: value}
-    
+
     def value(self, items):
         # Return the actual value from the parse tree
         if items:
             return items[0]
         return None
-    
+
     def NUMBER(self, token):
         return float(token)
-    
+
     def STRING(self, token):
         return str(token)[1:-1]  # Remove quotes
-    
+
     def IDENTIFIER(self, token):
         return str(token)
-    
+
     def json_object(self, items):
         obj = {}
         for item in items:
             if isinstance(item, tuple):
                 obj[item[0]] = item[1]
         return obj
-    
+
     def json_pair(self, items):
         return (items[0], items[1])
-    
+
     def json_array(self, items):
         return list(items)
 
 
 class QontinuiDSLParser:
     """Parser for Qontinui DSL scripts."""
-    
+
     def __init__(self):
         """Initialize the DSL parser."""
-        self.parser = Lark(QONTINUI_GRAMMAR, parser='lalr', transformer=QontinuiTransformer())
+        self.parser = Lark(QONTINUI_GRAMMAR, parser="lalr", transformer=QontinuiTransformer())
         self.transformer = QontinuiTransformer()
-    
-    def parse(self, script: str) -> Dict[str, Any]:
+
+    def parse(self, script: str) -> dict[str, Any]:
         """Parse a Qontinui DSL script.
-        
+
         Args:
             script: DSL script content
-            
+
         Returns:
             Parsed representation
         """
@@ -380,41 +379,41 @@ class QontinuiDSLParser:
         except Exception as e:
             logger.error(f"Failed to parse DSL script: {e}")
             raise
-    
-    def parse_file(self, filepath: str) -> Dict[str, Any]:
+
+    def parse_file(self, filepath: str) -> dict[str, Any]:
         """Parse a Qontinui DSL script from file.
-        
+
         Args:
             filepath: Path to DSL script file
-            
+
         Returns:
             Parsed representation
         """
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             script = f.read()
         return self.parse(script)
-    
+
     def validate(self, script: str) -> bool:
         """Validate a DSL script.
-        
+
         Args:
             script: DSL script content
-            
+
         Returns:
             True if valid, False otherwise
         """
         try:
             self.parse(script)
             return True
-        except:
+        except Exception:
             return False
-    
-    def to_python(self, parsed: Dict[str, Any]) -> str:
+
+    def to_python(self, parsed: dict[str, Any]) -> str:
         """Convert parsed DSL to Python code.
-        
+
         Args:
             parsed: Parsed DSL representation
-            
+
         Returns:
             Generated Python code
         """
@@ -422,38 +421,38 @@ class QontinuiDSLParser:
         lines.append("# Generated from Qontinui DSL")
         lines.append("from qontinui import QontinuiStateManager, State, Element, Transition")
         lines.append("")
-        
+
         # Generate state definitions
         for state_name, state in parsed.get("states", {}).items():
             lines.append(f"# State: {state_name}")
             lines.append(f"{state_name}_state = State(")
             lines.append(f'    name="{state.name}",')
-            lines.append(f"    elements=[],")
+            lines.append("    elements=[],")
             lines.append(f"    min_elements={state.min_elements},")
             if state.parent:
                 lines.append(f'    parent_state="{state.parent}",')
             lines.append(")")
             lines.append("")
-        
+
         # Generate transition definitions
         for trans_name, trans in parsed.get("transitions", {}).items():
             lines.append(f"# Transition: {trans_name}")
             lines.append(f"{trans_name}_transition = Transition(")
             lines.append(f'    from_state="{trans.from_state}",')
             lines.append(f'    to_state="{trans.to_state}",')
-            lines.append(f'    action_type=TransitionType.{trans.action.upper()},')
+            lines.append(f"    action_type=TransitionType.{trans.action.upper()},")
             if trans.trigger:
                 lines.append(f'    trigger_element="{trans.trigger}",')
             lines.append(f"    probability={trans.probability},")
             lines.append(")")
             lines.append("")
-        
+
         # Generate action calls
         lines.append("# Actions")
         for action in parsed.get("actions", []):
             args_str = ", ".join(f"{k}={v}" for k, v in action.arguments.items())
             lines.append(f"actions.{action.action_type}({args_str})")
-        
+
         return "\n".join(lines)
 
 

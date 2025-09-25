@@ -8,7 +8,7 @@ from .instruction_set import InstructionSet
 from .model.parameter import Parameter
 
 __all__ = [
-    'BusinessTask',
-    'InstructionSet',
-    'Parameter',
+    "BusinessTask",
+    "InstructionSet",
+    "Parameter",
 ]

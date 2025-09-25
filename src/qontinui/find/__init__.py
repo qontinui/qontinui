@@ -5,9 +5,9 @@ Core pattern matching and finding functionality.
 
 from .find import Find
 from .find_image import FindImage
+from .find_results import FindResults
 from .match import Match
 from .matches import Matches
-from .find_results import FindResults
 
 __all__ = [
     "Find",

@@ -2,23 +2,18 @@
 Unit tests for the DiagnosticReporter class.
 """
 
-import pytest
 from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from qontinui.test_migration.core.models import (
     Dependency,
     FailureAnalysis,
-    FailureType,
-    MockUsage,
-    SuspectedCause,
-    TestFailure,
     TestFile,
     TestMethod,
-    TestResults,
     TestResult,
+    TestResults,
     TestType,
 )
 from qontinui.test_migration.validation.diagnostic_reporter import (
@@ -42,7 +37,7 @@ class TestDiagnosticReporter:
         assert len(self.reporter._java_to_python_mappings) > 0
         assert len(self.reporter._annotation_mappings) > 0
         assert len(self.reporter._assertion_patterns) > 0
-        
+
         # Check some key mappings exist
         assert "org.junit.jupiter.api.Test" in self.reporter._java_to_python_mappings
         assert "org.mockito.Mockito" in self.reporter._java_to_python_mappings
@@ -59,17 +54,13 @@ class TestDiagnosticReporter:
                 "test_file": "test_example.py",
                 "test_name": "test_method",
                 "matched_patterns": [
-                    {
-                        "description": "Brobot import error",
-                        "pattern": "brobot",
-                        "confidence": 0.9
-                    }
-                ]
-            }
+                    {"description": "Brobot import error", "pattern": "brobot", "confidence": 0.9}
+                ],
+            },
         )
-        
+
         report = self.reporter.generate_failure_report(analysis)
-        
+
         assert "TEST FAILURE DIAGNOSTIC REPORT" in report
         assert "Migration Issue: YES" in report
         assert "Code Issue: NO" in report
@@ -86,11 +77,11 @@ class TestDiagnosticReporter:
             is_migration_issue=False,
             is_code_issue=True,
             confidence=0.75,
-            suggested_fixes=["Check business logic"]
+            suggested_fixes=["Check business logic"],
         )
-        
+
         report = self.reporter.generate_failure_report(analysis)
-        
+
         assert "TEST FAILURE DIAGNOSTIC REPORT" in report
         assert "Migration Issue: NO" in report
         assert "Code Issue: YES" in report
@@ -111,20 +102,20 @@ class TestDiagnosticReporter:
                     test_file="test_file1.py",
                     passed=False,
                     execution_time=2.0,
-                    error_message="Import error"
+                    error_message="Import error",
                 ),
                 TestResult(
                     test_name="test_failed_2",
                     test_file="test_file2.py",
                     passed=False,
                     execution_time=1.5,
-                    error_message="Assertion error"
-                )
-            ]
+                    error_message="Assertion error",
+                ),
+            ],
         )
-        
+
         summary = self.reporter.generate_migration_summary(results)
-        
+
         assert "TEST MIGRATION SUMMARY" in summary
         assert "Total Tests: 10" in summary
         assert "Passed: 7" in summary
@@ -145,11 +136,11 @@ class TestDiagnosticReporter:
             failed_tests=0,
             skipped_tests=0,
             execution_time=8.2,
-            individual_results=[]
+            individual_results=[],
         )
-        
+
         summary = self.reporter.generate_migration_summary(results)
-        
+
         assert "Total Tests: 5" in summary
         assert "Passed: 5" in summary
         assert "Failed: 0" in summary
@@ -166,10 +157,10 @@ class TestDiagnosticReporter:
             dependencies=[
                 Dependency(java_import="org.junit.jupiter.api.Test"),
                 Dependency(java_import="org.mockito.Mockito"),
-                Dependency(java_import="com.unknown.Library")
-            ]
+                Dependency(java_import="com.unknown.Library"),
+            ],
         )
-        
+
         # Create temporary Python file
         python_content = """
 import pytest
@@ -178,22 +169,22 @@ from unittest.mock import Mock
 def test_example():
     pass
 """
-        
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(python_content)
             python_path = Path(f.name)
-        
+
         try:
             differences = self.reporter.detect_dependency_differences(java_test, python_path)
-            
+
             # Should find missing unittest.mock import and unknown library
             assert len(differences) >= 1
-            
+
             # Check for unknown library requiring manual mapping
             unknown_deps = [d for d in differences if d.requires_manual_mapping]
             assert len(unknown_deps) >= 1
             assert any("com.unknown.Library" in d.java_dependency for d in unknown_deps)
-            
+
         finally:
             python_path.unlink()
 
@@ -204,40 +195,30 @@ def test_example():
             path=Path("test.java"),
             test_type=TestType.UNIT,
             class_name="TestClass",
-            test_methods=[
-                TestMethod(
-                    name="testMethod",
-                    annotations=["@Test", "@BeforeEach"]
-                )
-            ],
-            setup_methods=[
-                TestMethod(
-                    name="setUp",
-                    annotations=["@BeforeEach"]
-                )
-            ]
+            test_methods=[TestMethod(name="testMethod", annotations=["@Test", "@BeforeEach"])],
+            setup_methods=[TestMethod(name="setUp", annotations=["@BeforeEach"])],
         )
-        
+
         # Create temporary Python file without proper setup
         python_content = """
 def test_method():
     pass
 """
-        
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(python_content)
             python_path = Path(f.name)
-        
+
         try:
             differences = self.reporter.detect_setup_differences(java_test, python_path)
-            
+
             # Should find missing setup annotations/methods
             assert len(differences) > 0
-            
+
             # Check for missing BeforeEach annotation
             missing_annotations = [d for d in differences if d.setup_type == "annotation"]
             assert len(missing_annotations) > 0
-            
+
         finally:
             python_path.unlink()
 
@@ -251,32 +232,32 @@ def test_method():
             test_methods=[
                 TestMethod(
                     name="testMethod",
-                    assertions=["assertEquals(expected, actual)", "assertTrue(condition)"]
+                    assertions=["assertEquals(expected, actual)", "assertTrue(condition)"],
                 )
-            ]
+            ],
         )
-        
+
         # Create temporary Python file with equivalent assertions
         python_content = """
 def test_method():
     assert actual == expected
     assert condition
 """
-        
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(python_content)
             python_path = Path(f.name)
-        
+
         try:
             differences = self.reporter.compare_assertion_logic(java_test, python_path)
-            
+
             # Should find assertion differences
             assert len(differences) >= 2
-            
+
             # Check assertion types
             assert_types = [d.assertion_type for d in differences]
             assert "junit_equals" in assert_types or "junit_boolean" in assert_types
-            
+
         finally:
             python_path.unlink()
 
@@ -290,13 +271,11 @@ def test_method():
             dependencies=[Dependency(java_import="org.junit.jupiter.api.Test")],
             test_methods=[
                 TestMethod(
-                    name="testMethod",
-                    annotations=["@Test"],
-                    assertions=["assertEquals(1, 1)"]
+                    name="testMethod", annotations=["@Test"], assertions=["assertEquals(1, 1)"]
                 )
-            ]
+            ],
         )
-        
+
         # Create temporary Python file
         python_content = """
 import pytest
@@ -304,24 +283,24 @@ import pytest
 def test_method():
     assert 1 == 1
 """
-        
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(python_content)
             python_path = Path(f.name)
-        
+
         try:
             # Create failure analysis
             failure_analysis = FailureAnalysis(
                 is_migration_issue=True,
                 is_code_issue=False,
                 confidence=0.8,
-                suggested_fixes=["Fix import"]
+                suggested_fixes=["Fix import"],
             )
-            
+
             report = self.reporter.generate_comprehensive_report(
                 java_test, python_path, failure_analysis
             )
-            
+
             assert isinstance(report, DiagnosticReport)
             assert report.test_file == str(python_path)
             assert report.failure_analysis == failure_analysis
@@ -329,7 +308,7 @@ def test_method():
             assert isinstance(report.overall_confidence, float)
             assert isinstance(report.recommendations, list)
             assert "java_test_class" in report.detailed_analysis
-            
+
         finally:
             python_path.unlink()
 
@@ -341,20 +320,20 @@ from unittest.mock import Mock
 from pathlib import Path
 import os, sys
 """
-        
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(python_content)
             python_path = Path(f.name)
-        
+
         try:
             imports = self.reporter._extract_python_imports(python_path)
-            
+
             assert "pytest" in imports
             assert "unittest.mock" in imports
             assert "pathlib" in imports
             assert "os" in imports
             assert "sys" in imports
-            
+
         finally:
             python_path.unlink()
 
@@ -377,9 +356,9 @@ def setUp(self):
 def setup_class(cls):
     pass
 """
-        
+
         setup_methods = self.reporter._extract_python_setup_methods(python_content)
-        
+
         assert "setup_data" in setup_methods
         assert "setup_method" in setup_methods
         assert "setUp" in setup_methods or "setup_class" in setup_methods
@@ -391,13 +370,13 @@ def test_example():
     assert x == y
     assert condition
     assert not negative_condition
-    
+
     with pytest.raises(ValueError):
         raise ValueError("test")
 """
-        
+
         assertions = self.reporter._extract_python_assertions(python_content)
-        
+
         assert len(assertions) >= 3
         assert any("assert x == y" in assertion for assertion in assertions)
         assert any("assert condition" in assertion for assertion in assertions)
@@ -410,7 +389,10 @@ def test_example():
         assert self.reporter._classify_assertion("assertFalse(condition)") == "junit_boolean"
         assert self.reporter._classify_assertion("assertNull(value)") == "junit_null"
         assert self.reporter._classify_assertion("assertNotNull(value)") == "junit_null"
-        assert self.reporter._classify_assertion("assertThrows(Exception.class, () -> {})") == "junit_exception"
+        assert (
+            self.reporter._classify_assertion("assertThrows(Exception.class, () -> {})")
+            == "junit_exception"
+        )
         assert self.reporter._classify_assertion("customAssert(a, b)") == "custom"
 
     def test_calculate_content_similarity(self):
@@ -418,10 +400,10 @@ def test_example():
         content1 = "expected == actual"
         content2 = "actual == expected"
         content3 = "completely different"
-        
+
         similarity1 = self.reporter._calculate_content_similarity(content1, content2)
         similarity2 = self.reporter._calculate_content_similarity(content1, content3)
-        
+
         assert similarity1 > similarity2
         assert 0 <= similarity1 <= 1
         assert 0 <= similarity2 <= 1
@@ -431,12 +413,14 @@ def test_example():
         java_assertion = "assertEquals(expected, actual)"
         python_assertion = "assert actual == expected"
         different_assertion = "assert something_else"
-        
+
         # Note: This is a simplified test - the actual implementation
         # may need more sophisticated logic
         equivalent = self.reporter._check_semantic_equivalence(java_assertion, python_assertion)
-        not_equivalent = self.reporter._check_semantic_equivalence(java_assertion, different_assertion)
-        
+        not_equivalent = self.reporter._check_semantic_equivalence(
+            java_assertion, different_assertion
+        )
+
         # The exact result depends on implementation, but they should be different
         assert isinstance(equivalent, bool)
         assert isinstance(not_equivalent, bool)
@@ -445,24 +429,24 @@ def test_example():
         """Test Python equivalent suggestions."""
         assert "pytest" in self.reporter._suggest_python_equivalent("org.junit.Test")
         assert "unittest.mock" in self.reporter._suggest_python_equivalent("org.mockito.Mock")
-        assert "pytest.fixture" in self.reporter._suggest_python_equivalent("org.springframework.test")
-        assert "Manual mapping required" in self.reporter._suggest_python_equivalent("com.unknown.Library")
+        assert "pytest.fixture" in self.reporter._suggest_python_equivalent(
+            "org.springframework.test"
+        )
+        assert "Manual mapping required" in self.reporter._suggest_python_equivalent(
+            "com.unknown.Library"
+        )
 
     def test_calculate_migration_completeness(self):
         """Test migration completeness calculation."""
         # All issues resolved
         dep_diffs = [
             DependencyDifference(
-                java_dependency="test",
-                python_equivalent="pytest",
-                missing_in_python=False
+                java_dependency="test", python_equivalent="pytest", missing_in_python=False
             )
         ]
         setup_diffs = [
             SetupDifference(
-                setup_type="annotation",
-                java_setup="@Test",
-                migration_status="complete"
+                setup_type="annotation", java_setup="@Test", migration_status="complete"
             )
         ]
         assert_diffs = [
@@ -470,33 +454,26 @@ def test_example():
                 java_assertion="assertEquals(a, b)",
                 python_assertion="assert a == b",
                 assertion_type="junit_equals",
-                semantic_equivalent=True
+                semantic_equivalent=True,
             )
         ]
-        
+
         completeness = self.reporter._calculate_migration_completeness(
             dep_diffs, setup_diffs, assert_diffs
         )
-        
+
         assert 0 <= completeness <= 1
-        
+
         # No issues - should be 100% complete
         completeness_perfect = self.reporter._calculate_migration_completeness([], [], [])
         assert completeness_perfect == 1.0
 
     def test_calculate_overall_confidence(self):
         """Test overall confidence calculation."""
-        dep_diffs = [
-            DependencyDifference(
-                java_dependency="test",
-                requires_manual_mapping=False
-            )
-        ]
+        dep_diffs = [DependencyDifference(java_dependency="test", requires_manual_mapping=False)]
         setup_diffs = [
             SetupDifference(
-                setup_type="annotation",
-                java_setup="@Test",
-                migration_status="complete"
+                setup_type="annotation", java_setup="@Test", migration_status="complete"
             )
         ]
         assert_diffs = [
@@ -504,64 +481,52 @@ def test_example():
                 java_assertion="assertEquals(a, b)",
                 python_assertion="assert a == b",
                 assertion_type="junit_equals",
-                confidence=0.9
+                confidence=0.9,
             )
         ]
-        
+
         failure_analysis = FailureAnalysis(
-            is_migration_issue=True,
-            is_code_issue=False,
-            confidence=0.8
+            is_migration_issue=True, is_code_issue=False, confidence=0.8
         )
-        
+
         confidence = self.reporter._calculate_overall_confidence(
             dep_diffs, setup_diffs, assert_diffs, failure_analysis
         )
-        
+
         assert 0 <= confidence <= 1
 
     def test_generate_recommendations(self):
         """Test recommendation generation."""
         dep_diffs = [
-            DependencyDifference(
-                java_dependency="test1",
-                missing_in_python=True
-            ),
-            DependencyDifference(
-                java_dependency="test2",
-                requires_manual_mapping=True
-            )
+            DependencyDifference(java_dependency="test1", missing_in_python=True),
+            DependencyDifference(java_dependency="test2", requires_manual_mapping=True),
         ]
         setup_diffs = [
-            SetupDifference(
-                setup_type="annotation",
-                java_setup="@Test",
-                migration_status="missing"
-            )
+            SetupDifference(setup_type="annotation", java_setup="@Test", migration_status="missing")
         ]
         assert_diffs = [
             AssertionDifference(
                 java_assertion="assertEquals(a, b)",
                 python_assertion="assert a == b",
                 assertion_type="junit_equals",
-                confidence=0.5  # Low confidence
+                confidence=0.5,  # Low confidence
             )
         ]
-        
+
         failure_analysis = FailureAnalysis(
             is_migration_issue=True,
             is_code_issue=False,
             confidence=0.8,
-            suggested_fixes=["Fix specific issue"]
+            suggested_fixes=["Fix specific issue"],
         )
-        
+
         recommendations = self.reporter._generate_recommendations(
             dep_diffs, setup_diffs, assert_diffs, failure_analysis
         )
-        
+
         assert isinstance(recommendations, list)
         assert len(recommendations) > 0
-        
+
         # Should include recommendations for each type of issue
         rec_text = " ".join(recommendations)
         assert "dependencies" in rec_text or "setup" in rec_text or "assertion" in rec_text
@@ -573,9 +538,9 @@ def test_example():
             python_equivalent="pytest",
             missing_in_python=True,
             requires_manual_mapping=False,
-            suggested_replacement="pytest"
+            suggested_replacement="pytest",
         )
-        
+
         assert diff.java_dependency == "org.junit.Test"
         assert diff.python_equivalent == "pytest"
         assert diff.missing_in_python is True
@@ -589,9 +554,9 @@ def test_example():
             java_setup="@BeforeEach",
             python_equivalent="@pytest.fixture(autouse=True)",
             migration_status="partial",
-            suggested_fix="Add autouse parameter"
+            suggested_fix="Add autouse parameter",
         )
-        
+
         assert diff.setup_type == "annotation"
         assert diff.java_setup == "@BeforeEach"
         assert diff.python_equivalent == "@pytest.fixture(autouse=True)"
@@ -606,9 +571,9 @@ def test_example():
             assertion_type="junit_equals",
             semantic_equivalent=True,
             confidence=0.95,
-            suggested_improvement="Good migration"
+            suggested_improvement="Good migration",
         )
-        
+
         assert diff.java_assertion == "assertEquals(expected, actual)"
         assert diff.python_assertion == "assert actual == expected"
         assert diff.assertion_type == "junit_equals"
@@ -625,9 +590,9 @@ def test_example():
             test_file="test.py",
             migration_completeness=0.85,
             overall_confidence=0.75,
-            recommendations=["Fix imports", "Update assertions"]
+            recommendations=["Fix imports", "Update assertions"],
         )
-        
+
         assert report.report_id == "test_123"
         assert report.timestamp == timestamp
         assert report.test_file == "test.py"
@@ -639,37 +604,31 @@ def test_example():
     def test_nonexistent_python_file(self):
         """Test handling of nonexistent Python files."""
         java_test = TestFile(
-            path=Path("test.java"),
-            test_type=TestType.UNIT,
-            class_name="TestClass"
+            path=Path("test.java"), test_type=TestType.UNIT, class_name="TestClass"
         )
-        
+
         nonexistent_path = Path("nonexistent_file.py")
-        
+
         # Should handle gracefully without crashing
         dep_diffs = self.reporter.detect_dependency_differences(java_test, nonexistent_path)
         setup_diffs = self.reporter.detect_setup_differences(java_test, nonexistent_path)
         assert_diffs = self.reporter.compare_assertion_logic(java_test, nonexistent_path)
-        
+
         # Should return empty lists or handle gracefully
         assert isinstance(dep_diffs, list)
         assert isinstance(setup_diffs, list)
         assert isinstance(assert_diffs, list)
 
-    @patch('qontinui.test_migration.validation.diagnostic_reporter.datetime')
+    @patch("qontinui.test_migration.validation.diagnostic_reporter.datetime")
     def test_report_timestamp_generation(self, mock_datetime):
         """Test that reports include proper timestamps."""
         mock_now = datetime(2023, 1, 1, 12, 0, 0)
         mock_datetime.now.return_value = mock_now
-        
-        analysis = FailureAnalysis(
-            is_migration_issue=True,
-            is_code_issue=False,
-            confidence=0.8
-        )
-        
+
+        analysis = FailureAnalysis(is_migration_issue=True, is_code_issue=False, confidence=0.8)
+
         report = self.reporter.generate_failure_report(analysis)
-        
+
         assert "2023-01-01 12:00:00" in report
 
     def test_empty_test_methods(self):
@@ -678,20 +637,20 @@ def test_example():
             path=Path("test.java"),
             test_type=TestType.UNIT,
             class_name="EmptyTestClass",
-            test_methods=[]  # No test methods
+            test_methods=[],  # No test methods
         )
-        
+
         python_content = "# Empty Python file"
-        
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(python_content)
             python_path = Path(f.name)
-        
+
         try:
             # Should handle empty test files gracefully
             assert_diffs = self.reporter.compare_assertion_logic(java_test, python_path)
             assert isinstance(assert_diffs, list)
             assert len(assert_diffs) == 0
-            
+
         finally:
             python_path.unlink()

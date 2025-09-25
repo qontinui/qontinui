@@ -4,22 +4,21 @@ This service maintains a registry of action implementations and provides
 the correct action for a given configuration.
 """
 
-from typing import Optional, Dict, Type
 import logging
-from .action_interface import ActionInterface
+
 from .action_config import ActionConfig
-from .action_type import ActionType
-
-# Import basic actions
-from .basic.find.find import Find
+from .action_interface import ActionInterface
 from .basic.click.click import Click
-# Additional actions will be imported as they are implemented
-
-# Import find options
-from .basic.find.pattern_find_options import PatternFindOptions
 
 # Import action options
 from .basic.click.click_options import ClickOptions
+
+# Import basic actions
+from .basic.find.find import Find
+
+# Additional actions will be imported as they are implemented
+# Import find options
+from .basic.find.pattern_find_options import PatternFindOptions
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +41,8 @@ class ActionService:
 
     def __init__(self):
         """Initialize the action service with default registry."""
-        self._registry: Dict[Type[ActionConfig], Type[ActionInterface]] = {}
-        self._action_instances: Dict[Type[ActionInterface], ActionInterface] = {}
+        self._registry: dict[type[ActionConfig], type[ActionInterface]] = {}
+        self._action_instances: dict[type[ActionInterface], ActionInterface] = {}
         self._register_default_actions()
         logger.debug("ActionService initialized with default actions")
 
@@ -57,7 +56,7 @@ class ActionService:
 
         # Additional actions will be registered as they are implemented
 
-    def register(self, config_type: Type[ActionConfig], action_type: Type[ActionInterface]):
+    def register(self, config_type: type[ActionConfig], action_type: type[ActionInterface]):
         """Register an action mapping.
 
         Args:
@@ -67,7 +66,7 @@ class ActionService:
         self._registry[config_type] = action_type
         logger.debug(f"Registered {action_type.__name__} for {config_type.__name__}")
 
-    def get_action(self, action_config: ActionConfig) -> Optional[ActionInterface]:
+    def get_action(self, action_config: ActionConfig) -> ActionInterface | None:
         """Get the action implementation for a configuration.
 
         This method looks up the appropriate action implementation based on
@@ -99,7 +98,7 @@ class ActionService:
 
         return self._action_instances[action_type]
 
-    def _create_action_instance(self, action_type: Type[ActionInterface]) -> ActionInterface:
+    def _create_action_instance(self, action_type: type[ActionInterface]) -> ActionInterface:
         """Create an action instance with dependencies.
 
         Args:
@@ -109,8 +108,8 @@ class ActionService:
             The action instance
         """
         # Import here to avoid circular dependencies
-        from .basic.find.find import Find, FindPipeline
         from .basic.click.click import Click, SingleClickExecutor, TimeProvider
+        from .basic.find.find import Find, FindPipeline
 
         # For now, create with default constructor
         # In a real implementation, this would inject proper dependencies
@@ -119,15 +118,12 @@ class ActionService:
             return Find(find_pipeline=FindPipeline())
         elif action_type == Click:
             # Click only needs click-specific dependencies (no Find - it's atomic)
-            return Click(
-                click_location_once=SingleClickExecutor(),
-                time=TimeProvider()
-            )
+            return Click(click_location_once=SingleClickExecutor(), time=TimeProvider())
         else:
             # Create with no-arg constructor
             return action_type()
 
-    def get_registered_types(self) -> Dict[Type[ActionConfig], Type[ActionInterface]]:
+    def get_registered_types(self) -> dict[type[ActionConfig], type[ActionInterface]]:
         """Get all registered action mappings.
 
         Returns:
@@ -135,7 +131,7 @@ class ActionService:
         """
         return self._registry.copy()
 
-    def is_registered(self, config_type: Type[ActionConfig]) -> bool:
+    def is_registered(self, config_type: type[ActionConfig]) -> bool:
         """Check if a config type is registered.
 
         Args:

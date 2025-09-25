@@ -8,8 +8,8 @@ from .state_transitions import StateTransitions
 from .transition_function import TransitionType
 
 __all__ = [
-    'StateTransition',
-    'StateTransitions',
-    'StaysVisible',
-    'TransitionType',
+    "StateTransition",
+    "StateTransitions",
+    "StaysVisible",
+    "TransitionType",
 ]

@@ -14,20 +14,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
 
 public class CalculatorTest {
-    
+
     private Calculator calculator;
-    
+
     @BeforeEach
     public void setUp() {
         calculator = new Calculator();
     }
-    
+
     @Test
     public void testAddition() {
         int result = calculator.add(2, 3);
         Assertions.assertEquals(5, result);
     }
-    
+
     @Test
     public void testDivisionByZero() {
         Assertions.assertThrows(ArithmeticException.class, () -> {
@@ -49,15 +49,15 @@ python cli.py migrate brobot/library/src/test qontinui/tests/migrated --dry-run
 import pytest
 
 class TestCalculator:
-    
+
     def setup_method(self):
         # TODO: Replace with actual Qontinui Calculator implementation
         self.calculator = Calculator()
-    
+
     def test_addition(self):
         result = self.calculator.add(2, 3)
         assert result == 5
-    
+
     def test_division_by_zero(self):
         with pytest.raises(ArithmeticException):
             self.calculator.divide(1, 0)
@@ -93,9 +93,9 @@ import io.github.jspinak.brobot.mock.MockBuilder;
 import io.github.jspinak.brobot.actions.BrobotSettings;
 
 public class GuiAutomationTest {
-    
+
     private Mock guiMock;
-    
+
     @BeforeEach
     public void setUp() {
         guiMock = new MockBuilder()
@@ -104,12 +104,12 @@ public class GuiAutomationTest {
             .build();
         BrobotSettings.mock = true;
     }
-    
+
     @Test
     public void testLoginFlow() {
         guiMock.click("loginButton");
         guiMock.type("usernameField", "testuser");
-        
+
         boolean loginSuccessful = guiMock.exists("welcomeMessage");
         Assertions.assertTrue(loginSuccessful);
     }
@@ -129,18 +129,18 @@ from qontinui.test_migration.mocks import QontinuiMock, QontinuiMockBuilder
 from qontinui.core.settings import QontinuiSettings
 
 class TestGuiAutomation:
-    
+
     def setup_method(self):
         self.gui_mock = QontinuiMockBuilder() \
             .with_element("loginButton") \
             .with_element("usernameField") \
             .build()
         QontinuiSettings.mock = True
-    
+
     def test_login_flow(self):
         self.gui_mock.click("loginButton")
         self.gui_mock.type("usernameField", "testuser")
-        
+
         login_successful = self.gui_mock.exists("welcomeMessage")
         assert login_successful is True
 ```
@@ -162,19 +162,19 @@ import org.mockito.Mockito;
 @SpringBootTest
 @SpringJUnitConfig
 public class DatabaseIntegrationTest {
-    
+
     @Autowired
     private DatabaseService databaseService;
-    
+
     @Mock
     private ExternalApiService externalApiService;
-    
+
     @Test
     public void testDataPersistence() {
         // Mock external dependency
         Mockito.when(externalApiService.fetchData("key"))
                .thenReturn("test data");
-        
+
         // Test the service
         String result = databaseService.processData("key");
         Assertions.assertEquals("processed: test data", result);
@@ -195,17 +195,17 @@ from unittest.mock import Mock, patch
 
 @pytest.mark.integration
 class TestDatabaseIntegration:
-    
+
     @pytest.fixture(autouse=True)
     def setup_method(self):
         # TODO: Set up Qontinui application context equivalent
         self.database_service = DatabaseService()
         self.external_api_service = Mock()
-    
+
     def test_data_persistence(self):
         # Mock external dependency
         self.external_api_service.fetch_data.return_value = "test data"
-        
+
         # Test the service
         with patch('external_api_service', self.external_api_service):
             result = self.database_service.process_data("key")
@@ -310,7 +310,7 @@ qontinui/tests/migrated/
 public void testComplexAssertion() {
     List<String> expected = Arrays.asList("a", "b", "c");
     List<String> actual = service.getItems();
-    
+
     Assertions.assertAll(
         () -> Assertions.assertEquals(3, actual.size()),
         () -> Assertions.assertTrue(actual.containsAll(expected)),
@@ -324,7 +324,7 @@ public void testComplexAssertion() {
 def test_complex_assertion(self):
     expected = ["a", "b", "c"]
     actual = self.service.get_items()
-    
+
     # TODO: Review complex assertion migration
     assert len(actual) == 3
     assert all(item in actual for item in expected)
@@ -336,7 +336,7 @@ def test_complex_assertion(self):
 def test_complex_assertion(self):
     expected = ["a", "b", "c"]
     actual = self.service.get_items()
-    
+
     # Multiple assertions for clear failure messages
     assert len(actual) == 3, f"Expected 3 items, got {len(actual)}"
     assert set(expected).issubset(set(actual)), f"Missing items: {set(expected) - set(actual)}"

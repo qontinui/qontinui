@@ -1,11 +1,11 @@
 """Scroll actions package - ported from Qontinui framework."""
 
-from .scroll_options import ScrollOptions, ScrollOptionsBuilder, ScrollDirection
 from .scroll import Scroll
+from .scroll_options import ScrollDirection, ScrollOptions, ScrollOptionsBuilder
 
 __all__ = [
-    'ScrollOptions',
-    'ScrollOptionsBuilder',
-    'ScrollDirection',
-    'Scroll',
+    "ScrollOptions",
+    "ScrollOptionsBuilder",
+    "ScrollDirection",
+    "Scroll",
 ]

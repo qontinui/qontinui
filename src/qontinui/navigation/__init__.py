@@ -3,14 +3,10 @@
 This package handles state navigation, transitions, and path finding.
 """
 
-from .transition import (
-    StateTransitions,
-    StateTransitionsBuilder,
-    CodeStateTransition,
-)
+from .transition import CodeStateTransition, StateTransitions, StateTransitionsBuilder
 
 __all__ = [
-    'StateTransitions',
-    'StateTransitionsBuilder',
-    'CodeStateTransition',
+    "StateTransitions",
+    "StateTransitionsBuilder",
+    "CodeStateTransition",
 ]

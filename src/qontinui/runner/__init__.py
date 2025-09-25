@@ -12,9 +12,9 @@ from .dsl import BusinessTask, InstructionSet, Parameter
 from .json.dsl_parser import DSLParser, DSLValidator
 
 __all__ = [
-    'BusinessTask',
-    'InstructionSet',
-    'Parameter',
-    'DSLParser',
-    'DSLValidator',
+    "BusinessTask",
+    "InstructionSet",
+    "Parameter",
+    "DSLParser",
+    "DSLValidator",
 ]

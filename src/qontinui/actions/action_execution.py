@@ -4,11 +4,11 @@ This class handles the complete lifecycle of action execution including
 timing, logging, and cross-cutting concerns.
 """
 
-from typing import Optional, Tuple
-import time
 import logging
-from .action_interface import ActionInterface
+import time
+
 from .action_config import ActionConfig
+from .action_interface import ActionInterface
 from .action_result import ActionResult
 from .object_collection import ObjectCollection
 
@@ -40,11 +40,13 @@ class ActionExecution:
         self._failure_count = 0
         logger.debug("ActionExecution initialized")
 
-    def perform(self,
-                action: ActionInterface,
-                action_description: str,
-                action_config: ActionConfig,
-                object_collections: Tuple[ObjectCollection, ...]) -> ActionResult:
+    def perform(
+        self,
+        action: ActionInterface,
+        action_description: str,
+        action_config: ActionConfig,
+        object_collections: tuple[ObjectCollection, ...],
+    ) -> ActionResult:
         """Execute an action with full lifecycle management.
 
         This method implements the complete action lifecycle:
@@ -132,10 +134,10 @@ class ActionExecution:
         """
         total = max(1, self._execution_count)
         return {
-            'total_executions': self._execution_count,
-            'successful': self._success_count,
-            'failed': self._failure_count,
-            'success_rate': (self._success_count / total) * 100
+            "total_executions": self._execution_count,
+            "successful": self._success_count,
+            "failed": self._failure_count,
+            "success_rate": (self._success_count / total) * 100,
         }
 
     def reset_metrics(self):

@@ -8,34 +8,34 @@ from enum import Enum
 
 class LogLevel(Enum):
     """Log levels for the logging system.
-    
+
     Port of LogLevel from Qontinui framework enum.
     """
-    
+
     TRACE = "TRACE"
     """Trace level - most detailed logging."""
-    
+
     DEBUG = "DEBUG"
     """Debug level - debugging information."""
-    
+
     INFO = "INFO"
     """Info level - informational messages."""
-    
+
     WARN = "WARN"
     """Warning level - warning messages."""
-    
+
     ERROR = "ERROR"
     """Error level - error messages."""
-    
+
     FATAL = "FATAL"
     """Fatal level - fatal error messages."""
-    
+
     OFF = "OFF"
     """Off - no logging."""
-    
+
     def to_python_level(self) -> int:
         """Convert to Python logging level.
-        
+
         Returns:
             Python logging level integer
         """

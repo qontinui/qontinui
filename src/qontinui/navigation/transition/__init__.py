@@ -3,11 +3,11 @@
 Contains state transition implementations and management.
 """
 
-from .state_transitions import StateTransitions, StateTransitionsBuilder
 from .code_state_transition import CodeStateTransition
+from .state_transitions import StateTransitions, StateTransitionsBuilder
 
 __all__ = [
-    'StateTransitions',
-    'StateTransitionsBuilder', 
-    'CodeStateTransition',
+    "StateTransitions",
+    "StateTransitionsBuilder",
+    "CodeStateTransition",
 ]

@@ -15,24 +15,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-tk python3-dev
           sudo apt-get install -y xvfb x11-utils
           sudo apt-get install -y libgl1-mesa-glx
-      
+
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      
+
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:
@@ -40,26 +40,26 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
-      
+
       - name: Install dependencies
         run: |
           poetry install --no-interaction --no-ansi
-      
+
       - name: Run linting
         run: |
           poetry run ruff check .
           poetry run black --check .
-      
+
       - name: Run type checking
         run: |
           poetry run mypy src/qontinui --ignore-missing-imports
-      
+
       - name: Run tests with coverage
         run: |
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           poetry run pytest --cov=src/qontinui --cov-report=xml --cov-report=term
-      
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -74,26 +74,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      
+
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      
+
       - name: Build package
         run: |
           poetry build
-      
+
       - name: Check package
         run: |
           pip install twine
           twine check dist/*
-      
+
       - name: Store build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -102,10 +102,10 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -113,7 +113,7 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
-      
+
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
