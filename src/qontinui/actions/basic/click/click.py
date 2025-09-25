@@ -3,14 +3,15 @@
 Performs mouse click operations on GUI elements.
 """
 
-from typing import Optional, Tuple
-from ...action_interface import ActionInterface
-from ...action_type import ActionType
-from ...action_result import ActionResult
-from ...object_collection import ObjectCollection
-from .click_options import ClickOptions
+from typing import Optional
+
 from ....model.element.location import Location
 from ....model.match import Match
+from ...action_interface import ActionInterface
+from ...action_result import ActionResult
+from ...action_type import ActionType
+from ...object_collection import ObjectCollection
+from .click_options import ClickOptions
 
 
 class Click(ActionInterface):
@@ -41,10 +42,12 @@ class Click(ActionInterface):
     - Precise timing control between clicks
     """
 
-    def __init__(self,
-                 click_location_once: Optional['SingleClickExecutor'] = None,
-                 time: Optional['TimeProvider'] = None,
-                 after_click: Optional['PostClickHandler'] = None):
+    def __init__(
+        self,
+        click_location_once: Optional["SingleClickExecutor"] = None,
+        time: Optional["TimeProvider"] = None,
+        after_click: Optional["PostClickHandler"] = None,
+    ):
         """Initialize Click action.
 
         Args:
@@ -55,15 +58,15 @@ class Click(ActionInterface):
         self.click_location_once = click_location_once
         self.time = time
         self.after_click = after_click
-    
+
     def get_action_type(self) -> ActionType:
         """Return the action type.
-        
+
         Returns:
             ActionType.CLICK
         """
         return ActionType.CLICK
-    
+
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute click operations on provided locations, regions, or existing matches.
 
@@ -106,7 +109,6 @@ class Click(ActionInterface):
             # Click on any locations in the collection
             for location in obj_collection.get_locations():
                 # Create a temporary match for tracking
-                from ....model.match import Match
                 temp_match = Match(target=location)
                 self._click(location, click_options, temp_match)
                 matches.match_list.append(temp_match)
@@ -117,7 +119,6 @@ class Click(ActionInterface):
             # Click on any regions in the collection (at their center)
             for region in obj_collection.get_regions():
                 location = region.get_center()
-                from ....model.match import Match
                 temp_match = Match(target=location)
                 self._click(location, click_options, temp_match)
                 matches.match_list.append(temp_match)
@@ -128,7 +129,7 @@ class Click(ActionInterface):
         # Set success based on whether we clicked anything
         matches.success = clicked_count > 0
 
-    def _get_total_targets(self, object_collections: Tuple[ObjectCollection, ...]) -> int:
+    def _get_total_targets(self, object_collections: tuple[ObjectCollection, ...]) -> int:
         """Count total number of clickable targets across all collections.
 
         Args:
@@ -146,13 +147,13 @@ class Click(ActionInterface):
 
     def _click(self, location: Location, click_options: ClickOptions, match: Match) -> None:
         """Perform multiple clicks on a single location with configurable timing and post-click behavior.
-        
+
         This method handles the low-level click execution for a single match, including:
         - Repeating clicks based on configuration
         - Tracking click count on the match object
         - Managing timing between repeated clicks
         - Delegating post-click mouse movement to AfterClick when configured
-        
+
         Example: With timesToRepeatIndividualAction=2, this method will:
         1. Click the location
         2. Increment match's acted-on counter
@@ -161,7 +162,7 @@ class Click(ActionInterface):
         5. Click again
         6. Increment counter again
         7. Move mouse if configured (no pause after last click)
-        
+
         Args:
             location: The screen coordinates where clicks will be performed. This is the
                      final, adjusted location from the match's target.
@@ -186,13 +187,13 @@ class Click(ActionInterface):
 
 class SingleClickExecutor:
     """Placeholder for SingleClickExecutor class.
-    
+
     Executes a single click at a location.
     """
-    
+
     def click(self, location: Location, click_options: ClickOptions) -> None:
         """Execute a single click.
-        
+
         Args:
             location: Location to click
             click_options: Click configuration
@@ -202,42 +203,44 @@ class SingleClickExecutor:
 
 class PostClickHandler:
     """Placeholder for PostClickHandler class.
-    
+
     Handles post-click mouse movement.
     """
+
     pass
 
 
 class TimeProvider:
     """Placeholder for TimeProvider class.
-    
+
     Provides time and delay functionality.
     """
-    
+
     def wait(self, seconds: float) -> None:
         """Wait for specified duration.
-        
+
         Args:
             seconds: Duration to wait
         """
         import time
+
         time.sleep(seconds)
 
 
 class ActionResultFactory:
     """Placeholder for ActionResultFactory class.
-    
+
     Creates ActionResult instances.
     """
-    
+
     def init(self, action_config, description: str, object_collections: tuple) -> ActionResult:
         """Initialize an ActionResult.
-        
+
         Args:
             action_config: Configuration for the action
             description: Description of the action
             object_collections: Object collections
-            
+
         Returns:
             New ActionResult instance
         """
