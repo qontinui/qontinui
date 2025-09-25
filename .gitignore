@@ -357,3 +357,6 @@ CLAUDE.md
 test_venv
 test_*.py
 requirements.txt
+
+# Temporary development files
+temp_dev/
