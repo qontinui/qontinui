@@ -181,7 +181,7 @@ Images are exported as base64 in the JSON and automatically extracted to tempora
 
 ### Common Issues
 
-1. **Image not found**: 
+1. **Image not found**:
    - Check threshold settings
    - Ensure image quality matches
    - Verify screen resolution
