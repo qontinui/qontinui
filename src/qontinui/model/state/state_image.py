@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from ...find import FindImage, Matches
 from ..element import Image, Pattern, Region
+from ..search_regions import SearchRegions
 
 if TYPE_CHECKING:
     from qontinui.model.state.state import State
@@ -35,6 +36,7 @@ class StateImage:
 
     # Search configuration
     _search_region: Region | None = None
+    _search_regions: SearchRegions | None = None  # SearchRegions associated with this StateImage
     _similarity: float = 0.7
     _timeout: float = 5.0
 
@@ -186,6 +188,23 @@ class StateImage:
         """
         self._similarity = max(0.0, min(1.0, similarity))
         return self
+
+    def set_search_regions(self, search_regions: SearchRegions) -> StateImage:
+        """Set search regions for this image (fluent).
+
+        Args:
+            search_regions: SearchRegions to use for finding this image
+
+        Returns:
+            Self for chaining
+        """
+        self._search_regions = search_regions
+        return self
+
+    @property
+    def search_regions(self) -> SearchRegions | None:
+        """Get search regions for this image."""
+        return self._search_regions
 
     @property
     def is_fixed(self) -> bool:

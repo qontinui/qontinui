@@ -20,7 +20,8 @@ from .state import get_state_metadata, is_state, state
 from .state_component_extractor import StateComponentExtractor, StateComponents
 from .state_registration_service import StateRegistrationService
 from .states_registered_event import StatesRegisteredEvent
-from .transition_set import get_transition_set_metadata, is_transition_set, transition_set
+from .transition_set import get_transition_metadata as get_transition_set_metadata
+from .transition_set import is_transition_set, transition_set
 from .transition_set_processor import TransitionSetProcessor
 
 __all__ = [
