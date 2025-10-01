@@ -12,6 +12,7 @@ import inspect
 import logging
 import pkgutil
 from dataclasses import dataclass, field
+from typing import Any
 
 from qontinui.model.transition.enhanced_joint_table import StateTransitionsJointTable
 from qontinui.model.transition.enhanced_state_transition import (
@@ -211,17 +212,22 @@ class StateRegistry:
         # Get state IDs
         from_ids = set()
         for state_class in metadata.from_states:
-            state_name = get_state_metadata(state_class).name
-            if state_name in self.state_ids:
-                from_ids.add(self.state_ids[state_name])
+            from_metadata = get_state_metadata(state_class)
+            if from_metadata is not None:
+                state_name = from_metadata.name
+                if state_name in self.state_ids:
+                    from_ids.add(self.state_ids[state_name])
 
         to_ids = set()
         for state_class in metadata.to_states:
-            state_name = get_state_metadata(state_class).name
-            if state_name in self.state_ids:
-                to_ids.add(self.state_ids[state_name])
+            to_metadata = get_state_metadata(state_class)
+            if to_metadata is not None:
+                state_name = to_metadata.name
+                if state_name in self.state_ids:
+                    to_ids.add(self.state_ids[state_name])
 
         # Create transition instance
+        transition: CodeStateTransition | TaskSequenceStateTransition
         if hasattr(transition_class, "execute"):
             # Code-based transition
             instance = transition_class()
@@ -316,7 +322,11 @@ class StateRegistry:
                 initial_states.append(state_class)
 
         # Sort by priority
-        initial_states.sort(key=lambda s: get_state_metadata(s).priority, reverse=True)
+        def get_priority(s):
+            metadata = get_state_metadata(s)
+            return metadata.priority if metadata is not None else 0
+
+        initial_states.sort(key=get_priority, reverse=True)
 
         return initial_states
 
@@ -364,7 +374,7 @@ class StateRegistry:
 
         return outgoing, incoming
 
-    def get_statistics(self) -> dict:
+    def get_statistics(self) -> dict[str, Any]:
         """Get registry statistics.
 
         Returns:

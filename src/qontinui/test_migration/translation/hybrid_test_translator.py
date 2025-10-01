@@ -5,18 +5,25 @@ Hybrid test translator that combines utility-based and LLM-based translation.
 import logging
 from dataclasses import dataclass
 from enum import Enum
+from typing import TYPE_CHECKING, Any, cast
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import TestTranslator
     from ..core.models import TestFile, TestType
     from .llm_test_translator import LLMTestTranslator
     from .python_test_generator import PythonTestGenerator
-except ImportError:
-    # For standalone testing
-    from core.interfaces import TestTranslator
-    from core.models import TestFile, TestType
-    from llm_test_translator import LLMTestTranslator
-    from python_test_generator import PythonTestGenerator
+else:
+    try:
+        from ..core.interfaces import TestTranslator
+        from ..core.models import TestFile, TestType
+        from .llm_test_translator import LLMTestTranslator
+        from .python_test_generator import PythonTestGenerator
+    except ImportError:
+        # For standalone testing
+        from core.interfaces import TestTranslator
+        from core.models import TestFile, TestType
+        from llm_test_translator import LLMTestTranslator
+        from python_test_generator import PythonTestGenerator
 
 
 class TranslationStrategy(Enum):
@@ -81,7 +88,7 @@ class HybridTestTranslator(TestTranslator):
         self.llm_translator = LLMTestTranslator(llm_client) if llm_client else None
         self.default_strategy = default_strategy
         self.enable_caching = enable_caching
-        self.translation_cache = {} if enable_caching else None
+        self.translation_cache: dict[str, Any] | None = {} if enable_caching else None
 
         # Configure logging
         self.logger = logging.getLogger(__name__)
@@ -127,12 +134,12 @@ class HybridTestTranslator(TestTranslator):
         strategy = strategy or self.default_strategy
 
         # Check cache first
-        if self.enable_caching:
+        if self.enable_caching and self.translation_cache is not None:
             cache_key = self._generate_cache_key(test_file, strategy)
             if cache_key in self.translation_cache:
                 cached_result = self.translation_cache[cache_key]
                 self.logger.debug(f"Using cached translation for {test_file.class_name}")
-                return cached_result
+                return cast(TranslationResult, cached_result)
 
         # Determine optimal strategy based on test complexity
         optimal_strategy = self._determine_optimal_strategy(test_file, strategy)
@@ -143,7 +150,7 @@ class HybridTestTranslator(TestTranslator):
             result.translation_time = time.time() - start_time
 
             # Cache the result
-            if self.enable_caching:
+            if self.enable_caching and self.translation_cache is not None:
                 self.translation_cache[cache_key] = result
 
             # Update statistics
@@ -179,7 +186,7 @@ class HybridTestTranslator(TestTranslator):
         """
         # Try utility first for method-level translation
         try:
-            return self.utility_translator.translate_test_method(method_code)
+            return cast(str, self.utility_translator.translate_test_method(method_code))
         except Exception as e:
             if self.llm_translator:
                 return self.llm_translator.translate_test_method(method_code)
@@ -198,7 +205,7 @@ class HybridTestTranslator(TestTranslator):
         """
         # Try utility first for assertions
         try:
-            return self.utility_translator.translate_assertions(assertion_code)
+            return cast(str, self.utility_translator.translate_assertions(assertion_code))
         except Exception as e:
             if self.llm_translator:
                 return self.llm_translator.translate_assertions(assertion_code)
@@ -470,7 +477,7 @@ class HybridTestTranslator(TestTranslator):
         else:
             self.stats["hybrid_successes"] += 1
 
-    def get_translation_stats(self) -> dict[str, any]:
+    def get_translation_stats(self) -> dict[str, Any]:
         """Get translation statistics."""
         total = self.stats["total_translations"]
         if total == 0:

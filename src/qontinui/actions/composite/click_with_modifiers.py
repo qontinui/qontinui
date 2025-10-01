@@ -4,9 +4,10 @@ These composite methods maintain Brobot's atomic action principle
 by chaining KeyDown -> Click -> KeyUp actions.
 """
 
-from typing import Any
+from typing import Any, cast
 
-from ..basic.click.click import Click, ClickOptions
+from ..basic.click.click import Click
+from ..basic.click.click_options import ClickOptions, ClickOptionsBuilder
 from ..basic.type.key_down import KeyDown, KeyDownOptions
 from ..basic.type.key_up import KeyUp, KeyUpOptions
 
@@ -30,7 +31,7 @@ class ClickWithModifiers:
             True if successful
         """
         key_down = KeyDown(KeyDownOptions().add_key("SHIFT"))
-        click = Click(options or ClickOptions())
+        click = Click(options or ClickOptionsBuilder().build())
         key_up = KeyUp(KeyUpOptions().add_key("SHIFT"))
 
         # Execute atomic actions in sequence
@@ -38,7 +39,7 @@ class ClickWithModifiers:
             return False
 
         try:
-            result = click.execute(target)
+            result: bool = click.execute(target)
         finally:
             # Always release the key
             key_up.execute()
@@ -57,7 +58,7 @@ class ClickWithModifiers:
             True if successful
         """
         key_down = KeyDown(KeyDownOptions().add_key("CTRL"))
-        click = Click(options or ClickOptions())
+        click = Click(options or ClickOptionsBuilder().build())
         key_up = KeyUp(KeyUpOptions().add_key("CTRL"))
 
         # Execute atomic actions in sequence
@@ -65,7 +66,7 @@ class ClickWithModifiers:
             return False
 
         try:
-            result = click.execute(target)
+            result: bool = click.execute(target)
         finally:
             # Always release the key
             key_up.execute()
@@ -84,7 +85,7 @@ class ClickWithModifiers:
             True if successful
         """
         key_down = KeyDown(KeyDownOptions().add_key("ALT"))
-        click = Click(options or ClickOptions())
+        click = Click(options or ClickOptionsBuilder().build())
         key_up = KeyUp(KeyUpOptions().add_key("ALT"))
 
         # Execute atomic actions in sequence
@@ -92,7 +93,7 @@ class ClickWithModifiers:
             return False
 
         try:
-            result = click.execute(target)
+            result: bool = click.execute(target)
         finally:
             # Always release the key
             key_up.execute()
@@ -111,7 +112,7 @@ class ClickWithModifiers:
             True if successful
         """
         key_down = KeyDown(KeyDownOptions().add_key("CTRL").add_key("SHIFT"))
-        click = Click(options or ClickOptions())
+        click = Click(options or ClickOptionsBuilder().build())
         key_up = KeyUp(KeyUpOptions().add_key("SHIFT").add_key("CTRL"))
 
         # Execute atomic actions in sequence
@@ -119,7 +120,7 @@ class ClickWithModifiers:
             return False
 
         try:
-            result = click.execute(target)
+            result: bool = click.execute(target)
         finally:
             # Always release keys in reverse order
             key_up.execute()
@@ -138,7 +139,7 @@ class ClickWithModifiers:
             True if successful
         """
         key_down = KeyDown(KeyDownOptions().add_key("META"))
-        click = Click(options or ClickOptions())
+        click = Click(options or ClickOptionsBuilder().build())
         key_up = KeyUp(KeyUpOptions().add_key("META"))
 
         # Execute atomic actions in sequence
@@ -146,7 +147,7 @@ class ClickWithModifiers:
             return False
 
         try:
-            result = click.execute(target)
+            result: bool = click.execute(target)
         finally:
             # Always release the key
             key_up.execute()
@@ -168,8 +169,8 @@ class FluentClickWithModifiers:
             options: Optional click options
         """
         self.target = target
-        self.options = options or ClickOptions()
-        self.modifiers = []
+        self.options = options or ClickOptionsBuilder().build()
+        self.modifiers: list[str] = []
 
     def with_shift(self) -> "FluentClickWithModifiers":
         """Add Shift modifier.
@@ -219,7 +220,7 @@ class FluentClickWithModifiers:
         """
         if not self.modifiers:
             # No modifiers, just do a regular click
-            return Click(self.options).execute(self.target)
+            return cast(bool, Click(self.options).execute(self.target))
 
         # Create key down action with all modifiers
         key_down_options = KeyDownOptions()
@@ -243,7 +244,7 @@ class FluentClickWithModifiers:
             # Always release the keys
             key_up.execute()
 
-        return result
+        return cast(bool, result)
 
 
 def modified_click(target: Any, options: ClickOptions | None = None) -> FluentClickWithModifiers:

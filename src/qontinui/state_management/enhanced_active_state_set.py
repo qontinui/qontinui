@@ -9,6 +9,7 @@ Manages currently active states with support for:
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class StateActivation:
     state_id: int
     timestamp: datetime = field(default_factory=datetime.now)
     group: str | None = None
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -360,7 +361,7 @@ class EnhancedActiveStateSet:
         if len(self.activation_history) > self.max_history:
             self.activation_history = self.activation_history[-self.max_history :]
 
-    def get_statistics(self) -> dict:
+    def get_statistics(self) -> dict[str, Any]:
         """Get statistics about active states.
 
         Returns:

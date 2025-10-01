@@ -4,6 +4,7 @@ Core interfaces for the test migration system.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 from .models import (
     Dependency,
@@ -98,7 +99,7 @@ class TestRunner(ABC):
         pass
 
     @abstractmethod
-    def configure_test_environment(self, config: dict) -> None:
+    def configure_test_environment(self, config: dict[str, Any]) -> None:
         """Configure the test execution environment."""
         pass
 

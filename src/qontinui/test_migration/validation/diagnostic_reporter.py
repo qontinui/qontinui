@@ -7,15 +7,19 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import DiagnosticReporter
     from ..core.models import FailureAnalysis, TestFile, TestResults
-except ImportError:
-    # For standalone execution
-    from core.interfaces import DiagnosticReporter
-    from core.models import FailureAnalysis, TestFile, TestResults
+else:
+    try:
+        from ..core.interfaces import DiagnosticReporter
+        from ..core.models import FailureAnalysis, TestFile, TestResults
+    except ImportError:
+        # For standalone execution
+        from core.interfaces import DiagnosticReporter
+        from core.models import FailureAnalysis, TestFile, TestResults
 
 
 @dataclass
@@ -465,7 +469,7 @@ class DiagnosticReporterImpl(DiagnosticReporter):
 
     def _extract_python_imports(self, python_test_path: Path) -> set[str]:
         """Extract import statements from Python test file."""
-        imports = set()
+        imports: set[str] = set()
 
         if not python_test_path.exists():
             return imports

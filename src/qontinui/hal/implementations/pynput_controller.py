@@ -1,6 +1,7 @@
 """Pynput-based input controller implementation."""
 
 import time
+from typing import Any, cast
 
 from pynput import keyboard, mouse
 from pynput.keyboard import Key as PynputKey
@@ -45,7 +46,7 @@ class PynputController(IInputController):
 
         logger.info("pynput_controller_initialized")
 
-    def _build_key_map(self) -> dict:
+    def _build_key_map(self) -> dict[Key, Any]:
         """Build mapping from Key enum to Pynput keys."""
         return {
             # Modifier keys
@@ -114,13 +115,13 @@ class PynputController(IInputController):
             Pynput key or string
         """
         if isinstance(key, Key):
-            return self._key_map.get(key, str(key.value))
+            return cast(PynputKey | str, self._key_map.get(key, str(key.value)))
         elif isinstance(key, str):
             # Check if it's a special key name
             key_lower = key.lower()
             for enum_key, pynput_key in self._key_map.items():
-                if enum_key.value == key_lower:
-                    return pynput_key
+                if enum_key.value == key_lower:  # type: ignore[attr-defined]
+                    return cast(PynputKey | str, pynput_key)
             # Return as regular character
             return key
         return key
@@ -366,6 +367,75 @@ class PynputController(IInputController):
             logger.error(f"Get mouse position failed: {e}")
             return MousePosition(x=0, y=0)
 
+    def click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
+        """Click at specific coordinates.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            button: Mouse button to click
+
+        Returns:
+            True if successful
+        """
+        return self.mouse_click(x, y, button, clicks=1)
+
+    def double_click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
+        """Double click at specific coordinates.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            button: Mouse button to click
+
+        Returns:
+            True if successful
+        """
+        return self.mouse_click(x, y, button, clicks=2, interval=0.1)
+
+    def drag(
+        self, start_x: int, start_y: int, end_x: int, end_y: int, duration: float = 0.0
+    ) -> bool:
+        """Drag from start to end position.
+
+        Args:
+            start_x: Start X coordinate
+            start_y: Start Y coordinate
+            end_x: End X coordinate
+            end_y: End Y coordinate
+            duration: Drag duration in seconds
+
+        Returns:
+            True if successful
+        """
+        return self.mouse_drag(start_x, start_y, end_x, end_y, MouseButton.LEFT, duration)
+
+    def move_mouse(self, x: int, y: int, duration: float = 0.0) -> bool:
+        """Move mouse to position (alias for mouse_move).
+
+        Args:
+            x: Target X coordinate
+            y: Target Y coordinate
+            duration: Movement duration in seconds
+
+        Returns:
+            True if successful
+        """
+        return self.mouse_move(x, y, duration)
+
+    def scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
+        """Scroll mouse wheel (alias for mouse_scroll).
+
+        Args:
+            clicks: Number of scroll clicks (positive=up, negative=down)
+            x: X coordinate (None for current position)
+            y: Y coordinate (None for current position)
+
+        Returns:
+            True if successful
+        """
+        return self.mouse_scroll(clicks, x, y)
+
     # Keyboard operations
 
     def key_press(self, key: str | Key, presses: int = 1, interval: float = 0.0) -> bool:
@@ -490,9 +560,12 @@ class PynputController(IInputController):
         except Exception as e:
             logger.error(f"Hotkey failed: {e}")
             # Try to release any pressed keys
-            for key in keys:
+            for orig_key in keys:
                 try:
-                    self.keyboard_controller.release(self._get_pynput_key(key))
+                    # Type annotation to clarify for mypy
+                    qontinui_key: str | Key = orig_key
+                    pynput_key: PynputKey | str = self._get_pynput_key(qontinui_key)
+                    self.keyboard_controller.release(pynput_key)
                 except Exception:
                     pass
             return False

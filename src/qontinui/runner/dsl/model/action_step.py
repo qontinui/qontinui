@@ -4,7 +4,7 @@ Represents a single automation action in a task sequence.
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 
 @dataclass
@@ -38,7 +38,7 @@ class ActionStep:
     """Target objects for the action (images, regions, strings, etc.)."""
 
     @classmethod
-    def from_dict(cls, data: dict) -> "ActionStep":
+    def from_dict(cls, data: dict[str, Any]) -> "ActionStep":
         """Create ActionStep from dictionary.
 
         Args:
@@ -59,7 +59,7 @@ class ActionStep:
 
         return cls(action_options=action_options, object_collection=object_collection)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:
@@ -78,13 +78,13 @@ class ActionOptions:
     """Placeholder for ActionOptions class."""
 
     @classmethod
-    def from_dict(cls, data: dict) -> "ActionOptions":
+    def from_dict(cls, data: dict[str, Any]) -> "ActionOptions":
         """Create from dictionary."""
         instance = cls()
         instance.__dict__.update(data)
         return instance
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return self.__dict__.copy()
 
@@ -93,12 +93,12 @@ class ObjectCollection:
     """Placeholder for ObjectCollection class."""
 
     @classmethod
-    def from_dict(cls, data: dict) -> "ObjectCollection":
+    def from_dict(cls, data: dict[str, Any]) -> "ObjectCollection":
         """Create from dictionary."""
         instance = cls()
         instance.__dict__.update(data)
         return instance
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return self.__dict__.copy()

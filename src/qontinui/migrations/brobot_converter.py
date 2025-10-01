@@ -6,7 +6,7 @@ import shutil
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import cv2
 import numpy as np
@@ -264,7 +264,7 @@ class BrobotConverter:
             List of image paths
         """
         image_extensions = [".png", ".jpg", ".jpeg", ".bmp"]
-        images = []
+        images: list[Path] = []
 
         # Look for images in common Brobot locations
         search_dirs = [
@@ -293,7 +293,7 @@ class BrobotConverter:
         Returns:
             List of pattern file paths
         """
-        patterns = []
+        patterns: list[Path] = []
 
         # Look for pattern files
         pattern_locations = [
@@ -315,7 +315,7 @@ class BrobotConverter:
         Returns:
             List of config file paths
         """
-        configs = []
+        configs: list[Path] = []
 
         # Look for config files
         config_patterns = ["*.json", "*.xml", "*.properties", "*.yaml", "*.yml"]
@@ -486,7 +486,7 @@ class BrobotConverter:
                 if isinstance(element_dict["embedding"], np.ndarray):
                     element_dict["embedding"] = element_dict["embedding"].tolist()
 
-        return state_dict
+        return cast(dict[str, Any], state_dict)
 
     def _save_report(self):
         """Save conversion report."""

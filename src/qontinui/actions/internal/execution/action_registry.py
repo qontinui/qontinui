@@ -22,7 +22,7 @@ class ActionMetadata:
     category: str
     description: str
     version: str = "1.0.0"
-    tags: list[str] = None
+    tags: list[str] | None = None
     factory: Callable[..., ActionInterface] | None = None
 
     def __post_init__(self):
@@ -194,10 +194,11 @@ class ActionRegistry:
             self._categories[category].append(name)
 
             # Update tag index
-            for tag in metadata.tags:
-                if tag not in self._tags:
-                    self._tags[tag] = []
-                self._tags[tag].append(name)
+            if metadata.tags is not None:
+                for tag in metadata.tags:
+                    if tag not in self._tags:
+                        self._tags[tag] = []
+                    self._tags[tag].append(name)
 
             # Register factory if provided
             if factory:
@@ -228,11 +229,12 @@ class ActionRegistry:
                     del self._categories[metadata.category]
 
             # Remove from tag index
-            for tag in metadata.tags:
-                if tag in self._tags:
-                    self._tags[tag].remove(name)
-                    if not self._tags[tag]:
-                        del self._tags[tag]
+            if metadata.tags is not None:
+                for tag in metadata.tags:
+                    if tag in self._tags:
+                        self._tags[tag].remove(name)
+                        if not self._tags[tag]:
+                            del self._tags[tag]
 
             # Remove factory
             if name in self._factories:
@@ -352,10 +354,11 @@ class ActionRegistry:
                 continue
 
             # Check tags
-            for tag in metadata.tags:
-                if query_lower in tag.lower():
-                    matches.append(name)
-                    break
+            if metadata.tags is not None:
+                for tag in metadata.tags:
+                    if query_lower in tag.lower():
+                        matches.append(name)
+                        break
 
         return matches
 

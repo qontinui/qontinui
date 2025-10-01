@@ -6,6 +6,7 @@ Core pattern matching and finding functionality.
 from .find import Find
 from .find_image import FindImage
 from .find_results import FindResults
+from .masked_find import MaskedFind, MaskedFindBuilder
 from .match import Match
 from .matches import Matches
 
@@ -15,4 +16,6 @@ __all__ = [
     "Match",
     "Matches",
     "FindResults",
+    "MaskedFind",
+    "MaskedFindBuilder",
 ]

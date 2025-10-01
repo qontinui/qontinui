@@ -7,10 +7,13 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any
+from typing import Any, cast
 
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
+from ...action_result import ActionResult
+from ...action_type import ActionType
+from ...object_collection import ObjectCollection
 
 
 class WaitType(Enum):
@@ -138,6 +141,38 @@ class Wait(ActionInterface):
         self.options = options or WaitOptions()
         self._start_time: float | None = None
         self._elapsed_time: float = 0.0
+
+    def get_action_type(self) -> ActionType:
+        """Return the action type.
+
+        Returns:
+            ActionType.VANISH for vanish waits, otherwise a wait-related type
+        """
+        if self.options.wait_type == WaitType.VANISH:
+            return ActionType.VANISH
+        # For other wait types, we'll use VANISH as the closest match
+        # TODO: Add more specific ActionType values for different wait types if needed
+        return ActionType.VANISH
+
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+        """Execute the wait action using the Qontinui framework pattern.
+
+        Args:
+            matches: Contains ActionOptions and accumulates execution results
+            object_collections: Collections containing targets to wait for
+        """
+        # Extract target from object collections if provided
+        target = None
+        if object_collections:
+            collection = object_collections[0]
+            if collection.matches:
+                target = collection.matches[0]
+
+        # Execute the wait action
+        success = self.execute(target=target)
+
+        # Update matches with results
+        matches.success = success
 
     def execute(
         self, target: Any | None = None, condition: Callable[[], bool] | None = None
@@ -335,7 +370,7 @@ class Wait(ActionInterface):
         """
         # This would compare states/images
         # For now, use simple comparison
-        return abs(state1 - state2) > self.options.change_threshold
+        return cast(bool, abs(state1 - state2) > self.options.change_threshold)
 
     def _pause_before(self):
         """Apply pre-action pause from options."""

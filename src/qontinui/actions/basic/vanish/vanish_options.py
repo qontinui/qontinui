@@ -34,6 +34,11 @@ class VanishOptions(ActionConfig):
         """Get the interval between vanish checks."""
         return self.poll_interval
 
+    @property
+    def timeout(self) -> float:
+        """Alias for max_wait_time for compatibility."""
+        return self.max_wait_time
+
 
 class VanishOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing VanishOptions with a fluent API.

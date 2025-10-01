@@ -8,7 +8,7 @@ Ported from Brobot's TransitionSetProcessor.
 import inspect
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from ..model.transition.state_transition_service import StateTransitionService
 from ..model.transition.state_transitions import StateTransitions
@@ -84,11 +84,8 @@ class TransitionSetProcessor:
             if metadata is None:
                 continue
 
-            # Handle both single state and multiple states
-            target_states = metadata.get("states", [])
-            if not target_states and metadata.get("state"):
-                # Single state support
-                target_states = [metadata["state"]]
+            # Get target states from metadata
+            target_states = metadata.to_states if metadata.to_states else []
 
             if not target_states:
                 logger.warning(
@@ -131,7 +128,8 @@ class TransitionSetProcessor:
 
                 # Create StateTransitions container for the source state
                 state_transitions = (
-                    StateTransitions.builder(source_state_name)
+                    StateTransitions.builder()
+                    .with_state_name(source_state_name)
                     .add_transition(code_transition)
                     .build()
                 )
@@ -147,7 +145,7 @@ class TransitionSetProcessor:
 
         return transition_count
 
-    def _find_incoming_transition(self, instance: Any) -> Callable | None:
+    def _find_incoming_transition(self, instance: Any) -> Callable[..., Any] | None:
         """Find the @incoming_transition method in a transition set instance.
 
         Args:
@@ -164,7 +162,7 @@ class TransitionSetProcessor:
         logger.warning(f"No @incoming_transition method found in {instance.__class__.__name__}")
         return None
 
-    def _find_outgoing_transitions(self, instance: Any) -> list[tuple]:
+    def _find_outgoing_transitions(self, instance: Any) -> list[tuple[Any, ...]]:
         """Find all @outgoing_transition methods in a transition set instance.
 
         Args:
@@ -186,11 +184,11 @@ class TransitionSetProcessor:
 
     def _create_combined_transition(
         self,
-        outgoing_method: Callable,
-        incoming_method: Callable | None,
+        outgoing_method: Callable[..., Any],
+        incoming_method: Callable[..., Any] | None,
         source_name: str,
         target_names: set[str],
-    ) -> Callable:
+    ) -> Callable[..., Any]:
         """Create a combined transition function that executes outgoing then incoming.
 
         According to Brobot's design:
@@ -267,7 +265,7 @@ class TransitionSetProcessor:
         """
         metadata = get_state_metadata(state_class)
         if metadata and metadata.get("name"):
-            return metadata["name"]
+            return cast(str, metadata["name"])
 
         class_name = state_class.__name__
         # Remove "State" suffix if present
@@ -275,7 +273,7 @@ class TransitionSetProcessor:
             return class_name[:-5]
         return class_name
 
-    def _find_decorated_classes(self, module: Any, predicate: callable) -> list[type]:
+    def _find_decorated_classes(self, module: Any, predicate: Callable[..., Any]) -> list[type]:
         """Find all classes matching the predicate.
 
         Args:
@@ -299,7 +297,7 @@ class TransitionSetProcessor:
 
         return classes
 
-    def _scan_module(self, module: Any, predicate: callable) -> list[type]:
+    def _scan_module(self, module: Any, predicate: Callable[..., Any]) -> list[type]:
         """Scan a module for matching classes.
 
         Args:

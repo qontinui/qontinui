@@ -4,6 +4,7 @@ Centralized configuration using Pydantic for type safety and validation.
 """
 
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -231,9 +232,6 @@ class QontinuiProperties(BaseModel):
 
     model_config = ConfigDict(
         validate_assignment=True,
-        env_prefix="QONTINUI_",
-        env_nested_delimiter="__",
-        case_sensitive=False,
     )
 
     core: CoreConfig = Field(default_factory=CoreConfig, description="Core framework settings")
@@ -340,9 +338,9 @@ class QontinuiProperties(BaseModel):
         env_vars = dotenv_values(path)
 
         # Parse environment variables into nested dict
-        config = {}
+        config: dict[str, Any] = {}
         for key, value in env_vars.items():
-            if key.startswith("QONTINUI__"):
+            if key.startswith("QONTINUI__") and value is not None:
                 parts = key[10:].lower().split("__")
                 current = config
                 for part in parts[:-1]:
@@ -351,15 +349,17 @@ class QontinuiProperties(BaseModel):
                     current = current[part]
 
                 # Convert value types
-                if value.lower() in ("true", "false"):
-                    value = value.lower() == "true"
-                elif value.isdigit():
-                    value = int(value)
-                elif "." in value and value.replace(".", "").isdigit():
-                    value = float(value)
-                elif "," in value:
-                    value = value.split(",")
+                parsed_value: Any = value
+                if value is not None:
+                    if value.lower() in ("true", "false"):
+                        parsed_value = value.lower() == "true"
+                    elif value.isdigit():
+                        parsed_value = int(value)
+                    elif "." in value and value.replace(".", "").isdigit():
+                        parsed_value = float(value)
+                    elif "," in value:
+                        parsed_value = value.split(",")
 
-                current[parts[-1]] = value
+                current[parts[-1]] = parsed_value
 
         return cls(**config)

@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from ..element import Location, Region
+from .action_history import ActionHistory
 
 if TYPE_CHECKING:
     from qontinui.actions.action_result import ActionResult
@@ -34,6 +35,9 @@ class StateRegion:
 
     # Metadata
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    # Action history for integration testing
+    action_history: ActionHistory = field(default_factory=ActionHistory)
 
     def __post_init__(self):
         """Initialize region name."""
@@ -140,6 +144,49 @@ class StateRegion:
     def is_interaction_region(self) -> bool:
         """Check if this is an interaction region."""
         return self._interaction_region
+
+    @property
+    def search_region(self) -> Region:
+        """Get the region itself when used as a search region.
+
+        Returns:
+            The region
+        """
+        return self.region
+
+    def get_name(self) -> str:
+        """Get the name of this state region.
+
+        Returns:
+            Name or empty string
+        """
+        return self.name or ""
+
+    def get_owner_state_name(self) -> str:
+        """Get the owner state name.
+
+        Returns:
+            Owner state name or empty string
+        """
+        return self.owner_state.name if self.owner_state else ""
+
+    def get_search_region(self) -> Region:
+        """Get the search region (the region itself).
+
+        Returns:
+            The region
+        """
+        return self.region
+
+    def set_times_acted_on(self, times: int) -> None:
+        """Set times this region has been acted upon.
+
+        Args:
+            times: Number of times acted upon
+        """
+        # This would typically update action history
+        # For now, just a placeholder
+        pass
 
     def __str__(self) -> str:
         """String representation."""

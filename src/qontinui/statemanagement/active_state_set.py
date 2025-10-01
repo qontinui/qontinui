@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from ..model.state.state import State
@@ -37,11 +37,13 @@ class ActiveStateSet:
         """
         if hasattr(state, "id"):
             # State object
-            self.states.add(state.id)
+            state_id = state.id
+            if state_id is not None:
+                self.states.add(state_id)
         elif isinstance(state, Enum):
             # State enum
             self.states.add(state)
-        else:
+        elif isinstance(state, int):
             # Direct ID
             self.states.add(state)
         return self
@@ -69,8 +71,12 @@ class ActiveStateSet:
             Self for fluent interface
         """
         if hasattr(state, "id"):
-            self.states.discard(state.id)
+            state_id = state.id
+            if state_id is not None:
+                self.states.discard(state_id)
         elif isinstance(state, Enum):
+            self.states.discard(state)
+        elif isinstance(state, int):
             self.states.discard(state)
         else:
             self.states.discard(state)
@@ -310,4 +316,4 @@ class ActiveStateSetBuilder:
         Returns:
             Completed ActiveStateSet
         """
-        return self._set
+        return cast(ActiveStateSet, self._set)

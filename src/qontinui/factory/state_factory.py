@@ -5,7 +5,7 @@ Factory for creating states after framework initialization.
 
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ..model.state.state import State, StateBuilder
 
@@ -59,12 +59,12 @@ class StateFactory:
         Returns:
             A new StateImage instance
         """
-        from ..model.state.state_image import StateImageBuilder
+        from ..model.state.state_image import StateImageBuilder  # type: ignore[attr-defined]
 
-        builder = StateImageBuilder()
+        builder = StateImageBuilder()  # type: ignore[attr-defined]
         for image_name in image_names:
             builder.add_pattern(image_name)
-        return builder.build()
+        return cast("StateImage", builder.build())
 
     def create_state_string(
         self, value: str, name: str | None = None, owner_state_name: str | None = None
@@ -79,9 +79,9 @@ class StateFactory:
         Returns:
             A new StateString instance
         """
-        from ..model.state.state_string import StateStringBuilder
+        from ..model.state.state_string import StateStringBuilder  # type: ignore[attr-defined]
 
-        builder = StateStringBuilder()
+        builder = StateStringBuilder()  # type: ignore[attr-defined]
         builder.set_string(value)
 
         if name:
@@ -89,4 +89,4 @@ class StateFactory:
         if owner_state_name:
             builder.set_owner_state_name(owner_state_name)
 
-        return builder.build()
+        return cast("StateString", builder.build())

@@ -4,7 +4,7 @@ Service for resolving state names to IDs in state transitions.
 """
 
 import logging
-from typing import Optional
+from typing import Any, Optional, cast
 
 logger = logging.getLogger(__name__)
 
@@ -134,10 +134,10 @@ class StateTransitions:
         self.state_id = None
         self.transitions = []
 
-    def get_transitions(self) -> list:
+    def get_transitions(self) -> list[Any]:
         """Get transitions.
 
         Returns:
             List of transitions
         """
-        return self.transitions
+        return cast(list[Any], self.transitions)

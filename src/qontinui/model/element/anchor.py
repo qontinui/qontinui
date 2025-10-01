@@ -31,21 +31,54 @@ class AnchorType(Enum):
 
 @dataclass
 class Anchor:
-    """Defines a reference point for relative positioning.
+    """Defines a reference point for region definition and spatial relationships.
 
-    An Anchor represents a specific point that can be used as a reference
-    for positioning other elements. This enables creating flexible layouts
-    that adapt to different screen sizes and resolutions.
+    IMPORTANT DESIGN NOTE:
+    ======================
+    In Qontinui, Anchor and Location serve DIFFERENT purposes:
+    - Anchor: Used for REGION DEFINITION and spatial relationships
+    - Location: Used for ACTION TARGETS (where to click, type, hover)
 
-    Anchors can be:
-    - Predefined positions (corners, edges, center)
-    - Custom positions with specific coordinates
-    - Named reference points for semantic positioning
+    This differs from Brobot where the relationship may be structured differently.
+    See LOCATION_ANCHOR_DESIGN.md for full design rationale.
 
-    In the model-based approach, anchors are essential for:
-    - Defining spatial relationships between GUI elements
-    - Creating responsive layouts that adapt to screen changes
-    - Establishing consistent positioning rules across states
+    PRIMARY PURPOSE:
+    ================
+    Anchors are used to define COMPONENTS OF REGIONS:
+    - Two anchors can define opposite corners of a rectangular region
+    - Multiple anchors can define complex region boundaries
+    - Anchors establish spatial relationships between elements
+
+    REGION COMPONENT SPECIFICATION:
+    ================================
+    When an Anchor is part of a region definition, it specifies:
+    1. WHICH PART of the region it represents (via anchor_type)
+       - TOP_LEFT: Upper-left corner of the region
+       - BOTTOM_RIGHT: Lower-right corner of the region
+       - CENTER: Center point of the region
+       - etc.
+
+    2. HOW IT RELATES to other anchors defining the same region
+       - Two TOP_LEFT and BOTTOM_RIGHT anchors define a rectangle
+       - Multiple anchors can define irregular regions
+
+    Example:
+    ```python
+    # Define a region between two UI elements
+    top_anchor = Anchor(name="header", anchor_type=AnchorType.BOTTOM_LEFT)
+    bottom_anchor = Anchor(name="footer", anchor_type=AnchorType.TOP_RIGHT)
+    search_region = Region.from_anchors(top_anchor, bottom_anchor)
+    ```
+
+    KEY DIFFERENCES FROM LOCATION:
+    ===============================
+    - Anchor DEFINES region boundaries
+    - Anchor IS a component of region definition
+    - Anchor IS NOT the target for action operations
+    - Location IS for specifying where to perform actions
+
+    When you need to click/type somewhere, use Location.
+    When you need to define a region's boundaries, use Anchor.
     """
 
     name: str

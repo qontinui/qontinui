@@ -3,6 +3,8 @@
 Abstract base class for all statements in the DSL.
 """
 
+from typing import Any
+
 
 class Statement:
     """Abstract base class for all statements in the DSL.
@@ -35,7 +37,7 @@ class Statement:
         self.statement_type = statement_type
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Statement":
+    def from_dict(cls, data: dict[str, Any]) -> "Statement":
         """Create Statement from dictionary representation.
 
         Args:
@@ -73,7 +75,7 @@ class Statement:
         else:
             raise ValueError(f"Unknown statement type: {statement_type}")
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert Statement to dictionary representation.
 
         Returns:

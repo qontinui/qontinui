@@ -5,6 +5,7 @@ Statistical analysis of color distributions for MU strategy.
 
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 import cv2
 import numpy as np
@@ -59,19 +60,19 @@ class ColorStatistics:
         h_high = (self.h_mean + self.h_std * tolerance_std) % 360
 
         if h_low > h_high:  # Wraps around 0
-            h_matches = hsv.h >= h_low or hsv.h <= h_high
+            h_matches = hsv.hue >= h_low or hsv.hue <= h_high
         else:
-            h_matches = h_low <= hsv.h <= h_high
+            h_matches = h_low <= hsv.hue <= h_high
 
         # Check saturation
         s_low = max(0, self.s_mean - self.s_std * tolerance_std)
         s_high = min(255, self.s_mean + self.s_std * tolerance_std)
-        s_matches = s_low <= hsv.s <= s_high
+        s_matches = s_low <= hsv.saturation <= s_high
 
         # Check value
         v_low = max(0, self.v_mean - self.v_std * tolerance_std)
         v_high = min(255, self.v_mean + self.v_std * tolerance_std)
-        v_matches = v_low <= hsv.v <= v_high
+        v_matches = v_low <= hsv.value <= v_high
 
         return h_matches and s_matches and v_matches
 
@@ -106,7 +107,7 @@ class ColorStatisticsAnalyzer:
 
     include_rgb: bool = False  # Whether to include RGB statistics
 
-    def analyze_image(self, image: np.ndarray) -> ColorStatistics:
+    def analyze_image(self, image: np.ndarray[Any, Any]) -> ColorStatistics:
         """Calculate color statistics for an image.
 
         Args:
@@ -158,8 +159,8 @@ class ColorStatisticsAnalyzer:
         return stats
 
     def create_color_mask(
-        self, image: np.ndarray, stats: ColorStatistics, tolerance_std: float = 2.0
-    ) -> np.ndarray:
+        self, image: np.ndarray[Any, Any], stats: ColorStatistics, tolerance_std: float = 2.0
+    ) -> np.ndarray[Any, Any]:
         """Create a binary mask for pixels matching color statistics.
 
         Args:
@@ -192,10 +193,10 @@ class ColorStatisticsAnalyzer:
             mask2 = cv2.inRange(
                 hsv, np.array([h_low, s_low, v_low]), np.array([180, s_high, v_high])
             )
-            mask = cv2.bitwise_or(mask1, mask2)
+            mask = cv2.bitwise_or(mask1, mask2).astype(np.uint8)
         else:
             mask = cv2.inRange(
                 hsv, np.array([h_low, s_low, v_low]), np.array([h_high, s_high, v_high])
-            )
+            ).astype(np.uint8)
 
         return mask

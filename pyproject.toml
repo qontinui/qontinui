@@ -48,6 +48,7 @@ mss = "^9.0"
 prometheus-client = "^0.19"
 psutil = "^5.9"
 sqlalchemy = "^2.0"
+pydantic = "^2.11.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
@@ -63,6 +64,10 @@ pylint = "^3.3.8"
 isort = "^6.0.1"
 flake8 = "^7.3.0"
 tox = "^4.30.2"
+types-pyautogui = "^0.9.3.20241230"
+types-psutil = "^7.0.0.20250822"
+types-pynput = "^1.8.1.20250809"
+types-reportlab = "^4.4.4.20250926"
 
 [tool.poetry.extras]
 sam = ["segment-anything"]
@@ -102,6 +107,14 @@ known-first-party = ["qontinui"]
 python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "pydantic"
 ignore_missing_imports = true
 
 [tool.black]

@@ -120,8 +120,8 @@ def state(
         )
 
         # Store metadata on the class
-        cls._qontinui_state = True
-        cls._qontinui_state_metadata = metadata
+        cls._qontinui_state = True  # type: ignore[attr-defined]
+        cls._qontinui_state_metadata = metadata  # type: ignore[attr-defined]
 
         # Log state registration
         logger.debug(
@@ -194,12 +194,12 @@ def _add_state_methods(cls: type, metadata: StateMetadata) -> None:
         return state_name in metadata.can_hide
 
     # Add methods to the class
-    cls.get_state_name = get_state_name
-    cls.get_state_metadata = get_state_metadata
-    cls.is_initial_state = is_initial_state
-    cls.get_path_cost = get_path_cost
-    cls.is_blocking = is_blocking
-    cls.can_hide_state = can_hide_state
+    cls.get_state_name = get_state_name  # type: ignore[attr-defined]
+    cls.get_state_metadata = get_state_metadata  # type: ignore[attr-defined]
+    cls.is_initial_state = is_initial_state  # type: ignore[attr-defined]
+    cls.get_path_cost = get_path_cost  # type: ignore[attr-defined]
+    cls.is_blocking = is_blocking  # type: ignore[attr-defined]
+    cls.can_hide_state = can_hide_state  # type: ignore[attr-defined]
 
 
 def is_state(obj: Any) -> bool:
@@ -265,7 +265,11 @@ def get_initial_states_for_profile(states: list[Any], profile: str = "default") 
                 initial_states.append(state)
 
     # Sort by priority (higher priority first)
-    initial_states.sort(key=lambda s: get_state_metadata(s).priority, reverse=True)
+    def get_priority(s):
+        metadata = get_state_metadata(s)
+        return metadata.priority if metadata is not None else 0
+
+    initial_states.sort(key=get_priority, reverse=True)
 
     return initial_states
 

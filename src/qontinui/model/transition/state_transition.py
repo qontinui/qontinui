@@ -164,6 +164,95 @@ class StateTransition(ABC):
         """
         pass
 
+    # Additional properties for direct attribute access
+    @property
+    @abstractmethod
+    def to_state(self) -> str | None:
+        """Get the target state name this transition leads to.
+
+        Returns:
+            Target state name or None
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def from_state(self) -> str | None:
+        """Get the source state name this transition comes from.
+
+        Returns:
+            Source state name or None
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def transition_type(self) -> str:
+        """Get the transition type identifier.
+
+        Returns:
+            Transition type string
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def score(self) -> int:
+        """Get path-finding score as a property.
+
+        Returns:
+            Score value
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def probability(self) -> float:
+        """Get transition success probability.
+
+        Returns:
+            Probability value between 0.0 and 1.0
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Get transition name.
+
+        Returns:
+            Transition name
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def priority(self) -> int:
+        """Get transition priority.
+
+        Returns:
+            Priority value
+        """
+        pass
+
+    @abstractmethod
+    def execute(self) -> bool:
+        """Execute the state transition.
+
+        Returns:
+            True if transition succeeded, False otherwise
+        """
+        pass
+
+    @abstractmethod
+    def check_conditions(self) -> bool:
+        """Check if transition conditions are met.
+
+        Returns:
+            True if conditions are met, False otherwise
+        """
+        pass
+
 
 # Forward reference
 class TaskSequence:

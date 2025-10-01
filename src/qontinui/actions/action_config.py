@@ -72,7 +72,7 @@ class ActionConfig:
     must extend this class.
     """
 
-    def __init__(self, builder: Optional["ActionConfigBuilder"] = None):
+    def __init__(self, builder: Optional["ActionConfigBuilder"] = None) -> None:
         """Initialize ActionConfig from builder.
 
         Args:
@@ -170,7 +170,7 @@ class ActionConfigBuilder(ABC):
             .build()
     """
 
-    def __init__(self, original: ActionConfig | None = None):
+    def __init__(self, original: ActionConfig | None = None) -> None:
         """Initialize builder, optionally from existing config.
 
         Args:

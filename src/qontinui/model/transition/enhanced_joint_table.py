@@ -8,6 +8,7 @@ Central registry for managing state transitions with support for:
 
 from collections import defaultdict
 from dataclasses import dataclass, field
+from typing import Any
 
 from .enhanced_state_transition import StateTransition
 
@@ -281,7 +282,7 @@ class StateTransitionsJointTable:
         self.initial_states.clear()
         self.all_states.clear()
 
-    def get_statistics(self) -> dict:
+    def get_statistics(self) -> dict[str, Any]:
         """Get statistics about the joint table.
 
         Returns:

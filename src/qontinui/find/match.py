@@ -3,10 +3,12 @@
 Wrapper around MatchObject with additional functionality.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import timedelta
+from typing import Any
 
 from ..actions import ActionResult
-from ..model.element import Location
+from ..model.element import Image, Location, Region
 from ..model.match import Match as MatchObject
 
 
@@ -20,13 +22,21 @@ class Match:
 
     match_object: MatchObject
 
+    # Exposed properties from match_object
+    location: Location | None = field(init=False)
+    region: Region | None = field(init=False)
+    similarity: float = field(init=False)
+    pattern: Image | None = field(init=False)
+    state_object_data: Any = field(init=False, default=None)
+
     def __post_init__(self):
         """Initialize match properties."""
         # Expose key properties directly
-        self.location = self.match_object.location
-        self.region = self.match_object.region
-        self.similarity = self.match_object.similarity
-        self.pattern = self.match_object.pattern
+        self.location = self.match_object.target  # Match uses 'target' not 'location'
+        self.region = self.match_object.get_region()
+        self.similarity = self.match_object.score
+        self.pattern = self.match_object.search_image
+        self.state_object_data = self.match_object.state_object_data
 
     @property
     def center(self) -> Location:
@@ -36,12 +46,46 @@ class Match:
     @property
     def target(self) -> Location:
         """Get target location for actions."""
-        return self.match_object.target
+        target = self.match_object.target
+        if target is None:
+            return self.center  # Fallback to center if target is None
+        return target
 
     @property
     def score(self) -> float:
         """Get similarity score."""
-        return self.match_object.similarity
+        return self.match_object.score
+
+    @property
+    def confidence(self) -> float:
+        """Get confidence score (alias for score/similarity)."""
+        return self.match_object.score
+
+    @property
+    def x(self) -> int:
+        """Get x coordinate of match target."""
+        return int(self.target.x)
+
+    @property
+    def y(self) -> int:
+        """Get y coordinate of match target."""
+        return int(self.target.y)
+
+    def get_region(self) -> Region | None:
+        """Get the region of this match.
+
+        Returns:
+            Region of the match or None
+        """
+        return self.region
+
+    def get_target(self) -> Location:
+        """Get the target location for actions.
+
+        Returns:
+            Target location
+        """
+        return self.target
 
     def exists(self) -> bool:
         """Check if match exists (was found).
@@ -49,7 +93,9 @@ class Match:
         Returns:
             True if match exists
         """
-        return self.match_object is not None and self.similarity > 0
+        if self.match_object is None:
+            return False
+        return self.similarity > 0
 
     def click(self) -> ActionResult:
         """Click on this match.
@@ -63,13 +109,12 @@ class Match:
             result.output_text = "Match does not exist"
             return result
 
-        # This would use the Action system to click
+        # Use Action system to click at the target location
         from ..actions import Action
-        from ..actions.basic.click.click_options import ClickOptionsBuilder
+        from ..model.element import Location
 
-        click_options = ClickOptionsBuilder().build()
-        action = Action(click_options)
-        return action.click(self.target.x, self.target.y)
+        action = Action()
+        return action.click(Location(x=self.target.x, y=self.target.y))
 
     def double_click(self) -> ActionResult:
         """Double-click on this match.
@@ -85,10 +130,14 @@ class Match:
 
         from ..actions import Action
         from ..actions.basic.click.click_options import ClickOptionsBuilder
+        from ..actions.object_collection import ObjectCollectionBuilder
+        from ..model.element import Location
 
+        location = Location(x=self.target.x, y=self.target.y)
+        collection = ObjectCollectionBuilder().with_locations(location).build()
         click_options = ClickOptionsBuilder().set_number_of_clicks(2).build()
-        action = Action(click_options)
-        return action.click(self.target.x, self.target.y)
+        action = Action()
+        return action.perform(click_options, collection)
 
     def right_click(self) -> ActionResult:
         """Right-click on this match.
@@ -105,11 +154,15 @@ class Match:
         from ..actions import Action
         from ..actions.basic.click.click_options import ClickOptionsBuilder
         from ..actions.basic.mouse.mouse_press_options import MouseButton, MousePressOptions
+        from ..actions.object_collection import ObjectCollectionBuilder
+        from ..model.element import Location
 
+        location = Location(x=self.target.x, y=self.target.y)
+        collection = ObjectCollectionBuilder().with_locations(location).build()
         mouse_press = MousePressOptions.builder().set_button(MouseButton.RIGHT).build()
-        click_options = ClickOptionsBuilder().set_mouse_press_options(mouse_press).build()
-        action = Action(click_options)
-        return action.click(self.target.x, self.target.y)
+        click_options = ClickOptionsBuilder().set_press_options(mouse_press).build()
+        action = Action()
+        return action.perform(click_options, collection)
 
     def hover(self) -> ActionResult:
         """Move mouse to this match.
@@ -124,9 +177,15 @@ class Match:
             return result
 
         from ..actions import Action
+        from ..actions.basic.mouse.mouse_move_options import MouseMoveOptions
+        from ..actions.object_collection import ObjectCollectionBuilder
+        from ..model.element import Location
 
+        location = Location(x=self.target.x, y=self.target.y)
+        collection = ObjectCollectionBuilder().with_locations(location).build()
+        move_options = MouseMoveOptions()
         action = Action()
-        return action.move(self.target.x, self.target.y)
+        return action.perform(move_options, collection)
 
     def drag_to(self, target: "Match") -> ActionResult:
         """Drag from this match to another.
@@ -148,10 +207,18 @@ class Match:
             result.output_text = "Target match does not exist"
             return result
 
-        from ..actions import Action, DragOptions
+        from ..actions import Action
+        from ..actions.composite.drag import DragOptionsBuilder
+        from ..actions.object_collection import ObjectCollectionBuilder
+        from ..model.element import Location
 
-        action = Action(DragOptions())
-        return action.drag(self.target.x, self.target.y, target.target.x, target.target.y)
+        source_loc = Location(x=self.target.x, y=self.target.y)
+        target_loc = Location(x=target.target.x, y=target.target.y)
+        source_collection = ObjectCollectionBuilder().with_locations(source_loc).build()
+        target_collection = ObjectCollectionBuilder().with_locations(target_loc).build()
+        drag_options = DragOptionsBuilder().build()
+        action = Action()
+        return action.perform(drag_options, source_collection, target_collection)
 
     def type_text(self, text: str) -> ActionResult:
         """Type text at this match location.
@@ -173,9 +240,9 @@ class Match:
         if not click_result.success:
             return click_result
 
-        from ..actions import Action, TypeOptions
+        from ..actions import Action
 
-        action = Action(TypeOptions())
+        action = Action()
         return action.type_text(text)
 
     def highlight(self, duration: float = 2.0) -> ActionResult:
@@ -198,7 +265,7 @@ class Match:
         result = ActionResult()
         result.success = True
         result.defined_regions = [self.region] if self.region else []
-        result.duration = duration
+        result.duration = timedelta(seconds=duration)
         return result
 
     def get_text(self) -> str:
@@ -239,8 +306,11 @@ class Match:
         """
         if not self.exists() or not other.exists():
             return False
+        if self.region is None or other.region is None:
+            return False
 
-        return self.region.right <= other.region.left
+        is_left: bool = self.region.right <= other.region.left
+        return is_left
 
     def is_right_of(self, other: "Match") -> bool:
         """Check if this match is to the right of another.
@@ -253,8 +323,11 @@ class Match:
         """
         if not self.exists() or not other.exists():
             return False
+        if self.region is None or other.region is None:
+            return False
 
-        return self.region.left >= other.region.right
+        is_right: bool = self.region.left >= other.region.right
+        return is_right
 
     def is_above(self, other: "Match") -> bool:
         """Check if this match is above another.
@@ -267,8 +340,11 @@ class Match:
         """
         if not self.exists() or not other.exists():
             return False
+        if self.region is None or other.region is None:
+            return False
 
-        return self.region.bottom <= other.region.top
+        is_above: bool = self.region.bottom <= other.region.top
+        return is_above
 
     def is_below(self, other: "Match") -> bool:
         """Check if this match is below another.
@@ -281,8 +357,11 @@ class Match:
         """
         if not self.exists() or not other.exists():
             return False
+        if self.region is None or other.region is None:
+            return False
 
-        return self.region.top >= other.region.bottom
+        is_below: bool = self.region.top >= other.region.bottom
+        return is_below
 
     def __str__(self) -> str:
         """String representation."""

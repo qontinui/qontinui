@@ -75,7 +75,7 @@ class IntegrationTestEnvironment:
         Returns:
             Dictionary with wiring configuration and setup code
         """
-        wiring_config = {
+        wiring_config: dict[str, Any] = {
             "imports": [],
             "fixtures": [],
             "setup_methods": [],
@@ -221,7 +221,12 @@ class IntegrationTestEnvironment:
         Returns:
             Dictionary with test scenario setup and execution code
         """
-        scenario_config = {"imports": [], "fixtures": [], "test_methods": [], "helper_methods": []}
+        scenario_config: dict[str, Any] = {
+            "imports": [],
+            "fixtures": [],
+            "test_methods": [],
+            "helper_methods": [],
+        }
 
         # Add imports for multi-component testing
         scenario_config["imports"].extend(

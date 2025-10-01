@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from ..element import Location
+from .action_history import ActionHistory
 
 if TYPE_CHECKING:
     from qontinui.actions.action_result import ActionResult
@@ -34,6 +35,9 @@ class StateLocation:
 
     # Metadata
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    # Action history for integration testing
+    action_history: ActionHistory = field(default_factory=ActionHistory)
 
     def __post_init__(self):
         """Initialize location name."""
@@ -127,6 +131,39 @@ class StateLocation:
     def is_click_target(self) -> bool:
         """Check if this is a click target."""
         return self._click_target
+
+    def get_name(self) -> str | None:
+        """Get the location name.
+
+        Returns:
+            Location name or None
+        """
+        return self.name
+
+    def get_owner_state_name(self) -> str:
+        """Get the owner state name.
+
+        Returns:
+            Owner state name or empty string if no owner
+        """
+        if self.owner_state is None:
+            return ""
+        return self.owner_state.name if hasattr(self.owner_state, "name") else ""
+
+    def set_times_acted_on(self, times: int) -> None:
+        """Set times acted on count.
+
+        Args:
+            times: Number of times acted on
+
+        Note:
+            This is a legacy method for compatibility. ActionHistory now uses
+            add_record() to track individual actions rather than a simple counter.
+            This method does nothing in the current implementation.
+        """
+        # ActionHistory no longer uses a simple counter
+        # Individual action records are tracked via add_record()
+        pass
 
     def __str__(self) -> str:
         """String representation."""

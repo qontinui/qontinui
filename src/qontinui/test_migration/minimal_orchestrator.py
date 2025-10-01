@@ -4,11 +4,13 @@ Minimal migration orchestrator for testing core functionality.
 
 import logging
 from pathlib import Path
+from typing import Any, cast
 
 from config import TestMigrationConfig
 from core.models import MigrationConfig, TestFile, TestResult, TestResults
-from discovery.scanner import BrobotTestScanner
 from execution.pytest_runner import PytestRunner
+
+from discovery.scanner import BrobotTestScanner
 
 
 class MinimalMigrationOrchestrator:
@@ -28,7 +30,7 @@ class MinimalMigrationOrchestrator:
         self.runner = PytestRunner()
 
         # Migration state
-        self.migration_state = {
+        self.migration_state: dict[str, Any] = {
             "discovered_tests": [],
             "migrated_tests": [],
             "failed_migrations": [],
@@ -43,7 +45,7 @@ class MinimalMigrationOrchestrator:
             test_files = self.scanner.scan_directory(source_path)
             self.migration_state["discovered_tests"] = test_files
             self.logger.info(f"Discovered {len(test_files)} test files")
-            return test_files
+            return cast(list[Any], test_files)
 
         except Exception as e:
             self.logger.error(f"Test discovery failed: {str(e)}")
@@ -73,7 +75,7 @@ class MinimalMigrationOrchestrator:
             self.logger.error(f"Validation failed: {str(e)}")
             return self._create_error_results(str(e))
 
-    def get_migration_progress(self) -> dict:
+    def get_migration_progress(self) -> dict[str, Any]:
         """Get current migration progress."""
         discovered = self.migration_state.get("discovered_tests", [])
         migrated = self.migration_state.get("migrated_tests", [])

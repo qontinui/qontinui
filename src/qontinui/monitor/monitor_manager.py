@@ -219,7 +219,7 @@ class MonitorManager:
         Returns:
             List of all Screen objects
         """
-        screens = []
+        screens: list[Screen | None] = []
         if self.headless_mode:
             logger.debug("Running in headless mode - returning empty screen list")
             return screens

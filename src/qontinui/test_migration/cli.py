@@ -6,18 +6,25 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-try:
+if TYPE_CHECKING:
     from .config import TestMigrationConfig
     from .core.models import MigrationConfig
     from .orchestrator import TestMigrationOrchestrator
     from .reporting.dashboard import MigrationReportingDashboard
-except ImportError:
-    # Handle direct execution case
-    from config import TestMigrationConfig
-    from core.models import MigrationConfig
-    from orchestrator import TestMigrationOrchestrator
-    from reporting.dashboard import MigrationReportingDashboard
+else:
+    try:
+        from .config import TestMigrationConfig
+        from .core.models import MigrationConfig
+        from .orchestrator import TestMigrationOrchestrator
+        from .reporting.dashboard import MigrationReportingDashboard
+    except ImportError:
+        # Handle direct execution case
+        from config import TestMigrationConfig
+        from core.models import MigrationConfig
+        from orchestrator import TestMigrationOrchestrator
+        from reporting.dashboard import MigrationReportingDashboard
 
 
 class TestMigrationCLI:

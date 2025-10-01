@@ -68,7 +68,7 @@ class BinaryOperationExpression(Expression):
         self.right = right
 
     @classmethod
-    def from_dict(cls, data: dict) -> "BinaryOperationExpression":
+    def from_dict(cls, data: dict[str, Any]) -> "BinaryOperationExpression":
         """Create BinaryOperationExpression from dictionary.
 
         Args:
@@ -87,7 +87,7 @@ class BinaryOperationExpression(Expression):
 
         return cls(operator=data.get("operator", ""), left=left, right=right)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:
@@ -101,7 +101,7 @@ class BinaryOperationExpression(Expression):
             result["right"] = self.right.to_dict()
         return result
 
-    def evaluate(self, context: dict) -> Any:
+    def evaluate(self, context: dict[str, Any]) -> Any:
         """Evaluate the binary operation.
 
         Args:

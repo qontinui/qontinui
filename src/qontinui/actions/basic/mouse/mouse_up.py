@@ -60,10 +60,11 @@ class MouseUp(ActionInterface):
             raise ValueError("MouseUp requires MouseUpOptions configuration")
 
         options = matches.action_config
+        press_options = options.get_press_options()
 
-        # Pause before release
-        if options.pause_before_mouse_up > 0:
-            time.sleep(options.pause_before_mouse_up)
+        # Pause before release (using pause_after_press as timing before release)
+        if press_options.pause_after_press > 0:
+            time.sleep(press_options.pause_after_press)
 
         # Determine button
         button_map = {
@@ -71,14 +72,14 @@ class MouseUp(ActionInterface):
             MouseButton.RIGHT: "right",
             MouseButton.MIDDLE: "middle",
         }
-        button = button_map.get(options.button, "left")
+        button = button_map.get(press_options.button, "left")
 
         # Release button
         pyautogui.mouseUp(button=button)
         logger.debug(f"Mouse up: {button} button")
 
         # Pause after release
-        if options.pause_after_mouse_up > 0:
-            time.sleep(options.pause_after_mouse_up)
+        if press_options.pause_after_release > 0:
+            time.sleep(press_options.pause_after_release)
 
         matches.success = True

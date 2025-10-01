@@ -8,7 +8,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -83,7 +83,7 @@ def setup_logging(
     )
 
     # Configure standard logging
-    handlers = []
+    handlers: list[logging.Handler] = []
 
     if console:
         console_handler = logging.StreamHandler(sys.stdout)
@@ -110,13 +110,13 @@ def get_logger(name: str) -> structlog.BoundLogger:
     Returns:
         Structured logger instance
     """
-    return structlog.get_logger(name)
+    return cast(structlog.BoundLogger, structlog.get_logger(name))
 
 
 class LogContext:
     """Context manager for temporary log context."""
 
-    def __init__(self, logger: structlog.BoundLogger, **kwargs):
+    def __init__(self, logger: structlog.BoundLogger, **kwargs) -> None:
         """Initialize with logger and context.
 
         Args:
@@ -125,14 +125,14 @@ class LogContext:
         """
         self.logger = logger
         self.context = kwargs
-        self.original_context = {}
+        self.original_context: dict[str, Any] = {}
 
-    def __enter__(self) -> structlog.BoundLogger:
+    def __enter__(self) -> structlog.types.BindableLogger:
         """Enter context and bind values."""
         self.bound_logger = self.logger.bind(**self.context)
         return self.bound_logger
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit context and unbind values."""
         # Context automatically cleaned up when bound_logger goes out of scope
         pass
@@ -141,7 +141,7 @@ class LogContext:
 class ActionLogger:
     """Specialized logger for action execution."""
 
-    def __init__(self, base_logger: structlog.BoundLogger | None = None):
+    def __init__(self, base_logger: structlog.BoundLogger | None = None) -> None:
         """Initialize action logger.
 
         Args:
@@ -213,7 +213,7 @@ class ActionLogger:
 class StateLogger:
     """Specialized logger for state transitions."""
 
-    def __init__(self, base_logger: structlog.BoundLogger | None = None):
+    def __init__(self, base_logger: structlog.BoundLogger | None = None) -> None:
         """Initialize state logger.
 
         Args:
@@ -267,7 +267,7 @@ class StateLogger:
 class PerformanceLogger:
     """Logger for performance metrics."""
 
-    def __init__(self, base_logger: structlog.BoundLogger | None = None):
+    def __init__(self, base_logger: structlog.BoundLogger | None = None) -> None:
         """Initialize performance logger.
 
         Args:

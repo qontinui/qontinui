@@ -6,32 +6,37 @@ verify behavioral equivalence, and collect performance comparison metrics.
 """
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-try:
+if TYPE_CHECKING:
     from ..core.models import TestResult, TestResults
-except ImportError:
-    # For standalone testing, define minimal models
-    pass  # dataclass and field are already imported above
+else:
+    try:
+        from ..core.models import TestResult, TestResults
+    except ImportError:
+        # For standalone testing, define minimal models
+        pass  # dataclass and field are already imported above
 
-    @dataclass
-    class TestResult:
-        test_name: str
-        test_file: str
-        passed: bool
-        execution_time: float
-        error_message: str | None = None
-        stack_trace: str | None = None
-        output: str = ""
+        @dataclass
+        class TestResult:
+            test_name: str
+            test_file: str
+            passed: bool
+            execution_time: float
+            error_message: str | None = None
+            stack_trace: str | None = None
+            output: str = ""
 
-    @dataclass
-    class TestResults:
-        total_tests: int
-        passed_tests: int
-        failed_tests: int
+        @dataclass
+        class TestResults:
+            total_tests: int
+            passed_tests: int
+            failed_tests: int
+
         skipped_tests: int
         execution_time: float
         individual_results: list[TestResult] = field(default_factory=list)
@@ -104,7 +109,7 @@ class BehavioralEquivalenceCheck:
     ignore_case: bool = False
     ignore_order: bool = False
     tolerance_threshold: float = 0.95
-    custom_comparators: dict[str, callable] = field(default_factory=dict)
+    custom_comparators: dict[str, Callable[..., Any]] = field(default_factory=dict)
 
 
 class ResultValidator:
@@ -498,3 +503,13 @@ class ResultValidator:
 
         with open(output_path, "w") as f:
             json.dump(results_data, f, indent=2)
+
+    def validate_test_results(self, execution_results: Any) -> None:
+        """
+        Validate test execution results.
+
+        Args:
+            execution_results: Results from test execution to validate
+        """
+        # TODO: Implement validation logic
+        pass

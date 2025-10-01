@@ -78,7 +78,7 @@ class ExecutionContext:
         Returns:
             True if successful
         """
-        return self.phase == ExecutionPhase.COMPLETED and self.result
+        return self.phase == ExecutionPhase.COMPLETED and (self.result is True)
 
 
 @dataclass
@@ -348,11 +348,16 @@ class ActionExecutor:
         if hasattr(context.action, "options"):
             builder.with_action_config(context.action.options)
 
+        timestamp = (
+            datetime.fromtimestamp(context.start_time)
+            if context.start_time is not None
+            else datetime.now()
+        )
         record = (
             builder.with_text(context.action.__class__.__name__)
             .with_duration(context.duration)
             .with_success(context.result or False)
-            .with_timestamp(datetime.fromtimestamp(context.start_time))
+            .with_timestamp(timestamp)
             .build()
         )
 

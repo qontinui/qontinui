@@ -4,6 +4,7 @@ Represents a captured screenshot or screen state as a searchable pattern.
 """
 
 from dataclasses import dataclass
+from typing import cast
 
 from .pattern import Pattern
 
@@ -49,12 +50,12 @@ class Scene:
         elif filename is not None:
             from .image import Image
 
-            image = Image(name=filename, path=filename)
-            self.pattern = Pattern(image=image, name=filename)
+            image = Image.from_file(filename)
+            self.pattern = Pattern.from_image(image, name=filename)
         else:
             from .image import Image
 
-            self.pattern = Pattern(image=Image())
+            self.pattern = Pattern.from_image(Image())
 
         self.id = -1
 
@@ -74,7 +75,7 @@ class Scene:
         Returns:
             Pattern path or empty string
         """
-        return self.pattern.path if self.pattern else ""
+        return self.pattern.path if self.pattern and self.pattern.path else ""
 
     def has_pattern(self) -> bool:
         """Check if scene has a valid pattern.
@@ -82,7 +83,7 @@ class Scene:
         Returns:
             True if pattern exists and has content
         """
-        return self.pattern is not None and self.pattern.has_image()
+        return cast(bool, self.pattern is not None and self.pattern.has_image())
 
     def __str__(self) -> str:
         """String representation."""

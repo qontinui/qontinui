@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any, cast
 
 from .pure import ActionResult, PureActions
 
@@ -10,11 +11,13 @@ from .pure import ActionResult, PureActions
 class ActionChain:
     """Represents a chain of actions to be executed."""
 
-    actions: list[tuple[Callable, tuple, dict]] = field(default_factory=list)
+    actions: list[tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]] = field(
+        default_factory=list
+    )
     results: list[ActionResult] = field(default_factory=list)
     stop_on_failure: bool = True
 
-    def add(self, action: Callable, *args, **kwargs) -> "ActionChain":
+    def add(self, action: Callable[..., Any], *args, **kwargs) -> "ActionChain":
         """Add an action to the chain.
 
         Args:
@@ -34,6 +37,7 @@ class ActionChain:
         Returns:
             List of ActionResult objects
         """
+
         self.results = []
 
         for action, args, kwargs in self.actions:
@@ -43,7 +47,7 @@ class ActionChain:
             if not result.success and self.stop_on_failure:
                 break
 
-        return self.results
+        return cast(list[ActionResult], self.results)
 
     def clear(self) -> "ActionChain":
         """Clear the action chain.
@@ -62,7 +66,8 @@ class ActionChain:
         Returns:
             True if all actions succeeded
         """
-        return all(r.success for r in self.results)
+
+        return cast(bool, all(r.success for r in self.results))
 
     @property
     def last_result(self) -> ActionResult | None:
@@ -316,7 +321,8 @@ class FluentActions:
         Returns:
             List of ActionResult objects
         """
-        return self.chain.execute()
+
+        return cast(list[ActionResult], self.chain.execute())
 
     def clear(self) -> "FluentActions":
         """Clear the action chain.
@@ -335,7 +341,8 @@ class FluentActions:
         Returns:
             True if all actions succeeded
         """
-        return self.chain.success
+
+        return cast(bool, self.chain.success)
 
     @property
     def results(self) -> list[ActionResult]:
@@ -344,7 +351,7 @@ class FluentActions:
         Returns:
             List of ActionResult objects
         """
-        return self.chain.results
+        return cast(list[ActionResult], self.chain.results)
 
 
 # Example usage following Brobot patterns:

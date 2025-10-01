@@ -4,6 +4,8 @@ Complete state management system following Brobot's architecture.
 """
 
 from ..transition import StateTransition, StateTransitions
+from .action_history import ActionHistory
+from .action_snapshot import ActionSnapshot, ActionType, MatchResult
 from .initial_states import (
     InitialStates,
     get_initial_states,
@@ -41,6 +43,11 @@ __all__ = [
     "StateService",
     "Path",
     "PathFinder",
+    # Action history and snapshots
+    "ActionHistory",
+    "ActionSnapshot",
+    "ActionType",
+    "MatchResult",
     # Special states
     "NullState",
     "NullStateName",

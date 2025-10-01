@@ -4,13 +4,19 @@ Unit tests for TestClassifier.
 
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-try:
+if TYPE_CHECKING:
     from ..core.models import Dependency, TestFile, TestType
     from ..discovery.classifier import TestClassifier
-except ImportError:
-    from core.models import Dependency, TestFile, TestType
-    from discovery.classifier import TestClassifier
+else:
+    try:
+        from ..core.models import Dependency, TestFile, TestType
+        from ..discovery.classifier import TestClassifier
+    except ImportError:
+        from core.models import Dependency, TestFile, TestType
+
+        from discovery.classifier import TestClassifier
 
 
 class TestTestClassifier:

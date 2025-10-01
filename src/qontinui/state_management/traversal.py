@@ -6,7 +6,7 @@ from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 from .models import StateGraph, Transition, TransitionType
 
@@ -48,7 +48,7 @@ class StateTraversal:
         self.state_graph = state_graph
         self.visited_states: set[str] = set()
         self.traversal_history: list[tuple[str, Transition]] = []
-        self.cost_function: Callable | None = None
+        self.cost_function: Callable[..., Any] | None = None
 
     def find_path(
         self, start: str, goal: str, strategy: TraversalStrategy = TraversalStrategy.SHORTEST_PATH
@@ -102,7 +102,7 @@ class StateTraversal:
         Returns:
             TraversalResult if path found
         """
-        queue = deque([(start, [], [])])
+        queue: deque[tuple[str, list[str], list[Transition]]] = deque([(start, [], [])])
         visited = {start}
 
         while queue:
@@ -152,7 +152,7 @@ class StateTraversal:
         Returns:
             TraversalResult if path found
         """
-        stack = [(start, [], [], 0)]
+        stack: list[tuple[str, list[str], list[Transition], int]] = [(start, [], [], 0)]
         visited = set()
 
         while stack:
@@ -206,9 +206,9 @@ class StateTraversal:
         import heapq
 
         # Priority queue: (cost, state, path, transitions)
-        pq = [(0, start, [start], [])]
+        pq: list[tuple[float, str, list[str], list[Transition]]] = [(0, start, [start], [])]
         visited = set()
-        costs = {start: 0}
+        costs: dict[str, float] = {start: 0.0}
 
         while pq:
             current_cost, current, path, transitions = heapq.heappop(pq)
@@ -240,7 +240,7 @@ class StateTraversal:
                 new_cost = current_cost + transition_cost
 
                 if next_state not in costs or new_cost < costs[next_state]:
-                    costs[next_state] = new_cost
+                    costs[next_state] = float(new_cost)
                     heapq.heappush(
                         pq, (new_cost, next_state, path + [next_state], transitions + [transition])
                     )
@@ -267,9 +267,11 @@ class StateTraversal:
         import heapq
 
         # Priority queue: (f_score, cost, state, path, transitions)
-        pq = [(0, 0, start, [start], [])]
+        pq: list[tuple[float, float, str, list[str], list[Transition]]] = [
+            (0, 0, start, [start], [])
+        ]
         visited = set()
-        g_scores = {start: 0}
+        g_scores: dict[str, float] = {start: 0.0}
 
         while pq:
             _, current_cost, current, path, transitions = heapq.heappop(pq)
@@ -301,7 +303,7 @@ class StateTraversal:
                 new_g_score = current_cost + transition_cost
 
                 if next_state not in g_scores or new_g_score < g_scores[next_state]:
-                    g_scores[next_state] = new_g_score
+                    g_scores[next_state] = float(new_g_score)
 
                     # Calculate h score (heuristic)
                     h_score = self._heuristic(next_state, goal)
@@ -342,7 +344,7 @@ class StateTraversal:
         """
         current = start
         path = [start]
-        transitions = []
+        transitions: list[Transition] = []
         visited = {start}
 
         for step in range(max_steps):
@@ -386,8 +388,10 @@ class StateTraversal:
         Returns:
             TraversalResult if path found
         """
-        queue = deque([(start, [], [], set())])
-        global_visited = set()
+        queue: deque[tuple[str, list[str], list[Transition], set[str]]] = deque(
+            [(start, [], [], set())]
+        )
+        global_visited: set[str] = set()
 
         while queue:
             current, path, transitions, local_visited = queue.popleft()
@@ -446,7 +450,7 @@ class StateTraversal:
             Cost value
         """
         if self.cost_function:
-            return self.cost_function(transition)
+            return cast(float, self.cost_function(transition))
 
         # Default costs based on action type
         costs = {
@@ -525,4 +529,6 @@ class StateTraversal:
         Returns:
             Set of reachable state names
         """
-        return self.explore_graph(start, max_depth=float("inf"))
+        import sys
+
+        return self.explore_graph(start, max_depth=sys.maxsize)

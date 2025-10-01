@@ -6,7 +6,7 @@ Represents a variable declaration statement in the DSL.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .statement import Statement
 
@@ -64,7 +64,7 @@ class VariableDeclarationStatement(Statement):
         self.initial_value = initial_value
 
     @classmethod
-    def from_dict(cls, data: dict) -> VariableDeclarationStatement:
+    def from_dict(cls, data: dict[str, Any]) -> VariableDeclarationStatement:
         """Create VariableDeclarationStatement from dictionary.
 
         Args:
@@ -85,7 +85,7 @@ class VariableDeclarationStatement(Statement):
             initial_value=initial_value,
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:

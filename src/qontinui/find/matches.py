@@ -149,8 +149,8 @@ class Matches:
         """
 
         def position_key(match: Match):
-            y = match.location.y if top_to_bottom else -match.location.y
-            x = match.location.x if left_to_right else -match.location.x
+            y = match.target.y if top_to_bottom else -match.target.y
+            x = match.target.x if left_to_right else -match.target.x
             return (y, x)
 
         self._matches.sort(key=position_key)
@@ -219,12 +219,18 @@ class Matches:
 
         # Sort by similarity (best first)
         sorted_matches = sorted(self._matches, key=lambda m: m.similarity, reverse=True)
-        kept_matches = []
+        kept_matches: list[Match] = []
 
         for match in sorted_matches:
             # Check if overlaps with any kept match
             overlaps = False
+            # Skip matches without regions
+            if match.region is None:
+                continue
+
             for kept in kept_matches:
+                if kept.region is None:
+                    continue
                 intersection = match.region.intersection(kept.region)
                 if intersection:
                     overlap_ratio = intersection.area / min(match.region.area, kept.region.area)
@@ -271,6 +277,14 @@ class Matches:
         """
         return self._matches.copy()
 
+    def get_matches(self) -> list[Match]:
+        """Get list of all matches (alias for to_list).
+
+        Returns:
+            List of Match objects
+        """
+        return self._matches.copy()
+
     def clear(self) -> "Matches":
         """Clear all matches.
 
@@ -300,7 +314,10 @@ class Matches:
         """String representation."""
         if not self._matches:
             return "Matches(empty)"
-        return f"Matches({len(self._matches)} matches, best={self.best.similarity:.3f})"
+        best = self.best
+        if best is None:
+            return f"Matches({len(self._matches)} matches)"
+        return f"Matches({len(self._matches)} matches, best={best.similarity:.3f})"
 
     def __repr__(self) -> str:
         """Developer representation."""

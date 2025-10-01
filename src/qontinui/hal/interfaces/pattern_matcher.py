@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -44,7 +45,7 @@ class Feature:
     angle: float
     response: float
     octave: int
-    descriptor: np.ndarray | None = None
+    descriptor: np.ndarray[Any, Any] | None = None
 
 
 class IPatternMatcher(ABC):
@@ -128,7 +129,7 @@ class IPatternMatcher(ABC):
         self,
         haystack: Image.Image,
         needle: Image.Image,
-        scales: list[float] = None,
+        scales: list[float] | None = None,
         confidence: float = 0.9,
     ) -> Match | None:
         """Find pattern at multiple scales.

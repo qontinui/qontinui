@@ -91,7 +91,7 @@ class ImageLoadingDiagnostics:
         """
         logger.info("=== Qontinui Image Loading Diagnostics ===")
 
-        results = {}
+        results: dict[str, Any] = {}
 
         # 1. Environment Information
         results["environment"] = self._get_environment_info()
@@ -108,8 +108,9 @@ class ImageLoadingDiagnostics:
 
         # 4. Test Specific Images
         if self.config.test_images:
-            results["specific_tests"] = self._test_specific_images()
-            self._print_test_results(results["specific_tests"])
+            specific_tests = self._test_specific_images()
+            results["specific_tests"] = specific_tests
+            self._print_test_results(specific_tests)
 
         # 5. Test All Found Images
         if self.config.test_all_images:
@@ -122,8 +123,9 @@ class ImageLoadingDiagnostics:
             self._print_performance_report(results["performance"])
 
         # 7. Recommendations
-        results["recommendations"] = self._generate_recommendations(results)
-        self._print_recommendations(results["recommendations"])
+        recommendations = self._generate_recommendations(results)
+        results["recommendations"] = recommendations
+        self._print_recommendations(recommendations)
 
         logger.info("=== Image Loading Diagnostics Complete ===")
 
@@ -173,7 +175,7 @@ class ImageLoadingDiagnostics:
         Returns:
             Dictionary of library availability
         """
-        libraries = {}
+        libraries: dict[str, Any] = {}
 
         # Check PIL/Pillow
         try:
@@ -198,7 +200,7 @@ class ImageLoadingDiagnostics:
             import skimage
 
             libraries["scikit-image"] = True
-            libraries["skimage_version"] = skimage.__version__
+            libraries["skimage_version"] = skimage.__version__  # type: ignore[attr-defined]
         except ImportError:
             libraries["scikit-image"] = False
 
@@ -223,7 +225,7 @@ class ImageLoadingDiagnostics:
 
         settings = get_settings()
 
-        paths = {
+        paths: dict[str, Any] = {
             "image_path": settings.image_path,
             "screenshot_path": settings.screenshot_path,
             "python_path": sys.path[:5],  # First 5 paths
@@ -273,13 +275,15 @@ class ImageLoadingDiagnostics:
         Returns:
             Directory analysis
         """
-        analysis = {
+        file_types: defaultdict[str, int] = defaultdict(int)
+
+        analysis: dict[str, Any] = {
             "exists": True,
             "path": str(directory),
             "total_files": 0,
             "image_files": 0,
             "subdirectories": 0,
-            "file_types": defaultdict(int),
+            "file_types": file_types,
             "total_size_mb": 0.0,
         }
 
@@ -287,22 +291,22 @@ class ImageLoadingDiagnostics:
 
         for item in directory.rglob("*"):
             if item.is_file():
-                analysis["total_files"] += 1
+                analysis["total_files"] = analysis["total_files"] + 1  # type: ignore
                 extension = item.suffix.lower()
-                analysis["file_types"][extension] += 1
+                file_types[extension] += 1
 
                 if extension in image_extensions:
-                    analysis["image_files"] += 1
+                    analysis["image_files"] = analysis["image_files"] + 1  # type: ignore
 
                 try:
-                    analysis["total_size_mb"] += item.stat().st_size / (1024 * 1024)
+                    analysis["total_size_mb"] = analysis["total_size_mb"] + item.stat().st_size / (1024 * 1024)  # type: ignore
                 except Exception:
                     pass
 
             elif item.is_dir():
-                analysis["subdirectories"] += 1
+                analysis["subdirectories"] = analysis["subdirectories"] + 1  # type: ignore
 
-        analysis["file_types"] = dict(analysis["file_types"])
+        analysis["file_types"] = dict(file_types)
 
         return analysis
 
@@ -337,7 +341,7 @@ class ImageLoadingDiagnostics:
             from PIL import Image
 
             # Try different paths
-            paths_to_try = [
+            paths_to_try: list[str | Path] = [
                 image_name,
                 f"images/{image_name}",
                 f"resources/images/{image_name}",

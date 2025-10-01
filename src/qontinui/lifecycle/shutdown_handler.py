@@ -11,6 +11,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class QontinuiShutdownHandler:
         """Initialize shutdown handler."""
         self._shutdown_in_progress = False
         self._shutdown_lock = threading.Lock()
-        self._cleanup_callbacks: list[Callable] = []
+        self._cleanup_callbacks: list[Callable[..., Any]] = []
         self._exit_code = 0
 
         # Register signal handlers
@@ -205,7 +206,7 @@ class QontinuiShutdownHandler:
         except Exception as e:
             logger.warning(f"Error in final cleanup: {e}")
 
-    def register_cleanup_callback(self, callback: Callable):
+    def register_cleanup_callback(self, callback: Callable[..., Any]):
         """Register a callback to be executed during shutdown.
 
         Args:
@@ -221,7 +222,7 @@ class QontinuiShutdownHandler:
         Returns:
             True if shutdown has been initiated
         """
-        return self._shutdown_in_progress
+        return cast(bool, self._shutdown_in_progress)
 
     def abort_shutdown(self) -> bool:
         """Attempt to abort an in-progress shutdown.

@@ -6,7 +6,7 @@ Represents an if statement in the DSL.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .statement import Statement
 
@@ -71,7 +71,7 @@ class IfStatement(Statement):
         self.else_statements = else_statements or []
 
     @classmethod
-    def from_dict(cls, data: dict) -> IfStatement:
+    def from_dict(cls, data: dict[str, Any]) -> IfStatement:
         """Create IfStatement from dictionary.
 
         Args:
@@ -98,7 +98,7 @@ class IfStatement(Statement):
             condition=condition, then_statements=then_statements, else_statements=else_statements
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:

@@ -360,3 +360,11 @@ requirements.txt
 
 # Temporary development files
 temp_dev/
+
+*.txt
+*.md
+*.py
+*.sh
+mypy_errors_by_category/
+
+*.backup

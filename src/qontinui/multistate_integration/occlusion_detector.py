@@ -10,6 +10,7 @@ Detects and manages state occlusions:
 import logging
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, cast
 
 from qontinui.model.state.state import State
 from qontinui.model.transition.enhanced_state_transition import StateTransition
@@ -361,7 +362,7 @@ class OcclusionDetector:
         """
         active = self.state_memory.active_states
         occluded = self.get_all_occluded_states()
-        return active - occluded
+        return cast(set[int], active - occluded)
 
     def get_all_occluded_states(self) -> set[int]:
         """Get all currently occluded states.
@@ -441,7 +442,7 @@ class OcclusionDetector:
 
         return chain
 
-    def get_statistics(self) -> dict:
+    def get_statistics(self) -> dict[str, Any]:
         """Get occlusion detection statistics.
 
         Returns:
@@ -451,7 +452,7 @@ class OcclusionDetector:
         occluded = self.get_all_occluded_states()
         visible = self.get_visible_states()
 
-        occlusion_type_counts = {}
+        occlusion_type_counts: dict[str, int] = {}
         for relation in self.occlusions.values():
             type_name = relation.occlusion_type.value
             occlusion_type_counts[type_name] = occlusion_type_counts.get(type_name, 0) + 1

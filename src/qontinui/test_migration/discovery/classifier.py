@@ -3,16 +3,20 @@ Test classification logic for categorizing tests and analyzing mock usage.
 """
 
 import re
+from typing import TYPE_CHECKING, Any
 
-try:
+if TYPE_CHECKING:
     from ..core.models import GuiModel, MockUsage, TestFile, TestType
-except ImportError:
-    # Fallback for when running as standalone module
-    import sys
-    from pathlib import Path
+else:
+    try:
+        from ..core.models import GuiModel, MockUsage, TestFile, TestType
+    except ImportError:
+        # Fallback for when running as standalone module
+        import sys
+        from pathlib import Path
 
-    sys.path.append(str(Path(__file__).parent.parent))
-    from core.models import GuiModel, MockUsage, TestFile, TestType
+        sys.path.append(str(Path(__file__).parent.parent))
+        from core.models import GuiModel, MockUsage, TestFile, TestType
 
 
 class TestClassifier:
@@ -178,7 +182,7 @@ class TestClassifier:
         Returns:
             List of detected mock usage patterns
         """
-        mock_usages: list[str] = []
+        mock_usages: list[MockUsage] = []
 
         if not test_file.path.exists():
             return mock_usages
@@ -213,7 +217,7 @@ class TestClassifier:
         Returns:
             Dictionary mapping library categories to specific libraries
         """
-        dependency_analysis = {
+        dependency_analysis: dict[str, Any] = {
             "testing_frameworks": [],
             "mocking_frameworks": [],
             "spring_testing": [],
@@ -415,3 +419,27 @@ class TestClassifier:
             return "method"
         else:
             return "method"  # Default to method scope
+
+    def classify_test(self, test_file: TestFile) -> TestType:
+        """
+        Classify a test as unit or integration.
+
+        Args:
+            test_file: Test file to classify
+
+        Returns:
+            TestType indicating whether test is unit or integration
+        """
+        return self.categorize_test(test_file)
+
+    def analyze_mock_usage(self, test_file: TestFile) -> list[Any]:
+        """
+        Analyze mock usage in a test file.
+
+        Args:
+            test_file: Test file to analyze
+
+        Returns:
+            List of mock usage patterns found
+        """
+        return self.detect_mock_usage(test_file)

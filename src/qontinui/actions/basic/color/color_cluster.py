@@ -5,6 +5,7 @@ K-means clustering and color analysis utilities.
 
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from sklearn.cluster import KMeans
@@ -49,7 +50,9 @@ class ColorClusterAnalyzer:
     n_clusters: int = 3  # Default number of clusters
     random_state: int = 42  # For reproducible results
 
-    def analyze_image(self, image: np.ndarray, n_clusters: int | None = None) -> list[ColorCluster]:
+    def analyze_image(
+        self, image: np.ndarray[Any, Any], n_clusters: int | None = None
+    ) -> list[ColorCluster]:
         """Analyze image colors using k-means clustering.
 
         Args:
@@ -93,7 +96,7 @@ class ColorClusterAnalyzer:
 
         return clusters
 
-    def find_dominant_colors(self, image: np.ndarray, top_n: int = 3) -> list[RGB]:
+    def find_dominant_colors(self, image: np.ndarray[Any, Any], top_n: int = 3) -> list[RGB]:
         """Find the most dominant colors in an image.
 
         Args:
@@ -107,7 +110,7 @@ class ColorClusterAnalyzer:
         return [cluster.center for cluster in clusters[:top_n]]
 
     def match_color_in_image(
-        self, image: np.ndarray, target_color: RGB, tolerance: int = 30
+        self, image: np.ndarray[Any, Any], target_color: RGB, tolerance: int = 30
     ) -> float:
         """Check how well a target color matches the image.
 
@@ -131,7 +134,7 @@ class ColorClusterAnalyzer:
                 best_distance = distance
                 best_cluster = cluster
 
-        if best_distance > tolerance:
+        if best_distance > tolerance or best_cluster is None:
             return 0.0
 
         # Calculate score based on distance and cluster size

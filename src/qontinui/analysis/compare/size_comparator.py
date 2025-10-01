@@ -44,11 +44,19 @@ class SizeComparator:
             A list containing [smaller pattern, larger pattern] if one can contain the other,
             or an empty list if no complete containment is possible
         """
-        patterns = []
-        p1w = p1.get_b_image().get_width()
-        p1h = p1.get_b_image().get_height()
-        p2w = p2.get_b_image().get_width()
-        p2h = p2.get_b_image().get_height()
+        patterns: list[Pattern] = []
+
+        # Type guards: ensure images exist
+        p1_img = p1.get_b_image()
+        p2_img = p2.get_b_image()
+
+        if p1_img is None or p2_img is None:
+            return patterns
+
+        p1w = p1_img.get_width()
+        p1h = p1_img.get_height()
+        p2w = p2_img.get_width()
+        p2h = p2_img.get_height()
 
         # if the width is greater and height smaller, or vice-versa, there's no fit.
         if p1w > p2w and p1h < p2h:

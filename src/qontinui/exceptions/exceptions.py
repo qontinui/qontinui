@@ -281,3 +281,81 @@ class ValidationException(QontinuiRuntimeException):
         self.field = field
         self.value = value
         self.reason = reason
+
+
+class StorageReadException(QontinuiRuntimeException):
+    """Thrown when a storage read operation fails."""
+
+    def __init__(self, key: str, storage_type: str, reason: str, cause: Exception | None = None):
+        """Construct a new storage read exception.
+
+        Args:
+            key: Storage key that failed
+            storage_type: Type of storage (JSON, Pickle, etc.)
+            reason: Reason for failure
+            cause: Underlying cause
+        """
+        message = f"Failed to read {storage_type} key '{key}': {reason}"
+        super().__init__(message, cause)
+        self.key = key
+        self.storage_type = storage_type
+        self.reason = reason
+
+
+class StorageWriteException(QontinuiRuntimeException):
+    """Thrown when a storage write operation fails."""
+
+    def __init__(self, key: str, storage_type: str, reason: str, cause: Exception | None = None):
+        """Construct a new storage write exception.
+
+        Args:
+            key: Storage key that failed
+            storage_type: Type of storage (JSON, Pickle, etc.)
+            reason: Reason for failure
+            cause: Underlying cause
+        """
+        message = f"Failed to write {storage_type} key '{key}': {reason}"
+        super().__init__(message, cause)
+        self.key = key
+        self.storage_type = storage_type
+        self.reason = reason
+
+
+class InferenceException(QontinuiRuntimeException):
+    """Thrown when a model inference operation fails."""
+
+    def __init__(self, model_name: str, reason: str, cause: Exception | None = None):
+        """Construct a new inference exception.
+
+        Args:
+            model_name: Name of the model that failed
+            reason: Description of the inference failure
+            cause: The underlying cause
+        """
+        message = f"Inference failed for model '{model_name}': {reason}"
+        super().__init__(message, cause)
+        self.model_name = model_name
+        self.reason = reason
+
+
+class ModelLoadException(QontinuiRuntimeException):
+    """Thrown when a model cannot be loaded."""
+
+    pass
+
+
+class VectorDatabaseException(QontinuiRuntimeException):
+    """Thrown when a vector database operation fails."""
+
+    def __init__(self, operation: str, details: str, cause: Exception | None = None):
+        """Construct a new vector database exception.
+
+        Args:
+            operation: Name of the operation that failed
+            details: Details about the failure
+            cause: The underlying cause
+        """
+        message = f"Vector database operation '{operation}' failed: {details}"
+        super().__init__(message, cause)
+        self.operation = operation
+        self.details = details

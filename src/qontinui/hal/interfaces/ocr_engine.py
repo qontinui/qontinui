@@ -43,7 +43,7 @@ class IOCREngine(ABC):
     """Interface for OCR operations."""
 
     @abstractmethod
-    def extract_text(self, image: Image.Image, languages: list[str] = None) -> str:
+    def extract_text(self, image: Image.Image, languages: list[str] | None = None) -> str:
         """Extract all text from image.
 
         Args:
@@ -57,7 +57,7 @@ class IOCREngine(ABC):
 
     @abstractmethod
     def get_text_regions(
-        self, image: Image.Image, languages: list[str] = None, min_confidence: float = 0.5
+        self, image: Image.Image, languages: list[str] | None = None, min_confidence: float = 0.5
     ) -> list[TextRegion]:
         """Get all text regions with bounding boxes.
 
@@ -107,7 +107,10 @@ class IOCREngine(ABC):
 
     @abstractmethod
     def extract_text_from_region(
-        self, image: Image.Image, region: tuple[int, int, int, int], languages: list[str] = None
+        self,
+        image: Image.Image,
+        region: tuple[int, int, int, int],
+        languages: list[str] | None = None,
     ) -> str:
         """Extract text from specific region.
 

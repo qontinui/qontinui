@@ -25,6 +25,7 @@ class FailureType(Enum):
     DEPENDENCY_ERROR = "dependency_error"
     MOCK_ERROR = "mock_error"
     RUNTIME_ERROR = "runtime_error"
+    UNKNOWN = "unknown"
 
 
 class SuspectedCause(Enum):
@@ -124,7 +125,7 @@ class DependencyMapping:
     java_import: str
     python_import: str
     adaptation_required: bool = False
-    adapter_function: Callable | None = None
+    adapter_function: Callable[..., Any] | None = None
 
 
 @dataclass

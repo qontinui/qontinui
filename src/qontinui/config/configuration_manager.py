@@ -5,8 +5,9 @@ Provides a unified interface for all configuration needs.
 
 import logging
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from .execution_environment import ExecutionEnvironment, ExecutionMode, get_environment
 from .framework_settings import FrameworkSettings, get_settings
@@ -210,7 +211,7 @@ class ConfigurationManager:
             load_dotenv(path)
 
             # Map specific environment variables
-            env_mappings = {
+            env_mappings: dict[str, tuple[str, Callable[[str], Any]]] = {
                 "QONTINUI_MOCK": ("mock", lambda x: x.lower() == "true"),
                 "QONTINUI_HEADLESS": ("headless", lambda x: x.lower() == "true"),
                 "QONTINUI_IMAGE_PATH": ("image_path", str),
@@ -276,7 +277,8 @@ class ConfigurationManager:
         Returns:
             FrameworkSettings instance
         """
-        return self.settings
+
+        return cast(FrameworkSettings, self.settings)
 
     def get_properties(self) -> QontinuiProperties:
         """Get Qontinui properties.
@@ -284,7 +286,8 @@ class ConfigurationManager:
         Returns:
             QontinuiProperties instance
         """
-        return self.settings.get_properties()
+
+        return cast(QontinuiProperties, self.settings.get_properties())
 
     def get_environment(self) -> ExecutionEnvironment:
         """Get execution environment.
@@ -292,7 +295,8 @@ class ConfigurationManager:
         Returns:
             ExecutionEnvironment instance
         """
-        return self.environment
+
+        return cast(ExecutionEnvironment, self.environment)
 
     def validate(self) -> list[str]:
         """Validate current configuration.

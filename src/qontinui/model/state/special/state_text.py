@@ -137,7 +137,7 @@ class StateText:
             name: State name
             state_enum: Optional state enum
         """
-        self._state = State(name=name, state_enum=state_enum)
+        self._state = State(name=name)
         self._special_type = SpecialStateType.NULL  # Can be overridden
         self._text_patterns: list[TextPattern] = []
         self._required_texts: set[str] = set()

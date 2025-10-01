@@ -44,7 +44,7 @@ class LiteralExpression(Expression):
         self.value = value
 
     @classmethod
-    def from_dict(cls, data: dict) -> "LiteralExpression":
+    def from_dict(cls, data: dict[str, Any]) -> "LiteralExpression":
         """Create LiteralExpression from dictionary.
 
         Args:
@@ -55,7 +55,7 @@ class LiteralExpression(Expression):
         """
         return cls(value_type=data.get("valueType", ""), value=data.get("value"))
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:
@@ -66,7 +66,7 @@ class LiteralExpression(Expression):
         result["value"] = self.value
         return result
 
-    def evaluate(self, context: dict) -> Any:
+    def evaluate(self, context: dict[str, Any]) -> Any:
         """Evaluate the expression (returns the literal value).
 
         Args:

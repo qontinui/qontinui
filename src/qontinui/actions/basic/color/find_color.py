@@ -5,6 +5,7 @@ Color-based pattern matching and scene classification.
 
 import logging
 from dataclasses import dataclass, field
+from typing import Any, cast
 
 import cv2
 import numpy as np
@@ -55,21 +56,21 @@ class ColorProfile:
         h_low = (self.h_mean - self.h_std * std_range) % 360
         h_high = (self.h_mean + self.h_std * std_range) % 360
         if h_low > h_high:  # Wraps around 0
-            h_matches = hsv.h >= h_low or hsv.h <= h_high
+            h_matches = hsv.hue >= h_low or hsv.hue <= h_high
         else:
-            h_matches = h_low <= hsv.h <= h_high
+            h_matches = h_low <= hsv.hue <= h_high
 
         # Check saturation
         s_low = max(0, self.s_mean - self.s_std * std_range)
         s_high = min(255, self.s_mean + self.s_std * std_range)
-        s_matches = s_low <= hsv.s <= s_high
+        s_matches = s_low <= hsv.saturation <= s_high
 
         # Check value
         v_low = max(0, self.v_mean - self.v_std * std_range)
         v_high = min(255, self.v_mean + self.v_std * std_range)
-        v_matches = v_low <= hsv.v <= v_high
+        v_matches = v_low <= hsv.value <= v_high
 
-        return h_matches and s_matches and v_matches
+        return cast(bool, h_matches and s_matches and v_matches)
 
 
 @dataclass
@@ -147,7 +148,10 @@ class FindColor:
             matches.add_match(match)
 
     def _find_kmeans(
-        self, scene: np.ndarray, object_collection: ObjectCollection, options: ColorFindOptions
+        self,
+        scene: np.ndarray[Any, Any],
+        object_collection: ObjectCollection,
+        options: ColorFindOptions,
     ) -> list[Match]:
         """Find using k-means clustering.
 
@@ -181,7 +185,10 @@ class FindColor:
         return matches
 
     def _find_mu(
-        self, scene: np.ndarray, object_collection: ObjectCollection, options: ColorFindOptions
+        self,
+        scene: np.ndarray[Any, Any],
+        object_collection: ObjectCollection,
+        options: ColorFindOptions,
     ) -> list[Match]:
         """Find using mean/std color statistics.
 
@@ -212,7 +219,10 @@ class FindColor:
         return matches
 
     def _find_classification(
-        self, scene: np.ndarray, object_collection: ObjectCollection, options: ColorFindOptions
+        self,
+        scene: np.ndarray[Any, Any],
+        object_collection: ObjectCollection,
+        options: ColorFindOptions,
     ) -> list[Match]:
         """Find using multi-class classification.
 
@@ -276,16 +286,15 @@ class FindColor:
                 region = Region(x, y, w, h)
 
                 match = Match(
-                    location=region.center,
-                    region=region,
-                    similarity=0.9,  # Classification doesn't have similarity
-                    pattern_id=f"class_{class_id}",
+                    target=Location(region=region),
+                    score=0.9,  # Classification doesn't have similarity
+                    name=f"class_{class_id}",
                 )
                 matches.append(match)
 
         return matches
 
-    def _get_kmeans_colors(self, image: np.ndarray, n_clusters: int) -> list[RGB]:
+    def _get_kmeans_colors(self, image: np.ndarray[Any, Any], n_clusters: int) -> list[RGB]:
         """Get dominant colors using k-means.
 
         Args:
@@ -310,7 +319,7 @@ class FindColor:
 
         return colors
 
-    def _get_color_profile(self, image: np.ndarray) -> ColorProfile:
+    def _get_color_profile(self, image: np.ndarray[Any, Any]) -> ColorProfile:
         """Calculate color statistics for image.
 
         Args:
@@ -353,7 +362,7 @@ class FindColor:
         return profile
 
     def _find_color_regions(
-        self, scene: np.ndarray, color: RGB, min_size: int, tolerance: int = 30
+        self, scene: np.ndarray[Any, Any], color: RGB, min_size: int, tolerance: int = 30
     ) -> list[Match]:
         """Find regions matching a specific color.
 
@@ -372,16 +381,16 @@ class FindColor:
         # Create color range
         lower = np.array(
             [
-                max(0, target_hsv.h - tolerance),
-                max(0, target_hsv.s - tolerance),
-                max(0, target_hsv.v - tolerance),
+                max(0, target_hsv.hue - tolerance),
+                max(0, target_hsv.saturation - tolerance),
+                max(0, target_hsv.value - tolerance),
             ]
         )
         upper = np.array(
             [
-                min(179, target_hsv.h + tolerance),
-                min(255, target_hsv.s + tolerance),
-                min(255, target_hsv.v + tolerance),
+                min(179, target_hsv.hue + tolerance),
+                min(255, target_hsv.saturation + tolerance),
+                min(255, target_hsv.value + tolerance),
             ]
         )
 
@@ -405,7 +414,7 @@ class FindColor:
         return matches
 
     def _find_profile_regions(
-        self, scene: np.ndarray, profile: ColorProfile, min_size: int
+        self, scene: np.ndarray[Any, Any], profile: ColorProfile, min_size: int
     ) -> list[Match]:
         """Find regions matching a color profile.
 
@@ -453,13 +462,13 @@ class FindColor:
             Score (0.0-1.0)
         """
         # Calculate normalized distances
-        h_dist = abs(hsv.h - profile.h_mean) / 180.0
-        s_dist = abs(hsv.s - profile.s_mean) / 255.0
-        v_dist = abs(hsv.v - profile.v_mean) / 255.0
+        h_dist = abs(hsv.hue - profile.h_mean) / 180.0
+        s_dist = abs(hsv.saturation - profile.s_mean) / 255.0
+        v_dist = abs(hsv.value - profile.v_mean) / 255.0
 
         # Combined score (inverse of distance)
         avg_dist = (h_dist + s_dist + v_dist) / 3.0
-        return max(0.0, 1.0 - avg_dist)
+        return cast(float, max(0.0, 1.0 - avg_dist))
 
     def _filter_by_area(self, matches: list[Match], options: ColorFindOptions) -> list[Match]:
         """Filter matches by area constraints.
@@ -492,7 +501,7 @@ class FindColor:
         logger.debug(f"Filtered {len(matches) - len(filtered)} matches by area")
         return filtered
 
-    def _get_target_images(self, object_collection: ObjectCollection) -> list[np.ndarray]:
+    def _get_target_images(self, object_collection: ObjectCollection) -> list[np.ndarray[Any, Any]]:
         """Get target images from collection.
 
         Args:
@@ -505,7 +514,9 @@ class FindColor:
         # For now, return empty list as placeholder
         return []
 
-    def _get_classification_images(self, object_collection: ObjectCollection) -> list[np.ndarray]:
+    def _get_classification_images(
+        self, object_collection: ObjectCollection
+    ) -> list[np.ndarray[Any, Any]]:
         """Get all images for classification.
 
         Args:
@@ -518,7 +529,7 @@ class FindColor:
         # For now, return empty list as placeholder
         return []
 
-    def _capture_scene(self, options: ColorFindOptions) -> np.ndarray | None:
+    def _capture_scene(self, options: ColorFindOptions) -> np.ndarray[Any, Any] | None:
         """Capture scene for analysis.
 
         Args:

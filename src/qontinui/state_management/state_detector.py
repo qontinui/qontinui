@@ -4,10 +4,10 @@ Discovers active states through visual pattern matching in the framework.
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from ..actions.action import Action
-from ..actions.object_collection import ObjectCollection
+from ..actions.object_collection import ObjectCollectionBuilder
 from ..model.state.special.special_state_type import SpecialStateType
 from .state_memory import StateMemory
 
@@ -150,7 +150,7 @@ class StateDetector:
                 logger.warning(
                     "No states found after comprehensive search, defaulting to UNKNOWN state"
                 )
-                self.state_memory.add_active_state(SpecialStateType.UNKNOWN.get_id())
+                self.state_memory.add_active_state(SpecialStateType.UNKNOWN.value)
             else:
                 logger.info(f"Rebuilt active states: {self.state_memory.get_active_state_names()}")
 
@@ -213,14 +213,18 @@ class StateDetector:
 
         # The state will be automatically activated in StateMemory by ActionExecution
         # when patterns are found
-        result = self.action.find(ObjectCollection.Builder().with_non_shared_images(state).build())
+        from ..actions.basic.find.pattern_find_options import PatternFindOptionsBuilder
 
-        found = result.is_success()
+        collection = ObjectCollectionBuilder().with_non_shared_images(state).build()
+        config = PatternFindOptionsBuilder().build()
+        result = self.action.perform(config, collection)
+
+        found = result.is_success
 
         if found:
             logger.debug(f"State '{state_name}' found and activated")
 
-        return found
+        return cast(bool, found)
 
     def find_state(self, state_id: int) -> bool:
         """Search for a specific state by ID on the current screen.
@@ -249,14 +253,18 @@ class StateDetector:
 
         # The state will be automatically activated in StateMemory by ActionExecution
         # when patterns are found
-        result = self.action.find(ObjectCollection.Builder().with_non_shared_images(state).build())
+        from ..actions.basic.find.pattern_find_options import PatternFindOptionsBuilder
 
-        found = result.is_success()
+        collection = ObjectCollectionBuilder().with_non_shared_images(state).build()
+        config = PatternFindOptionsBuilder().build()
+        result = self.action.perform(config, collection)
+
+        found = result.is_success
 
         if found:
             logger.debug(f"State '{state_name}' (ID: {state_id}) found and activated")
 
-        return found
+        return cast(bool, found)
 
     def refresh_active_states(self) -> set[int]:
         """Completely reset and rediscover all active states.

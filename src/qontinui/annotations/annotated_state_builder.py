@@ -4,12 +4,12 @@ Builds State objects from @state annotated classes.
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from ..model.state.state import State
 from ..model.state.state_location import StateLocation
 from ..model.state.state_region import StateRegion
-from .state_component_extractor import StateComponentExtractor
+from .state_component_extractor import StateComponentExtractor, StateComponents
 
 logger = logging.getLogger(__name__)
 
@@ -56,11 +56,10 @@ class AnnotatedStateBuilder:
         # Extract components from the state instance
         components = self.component_extractor.extract_components(state_instance)
 
-        # Set the owner state name for all extracted components
-        self._set_owner_state_name_for_components(components, state_name)
+        # Build the State object using the StateBuilder constructor
+        from ..model.state.state import StateBuilder
 
-        # Build the State object using the string constructor
-        state_builder = State.builder(state_name)
+        state_builder = StateBuilder(state_name)
 
         # Add all extracted components
         if components.state_images:
@@ -88,55 +87,56 @@ class AnnotatedStateBuilder:
             f"Built state '{state_name}' with {components.get_total_components()} total components"
         )
 
-        return state
+        # Set the owner state for all extracted components after State is built
+        self._set_owner_state_for_components(components, state)
 
-    def _set_owner_state_name_for_components(
-        self, components: "StateComponentExtractor.StateComponents", state_name: str
-    ) -> None:
-        """Set the owner state name for all components.
+        return cast(State, state)
+
+    def _set_owner_state_for_components(self, components: StateComponents, state: State) -> None:
+        """Set the owner state for all components.
 
         This ensures that all StateObjects know which state they belong to,
         which is essential for features like cross-state search region resolution.
 
         Args:
             components: Extracted state components
-            state_name: Name of the owning state
+            state: The owning State object
         """
-        # Set owner state name for all StateImages
+        # Set owner state for all StateImages
         for state_image in components.state_images:
-            previous_owner = state_image.owner_state_name
-            state_image.owner_state_name = state_name
+            previous_owner = state_image.owner_state_name if state_image.owner_state else None
+            state_image.owner_state_name = state.name  # type: ignore[misc]
             logger.info(
-                f"Set owner state '{state_name}' for StateImage '{state_image.name}' "
+                f"Set owner state '{state.name}' for StateImage '{state_image.name}' "
                 f"(was: '{previous_owner}')"
             )
 
-        # Set owner state name for all StateStrings
+        # Set owner state for all StateStrings
         for state_string in components.state_strings:
-            state_string.owner_state_name = state_name
-            logger.debug(f"Set owner state '{state_name}' for StateString '{state_string.name}'")
+            state_string.owner_state = state
+            logger.debug(f"Set owner state '{state.name}' for StateString '{state_string.name}'")
 
-        # Set owner state name for all StateObjects (handle specific types)
+        # Set owner state for all StateObjects (handle specific types)
         for state_object in components.state_objects:
             # StateObject is a base class - check for specific implementations
             if isinstance(state_object, StateLocation):
-                state_object.owner_state_name = state_name
+                state_object.owner_state = state
                 logger.debug(
-                    f"Set owner state '{state_name}' for StateLocation '{state_object.name}'"
+                    f"Set owner state '{state.name}' for StateLocation '{state_object.name}'"
                 )
             elif isinstance(state_object, StateRegion):
-                state_object.owner_state_name = state_name
+                state_object.owner_state = state
                 logger.debug(
-                    f"Set owner state '{state_name}' for StateRegion '{state_object.name}'"
+                    f"Set owner state '{state.name}' for StateRegion '{state_object.name}'"
                 )
             else:
                 logger.debug(
-                    f"StateObject '{state_object.name}' type {state_object.__class__.__name__} "
-                    "does not support owner state name"
+                    f"StateObject '{state_object.get_name()}' type {state_object.__class__.__name__} "
+                    "does not support owner state"
                 )
 
         logger.debug(
-            f"Set owner state name '{state_name}' for {components.get_total_components()} components"
+            f"Set owner state '{state.name}' for {components.get_total_components()} components"
         )
 
     def _derive_state_name(self, state_class: type) -> str:

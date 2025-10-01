@@ -6,24 +6,12 @@ Lightweight reference to StateObject instances.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import TYPE_CHECKING
+
+from .state_object import StateObjectType
 
 if TYPE_CHECKING:
     from .state_object import StateObject
-
-
-class StateObjectType(Enum):
-    """Types of state objects.
-
-    Port of StateObject from Qontinui framework.Type enum.
-    """
-
-    IMAGE = "IMAGE"
-    REGION = "REGION"
-    LOCATION = "LOCATION"
-    STRING = "STRING"
-    MATCHES = "MATCHES"
 
 
 @dataclass

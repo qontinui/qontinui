@@ -9,7 +9,7 @@ import traceback
 from collections.abc import Callable
 from datetime import datetime
 from threading import Thread
-from typing import Any
+from typing import Any, TypedDict, cast
 
 import psutil
 from prometheus_client import REGISTRY, Counter, Gauge, Histogram, Summary, generate_latest
@@ -19,6 +19,13 @@ from ..config import get_settings
 from ..logging import get_logger
 
 logger = get_logger(__name__)
+
+
+class HealthCheckInfo(TypedDict):
+    """Type definition for health check information."""
+
+    func: Callable[[], bool]
+    critical: bool
 
 
 # Define Prometheus metrics
@@ -114,7 +121,7 @@ class MetricsCollector:
     def __init__(self):
         """Initialize metrics collector."""
         self.settings = get_settings()
-        self.start_time = time.time()
+        self.start_time: float = time.time()
         self._running = False
         self._thread: Thread | None = None
         self._custom_metrics: dict[str, Any] = {}
@@ -328,6 +335,7 @@ class MetricsCollector:
 
         labels = labels or []
 
+        metric: Counter | Gauge | Histogram | Summary
         if metric_type == "counter":
             metric = Counter(name, description, labels)
         elif metric_type == "gauge":
@@ -348,7 +356,7 @@ class MetricsCollector:
         Returns:
             Metrics in Prometheus text format
         """
-        return generate_latest(REGISTRY)
+        return cast(bytes, generate_latest(REGISTRY))
 
     def get_uptime(self) -> float:
         """Get uptime in seconds.
@@ -370,7 +378,7 @@ class HealthCheck:
 
     def __init__(self):
         """Initialize health check."""
-        self.checks: dict[str, Callable[[], bool]] = {}
+        self.checks: dict[str, HealthCheckInfo] = {}
         self.last_results: dict[str, dict[str, Any]] = {}
 
     def register_check(
@@ -392,7 +400,7 @@ class HealthCheck:
         Returns:
             Health check results
         """
-        results = {
+        results: dict[str, Any] = {
             "status": "healthy",
             "timestamp": datetime.utcnow().isoformat(),
             "checks": {},
@@ -446,7 +454,8 @@ class HealthCheck:
         """
         if not self.last_results:
             self.run_checks()
-        return self.last_results.get("status", "unknown")
+        status = self.last_results.get("status", "unknown")
+        return str(status) if status is not None else "unknown"
 
     def is_healthy(self) -> bool:
         """Check if system is healthy.
@@ -466,21 +475,21 @@ health_check = HealthCheck()
 def check_memory() -> bool:
     """Check if memory usage is acceptable."""
     process = psutil.Process()
-    memory_mb = process.memory_info().rss / 1024 / 1024
+    memory_mb = cast(float, process.memory_info().rss / 1024 / 1024)
     return memory_mb < 1000  # Less than 1GB
 
 
 def check_cpu() -> bool:
     """Check if CPU usage is acceptable."""
-    cpu_percent = psutil.cpu_percent(interval=0.1)
+    cpu_percent = cast(float, psutil.cpu_percent(interval=0.1))
     return cpu_percent < 90
 
 
 def check_disk() -> bool:
     """Check if disk space is available."""
     settings = get_settings()
-    usage = psutil.disk_usage(str(settings.data_path))
-    return usage.percent < 90
+    usage = psutil.disk_usage(str(settings.dataset_path))
+    return cast(bool, usage.percent < 90)
 
 
 # Register default checks

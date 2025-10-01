@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 from dataclasses import dataclass
+from typing import Any, cast
 
 # Add multistate to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../../multistate/src"))
@@ -19,7 +20,10 @@ from multistate.pathfinding.multi_target import SearchStrategy  # noqa: E402
 from multistate.transitions.transition import Transition as MultiTransition  # noqa: E402
 
 from qontinui.model.state.state import State as QontinuiState  # noqa: E402
-from qontinui.model.transition.enhanced_state_transition import StateTransition  # noqa: E402
+from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
+from qontinui.model.transition.enhanced_state_transition import (
+    TaskSequenceStateTransition as StateTransition,
+)
 from qontinui.state_management.state_memory import StateMemory  # noqa: E402
 
 logger = logging.getLogger(__name__)
@@ -82,7 +86,7 @@ class MultiStateAdapter:
         multistate_id = f"state_{qontinui_state.name.replace(' ', '_').lower()}"
 
         # Check if already registered
-        if qontinui_state.id in self.state_mappings:
+        if qontinui_state.id is not None and qontinui_state.id in self.state_mappings:
             return self.state_mappings[qontinui_state.id].multistate_state
 
         # Determine if state is blocking (modal dialogs, etc.)
@@ -96,7 +100,10 @@ class MultiStateAdapter:
             group=self._get_state_group(qontinui_state),
         )
 
-        # Create mapping
+        # Create mapping (only if qontinui_state has a valid ID)
+        if qontinui_state.id is None:
+            raise ValueError(f"Cannot register state '{qontinui_state.name}' without an ID")
+
         mapping = StateMapping(
             qontinui_id=qontinui_state.id,
             multistate_id=multistate_id,
@@ -240,7 +247,7 @@ class MultiStateAdapter:
 
     def generate_reveal_transition(
         self, covering_state_id: int, hidden_state_ids: set[int]
-    ) -> StateTransition | None:
+    ) -> TaskSequenceStateTransition | None:
         """Generate a reveal transition for hidden states.
 
         When a covering state (like a modal dialog) closes, this generates
@@ -271,14 +278,12 @@ class MultiStateAdapter:
             covering_state=covering_multi, hidden_states=hidden_multi
         )
 
-        # Convert to Qontinui StateTransition
-        qontinui_trans = StateTransition(
-            id=len(self.dynamic_transitions),
+        # Convert to Qontinui TaskSequenceStateTransition
+        qontinui_trans = TaskSequenceStateTransition(
             name=f"Reveal hidden states under {covering_multi.name}",
-            from_states={covering_state_id},
             activate=hidden_state_ids,
             exit={covering_state_id},
-            score=0.1,  # Reveal transitions are low-cost
+            path_cost=1,  # Reveal transitions are low-cost
         )
 
         # Track dynamic transition
@@ -306,7 +311,7 @@ class MultiStateAdapter:
 
         # Check if state has blocking property set
         if hasattr(state, "blocking"):
-            return state.blocking
+            return cast(bool, state.blocking)
 
         return False
 
@@ -352,7 +357,7 @@ class MultiStateAdapter:
 
         logger.debug(f"Synced {len(multistate_active)} active states with MultiState")
 
-    def get_statistics(self) -> dict:
+    def get_statistics(self) -> dict[str, Any]:
         """Get statistics about the integrated system.
 
         Returns:

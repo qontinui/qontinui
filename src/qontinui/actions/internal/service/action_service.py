@@ -4,7 +4,7 @@ Central service for resolving action implementations based on configuration.
 """
 
 from collections.abc import Callable
-from typing import Optional
+from typing import Any, Optional
 
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
@@ -45,7 +45,7 @@ class ActionService:
         """
         self.basic_action = basic_action
         self.find_functions = find_functions
-        self._custom_find = None
+        self._custom_find: Callable[[ActionResult, list[ObjectCollection]], None] | None = None
 
     def set_custom_find(
         self, custom_find: Callable[[ActionResult, list[ObjectCollection]], None]
@@ -62,7 +62,7 @@ class ActionService:
         - Integration with external vision systems
 
         Args:
-            custom_find: Callable that accepts ActionResult to populate and
+            custom_find: Callable[..., Any] that accepts ActionResult to populate and
                         ObjectCollections to search within
         """
         if self.find_functions:
@@ -167,7 +167,7 @@ class FindStrategyRegistry:
         """Initialize the registry."""
         self._custom_finds = []
 
-    def add_custom_find(self, custom_find: Callable) -> None:
+    def add_custom_find(self, custom_find: Callable[..., Any]) -> None:
         """Add a custom find implementation.
 
         Args:

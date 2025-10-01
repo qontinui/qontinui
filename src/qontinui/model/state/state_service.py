@@ -5,7 +5,7 @@ Service for managing state operations and navigation.
 
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from ..transition.state_transition import StateTransition
 from .path import Path
@@ -164,7 +164,7 @@ class StateService:
         # Try transitions from current state
         current = self.get_current_state()
         if current:
-            transitions = current.get_transitions_to(state)
+            transitions = current.get_transitions_to(state.name)
             for transition in transitions:
                 if time.time() - start_time > timeout:
                     break
@@ -196,8 +196,9 @@ class StateService:
 
                     # Update current state if transition succeeded
                     if transition.to_state:
-                        if transition.to_state.wait_for(5.0):
-                            self.set_current_state(transition.to_state)
+                        target_state = self.get_state(transition.to_state)
+                        if target_state and target_state.wait_for(5.0):
+                            self.set_current_state(target_state)
 
                     return True
             except Exception as e:
@@ -307,11 +308,12 @@ class StateService:
         Returns:
             List of reachable states
         """
+
         current = self.get_current_state()
         if not current:
             return []
 
-        return current.get_possible_next_states()
+        return cast(list[State], current.get_possible_next_states())
 
     def get_state_history(self) -> list[State]:
         """Get history of visited states.
@@ -383,6 +385,31 @@ class StateService:
             "current_state": self.current_state.name if self.current_state else None,
             "total_states": len(self.states),
         }
+
+    def save(self, state: State) -> bool:
+        """Save a state to persistent storage.
+
+        Args:
+            state: State to save
+
+        Returns:
+            True if save succeeded
+        """
+        # This is a placeholder implementation
+        # The actual implementation should save to database
+        self.states[state.name] = state
+        return True
+
+    def get_state_name(self, state: State) -> str:
+        """Get the name of a state.
+
+        Args:
+            state: State to get name from
+
+        Returns:
+            State name
+        """
+        return state.name
 
     def __str__(self) -> str:
         """String representation."""

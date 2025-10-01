@@ -5,8 +5,9 @@ Migration orchestrator for coordinating the complete test migration process.
 import logging
 import traceback
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
-try:
+if TYPE_CHECKING:
     from .config import TestMigrationConfig
     from .core.interfaces import MigrationOrchestrator
     from .core.models import (
@@ -26,27 +27,49 @@ try:
     from .validation.diagnostic_reporter import DiagnosticReporterImpl
     from .validation.result_validator import ResultValidator
     from .validation.test_failure_analyzer import TestFailureAnalyzer
-except ImportError:
-    # Handle direct execution case
-    from config import TestMigrationConfig
-    from core.interfaces import MigrationOrchestrator
-    from core.models import (
-        FailureType,
-        MigrationConfig,
-        SuspectedCause,
-        TestFailure,
-        TestFile,
-        TestResult,
-        TestResults,
-    )
-    from discovery.classifier import TestClassifier
-    from discovery.scanner import BrobotTestScanner
-    from execution.hybrid_test_translator import HybridTestTranslator
-    from execution.pytest_runner import PytestRunner
-    from validation.coverage_tracker import CoverageTracker
-    from validation.diagnostic_reporter import DiagnosticReporterImpl
-    from validation.result_validator import ResultValidator
-    from validation.test_failure_analyzer import TestFailureAnalyzer
+else:
+    try:
+        from .config import TestMigrationConfig
+        from .core.interfaces import MigrationOrchestrator
+        from .core.models import (
+            FailureType,
+            MigrationConfig,
+            SuspectedCause,
+            TestFailure,
+            TestFile,
+            TestResult,
+            TestResults,
+        )
+        from .discovery.classifier import TestClassifier
+        from .discovery.scanner import BrobotTestScanner
+        from .execution.hybrid_test_translator import HybridTestTranslator
+        from .execution.pytest_runner import PytestRunner
+        from .validation.coverage_tracker import CoverageTracker
+        from .validation.diagnostic_reporter import DiagnosticReporterImpl
+        from .validation.result_validator import ResultValidator
+        from .validation.test_failure_analyzer import TestFailureAnalyzer
+    except ImportError:
+        # Handle direct execution case
+        from config import TestMigrationConfig
+        from core.interfaces import MigrationOrchestrator
+        from core.models import (
+            FailureType,
+            MigrationConfig,
+            SuspectedCause,
+            TestFailure,
+            TestFile,
+            TestResult,
+            TestResults,
+        )
+        from execution.hybrid_test_translator import HybridTestTranslator
+        from execution.pytest_runner import PytestRunner
+        from validation.coverage_tracker import CoverageTracker
+        from validation.diagnostic_reporter import DiagnosticReporterImpl
+        from validation.result_validator import ResultValidator
+        from validation.test_failure_analyzer import TestFailureAnalyzer
+
+        from discovery.classifier import TestClassifier
+        from discovery.scanner import BrobotTestScanner
 
 
 class TestMigrationOrchestrator(MigrationOrchestrator):
@@ -81,16 +104,24 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
         self.runner = PytestRunner()
         self.failure_analyzer = TestFailureAnalyzer()
         self.result_validator = ResultValidator()
+
+        # Type guards for config attributes
+        source_dir = Path(".")
+        if config is not None and config.source_directories:
+            source_dir = config.source_directories[0]
+
+        target_dir = Path(".")
+        if config is not None and config.target_directory is not None:
+            target_dir = config.target_directory
+
         self.coverage_tracker = CoverageTracker(
-            java_source_dir=(
-                config.source_directories[0] if config.source_directories else Path(".")
-            ),
-            python_target_dir=config.target_directory,
+            java_source_dir=source_dir,
+            python_target_dir=target_dir,
         )
         self.diagnostic_reporter = DiagnosticReporterImpl()
 
         # Migration state
-        self.migration_state = {
+        self.migration_state: dict[str, Any] = {
             "discovered_tests": [],
             "migrated_tests": [],
             "failed_migrations": [],
@@ -184,7 +215,7 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             self.logger.error(f"Validation failed: {str(e)}")
             return self._create_error_results(str(e))
 
-    def recover_from_failure(self, failed_test: str, error_info: dict) -> bool:
+    def recover_from_failure(self, failed_test: str, error_info: dict[str, Any]) -> bool:
         """
         Attempt to recover from a migration failure.
 
@@ -220,7 +251,7 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             self.logger.error(f"Recovery attempt failed: {str(e)}")
             return False
 
-    def get_migration_progress(self) -> dict:
+    def get_migration_progress(self) -> dict[str, Any]:
         """
         Get current migration progress information.
 
@@ -259,7 +290,7 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             self.logger.error(f"Test discovery failed: {str(e)}")
             raise
 
-    def _migrate_tests(self, test_files: list[TestFile], target_path: Path) -> list[dict]:
+    def _migrate_tests(self, test_files: list[TestFile], target_path: Path) -> list[dict[str, Any]]:
         """Migrate test files to Python equivalents."""
         migration_results = []
 
@@ -325,7 +356,7 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             results = self.runner.run_test_suite(target_path)
 
             # Update coverage tracking
-            self.coverage_tracker.update_coverage(results)
+            self.coverage_tracker.update_coverage(test_name="test_suite", coverage_data=results)
 
             return results
 
@@ -334,7 +365,7 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             raise
 
     def _analyze_and_report(
-        self, execution_results: TestResults, migration_results: list[dict]
+        self, execution_results: TestResults, migration_results: list[dict[str, Any]]
     ) -> TestResults:
         """Analyze results and generate comprehensive reports."""
         try:
@@ -403,8 +434,8 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
         return target_dir / python_name
 
     def _generate_migration_summary(
-        self, migration_results: list[dict], execution_results: TestResults
-    ) -> dict:
+        self, migration_results: list[dict[str, Any]], execution_results: TestResults
+    ) -> dict[str, Any]:
         """Generate a summary of the migration process."""
         successful_migrations = [r for r in migration_results if r["success"]]
         failed_migrations = [r for r in migration_results if not r["success"]]

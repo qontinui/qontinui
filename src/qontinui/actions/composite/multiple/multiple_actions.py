@@ -13,6 +13,9 @@ from typing import Any
 from ....model.action.action_record import ActionRecord
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
+from ...action_result import ActionResult
+from ...action_type import ActionType
+from ...object_collection import ObjectCollection
 
 
 class ExecutionStrategy(Enum):
@@ -65,13 +68,17 @@ class ActionTask:
             if self.target is not None:
                 if hasattr(self.action, "execute"):
                     self.result = self.action.execute(self.target)
+                elif callable(self.action):
+                    self.result = self.action(self.target)  # type: ignore
                 else:
-                    self.result = self.action(self.target)
+                    raise RuntimeError(f"Action {self.action} is not executable")
             else:
                 if hasattr(self.action, "execute"):
                     self.result = self.action.execute()
+                elif callable(self.action):
+                    self.result = self.action()  # type: ignore
                 else:
-                    self.result = self.action()
+                    raise RuntimeError(f"Action {self.action} is not executable")
 
             self.end_time = time.time()
             return self.result
@@ -193,6 +200,36 @@ class MultipleActions(ActionInterface):
         self._tasks: list[ActionTask] = []
         self._execution_history: list[ActionRecord] = []
         self._stop_flag = threading.Event()
+
+    def get_action_type(self) -> ActionType:
+        """Return the action type.
+
+        Returns:
+            ActionType for the first action in tasks, or FIND if no tasks
+        """
+        if self._tasks:
+            first_action = self._tasks[0].action
+            if hasattr(first_action, "get_action_type"):
+                return first_action.get_action_type()
+        # Default to FIND as a generic action type
+        return ActionType.FIND
+
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+        """Execute multiple actions using the Qontinui framework pattern.
+
+        Args:
+            matches: Contains ActionOptions and accumulates execution results
+            object_collections: Collections containing targets for the actions
+        """
+        # Execute all actions
+        success = self.execute()
+
+        # Update matches with results
+        matches.success = success
+
+        # Add execution history to matches
+        for record in self._execution_history:
+            matches.add_execution_record(record)  # type: ignore[arg-type]
 
     def add(
         self,
@@ -413,7 +450,7 @@ class MultipleActions(ActionInterface):
             action_config=getattr(task.action, "options", None),
             text=task.name,
             duration=task.duration,
-            success=task.result or False,
+            action_success=task.result or False,
         )
         self._execution_history.append(record)
 
@@ -433,7 +470,9 @@ class MultipleActions(ActionInterface):
         Returns:
             Dictionary of task name to result
         """
-        return {task.name: task.result for task in self._tasks}
+        return {
+            task.name: (task.result if task.result is not None else False) for task in self._tasks
+        }
 
     def get_successful_tasks(self) -> list[ActionTask]:
         """Get list of successful tasks.

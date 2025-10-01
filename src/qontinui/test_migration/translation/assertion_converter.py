@@ -3,6 +3,7 @@ Assertion converter for mapping JUnit assertions to pytest assertions.
 """
 
 import re
+from typing import cast
 
 
 class AssertionConverter:
@@ -76,7 +77,7 @@ class AssertionConverter:
         # Find the assertion method
         for junit_method, converter_func in self._basic_assertion_mappings.items():
             if junit_method in assertion_line:
-                return converter_func(assertion_line)
+                return cast(str, converter_func(assertion_line))
 
         # If no specific assertion found, return as-is
         return assertion_line

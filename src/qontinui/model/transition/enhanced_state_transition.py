@@ -78,6 +78,12 @@ class StateTransition(ABC):
     - Path costs influence route selection
     """
 
+    # Identification
+    id: int = field(default_factory=lambda: id(object()))  # Unique transition ID
+
+    # Source states (where transition can originate from)
+    from_states: set[int] = field(default_factory=set)
+
     # Multi-state activation (from Brobot)
     activate: set[int] = field(default_factory=set)
     exit: set[int] = field(default_factory=set)
@@ -167,6 +173,15 @@ class StateTransition(ABC):
             True if all states are activated by this transition
         """
         return states.issubset(self.activate)
+
+    @property
+    def score(self) -> int:
+        """Get path-finding score as a property.
+
+        Returns:
+            Score value (path_cost)
+        """
+        return self.path_cost
 
     def __str__(self) -> str:
         """String representation."""

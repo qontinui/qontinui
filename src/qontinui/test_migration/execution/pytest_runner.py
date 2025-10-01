@@ -6,14 +6,19 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import TestRunner
     from ..core.models import TestResult, TestResults
-except ImportError:
-    # For standalone testing
-    from core.interfaces import TestRunner
-    from core.models import TestResult, TestResults
+else:
+    try:
+        from ..core.interfaces import TestRunner
+        from ..core.models import TestResult, TestResults
+    except ImportError:
+        # For standalone testing
+        from core.interfaces import TestRunner
+        from core.models import TestResult, TestResults
 
 
 class PytestRunner(TestRunner):
@@ -35,7 +40,7 @@ class PytestRunner(TestRunner):
             python_executable: Path to Python executable to use (defaults to sys.executable)
         """
         self.python_executable = python_executable or sys.executable
-        self.test_config = {}
+        self.test_config: dict[str, Any] = {}
         self.default_pytest_args = [
             "-v",  # Verbose output
             "--tb=short",  # Short traceback format
@@ -43,7 +48,7 @@ class PytestRunner(TestRunner):
             "--no-summary",  # No summary section
         ]
 
-    def configure_test_environment(self, config: dict) -> None:
+    def configure_test_environment(self, config: dict[str, Any]) -> None:
         """
         Configure the test execution environment.
 
@@ -296,7 +301,7 @@ class PytestRunner(TestRunner):
 
     def _discover_test_files(self, directory: Path) -> list[Path]:
         """Discover test files in the given directory."""
-        test_files = []
+        test_files: list[Path] = []
 
         # Common test file patterns
         patterns = ["test_*.py", "*_test.py"]
@@ -312,7 +317,10 @@ class PytestRunner(TestRunner):
         return sorted(set(test_files))
 
     def _parse_single_test_result(
-        self, test_file: Path, subprocess_result: subprocess.CompletedProcess, execution_time: float
+        self,
+        test_file: Path,
+        subprocess_result: subprocess.CompletedProcess[str],
+        execution_time: float,
     ) -> TestResult:
         """Parse the result of a single test execution."""
 
@@ -340,7 +348,7 @@ class PytestRunner(TestRunner):
     def _parse_suite_results(
         self,
         test_directory: Path,
-        subprocess_result: subprocess.CompletedProcess,
+        subprocess_result: subprocess.CompletedProcess[str],
         execution_time: float,
         test_files: list[Path],
     ) -> TestResults:
@@ -363,7 +371,7 @@ class PytestRunner(TestRunner):
             individual_results=individual_results,
         )
 
-    def _parse_test_counts(self, output: str) -> tuple:
+    def _parse_test_counts(self, output: str) -> tuple[Any, ...]:
         """Parse test counts from pytest output."""
         import re
 

@@ -1,6 +1,6 @@
 """Screen segmentation for UI element detection."""
 
-from typing import Any
+from typing import Any, cast
 
 import cv2
 import numpy as np
@@ -51,7 +51,7 @@ class ScreenSegmenter:
                 print(f"Failed to initialize SAM: {e}, falling back to OpenCV")
                 self.use_sam = False
 
-    def segment_screen(self, screenshot: np.ndarray) -> list[dict[str, Any]]:
+    def segment_screen(self, screenshot: np.ndarray[Any, Any]) -> list[dict[str, Any]]:
         """Segment a screenshot into UI elements.
 
         Args:
@@ -65,7 +65,7 @@ class ScreenSegmenter:
         else:
             return self._segment_with_opencv(screenshot)
 
-    def _segment_with_sam(self, screenshot: np.ndarray) -> list[dict[str, Any]]:
+    def _segment_with_sam(self, screenshot: np.ndarray[Any, Any]) -> list[dict[str, Any]]:
         """Segment using Segment Anything Model.
 
         Args:
@@ -76,6 +76,10 @@ class ScreenSegmenter:
         """
         # Convert BGR to RGB for SAM
         image_rgb = cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB)
+
+        # Type guard: ensure mask_generator is not None
+        if self.mask_generator is None:
+            return []
 
         # Generate masks
         masks = self.mask_generator.generate(image_rgb)
@@ -103,7 +107,7 @@ class ScreenSegmenter:
 
         return segments
 
-    def _segment_with_opencv(self, screenshot: np.ndarray) -> list[dict[str, Any]]:
+    def _segment_with_opencv(self, screenshot: np.ndarray[Any, Any]) -> list[dict[str, Any]]:
         """Segment using OpenCV contour detection.
 
         Args:
@@ -150,11 +154,14 @@ class ScreenSegmenter:
             segments.append(segment)
 
         # Sort by area (largest first)
-        segments.sort(key=lambda s: s["area"], reverse=True)
+
+        segments.sort(key=lambda s: float(cast(float, s["area"])), reverse=True)
 
         return segments
 
-    def _crop_image(self, img: np.ndarray, bbox: tuple[int, int, int, int]) -> np.ndarray:
+    def _crop_image(
+        self, img: np.ndarray[Any, Any], bbox: tuple[int, int, int, int]
+    ) -> np.ndarray[Any, Any]:
         """Crop image to bounding box.
 
         Args:
@@ -174,7 +181,7 @@ class ScreenSegmenter:
 
         return img[y:y2, x:x2]
 
-    def detect_text_regions(self, screenshot: np.ndarray) -> list[dict[str, Any]]:
+    def detect_text_regions(self, screenshot: np.ndarray[Any, Any]) -> list[dict[str, Any]]:
         """Detect text regions in screenshot.
 
         Args:
@@ -214,7 +221,7 @@ class ScreenSegmenter:
 
         return text_regions
 
-    def detect_buttons(self, screenshot: np.ndarray) -> list[dict[str, Any]]:
+    def detect_buttons(self, screenshot: np.ndarray[Any, Any]) -> list[dict[str, Any]]:
         """Detect button-like elements in screenshot.
 
         Args:

@@ -4,6 +4,8 @@ Waits for visual elements to disappear from the screen.
 """
 
 import time
+from datetime import timedelta
+from typing import Any
 
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
@@ -58,16 +60,16 @@ class Vanish(ActionInterface):
 
         action_result.success = vanished
         if vanished:
-            action_result.text = "Element(s) vanished successfully"
+            action_result.output_text = "Element(s) vanished successfully"
         else:
-            action_result.text = (
+            action_result.output_text = (
                 f"Element(s) still present after {vanish_options.get_max_wait_time()} seconds"
             )
 
     def _wait_for_vanish(
         self,
         action_result: ActionResult,
-        object_collections: tuple,
+        object_collections: tuple[Any, ...],
         max_wait: float,
         poll_interval: float,
     ) -> bool:
@@ -92,17 +94,19 @@ class Vanish(ActionInterface):
             # Check if elements are still present
             if self._elements_are_gone(action_result, object_collections):
                 # Elements have vanished
-                action_result.duration = time.time() - start_time
+                action_result.duration = timedelta(seconds=time.time() - start_time)
                 return True
 
             # Wait before next check
             time.sleep(poll_interval)
 
         # Timeout - elements still present
-        action_result.duration = max_wait
+        action_result.duration = timedelta(seconds=max_wait)
         return False
 
-    def _elements_are_gone(self, action_result: ActionResult, object_collections: tuple) -> bool:
+    def _elements_are_gone(
+        self, action_result: ActionResult, object_collections: tuple[Any, ...]
+    ) -> bool:
         """Check if elements are no longer present.
 
         Args:
@@ -112,9 +116,13 @@ class Vanish(ActionInterface):
         Returns:
             True if elements are gone, False if still present
         """
+        # Type guard: ensure find is not None
+        if self.find is None:
+            return True  # If no find configured, consider elements gone
+
         # Use Find to check for presence
         find_result = ActionResult(action_result.action_config)
         self.find.perform(find_result, *object_collections)
 
         # Elements are gone if Find fails or finds no matches
-        return not find_result.is_success() or len(find_result.match_list) == 0
+        return not find_result.is_success or len(find_result.match_list) == 0

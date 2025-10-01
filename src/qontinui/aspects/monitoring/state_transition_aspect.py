@@ -9,7 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import wraps
-from typing import Any
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +209,7 @@ class StateTransitionAspect:
             states = transition_instance._qontinui_transition_from
             if states:
                 # Return first state for simplicity
-                return states[0].__name__
+                return cast(str | None, states[0].__name__)
 
         return None
 
@@ -227,7 +227,7 @@ class StateTransitionAspect:
             states = transition_instance._qontinui_transition_to
             if states:
                 # Return first state for simplicity
-                return states[0].__name__
+                return cast(str | None, states[0].__name__)
 
         return None
 
@@ -417,7 +417,7 @@ class StateTransitionAspect:
 
         return "\\n".join(lines)
 
-    def get_navigation_patterns(self, min_length: int = 3) -> dict[tuple, int]:
+    def get_navigation_patterns(self, min_length: int = 3) -> dict[tuple[str, ...], int]:
         """Find common navigation patterns.
 
         Args:
@@ -426,7 +426,7 @@ class StateTransitionAspect:
         Returns:
             Dictionary of patterns to occurrence counts
         """
-        patterns = defaultdict(int)
+        patterns: defaultdict[tuple[str, ...], int] = defaultdict(int)
 
         for path in self._navigation_paths:
             if len(path) < min_length:

@@ -1,7 +1,7 @@
 """Element matching and similarity computation."""
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import faiss
 import numpy as np
@@ -31,7 +31,7 @@ class ElementMatcher:
         self.use_faiss = use_faiss
         self.embedding_dim = embedding_dim
         self.index = None
-        self.element_metadata = {}
+        self.element_metadata: dict[str, dict[str, Any]] = {}
 
         if use_faiss:
             self._initialize_faiss()
@@ -51,7 +51,7 @@ class ElementMatcher:
             print(f"Failed to initialize FAISS: {e}")
             self.use_faiss = False
 
-    def add_elements(self, embeddings: np.ndarray, metadata: list[dict[str, Any]]):
+    def add_elements(self, embeddings: np.ndarray[Any, Any], metadata: list[dict[str, Any]]):
         """Add elements to the search index.
 
         Args:
@@ -75,14 +75,14 @@ class ElementMatcher:
         else:
             # Store embeddings and metadata for sklearn fallback
             if not hasattr(self, "_embeddings"):
-                self._embeddings = []
+                self._embeddings: list[np.ndarray[Any, Any]] = []
                 self._metadata = []
 
             self._embeddings.extend(embeddings)
             self._metadata.extend(metadata)
 
     def find_similar(
-        self, query_embedding: np.ndarray, k: int = 5, threshold: float = 0.7
+        self, query_embedding: np.ndarray[Any, Any], k: int = 5, threshold: float = 0.7
     ) -> list[MatchResult]:
         """Find similar elements to a query embedding.
 
@@ -103,7 +103,7 @@ class ElementMatcher:
             return self._find_similar_sklearn(query_embedding, k, threshold)
 
     def _find_similar_faiss(
-        self, query_embedding: np.ndarray, k: int, threshold: float
+        self, query_embedding: np.ndarray[Any, Any], k: int, threshold: float
     ) -> list[MatchResult]:
         """Find similar elements using FAISS.
 
@@ -116,6 +116,8 @@ class ElementMatcher:
             List of MatchResult objects
         """
         # Search in FAISS index
+        if self.index is None:
+            return []
         k = min(k, self.index.ntotal)
         distances, indices = self.index.search(query_embedding.astype(np.float32), k)
 
@@ -134,7 +136,7 @@ class ElementMatcher:
         return results
 
     def _find_similar_sklearn(
-        self, query_embedding: np.ndarray, k: int, threshold: float
+        self, query_embedding: np.ndarray[Any, Any], k: int, threshold: float
     ) -> list[MatchResult]:
         """Find similar elements using sklearn.
 
@@ -171,7 +173,7 @@ class ElementMatcher:
 
         return results
 
-    def _normalize_embeddings(self, embeddings: np.ndarray) -> np.ndarray:
+    def _normalize_embeddings(self, embeddings: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
         """Normalize embeddings for cosine similarity.
 
         Args:
@@ -183,10 +185,13 @@ class ElementMatcher:
         norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
         # Avoid division by zero
         norms = np.where(norms == 0, 1, norms)
-        return embeddings / norms
+        return cast(np.ndarray[Any, Any], embeddings / norms)
 
     def match_template(
-        self, template_image: np.ndarray, screenshot: np.ndarray, method: str = "correlation"
+        self,
+        template_image: np.ndarray[Any, Any],
+        screenshot: np.ndarray[Any, Any],
+        method: str = "correlation",
     ) -> list[MatchResult]:
         """Match template image in screenshot using traditional CV.
 

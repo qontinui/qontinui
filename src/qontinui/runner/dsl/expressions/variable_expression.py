@@ -37,7 +37,7 @@ class VariableExpression(Expression):
         self.name = name
 
     @classmethod
-    def from_dict(cls, data: dict) -> "VariableExpression":
+    def from_dict(cls, data: dict[str, Any]) -> "VariableExpression":
         """Create VariableExpression from dictionary.
 
         Args:
@@ -48,7 +48,7 @@ class VariableExpression(Expression):
         """
         return cls(name=data.get("name", ""))
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:
@@ -58,7 +58,7 @@ class VariableExpression(Expression):
         result["name"] = self.name
         return result
 
-    def evaluate(self, context: dict) -> Any:
+    def evaluate(self, context: dict[str, Any]) -> Any:
         """Evaluate the expression (returns the variable value).
 
         Args:

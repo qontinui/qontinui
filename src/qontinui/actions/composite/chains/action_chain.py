@@ -12,6 +12,9 @@ from typing import Any
 from ....model.action.action_record import ActionRecord
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
+from ...action_result import ActionResult
+from ...action_type import ActionType
+from ...object_collection import ObjectCollection
 
 
 class ChainMode(Enum):
@@ -85,13 +88,17 @@ class ChainAction:
                 if self.target is not None:
                     if hasattr(self.action, "execute"):
                         result = self.action.execute(self.target)
+                    elif callable(self.action):
+                        result = self.action(self.target)  # type: ignore
                     else:
-                        result = self.action(self.target)
+                        raise RuntimeError(f"Action {self.action} is not executable")
                 else:
                     if hasattr(self.action, "execute"):
                         result = self.action.execute()
+                    elif callable(self.action):
+                        result = self.action()  # type: ignore
                     else:
-                        result = self.action()
+                        raise RuntimeError(f"Action {self.action} is not executable")
 
                 self.last_result = result
 
@@ -193,6 +200,36 @@ class ActionChain(ActionInterface):
         self._current_index = 0
         self._chain_result = True
 
+    def get_action_type(self) -> ActionType:
+        """Return the action type.
+
+        Returns:
+            ActionType for the first action in the chain, or FIND if chain is empty
+        """
+        if self._actions:
+            first_action = self._actions[0].action
+            if hasattr(first_action, "get_action_type"):
+                return first_action.get_action_type()
+        # Default to FIND as a generic action type
+        return ActionType.FIND
+
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+        """Execute the action chain using the Qontinui framework pattern.
+
+        Args:
+            matches: Contains ActionOptions and accumulates execution results
+            object_collections: Collections containing targets for the chain
+        """
+        # Execute the chain
+        success = self.execute()
+
+        # Update matches with results
+        matches.success = success
+
+        # Add execution history to matches
+        for record in self._execution_history:
+            matches.add_execution_record(record)  # type: ignore[arg-type]
+
     def add(self, action: ActionInterface, target: Any | None = None, **kwargs) -> "ActionChain":
         """Add action to chain.
 
@@ -242,7 +279,7 @@ class ActionChain(ActionInterface):
             def execute(self, target=None):
                 return self.action.execute(self.text, target)
 
-        return self.add(TypeWrapper(text), target)
+        return self.add(TypeWrapper(text), target)  # type: ignore[arg-type]
 
     def add_wait(self, seconds: float) -> "ActionChain":
         """Add wait action to chain.
@@ -279,7 +316,7 @@ class ActionChain(ActionInterface):
             def execute(self):
                 return self.action.execute(self.start, self.end)
 
-        return self.add(DragWrapper(start, end))
+        return self.add(DragWrapper(start, end))  # type: ignore[arg-type]
 
     def add_conditional(
         self, action: ActionInterface, condition: Callable[[], bool], target: Any | None = None
@@ -453,7 +490,7 @@ class ActionChain(ActionInterface):
             action_config=getattr(chain_action.action, "options", None),
             text=f"Chain action {self._current_index + 1}",
             duration=duration,
-            success=success,
+            action_success=success,
         )
         self._execution_history.append(record)
 

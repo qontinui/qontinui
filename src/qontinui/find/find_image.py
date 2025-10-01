@@ -25,7 +25,7 @@ class FindImage(Find):
         super().__init__()
         if image:
             if isinstance(image, str):
-                self.image(Image(name=image, path=image))
+                self.image(Image.from_file(image))
             else:
                 self.image(image)
 
@@ -105,7 +105,8 @@ class FindImage(Find):
         Returns:
             Self for chaining
         """
-        return self.search_region(region)
+        self.search_region(region)
+        return self
 
     def near(self, location: Location, radius: int) -> "FindImage":
         """Search near a specific location (fluent).
@@ -118,7 +119,8 @@ class FindImage(Find):
             Self for chaining
         """
         region = Region(location.x - radius, location.y - radius, radius * 2, radius * 2)
-        return self.search_region(region)
+        self.search_region(region)
+        return self
 
     def above(self, reference: Match | Region, distance: int = 100) -> "FindImage":
         """Search above a reference (fluent).
@@ -132,11 +134,14 @@ class FindImage(Find):
         """
         if isinstance(reference, Match):
             ref_region = reference.region
+            if ref_region is None:
+                raise ValueError("Match does not have a region")
         else:
             ref_region = reference
 
         search_region = ref_region.above(distance)
-        return self.search_region(search_region)
+        self.search_region(search_region)
+        return self
 
     def below(self, reference: Match | Region, distance: int = 100) -> "FindImage":
         """Search below a reference (fluent).
@@ -150,11 +155,14 @@ class FindImage(Find):
         """
         if isinstance(reference, Match):
             ref_region = reference.region
+            if ref_region is None:
+                raise ValueError("Match does not have a region")
         else:
             ref_region = reference
 
         search_region = ref_region.below(distance)
-        return self.search_region(search_region)
+        self.search_region(search_region)
+        return self
 
     def left_of(self, reference: Match | Region, distance: int = 100) -> "FindImage":
         """Search to the left of a reference (fluent).
@@ -168,11 +176,14 @@ class FindImage(Find):
         """
         if isinstance(reference, Match):
             ref_region = reference.region
+            if ref_region is None:
+                raise ValueError("Match does not have a region")
         else:
             ref_region = reference
 
         search_region = ref_region.left_of(distance)
-        return self.search_region(search_region)
+        self.search_region(search_region)
+        return self
 
     def right_of(self, reference: Match | Region, distance: int = 100) -> "FindImage":
         """Search to the right of a reference (fluent).
@@ -186,11 +197,14 @@ class FindImage(Find):
         """
         if isinstance(reference, Match):
             ref_region = reference.region
+            if ref_region is None:
+                raise ValueError("Match does not have a region")
         else:
             ref_region = reference
 
         search_region = ref_region.right_of(distance)
-        return self.search_region(search_region)
+        self.search_region(search_region)
+        return self
 
     def best_match(self) -> Match | None:
         """Find the best match by similarity.

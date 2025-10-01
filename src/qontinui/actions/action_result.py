@@ -5,10 +5,15 @@ Comprehensive results container for action executions.
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 if TYPE_CHECKING:
+    from ..find.match import Match
+    from .action_config import ActionConfig
     from .object_collection import ObjectCollection
+
+from ..model.element.location import Location
+from ..model.element.region import Region
 
 
 @dataclass
@@ -74,7 +79,7 @@ class ActionResult:
     action_config: Optional["ActionConfig"] = None
     """Configuration used for this action execution."""
 
-    def __init__(self, action_config: Optional["ActionConfig"] = None):
+    def __init__(self, action_config: Optional["ActionConfig"] = None) -> None:
         """Initialize ActionResult with optional configuration.
 
         Args:
@@ -146,9 +151,10 @@ class ActionResult:
         Returns:
             Optional containing the location, or None if no matches
         """
+
         best = self.get_best_match()
         if best and hasattr(best, "get_target"):
-            return best.get_target()
+            return cast(Location | None, best.get_target())
         return None
 
     def size(self) -> int:
@@ -185,10 +191,12 @@ class ActionResult:
             text: Text to add to the results
         """
         if self.text is None:
-            from ..model.element import Text
+            from ..model.element import Text as ElementText
 
-            self.text = Text()
-        if hasattr(self.text, "add"):
+            self.text = ElementText()  # type: ignore[assignment]
+
+        # Type guard: check text is not None before calling add
+        if self.text is not None and hasattr(self.text, "add"):
             self.text.add(text)
 
     def add_defined_region(self, region: "Region") -> None:
@@ -311,6 +319,88 @@ class ActionResult:
             summary.append(f"Extracted text: {self.text}")
         return "\n".join(summary)
 
+    @property
+    def is_success(self) -> bool:
+        """Check if action was successful as a property.
+
+        Returns:
+            True if action succeeded
+        """
+        return self.success
+
+    @property
+    def matches(self) -> list["Match"]:
+        """Get the list of matches as a property.
+
+        Returns:
+            List of matches
+        """
+        return self.match_list
+
+    def add_match(self, match: "Match") -> None:
+        """Add a single match to the result.
+
+        Args:
+            match: Match to add
+        """
+        self.add(match)
+
+    def add_text_result(self, text: str) -> None:
+        """Add a text result.
+
+        Args:
+            text: Text to add
+        """
+        self.add_string(text)
+
+    def add_match_location(self, location: "Location") -> None:
+        """Add a match location.
+
+        Args:
+            location: Location to add
+        """
+        # This is a placeholder - actual implementation may create a match from location
+        # For now, we'll just add it to movements if needed
+        pass
+
+    def get_match_locations(self) -> list["Location"]:
+        """Get all match target locations.
+
+        Returns:
+            List of locations from all matches
+        """
+        locations = []
+        for match in self.match_list:
+            if hasattr(match, "get_target"):
+                target = match.get_target()
+                if target:
+                    locations.append(target)
+        return locations
+
+    def get_movements(self) -> list["Movement"]:
+        """Get all movements from the action.
+
+        Returns:
+            List of movements
+        """
+        return self.movements
+
+    def get_execution_records(self) -> list["ActionRecord"]:
+        """Get all execution records.
+
+        Returns:
+            List of action records
+        """
+        return self.execution_history
+
+    def get_action_config(self) -> Optional["ActionConfig"]:
+        """Get the action configuration.
+
+        Returns:
+            Action configuration or None
+        """
+        return self.action_config
+
     def __str__(self) -> str:
         """String representation for debugging."""
         result = f"ActionResult: size={self.size()}"
@@ -320,28 +410,14 @@ class ActionResult:
 
 
 # Forward references
-class Match:
-    """Placeholder for Match class."""
-
-    pass
-
-
 class Text:
     """Placeholder for Text class."""
 
     pass
 
 
-class Region:
-    """Placeholder for Region class."""
-
-    pass
-
-
-class Location:
-    """Placeholder for Location class."""
-
-    pass
+# Region is imported from model.element.region
+# Location is imported from model.element.location
 
 
 class Movement:
@@ -352,11 +428,5 @@ class Movement:
 
 class ActionRecord:
     """Placeholder for ActionRecord class."""
-
-    pass
-
-
-class ActionConfig:
-    """Placeholder for ActionConfig class."""
 
     pass

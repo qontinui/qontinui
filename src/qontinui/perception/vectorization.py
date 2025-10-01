@@ -1,5 +1,7 @@
 """Element vectorization using vision models."""
 
+from typing import Any, cast
+
 import cv2
 import numpy as np
 from PIL import Image
@@ -41,7 +43,7 @@ class ObjectVectorizer:
         except Exception as e:
             print(f"Failed to initialize CLIP model: {e}")
 
-    def vectorize_element(self, element_image: np.ndarray) -> np.ndarray:
+    def vectorize_element(self, element_image: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
         """Generate embedding vector for a UI element.
 
         Args:
@@ -55,7 +57,7 @@ class ObjectVectorizer:
         else:
             return self._vectorize_fallback(element_image)
 
-    def _vectorize_with_clip(self, element_image: np.ndarray) -> np.ndarray:
+    def _vectorize_with_clip(self, element_image: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
         """Vectorize using CLIP model.
 
         Args:
@@ -76,6 +78,8 @@ class ObjectVectorizer:
         pil_image = Image.fromarray(rgb_image)
 
         # Process image
+        if self.clip_processor is None:
+            raise RuntimeError("CLIP processor not initialized")
         inputs = self.clip_processor(images=pil_image, return_tensors="pt")
 
         # Move to device
@@ -92,7 +96,7 @@ class ObjectVectorizer:
 
         return embedding
 
-    def _vectorize_fallback(self, element_image: np.ndarray) -> np.ndarray:
+    def _vectorize_fallback(self, element_image: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
         """Fallback vectorization using traditional computer vision features.
 
         Args:
@@ -121,7 +125,7 @@ class ObjectVectorizer:
 
         return np.array(features, dtype=np.float32)
 
-    def _extract_color_histogram(self, image: np.ndarray, bins: int = 32) -> list[float]:
+    def _extract_color_histogram(self, image: np.ndarray[Any, Any], bins: int = 32) -> list[float]:
         """Extract color histogram features.
 
         Args:
@@ -141,7 +145,7 @@ class ObjectVectorizer:
 
         return features
 
-    def _extract_edge_features(self, image: np.ndarray) -> list[float]:
+    def _extract_edge_features(self, image: np.ndarray[Any, Any]) -> list[float]:
         """Extract edge-based features.
 
         Args:
@@ -172,7 +176,7 @@ class ObjectVectorizer:
 
         return features
 
-    def _extract_texture_features(self, image: np.ndarray) -> list[float]:
+    def _extract_texture_features(self, image: np.ndarray[Any, Any]) -> list[float]:
         """Extract texture features using Gabor filters.
 
         Args:
@@ -190,14 +194,14 @@ class ObjectVectorizer:
             filtered = cv2.filter2D(gray, cv2.CV_32F, kernel)  # type: ignore[attr-defined]
             features.extend(
                 [
-                    np.mean(filtered),
-                    np.std(filtered),
+                    float(np.mean(filtered)),
+                    float(np.std(filtered)),
                 ]
             )
 
         return features
 
-    def _extract_shape_features(self, image: np.ndarray) -> list[float]:
+    def _extract_shape_features(self, image: np.ndarray[Any, Any]) -> list[float]:
         """Extract shape-based features.
 
         Args:
@@ -218,9 +222,9 @@ class ObjectVectorizer:
 
         features = [aspect_ratio] + hu_moments.tolist()[:7]
 
-        return features
+        return cast(list[float], features)
 
-    def vectorize_batch(self, images: list[np.ndarray]) -> np.ndarray:
+    def vectorize_batch(self, images: list[np.ndarray[Any, Any]]) -> np.ndarray[Any, Any]:
         """Vectorize a batch of images.
 
         Args:
@@ -236,7 +240,9 @@ class ObjectVectorizer:
 
         return np.array(embeddings)
 
-    def compute_similarity(self, embedding1: np.ndarray, embedding2: np.ndarray) -> float:
+    def compute_similarity(
+        self, embedding1: np.ndarray[Any, Any], embedding2: np.ndarray[Any, Any]
+    ) -> float:
         """Compute cosine similarity between two embeddings.
 
         Args:
@@ -262,7 +268,7 @@ class ObjectVectorizer:
         # Ensure in [0, 1] range
         return float(np.clip(similarity, 0, 1))
 
-    def encode_text(self, text: str | list[str]) -> np.ndarray:
+    def encode_text(self, text: str | list[str]) -> np.ndarray[Any, Any]:
         """Encode text descriptions for cross-modal matching.
 
         Args:

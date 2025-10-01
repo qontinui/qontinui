@@ -118,7 +118,9 @@ class ActionService:
             return Find(find_pipeline=FindPipeline())
         elif action_type == Click:
             # Click only needs click-specific dependencies (no Find - it's atomic)
-            return Click(click_location_once=SingleClickExecutor(), time=TimeProvider())
+            return Click(
+                options=None, click_location_once=SingleClickExecutor(), time=TimeProvider()
+            )
         else:
             # Create with no-arg constructor
             return action_type()

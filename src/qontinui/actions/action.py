@@ -3,7 +3,8 @@
 Entry point for executing GUI automation actions.
 """
 
-from typing import TYPE_CHECKING, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 if TYPE_CHECKING:
     from ..model.state.state_image import StateImage
@@ -195,7 +196,9 @@ class Action:
             # Now click on the found matches
             # Build collection with matches and any direct locations/regions
             click_builder = ObjectCollectionBuilder()
-            click_builder.with_matches(*find_result.match_list)
+            # Convert find.Match to model.Match objects
+            model_matches = [m.match_object for m in find_result.match_list]
+            click_builder.with_match_objects_as_regions(*model_matches)
             if locations:
                 click_builder.with_locations(*locations)
             if regions:
@@ -235,12 +238,45 @@ class Action:
         # return self.perform(config, collection)
         return ActionResult()  # Placeholder
 
+    def execute(self, action_func: Callable[[], Any], target: Any | None = None) -> ActionResult:
+        """Execute a primitive action function with lifecycle management.
+
+        Used by primitive actions (mouse, keyboard) to wrap their operations
+        with proper lifecycle management, timing, and error handling.
+
+        Args:
+            action_func: Callable that performs the actual action and returns
+                        either pure.ActionResult or action_result.ActionResult
+            target: Optional target information for logging/tracking
+
+        Returns:
+            ActionResult from the action function (action_result.ActionResult type)
+        """
+        # Execute the function
+        result = action_func()
+
+        # If it's a pure.ActionResult, convert it to action_result.ActionResult
+        if (
+            hasattr(result, "success")
+            and hasattr(result, "data")
+            and not hasattr(result, "match_list")
+        ):
+            # This is a pure.ActionResult, convert to action_result.ActionResult
+            converted = ActionResult()
+            converted.success = result.success
+            if hasattr(result, "error") and result.error:
+                converted.output_text = result.error
+            return converted
+
+        # Already an action_result.ActionResult
+        return cast(ActionResult, result)
+
 
 # Forward reference for dependencies not yet implemented
 class ActionChainExecutor:
     """Placeholder for ActionChainExecutor class."""
 
     def execute_chain(
-        self, config: ActionConfig, result: ActionResult, collections: tuple
+        self, config: ActionConfig, result: ActionResult, collections: tuple[Any, ...]
     ) -> ActionResult:
         return result

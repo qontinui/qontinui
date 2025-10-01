@@ -10,6 +10,7 @@ This module implements the complete transition execution flow including:
 import logging
 import time
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, cast
 
 from qontinui.model.transition.enhanced_joint_table import StateTransitionsJointTable
 from qontinui.model.transition.enhanced_state_transition import (
@@ -18,6 +19,11 @@ from qontinui.model.transition.enhanced_state_transition import (
     TransitionContext,
     TransitionResult,
 )
+
+if TYPE_CHECKING:
+    from qontinui.state_management.enhanced_active_state_set import EnhancedActiveStateSet
+    from qontinui.state_management.state_memory import StateMemory
+    from qontinui.state_management.state_visibility_manager import StateVisibilityManager
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +44,9 @@ class TransitionExecutor:
     """
 
     joint_table: StateTransitionsJointTable
-    active_states: "ActiveStateSet" = None  # Will be injected
-    state_memory: "StateMemory" = None  # Will be injected
-    visibility_manager: "StateVisibilityManager" = None  # Will be injected
+    active_states: "EnhancedActiveStateSet | None" = None  # Will be injected
+    state_memory: "StateMemory | None" = None  # Will be injected
+    visibility_manager: "StateVisibilityManager | None" = None  # Will be injected
 
     # Execution options
     execute_incoming: bool = True  # Execute incoming transitions for activated states
@@ -123,7 +129,7 @@ class TransitionExecutor:
                         )
 
             # Phase 5: Update state visibility
-            if self.visibility_manager:
+            if self.active_states:
                 hidden_states = self._update_state_visibility(transition, context)
                 overall_result.hidden_states = hidden_states
                 logger.debug(f"Hidden states: {hidden_states}")
@@ -201,8 +207,8 @@ class TransitionExecutor:
 
         activated = set()
         for state_id in state_ids:
-            if self.active_states.add_state(state_id):
-                activated.add(state_id)
+            self.active_states.add_state(cast(Any, state_id))  # type: ignore[arg-type]
+            activated.add(state_id)
 
         return activated
 
@@ -224,9 +230,9 @@ class TransitionExecutor:
         activated = set()
         for state_id in state_ids:
             # Small delay between activations if needed
-            if self.active_states.add_state(state_id):
-                activated.add(state_id)
-                time.sleep(0.01)  # Small delay for sequential activation
+            self.active_states.add_state(cast(Any, state_id))  # type: ignore[arg-type]
+            activated.add(state_id)
+            time.sleep(0.01)  # Small delay for sequential activation
 
         return activated
 
@@ -247,8 +253,8 @@ class TransitionExecutor:
 
         deactivated = set()
         for state_id in state_ids:
-            if self.active_states.remove_state(state_id):
-                deactivated.add(state_id)
+            self.active_states.remove_state(cast(Any, state_id))  # type: ignore[arg-type]
+            deactivated.add(state_id)
 
         return deactivated
 
@@ -318,7 +324,7 @@ class TransitionExecutor:
         Returns:
             Set of hidden state IDs
         """
-        if not self.visibility_manager:
+        if not self.active_states:
             return set()
 
         hidden_states = set()
@@ -331,13 +337,13 @@ class TransitionExecutor:
             states_to_hide = context.current_states - transition.exit
 
             for state_id in states_to_hide:
-                if self.visibility_manager.hide_state(state_id):
+                if self.active_states.hide_state(state_id):
                     hidden_states.add(state_id)
 
         elif stays_visible == StaysVisible.TRUE:
             # Ensure current states remain visible
             for state_id in context.current_states:
-                self.visibility_manager.show_state(state_id)
+                self.active_states.show_state(state_id)
 
         return hidden_states
 
@@ -358,9 +364,8 @@ class TransitionExecutor:
         for state_id in result.deactivated_states:
             self.state_memory.remove_active_state(state_id)
 
-        # Update memory with hidden states
-        for state_id in result.hidden_states:
-            self.state_memory.add_hidden_state(state_id)
+        # Note: Hidden states are tracked in active_states.hidden_states,
+        # not in state_memory
 
     def _get_current_active_states(self) -> set[int]:
         """Get current active states.
@@ -369,6 +374,7 @@ class TransitionExecutor:
             Set of active state IDs
         """
         if self.active_states:
+            # EnhancedActiveStateSet returns set[int] directly
             return self.active_states.get_active_states()
         return set()
 
@@ -403,40 +409,3 @@ class TransitionExecutor:
             f"TransitionExecutor(execute_incoming={self.execute_incoming}, "
             f"batch_activation={self.batch_activation})"
         )
-
-
-# Placeholder classes - will be implemented later or imported
-class ActiveStateSet:
-    """Placeholder for ActiveStateSet."""
-
-    def add_state(self, state_id: int) -> bool:
-        return True
-
-    def remove_state(self, state_id: int) -> bool:
-        return True
-
-    def get_active_states(self) -> set[int]:
-        return set()
-
-
-class StateMemory:
-    """Placeholder for StateMemory."""
-
-    def add_active_state(self, state_id: int) -> None:
-        pass
-
-    def remove_active_state(self, state_id: int) -> None:
-        pass
-
-    def add_hidden_state(self, state_id: int) -> None:
-        pass
-
-
-class StateVisibilityManager:
-    """Placeholder for StateVisibilityManager."""
-
-    def hide_state(self, state_id: int) -> bool:
-        return True
-
-    def show_state(self, state_id: int) -> bool:
-        return True

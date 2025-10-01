@@ -4,6 +4,7 @@ Represents an ordered list of automation steps.
 """
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -38,7 +39,7 @@ class TaskSequence:
     """Ordered list of action steps to execute."""
 
     @classmethod
-    def from_dict(cls, data: dict) -> "TaskSequence":
+    def from_dict(cls, data: dict[str, Any]) -> "TaskSequence":
         """Create TaskSequence from dictionary.
 
         Args:
@@ -53,7 +54,7 @@ class TaskSequence:
 
         return cls(steps=steps)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:
@@ -67,7 +68,7 @@ class ActionStep:
     """Placeholder for ActionStep class."""
 
     @classmethod
-    def from_dict(cls, data: dict) -> "ActionStep":
+    def from_dict(cls, data: dict[str, Any]) -> "ActionStep":
         """Create ActionStep from dictionary.
 
         Args:
@@ -79,7 +80,7 @@ class ActionStep:
         # Placeholder implementation
         return cls()
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:

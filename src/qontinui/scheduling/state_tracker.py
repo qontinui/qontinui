@@ -7,6 +7,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +180,7 @@ class StateTracker:
             self._state_entry_count[state] = self._state_entry_count.get(state, 0) + 1
             self._state_entry_time[state] = now
 
-    def get_state_statistics(self) -> dict[str, dict]:
+    def get_state_statistics(self) -> dict[str, dict[str, Any]]:
         """Get statistics for all states.
 
         Returns:

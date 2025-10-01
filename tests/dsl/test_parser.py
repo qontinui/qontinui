@@ -113,7 +113,7 @@ class TestQontinuiDSLParser:
         assert "variables" in result
         assert result["variables"]["username"] == "test_user"
         assert result["variables"]["count"] == 5
-        assert result["variables"]["enabled"] == True
+        assert result["variables"]["enabled"]
 
     def test_parse_loop_constructs(self, parser):
         """Test parsing loop constructs."""
@@ -207,7 +207,7 @@ class TestQontinuiDSLParser:
         }
         """
 
-        assert parser.validate(script) == True
+        assert parser.validate(script)
 
     def test_validate_invalid_script(self, parser):
         """Test validation of invalid script."""
@@ -218,7 +218,7 @@ class TestQontinuiDSLParser:
         }
         """
 
-        assert parser.validate(script) == False
+        assert not parser.validate(script)
 
     def test_to_python_generation(self, parser):
         """Test Python code generation from parsed DSL."""

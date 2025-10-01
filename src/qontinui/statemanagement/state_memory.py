@@ -70,9 +70,11 @@ class StateMemory:
         """
         names = []
         for state_id in self.active_states:
-            name = state_service.get_state_name(state_id)
-            if name:
-                names.append(name)
+            # Find state by ID - iterate through all states
+            for state in state_service.states.values():
+                if state.id == state_id:
+                    names.append(state.name)
+                    break
         return names
 
     def add_active_state(self, state_id: int, state: State | None = None) -> None:
@@ -92,7 +94,7 @@ class StateMemory:
 
         # Update state object if provided
         if state:
-            state.probability_exists = 100.0
+            state.probability_exists = 100
             state.times_visited += 1
 
         logger.debug(f"State {state_id} activated. Active states: {self.active_states}")
@@ -113,7 +115,7 @@ class StateMemory:
 
         # Update state object if provided
         if state:
-            state.probability_exists = 0.0
+            state.probability_exists = 0
 
         logger.debug(f"State {state_id} deactivated. Active states: {self.active_states}")
 

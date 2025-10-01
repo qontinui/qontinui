@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from .execution_controller import ExecutionController, get_execution_controller
+from .execution_controller import ExecutionController
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,8 @@ class ExecutionPauseController:
         Args:
             execution_controller: Controller to use, or None for global
         """
-        self.execution_controller = execution_controller or get_execution_controller()
+        # TODO: Implement global execution controller singleton
+        self.execution_controller = execution_controller
         self._pause_points: dict[str, PausePoint] = {}
         self._global_pause_enabled = True
         self._step_mode = False
@@ -238,12 +239,20 @@ class ExecutionPauseController:
         """
         logger.info(f"Pausing at '{pause_point_name}'")
 
-        # Only pause if we're running
+        # Only pause if we have a controller and we're running
+        if self.execution_controller is None:
+            logger.warning("No execution controller available, cannot pause")
+            return
+
         if self.execution_controller.is_running():
             self.execution_controller.pause()
 
             # Wait for resume
-            self.execution_controller.await_not_paused()
+            # TODO: Implement await_not_paused method in ExecutionController protocol
+            # self.execution_controller.await_not_paused()
+            # For now, use a simple polling loop
+            while self.execution_controller.is_paused():
+                time.sleep(0.1)
 
             # In step mode, prepare for next pause
             if self._step_mode:

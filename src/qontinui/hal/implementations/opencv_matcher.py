@@ -1,5 +1,7 @@
 """OpenCV-based pattern matching implementation."""
 
+from typing import Any
+
 import cv2
 import numpy as np
 from PIL import Image
@@ -53,7 +55,7 @@ class OpenCVMatcher(IPatternMatcher):
         # Set number of threads for OpenCV
         cv2.setNumThreads(self.config.matcher_threads)
 
-    def _pil_to_cv2(self, image: Image.Image) -> np.ndarray:
+    def _pil_to_cv2(self, image: Image.Image) -> np.ndarray[Any, Any]:
         """Convert PIL Image to OpenCV format.
 
         Args:
@@ -69,7 +71,7 @@ class OpenCVMatcher(IPatternMatcher):
         # Convert RGB to BGR for OpenCV
         return cv2.cvtColor(np_image, cv2.COLOR_RGB2BGR)
 
-    def _cv2_to_pil(self, cv_image: np.ndarray) -> Image.Image:
+    def _cv2_to_pil(self, cv_image: np.ndarray[Any, Any]) -> Image.Image:
         """Convert OpenCV image to PIL format.
 
         Args:
@@ -309,7 +311,7 @@ class OpenCVMatcher(IPatternMatcher):
         self,
         haystack: Image.Image,
         needle: Image.Image,
-        scales: list[float] = None,
+        scales: list[float] | None = None,
         confidence: float = 0.9,
     ) -> Match | None:
         """Find pattern at multiple scales.

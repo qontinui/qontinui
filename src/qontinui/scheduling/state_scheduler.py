@@ -8,6 +8,7 @@ import logging
 import threading
 import time
 from collections.abc import Callable
+from typing import Any
 
 from ..actions import Actions
 from ..model.state.path_finder import PathFinder
@@ -321,7 +322,7 @@ class StateScheduler:
 
         return None
 
-    def get_statistics(self) -> dict:
+    def get_statistics(self) -> dict[str, Any]:
         """Get scheduler statistics.
 
         Returns:

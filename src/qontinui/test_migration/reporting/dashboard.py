@@ -5,16 +5,19 @@ Migration reporting dashboard for generating comprehensive reports.
 import datetime
 import json
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-try:
+if TYPE_CHECKING:
     from ..validation.coverage_tracker import CoverageTracker
-except ImportError:
-    # Handle direct execution case
-    import sys
+else:
+    try:
+        from ..validation.coverage_tracker import CoverageTracker
+    except ImportError:
+        # Handle direct execution case
+        import sys
 
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from validation.coverage_tracker import CoverageTracker
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from validation.coverage_tracker import CoverageTracker
 
 
 class MigrationReportingDashboard:
@@ -28,7 +31,7 @@ class MigrationReportingDashboard:
     - PDF reports for documentation
     """
 
-    def __init__(self, java_source_dir: Path = None, python_target_dir: Path = None):
+    def __init__(self, java_source_dir: Path | None = None, python_target_dir: Path | None = None):
         """Initialize the reporting dashboard."""
         # Use default paths if not provided
         if java_source_dir is None:
@@ -196,8 +199,9 @@ class MigrationReportingDashboard:
 
     def _analyze_test_complexity(self, test_files: list[Path]) -> dict[str, Any]:
         """Analyze test complexity metrics."""
-        complexity = {
-            "total_lines": 0,
+        total_lines = 0
+        complexity: dict[str, Any] = {
+            "total_lines": total_lines,
             "average_file_size": 0,
             "largest_file": None,
             "smallest_file": None,
@@ -210,7 +214,8 @@ class MigrationReportingDashboard:
                 content = test_file.read_text()
                 lines = len(content.splitlines())
                 file_sizes.append(lines)
-                complexity["total_lines"] += lines
+                total_lines += lines
+                complexity["total_lines"] = total_lines
 
                 if complexity["largest_file"] is None or lines > file_sizes[0]:
                     complexity["largest_file"] = {"file": str(test_file), "lines": lines}
@@ -275,7 +280,7 @@ class MigrationReportingDashboard:
 
             doc = SimpleDocTemplate(str(output_file), pagesize=letter)
             styles = getSampleStyleSheet()
-            story = []
+            story: list[Any] = []  # List of Flowable objects (Paragraph, Spacer, etc.)
 
             # Title
             title = Paragraph("Test Migration Report", styles["Title"])
@@ -389,8 +394,9 @@ class ReportFormatter:
     @staticmethod
     def format_file_size(size_bytes: int) -> str:
         """Format file size in human-readable format."""
+        size: float = float(size_bytes)
         for unit in ["B", "KB", "MB", "GB"]:
-            if size_bytes < 1024.0:
-                return f"{size_bytes:.1f} {unit}"
-            size_bytes /= 1024.0
-        return f"{size_bytes:.1f} TB"
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"

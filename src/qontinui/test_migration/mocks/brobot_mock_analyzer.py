@@ -3,6 +3,7 @@ Brobot mock analyzer for identifying and extracting Brobot mock usage patterns.
 """
 
 import re
+from typing import Any, cast
 
 from ..core.interfaces import MockAnalyzer
 from ..core.models import GuiModel, MockUsage, TestFile
@@ -217,7 +218,7 @@ class BrobotMockAnalyzer(MockAnalyzer):
 
         return mock_usages
 
-    def _extract_gui_configurations(self, method_body: str) -> list[dict]:
+    def _extract_gui_configurations(self, method_body: str) -> list[dict[str, Any]]:
         """Extract GUI model configurations from method body."""
         configurations = []
 
@@ -302,7 +303,7 @@ class BrobotMockAnalyzer(MockAnalyzer):
 
     def get_mock_dependency_mapping(self) -> dict[str, str]:
         """Get the mapping of Brobot mock dependencies to Qontinui equivalents."""
-        return self.mock_dependencies.copy()
+        return cast(dict[str, str], self.mock_dependencies.copy())
 
     def analyze_mock_complexity(self, mock_usage: MockUsage) -> str:
         """

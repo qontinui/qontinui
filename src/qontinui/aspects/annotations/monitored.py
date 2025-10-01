@@ -32,7 +32,7 @@ class MonitoredConfig:
     log_result: bool = False
     """Whether to include return value in logs."""
 
-    tags: list[str] = None
+    tags: list[str] | None = None
     """Tags for categorizing the operation."""
 
     sampling_rate: float = 1.0
@@ -41,7 +41,7 @@ class MonitoredConfig:
     create_span: bool = False
     """Whether to create a trace span."""
 
-    custom_metrics: list[str] = None
+    custom_metrics: list[str] | None = None
     """Custom metrics to capture."""
 
     def __post_init__(self):
@@ -61,7 +61,7 @@ def monitored(
     sampling_rate: float = 1.0,
     create_span: bool = False,
     custom_metrics: list[str] | None = None,
-) -> Callable:
+) -> Callable[..., Any]:
     """Mark a method or class for enhanced performance monitoring.
 
     Direct port of Brobot's @Monitored annotation.
@@ -127,7 +127,7 @@ def monitored(
     return decorator
 
 
-def _decorate_function(func: Callable, config: MonitoredConfig) -> Callable:
+def _decorate_function(func: Callable[..., Any], config: MonitoredConfig) -> Callable[..., Any]:
     """Decorate a function with monitoring.
 
     Args:
@@ -201,8 +201,8 @@ def _decorate_function(func: Callable, config: MonitoredConfig) -> Callable:
             raise
 
     # Store config on the wrapper
-    wrapper._monitored_config = config
-    wrapper._monitored = True
+    wrapper._monitored_config = config  # type: ignore[attr-defined]
+    wrapper._monitored = True  # type: ignore[attr-defined]
 
     return wrapper
 
@@ -237,8 +237,8 @@ def _decorate_class(cls: type, config: MonitoredConfig) -> type:
                 setattr(cls, attr_name, _decorate_function(attr, method_config))
 
     # Mark class as monitored
-    cls._monitored = True
-    cls._monitored_config = config
+    cls._monitored = True  # type: ignore[attr-defined]
+    cls._monitored_config = config  # type: ignore[attr-defined]
 
     return cls
 

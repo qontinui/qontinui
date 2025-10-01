@@ -135,8 +135,8 @@ def transition_set(
         )
 
         # Store metadata on the class
-        cls._qontinui_transition_set = True
-        cls._qontinui_transition_metadata = metadata
+        cls._qontinui_transition_set = True  # type: ignore[attr-defined]
+        cls._qontinui_transition_metadata = metadata  # type: ignore[attr-defined]
 
         # Log transition registration
         logger.debug(
@@ -261,13 +261,13 @@ def _add_transition_methods(cls: type, metadata: TransitionSetMetadata) -> None:
         return metadata.transition_type in [TransitionType.OUTGOING, TransitionType.BIDIRECTIONAL]
 
     # Add methods to the class
-    cls.get_transition_name = get_transition_name
-    cls.get_transition_metadata = get_transition_metadata
-    cls.activates_states = activates_states
-    cls.exits_states = exits_states
-    cls.get_path_cost = get_path_cost
-    cls.is_incoming = is_incoming
-    cls.is_outgoing = is_outgoing
+    cls.get_transition_name = get_transition_name  # type: ignore[attr-defined]
+    cls.get_transition_metadata = get_transition_metadata  # type: ignore[attr-defined]
+    cls.activates_states = activates_states  # type: ignore[attr-defined]
+    cls.exits_states = exits_states  # type: ignore[attr-defined]
+    cls.get_path_cost = get_path_cost  # type: ignore[attr-defined]
+    cls.is_incoming = is_incoming  # type: ignore[attr-defined]
+    cls.is_outgoing = is_outgoing  # type: ignore[attr-defined]
 
 
 def is_transition_set(obj: Any) -> bool:
@@ -353,7 +353,11 @@ def get_incoming_transitions(transitions: list[Any], state_class: type) -> list[
 
     for transition in transitions:
         metadata = get_transition_metadata(transition)
-        if metadata and metadata.is_incoming() and state_class in metadata.to_states:
+        if (
+            metadata
+            and metadata.transition_type in [TransitionType.INCOMING, TransitionType.BIDIRECTIONAL]
+            and state_class in metadata.to_states
+        ):
             incoming.append(transition)
 
     return incoming

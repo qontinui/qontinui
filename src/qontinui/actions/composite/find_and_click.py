@@ -12,7 +12,7 @@ from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from ..basic.action_config import ActionConfig
 from ..basic.click.click import Click
-from ..basic.click.click_options import ClickOptions
+from ..basic.click.click_options import ClickOptions, ClickOptionsBuilder
 from ..basic.find.find import Find
 from ..basic.find.options.pattern_find_options import PatternFindOptions
 
@@ -28,8 +28,8 @@ class FindAndClickOptions(ActionConfig):
     Combines Find and Click configurations for convenience.
     """
 
-    find_options: PatternFindOptions = field(default_factory=PatternFindOptions)
-    click_options: ClickOptions = field(default_factory=ClickOptions)
+    find_options: PatternFindOptions = field(default_factory=lambda: PatternFindOptions())
+    click_options: ClickOptions = field(default_factory=lambda: ClickOptionsBuilder().build())
 
     def with_find_options(self, options: PatternFindOptions) -> "FindAndClickOptions":
         """Set find options.
@@ -124,7 +124,7 @@ class FindAndClick(ActionInterface):
         else:
             # Use defaults if not FindAndClickOptions
             find_options = PatternFindOptions()
-            click_options = ClickOptions()
+            click_options = ClickOptionsBuilder().build()
 
         # Step 1: Find the target
         find_result = ActionResult(action_config=find_options)

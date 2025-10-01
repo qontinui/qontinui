@@ -31,7 +31,7 @@ class EasyOCREngine(IOCREngine):
             config: HAL configuration
         """
         self.config = config or HALConfig()
-        self._readers = {}  # Cache readers by language
+        self._readers: dict[str, Any] = {}  # Cache readers by language
         self._default_languages = ["en"]
 
         # Check GPU availability
@@ -88,7 +88,7 @@ class EasyOCREngine(IOCREngine):
                 return self._get_reader(["en"])
             raise
 
-    def _pil_to_numpy(self, image: Image.Image) -> np.ndarray:
+    def _pil_to_numpy(self, image: Image.Image) -> np.ndarray[Any, Any]:
         """Convert PIL Image to numpy array.
 
         Args:
@@ -101,7 +101,7 @@ class EasyOCREngine(IOCREngine):
             image = image.convert("RGB")
         return np.array(image)
 
-    def extract_text(self, image: Image.Image, languages: list[str] = None) -> str:
+    def extract_text(self, image: Image.Image, languages: list[str] | None = None) -> str:
         """Extract all text from image.
 
         Args:
@@ -130,7 +130,7 @@ class EasyOCREngine(IOCREngine):
             return ""
 
     def get_text_regions(
-        self, image: Image.Image, languages: list[str] = None, min_confidence: float = 0.5
+        self, image: Image.Image, languages: list[str] | None = None, min_confidence: float = 0.5
     ) -> list[TextRegion]:
         """Get all text regions with bounding boxes.
 
@@ -265,7 +265,10 @@ class EasyOCREngine(IOCREngine):
             return []
 
     def extract_text_from_region(
-        self, image: Image.Image, region: tuple[int, int, int, int], languages: list[str] = None
+        self,
+        image: Image.Image,
+        region: tuple[int, int, int, int],
+        languages: list[str] | None = None,
     ) -> str:
         """Extract text from specific region.
 

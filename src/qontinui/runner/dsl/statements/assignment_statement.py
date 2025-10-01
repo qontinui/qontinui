@@ -6,7 +6,7 @@ Represents an assignment statement in the DSL.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .statement import Statement
 
@@ -52,7 +52,7 @@ class AssignmentStatement(Statement):
         self.value = value
 
     @classmethod
-    def from_dict(cls, data: dict) -> AssignmentStatement:
+    def from_dict(cls, data: dict[str, Any]) -> AssignmentStatement:
         """Create AssignmentStatement from dictionary.
 
         Args:
@@ -69,7 +69,7 @@ class AssignmentStatement(Statement):
 
         return cls(variable_name=data.get("variableName", ""), value=value)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:

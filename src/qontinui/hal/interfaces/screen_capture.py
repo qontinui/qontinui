@@ -81,6 +81,15 @@ class IScreenCapture(ABC):
         pass
 
     @abstractmethod
+    def get_screen_size(self) -> tuple[int, int]:
+        """Get screen size.
+
+        Returns:
+            Tuple of (width, height) in pixels
+        """
+        pass
+
+    @abstractmethod
     def get_pixel_color(self, x: int, y: int, monitor: int | None = None) -> tuple[int, int, int]:
         """Get color of pixel at coordinates.
 

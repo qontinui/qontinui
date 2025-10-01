@@ -5,6 +5,7 @@ providing better performance and flexibility.
 """
 
 from pathlib import Path
+from typing import cast
 
 from PIL import Image
 
@@ -43,12 +44,12 @@ class ScreenCapture:
     @property
     def monitors(self) -> list[Monitor]:
         """Get list of available monitors."""
-        return self.hal_capture.get_monitors()
+        return cast(list[Monitor], self.hal_capture.get_monitors())
 
     @property
     def primary_monitor(self) -> Monitor:
         """Get primary monitor."""
-        return self.hal_capture.get_primary_monitor()
+        return cast(Monitor, self.hal_capture.get_primary_monitor())
 
     def get_monitor(self, index: int | None = None) -> Monitor:
         """Get specific monitor by index.
@@ -62,15 +63,15 @@ class ScreenCapture:
         Raises:
             ScreenCaptureException: If monitor not found
         """
-        monitors = self.hal_capture.get_monitors()
+        monitors = cast(list[Monitor], self.hal_capture.get_monitors())
 
         if index is None:
-            return self.hal_capture.get_primary_monitor()
+            return cast(Monitor, self.hal_capture.get_primary_monitor())
 
         if 0 <= index < len(monitors):
-            return monitors[index]
+            return cast(Monitor, monitors[index])
 
-        raise ScreenCaptureException(f"Monitor {index} not found", monitor=index)
+        raise ScreenCaptureException(f"Monitor {index} not found")
 
     def capture_screen(self, monitor: int | None = None, cache: bool = True) -> Image.Image:
         """Capture entire screen or specific monitor.
@@ -86,9 +87,11 @@ class ScreenCapture:
             ScreenCaptureException: If capture fails
         """
         try:
-            return self.hal_capture.capture_screen(monitor)
+            return cast(Image.Image, self.hal_capture.capture_screen(monitor))
         except Exception as e:
-            raise ScreenCaptureException(f"Failed to capture screen: {e}", monitor=monitor) from e
+            raise ScreenCaptureException(
+                f"Failed to capture screen (monitor={monitor}): {e}"
+            ) from e
 
     def capture_region(
         self,
@@ -116,9 +119,11 @@ class ScreenCapture:
             ScreenCaptureException: If capture fails
         """
         try:
-            return self.hal_capture.capture_region(x, y, width, height, monitor)
+            return cast(Image.Image, self.hal_capture.capture_region(x, y, width, height, monitor))
         except Exception as e:
-            raise ScreenCaptureException(f"Failed to capture region: {e}", monitor=monitor) from e
+            raise ScreenCaptureException(
+                f"Failed to capture region (monitor={monitor}): {e}"
+            ) from e
 
     def find_on_screen(
         self,
@@ -142,8 +147,9 @@ class ScreenCapture:
         """
         try:
             # Load image if path provided
+            needle: Image.Image
             if isinstance(image, str | Path):
-                needle = Image.open(image)
+                needle = Image.open(image)  # type: ignore[assignment]
             else:
                 needle = image
 
@@ -196,8 +202,9 @@ class ScreenCapture:
         """
         try:
             # Load image if path provided
+            needle: Image.Image
             if isinstance(image, str | Path):
-                needle = Image.open(image)
+                needle = Image.open(image)  # type: ignore[assignment]
             else:
                 needle = image
 
@@ -256,7 +263,9 @@ class ScreenCapture:
             saved_path = self.hal_capture.save_screenshot(path_str, monitor, region)
             return Path(saved_path)
         except Exception as e:
-            raise ScreenCaptureException(f"Failed to save screenshot: {e}", monitor=monitor) from e
+            raise ScreenCaptureException(
+                f"Failed to save screenshot (monitor={monitor}): {e}"
+            ) from e
 
     def get_pixel_color(self, x: int, y: int, monitor: int | None = None) -> tuple[int, int, int]:
         """Get color of pixel at coordinates.
@@ -270,7 +279,7 @@ class ScreenCapture:
             RGB color tuple
         """
         try:
-            return self.hal_capture.get_pixel_color(x, y, monitor)
+            return cast(tuple[int, int, int], self.hal_capture.get_pixel_color(x, y, monitor))
         except Exception as e:
             logger.error("get_pixel_color_failed", x=x, y=y, error=str(e))
             return (0, 0, 0)

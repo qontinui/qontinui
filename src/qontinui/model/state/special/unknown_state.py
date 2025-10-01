@@ -77,7 +77,7 @@ class UnknownState:
         Args:
             state_service: Optional StateService to register with
         """
-        self._state = State(name="unknown", state_enum=UnknownStateEnum.UNKNOWN)
+        self._state = State(name="unknown")
         if state_service:
             state_service.save(self._state)
 

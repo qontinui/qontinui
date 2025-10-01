@@ -6,6 +6,7 @@ similar to Brobot's approach.
 
 import logging
 from collections.abc import Callable
+from typing import Any
 
 from ..model.element import Region
 from .region_builder import RegionBuilder
@@ -174,7 +175,7 @@ class RegionDefinitions:
         """Clear cached dynamic regions."""
         self._cached_dynamic.clear()
 
-    def get_all_names(self) -> list:
+    def get_all_names(self) -> list[Any]:
         """Get all defined region names.
 
         Returns:

@@ -151,7 +151,9 @@ class MSSScreenCapture(IScreenCapture):
             return image
 
         except Exception as e:
-            raise ScreenCaptureException(f"Failed to capture screen: {e}", monitor=monitor) from e
+            raise ScreenCaptureException(
+                f"Failed to capture screen (monitor={monitor}): {e}"
+            ) from e
 
     def capture_region(
         self, x: int, y: int, width: int, height: int, monitor: int | None = None
@@ -206,7 +208,9 @@ class MSSScreenCapture(IScreenCapture):
             return image
 
         except Exception as e:
-            raise ScreenCaptureException(f"Failed to capture region: {e}", monitor=monitor) from e
+            raise ScreenCaptureException(
+                f"Failed to capture region (monitor={monitor}): {e}"
+            ) from e
 
     def get_monitors(self) -> list[Monitor]:
         """Get list of available monitors.
@@ -221,12 +225,26 @@ class MSSScreenCapture(IScreenCapture):
 
         Returns:
             Primary Monitor object
+
+        Raises:
+            RuntimeError: If no monitors are available
         """
         for monitor in self._monitors:
             if monitor.is_primary:
                 return monitor
         # Fallback to first monitor
-        return self._monitors[0] if self._monitors else None
+        if self._monitors:
+            return self._monitors[0]
+        raise RuntimeError("No monitors available")
+
+    def get_screen_size(self) -> tuple[int, int]:
+        """Get screen size.
+
+        Returns:
+            Tuple of (width, height) in pixels
+        """
+        primary = self.get_primary_monitor()
+        return (primary.width, primary.height)
 
     def get_pixel_color(self, x: int, y: int, monitor: int | None = None) -> tuple[int, int, int]:
         """Get color of pixel at coordinates.
@@ -300,7 +318,9 @@ class MSSScreenCapture(IScreenCapture):
             return str(path)
 
         except Exception as e:
-            raise ScreenCaptureException(f"Failed to save screenshot: {e}", monitor=monitor) from e
+            raise ScreenCaptureException(
+                f"Failed to save screenshot (monitor={monitor}): {e}"
+            ) from e
 
     def _is_cached(self, key: str) -> bool:
         """Check if cache entry is valid.

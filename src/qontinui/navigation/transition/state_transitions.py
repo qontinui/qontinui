@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Optional
 
-from ...model.transition.state_transition import StateTransition, StaysVisible
+from ...model.transition.state_transition import StateTransition, StaysVisible, TaskSequence
 
 
 @dataclass
@@ -47,9 +47,7 @@ class StateTransitions:
     transition_finish: StateTransition | None = None
     """Transition executed when arriving at this state."""
 
-    action_definition_transitions: dict[int, "TaskSequenceStateTransition"] = field(
-        default_factory=dict
-    )
+    action_definition_transitions: dict[int, StateTransition] = field(default_factory=dict)
     """Map of target state IDs to TaskSequence-based transitions."""
 
     transitions: list[StateTransition] = field(default_factory=list)
@@ -204,8 +202,8 @@ class StateTransitionsBuilder:
             state_name: Name of the state these transitions belong to
         """
         self.state_name = state_name
-        self.transition_finish = None
-        self.transitions = []
+        self.transition_finish: StateTransition | None = None
+        self.transitions: list[StateTransition] = []
         self.stays_visible_after_transition = False
 
     def add_transition(
@@ -300,16 +298,3 @@ class StateTransitionsBuilder:
         state_transitions.transitions = self.transitions
         state_transitions.stays_visible_after_transition = self.stays_visible_after_transition
         return state_transitions
-
-
-# Forward references
-class TaskSequenceStateTransition:
-    """Placeholder for TaskSequenceStateTransition class."""
-
-    pass
-
-
-class TaskSequence:
-    """Placeholder for TaskSequence class."""
-
-    pass

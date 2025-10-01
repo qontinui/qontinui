@@ -6,6 +6,8 @@ timing, logging, and cross-cutting concerns.
 
 import logging
 import time
+from datetime import timedelta
+from typing import Any
 
 from .action_config import ActionConfig
 from .action_interface import ActionInterface
@@ -67,7 +69,7 @@ class ActionExecution:
             ActionResult containing execution results and timing
         """
         # Initialize result
-        result = ActionResult(action_config)
+        result = ActionResult(action_config)  # type: ignore[arg-type]
         result.action_description = action_description
         start_time = time.time()
 
@@ -113,20 +115,20 @@ class ActionExecution:
             # Record timing
             end_time = time.time()
             duration = end_time - start_time
-            result.duration = duration
+            result.duration = timedelta(seconds=duration)
 
             # Apply custom success criteria if provided
             success_criteria = action_config.get_success_criteria()
             if success_criteria:
                 try:
-                    custom_success = success_criteria(result)
+                    custom_success = success_criteria(result)  # type: ignore[arg-type]
                     result.success = custom_success
                 except Exception as e:
                     logger.error(f"Success criteria evaluation failed: {e}")
 
         return result
 
-    def get_metrics(self) -> dict:
+    def get_metrics(self) -> dict[str, Any]:
         """Get execution metrics.
 
         Returns:

@@ -99,7 +99,7 @@ class TestAction:
         )
 
         # Execute a simple action
-        result = action.click(100, 200)
+        action.click(100, 200)
 
         assert phases_executed == ["before", "during", "after", "success"]
 

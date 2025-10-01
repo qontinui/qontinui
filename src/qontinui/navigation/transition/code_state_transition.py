@@ -5,9 +5,9 @@ Transition implementation defined in Python code (as opposed to DSL/JSON configu
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any
 
-from ...model.transition.state_transition import StateTransition, StaysVisible
+from ...model.transition.state_transition import StateTransition, StaysVisible, TaskSequence
 
 
 @dataclass
@@ -78,7 +78,7 @@ class CodeStateTransition(StateTransition):
     """Controls whether source state remains visible after transition."""
 
     # Path-finding
-    score: int = 100
+    _score: int = 100
     """Path-finding weight for this transition (lower is better)."""
 
     # Metrics
@@ -122,7 +122,7 @@ class CodeStateTransition(StateTransition):
         """
         return self.exit.copy()
 
-    def set_state_ids(self, name_to_id: dict) -> None:
+    def set_state_ids(self, name_to_id: dict[str, Any]) -> None:
         """Convert state names to IDs.
 
         Args:
@@ -140,7 +140,7 @@ class CodeStateTransition(StateTransition):
 
     # Abstract method implementations from StateTransition
 
-    def get_task_sequence_optional(self) -> Optional:
+    def get_task_sequence_optional(self) -> TaskSequence | None:
         """Get task sequence (None for code-based transitions).
 
         Returns:
@@ -202,7 +202,7 @@ class CodeStateTransition(StateTransition):
         Returns:
             Score value
         """
-        return self.score
+        return self._score
 
     def set_score(self, score: int) -> None:
         """Set path-finding score.
@@ -210,7 +210,25 @@ class CodeStateTransition(StateTransition):
         Args:
             score: Score value
         """
-        self.score = score
+        self._score = score
+
+    @property
+    def score(self) -> int:
+        """Get path-finding score as a property.
+
+        Returns:
+            Score value
+        """
+        return self._score
+
+    @score.setter
+    def score(self, value: int) -> None:
+        """Set path-finding score as a property.
+
+        Args:
+            value: Score value
+        """
+        self._score = value
 
     def get_times_successful(self) -> int:
         """Get success count.
@@ -227,6 +245,71 @@ class CodeStateTransition(StateTransition):
             times_successful: Number of successful executions
         """
         self.times_successful = times_successful
+
+    @property
+    def to_state(self) -> str | None:
+        """Get the target state name this transition leads to.
+
+        Returns:
+            First activated state name or None
+        """
+        return next(iter(self.activate_names), None) if self.activate_names else None
+
+    @property
+    def from_state(self) -> str | None:
+        """Get the source state name this transition comes from.
+
+        Returns:
+            None for code transitions (source is implicit)
+        """
+        return None
+
+    @property
+    def transition_type(self) -> str:
+        """Get the transition type identifier.
+
+        Returns:
+            Type identifier
+        """
+        return "code"
+
+    @property
+    def probability(self) -> float:
+        """Get transition success probability.
+
+        Returns:
+            Probability based on success history
+        """
+        return 1.0  # Default to 1.0 for code transitions
+
+    @property
+    def name(self) -> str:
+        """Get transition name.
+
+        Returns:
+            Generated name based on activated states
+        """
+        if self.activate_names:
+            return f"CodeTransition->{','.join(sorted(self.activate_names))}"
+        return "CodeTransition"
+
+    @property
+    def priority(self) -> int:
+        """Get transition priority.
+
+        Returns:
+            Priority (inverse of score)
+        """
+        return -self._score  # Higher score = lower priority
+
+    def check_conditions(self) -> bool:
+        """Check if transition conditions are met.
+
+        Returns:
+            True if conditions are met
+        """
+        # For code transitions, conditions are checked during execute
+        return True
 
     def __str__(self) -> str:
         """String representation."""

@@ -143,7 +143,7 @@ class ApplicationLifecycleService:
         self.shutdown_handler.register_cleanup_callback(cleanup_function)
         logger.debug(f"Registered cleanup task: {cleanup_function.__name__}")
 
-    def perform_health_check(self) -> dict:
+    def perform_health_check(self) -> dict[str, Any]:
         """Perform a health check on the application.
 
         Returns:
@@ -184,7 +184,7 @@ class ApplicationLifecycleService:
         logger.debug(f"Health check result: {health_status['status']}")
         return health_status
 
-    def get_memory_usage(self) -> dict:
+    def get_memory_usage(self) -> dict[str, Any]:
         """Get current memory usage statistics.
 
         Returns:

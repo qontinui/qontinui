@@ -8,17 +8,22 @@ import json
 import re
 import subprocess
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import BehaviorComparator
     from ..core.models import TestFile, TestResult
-except ImportError:
-    # For standalone execution
-    from core.interfaces import BehaviorComparator
-    from core.models import TestFile, TestResult
+else:
+    try:
+        from ..core.interfaces import BehaviorComparator
+        from ..core.models import TestFile, TestResult
+    except ImportError:
+        # For standalone execution
+        from core.interfaces import BehaviorComparator
+        from core.models import TestFile, TestResult
 
 
 @dataclass
@@ -382,7 +387,7 @@ class BehaviorComparatorImpl(BehaviorComparator):
             # Try parsing as JSON
             json1 = json.loads(output1)
             json2 = json.loads(output2)
-            return json1 == json2
+            return cast(bool, json1 == json2)
         except (json.JSONDecodeError, TypeError):
             pass
 
@@ -390,7 +395,7 @@ class BehaviorComparatorImpl(BehaviorComparator):
         try:
             literal1 = ast.literal_eval(output1)
             literal2 = ast.literal_eval(output2)
-            return literal1 == literal2
+            return cast(bool, literal1 == literal2)
         except (ValueError, SyntaxError):
             pass
 
@@ -449,7 +454,7 @@ class BehaviorComparatorImpl(BehaviorComparator):
 
         return differences
 
-    def _initialize_output_normalizers(self) -> dict[str, list[callable]]:
+    def _initialize_output_normalizers(self) -> dict[str, list[Callable[[str], str]]]:
         """Initialize language-specific output normalizers."""
         return {
             "java": [
@@ -468,7 +473,7 @@ class BehaviorComparatorImpl(BehaviorComparator):
             ],
         }
 
-    def _initialize_assertion_extractors(self) -> dict[str, callable]:
+    def _initialize_assertion_extractors(self) -> dict[str, Callable[..., Any]]:
         """Initialize assertion extractors for different test frameworks."""
         return {
             "junit": self._extract_junit_assertions,

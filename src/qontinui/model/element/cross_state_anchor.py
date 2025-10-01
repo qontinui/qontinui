@@ -4,6 +4,7 @@ Provides anchoring between states for multi-state operations.
 """
 
 from dataclasses import dataclass, field
+from typing import cast
 
 from ..state.state_object import StateObject
 from .anchor import Anchor
@@ -151,8 +152,9 @@ class CrossStateAnchor:
             return Location(base_location.x + anchor.offset_x, base_location.y + anchor.offset_y)
 
         # Otherwise return anchor's absolute position if available
-        if anchor.position:
-            return Location(anchor.position.x, anchor.position.y)
+        pos = anchor.get_position()
+        if pos:
+            return Location(pos[0], pos[1])
 
         return None
 
@@ -342,4 +344,4 @@ class CrossStateAnchorBuilder:
         Returns:
             Configured CrossStateAnchor instance
         """
-        return self._anchor.copy()
+        return cast(CrossStateAnchor, self._anchor.copy())

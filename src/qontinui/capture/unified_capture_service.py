@@ -46,7 +46,7 @@ class CaptureConfig:
     cache_enabled: bool = True
     cache_ttl: float = 1.0
     fallback_enabled: bool = True
-    fallback_providers: list[str] = None
+    fallback_providers: list[str] | None = None
 
     def __post_init__(self):
         """Initialize default fallback providers."""
@@ -261,7 +261,7 @@ class UnifiedCaptureService:
             lambda: self._provider.capture_region(x, y, width, height, screen_id), "capture_region"
         )
 
-    def get_monitors(self) -> list:
+    def get_monitors(self) -> list[Any]:
         """Get list of available monitors.
 
         Returns:
@@ -303,11 +303,11 @@ class UnifiedCaptureService:
             lambda: self._provider.save_screenshot(filepath, screen_id, region), "save_screenshot"
         )
 
-    def _execute_with_retry(self, operation: Callable, operation_name: str) -> Any:
+    def _execute_with_retry(self, operation: Callable[..., Any], operation_name: str) -> Any:
         """Execute operation with automatic retry.
 
         Args:
-            operation: Callable to execute
+            operation: Callable[..., Any] to execute
             operation_name: Name for logging
 
         Returns:
@@ -337,8 +337,10 @@ class UnifiedCaptureService:
 
                 if attempt < self.config.retry_count - 1:
                     time.sleep(self.config.retry_delay)
-                elif self.config.fallback_enabled and self._fallback_index < len(
-                    self.config.fallback_providers
+                elif (
+                    self.config.fallback_enabled
+                    and self.config.fallback_providers is not None
+                    and self._fallback_index < len(self.config.fallback_providers)
                 ):
                     # Try with fallback provider
                     try:

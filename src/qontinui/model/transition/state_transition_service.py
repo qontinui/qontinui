@@ -5,7 +5,9 @@ services for managing state transitions within the state machine.
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, cast
 
 from .state_transition import StateTransition
 from .state_transitions import StateTransitions
@@ -49,7 +51,7 @@ class StateTransitionService:
         self._registered_states: set[str] = set()
 
         # Transition validation rules
-        self._validation_rules: list[callable] = []
+        self._validation_rules: list[Callable[..., bool]] = []
 
         logger.info("StateTransitionService initialized")
 
@@ -73,6 +75,9 @@ class StateTransitionService:
             transitions: Container of state transitions to register
         """
         state_name = transitions.get_state_name()
+        if state_name is None:
+            logger.warning("Cannot register transitions: state name is None")
+            return
 
         if state_name not in self._transitions:
             self._transitions[state_name] = []
@@ -192,7 +197,7 @@ class StateTransitionService:
             else:
                 logger.warning(f"Transition failed: {from_state} -> {to_state}")
 
-            return success
+            return cast(bool, success)
 
         except Exception as e:
             logger.error(f"Error executing transition from {from_state} to {to_state}", exc_info=e)
@@ -241,7 +246,7 @@ class StateTransitionService:
         self._history.clear()
         logger.debug("Transition history cleared")
 
-    def add_validation_rule(self, rule: callable) -> None:
+    def add_validation_rule(self, rule: Callable[..., Any]) -> None:
         """Add a validation rule for transitions.
 
         The rule should be a callable that takes (from_state, to_state, transition)

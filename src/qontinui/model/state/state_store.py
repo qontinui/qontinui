@@ -92,6 +92,7 @@ class StateStore:
         # State storage
         self._states: dict[str, State] = {}
         self._states_by_enum: dict[StateEnum, State] = {}
+        self._states_by_id: dict[int, State] = {}
 
         # State metadata
         self._metadata: dict[str, StateMetadata] = {}
@@ -143,6 +144,8 @@ class StateStore:
                 self._states[name] = state
                 if state.state_enum:
                     self._states_by_enum[state.state_enum] = state
+                if state.id is not None:
+                    self._states_by_id[state.id] = state
 
                 # Initialize metadata
                 if name not in self._metadata:
@@ -188,6 +191,8 @@ class StateStore:
                 state = self._states.pop(name)
                 if state.state_enum in self._states_by_enum:
                     del self._states_by_enum[state.state_enum]
+                if state.id is not None and state.id in self._states_by_id:
+                    del self._states_by_id[state.id]
 
                 # Remove metadata
                 if name in self._metadata:
@@ -211,17 +216,22 @@ class StateStore:
                 logger.error(f"Failed to unregister state '{name}': {e}")
                 return False
 
-    def get(self, identifier: str | StateEnum) -> State | None:
-        """Get a state by name or enum.
+    def get(self, identifier: int | str | StateEnum) -> State | None:
+        """Get a state by ID, name, or enum.
 
         Args:
-            identifier: State name or enum
+            identifier: State ID (int), name (str), or enum (StateEnum)
 
         Returns:
             State or None if not found
         """
         with self._lock:
-            if isinstance(identifier, str):
+            if isinstance(identifier, int):
+                state = self._states_by_id.get(identifier)
+                if state:
+                    self._access_state(state.name)
+                return state
+            elif isinstance(identifier, str):
                 state = self._states.get(identifier)
                 if state:
                     self._access_state(identifier)
@@ -465,6 +475,7 @@ class StateStore:
         with self._lock:
             self._states.clear()
             self._states_by_enum.clear()
+            self._states_by_id.clear()
             self._metadata.clear()
             self._transitions.clear()
             self._parent_states.clear()

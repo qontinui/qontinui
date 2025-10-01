@@ -98,7 +98,7 @@ class AdjacentStates:
             Set of state IDs that can be reached through direct transitions,
             empty set if the state has no transitions or doesn't exist
         """
-        adjacent = set()
+        adjacent: set[int] = set()
 
         if not self.state_transitions_in_project_service:
             return adjacent
@@ -110,15 +110,16 @@ class AdjacentStates:
         # Get states with static transitions (those with activation methods)
         states_with_static_transitions = set()
         for transition in transitions_opt.get_transitions():
-            if transition.activate and len(transition.activate) > 0:
-                states_with_static_transitions.update(transition.activate)
+            activate_states = transition.get_activate()
+            if activate_states and len(activate_states) > 0:
+                states_with_static_transitions.update(activate_states)
 
         adjacent.update(states_with_static_transitions)
 
         # Handle PREVIOUS state expansion
-        from ..model.state.special.special_state_type import SpecialStateType
+        from ..statemanagement.state_memory import SpecialStateId
 
-        previous_id = SpecialStateType.PREVIOUS.get_id()
+        previous_id = SpecialStateId.PREVIOUS
 
         if previous_id not in states_with_static_transitions:
             return adjacent

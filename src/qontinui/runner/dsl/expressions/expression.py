@@ -34,7 +34,7 @@ class Expression(ABC):
         self.expression_type = expression_type
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Expression":
+    def from_dict(cls, data: dict[str, Any]) -> "Expression":
         """Create Expression from dictionary representation.
 
         Args:
@@ -68,7 +68,7 @@ class Expression(ABC):
         else:
             raise ValueError(f"Unknown expression type: {expression_type}")
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert Expression to dictionary representation.
 
         Returns:
@@ -77,7 +77,7 @@ class Expression(ABC):
         return {"expressionType": self.expression_type}
 
     @abstractmethod
-    def evaluate(self, context: dict) -> Any:
+    def evaluate(self, context: dict[str, Any]) -> Any:
         """Evaluate the expression in the given context.
 
         Args:

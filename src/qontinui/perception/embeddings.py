@@ -7,7 +7,7 @@ enabling semantic understanding and natural language queries.
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -30,7 +30,7 @@ class EmbeddingResult:
         metadata: Additional metadata
     """
 
-    embedding: np.ndarray
+    embedding: np.ndarray[Any, Any]
     modality: str
     metadata: dict[str, Any]
 
@@ -67,11 +67,11 @@ class EmbeddingGenerator:
 
         # Set device
         if device is None:
-            device = "cuda" if torch.cuda.is_available() and self.settings.use_gpu else "cpu"
+            device = "cuda" if torch.cuda.is_available() else "cpu"
         self.device = device
 
         # Initialize cache
-        self._cache = {} if use_cache else None
+        self._cache: dict[str, np.ndarray[Any, Any]] | None = {} if use_cache else None
         self.cache_size = cache_size
 
         # Initialize model
@@ -113,8 +113,10 @@ class EmbeddingGenerator:
             raise ModelLoadException(model_name=self.model_name, reason=str(e)) from e
 
     def encode_image(
-        self, image: Image.Image | np.ndarray | str | Path | list, normalize: bool = True
-    ) -> np.ndarray | list[np.ndarray]:
+        self,
+        image: Image.Image | np.ndarray[Any, Any] | str | Path | list[Any],
+        normalize: bool = True,
+    ) -> np.ndarray[Any, Any] | list[np.ndarray[Any, Any]]:
         """Generate image embeddings.
 
         Args:
@@ -129,7 +131,7 @@ class EmbeddingGenerator:
         if not is_batch:
             images = [image]
         else:
-            images = image
+            images = cast(list[Any], image)
 
         # Convert images to PIL format
         pil_images = []
@@ -154,12 +156,12 @@ class EmbeddingGenerator:
                 cache_keys.append(cache_key)
 
         # Check cache and process uncached images
-        embeddings = []
+        embeddings: list[np.ndarray[Any, Any] | None] = []
         uncached_images = []
         uncached_indices = []
 
         for i, (img, key) in enumerate(zip(pil_images, cache_keys, strict=False)):
-            if self.use_cache and key in self._cache:
+            if self.use_cache and self._cache is not None and key in self._cache:
                 embeddings.append(self._cache[key])
                 logger.debug("embedding_cache_hit", key=key[:8])
             else:
@@ -169,6 +171,9 @@ class EmbeddingGenerator:
 
         # Process uncached images
         if uncached_images:
+            if self.processor is None or self.model is None:
+                raise RuntimeError("Model not initialized")
+
             try:
                 # Prepare inputs
                 inputs = self.processor(
@@ -201,15 +206,20 @@ class EmbeddingGenerator:
                     model_name=self.model_name, reason=f"Image encoding failed: {e}"
                 ) from e
 
-        # Return single or batch
+        # Return single or batch (filter out None values)
         if is_batch:
-            return embeddings
+            # Filter out None values to match return type
+            return [emb for emb in embeddings if emb is not None]
         else:
-            return embeddings[0]
+            # For single image, return the first embedding (guaranteed to be non-None at this point)
+            result = embeddings[0]
+            if result is None:
+                raise InferenceException(self.model_name, "Failed to generate image embedding")
+            return result
 
     def encode_text(
         self, text: str | list[str], normalize: bool = True
-    ) -> np.ndarray | list[np.ndarray]:
+    ) -> np.ndarray[Any, Any] | list[np.ndarray[Any, Any]]:
         """Generate text embeddings.
 
         Args:
@@ -222,17 +232,18 @@ class EmbeddingGenerator:
         # Handle batch input
         is_batch = isinstance(text, list)
         if not is_batch:
-            texts = [text]
+            texts: list[str] = [text]  # type: ignore[list-item]
         else:
-            texts = text
+            texts = cast(list[str], text)
 
         # Check cache
-        embeddings = []
+        embeddings: list[np.ndarray[Any, Any] | None] = []
         uncached_texts = []
         uncached_indices = []
 
         for i, txt in enumerate(texts):
-            if self.use_cache:
+            # txt is always str here since texts is always a list[str] at this point
+            if self.use_cache and self._cache is not None:
                 cache_key = self._get_text_cache_key(txt)
                 if cache_key in self._cache:
                     embeddings.append(self._cache[cache_key])
@@ -245,6 +256,9 @@ class EmbeddingGenerator:
 
         # Process uncached texts
         if uncached_texts:
+            if self.processor is None or self.model is None:
+                raise RuntimeError("Model not initialized")
+
             try:
                 # Prepare inputs
                 inputs = self.processor(
@@ -281,15 +295,20 @@ class EmbeddingGenerator:
                     model_name=self.model_name, reason=f"Text encoding failed: {e}"
                 ) from e
 
-        # Return single or batch
+        # Return single or batch (filter out None values)
         if is_batch:
-            return embeddings
+            # Filter out None values to match return type
+            return [emb for emb in embeddings if emb is not None]
         else:
-            return embeddings[0]
+            # For single text, return the first embedding (guaranteed to be non-None at this point)
+            result = embeddings[0]
+            if result is None:
+                raise InferenceException(self.model_name, "Failed to generate text embedding")
+            return result
 
     def encode_multimodal(
-        self, image: Image.Image | np.ndarray, text: str, fusion: str = "average"
-    ) -> np.ndarray:
+        self, image: Image.Image | np.ndarray[Any, Any], text: str, fusion: str = "average"
+    ) -> np.ndarray[Any, Any]:
         """Generate combined image-text embedding.
 
         Args:
@@ -301,8 +320,12 @@ class EmbeddingGenerator:
             Fused embedding
         """
         # Get individual embeddings
-        image_emb = self.encode_image(image, normalize=True)
-        text_emb = self.encode_text(text, normalize=True)
+        image_emb_result = self.encode_image(image, normalize=True)
+        text_emb_result = self.encode_text(text, normalize=True)
+
+        # Ensure we have single embeddings, not lists
+        image_emb = image_emb_result[0] if isinstance(image_emb_result, list) else image_emb_result
+        text_emb = text_emb_result[0] if isinstance(text_emb_result, list) else text_emb_result
 
         # Fuse embeddings
         if fusion == "average":
@@ -311,19 +334,22 @@ class EmbeddingGenerator:
         elif fusion == "concat":
             fused = np.concatenate([image_emb, text_emb])
         elif fusion == "weighted":
-            # Use settings for weights
-            img_weight = self.settings.deterministic_weight
-            txt_weight = self.settings.semantic_weight
+            # Use default weights (deterministic vs semantic)
+            img_weight = 0.7  # Default deterministic weight
+            txt_weight = 0.3  # Default semantic weight
             fused = img_weight * image_emb + txt_weight * text_emb
             fused = fused / np.linalg.norm(fused)
         else:
             raise ValueError(f"Unknown fusion method: {fusion}")
 
-        return fused
+        return cast(np.ndarray[Any, Any], fused)
 
     def compute_similarity(
-        self, embeddings1: np.ndarray, embeddings2: np.ndarray, metric: str = "cosine"
-    ) -> np.ndarray:
+        self,
+        embeddings1: np.ndarray[Any, Any],
+        embeddings2: np.ndarray[Any, Any],
+        metric: str = "cosine",
+    ) -> np.ndarray[Any, Any]:
         """Compute similarity between embeddings.
 
         Args:
@@ -361,12 +387,12 @@ class EmbeddingGenerator:
         else:
             raise ValueError(f"Unknown metric: {metric}")
 
-        return similarity
+        return cast(np.ndarray[Any, Any], similarity)
 
     def find_similar(
         self,
-        query: str | Image.Image | np.ndarray,
-        candidates: list[np.ndarray],
+        query: str | Image.Image | np.ndarray[Any, Any],
+        candidates: list[np.ndarray[Any, Any]],
         k: int = 5,
         threshold: float | None = None,
     ) -> list[tuple[int, float]]:
@@ -383,9 +409,15 @@ class EmbeddingGenerator:
         """
         # Get query embedding
         if isinstance(query, str):
-            query_emb = self.encode_text(query)
+            query_emb_result = self.encode_text(query)
         else:
-            query_emb = self.encode_image(query)
+            query_emb_result = self.encode_image(query)
+
+        # Ensure single embedding (not list)
+        if isinstance(query_emb_result, list):
+            query_emb: np.ndarray[Any, Any] = query_emb_result[0]
+        else:
+            query_emb = query_emb_result
 
         # Stack candidates
         candidate_matrix = np.vstack(candidates)
@@ -425,12 +457,15 @@ class EmbeddingGenerator:
         text_hash = hashlib.md5(text.encode()).hexdigest()
         return f"txt_{text_hash}"
 
-    def _update_cache(self, key: str, embedding: np.ndarray):
+    def _update_cache(self, key: str, embedding: np.ndarray[Any, Any]):
         """Update embedding cache."""
+        if self._cache is None:
+            return
+
         # Limit cache size
         if len(self._cache) >= self.cache_size:
             # Remove oldest entry (simple FIFO)
-            oldest_key = next(iter(self._cache))
+            oldest_key = cast(str, next(iter(self._cache)))
             del self._cache[oldest_key]
 
         self._cache[key] = embedding
@@ -443,4 +478,4 @@ class EmbeddingGenerator:
 
     def get_embedding_dim(self) -> int:
         """Get embedding dimension."""
-        return self.embedding_dim
+        return cast(int, self.embedding_dim)

@@ -225,8 +225,8 @@ class ErrorRecoveryAspect:
         self._circuit_breakers: dict[str, CircuitBreaker] = {}
 
     def with_recovery(
-        self, policy: RetryPolicy | None = None, fallback: Callable | None = None
-    ) -> Callable:
+        self, policy: RetryPolicy | None = None, fallback: Callable[..., Any] | None = None
+    ) -> Callable[..., Any]:
         """Decorator to add error recovery to a method.
 
         Args:
@@ -237,7 +237,7 @@ class ErrorRecoveryAspect:
             Decorator function
         """
 
-        def decorator(func: Callable) -> Callable:
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             method_name = f"{func.__module__}.{func.__name__}"
 
             # Store method-specific policy
@@ -448,8 +448,8 @@ _error_recovery_aspect = ErrorRecoveryAspect()
 
 
 def with_error_recovery(
-    policy: RetryPolicy | None = None, fallback: Callable | None = None
-) -> Callable:
+    policy: RetryPolicy | None = None, fallback: Callable[..., Any] | None = None
+) -> Callable[..., Any]:
     """Decorator for error recovery.
 
     Args:

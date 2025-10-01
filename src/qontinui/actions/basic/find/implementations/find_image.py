@@ -5,7 +5,7 @@ Core image matching using template matching and other strategies.
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -108,7 +108,7 @@ class FindImage:
 
         return patterns
 
-    def _get_search_images(self, options: PatternFindOptions) -> list[np.ndarray]:
+    def _get_search_images(self, options: PatternFindOptions) -> list[np.ndarray[Any, Any]]:
         """Get images to search in.
 
         Args:
@@ -135,7 +135,10 @@ class FindImage:
         return search_images
 
     def _find_pattern(
-        self, pattern: Pattern, search_images: list[np.ndarray], options: PatternFindOptions
+        self,
+        pattern: Pattern,
+        search_images: list[np.ndarray[Any, Any]],
+        options: PatternFindOptions,
     ) -> list[Match]:
         """Find a single pattern in search images.
 
@@ -182,7 +185,10 @@ class FindImage:
         return matches
 
     def _single_scale_match(
-        self, template: np.ndarray, image: np.ndarray, options: PatternFindOptions
+        self,
+        template: np.ndarray[Any, Any],
+        image: np.ndarray[Any, Any],
+        options: PatternFindOptions,
     ) -> list[Match]:
         """Perform single-scale template matching.
 
@@ -237,7 +243,10 @@ class FindImage:
         return matches
 
     def _multiscale_match(
-        self, template: np.ndarray, image: np.ndarray, options: PatternFindOptions
+        self,
+        template: np.ndarray[Any, Any],
+        image: np.ndarray[Any, Any],
+        options: PatternFindOptions,
     ) -> list[Match]:
         """Perform multi-scale template matching.
 
@@ -304,7 +313,7 @@ class FindImage:
 
         return mapping.get(method, cv2.TM_CCOEFF_NORMED)
 
-    def _load_pattern_image(self, pattern: Pattern) -> np.ndarray | None:
+    def _load_pattern_image(self, pattern: Pattern) -> np.ndarray[Any, Any] | None:
         """Load pattern image.
 
         Args:
@@ -318,7 +327,7 @@ class FindImage:
         logger.debug("Loading pattern image")
         return None
 
-    def _capture_screen(self) -> np.ndarray | None:
+    def _capture_screen(self) -> np.ndarray[Any, Any] | None:
         """Capture full screen.
 
         Returns:
@@ -329,7 +338,7 @@ class FindImage:
         logger.debug("Capturing screen")
         return None
 
-    def _capture_region(self, region: Region) -> np.ndarray | None:
+    def _capture_region(self, region: Region) -> np.ndarray[Any, Any] | None:
         """Capture specific region.
 
         Args:
@@ -375,7 +384,7 @@ class ImageFinder:
         # Check if ML finder is available and should be used
         if self.use_ml_if_available and self._ml_finder is not None:
             logger.debug("Using ML-based image finder")
-            return self._ml_finder.find(object_collection, options)
+            return cast(list[Match], self._ml_finder.find(object_collection, options))
 
         # Fall back to legacy template matching
         logger.debug("Using template matching finder")

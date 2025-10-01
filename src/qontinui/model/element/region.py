@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from .location import Location
@@ -45,11 +45,29 @@ class Region:
     name: str | None = None
     """Optional name for this region."""
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize with screen dimensions if width/height are 0."""
         if self.width == 0 and self.height == 0:
             # Try to get screen dimensions
             self.width, self.height = self._get_screen_dimensions()
+
+    @property
+    def right(self) -> int:
+        """Get the right edge x-coordinate.
+
+        Returns:
+            X coordinate of right edge
+        """
+        return self.x + self.width
+
+    @property
+    def bottom(self) -> int:
+        """Get the bottom edge y-coordinate.
+
+        Returns:
+            Y coordinate of bottom edge
+        """
+        return self.y + self.height
 
     @staticmethod
     def _get_screen_dimensions() -> tuple[int, int]:
@@ -135,7 +153,7 @@ class Region:
         return self.width
 
     @w.setter
-    def w(self, value: int):
+    def w(self, value: int) -> None:
         self.width = value
 
     @property
@@ -144,7 +162,7 @@ class Region:
         return self.height
 
     @h.setter
-    def h(self, value: int):
+    def h(self, value: int) -> None:
         self.height = value
 
     @property
@@ -358,7 +376,7 @@ class Region:
 
         return regions
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary.
 
         Returns:
@@ -395,4 +413,165 @@ class Region:
 
     def __lt__(self, other) -> bool:
         """Compare regions by area."""
-        return self.area < other.area
+
+        return cast(bool, self.area < other.area)
+
+    def contains_point(self, x: int, y: int) -> bool:
+        """Check if a point is inside this region.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+
+        Returns:
+            True if point is inside region
+        """
+        return self.x <= x < self.x + self.width and self.y <= y < self.y + self.height
+
+    def is_defined(self) -> bool:
+        """Check if region is defined (has non-zero area).
+
+        Returns:
+            True if region has non-zero width and height
+        """
+        return self.width > 0 and self.height > 0
+
+    def get_center(self) -> Location:
+        """Get center location (method version of center property).
+
+        Returns:
+            Center location
+        """
+        return self.center
+
+    def distance_to(self, other: Region) -> float:
+        """Calculate distance between this region and another.
+
+        Args:
+            other: Other region
+
+        Returns:
+            Distance between closest edges, 0 if overlapping
+        """
+        import math
+
+        # If regions overlap, distance is 0
+        if self.overlaps(other):
+            return 0.0
+
+        # Calculate horizontal distance
+        if self.x + self.width < other.x:
+            dx = other.x - (self.x + self.width)
+        elif other.x + other.width < self.x:
+            dx = self.x - (other.x + other.width)
+        else:
+            dx = 0
+
+        # Calculate vertical distance
+        if self.y + self.height < other.y:
+            dy = other.y - (self.y + self.height)
+        elif other.y + other.height < self.y:
+            dy = self.y - (other.y + other.height)
+        else:
+            dy = 0
+
+        return math.sqrt(dx * dx + dy * dy)
+
+    def distance_from_center(self, x: int, y: int) -> float:
+        """Calculate distance from center of this region to a point.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+
+        Returns:
+            Distance from center to point
+        """
+        import math
+
+        center = self.center
+        dx = center.x - x
+        dy = center.y - y
+        return math.sqrt(dx * dx + dy * dy)
+
+    @property
+    def left(self) -> int:
+        """Get the left edge x-coordinate (alias for x).
+
+        Returns:
+            X coordinate of left edge
+        """
+        return self.x
+
+    @property
+    def top(self) -> int:
+        """Get the top edge y-coordinate (alias for y).
+
+        Returns:
+            Y coordinate of top edge
+        """
+        return self.y
+
+    def above(self, distance: int) -> Region:
+        """Create a region above this one.
+
+        Args:
+            distance: Height of the new region
+
+        Returns:
+            New region above this one
+        """
+        return Region(
+            x=self.x,
+            y=self.y - distance,
+            width=self.width,
+            height=distance,
+        )
+
+    def below(self, distance: int) -> Region:
+        """Create a region below this one.
+
+        Args:
+            distance: Height of the new region
+
+        Returns:
+            New region below this one
+        """
+        return Region(
+            x=self.x,
+            y=self.y + self.height,
+            width=self.width,
+            height=distance,
+        )
+
+    def left_of(self, distance: int) -> Region:
+        """Create a region to the left of this one.
+
+        Args:
+            distance: Width of the new region
+
+        Returns:
+            New region to the left of this one
+        """
+        return Region(
+            x=self.x - distance,
+            y=self.y,
+            width=distance,
+            height=self.height,
+        )
+
+    def right_of(self, distance: int) -> Region:
+        """Create a region to the right of this one.
+
+        Args:
+            distance: Width of the new region
+
+        Returns:
+            New region to the right of this one
+        """
+        return Region(
+            x=self.x + self.width,
+            y=self.y,
+            width=distance,
+            height=self.height,
+        )

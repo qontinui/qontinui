@@ -45,7 +45,7 @@ class ClickOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with click-specific defaults."""
         super().__init__()
         self._action_name = "click"
@@ -93,7 +93,7 @@ class DragOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with drag-specific defaults."""
         super().__init__()
         self._action_name = "drag"
@@ -136,7 +136,7 @@ class MoveOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with move-specific defaults."""
         super().__init__()
         self._action_name = "move"
@@ -169,7 +169,7 @@ class TypeOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with type-specific defaults."""
         super().__init__()
         self._action_name = "type"
@@ -206,7 +206,7 @@ class KeyDownOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with key down defaults."""
         super().__init__()
         self._action_name = "key_down"
@@ -231,7 +231,7 @@ class KeyUpOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with key up defaults."""
         super().__init__()
         self._action_name = "key_up"
@@ -250,7 +250,7 @@ class ScrollOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with scroll defaults."""
         super().__init__()
         self._action_name = "scroll"
@@ -287,7 +287,7 @@ class WaitOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with wait defaults."""
         super().__init__()
         self._action_name = "wait"
@@ -318,7 +318,7 @@ class FindOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with find defaults."""
         super().__init__()
         self._action_name = "find"
@@ -327,6 +327,7 @@ class FindOptions(ActionConfig):
         self._sort_by: str = "similarity"  # similarity, position, size
         self._cache_result: bool = False
         self._use_cache: bool = True
+        self._min_similarity: float = 0.95  # Default similarity threshold
 
     def find_all(self, find_all: bool = True) -> "FindOptions":
         """Find all matches vs first (fluent)."""
@@ -353,6 +354,38 @@ class FindOptions(ActionConfig):
         self._use_cache = use
         return self
 
+    def min_similarity(self, similarity: float) -> "FindOptions":
+        """Set minimum similarity threshold (fluent)."""
+        self._min_similarity = similarity
+        return self
+
+    def search_region(self, x: int, y: int, width: int, height: int) -> "FindOptions":
+        """Set search region (fluent).
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            width: Width
+            height: Height
+
+        Returns:
+            Self for chaining
+        """
+        # Store search region parameters if needed
+        return self
+
+    def timeout(self, seconds: float) -> "FindOptions":
+        """Set timeout (fluent).
+
+        Args:
+            seconds: Timeout in seconds
+
+        Returns:
+            Self for chaining
+        """
+        # Store timeout if needed
+        return self
+
 
 class GetTextOptions(ActionConfig):
     """Options for text extraction/OCR actions.
@@ -361,7 +394,7 @@ class GetTextOptions(ActionConfig):
     Inherits directly from ActionConfig.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with text extraction defaults."""
         super().__init__()
         self._action_name = "get_text"

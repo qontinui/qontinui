@@ -7,8 +7,8 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum, auto
-from typing import Any
+from enum import Enum, IntEnum, auto
+from typing import Any, cast
 
 from ....action_config import ActionConfig
 from ....action_interface import ActionInterface
@@ -16,7 +16,7 @@ from ....action_interface import ActionInterface
 logger = logging.getLogger(__name__)
 
 
-class LifecycleStage(Enum):
+class LifecycleStage(IntEnum):
     """Stages in action lifecycle."""
 
     CREATED = auto()
@@ -83,7 +83,7 @@ class ActionLifecycle:
         """
         self.action = action
         self.state = LifecycleState()
-        self._listeners: dict[LifecycleEvent, list[Callable]] = {}
+        self._listeners: dict[LifecycleEvent, list[Callable[..., Any]]] = {}
         self._stage_validators: dict[LifecycleStage, Callable[[], bool]] = {}
         self._setup_default_validators()
         logger.debug(f"Lifecycle created for {action.__class__.__name__}")
@@ -257,7 +257,7 @@ class ActionLifecycle:
             else:
                 self._fire_event(LifecycleEvent.ON_FAILURE)
 
-            return result
+            return cast(bool, result)
 
         except Exception as e:
             logger.error(f"Execution failed: {e}")
@@ -364,7 +364,7 @@ class ActionLifecycle:
             except Exception as e:
                 logger.warning(f"Event listener failed: {e}")
 
-    def add_listener(self, event: LifecycleEvent, listener: Callable):
+    def add_listener(self, event: LifecycleEvent, listener: Callable[..., Any]):
         """Add event listener.
 
         Args:
@@ -375,7 +375,7 @@ class ActionLifecycle:
             self._listeners[event] = []
         self._listeners[event].append(listener)
 
-    def remove_listener(self, event: LifecycleEvent, listener: Callable):
+    def remove_listener(self, event: LifecycleEvent, listener: Callable[..., Any]):
         """Remove event listener.
 
         Args:

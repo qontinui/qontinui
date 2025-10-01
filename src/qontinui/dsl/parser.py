@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from lark import Lark, Transformer
 
@@ -157,7 +157,7 @@ class ParsedAction:
     arguments: dict[str, Any]
 
 
-class QontinuiTransformer(Transformer):
+class QontinuiTransformer(Transformer[Any, Any]):
     """Transform parsed DSL into Python objects."""
 
     def __init__(self):
@@ -375,7 +375,7 @@ class QontinuiDSLParser:
         """
         try:
             tree = self.parser.parse(script)
-            return tree
+            return cast(dict[str, Any], tree)
         except Exception as e:
             logger.error(f"Failed to parse DSL script: {e}")
             raise

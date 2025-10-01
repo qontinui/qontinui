@@ -9,7 +9,7 @@ Extends Qontinui's StateMemory with:
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from qontinui.model.transition.enhanced_state_transition import StateTransition
 from qontinui.state_management.state_memory import StateMemory
@@ -17,7 +17,7 @@ from qontinui.state_management.state_memory import StateMemory
 from .multistate_adapter import MultiStateAdapter
 
 if TYPE_CHECKING:
-    from qontinui.model.state.state_service import StateService
+    from qontinui.state_management.state_memory import StateService
 
 logger = logging.getLogger(__name__)
 
@@ -150,9 +150,11 @@ class EnhancedStateMemory(StateMemory):
 
         # Cache result
         if path and use_cache:
-            self.navigation_cache[cache_key] = path
+            # Cast to match cache type (TaskSequenceStateTransition is a subclass of StateTransition)
+            self.navigation_cache[cache_key] = cast(list[StateTransition], path)
 
-        return path
+        # Cast to match return type (TaskSequenceStateTransition is a subclass of StateTransition)
+        return cast(list[StateTransition] | None, path)
 
     def activate_group(self, group_name: str) -> None:
         """Activate all states in a group atomically.
@@ -229,7 +231,7 @@ class EnhancedStateMemory(StateMemory):
             Set of state IDs that are visible
         """
         occluded = self.get_occluded_states()
-        return self.active_states - occluded
+        return cast(set[int], self.active_states - occluded)
 
     def get_dynamic_transitions(self) -> list[StateTransition]:
         """Get currently available dynamic transitions.
@@ -276,7 +278,7 @@ class EnhancedStateMemory(StateMemory):
         # 4. Temporal transitions that have become valid
         pass
 
-    def get_statistics(self) -> dict:
+    def get_statistics(self) -> dict[str, Any]:
         """Get enhanced statistics about state memory.
 
         Returns:

@@ -3,15 +3,15 @@
 Performs mouse click operations on GUI elements.
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from ....model.element.location import Location
-from ....model.match import Match
+from ....model.match import Match as ModelMatch
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
-from .click_options import ClickOptions
+from .click_options import ClickOptions, ClickOptionsBuilder
 
 
 class Click(ActionInterface):
@@ -44,6 +44,7 @@ class Click(ActionInterface):
 
     def __init__(
         self,
+        options: ClickOptions | None = None,
         click_location_once: Optional["SingleClickExecutor"] = None,
         time: Optional["TimeProvider"] = None,
         after_click: Optional["PostClickHandler"] = None,
@@ -51,10 +52,12 @@ class Click(ActionInterface):
         """Initialize Click action.
 
         Args:
+            options: Click options for configuration (timing, click type, etc.)
             click_location_once: Executor for single clicks
             time: Time provider for delays
             after_click: Handler for post-click actions
         """
+        self.options = options or ClickOptionsBuilder().build()
         self.click_location_once = click_location_once
         self.time = time
         self.after_click = after_click
@@ -66,6 +69,41 @@ class Click(ActionInterface):
             ActionType.CLICK
         """
         return ActionType.CLICK
+
+    def execute(self, target: Any = None) -> bool:
+        """Convenience method to execute a click action.
+
+        Args:
+            target: Target to click (Location, Region, Match, or ObjectCollection)
+
+        Returns:
+            True if click was successful
+        """
+        # Initialize ActionResult with stored ClickOptions
+        matches = ActionResult(self.options)
+        if target is None:
+            return False
+
+        # Convert target to ObjectCollection if needed
+        if isinstance(target, ObjectCollection):
+            self.perform(matches, target)
+        else:
+            # Create ObjectCollection from target
+            from ...object_collection import ObjectCollectionBuilder
+
+            builder = ObjectCollectionBuilder()
+            if isinstance(target, Location):
+                builder.with_locations(target)
+            elif isinstance(target, ModelMatch):
+                builder.with_match_objects_as_regions(target)
+            else:
+                # Assume it's already compatible
+                pass
+
+            obj_coll = builder.build()
+            self.perform(matches, obj_coll)
+
+        return matches.success
 
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute click operations on provided locations, regions, or existing matches.
@@ -96,32 +134,47 @@ class Click(ActionInterface):
 
         # Process all object collections
         for obj_collection in object_collections:
-            # Click on any existing matches in the collection
-            for match in obj_collection.get_matches():
-                location = match.target
-                if location:  # Only click if match has a target location
-                    self._click(location, click_options, match)
-                    clicked_count += 1
-                    # Pause between different targets
-                    if self.time and clicked_count < self._get_total_targets(object_collections):
-                        self.time.wait(click_options.get_pause_between_individual_actions())
+            # Click on any existing matches in the collection (ActionResult objects with match_list)
+            for action_result in obj_collection.matches:
+                # ActionResult contains a match_list with actual Match objects (from find module)
+                for find_match in action_result.match_list:
+                    location = find_match.target
+                    if location:  # Only click if match has a target location
+                        # Use the underlying match_object which is a ModelMatch
+                        self._click(location, click_options, find_match.match_object)
+                        clicked_count += 1
+                        # Pause between different targets
+                        if self.time and clicked_count < self._get_total_targets(
+                            object_collections
+                        ):
+                            self.time.wait(click_options.get_pause_between_individual_actions())
 
             # Click on any locations in the collection
-            for location in obj_collection.get_locations():
-                # Create a temporary match for tracking
-                temp_match = Match(target=location)
-                self._click(location, click_options, temp_match)
-                matches.match_list.append(temp_match)
+            for state_location in obj_collection.state_locations:
+                # Extract the Location from StateLocation
+                from ....find.match import Match as FindMatch
+
+                # Create a model Match for tracking
+                model_match = ModelMatch(target=state_location.location, score=1.0)
+                # Wrap in find Match for compatibility with match_list
+                find_match = FindMatch(match_object=model_match)
+                self._click(state_location.location, click_options, model_match)
+                matches.match_list.append(find_match)
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
 
             # Click on any regions in the collection (at their center)
-            for region in obj_collection.get_regions():
-                location = region.get_center()
-                temp_match = Match(target=location)
-                self._click(location, click_options, temp_match)
-                matches.match_list.append(temp_match)
+            for state_region in obj_collection.state_regions:
+                from ....find.match import Match as FindMatch
+
+                location = state_region.get_center()
+                # Create a model Match for tracking
+                model_match = ModelMatch(target=location, score=1.0)
+                # Wrap in find Match for compatibility with match_list
+                find_match = FindMatch(match_object=model_match)
+                self._click(location, click_options, model_match)
+                matches.match_list.append(find_match)
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
@@ -140,12 +193,12 @@ class Click(ActionInterface):
         """
         count = 0
         for obj_collection in object_collections:
-            count += len(obj_collection.get_matches())
-            count += len(obj_collection.get_locations())
-            count += len(obj_collection.get_regions())
+            count += len(obj_collection.matches)
+            count += len(obj_collection.state_locations)
+            count += len(obj_collection.state_regions)
         return count
 
-    def _click(self, location: Location, click_options: ClickOptions, match: Match) -> None:
+    def _click(self, location: Location, click_options: ClickOptions, match: ModelMatch) -> None:
         """Perform multiple clicks on a single location with configurable timing and post-click behavior.
 
         This method handles the low-level click execution for a single match, including:
@@ -233,7 +286,9 @@ class ActionResultFactory:
     Creates ActionResult instances.
     """
 
-    def init(self, action_config, description: str, object_collections: tuple) -> ActionResult:
+    def init(
+        self, action_config, description: str, object_collections: tuple[Any, ...]
+    ) -> ActionResult:
         """Initialize an ActionResult.
 
         Args:

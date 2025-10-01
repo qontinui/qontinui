@@ -60,10 +60,11 @@ class MouseDown(ActionInterface):
             raise ValueError("MouseDown requires MouseDownOptions configuration")
 
         options = matches.action_config
+        press_options = options.get_press_options()
 
-        # Pause before press
-        if options.pause_before_mouse_down > 0:
-            time.sleep(options.pause_before_mouse_down)
+        # Pause before press (using pause_after_release as timing before press)
+        if press_options.pause_after_release > 0:
+            time.sleep(press_options.pause_after_release)
 
         # Determine button
         button_map = {
@@ -71,14 +72,14 @@ class MouseDown(ActionInterface):
             MouseButton.RIGHT: "right",
             MouseButton.MIDDLE: "middle",
         }
-        button = button_map.get(options.button, "left")
+        button = button_map.get(press_options.button, "left")
 
         # Press button
         pyautogui.mouseDown(button=button)
         logger.debug(f"Mouse down: {button} button")
 
         # Pause after press
-        if options.pause_after_mouse_down > 0:
-            time.sleep(options.pause_after_mouse_down)
+        if press_options.pause_after_press > 0:
+            time.sleep(press_options.pause_after_press)
 
         matches.success = True

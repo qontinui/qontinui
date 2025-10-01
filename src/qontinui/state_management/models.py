@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -45,7 +45,7 @@ class Element:
 
     id: str
     bbox: tuple[int, int, int, int]  # (x, y, width, height)
-    embedding: np.ndarray | None = None
+    embedding: np.ndarray[Any, Any] | None = None
     description: str = ""
     element_type: ElementType = ElementType.UNKNOWN
     co_occurrences: list[str] = field(default_factory=list)
@@ -54,7 +54,7 @@ class Element:
     text_content: str | None = None
     attributes: dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate element data."""
         if len(self.bbox) != 4:
             raise ValueError(f"bbox must have 4 values, got {len(self.bbox)}")
@@ -181,7 +181,7 @@ class State:
 
     def get_element(self, element_id: str) -> Element | None:
         """Get element by ID."""
-        return self._element_lookup.get(element_id)
+        return cast(Element | None, self._element_lookup.get(element_id))
 
     def find_elements_by_type(self, element_type: ElementType) -> list[Element]:
         """Find all elements of a specific type."""

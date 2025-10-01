@@ -26,6 +26,32 @@ class StateTransitions:
     transitions: list[StateTransition] = field(default_factory=list)
     name: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    state_name: str | None = None
+
+    def get_state_name(self) -> str | None:
+        """Get the state name this transition set is associated with.
+
+        Returns:
+            State name or None
+        """
+        return self.state_name
+
+    def get_transitions(self) -> list[StateTransition]:
+        """Get all transitions in this set.
+
+        Returns:
+            List of transitions
+        """
+        return self.transitions
+
+    @classmethod
+    def builder(cls) -> StateTransitionsBuilder:
+        """Create a builder for StateTransitions.
+
+        Returns:
+            StateTransitionsBuilder instance
+        """
+        return StateTransitionsBuilder()
 
     def add(self, transition: StateTransition) -> StateTransitions:
         """Add a transition (fluent).
@@ -221,3 +247,88 @@ class StateTransitions:
     def __str__(self) -> str:
         """String representation."""
         return f"StateTransitions({len(self.transitions)} transitions)"
+
+
+class StateTransitionsBuilder:
+    """Builder for creating StateTransitions objects."""
+
+    def __init__(self):
+        """Initialize builder."""
+        self._transitions: list[StateTransition] = []
+        self._name: str | None = None
+        self._state_name: str | None = None
+        self._metadata: dict[str, Any] = {}
+
+    def with_name(self, name: str) -> StateTransitionsBuilder:
+        """Set the name (fluent).
+
+        Args:
+            name: Name for the transitions
+
+        Returns:
+            Self for chaining
+        """
+        self._name = name
+        return self
+
+    def with_state_name(self, state_name: str) -> StateTransitionsBuilder:
+        """Set the associated state name (fluent).
+
+        Args:
+            state_name: State name
+
+        Returns:
+            Self for chaining
+        """
+        self._state_name = state_name
+        return self
+
+    def add_transition(self, transition: StateTransition) -> StateTransitionsBuilder:
+        """Add a transition (fluent).
+
+        Args:
+            transition: Transition to add
+
+        Returns:
+            Self for chaining
+        """
+        self._transitions.append(transition)
+        return self
+
+    def add_transitions(self, transitions: list[StateTransition]) -> StateTransitionsBuilder:
+        """Add multiple transitions (fluent).
+
+        Args:
+            transitions: List of transitions to add
+
+        Returns:
+            Self for chaining
+        """
+        self._transitions.extend(transitions)
+        return self
+
+    def with_metadata(self, key: str, value: Any) -> StateTransitionsBuilder:
+        """Add metadata (fluent).
+
+        Args:
+            key: Metadata key
+            value: Metadata value
+
+        Returns:
+            Self for chaining
+        """
+        self._metadata[key] = value
+        return self
+
+    def build(self) -> StateTransitions:
+        """Build the StateTransitions object.
+
+        Returns:
+            Constructed StateTransitions
+        """
+        return StateTransitions(
+            transitions=self._transitions,
+            name=self._name,
+            state_name=self._state_name,
+            metadata=self._metadata,
+        )

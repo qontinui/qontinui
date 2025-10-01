@@ -184,6 +184,22 @@ class StateMemory:
         """
         return state_id in self.active_states
 
+    def is_state_active(self, state_name: str) -> bool:
+        """Check if a state is currently active by name.
+
+        Args:
+            state_name: State name to check
+
+        Returns:
+            True if state is active
+        """
+        if not self.state_service:
+            return False
+
+        # Get state ID from name
+        active_names = self.get_active_state_names()
+        return state_name in active_names
+
     def clear_active_states(self) -> None:
         """Clear all active states.
 
@@ -234,3 +250,19 @@ class StateService:
         """
         # Placeholder implementation
         return None
+
+
+# Global instance for convenience
+_state_memory: StateMemory | None = None
+
+
+def get_state_memory() -> StateMemory:
+    """Get or create global StateMemory instance.
+
+    Returns:
+        StateMemory instance
+    """
+    global _state_memory
+    if _state_memory is None:
+        _state_memory = StateMemory()
+    return _state_memory

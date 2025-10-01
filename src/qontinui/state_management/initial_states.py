@@ -93,7 +93,7 @@ class InitialStates:
         self.sum_of_probabilities = 0
         """Running total of all probability weights for normalization."""
 
-        self.potential_active_states: dict[frozenset, int] = {}
+        self.potential_active_states: dict[frozenset[int], int] = {}
         """Maps potential state sets to their cumulative probability thresholds.
 
         Each entry maps a set of state IDs to an integer representing the upper
@@ -123,7 +123,7 @@ class InitialStates:
             return
 
         self.sum_of_probabilities += probability
-        state_ids = frozenset(state.id for state in states)
+        state_ids = frozenset(state.id for state in states if state.id is not None)
         self.potential_active_states[state_ids] = self.sum_of_probabilities
 
     def add_state_set(self, probability: int, *state_names: str) -> None:
@@ -152,7 +152,10 @@ class InitialStates:
                 state_ids.add(state.id)
 
         if state_ids:
-            self.potential_active_states[frozenset(state_ids)] = self.sum_of_probabilities
+            # Filter out None values before creating frozenset
+            valid_ids = {id for id in state_ids if id is not None}
+            if valid_ids:
+                self.potential_active_states[frozenset(valid_ids)] = self.sum_of_probabilities
 
     def find_initial_states(self) -> None:
         """Discover and activate the initial states for automation.
@@ -169,7 +172,7 @@ class InitialStates:
         """
         logger.info("Finding initial states")
 
-        if FrameworkSettings.mock:
+        if FrameworkSettings.get_instance().mock:
             self._mock_initial_states()
         else:
             self._search_for_initial_states()
@@ -237,7 +240,7 @@ class InitialStates:
                 self._search_for_states(potential)
 
     def _search_for_states(
-        self, potential_active_states_and_probabilities: dict[frozenset, int]
+        self, potential_active_states_and_probabilities: dict[frozenset[int], int]
     ) -> None:
         """Execute state searches for all states in the provided sets.
 
@@ -251,7 +254,7 @@ class InitialStates:
         if not self.state_finder:
             return
 
-        all_potential_states = set()
+        all_potential_states: set[int] = set()
         for state_ids in potential_active_states_and_probabilities.keys():
             all_potential_states.update(state_ids)
 

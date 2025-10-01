@@ -7,16 +7,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ..element.region import Region
+from ..search_regions import SearchRegions
 
 if TYPE_CHECKING:
     from qontinui.model.element.scene import Scene
+    from qontinui.model.state.state_enum import StateEnum
     from qontinui.model.state.state_image import StateImage
     from qontinui.model.state.state_location import StateLocation
     from qontinui.model.state.state_region import StateRegion
     from qontinui.model.state.state_string import StateString
+    from qontinui.model.transition.state_transition import StateTransition
 
 
 @dataclass
@@ -56,6 +59,9 @@ class State:
 
     id: int | None = None
     """Database ID, set when saved."""
+
+    state_enum: StateEnum | None = None
+    """Optional enum value for this state."""
 
     state_text: set[str] = field(default_factory=set)
     """Text that appears on screen as a clue to look for images in this state."""
@@ -111,6 +117,74 @@ class State:
     match_history: ActionHistory = field(default_factory=lambda: ActionHistory())
     """History of actions performed in this state."""
 
+    transitions: list[StateTransition] = field(default_factory=list)
+    """List of transitions from this state."""
+
+    def exists(self, timeout: float = 0.0) -> bool:
+        """Check if this state exists.
+
+        Args:
+            timeout: Maximum time to wait for state to exist
+
+        Returns:
+            True if state exists, False otherwise
+        """
+        # This is a placeholder implementation
+        # The actual implementation should check if state images are visible
+        return self.probability_exists > 0
+
+    def wait_for(self, timeout: float = 10.0) -> bool:
+        """Wait for this state to appear.
+
+        Args:
+            timeout: Maximum time to wait
+
+        Returns:
+            True if state appeared, False otherwise
+        """
+        # This is a placeholder implementation
+        # The actual implementation should wait for state images to be visible
+        return self.exists(timeout)
+
+    def get_transitions_to(self, target_state: str) -> list[StateTransition]:
+        """Get transitions to a specific target state.
+
+        Args:
+            target_state: Target state name
+
+        Returns:
+            List of transitions to the target state
+        """
+        return [t for t in self.transitions if t.to_state == target_state]
+
+    def get_possible_next_states(self) -> list[str]:
+        """Get list of possible next states from this state.
+
+        Returns:
+            List of state names that can be reached from this state
+        """
+        next_states = []
+        for transition in self.transitions:
+            if transition.to_state:
+                next_states.append(transition.to_state)
+        return list(set(next_states))  # Remove duplicates
+
+    def add_transition(self, transition: StateTransition) -> None:
+        """Add a transition from this state.
+
+        Args:
+            transition: StateTransition to add
+        """
+        self.transitions.append(transition)
+
+    def get_state_images(self) -> list[StateImage]:
+        """Get list of state images.
+
+        Returns:
+            List of StateImage objects
+        """
+        return self.state_images
+
     def add_state_image(self, state_image: StateImage) -> None:
         """Add a StateImage to this state.
 
@@ -161,8 +235,9 @@ class State:
         Args:
             search_region: Region to set
         """
+        search_regions = SearchRegions().add_region(search_region)
         for image_obj in self.state_images:
-            image_obj.set_search_regions(search_region)
+            image_obj.set_search_regions(search_regions)
 
     def set_probability_to_base_probability(self) -> None:
         """Reset probability to base probability."""
@@ -196,9 +271,9 @@ class State:
 
         # Add regions from StateImages
         for state_image in self.state_images:
-            # Add fixed regions
-            for pattern in state_image.patterns:
-                fixed_region = pattern.search_regions.get_fixed_region()
+            # Add fixed regions from search_regions
+            if state_image.search_regions:
+                fixed_region = state_image.search_regions.get_fixed_region()
                 if fixed_region and fixed_region.is_defined():
                     image_regions.append(fixed_region)
 
@@ -222,11 +297,12 @@ class State:
             return Region()  # Return undefined region
 
         # Calculate union of all regions
+
         union = image_regions[0]
         for i in range(1, len(image_regions)):
             union = union.union(image_regions[i])
 
-        return union
+        return cast(Region, union)
 
     def __str__(self) -> str:
         """String representation."""
@@ -259,18 +335,18 @@ class StateBuilder:
             name: Name of the state
         """
         self.name = name
-        self.state_text = set()
-        self.state_images = []  # List instead of set for unhashable objects
-        self.state_strings = []  # List instead of set for unhashable objects
-        self.state_regions = []  # List instead of set for unhashable objects
-        self.state_locations = []  # List instead of set for unhashable objects
+        self.state_text: set[str] = set()
+        self.state_images: list[StateImage] = []  # List instead of set for unhashable objects
+        self.state_strings: list[StateString] = []  # List instead of set for unhashable objects
+        self.state_regions: list[StateRegion] = []  # List instead of set for unhashable objects
+        self.state_locations: list[StateLocation] = []  # List instead of set for unhashable objects
         self.blocking = False
-        self.can_hide = set()
-        self.hidden = set()
+        self.can_hide: set[str] = set()
+        self.hidden: set[str] = set()
         self.path_score = 1
         self.last_accessed = None
         self.base_probability_exists = 100
-        self.scenes = []
+        self.scenes: list[Scene] = []
         self.usable_area = Region()
 
     def with_text(self, *state_text: str) -> StateBuilder:

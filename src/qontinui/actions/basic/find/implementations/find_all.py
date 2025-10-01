@@ -5,6 +5,7 @@ Exhaustive pattern matching to find all occurrences.
 
 import logging
 from dataclasses import dataclass, field
+from typing import cast
 
 from .....model.element.location import Location
 from .....model.element.region import Region
@@ -135,10 +136,10 @@ class FindAll:
         seen_locations: set[tuple[int, int]] = set()
 
         for match in matches:
-            if match.location:
+            if match.target:
                 # Round location to grid to catch near-duplicates
-                grid_x = round(match.location.x / 5) * 5
-                grid_y = round(match.location.y / 5) * 5
+                grid_x = round(match.target.x / 5) * 5
+                grid_y = round(match.target.y / 5) * 5
                 location_key = (grid_x, grid_y)
 
                 if location_key not in seen_locations:
@@ -166,7 +167,7 @@ class FindAll:
         # Sort by similarity (best first)
         sorted_matches = sorted(matches, key=lambda m: m.similarity, reverse=True)
 
-        filtered = []
+        filtered: list[Match] = []
         for match in sorted_matches:
             # Check overlap with already accepted matches
             is_overlapping = False
@@ -198,12 +199,12 @@ class FindAll:
         # Sort by similarity
         sorted_matches = sorted(matches, key=lambda m: m.similarity, reverse=True)
 
-        filtered = []
+        filtered: list[Match] = []
         for match in sorted_matches:
             too_close = False
 
             for accepted in filtered:
-                distance = self._calculate_distance(match.location, accepted.location)
+                distance = self._calculate_distance(match.target, accepted.target)
                 if distance < self.min_distance_between_matches:
                     too_close = True
                     break
@@ -225,8 +226,8 @@ class FindAll:
         """
 
         def sort_key(match: Match) -> tuple[int, int]:
-            if match.location:
-                return (match.location.y, match.location.x)
+            if match.target:
+                return (match.target.y, match.target.x)
             return (0, 0)
 
         return sorted(matches, key=sort_key)
@@ -280,7 +281,7 @@ class FindAll:
 
         dx = loc1.x - loc2.x
         dy = loc1.y - loc2.y
-        return (dx * dx + dy * dy) ** 0.5
+        return cast(float, (dx * dx + dy * dy) ** 0.5)
 
 
 @dataclass

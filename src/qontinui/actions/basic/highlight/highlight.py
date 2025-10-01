@@ -4,6 +4,7 @@ Highlights regions on screen for debugging and visualization.
 """
 
 import time
+from typing import Any
 
 from ....model.element.region import Region
 from ...action_interface import ActionInterface
@@ -51,7 +52,7 @@ class Highlight(ActionInterface):
         regions = self._find_regions_to_highlight(action_result, object_collections)
         if not regions:
             action_result.success = False
-            action_result.text = "No regions found to highlight"
+            action_result.output_text = "No regions found to highlight"
             return
 
         # Perform highlighting
@@ -66,10 +67,10 @@ class Highlight(ActionInterface):
 
         action_result.success = success
         if success:
-            action_result.text = f"Highlighted {len(regions)} region(s)"
+            action_result.output_text = f"Highlighted {len(regions)} region(s)"
 
     def _find_regions_to_highlight(
-        self, action_result: ActionResult, object_collections: tuple
+        self, action_result: ActionResult, object_collections: tuple[Any, ...]
     ) -> list[Region]:
         """Find regions to highlight.
 
@@ -80,7 +81,7 @@ class Highlight(ActionInterface):
         Returns:
             List of regions to highlight
         """
-        regions = []
+        regions: list[Region] = []
 
         if not object_collections:
             return regions
@@ -90,17 +91,19 @@ class Highlight(ActionInterface):
             find_result = ActionResult(action_result.action_config)
             self.find.perform(find_result, *object_collections)
 
-            if find_result.is_success() and find_result.match_list:
+            if find_result.is_success and find_result.match_list:
                 # Extract regions from all matches
                 for match in find_result.match_list:
-                    regions.append(match.get_region())
+                    region = match.get_region()
+                    if region is not None:
+                        regions.append(region)
 
         return regions
 
     def _highlight_regions(
         self,
         regions: list[Region],
-        color: tuple,
+        color: tuple[Any, ...],
         thickness: int,
         duration: float,
         flash: bool,
@@ -138,7 +141,9 @@ class Highlight(ActionInterface):
 
         return True
 
-    def _draw_highlights(self, regions: list[Region], color: tuple, thickness: int) -> None:
+    def _draw_highlights(
+        self, regions: list[Region], color: tuple[Any, ...], thickness: int
+    ) -> None:
         """Draw highlight borders around regions.
 
         Args:

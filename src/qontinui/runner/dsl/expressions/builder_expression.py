@@ -61,7 +61,7 @@ class BuilderExpression(Expression):
         self.method_calls = method_calls or []
 
     @classmethod
-    def from_dict(cls, data: dict) -> "BuilderExpression":
+    def from_dict(cls, data: dict[str, Any]) -> "BuilderExpression":
         """Create BuilderExpression from dictionary.
 
         Args:
@@ -76,7 +76,7 @@ class BuilderExpression(Expression):
 
         return cls(builder_type=data.get("builderType", ""), method_calls=method_calls)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:
@@ -88,7 +88,7 @@ class BuilderExpression(Expression):
             result["methodCalls"] = [mc.to_dict() for mc in self.method_calls]
         return result
 
-    def evaluate(self, context: dict) -> Any:
+    def evaluate(self, context: dict[str, Any]) -> Any:
         """Evaluate the builder expression.
 
         Args:
@@ -118,7 +118,7 @@ class BuilderMethodCall:
     """Arguments to pass to the method."""
 
     @classmethod
-    def from_dict(cls, data: dict) -> "BuilderMethodCall":
+    def from_dict(cls, data: dict[str, Any]) -> "BuilderMethodCall":
         """Create BuilderMethodCall from dictionary.
 
         Args:
@@ -133,13 +133,13 @@ class BuilderMethodCall:
 
         return cls(method=data.get("method", ""), arguments=arguments)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:
             Dictionary representation
         """
-        result = {"method": self.method}
+        result: dict[str, Any] = {"method": self.method}
         if self.arguments:
             result["arguments"] = [arg.to_dict() for arg in self.arguments]
         return result

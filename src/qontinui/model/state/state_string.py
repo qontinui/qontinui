@@ -60,6 +60,14 @@ class StateString:
         matches = self.find_on_screen()
         return len(matches) > 0
 
+    def get_string(self) -> str:
+        """Get the string value.
+
+        Returns:
+            The string value
+        """
+        return self.string
+
     def type(self) -> ActionResult:
         """Type this string.
 
@@ -171,6 +179,26 @@ class StateString:
     def is_regex(self) -> bool:
         """Check if this is a regex pattern."""
         return self._regex
+
+    def get_owner_state_name(self) -> str:
+        """Get the owner state name.
+
+        Returns:
+            Owner state name or empty string if no owner
+        """
+        if self.owner_state is None:
+            return ""
+        return self.owner_state.name if hasattr(self.owner_state, "name") else ""
+
+    def set_times_acted_on(self, times: int) -> None:
+        """Set times acted on count.
+
+        Args:
+            times: Number of times acted on
+        """
+        # StateString doesn't track action history like other state objects
+        # This is a placeholder for API compatibility
+        pass
 
     def __str__(self) -> str:
         """String representation."""

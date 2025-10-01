@@ -39,6 +39,54 @@ class DragOptions(ActionConfig):
         """Get delay after drag."""
         return self.delay_after_drag
 
+    def get_find_source_options(self) -> "ActionConfig":
+        """Get find source options.
+
+        Returns:
+            ActionConfig for finding the source
+        """
+        return self
+
+    def get_find_target_options(self) -> "ActionConfig":
+        """Get find target options.
+
+        Returns:
+            ActionConfig for finding the target
+        """
+        return self
+
+    def get_move_to_source_options(self) -> "ActionConfig":
+        """Get move to source options.
+
+        Returns:
+            ActionConfig for moving to source
+        """
+        return self
+
+    def get_mouse_down_options(self) -> MousePressOptions:
+        """Get mouse down options.
+
+        Returns:
+            MousePressOptions for mouse down
+        """
+        return self.mouse_press_options
+
+    def get_move_to_target_options(self) -> "ActionConfig":
+        """Get move to target options.
+
+        Returns:
+            ActionConfig for moving to target
+        """
+        return self
+
+    def get_mouse_up_options(self) -> MousePressOptions:
+        """Get mouse up options.
+
+        Returns:
+            MousePressOptions for mouse up
+        """
+        return self.mouse_press_options
+
 
 class DragOptionsBuilder(ActionConfigBuilder):
     """Builder for constructing DragOptions with a fluent API.

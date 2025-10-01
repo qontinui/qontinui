@@ -65,3 +65,11 @@ class SearchRegions:
             True if no regions are defined, False otherwise
         """
         return len(self.regions) == 0
+
+    def get_fixed_region(self) -> Region | None:
+        """Get the first region if defined.
+
+        Returns:
+            First region if available, None otherwise
+        """
+        return self.regions[0] if self.regions else None

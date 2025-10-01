@@ -321,7 +321,7 @@ class MockActionHistoryBuilder:
                 center_location.region = match_region
 
                 match_obj = MatchObject(
-                    score=similarity, target=center_location, name=f"mock_match_{i}", text=""
+                    score=similarity, target=center_location, name=f"mock_match_{i}", ocr_text=""
                 )
 
                 # Create Match wrapper - but Match expects match_object not MatchObject

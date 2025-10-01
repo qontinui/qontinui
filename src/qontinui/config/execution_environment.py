@@ -9,7 +9,7 @@ import platform
 import subprocess
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class SystemInfo:
     screen_count: int
     """Number of screens/monitors."""
 
-    primary_screen_resolution: tuple
+    primary_screen_resolution: tuple[Any, ...]
     """Primary screen resolution (width, height)."""
 
     dpi: int | None
@@ -225,7 +225,7 @@ class ExecutionEnvironment:
 
         return DisplayServer.UNKNOWN
 
-    def _detect_screen_info(self) -> tuple:
+    def _detect_screen_info(self) -> tuple[Any, ...]:
         """Detect screen configuration.
 
         Returns:
@@ -421,7 +421,8 @@ class ExecutionEnvironment:
         Returns:
             True if headless
         """
-        return self.system_info.display_server == DisplayServer.HEADLESS
+
+        return cast(bool, self.system_info.display_server == DisplayServer.HEADLESS)
 
     def supports_screenshots(self) -> bool:
         """Check if environment supports screenshots.

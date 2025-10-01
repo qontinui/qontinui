@@ -5,12 +5,13 @@ Visual pattern-based state discovery system.
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 if TYPE_CHECKING:
     from ..actions.basic.find.find import Find
     from ..model.match.match import Match
 
+from ..actions.action_result import ActionResult
 from ..actions.object_collection import ObjectCollection
 from ..model.state.state import State
 from ..model.state.state_service import StateService
@@ -72,7 +73,7 @@ class StateDetector:
         states_to_remove = set()
 
         for state_id in state_ids:
-            state = self.state_store.get_state(state_id)
+            state = self.state_store.get(state_id)
             if not state:
                 logger.warning(f"State {state_id} not found in store")
                 states_to_remove.add(state_id)
@@ -109,11 +110,11 @@ class StateDetector:
         self.state_memory.clear_active_states()
 
         # Get all states from store
-        all_states = self.state_store.get_all_states()
+        all_states = self.state_store.get_all()
         found_states = set()
 
         for state in all_states:
-            if self._is_state_visible(state):
+            if self._is_state_visible(state) and state.id is not None:
                 found_states.add(state.id)
                 self.state_memory.add_active_state(state.id, state)
                 logger.info(f"Found active state: {state.name} ({state.id})")
@@ -133,10 +134,10 @@ class StateDetector:
         logger.debug("Performing comprehensive state search")
         results = {}
 
-        all_states = self.state_store.get_all_states()
+        all_states = self.state_store.get_all()
 
         for state in all_states:
-            if not state.state_images:
+            if not state.state_images or state.id is None:
                 continue
 
             matches = self._search_state_images(state)
@@ -148,7 +149,7 @@ class StateDetector:
 
         return results
 
-    def find_state(self, state_identifier: any) -> State | None:
+    def find_state(self, state_identifier: Any) -> State | None:
         """Search for a specific state by name or ID.
 
         Args:
@@ -159,9 +160,9 @@ class StateDetector:
         """
         # Resolve state
         if isinstance(state_identifier, str):
-            state = self.state_store.get_state_by_name(state_identifier)
+            state = self.state_store.get(state_identifier)
         elif isinstance(state_identifier, int):
-            state = self.state_store.get_state(state_identifier)
+            state = self.state_store.get(state_identifier)
         else:
             logger.error(f"Invalid state identifier type: {type(state_identifier)}")
             return None
@@ -172,8 +173,9 @@ class StateDetector:
 
         # Check if visible
         if self._is_state_visible(state):
-            self.state_memory.add_active_state(state.id, state)
-            return state
+            if state.id is not None:
+                self.state_memory.add_active_state(state.id, state)
+            return cast(State | None, state)
 
         return None
 
@@ -216,7 +218,7 @@ class StateDetector:
 
             for state_id in expected_state_ids:
                 if state_id not in self.state_memory.active_states:
-                    state = self.state_store.get_state(state_id)
+                    state = self.state_store.get(state_id)
                     if state and self._is_state_visible(state):
                         self.state_memory.add_active_state(state_id, state)
                     else:
@@ -271,9 +273,10 @@ class StateDetector:
 
         # Perform find operation
         try:
-            result = self.find_action.perform(collection)
-            if result and result.has_matches():
-                return result.get_matches()
+            result = ActionResult()
+            self.find_action.perform(result, collection)
+            if result and not result.is_empty():
+                return cast(list[Match], result.get_match_list())
         except Exception as e:
             logger.error(f"Error searching for state {state.name}: {e}")
 

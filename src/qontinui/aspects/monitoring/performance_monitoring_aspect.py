@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from functools import wraps
 from threading import Lock
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class MethodPerformanceStats:
     max_time_ms: float = 0.0
     """Maximum execution time."""
 
-    recent_times: deque = field(default_factory=lambda: deque(maxlen=100))
+    recent_times: deque[float] = field(default_factory=lambda: deque(maxlen=100))
     """Recent execution times for percentile calculation."""
 
     last_call_time: datetime | None = None
@@ -137,9 +138,9 @@ class PerformanceMonitoringAspect:
         self._last_report_time = datetime.now()
 
         # Trend detection
-        self._performance_trends: dict[str, list[float]] = {}
+        self._performance_trends: dict[str, deque[float]] = {}
 
-    def monitor(self, name: str | None = None, track_args: bool = False) -> Callable:
+    def monitor(self, name: str | None = None, track_args: bool = False) -> Callable[..., Any]:
         """Decorator to monitor method performance.
 
         Args:
@@ -150,7 +151,7 @@ class PerformanceMonitoringAspect:
             Decorator function
         """
 
-        def decorator(func: Callable) -> Callable:
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             operation_name = name or f"{func.__module__}.{func.__name__}"
 
             @wraps(func)
@@ -249,7 +250,7 @@ class PerformanceMonitoringAspect:
             import psutil
 
             process = psutil.Process()
-            return process.memory_info().rss / 1024 / 1024
+            return cast(float, process.memory_info().rss / 1024 / 1024)
         except ImportError:
             return 0.0
 
@@ -262,7 +263,7 @@ class PerformanceMonitoringAspect:
         with self._stats_lock:
             return dict(self._stats)
 
-    def get_slowest_operations(self, limit: int = 10) -> list[tuple]:
+    def get_slowest_operations(self, limit: int = 10) -> list[tuple[Any, ...]]:
         """Get the slowest operations.
 
         Args:
@@ -380,7 +381,7 @@ class PerformanceMonitoringAspect:
 _performance_aspect = PerformanceMonitoringAspect()
 
 
-def performance_monitored(name: str | None = None) -> Callable:
+def performance_monitored(name: str | None = None) -> Callable[..., Any]:
     """Decorator for performance monitoring.
 
     Args:

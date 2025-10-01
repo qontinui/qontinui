@@ -4,14 +4,19 @@ Java test file scanner for discovering Brobot test files.
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import TestScanner
     from ..core.models import Dependency, TestFile, TestType
-except ImportError:
-    # Handle direct import case
-    from core.interfaces import TestScanner
-    from core.models import Dependency, TestFile, TestType
+else:
+    try:
+        from ..core.interfaces import TestScanner
+        from ..core.models import Dependency, TestFile, TestType
+    except ImportError:
+        # Handle direct import case
+        from core.interfaces import TestScanner
+        from core.models import Dependency, TestFile, TestType
 
 
 class BrobotTestScanner(TestScanner):
@@ -200,7 +205,7 @@ class BrobotTestScanner(TestScanner):
             # If we can't read the file, assume it's not a test
             return False
 
-    def _create_test_file(self, java_file: Path) -> TestFile:
+    def _create_test_file(self, java_file: Path) -> TestFile | None:
         """
         Create a TestFile object from a Java file path.
 

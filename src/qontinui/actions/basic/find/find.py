@@ -3,7 +3,7 @@
 Core pattern matching action that locates GUI elements on the screen.
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
@@ -110,7 +110,10 @@ class FindPipeline:
     """
 
     def execute(
-        self, find_options: BaseFindOptions, matches: ActionResult, object_collections: tuple
+        self,
+        find_options: BaseFindOptions,
+        matches: ActionResult,
+        object_collections: tuple[Any, ...],
     ) -> None:
         """Execute the find pipeline.
 

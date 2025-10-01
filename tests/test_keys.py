@@ -32,23 +32,23 @@ def test_key_classification():
     print("\nTesting key classification...")
 
     # Test modifier detection
-    assert Key.is_modifier(Key.SHIFT) == True
-    assert Key.is_modifier(Key.CTRL) == True
-    assert Key.is_modifier(Key.ALT) == True
-    assert Key.is_modifier(Key.ENTER) == False
-    assert Key.is_modifier(Key.F1) == False
+    assert Key.is_modifier(Key.SHIFT)
+    assert Key.is_modifier(Key.CTRL)
+    assert Key.is_modifier(Key.ALT)
+    assert not Key.is_modifier(Key.ENTER)
+    assert not Key.is_modifier(Key.F1)
 
     # Test function key detection
-    assert Key.is_function_key(Key.F1) == True
-    assert Key.is_function_key(Key.F12) == True
-    assert Key.is_function_key(Key.ENTER) == False
-    assert Key.is_function_key(Key.SHIFT) == False
+    assert Key.is_function_key(Key.F1)
+    assert Key.is_function_key(Key.F12)
+    assert not Key.is_function_key(Key.ENTER)
+    assert not Key.is_function_key(Key.SHIFT)
 
     # Test navigation key detection
-    assert Key.is_navigation_key(Key.UP) == True
-    assert Key.is_navigation_key(Key.DOWN) == True
-    assert Key.is_navigation_key(Key.HOME) == True
-    assert Key.is_navigation_key(Key.ENTER) == False
+    assert Key.is_navigation_key(Key.UP)
+    assert Key.is_navigation_key(Key.DOWN)
+    assert Key.is_navigation_key(Key.HOME)
+    assert not Key.is_navigation_key(Key.ENTER)
 
     print("✓ Key classification methods work correctly")
 
@@ -70,7 +70,7 @@ def test_key_from_string():
     # Test error case
     try:
         Key.from_string("invalid_key")
-        assert False, "Should have raised ValueError"
+        raise AssertionError("Should have raised ValueError")
     except ValueError as e:
         assert "No Key enum found" in str(e)
 

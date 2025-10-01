@@ -6,7 +6,7 @@ Orchestrates the complete find operation pipeline.
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 if TYPE_CHECKING:
     from .strategy_registry import StrategyRegistry
@@ -134,7 +134,7 @@ class FindPipeline:
         if self.strategy_registry:
             implementation = self.strategy_registry.get_implementation(strategy)
             if implementation:
-                return implementation.find(object_collection, options)
+                return cast(list[Match], implementation.find(object_collection, options))
 
         # Fallback to basic implementation
         logger.warning(f"No implementation found for strategy: {strategy.name}")
@@ -243,12 +243,16 @@ class FindPipeline:
         # Sort by similarity (highest first)
         matches = sorted(matches, key=lambda m: m.similarity, reverse=True)
 
-        keep = []
+        keep: list[Match] = []
         for match in matches:
             # Check overlap with already kept matches
             should_keep = True
             for kept_match in keep:
-                if self._calculate_iou(match.region, kept_match.region) > threshold:
+                if (
+                    match.region
+                    and kept_match.region
+                    and self._calculate_iou(match.region, kept_match.region) > threshold
+                ):
                     should_keep = False
                     break
 
@@ -396,4 +400,4 @@ class PipelineBuilder:
         Returns:
             Configured FindPipeline
         """
-        return self._pipeline
+        return cast(FindPipeline, self._pipeline)

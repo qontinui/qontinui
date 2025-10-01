@@ -21,7 +21,8 @@ class KeyPress(Action):
         Args:
             config: ActionConfig instance or None for defaults
         """
-        super().__init__(config or ActionConfig())
+        super().__init__()
+        self._config = config or ActionConfig()
         self._pure = PureActions()
 
     def execute_key(self, key: str) -> ActionResult:
@@ -49,7 +50,8 @@ class KeyDown(Action):
         Args:
             config: KeyDownOptions instance or None for defaults
         """
-        super().__init__(config or KeyDownOptions())
+        super().__init__()
+        self._config = config or KeyDownOptions()
         self._pure = PureActions()
 
     def execute_key(self, key: str) -> ActionResult:
@@ -101,7 +103,8 @@ class KeyUp(Action):
         Args:
             config: KeyUpOptions instance or None for defaults
         """
-        super().__init__(config or KeyUpOptions())
+        super().__init__()
+        self._config = config or KeyUpOptions()
         self._pure = PureActions()
 
     def execute_key(self, key: str) -> ActionResult:
@@ -146,7 +149,12 @@ class TypeText(Action):
         Args:
             config: TypeOptions instance or None for defaults
         """
-        super().__init__(config or TypeOptions())
+        super().__init__()
+        if config is None:
+            from ..actions.basic.type import TypeOptionsBuilder
+
+            config = TypeOptionsBuilder().build()
+        self._config = config
         self._pure = PureActions()
 
     def execute_text(self, text: str) -> ActionResult:

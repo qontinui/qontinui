@@ -154,7 +154,7 @@ class OverlappingGrids:
         if not cells:
             # Return nearest cell if point is outside all cells
             all_regions = self.get_all_regions()
-            return min(all_regions, key=lambda r: r.distance_to(x, y))
+            return min(all_regions, key=lambda r: r.distance_from_center(x, y))
 
         # Return cell where point is most centered
         return min(cells, key=lambda r: r.distance_from_center(x, y))

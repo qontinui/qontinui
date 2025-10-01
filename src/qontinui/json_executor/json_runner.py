@@ -1,5 +1,7 @@
 """Main runner for executing Qontinui JSON configurations."""
 
+from typing import Any, cast
+
 from ..monitor.monitor_manager import MonitorManager
 from .action_executor import ActionExecutor
 from .config_parser import ConfigParser, QontinuiConfig
@@ -156,11 +158,16 @@ class JSONRunner:
         print(f"Active states: {self.state_executor.get_active_states()}")
         print(f"State history: {self.state_executor.get_state_history()}")
 
-        return result
+        return cast(bool, result)
 
     def _run_processes(self) -> bool:
         """Run all processes sequentially."""
         print("\n=== Running Processes ===\n")
+
+        # Type guards: ensure config and its attributes are not None
+        if self.config is None or self.config.processes is None:
+            print("No processes to execute")
+            return True
 
         action_executor = ActionExecutor(self.config)
         # Pass monitor manager to action executor
@@ -173,7 +180,10 @@ class JSONRunner:
             for action in process.actions:
                 if not action_executor.execute_action(action):
                     print(f"Action {action.id} failed in process {process.name}")
-                    if self.config.execution_settings.failure_strategy == "stop":
+                    if (
+                        self.config.execution_settings is not None
+                        and self.config.execution_settings.failure_strategy == "stop"
+                    ):
                         return False
 
         print("\n=== Process Execution Complete ===")
@@ -183,6 +193,11 @@ class JSONRunner:
         """Run all actions from all processes individually."""
         print("\n=== Running Individual Actions ===\n")
 
+        # Type guards: ensure config and its attributes are not None
+        if self.config is None or self.config.processes is None:
+            print("No processes to execute")
+            return True
+
         action_executor = ActionExecutor(self.config)
 
         for process in self.config.processes:
@@ -190,7 +205,10 @@ class JSONRunner:
                 print(f"\nFrom process '{process.name}':")
                 if not action_executor.execute_action(action):
                     print(f"Action {action.id} failed")
-                    if self.config.execution_settings.failure_strategy == "stop":
+                    if (
+                        self.config.execution_settings is not None
+                        and self.config.execution_settings.failure_strategy == "stop"
+                    ):
                         return False
 
         print("\n=== Action Execution Complete ===")
@@ -226,7 +244,7 @@ class JSONRunner:
             self.parser.cleanup()
             print("Cleaned up temporary files")
 
-    def get_summary(self) -> dict:
+    def get_summary(self) -> dict[str, Any]:
         """Get execution summary."""
         if not self.config:
             return {}

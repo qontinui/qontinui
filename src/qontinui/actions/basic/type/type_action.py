@@ -5,10 +5,13 @@ Text typing action with various input methods.
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any
+from typing import Any, cast
 
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
+from ...action_result import ActionResult
+from ...action_type import ActionType
+from ...object_collection import ObjectCollection
 
 
 class TypeMethod(Enum):
@@ -121,6 +124,36 @@ class TypeAction(ActionInterface):
         self.options = options or TypeOptions()
         self._last_typed_text: str | None = None
 
+    def get_action_type(self) -> ActionType:
+        """Return the action type.
+
+        Returns:
+            ActionType.TYPE
+        """
+        return ActionType.TYPE
+
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+        """Execute the type action using the Qontinui framework pattern.
+
+        Args:
+            matches: Contains ActionOptions and accumulates execution results
+            object_collections: Collections containing text to type (as Strings)
+        """
+        # Extract text from object collections
+        text_to_type = ""
+        for collection in object_collections:
+            if collection.state_strings:
+                text_to_type = collection.state_strings[0].get_string()  # Use first string
+                break
+
+        # Execute the type action
+        success = self.execute(text_to_type)
+
+        # Update matches with results
+        matches.success = success
+        if success:
+            matches.add_text_result(text_to_type)
+
     def execute(self, text: str, target: Any | None = None) -> bool:
         """Execute type action.
 
@@ -179,7 +212,7 @@ class TypeAction(ActionInterface):
         # Click on target to focus
         from ..click.click import Click
 
-        return Click().execute(target)
+        return cast(bool, Click().execute(target))
 
     def _clear_field(self):
         """Clear the current field."""

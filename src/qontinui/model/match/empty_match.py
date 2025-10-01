@@ -4,7 +4,7 @@ Represents the absence of a match in the framework.
 """
 
 from ..element import Image, Region, Scene
-from .match import MatchObject
+from .match import Match as MatchObject
 
 
 class EmptyMatch:
@@ -62,11 +62,10 @@ class EmptyMatch:
         from ..element import Location
 
         return MatchObject(
-            location=Location(0, 0),
-            region=self.region,
-            similarity=self.score,
-            pattern=None,
-            metadata={"empty": True, "name": self.name},
+            target=Location(0, 0),
+            score=self.score,
+            search_image=self.search_image,
+            name=self.name,
         )
 
     def is_empty(self) -> bool:

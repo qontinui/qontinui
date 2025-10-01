@@ -4,6 +4,7 @@ Performs scroll operations at specified locations.
 """
 
 import time
+from typing import Any, cast
 
 from ....model.element.location import Location
 from ...action_interface import ActionInterface
@@ -53,7 +54,7 @@ class Scroll(ActionInterface):
         location = self._find_scroll_location(action_result, object_collections)
         if not location:
             action_result.success = False
-            action_result.text = "Could not find location to scroll"
+            action_result.output_text = "Could not find location to scroll"
             return
 
         # Perform the scroll operations
@@ -67,10 +68,10 @@ class Scroll(ActionInterface):
 
         action_result.success = success
         if success:
-            action_result.text = f"Scrolled {scroll_options.get_direction().name} {scroll_options.get_clicks()} times"
+            action_result.output_text = f"Scrolled {scroll_options.get_direction().name} {scroll_options.get_clicks()} times"
 
     def _find_scroll_location(
-        self, action_result: ActionResult, object_collections: tuple
+        self, action_result: ActionResult, object_collections: tuple[Any, ...]
     ) -> Location | None:
         """Find the location to scroll at.
 
@@ -90,10 +91,10 @@ class Scroll(ActionInterface):
             find_result = ActionResult(action_result.action_config)
             self.find.perform(find_result, *object_collections)
 
-            if find_result.is_success() and find_result.match_list:
+            if find_result.is_success and find_result.match_list:
                 # Use the first match's location
                 first_match = find_result.match_list[0]
-                return first_match.get_target()
+                return cast(Location | None, first_match.get_target())
 
         return None
 

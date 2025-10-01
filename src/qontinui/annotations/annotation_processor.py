@@ -5,7 +5,11 @@ Processes @state and @transition annotations to configure the state machine.
 
 import inspect
 import logging
-from typing import Any
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from ..model.state.state import State
 
 from ..model.state.initial_states import InitialStates
 from ..model.state.state_service import StateService
@@ -85,7 +89,7 @@ class AnnotationProcessor:
             f"Brobot annotation processing complete. "
             f"{len(state_map)} states and {transition_count} transitions registered."
         )
-        logger.info(f"Total states in StateService: {len(self.state_service.get_all_states())}")
+        logger.info(f"Total states in StateService: {len(self.state_service.states)}")
 
         # Create and return event
         event = StatesRegisteredEvent(
@@ -154,9 +158,9 @@ class AnnotationProcessor:
             )
             # Add initial states to the registry
             for state_name in initial_state_names:
-                state = self.state_service.get_state(state_name)
-                if state:
-                    self.initial_states.add_state(state)
+                initial_state: State | None = self.state_service.get_state(state_name)
+                if initial_state is not None:
+                    self.initial_states.add_state(initial_state)
                     logger.debug(f"Added {state_name} to initial states registry")
                 else:
                     logger.warning(f"Could not find state {state_name} to add to initial states")
@@ -180,7 +184,7 @@ class AnnotationProcessor:
         """
         metadata = get_state_metadata(state_class)
         if metadata and metadata.get("name"):
-            return metadata["name"]
+            return cast(str, metadata["name"])
 
         class_name = state_class.__name__
         # Remove "State" suffix if present
@@ -188,7 +192,7 @@ class AnnotationProcessor:
             return class_name[:-5]
         return class_name
 
-    def _find_decorated_classes(self, module: Any, predicate: callable) -> list[type]:
+    def _find_decorated_classes(self, module: Any, predicate: Callable[..., Any]) -> list[type]:
         """Find all classes matching the predicate.
 
         Args:
@@ -212,7 +216,7 @@ class AnnotationProcessor:
 
         return classes
 
-    def _scan_module(self, module: Any, predicate: callable) -> list[type]:
+    def _scan_module(self, module: Any, predicate: Callable[..., Any]) -> list[type]:
         """Scan a module for matching classes.
 
         Args:

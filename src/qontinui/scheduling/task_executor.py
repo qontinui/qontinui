@@ -7,6 +7,7 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from datetime import datetime
+from typing import Any
 
 from .scheduled_task import ScheduledTask, TaskStatus
 
@@ -124,6 +125,8 @@ class TaskExecutor:
             start_time = time.time()
 
             # Execute the task
+            if task.task_function is None:
+                raise RuntimeError("Task function is None")
             result = task.task_function()
 
             # Record execution time
@@ -183,7 +186,7 @@ class TaskExecutor:
         logger.info("Shutting down TaskExecutor")
         self.executor.shutdown(wait=wait)
 
-    def get_statistics(self) -> dict:
+    def get_statistics(self) -> dict[str, Any]:
         """Get executor statistics.
 
         Returns:

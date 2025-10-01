@@ -6,7 +6,7 @@ NO BACKWARD COMPATIBILITY: PyAutoGUI has been completely replaced with HAL.
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 
 @dataclass
@@ -453,4 +453,4 @@ class AdapterFactory:
             )
 
         adapter_class = adapters[backend]
-        return adapter_class(**kwargs)
+        return cast(ActionAdapter, adapter_class(**kwargs))

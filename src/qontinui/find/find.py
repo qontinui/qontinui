@@ -32,7 +32,13 @@ class Find:
         Args:
             target: Pattern, Image, or image path to find
         """
-        self._target = self._convert_to_pattern(target) if target else None
+        # Pattern now has mask support built-in
+        self._target: Pattern | None
+        if isinstance(target, Pattern):
+            self._target = target
+        else:
+            self._target = self._convert_to_pattern(target) if target else None
+
         self._options = FindOptions()
         self._search_region: SearchRegion | None = None
         self._screenshot: Any | None = None
@@ -45,16 +51,14 @@ class Find:
             target: Pattern, Image, or path string
 
         Returns:
-            Pattern object
+            Pattern object with full mask
         """
         if isinstance(target, Pattern):
             return target
         elif isinstance(target, Image):
-            return Pattern(image=target)
+            return Pattern.from_image(target)
         elif isinstance(target, str):
-            # Create Image from path
-            image = Image(name=target, path=target)
-            return Pattern(image=image)
+            return Pattern.from_file(target)
         else:
             raise ValueError(f"Invalid target type: {type(target)}")
 
@@ -79,7 +83,7 @@ class Find:
         Returns:
             Self for chaining
         """
-        self._target = Pattern(image=image)
+        self._target = Pattern.from_image(image)
         return self
 
     def similarity(self, similarity: float) -> Find:
@@ -93,7 +97,8 @@ class Find:
         """
         self._options.min_similarity(similarity)
         if self._target:
-            self._target = self._target.with_similarity(similarity)
+            # Pattern always has similarity_threshold attribute
+            self._target.similarity_threshold = similarity
         return self
 
     def search_region(self, region: Region | SearchRegions) -> Find:
@@ -105,11 +110,13 @@ class Find:
         Returns:
             Self for chaining
         """
-        if isinstance(region, SearchRegion):
+        if isinstance(region, SearchRegions):
             self._search_region = region
-        else:
-            self._search_region = SearchRegion(region.x, region.y, region.width, region.height)
-        self._options.search_region(region.x, region.y, region.width, region.height)
+            # SearchRegions doesn't have x, y, width, height directly
+            # Don't set individual region in options
+        elif isinstance(region, Region):
+            self._search_region = Region(region.x, region.y, region.width, region.height)
+            self._options.search_region(region.x, region.y, region.width, region.height)
         return self
 
     def timeout(self, seconds: float) -> Find:
@@ -235,16 +242,25 @@ class Find:
 
         # Apply max matches limit
         if not self._options._find_all and matches.size() > 0:
-            matches = Matches([matches.first])
+            first_match = matches.first
+            if first_match is not None:
+                matches = Matches([first_match])
         elif self._options._max_matches < matches.size():
             matches = Matches(matches.to_list()[: self._options._max_matches])
 
         duration = time.time() - start_time
 
+        # Convert SearchRegions to Region if needed
+        search_region_for_results = (
+            self._search_region.regions[0]
+            if isinstance(self._search_region, SearchRegions) and self._search_region.regions
+            else self._search_region if isinstance(self._search_region, Region) else None
+        )
+
         return FindResults(
             matches=matches,
             pattern=self._target,
-            search_region=self._search_region,
+            search_region=search_region_for_results,
             duration=duration,
             screenshot=self._screenshot,
             method=self._method,
@@ -327,9 +343,17 @@ class Find:
         from ..actions.pure import PureActions
 
         pure = PureActions()
-        result = pure.capture_screen(
-            region=self._search_region.to_tuple() if self._search_region else None
-        )
+        region_tuple = None
+        if self._search_region is not None:
+            if isinstance(self._search_region, Region):
+                region_tuple = (
+                    self._search_region.x,
+                    self._search_region.y,
+                    self._search_region.width,
+                    self._search_region.height,
+                )
+            # SearchRegions doesn't have to_tuple method
+        result = pure.screenshot(region=region_tuple)
         return result.data if result.success else None
 
     def _perform_find(self) -> Matches:
@@ -338,30 +362,194 @@ class Find:
         Returns:
             Matches found
         """
-        # This would perform actual matching using OpenCV, etc.
-        # For now, return empty matches as placeholder
-        # In real implementation, this would:
-        # 1. Use template matching for self._method == "template"
-        # 2. Use feature matching for self._method == "feature"
-        # 3. Use AI model for self._method == "ai"
+        if not self._target or not self._screenshot:
+            return Matches()
 
-        # Placeholder implementation
-        from ..model.element import MatchObject
+        # Import required modules
+        import cv2
+        import numpy as np
 
-        # Simulate finding a match at a location
-        if self._target and self._screenshot:
-            # Create a simulated match
-            match_obj = MatchObject(
-                location=Location(100, 100),
-                region=Region(100, 100, self._target.image.width, self._target.image.height),
-                similarity=0.95,
-                pattern=self._target,
-                screenshot=self._screenshot,
-                timestamp=time.time(),
-            )
-            return Matches([Match(match_obj)])
+        from ..model.match import Match as MatchObject
 
+        # All Patterns now have pixel_data and mask
+        template = self._target.pixel_data
+        pattern_mask = self._target.mask
+
+        if template is None:
+            return Matches()
+
+        # Get screenshot as numpy array
+        if hasattr(self._screenshot, "get_mat_bgr"):
+            screenshot = self._screenshot.get_mat_bgr()
+        elif isinstance(self._screenshot, np.ndarray):
+            screenshot = self._screenshot
+        else:
+            return Matches()
+
+        if screenshot is None:
+            return Matches()
+
+        # Apply search region if specified
+        search_img = screenshot
+        offset_x, offset_y = 0, 0
+        if self._search_region and isinstance(self._search_region, Region):
+            x, y = self._search_region.x, self._search_region.y
+            w, h = self._search_region.width, self._search_region.height
+            # Ensure region is within bounds
+            x = max(0, min(x, screenshot.shape[1]))
+            y = max(0, min(y, screenshot.shape[0]))
+            w = min(w, screenshot.shape[1] - x)
+            h = min(h, screenshot.shape[0] - y)
+            search_img = screenshot[y : y + h, x : x + w]
+            offset_x, offset_y = x, y
+
+        # Perform template matching
+        if self._method == "template":
+            # Store original template dimensions
+            template_height, template_width = template.shape[:2]
+
+            # Determine which mask to use (priority: pattern_mask > alpha channel)
+            mask = None
+            if pattern_mask is not None:
+                # Use the pattern mask (from MaskedPattern)
+                # Convert mask to uint8 format (0-255) if it's in float format (0.0-1.0)
+                if pattern_mask.dtype == np.float32 or pattern_mask.dtype == np.float64:
+                    mask = (pattern_mask * 255).astype(np.uint8)
+                else:
+                    mask = pattern_mask.astype(np.uint8)
+            elif template.shape[2] == 4 if len(template.shape) == 3 else False:
+                # Fall back to alpha channel if present and no pattern mask
+                alpha = template[:, :, 3]
+                mask = alpha.copy()
+
+            # Prepare template (remove alpha channel if present)
+            if len(template.shape) == 3 and template.shape[2] == 4:
+                template_bgr = template[:, :, :3]
+            else:
+                template_bgr = template
+
+            # Ensure screenshot is BGR (remove alpha if present)
+            if len(search_img.shape) == 3 and search_img.shape[2] == 4:
+                search_img = search_img[:, :, :3]
+
+            # Perform template matching with or without mask
+            if mask is not None:
+                result = cv2.matchTemplate(
+                    search_img, template_bgr, cv2.TM_CCOEFF_NORMED, mask=mask
+                )
+            else:
+                result = cv2.matchTemplate(search_img, template_bgr, cv2.TM_CCOEFF_NORMED)
+
+            matches_list = []
+            min_similarity = self._options._min_similarity
+
+            if self._options._find_all:
+                # Find all matches above threshold
+                locations = np.where(result >= min_similarity)
+
+                # Collect all potential matches
+                for pt in zip(*locations[::-1], strict=False):  # Switch x and y
+                    score = result[pt[1], pt[0]]
+                    x = int(pt[0]) + offset_x
+                    y = int(pt[1]) + offset_y
+
+                    # Debug: Check for inf scores
+                    import math
+
+                    if not math.isfinite(float(score)):
+                        print(f"[Find] WARNING: Non-finite score detected at ({x}, {y}): {score}")
+                        continue  # Skip non-finite scores
+
+                    match_obj = MatchObject(
+                        target=Location(region=Region(x, y, template_width, template_height)),
+                        score=float(score),
+                        name=self._target.name if self._target else "match",
+                    )
+                    matches_list.append(Match(match_obj))
+
+                # Apply Non-Maximum Suppression to remove overlapping matches
+                if len(matches_list) > 1:
+                    matches_list = self._apply_nms(matches_list, overlap_threshold=0.3)
+
+                # Final filter to ensure all matches meet minimum similarity
+                print(f"[Find] Before final filter: {len(matches_list)} matches")
+                for i, m in enumerate(matches_list):
+                    print(
+                        f"[Find]   Match {i}: similarity={m.similarity}, min_required={min_similarity}"
+                    )
+
+                matches_list = [m for m in matches_list if m.similarity >= min_similarity]
+                print(f"[Find] After final filter: {len(matches_list)} matches")
+            else:
+                # Find best match only
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+                if max_val >= min_similarity:
+                    x = int(max_loc[0]) + offset_x
+                    y = int(max_loc[1]) + offset_y
+
+                    match_obj = MatchObject(
+                        target=Location(region=Region(x, y, template_width, template_height)),
+                        score=float(max_val),
+                        name=self._target.name if self._target else "match",
+                    )
+                    matches_list.append(Match(match_obj))
+
+            return Matches(matches_list)
+
+        # Other methods not implemented yet
         return Matches()
+
+    def _apply_nms(self, matches: list[Match], overlap_threshold: float = 0.3) -> list[Match]:
+        """Apply Non-Maximum Suppression to remove overlapping matches.
+
+        Args:
+            matches: List of matches to filter
+            overlap_threshold: IoU threshold for considering matches as overlapping
+
+        Returns:
+            Filtered list of matches
+        """
+        if not matches:
+            return matches
+
+        # Sort by score descending
+        sorted_matches = sorted(matches, key=lambda m: m.similarity, reverse=True)
+
+        kept_matches: list[Match] = []
+        for match in sorted_matches:
+            # Skip matches without regions
+            if match.region is None:
+                continue
+
+            # Check if this match overlaps with any kept match
+            should_keep = True
+            for kept in kept_matches:
+                # Skip kept matches without regions
+                if kept.region is None:
+                    continue
+
+                # Calculate IoU (Intersection over Union)
+                x1 = max(match.region.x, kept.region.x)
+                y1 = max(match.region.y, kept.region.y)
+                x2 = min(match.region.x + match.region.width, kept.region.x + kept.region.width)
+                y2 = min(match.region.y + match.region.height, kept.region.y + kept.region.height)
+
+                if x2 > x1 and y2 > y1:
+                    intersection = (x2 - x1) * (y2 - y1)
+                    area1 = match.region.width * match.region.height
+                    area2 = kept.region.width * kept.region.height
+                    union = area1 + area2 - intersection
+                    iou = intersection / union if union > 0 else 0
+
+                    if iou > overlap_threshold:
+                        should_keep = False
+                        break
+
+            if should_keep:
+                kept_matches.append(match)
+
+        return kept_matches
 
     def __str__(self) -> str:
         """String representation."""

@@ -1,7 +1,7 @@
 """HAL Factory for creating implementation instances."""
 
 import sys
-from typing import Any
+from typing import Any, cast
 
 from .config import HALConfig, get_config
 from .interfaces import (
@@ -60,7 +60,8 @@ class HALFactory:
             else:
                 raise ValueError(f"Unsupported screen capture backend: {backend}")
 
-        return cls._instances[cache_key]
+        instance: IScreenCapture = cls._instances[cache_key]
+        return instance
 
     @classmethod
     def get_pattern_matcher(cls, config: HALConfig | None = None) -> IPatternMatcher:
@@ -95,7 +96,8 @@ class HALFactory:
             else:
                 raise ValueError(f"Unsupported pattern matcher backend: {backend}")
 
-        return cls._instances[cache_key]
+        instance: IPatternMatcher = cls._instances[cache_key]
+        return instance
 
     @classmethod
     def get_input_controller(cls, config: HALConfig | None = None) -> IInputController:
@@ -130,7 +132,8 @@ class HALFactory:
             else:
                 raise ValueError(f"Unsupported input controller backend: {backend}")
 
-        return cls._instances[cache_key]
+        instance: IInputController = cls._instances[cache_key]
+        return instance
 
     @classmethod
     def get_ocr_engine(cls, config: HALConfig | None = None) -> IOCREngine:
@@ -167,7 +170,8 @@ class HALFactory:
             else:
                 raise ValueError(f"Unsupported OCR engine backend: {backend}")
 
-        return cls._instances[cache_key]
+        instance: IOCREngine = cls._instances[cache_key]
+        return instance
 
     @classmethod
     def get_platform_specific(cls, config: HALConfig | None = None) -> IPlatformSpecific:
@@ -200,7 +204,8 @@ class HALFactory:
             else:
                 raise ValueError(f"Unsupported platform: {platform}")
 
-        return cls._instances[cache_key]
+        instance: IPlatformSpecific = cls._instances[cache_key]
+        return instance
 
     @classmethod
     def _detect_platform(cls, config: HALConfig) -> str:
@@ -234,20 +239,21 @@ class HALFactory:
         Returns:
             Native screen capture implementation
         """
+
         platform = cls._detect_platform(config)
 
         if platform == "windows":
             from .implementations.platform.windows_capture import WindowsScreenCapture
 
-            return WindowsScreenCapture(config)
+            return cast(IScreenCapture, WindowsScreenCapture(config))
         elif platform == "macos":
             from .implementations.platform.macos_capture import MacOSScreenCapture
 
-            return MacOSScreenCapture(config)
+            return cast(IScreenCapture, MacOSScreenCapture(config))
         elif platform == "linux":
             from .implementations.platform.linux_capture import LinuxScreenCapture
 
-            return LinuxScreenCapture(config)
+            return cast(IScreenCapture, LinuxScreenCapture(config))
         else:
             raise ValueError(f"No native screen capture for platform: {platform}")
 
@@ -276,20 +282,21 @@ class HALFactory:
         Returns:
             Native input controller implementation
         """
+
         platform = cls._detect_platform(config)
 
         if platform == "windows":
             from .implementations.platform.windows_input import WindowsInputController
 
-            return WindowsInputController(config)
+            return cast(IInputController, WindowsInputController(config))
         elif platform == "macos":
             from .implementations.platform.macos_input import MacOSInputController
 
-            return MacOSInputController(config)
+            return cast(IInputController, MacOSInputController(config))
         elif platform == "linux":
             from .implementations.platform.linux_input import LinuxInputController
 
-            return LinuxInputController(config)
+            return cast(IInputController, LinuxInputController(config))
         else:
             raise ValueError(f"No native input controller for platform: {platform}")
 

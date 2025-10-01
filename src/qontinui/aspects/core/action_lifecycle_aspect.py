@@ -111,7 +111,7 @@ class ActionLifecycleAspect:
         """
         return getattr(self._local, "context", None)
 
-    def wrap_action(self, func: Callable) -> Callable:
+    def wrap_action(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """Wrap an action's perform method with lifecycle management.
 
         Args:
@@ -179,7 +179,7 @@ class ActionLifecycleAspect:
         context: ActionContext,
         action: ActionInterface,
         action_result: ActionResult,
-        object_collections: tuple,
+        object_collections: tuple[Any, ...],
     ) -> None:
         """Handle pre-execution tasks.
 
@@ -322,7 +322,7 @@ class ActionLifecycleAspect:
 _lifecycle_aspect = ActionLifecycleAspect()
 
 
-def with_lifecycle(func: Callable) -> Callable:
+def with_lifecycle(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to apply lifecycle management to an action.
 
     Usage:

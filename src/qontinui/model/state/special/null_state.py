@@ -4,6 +4,7 @@ Special state for handling stateless objects in the framework.
 """
 
 from enum import Enum
+from typing import cast
 
 from ..state import State
 
@@ -71,7 +72,7 @@ class NullState:
         Returns:
             The null State instance
         """
-        return self._state
+        return cast(State, self._state)
 
     @property
     def name(self) -> NullStateName:

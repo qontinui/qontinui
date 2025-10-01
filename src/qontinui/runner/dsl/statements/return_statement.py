@@ -6,7 +6,7 @@ Represents a return statement in the DSL.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .statement import Statement
 
@@ -49,7 +49,7 @@ class ReturnStatement(Statement):
         self.value = value
 
     @classmethod
-    def from_dict(cls, data: dict) -> ReturnStatement:
+    def from_dict(cls, data: dict[str, Any]) -> ReturnStatement:
         """Create ReturnStatement from dictionary.
 
         Args:
@@ -66,7 +66,7 @@ class ReturnStatement(Statement):
 
         return cls(value=value)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:

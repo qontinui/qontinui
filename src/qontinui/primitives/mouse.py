@@ -23,13 +23,14 @@ class MouseMove(Action):
     Moves the mouse to a specific position.
     """
 
-    def __init__(self, config: MoveOptions | None = None):
+    def __init__(self, config: MoveOptions | None = None) -> None:
         """Initialize with optional MoveOptions.
 
         Args:
             config: MoveOptions instance or None for defaults
         """
-        super().__init__(config or MoveOptions())
+        super().__init__()
+        self._config = config or MoveOptions()
         self._pure = PureActions()
 
     def execute_at(self, x: int, y: int, duration: float | None = None) -> ActionResult:
@@ -57,13 +58,18 @@ class MouseClick(Action):
     Performs a single click at a position.
     """
 
-    def __init__(self, config: ClickOptions | None = None):
+    def __init__(self, config: ClickOptions | None = None) -> None:
         """Initialize with optional ClickOptions.
 
         Args:
             config: ClickOptions instance or None for defaults
         """
-        super().__init__(config or ClickOptions())
+        super().__init__()
+        if config is None:
+            from ..actions.basic.click import ClickOptionsBuilder
+
+            config = ClickOptionsBuilder().build()
+        self._config = config
         self._pure = PureActions()
 
     def execute_at(self, x: int, y: int, button: str = "left") -> ActionResult:
@@ -90,7 +96,7 @@ class MouseClick(Action):
                 results.append(result)
                 if not result.success:
                     return result
-            return ActionResult(success=True, data={"x": x, "y": y, "clicks": click_count})
+            return result  # Return the last successful result from PureActions
 
         return self.execute(click_action, target=(x, y))
 
@@ -102,13 +108,14 @@ class MouseDown(Action):
     Presses and holds a mouse button.
     """
 
-    def __init__(self, config: ActionConfig | None = None):
+    def __init__(self, config: ActionConfig | None = None) -> None:
         """Initialize with optional ActionConfig.
 
         Args:
             config: ActionConfig instance or None for defaults
         """
-        super().__init__(config or ActionConfig())
+        super().__init__()
+        self._config = config or ActionConfig()
         self._pure = PureActions()
 
     def execute_at(
@@ -136,13 +143,14 @@ class MouseUp(Action):
     Releases a mouse button.
     """
 
-    def __init__(self, config: ActionConfig | None = None):
+    def __init__(self, config: ActionConfig | None = None) -> None:
         """Initialize with optional ActionConfig.
 
         Args:
             config: ActionConfig instance or None for defaults
         """
-        super().__init__(config or ActionConfig())
+        super().__init__()
+        self._config = config or ActionConfig()
         self._pure = PureActions()
 
     def execute_at(
@@ -170,13 +178,18 @@ class MouseDrag(Action):
     Drags from one position to another.
     """
 
-    def __init__(self, config: DragOptions | None = None):
+    def __init__(self, config: DragOptions | None = None) -> None:
         """Initialize with optional DragOptions.
 
         Args:
             config: DragOptions instance or None for defaults
         """
-        super().__init__(config or DragOptions())
+        super().__init__()
+        if config is None:
+            from ..actions.composite.drag import DragOptionsBuilder
+
+            config = DragOptionsBuilder().build()
+        self._config = config
         self._pure = PureActions()
 
     def execute_from_to(self, start_x: int, start_y: int, end_x: int, end_y: int) -> ActionResult:
@@ -223,16 +236,7 @@ class MouseDrag(Action):
 
             # Mouse up
             up_result = self._pure.mouse_up(button=button)
-
-            return ActionResult(
-                success=up_result.success,
-                data={
-                    "start": (start_x, start_y),
-                    "end": (end_x, end_y),
-                    "duration": drag_duration,
-                },
-                error=up_result.error,
-            )
+            return up_result  # Return the PureActions ActionResult directly
 
         return self.execute(drag_action, target=((start_x, start_y), (end_x, end_y)))
 
@@ -244,13 +248,18 @@ class MouseWheel(Action):
     Scrolls the mouse wheel.
     """
 
-    def __init__(self, config: ScrollOptions | None = None):
+    def __init__(self, config: ScrollOptions | None = None) -> None:
         """Initialize with optional ScrollOptions.
 
         Args:
             config: ScrollOptions instance or None for defaults
         """
-        super().__init__(config or ScrollOptions())
+        super().__init__()
+        if config is None:
+            from ..actions.basic.mouse.scroll_options import ScrollOptionsBuilder
+
+            config = ScrollOptionsBuilder().build()
+        self._config = config
         self._pure = PureActions()
 
     def execute_scroll(

@@ -9,10 +9,11 @@ Ported from Brobot's StateMemoryUpdater component.
 """
 
 import logging
+from typing import Any, cast
 
 from ..actions.action_result import ActionResult
 from ..find.match import Match
-from .manager import StateManager
+from .manager import QontinuiStateManager as StateManager
 from .state_memory import StateMemory
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class StateMemoryUpdater:
         state_manager: StateManager | None = None,
         auto_activation_enabled: bool = True,
         activation_confidence_threshold: float = 0.9,
-    ):
+    ) -> None:
         """Initialize StateMemoryUpdater.
 
         Args:
@@ -48,12 +49,13 @@ class StateMemoryUpdater:
             activation_confidence_threshold: Minimum match confidence for activation
         """
         self.state_memory = state_memory
-        self.state_manager = state_manager or StateManager.get_instance()
+        # Create a default StateManager if none provided
+        self.state_manager = state_manager if state_manager is not None else StateManager()
         self.auto_activation_enabled = auto_activation_enabled
         self.activation_confidence_threshold = activation_confidence_threshold
 
         # Track activation history for debugging
-        self._activation_history: list[dict] = []
+        self._activation_history: list[dict[str, Any]] = []
 
         logger.info(
             "StateMemoryUpdater initialized",
@@ -154,7 +156,11 @@ class StateMemoryUpdater:
                 },
             )
 
-            self.state_memory.add_active_state(state_name)
+            # Get state ID for activation
+            if hasattr(state, "id") and state.id is not None:
+                self.state_memory.add_active_state(state.id)
+            else:
+                logger.warning(f"State '{state_name}' has no valid ID")
 
             # Record activation in history
             self._record_activation(state_name, match)
@@ -174,12 +180,14 @@ class StateMemoryUpdater:
         """
         # Check if match has state object data
         if hasattr(match, "state_object_data") and match.state_object_data:
-            if hasattr(match.state_object_data, "owner_state_name"):
-                return match.state_object_data.owner_state_name
+            state_obj_data = match.state_object_data
+            if hasattr(state_obj_data, "owner_state_name"):
+                owner_name = getattr(state_obj_data, "owner_state_name", None)
+                return cast(str | None, owner_name)
 
         # Check if match has state_name directly
         if hasattr(match, "state_name"):
-            return match.state_name
+            return cast(str | None, match.state_name)
 
         # Check if match has metadata with state info
         if hasattr(match, "metadata") and isinstance(match.metadata, dict):
@@ -187,7 +195,7 @@ class StateMemoryUpdater:
 
         return None
 
-    def _record_activation(self, state_name: str, match: Match):
+    def _record_activation(self, state_name: str, match: Match) -> None:
         """Record state activation in history.
 
         Args:
@@ -210,7 +218,7 @@ class StateMemoryUpdater:
         if len(self._activation_history) > max_history:
             self._activation_history = self._activation_history[-max_history:]
 
-    def set_auto_activation(self, enabled: bool):
+    def set_auto_activation(self, enabled: bool) -> None:
         """Enable or disable automatic state activation.
 
         Args:
@@ -219,7 +227,7 @@ class StateMemoryUpdater:
         self.auto_activation_enabled = enabled
         logger.info(f"Auto-activation {'enabled' if enabled else 'disabled'}")
 
-    def set_confidence_threshold(self, threshold: float):
+    def set_confidence_threshold(self, threshold: float) -> None:
         """Set minimum confidence threshold for state activation.
 
         Args:
@@ -231,7 +239,7 @@ class StateMemoryUpdater:
         self.activation_confidence_threshold = threshold
         logger.info(f"Activation confidence threshold set to {threshold:.2f}")
 
-    def get_activation_history(self) -> list[dict]:
+    def get_activation_history(self) -> list[dict[str, Any]]:
         """Get the history of state activations.
 
         Returns:
@@ -239,7 +247,7 @@ class StateMemoryUpdater:
         """
         return self._activation_history.copy()
 
-    def clear_activation_history(self):
+    def clear_activation_history(self) -> None:
         """Clear the activation history."""
         self._activation_history.clear()
         logger.debug("Activation history cleared")
@@ -264,7 +272,7 @@ class StateMemoryUpdater:
 
         # Get states to check
         if states_to_check is None:
-            states_to_check = self.state_memory.get_active_state_names()
+            states_to_check = set(self.state_memory.get_active_state_names())
 
         # Get states that have matches
         states_with_matches = set()
@@ -281,8 +289,13 @@ class StateMemoryUpdater:
                 state_name
             ):
                 logger.debug(f"Deactivating state '{state_name}' - no matches found")
-                self.state_memory.remove_active_state(state_name)
-                deactivated_states.add(state_name)
+                # Get state ID for deactivation
+                state = self.state_manager.get_state(state_name)
+                if state and hasattr(state, "id") and state.id is not None:
+                    self.state_memory.remove_active_state(state.id)
+                    deactivated_states.add(state_name)
+                else:
+                    logger.warning(f"Could not deactivate state '{state_name}' - no valid ID")
 
         if deactivated_states:
             logger.info(
@@ -308,11 +321,13 @@ def get_state_memory_updater() -> StateMemoryUpdater:
     """
     global _state_memory_updater
     if _state_memory_updater is None:
-        from .manager import StateManager
+        from .manager import QontinuiStateManager as StateManager
         from .state_memory import get_state_memory
 
+        # Create a default StateManager instance
+        state_manager_instance = StateManager()
         _state_memory_updater = StateMemoryUpdater(
-            state_memory=get_state_memory(), state_manager=StateManager.get_instance()
+            state_memory=get_state_memory(), state_manager=state_manager_instance
         )
 
     return _state_memory_updater

@@ -280,7 +280,9 @@ class Path:
         for i in range(1, len(self.states)):
             transition = self.transitions[i - 1] if i - 1 < len(self.transitions) else None
             if transition:
-                path_str += f" --[{transition.transition_type.value}]--> "
+                # transition_type is already a string, not an enum
+                transition_type = transition.transition_type
+                path_str += f" --[{transition_type}]--> "
             else:
                 path_str += " --> "
             path_str += self.states[i].name

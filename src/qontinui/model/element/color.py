@@ -138,6 +138,21 @@ class HSV:
         self.saturation = max(0, min(100, self.saturation))
         self.value = max(0, min(100, self.value))
 
+    @property
+    def h(self) -> int:
+        """Alias for hue."""
+        return self.hue
+
+    @property
+    def s(self) -> int:
+        """Alias for saturation."""
+        return self.saturation
+
+    @property
+    def v(self) -> int:
+        """Alias for value."""
+        return self.value
+
     def to_rgb(self) -> RGB:
         """Convert to RGB color space.
 

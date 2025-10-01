@@ -6,7 +6,7 @@ Initializes search region dependencies when states are loaded.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ..model.state.state import State
@@ -63,7 +63,10 @@ class SearchRegionDependencyInitializer:
             logger.warning("Cannot initialize dependencies: missing store or resolver")
             return
 
-        all_objects = []
+        if TYPE_CHECKING:
+            pass
+
+        all_objects: list[Any] = []  # Will contain StateImages, StateLocations, and StateRegions
 
         # Collect all state objects from all states
         for state in self.state_store.get_all_states():

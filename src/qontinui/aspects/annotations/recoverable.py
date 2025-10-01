@@ -17,9 +17,9 @@ def recoverable(
     backoff_multiplier: float = 2.0,
     initial_delay_ms: int = 1000,
     max_delay_ms: int = 30000,
-    recoverable_exceptions: tuple | None = None,
-    fallback: Callable | None = None,
-) -> Callable:
+    recoverable_exceptions: tuple[Any, ...] | None = None,
+    fallback: Callable[..., Any] | None = None,
+) -> Callable[..., Any]:
     """Mark a method for automatic recovery on failure.
 
     Direct port of Brobot's @Recoverable annotation.
@@ -59,7 +59,7 @@ def recoverable(
         Decorator function
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
         def wrapper(*args, **kwargs):
             last_exception = None
@@ -116,8 +116,8 @@ def recoverable(
             raise last_exception
 
         # Store configuration on wrapper
-        wrapper._recoverable = True
-        wrapper._recoverable_config = {
+        wrapper._recoverable = True  # type: ignore[attr-defined]
+        wrapper._recoverable_config = {  # type: ignore[attr-defined]
             "max_retries": max_retries,
             "backoff_multiplier": backoff_multiplier,
             "initial_delay_ms": initial_delay_ms,
@@ -143,7 +143,7 @@ def is_recoverable(obj: Any) -> bool:
     return hasattr(obj, "_recoverable") and obj._recoverable
 
 
-def get_recoverable_config(obj: Any) -> dict | None:
+def get_recoverable_config(obj: Any) -> dict[str, Any] | None:
     """Get recovery configuration from an object.
 
     Args:

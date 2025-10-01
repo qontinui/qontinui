@@ -4,19 +4,26 @@ Hybrid test translator that combines utility-based and LLM-based translation.
 
 import logging
 import time
+from typing import TYPE_CHECKING, Any
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import TestTranslator
     from ..core.models import TestFile, TestType
     from .llm_test_translator import LLMTestTranslator
     from .python_test_generator import PythonTestGenerator
-except ImportError:
-    # For standalone testing
-    from core.interfaces import TestTranslator
-    from core.models import TestFile, TestType
+else:
+    try:
+        from ..core.interfaces import TestTranslator
+        from ..core.models import TestFile, TestType
+        from .llm_test_translator import LLMTestTranslator
+        from .python_test_generator import PythonTestGenerator
+    except ImportError:
+        # For standalone testing
+        from core.interfaces import TestTranslator
+        from core.models import TestFile, TestType
 
-    from .llm_test_translator import LLMTestTranslator
-    from .python_test_generator import PythonTestGenerator
+        from .llm_test_translator import LLMTestTranslator
+        from .python_test_generator import PythonTestGenerator
 
 
 class TranslationResult:
@@ -27,7 +34,7 @@ class TranslationResult:
         content: str,
         method: str,
         confidence: float,
-        errors: list[str] = None,
+        errors: list[str] | None = None,
         execution_time: float = 0.0,
     ):
         self.content = content
@@ -411,7 +418,7 @@ class {class_name}:
 
         return content
 
-    def get_translation_stats(self) -> dict:
+    def get_translation_stats(self) -> dict[str, Any]:
         """Get translation statistics."""
         total = self.stats["total_translations"]
         if total == 0:
@@ -425,7 +432,9 @@ class {class_name}:
             "average_time": self.stats["total_time"] / total,
         }
 
-    def configure_thresholds(self, utility_threshold: float = None, llm_threshold: float = None):
+    def configure_thresholds(
+        self, utility_threshold: float | None = None, llm_threshold: float | None = None
+    ):
         """Configure confidence thresholds."""
         if utility_threshold is not None:
             self.utility_confidence_threshold = utility_threshold

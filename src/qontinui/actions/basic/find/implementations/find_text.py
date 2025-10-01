@@ -218,7 +218,7 @@ class FindText:
             return []
 
     def _ocr_tesseract(
-        self, image: np.ndarray, region: Region, options: TextFindOptions
+        self, image: np.ndarray[Any, Any], region: Region, options: TextFindOptions
     ) -> list[OCRResult]:
         """Perform OCR using Tesseract.
 
@@ -291,7 +291,7 @@ class FindText:
             return []
 
     def _ocr_easyocr(
-        self, image: np.ndarray, region: Region, options: TextFindOptions
+        self, image: np.ndarray[Any, Any], region: Region, options: TextFindOptions
     ) -> list[OCRResult]:
         """Perform OCR using EasyOCR.
 
@@ -341,7 +341,7 @@ class FindText:
             return []
 
     def _ocr_paddleocr(
-        self, image: np.ndarray, region: Region, options: TextFindOptions
+        self, image: np.ndarray[Any, Any], region: Region, options: TextFindOptions
     ) -> list[OCRResult]:
         """Perform OCR using PaddleOCR.
 
@@ -417,7 +417,7 @@ class FindText:
                 match = Match(
                     target=Location(region=ocr_result.region),
                     score=similarity,
-                    text=ocr_result.text if options.return_text_content else "",
+                    ocr_text=ocr_result.text if options.return_text_content else "",
                 )
                 matches.append(match)
 
@@ -472,7 +472,9 @@ class FindText:
 
         return 0.0
 
-    def _preprocess_image(self, image: np.ndarray, options: TextFindOptions) -> np.ndarray:
+    def _preprocess_image(
+        self, image: np.ndarray[Any, Any], options: TextFindOptions
+    ) -> np.ndarray[Any, Any]:
         """Preprocess image for OCR.
 
         Args:
@@ -521,7 +523,7 @@ class FindText:
 
         return result
 
-    def _capture_region(self, region: Region) -> np.ndarray | None:
+    def _capture_region(self, region: Region) -> np.ndarray[Any, Any] | None:
         """Capture image from region.
 
         Args:

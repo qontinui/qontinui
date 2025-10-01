@@ -4,7 +4,7 @@ Base configuration for all Find actions.
 """
 
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from ....model.search_regions import SearchRegions
 from ...action_config import ActionConfig, ActionConfigBuilder
@@ -15,7 +15,7 @@ from .match_adjustment_options import MatchAdjustmentOptions
 DEFAULT_MIN_SIMILARITY = 0.7
 
 # Type variable for builder pattern
-TBuilder = TypeVar("TBuilder", bound="BaseFindOptionsBuilder")
+TBuilder = TypeVar("TBuilder", bound="BaseFindOptionsBuilder[Any]")
 
 
 class BaseFindOptions(ActionConfig, ABC):
@@ -36,7 +36,7 @@ class BaseFindOptions(ActionConfig, ABC):
     implementations while maintaining type safety and API clarity.
     """
 
-    def __init__(self, builder: "BaseFindOptionsBuilder"):
+    def __init__(self, builder: "BaseFindOptionsBuilder[Any]"):
         """Initialize BaseFindOptions from builder.
 
         Args:
@@ -93,7 +93,7 @@ class BaseFindOptions(ActionConfig, ABC):
         return self.search_duration
 
 
-class BaseFindOptionsBuilder[TBuilder: "BaseFindOptionsBuilder"](ActionConfigBuilder):
+class BaseFindOptionsBuilder[TBuilder: "BaseFindOptionsBuilder[Any]"](ActionConfigBuilder):
     """Abstract generic builder for constructing BaseFindOptions and its subclasses.
 
     Port of BaseFindOptions from Qontinui framework.Builder.
@@ -125,6 +125,16 @@ class BaseFindOptionsBuilder[TBuilder: "BaseFindOptionsBuilder"](ActionConfigBui
             self.max_matches_to_act_on = -1
             self.match_adjustment_options = MatchAdjustmentOptions.builder().build()
             self.search_duration = 3.0  # Default 3 seconds, same as SikuliX default
+
+    def _self(self) -> TBuilder:
+        """Return self cast to the concrete builder type.
+
+        This enables proper type inference for builder chaining.
+
+        Returns:
+            Self cast to TBuilder type
+        """
+        return self  # type: ignore[return-value]
 
     def set_similarity(self, similarity: float) -> TBuilder:
         """Set the minimum similarity score (0.0 to 1.0) for a match to be considered valid.

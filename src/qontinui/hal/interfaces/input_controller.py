@@ -206,6 +206,80 @@ class IInputController(ABC):
         """
         pass
 
+    @abstractmethod
+    def click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
+        """Click at specific coordinates.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            button: Mouse button to click
+
+        Returns:
+            True if successful
+        """
+        pass
+
+    @abstractmethod
+    def double_click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
+        """Double click at specific coordinates.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            button: Mouse button to click
+
+        Returns:
+            True if successful
+        """
+        pass
+
+    @abstractmethod
+    def drag(
+        self, start_x: int, start_y: int, end_x: int, end_y: int, duration: float = 0.0
+    ) -> bool:
+        """Drag from start to end position.
+
+        Args:
+            start_x: Start X coordinate
+            start_y: Start Y coordinate
+            end_x: End X coordinate
+            end_y: End Y coordinate
+            duration: Drag duration in seconds
+
+        Returns:
+            True if successful
+        """
+        pass
+
+    @abstractmethod
+    def move_mouse(self, x: int, y: int, duration: float = 0.0) -> bool:
+        """Move mouse to position (alias for mouse_move).
+
+        Args:
+            x: Target X coordinate
+            y: Target Y coordinate
+            duration: Movement duration in seconds
+
+        Returns:
+            True if successful
+        """
+        pass
+
+    @abstractmethod
+    def scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
+        """Scroll mouse wheel (alias for mouse_scroll).
+
+        Args:
+            clicks: Number of scroll clicks (positive=up, negative=down)
+            x: X coordinate (None for current position)
+            y: Y coordinate (None for current position)
+
+        Returns:
+            True if successful
+        """
+        pass
+
     # Keyboard operations
 
     @abstractmethod

@@ -12,7 +12,7 @@ import logging
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Optional, cast
 
 from qontinui.model.transition.enhanced_joint_table import StateTransitionsJointTable
 from qontinui.model.transition.enhanced_state_transition import StateTransition
@@ -73,7 +73,7 @@ class Path:
         # Check if final transition activates all targets
         if self.transitions:
             final_transition = self.transitions[-1]
-            return final_transition.activates_all(target_states)
+            return cast(bool, final_transition.activates_all(target_states))
 
         # If no transitions, check if we're already at all targets
         return target_states.issubset(set(self.states))
@@ -109,7 +109,7 @@ class HybridPathFinder:
     reliability_weight: float = 0.2
 
     # Cache
-    _path_cache: dict[tuple[frozenset, frozenset], Path] = field(default_factory=dict)
+    _path_cache: dict[tuple[frozenset[int], frozenset[int]], Path] = field(default_factory=dict)
 
     def find_path_to_states(
         self, start_states: set[int], target_states: set[int], strategy: PathStrategy | None = None
@@ -195,7 +195,7 @@ class HybridPathFinder:
             Shortest path or None
         """
         # BFS to find shortest path
-        queue = deque()
+        queue: deque[tuple[int, Path]] = deque()
 
         # Initialize with all start states
         for state_id in start_states:
@@ -245,7 +245,7 @@ class HybridPathFinder:
             Optimal path or None
         """
         # Priority queue: (negative_score, counter, state_id, path)
-        heap = []
+        heap: list[tuple[float, int, int, Path]] = []
         counter = 0
 
         # Initialize with all start states
@@ -255,7 +255,7 @@ class HybridPathFinder:
             heapq.heappush(heap, (0.0, counter, state_id, path))
             counter += 1
 
-        visited = {}  # state_id -> best_cost
+        visited: dict[int, float] = {}  # state_id -> best_cost
 
         while heap:
             neg_score, _, current_state, current_path = heapq.heappop(heap)
@@ -313,7 +313,7 @@ class HybridPathFinder:
         Returns:
             List of all valid paths
         """
-        all_paths = []
+        all_paths: list[Path] = []
 
         def recurse(current_state: int, current_path: Path, visited: set[int]):
             if len(all_paths) >= max_paths:

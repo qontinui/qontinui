@@ -16,25 +16,59 @@ if TYPE_CHECKING:
 
 @dataclass
 class Location:
-    """Represents a point on the screen.
+    """Represents a point on the screen for action targets.
 
     Port of Location from Qontinui framework class.
 
-    A Location defines a specific point that can be specified in two ways:
-    - Absolute coordinates: Using x,y pixel values directly
-    - Relative position: As a percentage position within a Region
+    IMPORTANT DESIGN NOTE:
+    ======================
+    In Qontinui, Location and Anchor serve DIFFERENT purposes:
+    - Location: Used for ACTION TARGETS (where to click, type, hover, etc.)
+    - Anchor: Used for REGION DEFINITION and spatial relationships
 
-    Both methods support optional x,y offsets for fine-tuning the final position.
+    This differs from Brobot where the relationship may be structured differently.
+    See LOCATION_ANCHOR_DESIGN.md for full design rationale.
 
-    In the model-based approach, Locations are essential for:
-    - Specifying click targets within GUI elements
-    - Defining anchor points for spatial relationships between elements
-    - Positioning the mouse for hover actions
-    - Creating dynamic positions that adapt to different screen sizes
+    POSITIONING MODES:
+    ==================
+    A Location can be defined in two ways:
+    1. ABSOLUTE: Using x,y pixel coordinates directly
+       - Used when: fixed=True OR region=None
+       - Example: Location(x=100, y=200, fixed=True)
 
-    The relative positioning feature is particularly powerful in model-based automation
-    as it allows locations to remain valid even when GUI elements move or resize, making
-    automation more robust to UI changes.
+    2. RELATIVE: As a percentage position within a Region
+       - Used when: region is set AND fixed=False
+       - Example: Location(region=match.region, position=Position.CENTER)
+       - The region can be from: StateImage match, StateRegion, or any Region
+
+    RESOLUTION LOGIC:
+    =================
+    The system determines positioning mode as follows:
+    1. If fixed=True → Always use absolute (x, y)
+    2. If region is set AND position is set → Use relative positioning
+    3. Otherwise → Use absolute (x, y)
+
+    Both modes support offset_x and offset_y for fine adjustments.
+
+    RUNTIME BEHAVIOR:
+    =================
+    During execution, a Location linked to an image:
+    1. Waits for the image to be found
+    2. Sets its region to the match.region
+    3. Calculates final position within that region
+    4. Applies any offsets
+
+    This allows Locations to adapt dynamically to where elements appear.
+
+    KEY DIFFERENCES FROM ANCHOR:
+    ============================
+    - Location DOES NOT define region boundaries
+    - Location IS NOT a component of region definition
+    - Location IS the target for all action operations
+    - Anchor IS for defining how regions relate to each other
+
+    When you need to define a region's boundaries, use Anchors.
+    When you need to click/type somewhere, use Location.
     """
 
     x: int = 0
@@ -47,19 +81,26 @@ class Location:
     """Optional name for this location."""
 
     region: Region | None = None
-    """Optional region for relative positioning."""
+    """Optional region for relative positioning. Can be set at runtime from a match."""
 
     position: Position | None = None
     """Position within region (as percentages)."""
 
     anchor: str | None = None
-    """Anchor point name."""
+    """Reference to a named Anchor (for spatial relationships, not for this Location's position)."""
 
     offset_x: int = 0
-    """X offset in pixels."""
+    """X offset in pixels added to final position."""
 
     offset_y: int = 0
-    """Y offset in pixels."""
+    """Y offset in pixels added to final position."""
+
+    fixed: bool = False
+    """If True, always use absolute coordinates (x,y) regardless of region.
+    If False, use relative positioning when region is available."""
+
+    reference_image_id: str | None = None
+    """ID of StateImage this location is relative to. Used to link to match at runtime."""
 
     def __post_init__(self):
         """Validate location after initialization."""
@@ -91,17 +132,38 @@ class Location:
     def get_final_location(self) -> Location:
         """Get final location after applying region and offsets.
 
+        Resolution logic:
+        1. If fixed=True, always use absolute coordinates
+        2. If region and position are set, use relative positioning
+        3. Otherwise, use absolute coordinates
+
+        This method is called at runtime to resolve the actual screen position.
+
         Returns:
-            Final computed location
+            Final computed location with resolved coordinates
         """
+        # Fixed positioning - always use absolute
+        if self.fixed:
+            return Location(
+                x=self.x + self.offset_x, y=self.y + self.offset_y, name=self.name, fixed=True
+            )
+
+        # Relative positioning - calculate from region
         if self.region and self.position:
-            # Calculate position within region
             base_x = self.region.x + int(self.region.width * self.position.percent_w)
             base_y = self.region.y + int(self.region.height * self.position.percent_h)
-            return Location(x=base_x + self.offset_x, y=base_y + self.offset_y, name=self.name)
-        else:
-            # Use absolute coordinates with offsets
-            return Location(x=self.x + self.offset_x, y=self.y + self.offset_y, name=self.name)
+            return Location(
+                x=base_x + self.offset_x,
+                y=base_y + self.offset_y,
+                name=self.name,
+                fixed=False,
+                reference_image_id=self.reference_image_id,
+            )
+
+        # Default to absolute coordinates
+        return Location(
+            x=self.x + self.offset_x, y=self.y + self.offset_y, name=self.name, fixed=self.fixed
+        )
 
     def is_defined_with_region(self) -> bool:
         """Check if this location is defined relative to a region.

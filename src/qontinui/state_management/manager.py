@@ -3,6 +3,7 @@
 import logging
 from collections.abc import Callable
 from datetime import datetime
+from typing import Any
 
 import numpy as np
 from transitions import Machine
@@ -27,6 +28,7 @@ class QontinuiStateManager:
         self.use_hierarchical = use_hierarchical
 
         # Initialize state machine
+        self.machine: HierarchicalMachine | Machine
         if use_hierarchical:
             self.machine = HierarchicalMachine(
                 model=self,
@@ -52,8 +54,8 @@ class QontinuiStateManager:
         self.activation_history: list[tuple[str, float, datetime]] = []
 
         # Callbacks
-        self.on_state_enter: dict[str, list[Callable]] = {}
-        self.on_state_exit: dict[str, list[Callable]] = {}
+        self.on_state_enter: dict[str, list[Callable[..., Any]]] = {}
+        self.on_state_exit: dict[str, list[Callable[..., Any]]] = {}
 
         # Evidence accumulator for multi-state activation
         self.state_evidence: dict[str, float] = {}
@@ -269,6 +271,17 @@ class QontinuiStateManager:
 
         return 0.0
 
+    def get_state(self, state_name: str) -> State | None:
+        """Get a state by name.
+
+        Args:
+            state_name: Name of the state to retrieve
+
+        Returns:
+            State object or None if not found
+        """
+        return self.state_graph.get_state(state_name)
+
     def get_current_states(self) -> set[str]:
         """Get currently active states.
 
@@ -292,7 +305,7 @@ class QontinuiStateManager:
 
         return transitions
 
-    def register_enter_callback(self, state_name: str, callback: Callable):
+    def register_enter_callback(self, state_name: str, callback: Callable[..., Any]):
         """Register callback for state entry.
 
         Args:
@@ -303,7 +316,7 @@ class QontinuiStateManager:
             self.on_state_enter[state_name] = []
         self.on_state_enter[state_name].append(callback)
 
-    def register_exit_callback(self, state_name: str, callback: Callable):
+    def register_exit_callback(self, state_name: str, callback: Callable[..., Any]):
         """Register callback for state exit.
 
         Args:
@@ -314,7 +327,7 @@ class QontinuiStateManager:
             self.on_state_exit[state_name] = []
         self.on_state_exit[state_name].append(callback)
 
-    def _create_enter_callback(self, state_name: str) -> Callable:
+    def _create_enter_callback(self, state_name: str) -> Callable[..., Any]:
         """Create enter callback for state machine.
 
         Args:
@@ -331,7 +344,7 @@ class QontinuiStateManager:
 
         return callback
 
-    def _create_exit_callback(self, state_name: str) -> Callable:
+    def _create_exit_callback(self, state_name: str) -> Callable[..., Any]:
         """Create exit callback for state machine.
 
         Args:
@@ -348,16 +361,20 @@ class QontinuiStateManager:
 
         return callback
 
-    def _create_transition_conditions(self, transition: Transition) -> list[Callable]:
+    def _create_transition_conditions(
+        self, transition: Transition
+    ) -> list[str | Callable[..., bool | None]] | None:
         """Create condition callbacks for transition.
 
         Args:
             transition: Transition object
 
         Returns:
-            List of condition functions
+            List of condition functions or strings, or None
         """
-        conditions = []
+        from collections.abc import Callable as ABCCallable
+
+        conditions: list[str | ABCCallable[..., bool | None]] = []
 
         # Add custom conditions based on transition.conditions
         for _condition_str in transition.conditions:
@@ -368,9 +385,9 @@ class QontinuiStateManager:
 
             conditions.append(condition)
 
-        return conditions
+        return conditions if conditions else None
 
-    def _create_before_transition_callback(self, transition: Transition) -> Callable:
+    def _create_before_transition_callback(self, transition: Transition) -> Callable[..., Any]:
         """Create before-transition callback.
 
         Args:
@@ -385,7 +402,7 @@ class QontinuiStateManager:
 
         return callback
 
-    def _create_after_transition_callback(self, transition: Transition) -> Callable:
+    def _create_after_transition_callback(self, transition: Transition) -> Callable[..., Any]:
         """Create after-transition callback.
 
         Args:
@@ -400,7 +417,9 @@ class QontinuiStateManager:
 
         return callback
 
-    def _execute_callbacks(self, callback_dict: dict[str, list[Callable]], state_name: str):
+    def _execute_callbacks(
+        self, callback_dict: dict[str, list[Callable[..., Any]]], state_name: str
+    ):
         """Execute callbacks for a state.
 
         Args:

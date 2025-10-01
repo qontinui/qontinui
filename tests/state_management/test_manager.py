@@ -51,7 +51,7 @@ class TestQontinuiStateManager:
     def test_init(self):
         """Test manager initialization."""
         manager = QontinuiStateManager(use_hierarchical=True)
-        assert manager.use_hierarchical == True
+        assert manager.use_hierarchical
         assert len(manager.active_states) == 0
         assert manager.activation_threshold == 0.75
         assert manager.deactivation_threshold == 0.3

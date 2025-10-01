@@ -29,10 +29,10 @@ class CollectedData:
     duration_ms: float
     """Duration of execution in milliseconds."""
 
-    args: tuple = ()
+    args: tuple[Any, ...] = ()
     """Arguments passed to the method."""
 
-    kwargs: dict = field(default_factory=dict)
+    kwargs: dict[str, Any] = field(default_factory=dict)
     """Keyword arguments passed to the method."""
 
     result: Any = None
@@ -66,8 +66,8 @@ def collect_data(
     collect_args: bool = False,
     collect_result: bool = False,
     tags: list[str] | None = None,
-    custom_collector: Callable | None = None,
-) -> Callable:
+    custom_collector: Callable[..., Any] | None = None,
+) -> Callable[..., Any]:
     """Mark a method for data collection during execution.
 
     Direct port of Brobot's @CollectData annotation.
@@ -106,7 +106,7 @@ def collect_data(
         Decorator function
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Initialize data collection
@@ -161,8 +161,8 @@ def collect_data(
                 )
 
         # Store configuration on wrapper
-        wrapper._collect_data = True
-        wrapper._collect_data_config = {
+        wrapper._collect_data = True  # type: ignore[attr-defined]
+        wrapper._collect_data_config = {  # type: ignore[attr-defined]
             "name": name,
             "collect_args": collect_args,
             "collect_result": collect_result,
@@ -187,7 +187,7 @@ def is_collecting_data(obj: Any) -> bool:
     return hasattr(obj, "_collect_data") and obj._collect_data
 
 
-def get_collect_data_config(obj: Any) -> dict | None:
+def get_collect_data_config(obj: Any) -> dict[str, Any] | None:
     """Get data collection configuration from an object.
 
     Args:

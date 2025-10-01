@@ -11,44 +11,47 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-try:
+if TYPE_CHECKING:
     from ..core.models import TestFile, TestResult, TestResults, TestType
-except ImportError:
-    # For standalone testing, define minimal models
-    pass  # dataclass, field, and Enum are already imported above
+else:
+    try:
+        from ..core.models import TestFile, TestResult, TestResults, TestType
+    except ImportError:
+        # For standalone testing, define minimal models
+        pass  # dataclass, field, and Enum are already imported above
 
-    class TestType(Enum):
-        UNIT = "unit"
-        INTEGRATION = "integration"
-        UNKNOWN = "unknown"
+        class TestType(Enum):
+            UNIT = "unit"
+            INTEGRATION = "integration"
+            UNKNOWN = "unknown"
 
-    @dataclass
-    class TestResult:
-        test_name: str
-        test_file: str
-        passed: bool
-        execution_time: float
-        error_message: str | None = None
-        stack_trace: str | None = None
-        output: str = ""
+        @dataclass
+        class TestResult:
+            test_name: str
+            test_file: str
+            passed: bool
+            execution_time: float
+            error_message: str | None = None
+            stack_trace: str | None = None
+            output: str = ""
 
-    @dataclass
-    class TestResults:
-        total_tests: int
-        passed_tests: int
-        failed_tests: int
-        skipped_tests: int
-        execution_time: float
-        individual_results: list[TestResult] = field(default_factory=list)
+        @dataclass
+        class TestResults:
+            total_tests: int
+            passed_tests: int
+            failed_tests: int
+            skipped_tests: int
+            execution_time: float
+            individual_results: list[TestResult] = field(default_factory=list)
 
-    @dataclass
-    class TestFile:
-        path: Path
-        test_type: TestType
-        class_name: str
-        package: str = ""
+        @dataclass
+        class TestFile:
+            path: Path
+            test_type: TestType
+            class_name: str
+            package: str = ""
 
 
 class MigrationStatus(Enum):
@@ -369,7 +372,7 @@ class CoverageTracker:
             List of recently migrated test mappings
         """
         recent = [m for m in self.migration_history if m.migration_date is not None]
-        recent.sort(key=lambda x: x.migration_date, reverse=True)
+        recent.sort(key=lambda x: x.migration_date or datetime.min, reverse=True)
         return recent[:limit]
 
     def identify_issues(self) -> dict[str, int]:
@@ -639,3 +642,14 @@ class CoverageTracker:
             "migration_velocity": len(self.get_recent_migrations(7)),  # Migrations in last week
             "time_since_start": (datetime.now() - self.tracking_start_time).days,
         }
+
+    def update_coverage(self, test_name: str, coverage_data: Any) -> None:
+        """
+        Update coverage information for a test.
+
+        Args:
+            test_name: Name of the test
+            coverage_data: Coverage data to update
+        """
+        # TODO: Implement coverage update logic
+        pass

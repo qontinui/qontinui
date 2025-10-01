@@ -1,6 +1,7 @@
 """State machine executor for Qontinui automation."""
 
 import time
+from typing import Any
 
 from .action_executor import ActionExecutor
 from .config_parser import FromTransition, Process, QontinuiConfig, ToTransition, Transition
@@ -163,12 +164,20 @@ class StateExecutor:
             # Deactivate states
             for state_id in transition.deactivate_states:
                 self.active_states.discard(state_id)
-                print(f"Deactivated state: {self.config.state_map.get(state_id, {}).name}")
+                state_obj: Any = self.config.state_map.get(state_id, {})
+                if isinstance(state_obj, dict):
+                    print(f"Deactivated state: {state_id}")
+                else:
+                    print(f"Deactivated state: {state_obj.name}")
 
             # Activate states
             for state_id in transition.activate_states:
                 self.active_states.add(state_id)
-                print(f"Activated state: {self.config.state_map.get(state_id, {}).name}")
+                state_obj = self.config.state_map.get(state_id, {})
+                if isinstance(state_obj, dict):
+                    print(f"Activated state: {state_id}")
+                else:
+                    print(f"Activated state: {state_obj.name}")
 
             # Move to target state
             if transition.to_state:

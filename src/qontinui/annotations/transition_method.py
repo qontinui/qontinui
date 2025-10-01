@@ -89,7 +89,7 @@ def transition(
         The decorated method with transition metadata attached.
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         # Normalize activate/exit to sets
         if activate is None:
             activate_set = {to_state} if to_state else set()
@@ -110,14 +110,14 @@ def transition(
             exit_set = exit
 
         # Store metadata on the function
-        func._qontinui_transition = True
-        func._qontinui_transition_from = from_state
-        func._qontinui_transition_to = to_state
-        func._qontinui_transition_activate = activate_set
-        func._qontinui_transition_exit = exit_set
-        func._qontinui_transition_name = name or func.__name__
-        func._qontinui_transition_description = description
-        func._qontinui_transition_priority = priority
+        func._qontinui_transition = True  # type: ignore[attr-defined]
+        func._qontinui_transition_from = from_state  # type: ignore[attr-defined]
+        func._qontinui_transition_to = to_state  # type: ignore[attr-defined]
+        func._qontinui_transition_activate = activate_set  # type: ignore[attr-defined]
+        func._qontinui_transition_exit = exit_set  # type: ignore[attr-defined]
+        func._qontinui_transition_name = name or func.__name__  # type: ignore[attr-defined]
+        func._qontinui_transition_description = description  # type: ignore[attr-defined]
+        func._qontinui_transition_priority = priority  # type: ignore[attr-defined]
 
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -136,14 +136,14 @@ def transition(
             return result
 
         # Copy metadata to wrapper
-        wrapper._qontinui_transition = func._qontinui_transition
-        wrapper._qontinui_transition_from = func._qontinui_transition_from
-        wrapper._qontinui_transition_to = func._qontinui_transition_to
-        wrapper._qontinui_transition_activate = func._qontinui_transition_activate
-        wrapper._qontinui_transition_exit = func._qontinui_transition_exit
-        wrapper._qontinui_transition_name = func._qontinui_transition_name
-        wrapper._qontinui_transition_description = func._qontinui_transition_description
-        wrapper._qontinui_transition_priority = func._qontinui_transition_priority
+        wrapper._qontinui_transition = func._qontinui_transition  # type: ignore[attr-defined]
+        wrapper._qontinui_transition_from = func._qontinui_transition_from  # type: ignore[attr-defined]
+        wrapper._qontinui_transition_to = func._qontinui_transition_to  # type: ignore[attr-defined]
+        wrapper._qontinui_transition_activate = func._qontinui_transition_activate  # type: ignore[attr-defined]
+        wrapper._qontinui_transition_exit = func._qontinui_transition_exit  # type: ignore[attr-defined]
+        wrapper._qontinui_transition_name = func._qontinui_transition_name  # type: ignore[attr-defined]
+        wrapper._qontinui_transition_description = func._qontinui_transition_description  # type: ignore[attr-defined]
+        wrapper._qontinui_transition_priority = func._qontinui_transition_priority  # type: ignore[attr-defined]
 
         return wrapper
 
@@ -162,7 +162,7 @@ def is_transition_method(obj: Any) -> bool:
     return hasattr(obj, "_qontinui_transition") and obj._qontinui_transition
 
 
-def get_transition_metadata(func: Callable) -> dict | None:
+def get_transition_metadata(func: Callable[..., Any]) -> dict[str, Any] | None:
     """Get transition metadata from a decorated method.
 
     Args:
@@ -186,7 +186,7 @@ def get_transition_metadata(func: Callable) -> dict | None:
     }
 
 
-def collect_transitions(obj: Any) -> list[dict]:
+def collect_transitions(obj: Any) -> list[dict[str, Any]]:
     """Collect all transition methods from an object.
 
     Scans an object (typically a class instance) for methods
@@ -232,7 +232,7 @@ def collect_transitions(obj: Any) -> list[dict]:
     return transitions
 
 
-def create_code_transition(metadata: dict):
+def create_code_transition(metadata: dict[str, Any]):
     """Create a CodeStateTransition from transition metadata.
 
     Args:
@@ -243,11 +243,11 @@ def create_code_transition(metadata: dict):
     """
     from ..navigation.transition.code_state_transition import CodeStateTransition
 
-    return CodeStateTransition(
-        name=metadata["name"],
-        from_state=metadata["from_state"],
-        to_state=metadata["to_state"],
+    transition = CodeStateTransition(
         activate_names=metadata["activate"],
         exit_names=metadata["exit"],
         transition_function=metadata["function"],
     )
+    # Note: name, from_state, and to_state are not parameters of CodeStateTransition
+    # These are typically managed by the StateTransitions container
+    return transition

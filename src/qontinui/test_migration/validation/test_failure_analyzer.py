@@ -4,19 +4,23 @@ Test failure analysis engine for distinguishing migration errors from code error
 
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import FailureAnalyzer
     from ..core.models import FailureAnalysis, FailureType, SuspectedCause, TestFailure
-except ImportError:
-    # For standalone execution
-    import sys
-    from pathlib import Path
+else:
+    try:
+        from ..core.interfaces import FailureAnalyzer
+        from ..core.models import FailureAnalysis, FailureType, SuspectedCause, TestFailure
+    except ImportError:
+        # For standalone execution
+        import sys
+        from pathlib import Path
 
-    sys.path.append(str(Path(__file__).parent.parent))
-    from core.interfaces import FailureAnalyzer
-    from core.models import FailureAnalysis, FailureType, SuspectedCause, TestFailure
+        sys.path.append(str(Path(__file__).parent.parent))
+        from core.interfaces import FailureAnalyzer
+        from core.models import FailureAnalysis, FailureType, SuspectedCause, TestFailure
 
 
 @dataclass
@@ -296,7 +300,7 @@ class TestFailureAnalyzer(FailureAnalyzer):
 
     def _generate_diagnostic_info(self, failure: TestFailure, error_text: str) -> dict[str, Any]:
         """Generate detailed diagnostic information."""
-        diagnostic_info = {
+        diagnostic_info: dict[str, Any] = {
             "failure_type": failure.failure_type.value,
             "test_file": failure.test_file,
             "test_name": failure.test_name,

@@ -43,22 +43,22 @@ def incoming_transition(description: str = "", timeout: int = 5, required: bool 
         The decorated method with transition metadata attached.
     """
 
-    def decorator(method: Callable) -> Callable:
+    def decorator(method: Callable[..., Any]) -> Callable[..., Any]:
         # Store metadata on the method
-        method._qontinui_incoming_transition = True
-        method._qontinui_incoming_transition_description = description
-        method._qontinui_incoming_transition_timeout = timeout
-        method._qontinui_incoming_transition_required = required
+        method._qontinui_incoming_transition = True  # type: ignore[attr-defined]
+        method._qontinui_incoming_transition_description = description  # type: ignore[attr-defined]
+        method._qontinui_incoming_transition_timeout = timeout  # type: ignore[attr-defined]
+        method._qontinui_incoming_transition_required = required  # type: ignore[attr-defined]
 
         @wraps(method)
         def wrapper(*args, **kwargs):
             return method(*args, **kwargs)
 
         # Copy metadata to wrapper
-        wrapper._qontinui_incoming_transition = True
-        wrapper._qontinui_incoming_transition_description = description
-        wrapper._qontinui_incoming_transition_timeout = timeout
-        wrapper._qontinui_incoming_transition_required = required
+        wrapper._qontinui_incoming_transition = True  # type: ignore[attr-defined]
+        wrapper._qontinui_incoming_transition_description = description  # type: ignore[attr-defined]
+        wrapper._qontinui_incoming_transition_timeout = timeout  # type: ignore[attr-defined]
+        wrapper._qontinui_incoming_transition_required = required  # type: ignore[attr-defined]
 
         return wrapper
 
@@ -77,7 +77,7 @@ def is_incoming_transition(method: Any) -> bool:
     return hasattr(method, "_qontinui_incoming_transition") and method._qontinui_incoming_transition
 
 
-def get_incoming_transition_metadata(method: Any) -> dict | None:
+def get_incoming_transition_metadata(method: Any) -> dict[str, Any] | None:
     """Get IncomingTransition metadata from a decorated method.
 
     Args:

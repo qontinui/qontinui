@@ -9,9 +9,10 @@ import pickle
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-from sqlalchemy import Column, DateTime, MetaData, String, Table, create_engine
+from sqlalchemy import Column, MetaData, String, Table, create_engine, text
+from sqlalchemy import DateTime as SQLDateTime
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -41,7 +42,7 @@ class SimpleStorage:
             base_path: Base path for storage (defaults to settings)
         """
         settings = get_settings()
-        self.base_path = base_path or settings.data_path
+        self.base_path: Path = Path(base_path or settings.dataset_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
 
         # Create standard subdirectories
@@ -59,7 +60,7 @@ class SimpleStorage:
     def save_json(
         self,
         key: str,
-        data: dict | list,
+        data: dict[str, Any] | list[Any],
         subfolder: str = "",
         version: bool = False,
         backup: bool = False,
@@ -110,7 +111,7 @@ class SimpleStorage:
 
     def load_json(
         self, key: str, subfolder: str = "", version: str | None = None, default: Any = None
-    ) -> dict | list | None:
+    ) -> dict[str, Any] | list[Any] | None:
         """Load JSON data.
 
         Args:
@@ -138,7 +139,7 @@ class SimpleStorage:
 
             if not path.exists():
                 if default is not None:
-                    return default
+                    return cast(dict[Any, Any] | list[Any] | None, default)
                 raise FileNotFoundError(f"File not found: {path}")
 
             # Load data
@@ -147,15 +148,15 @@ class SimpleStorage:
 
             logger.debug("json_loaded", key=key, path=str(path))
 
-            return data
+            return cast(dict[Any, Any] | list[Any], data)
 
         except FileNotFoundError as e:
             if default is not None:
-                return default
+                return cast(dict[Any, Any] | list[Any] | None, default)
             raise StorageReadException(key=key, storage_type="JSON", reason="File not found") from e
         except Exception as e:
             if default is not None:
-                return default
+                return cast(dict[Any, Any] | list[Any] | None, default)
             raise StorageReadException(key=key, storage_type="JSON", reason=str(e)) from e
 
     def list_json(self, subfolder: str = "", pattern: str = "*.json") -> list[Path]:
@@ -276,7 +277,7 @@ class SimpleStorage:
 
     # State Storage Methods
 
-    def save_state(self, state_name: str, state_data: dict) -> Path:
+    def save_state(self, state_name: str, state_data: dict[str, Any]) -> Path:
         """Save state data.
 
         Args:
@@ -292,7 +293,7 @@ class SimpleStorage:
 
         return self.save_json(key=state_name, data=state_data, subfolder="states", backup=True)
 
-    def load_state(self, state_name: str) -> dict | None:
+    def load_state(self, state_name: str) -> dict[str, Any] | list[Any] | None:
         """Load state data.
 
         Args:
@@ -314,7 +315,7 @@ class SimpleStorage:
 
     # Configuration Storage Methods
 
-    def save_config(self, config_name: str, config_data: dict) -> Path:
+    def save_config(self, config_name: str, config_data: dict[str, Any]) -> Path:
         """Save configuration.
 
         Args:
@@ -326,7 +327,7 @@ class SimpleStorage:
         """
         return self.save_json(key=config_name, data=config_data, subfolder="configs")
 
-    def load_config(self, config_name: str) -> dict | None:
+    def load_config(self, config_name: str) -> dict[str, Any] | list[Any] | None:
         """Load configuration.
 
         Args:
@@ -439,7 +440,7 @@ class DatabaseStorage:
         """
         if connection_string is None:
             settings = get_settings()
-            db_path = settings.data_path / "qontinui.db"
+            db_path = Path(settings.dataset_path) / "qontinui.db"
             connection_string = f"sqlite:///{db_path}"
 
         self.connection_string = connection_string
@@ -477,7 +478,7 @@ class DatabaseStorage:
         finally:
             session.close()
 
-    def execute_sql(self, sql: str, params: dict | None = None) -> Any:
+    def execute_sql(self, sql: str, params: dict[str, Any] | None = None) -> Any:
         """Execute raw SQL.
 
         Args:
@@ -488,7 +489,7 @@ class DatabaseStorage:
             Query result
         """
         with self.engine.connect() as conn:
-            result = conn.execute(sql, params or {})
+            result = conn.execute(text(sql), params or {})
             conn.commit()
             return result
 
@@ -506,8 +507,9 @@ class DatabaseStorage:
         cols = [Column("id", String, primary_key=True)]
         for name, type_ in columns.items():
             cols.append(Column(name, type_))
-        cols.append(Column("created_at", DateTime, default=datetime.utcnow))
-        cols.append(Column("updated_at", DateTime, onupdate=datetime.utcnow))
+        # Type ignore needed for SQLAlchemy DateTime type stubs
+        cols.append(Column("created_at", SQLDateTime, default=lambda: datetime.utcnow()))  # type: ignore[arg-type]
+        cols.append(Column("updated_at", SQLDateTime, onupdate=lambda: datetime.utcnow()))  # type: ignore[arg-type]
 
         # Create table
         table = Table(table_name, self.metadata, *cols)
@@ -609,5 +611,5 @@ class CacheStorage:
         if not self._timestamps:
             return
 
-        oldest_key = min(self._timestamps, key=self._timestamps.get)
+        oldest_key = min(self._timestamps, key=lambda k: self._timestamps[k])
         self.delete(oldest_key)

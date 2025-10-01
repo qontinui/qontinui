@@ -5,7 +5,7 @@ Core interface for all objects that belong to states in the framework.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 
 class StateObjectType(Enum):
@@ -21,6 +21,7 @@ class StateObjectType(Enum):
     TEXT = "TEXT"
 
 
+@runtime_checkable
 class StateObject(Protocol):
     """Core interface for all objects that belong to states.
 

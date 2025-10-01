@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ..state.state_object import StateObject
 from .location import Position
@@ -25,6 +25,16 @@ class SearchStrategy(Enum):
     EXPANDED = auto()  # Expanded from object bounds
     CONTRACTED = auto()  # Contracted from object bounds
     ADJACENT = auto()  # Adjacent to object (above, below, left, right)
+
+
+class AdjacentDirection(Enum):
+    """Direction for adjacent search regions."""
+
+    TOP = auto()
+    BOTTOM = auto()
+    LEFT = auto()
+    RIGHT = auto()
+    CENTER = auto()
 
 
 @dataclass
@@ -75,8 +85,8 @@ class SearchRegionOnObject:
     # Size adjustments (for EXPANDED/CONTRACTED strategies)
     expand_by: int = 0  # Pixels to expand/contract by
 
-    # Position relative to object (for ADJACENT strategy)
-    adjacent_position: Position = Position.CENTER
+    # Direction for adjacent search regions (for ADJACENT strategy)
+    adjacent_direction: AdjacentDirection = AdjacentDirection.CENTER
     adjacent_distance: int = 0  # Distance from object edge
     adjacent_width: int | None = None  # Width of adjacent region
     adjacent_height: int | None = None  # Height of adjacent region
@@ -347,11 +357,11 @@ class SearchRegionOnObject:
 
         # Try to get region from state object
         if hasattr(self.base_object, "search_region"):
-            return self.base_object.search_region
+            return cast(Region | None, self.base_object.search_region)
         elif hasattr(self.base_object, "region"):
-            return self.base_object.region
+            return cast(Region | None, self.base_object.region)
         elif hasattr(self.base_object, "get_region"):
-            return self.base_object.get_region()
+            return cast(Region | None, self.base_object.get_region())
 
         return None
 
@@ -400,14 +410,14 @@ class SearchRegionOnObject:
         width = self.adjacent_width or base.width
         height = self.adjacent_height or base.height
 
-        if self.adjacent_position == Position.TOP:
+        if self.adjacent_direction == AdjacentDirection.TOP:
             return Region(base.x, base.y - height - self.adjacent_distance, width, height)
-        elif self.adjacent_position == Position.BOTTOM:
-            return Region(base.x, base.bottom + self.adjacent_distance, width, height)
-        elif self.adjacent_position == Position.LEFT:
+        elif self.adjacent_direction == AdjacentDirection.BOTTOM:
+            return Region(base.x, base.y + base.height + self.adjacent_distance, width, height)
+        elif self.adjacent_direction == AdjacentDirection.LEFT:
             return Region(base.x - width - self.adjacent_distance, base.y, width, height)
-        elif self.adjacent_position == Position.RIGHT:
-            return Region(base.right + self.adjacent_distance, base.y, width, height)
+        elif self.adjacent_direction == AdjacentDirection.RIGHT:
+            return Region(base.x + base.width + self.adjacent_distance, base.y, width, height)
         else:
             # For other positions, return offset region
             return self._compute_relative_region(base)
@@ -437,7 +447,7 @@ class SearchRegionOnObject:
             offset_x=self.offset_x,
             offset_y=self.offset_y,
             expand_by=self.expand_by,
-            adjacent_position=self.adjacent_position,
+            adjacent_direction=self.adjacent_direction,
             adjacent_distance=self.adjacent_distance,
             adjacent_width=self.adjacent_width,
             adjacent_height=self.adjacent_height,

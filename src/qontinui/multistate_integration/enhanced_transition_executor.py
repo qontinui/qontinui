@@ -8,10 +8,12 @@ Extends Qontinui's TransitionExecutor with:
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
-from qontinui.model.transition.enhanced_state_transition import StateTransition
+from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
 from qontinui.state_management.state_memory import StateMemory
 
 from .multistate_adapter import MultiStateAdapter
@@ -43,11 +45,11 @@ class SuccessPolicy(Enum):
 class ExecutionContext:
     """Context for a transition execution."""
 
-    transition: StateTransition
+    transition: TaskSequenceStateTransition
     phase: ExecutionPhase
-    activated_states: set[int] = None
-    successful_incoming: set[int] = None
-    failed_incoming: set[int] = None
+    activated_states: set[int] | None = None
+    successful_incoming: set[int] | None = None
+    failed_incoming: set[int] | None = None
     rollback_needed: bool = False
     error_message: str | None = None
 
@@ -98,9 +100,13 @@ class EnhancedTransitionExecutor:
         self.execution_history: list[ExecutionContext] = []
 
         # Track phased execution callbacks
-        self.phase_callbacks: dict[ExecutionPhase, list] = {phase: [] for phase in ExecutionPhase}
+        self.phase_callbacks: dict[ExecutionPhase, list[Callable[..., Any]]] = {
+            phase: [] for phase in ExecutionPhase
+        }
 
-    def execute_transition(self, transition: StateTransition, dry_run: bool = False) -> bool:
+    def execute_transition(
+        self, transition: TaskSequenceStateTransition, dry_run: bool = False
+    ) -> bool:
         """Execute a transition with phased execution model.
 
         Args:
@@ -234,9 +240,11 @@ class EnhancedTransitionExecutor:
         transition = context.transition
 
         # Activate ALL states together (atomic operation)
-        for state_id in transition.activate:
-            self.state_memory.active_states.add(state_id)
-            context.activated_states.add(state_id)
+        if transition.activate is not None:
+            for state_id in transition.activate:
+                self.state_memory.active_states.add(state_id)
+                if context.activated_states is not None:
+                    context.activated_states.add(state_id)
 
         # Sync with MultiState
         if self.multistate_adapter:
@@ -246,7 +254,8 @@ class EnhancedTransitionExecutor:
         for callback in self.phase_callbacks[ExecutionPhase.ACTIVATE]:
             callback(context)
 
-        logger.debug(f"Activated {len(context.activated_states)} states")
+        activated_count = len(context.activated_states) if context.activated_states else 0
+        logger.debug(f"Activated {activated_count} states")
 
     def _execute_incoming(self, context: ExecutionContext) -> bool:
         """Execute incoming transitions for EACH activated state.
@@ -259,11 +268,14 @@ class EnhancedTransitionExecutor:
         """
 
         # Execute incoming transition for EACH activated state
-        for state_id in context.activated_states:
-            if self._execute_single_incoming(state_id, context):
-                context.successful_incoming.add(state_id)
-            else:
-                context.failed_incoming.add(state_id)
+        if context.activated_states is not None:
+            for state_id in context.activated_states:
+                if self._execute_single_incoming(state_id, context):
+                    if context.successful_incoming is not None:
+                        context.successful_incoming.add(state_id)
+                else:
+                    if context.failed_incoming is not None:
+                        context.failed_incoming.add(state_id)
 
         # Run phase callbacks
         for callback in self.phase_callbacks[ExecutionPhase.INCOMING]:
@@ -330,14 +342,16 @@ class EnhancedTransitionExecutor:
             context: Execution context
         """
         # Remove activated states from memory
-        for state_id in context.activated_states:
-            self.state_memory.active_states.discard(state_id)
+        if context.activated_states is not None:
+            for state_id in context.activated_states:
+                self.state_memory.active_states.discard(state_id)
 
         # Sync with MultiState
         if self.multistate_adapter:
             self.multistate_adapter.sync_with_state_memory()
 
-        logger.info(f"Rolled back activation of {len(context.activated_states)} states")
+        activated_count = len(context.activated_states) if context.activated_states else 0
+        logger.info(f"Rolled back activation of {activated_count} states")
 
     def _evaluate_success(self, context: ExecutionContext) -> bool:
         """Evaluate transition success based on policy.
@@ -348,8 +362,8 @@ class EnhancedTransitionExecutor:
         Returns:
             True if successful per policy
         """
-        total = len(context.activated_states)
-        successful = len(context.successful_incoming)
+        total = len(context.activated_states) if context.activated_states else 0
+        successful = len(context.successful_incoming) if context.successful_incoming else 0
 
         if total == 0:
             return True  # No states to activate is success
@@ -401,17 +415,16 @@ class EnhancedTransitionExecutor:
         group_states = self.state_memory.state_groups[group_name]
 
         # Create synthetic transition
-        transition = StateTransition(
-            id=-1,  # Synthetic ID
+        transition = TaskSequenceStateTransition(
             name=f"{'Activate' if activate else 'Deactivate'} group {group_name}",
             activate=group_states if activate else set(),
             exit=group_states if not activate else set(),
-            score=0.1,  # Low cost for group operations
+            path_cost=1,  # Low cost for group operations
         )
 
         return self.execute_transition(transition)
 
-    def get_execution_statistics(self) -> dict:
+    def get_execution_statistics(self) -> dict[str, Any]:
         """Get statistics about transition executions.
 
         Returns:

@@ -57,7 +57,7 @@ class MethodCallExpression(Expression):
         self.arguments = arguments or []
 
     @classmethod
-    def from_dict(cls, data: dict) -> "MethodCallExpression":
+    def from_dict(cls, data: dict[str, Any]) -> "MethodCallExpression":
         """Create MethodCallExpression from dictionary.
 
         Args:
@@ -72,7 +72,7 @@ class MethodCallExpression(Expression):
 
         return cls(object=data.get("object"), method=data.get("method", ""), arguments=arguments)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:
@@ -86,7 +86,7 @@ class MethodCallExpression(Expression):
             result["arguments"] = [arg.to_dict() for arg in self.arguments]
         return result
 
-    def evaluate(self, context: dict) -> Any:
+    def evaluate(self, context: dict[str, Any]) -> Any:
         """Evaluate the method call expression.
 
         Args:

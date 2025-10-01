@@ -6,7 +6,7 @@ Represents a forEach loop statement in the DSL.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .statement import Statement
 
@@ -66,7 +66,7 @@ class ForEachStatement(Statement):
         self.statements = statements or []
 
     @classmethod
-    def from_dict(cls, data: dict) -> ForEachStatement:
+    def from_dict(cls, data: dict[str, Any]) -> ForEachStatement:
         """Create ForEachStatement from dictionary.
 
         Args:
@@ -89,7 +89,7 @@ class ForEachStatement(Statement):
             variable_name=data.get("variableName", ""), collection=collection, statements=statements
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:

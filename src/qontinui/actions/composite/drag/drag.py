@@ -4,11 +4,14 @@ Implements drag-and-drop functionality using action chaining.
 """
 
 from ...action_chain_options import ActionChainOptions, ActionChainOptionsBuilder, ChainingStrategy
+from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
+from ...action_type import ActionType
 from ...basic.find.pattern_find_options import PatternFindOptions, PatternFindOptionsBuilder
 from ...basic.mouse.mouse_down_options import MouseDownOptions, MouseDownOptionsBuilder
 from ...basic.mouse.mouse_move_options import MouseMoveOptions
+from ...basic.mouse.mouse_press_options import MousePressOptions
 from ...basic.mouse.mouse_up_options import MouseUpOptions, MouseUpOptionsBuilder
 from ...internal.execution.action_chain_executor import ActionChainExecutor
 from ...internal.service.action_service import ActionService
@@ -50,6 +53,14 @@ class Drag(ActionInterface):
         if self.action_chain_executor.action_service is None:
             self.action_chain_executor.action_service = action_service
 
+    def get_action_type(self) -> ActionType:
+        """Return the action type.
+
+        Returns:
+            ActionType.DRAG
+        """
+        return ActionType.DRAG
+
     def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the drag operation using action chaining.
 
@@ -75,7 +86,9 @@ class Drag(ActionInterface):
         # Ensure we have at least 2 object collections (source and target)
         if len(object_collections) < 2:
             action_result.success = False
-            action_result.text = "Drag requires at least 2 object collections (source and target)"
+            action_result.output_text = (
+                "Drag requires at least 2 object collections (source and target)"
+            )
             return
 
         source_collection = object_collections[0]
@@ -149,7 +162,7 @@ class Drag(ActionInterface):
         return chain_options
 
     def _create_find_options(
-        self, base_options: PatternFindOptions | None, collection: ObjectCollection
+        self, base_options: ActionConfig, collection: ObjectCollection
     ) -> PatternFindOptions:
         """Create find options for source or target.
 
@@ -160,13 +173,16 @@ class Drag(ActionInterface):
         Returns:
             Configured PatternFindOptions
         """
-        if base_options:
+        # If base_options is already PatternFindOptions, use it
+        if isinstance(base_options, PatternFindOptions):
             return base_options
 
         # Create default find options
-        return PatternFindOptionsBuilder().set_do_on_each(False).set_action_duration(2.0).build()
+        from ...basic.find.do_on_each import DoOnEach
 
-    def _create_move_options(self, base_options: MouseMoveOptions | None) -> MouseMoveOptions:
+        return PatternFindOptionsBuilder().set_do_on_each(DoOnEach.FIRST).build()
+
+    def _create_move_options(self, base_options: ActionConfig) -> MouseMoveOptions:
         """Create mouse move options.
 
         Args:
@@ -175,39 +191,40 @@ class Drag(ActionInterface):
         Returns:
             Configured MouseMoveOptions
         """
-        if base_options:
+        # If base_options is already MouseMoveOptions, use it
+        if isinstance(base_options, MouseMoveOptions):
             return base_options
 
         # Create default move options
-        move_options = MouseMoveOptions()
-        move_options.move_after_click = False
-        return move_options
+        return MouseMoveOptions()
 
-    def _create_mouse_down_options(self, base_options: MouseDownOptions | None) -> MouseDownOptions:
+    def _create_mouse_down_options(self, base_options: MousePressOptions) -> MouseDownOptions:
         """Create mouse down options.
 
         Args:
-            base_options: Base configuration to use
+            base_options: Base configuration to use (MousePressOptions)
 
         Returns:
             Configured MouseDownOptions
         """
-        if base_options:
+        # If base_options is already MouseDownOptions, use it
+        if isinstance(base_options, MouseDownOptions):
             return base_options
 
         # Create default mouse down options
         return MouseDownOptionsBuilder().build()
 
-    def _create_mouse_up_options(self, base_options: MouseUpOptions | None) -> MouseUpOptions:
+    def _create_mouse_up_options(self, base_options: MousePressOptions) -> MouseUpOptions:
         """Create mouse up options.
 
         Args:
-            base_options: Base configuration to use
+            base_options: Base configuration to use (MousePressOptions)
 
         Returns:
             Configured MouseUpOptions
         """
-        if base_options:
+        # If base_options is already MouseUpOptions, use it
+        if isinstance(base_options, MouseUpOptions):
             return base_options
 
         # Create default mouse up options
@@ -220,7 +237,7 @@ class Drag(ActionInterface):
             source: Source result from chain execution
             target: Target result to populate
         """
-        target.success = source.is_success()
+        target.success = source.is_success
         target.match_list = source.match_list
         target.duration = source.duration
         target.text = source.text

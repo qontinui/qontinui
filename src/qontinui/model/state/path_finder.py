@@ -98,8 +98,8 @@ class PathFinder:
         Returns:
             List of paths
         """
-        paths = []
-        visited = set()
+        paths: list[Path] = []
+        visited: set[str] = set()
         current_path = Path()
 
         self._find_all_paths_recursive(start, end, visited, current_path, paths, max_paths)
@@ -131,7 +131,11 @@ class PathFinder:
                 continue
 
             for transition in current_state.transitions:
-                next_state = transition.to_state
+                next_state_name = transition.to_state
+                if not next_state_name:
+                    continue
+
+                next_state = self.states.get(next_state_name)
                 if not next_state:
                     continue
 
@@ -175,7 +179,7 @@ class PathFinder:
 
         # Priority queue: (negative_score, path)
         heap = [(-1000.0, 0, Path().add_state(start))]
-        visited = {}
+        visited: dict[str, float] = {}
         counter = 0
 
         while heap:
@@ -184,6 +188,10 @@ class PathFinder:
 
             if current_state == end:
                 return current_path
+
+            # Type guard for current_state
+            if current_state is None:
+                continue
 
             state_key = current_state.name
             if state_key in visited and visited[state_key] <= -neg_score:
@@ -195,7 +203,11 @@ class PathFinder:
                 continue
 
             for transition in current_state.transitions:
-                next_state = transition.to_state
+                next_state_name = transition.to_state
+                if not next_state_name:
+                    continue
+
+                next_state = self.states.get(next_state_name)
                 if not next_state:
                     continue
 
@@ -283,7 +295,11 @@ class PathFinder:
         else:
             # Explore neighbors
             for transition in current.transitions:
-                next_state = transition.to_state
+                next_state_name = transition.to_state
+                if not next_state_name:
+                    continue
+
+                next_state = self.states.get(next_state_name)
                 if next_state and (next_state.name not in visited or self._allow_loops):
                     self._find_all_paths_recursive(
                         next_state, end, visited.copy(), current_path, all_paths, max_paths
@@ -332,8 +348,13 @@ class PathFinder:
         for state in self.states.values():
             # Try to find path back to itself
             for transition in state.transitions:
-                if transition.to_state:
-                    path = self.find_path(transition.to_state, state)
+                next_state_name = transition.to_state
+                if not next_state_name:
+                    continue
+
+                next_state = self.states.get(next_state_name)
+                if next_state:
+                    path = self.find_path(next_state, state)
                     if path and len(path.states) > 1:
                         # Add the completing transition
                         cycle = Path()

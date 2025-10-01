@@ -7,17 +7,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
+from ..element.anchors import Anchors
 from ..element.image import Image
 from ..element.location import Location
 from ..element.position import Position
 from ..element.region import Region
 
 if TYPE_CHECKING:
-    from qontinui.model.element.anchor import Anchors
     from qontinui.model.element.scene import Scene
     from qontinui.model.state.state_image import StateImage
     from qontinui.model.state.state_object_metadata import StateObjectMetadata
@@ -61,8 +61,8 @@ class Match:
     image: Image | None = None
     """Actual pixels from the screen at the match location."""
 
-    text: str = ""
-    """Text content if this is a text match."""
+    ocr_text: str = ""
+    """Text extracted via OCR from the matched region."""
 
     name: str = ""
     """Name identifier for this match."""
@@ -76,7 +76,7 @@ class Match:
     state_object_data: StateObjectMetadata | None = None
     """Metadata about the State object that found this match."""
 
-    histogram: np.ndarray | None = field(default=None, repr=False)
+    histogram: np.ndarray[Any, Any] | None = field(default=None, repr=False)
     """Histogram data for this match."""
 
     scene: Scene | None = None
@@ -93,6 +93,41 @@ class Match:
         if self.target is None:
             self.target = Location(region=Region())
 
+    @property
+    def region(self) -> Region | None:
+        """Get the region of this match as a property.
+
+        Returns:
+            Region or None
+        """
+        return self.get_region()
+
+    @property
+    def similarity(self) -> float:
+        """Get the similarity score as a property.
+
+        Returns:
+            Similarity score (0.0-1.0)
+        """
+        return self.score
+
+    @property
+    def confidence(self) -> float:
+        """Get the confidence score as a property (alias for score).
+
+        Returns:
+            Confidence score (0.0-1.0)
+        """
+        return self.score
+
+    def get_target(self) -> Location | None:
+        """Get the target location of this match.
+
+        Returns:
+            Target location or None
+        """
+        return self.target
+
     @classmethod
     def from_region(cls, region: Region) -> Match:
         """Create Match from Region.
@@ -104,6 +139,18 @@ class Match:
             Match instance
         """
         return cls(target=Location(region=region))
+
+    @property
+    def center(self) -> Location:
+        """Get center location of match.
+
+        Returns:
+            Center location
+        """
+        region = self.get_region()
+        if region:
+            return Location(x=region.x + region.width // 2, y=region.y + region.height // 2)
+        return self.target if self.target else Location(0, 0)
 
     @property
     def x(self) -> int:
@@ -166,7 +213,7 @@ class Match:
         else:
             self.target.region = region
 
-    def get_mat(self) -> np.ndarray | None:
+    def get_mat(self) -> np.ndarray[Any, Any] | None:
         """Get the image as BGR NumPy array.
 
         Returns:
@@ -214,8 +261,9 @@ class Match:
         Returns:
             Owner state name or empty string
         """
+
         if self.state_object_data:
-            return self.state_object_data.owner_state_name
+            return cast(str, self.state_object_data.owner_state_name)
         return ""
 
     def to_state_image(self) -> StateImage:
@@ -229,15 +277,15 @@ class Match:
         from ..element.pattern import Pattern
         from ..state.state_image import StateImage
 
-        state_image = StateImage()
-        state_image.name = self.name
+        # Create a Pattern from this match
+        pattern = Pattern.from_match(self)
+        state_image = StateImage(image=pattern, name=self.name)
 
         if self.state_object_data:
-            state_image.owner_state_name = self.state_object_data.owner_state_name
+            state_image.owner_state_name = self.state_object_data.owner_state_name  # type: ignore[misc]
             if self.state_object_data.state_object_name:
                 state_image.name = self.state_object_data.state_object_name
 
-        state_image.add_patterns(Pattern.from_match(self))
         return state_image
 
     def __str__(self) -> str:
@@ -255,8 +303,8 @@ class Match:
         else:
             parts.append(f"R[null] simScore:{self.score:.1f}")
 
-        if self.text:
-            parts.append(f" text:{self.text}")
+        if self.ocr_text:
+            parts.append(f" ocr_text:{self.ocr_text}")
 
         parts.append("]")
         return "".join(parts)
@@ -273,13 +321,13 @@ class Match:
         return (
             self.score == other.score
             and self.name == other.name
-            and self.text == other.text
+            and self.ocr_text == other.ocr_text
             and self.get_region() == other.get_region()
         )
 
     def __hash__(self) -> int:
         """Get hash code."""
-        return hash((self.score, self.name, self.text, self.get_region()))
+        return hash((self.score, self.name, self.ocr_text, self.get_region()))
 
 
 class MatchBuilder:
@@ -298,7 +346,7 @@ class MatchBuilder:
         self.search_image = None
         self.region = None
         self.name = None
-        self.text = None
+        self.ocr_text = None
         self.anchors = None
         self.state_object_data = None
         self.histogram = None
@@ -318,12 +366,13 @@ class MatchBuilder:
             self.image = match.image
         if match.search_image:
             self.search_image = match.search_image
-        if match.get_region():
-            self.set_region(match.get_region())
+        region = match.get_region()
+        if region is not None:
+            self.set_region(region)
         if match.name:
             self.name = match.name
-        if match.text:
-            self.text = match.text
+        if match.ocr_text:
+            self.ocr_text = match.ocr_text
         if match.anchors:
             self.anchors = match.anchors
         if match.state_object_data:
@@ -435,16 +484,16 @@ class MatchBuilder:
         self.name = name
         return self
 
-    def set_text(self, text: str) -> MatchBuilder:
-        """Set text.
+    def set_ocr_text(self, ocr_text: str) -> MatchBuilder:
+        """Set OCR text.
 
         Args:
-            text: Text to set
+            ocr_text: OCR text to set
 
         Returns:
             Self for chaining
         """
-        self.text = text
+        self.ocr_text = ocr_text
         return self
 
     def set_search_image(self, image: Image) -> MatchBuilder:
@@ -483,7 +532,7 @@ class MatchBuilder:
         self.state_object_data = state_object_data
         return self
 
-    def set_histogram(self, histogram: np.ndarray) -> MatchBuilder:
+    def set_histogram(self, histogram: np.ndarray[Any, Any]) -> MatchBuilder:
         """Set histogram.
 
         Args:
@@ -546,8 +595,8 @@ class MatchBuilder:
 
         if self.name:
             match.name = self.name
-        if self.text:
-            match.text = self.text
+        if self.ocr_text:
+            match.ocr_text = self.ocr_text
         if self.sim_score >= 0:
             match.score = self.sim_score
 

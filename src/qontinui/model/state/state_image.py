@@ -6,11 +6,12 @@ Images associated with states for identification.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ...find import FindImage, Matches
 from ..element import Image, Pattern, Region
 from ..search_regions import SearchRegions
+from .action_history import ActionHistory
 
 if TYPE_CHECKING:
     from qontinui.model.state.state import State
@@ -41,7 +42,22 @@ class StateImage:
     _timeout: float = 5.0
 
     # Metadata
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    # Action history for integration testing
+    action_history: ActionHistory = field(default_factory=ActionHistory)
+
+    # Screenshot IDs for pixel stability analysis
+    screenshot_ids: list[str] = field(default_factory=list)
+
+    @property
+    def screenshots(self) -> list[str]:
+        """Get screenshot IDs as property.
+
+        Returns:
+            List of screenshot IDs
+        """
+        return self.screenshot_ids
 
     def __post_init__(self):
         """Initialize StateImage properties."""
@@ -60,7 +76,7 @@ class StateImage:
         if isinstance(self.image, Pattern):
             pattern = self.image
         else:
-            pattern = Pattern(image=self.image)
+            pattern = Pattern.from_image(self.image)
 
         # Apply StateImage configuration
         pattern = pattern.with_similarity(self._similarity)
@@ -225,6 +241,69 @@ class StateImage:
     def index(self) -> int:
         """Get image index/priority."""
         return self._index
+
+    @property
+    def patterns(self) -> list[Pattern]:
+        """Get patterns for this state image.
+
+        Returns:
+            List containing the pattern
+        """
+        pattern = self.get_pattern()
+        return [pattern]
+
+    @property
+    def owner_state_name(self) -> str:
+        """Get owner state name as a property.
+
+        Returns:
+            Owner state name or empty string
+        """
+        return self.owner_state.name if self.owner_state else ""
+
+    def get_name(self) -> str:
+        """Get the name of this state image.
+
+        Returns:
+            Name or empty string
+        """
+        return self.name or ""
+
+    def get_patterns(self) -> list[Pattern]:
+        """Get patterns for finding this image.
+
+        Returns:
+            List containing the pattern
+        """
+        return self.patterns
+
+    def get_owner_state_name(self) -> str:
+        """Get the owner state name.
+
+        Returns:
+            Owner state name or empty string
+        """
+        return self.owner_state_name
+
+    def set_times_acted_on(self, times: int) -> None:
+        """Set times this image has been acted upon.
+
+        Args:
+            times: Number of times acted upon
+        """
+        # This would typically update action history
+        # For now, just a placeholder
+        pass
+
+    def get_all_match_snapshots(self) -> list[Any]:
+        """Get all match snapshots for this state image.
+
+        Returns:
+            List of match snapshots
+        """
+        # This would typically return historical match data
+        # For now, return empty list
+        return []
 
     def __str__(self) -> str:
         """String representation."""

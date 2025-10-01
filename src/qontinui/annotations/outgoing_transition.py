@@ -42,24 +42,24 @@ def outgoing_transition(
         The decorated method with transition metadata attached.
     """
 
-    def decorator(method: Callable) -> Callable:
+    def decorator(method: Callable[..., Any]) -> Callable[..., Any]:
         # Store metadata on the method
-        method._qontinui_outgoing_transition = True
-        method._qontinui_outgoing_transition_from = from_state
-        method._qontinui_outgoing_transition_priority = priority
-        method._qontinui_outgoing_transition_description = description
-        method._qontinui_outgoing_transition_timeout = timeout
+        method._qontinui_outgoing_transition = True  # type: ignore[attr-defined]
+        method._qontinui_outgoing_transition_from = from_state  # type: ignore[attr-defined]
+        method._qontinui_outgoing_transition_priority = priority  # type: ignore[attr-defined]
+        method._qontinui_outgoing_transition_description = description  # type: ignore[attr-defined]
+        method._qontinui_outgoing_transition_timeout = timeout  # type: ignore[attr-defined]
 
         @wraps(method)
         def wrapper(*args, **kwargs):
             return method(*args, **kwargs)
 
         # Copy metadata to wrapper
-        wrapper._qontinui_outgoing_transition = True
-        wrapper._qontinui_outgoing_transition_from = from_state
-        wrapper._qontinui_outgoing_transition_priority = priority
-        wrapper._qontinui_outgoing_transition_description = description
-        wrapper._qontinui_outgoing_transition_timeout = timeout
+        wrapper._qontinui_outgoing_transition = True  # type: ignore[attr-defined]
+        wrapper._qontinui_outgoing_transition_from = from_state  # type: ignore[attr-defined]
+        wrapper._qontinui_outgoing_transition_priority = priority  # type: ignore[attr-defined]
+        wrapper._qontinui_outgoing_transition_description = description  # type: ignore[attr-defined]
+        wrapper._qontinui_outgoing_transition_timeout = timeout  # type: ignore[attr-defined]
 
         return wrapper
 
@@ -78,7 +78,7 @@ def is_outgoing_transition(method: Any) -> bool:
     return hasattr(method, "_qontinui_outgoing_transition") and method._qontinui_outgoing_transition
 
 
-def get_outgoing_transition_metadata(method: Any) -> dict | None:
+def get_outgoing_transition_metadata(method: Any) -> dict[str, Any] | None:
     """Get OutgoingTransition metadata from a decorated method.
 
     Args:

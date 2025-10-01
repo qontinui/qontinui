@@ -5,7 +5,7 @@ enabling fast similarity-based matching and state recognition.
 """
 
 import pickle
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +37,7 @@ class VectorMetadata:
     element_type: str | None = None
     timestamp: str | None = None
     source: str | None = None
-    properties: dict[str, Any] = None
+    properties: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -79,7 +79,7 @@ class VectorStore:
         self.dimension = dimension
         self.index_type = index_type
         self.metric = metric
-        self.use_gpu = gpu and self.settings.use_gpu
+        self.use_gpu = gpu  # GPU support if requested and available
         self.nlist = nlist
         self.nprobe = nprobe
 
@@ -143,11 +143,11 @@ class VectorStore:
             return index
 
         except Exception as e:
-            raise VectorDatabaseException(operation="create_index", reason=str(e)) from e
+            raise VectorDatabaseException("create_index", str(e)) from e
 
     def add_vectors(
         self,
-        vectors: np.ndarray,
+        vectors: np.ndarray[Any, Any],
         metadata: list[VectorMetadata] | None = None,
         ids: list[str] | None = None,
     ) -> list[str]:
@@ -206,11 +206,11 @@ class VectorStore:
             return ids
 
         except Exception as e:
-            raise VectorDatabaseException(operation="add_vectors", reason=str(e)) from e
+            raise VectorDatabaseException("add_vectors", str(e)) from e
 
     def search(
-        self, query_vectors: np.ndarray, k: int = 5, threshold: float | None = None
-    ) -> tuple[np.ndarray, np.ndarray, list[list[VectorMetadata | None]]]:
+        self, query_vectors: np.ndarray[Any, Any], k: int = 5, threshold: float | None = None
+    ) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any], list[list[VectorMetadata | None]]]:
         """Search for similar vectors.
 
         Args:
@@ -259,11 +259,11 @@ class VectorStore:
             return distances, indices, metadata_results
 
         except Exception as e:
-            raise VectorDatabaseException(operation="search", reason=str(e)) from e
+            raise VectorDatabaseException("search", str(e)) from e
 
     def search_by_id(
         self, id_: str, k: int = 5, include_self: bool = False
-    ) -> tuple[np.ndarray, list[VectorMetadata]]:
+    ) -> tuple[np.ndarray[Any, Any], list[VectorMetadata]]:
         """Search for similar vectors to a stored vector.
 
         Args:
@@ -292,17 +292,20 @@ class VectorStore:
             # Filter out the query vector itself
             mask = indices[0] != faiss_idx
             distances = distances[0][mask][:k]
-            metadata = [m for i, m in zip(indices[0], metadata[0], strict=False) if i != faiss_idx][
-                :k
-            ]
+            metadata_filtered = [
+                m for i, m in zip(indices[0], metadata[0], strict=False) if i != faiss_idx
+            ][:k]
         else:
             distances = distances[0]
-            metadata = metadata[0]
+            metadata_filtered = metadata[0]
 
-        return distances, metadata
+        # Filter out None values from metadata to match return type
+        metadata_final: list[VectorMetadata] = [m for m in metadata_filtered if m is not None]
+
+        return distances, metadata_final
 
     def update_vector(
-        self, id_: str, new_vector: np.ndarray, new_metadata: VectorMetadata | None = None
+        self, id_: str, new_vector: np.ndarray[Any, Any], new_metadata: VectorMetadata | None = None
     ):
         """Update an existing vector.
 
@@ -459,7 +462,7 @@ class VectorStore:
 
         # Add state distribution if available
         if self.metadata:
-            state_counts = {}
+            state_counts: dict[str, int] = {}
             for meta in self.metadata.values():
                 if meta.state_name:
                     state_counts[meta.state_name] = state_counts.get(meta.state_name, 0) + 1

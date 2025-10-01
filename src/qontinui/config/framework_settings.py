@@ -5,7 +5,7 @@ Global configuration settings using singleton pattern with Pydantic validation.
 
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from .qontinui_properties import QontinuiProperties
 
@@ -90,7 +90,7 @@ class FrameworkSettings:
     @property
     def mouse_move_delay(self) -> float:
         """Delay for mouse movement in seconds."""
-        return self._properties.mouse.move_delay
+        return cast(float, self._properties.mouse.move_delay)
 
     @mouse_move_delay.setter
     def mouse_move_delay(self, value: float) -> None:
@@ -99,7 +99,7 @@ class FrameworkSettings:
     @property
     def pause_before_mouse_down(self) -> float:
         """Pause before mouse down in seconds."""
-        return self._properties.mouse.pause_before_down
+        return cast(float, self._properties.mouse.pause_before_down)
 
     @pause_before_mouse_down.setter
     def pause_before_mouse_down(self, value: float) -> None:
@@ -108,7 +108,7 @@ class FrameworkSettings:
     @property
     def pause_after_mouse_down(self) -> float:
         """Pause after mouse down in seconds."""
-        return self._properties.mouse.pause_after_down
+        return cast(float, self._properties.mouse.pause_after_down)
 
     @pause_after_mouse_down.setter
     def pause_after_mouse_down(self, value: float) -> None:
@@ -117,7 +117,7 @@ class FrameworkSettings:
     @property
     def pause_before_mouse_up(self) -> float:
         """Pause before mouse up in seconds."""
-        return self._properties.mouse.pause_before_up
+        return cast(float, self._properties.mouse.pause_before_up)
 
     @pause_before_mouse_up.setter
     def pause_before_mouse_up(self, value: float) -> None:
@@ -126,7 +126,7 @@ class FrameworkSettings:
     @property
     def pause_after_mouse_up(self) -> float:
         """Pause after mouse up in seconds."""
-        return self._properties.mouse.pause_after_up
+        return cast(float, self._properties.mouse.pause_after_up)
 
     @pause_after_mouse_up.setter
     def pause_after_mouse_up(self, value: float) -> None:
@@ -136,7 +136,7 @@ class FrameworkSettings:
     @property
     def mock(self) -> bool:
         """Enable mock mode for testing without GUI."""
-        return self._properties.core.mock
+        return cast(bool, self._properties.core.mock)
 
     @mock.setter
     def mock(self, value: bool) -> None:
@@ -146,7 +146,7 @@ class FrameworkSettings:
     @property
     def headless(self) -> bool:
         """Run in headless mode without display."""
-        return self._properties.core.headless
+        return cast(bool, self._properties.core.headless)
 
     @headless.setter
     def headless(self, value: bool) -> None:
@@ -155,7 +155,7 @@ class FrameworkSettings:
     @property
     def image_path(self) -> str:
         """Path to image resources."""
-        return self._properties.core.image_path
+        return cast(str, self._properties.core.image_path)
 
     @image_path.setter
     def image_path(self, value: str) -> None:
@@ -165,7 +165,7 @@ class FrameworkSettings:
     @property
     def save_snapshots(self) -> bool:
         """Save screenshots during execution."""
-        return self._properties.screenshot.save_snapshots
+        return cast(bool, self._properties.screenshot.save_snapshots)
 
     @save_snapshots.setter
     def save_snapshots(self, value: bool) -> None:
@@ -174,7 +174,7 @@ class FrameworkSettings:
     @property
     def screenshot_path(self) -> str:
         """Path to save screenshots."""
-        return self._properties.screenshot.path
+        return cast(str, self._properties.screenshot.path)
 
     @screenshot_path.setter
     def screenshot_path(self, value: str) -> None:
@@ -183,7 +183,7 @@ class FrameworkSettings:
     @property
     def max_history(self) -> int:
         """Maximum screenshot history to maintain."""
-        return self._properties.screenshot.max_history
+        return cast(int, self._properties.screenshot.max_history)
 
     @max_history.setter
     def max_history(self, value: int) -> None:
@@ -193,7 +193,7 @@ class FrameworkSettings:
     @property
     def mock_click_duration(self) -> float:
         """Simulated click duration in seconds."""
-        return self._properties.mock.click_duration
+        return cast(float, self._properties.mock.click_duration)
 
     @mock_click_duration.setter
     def mock_click_duration(self, value: float) -> None:
@@ -202,7 +202,7 @@ class FrameworkSettings:
     @property
     def mock_type_duration(self) -> float:
         """Simulated typing duration in seconds."""
-        return self._properties.mock.type_duration
+        return cast(float, self._properties.mock.type_duration)
 
     @mock_type_duration.setter
     def mock_type_duration(self, value: float) -> None:
@@ -211,7 +211,7 @@ class FrameworkSettings:
     @property
     def mock_find_duration(self) -> float:
         """Simulated find duration in seconds."""
-        return self._properties.mock.find_duration
+        return cast(float, self._properties.mock.find_duration)
 
     @mock_find_duration.setter
     def mock_find_duration(self, value: float) -> None:
@@ -221,7 +221,7 @@ class FrameworkSettings:
     @property
     def illustration_enabled(self) -> bool:
         """Enable action illustrations."""
-        return self._properties.illustration.enabled
+        return cast(bool, self._properties.illustration.enabled)
 
     @illustration_enabled.setter
     def illustration_enabled(self, value: bool) -> None:
@@ -230,7 +230,7 @@ class FrameworkSettings:
     @property
     def show_click_illustration(self) -> bool:
         """Illustrate click actions."""
-        return self._properties.illustration.show_click
+        return cast(bool, self._properties.illustration.show_click)
 
     @show_click_illustration.setter
     def show_click_illustration(self, value: bool) -> None:
@@ -240,7 +240,7 @@ class FrameworkSettings:
     @property
     def kmeans_clusters(self) -> int:
         """Number of k-means clusters for color analysis."""
-        return self._properties.analysis.kmeans_clusters
+        return cast(int, self._properties.analysis.kmeans_clusters)
 
     @kmeans_clusters.setter
     def kmeans_clusters(self, value: int) -> None:
@@ -249,7 +249,7 @@ class FrameworkSettings:
     @property
     def color_tolerance(self) -> int:
         """Color matching tolerance."""
-        return self._properties.analysis.color_tolerance
+        return cast(int, self._properties.analysis.color_tolerance)
 
     @color_tolerance.setter
     def color_tolerance(self, value: int) -> None:
@@ -259,7 +259,7 @@ class FrameworkSettings:
     @property
     def collect_dataset(self) -> bool:
         """Enable dataset collection."""
-        return self._properties.dataset.collect
+        return cast(bool, self._properties.dataset.collect)
 
     @collect_dataset.setter
     def collect_dataset(self, value: bool) -> None:
@@ -268,7 +268,7 @@ class FrameworkSettings:
     @property
     def dataset_path(self) -> str:
         """Path to save datasets."""
-        return self._properties.dataset.path
+        return cast(str, self._properties.dataset.path)
 
     @dataset_path.setter
     def dataset_path(self, value: str) -> None:
@@ -278,7 +278,7 @@ class FrameworkSettings:
     @property
     def timeout_multiplier(self) -> float:
         """Multiply timeouts during testing."""
-        return self._properties.testing.timeout_multiplier
+        return cast(float, self._properties.testing.timeout_multiplier)
 
     @timeout_multiplier.setter
     def timeout_multiplier(self, value: float) -> None:
@@ -291,7 +291,9 @@ class FrameworkSettings:
         Returns:
             The properties object
         """
-        return self._properties
+        # Return the actual properties object with proper type
+        props: QontinuiProperties = self._properties
+        return props
 
     def update_from_dict(self, config: dict[str, Any]) -> None:
         """Update configuration from dictionary.
@@ -355,7 +357,8 @@ class FrameworkSettings:
         Returns:
             Configuration dictionary
         """
-        return self._properties.model_dump()
+        result: dict[str, Any] = self._properties.model_dump()
+        return result
 
     def validate(self) -> list[str]:
         """Validate current configuration.

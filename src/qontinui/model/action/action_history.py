@@ -8,6 +8,7 @@ import statistics
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Any
 
 from .action_record import ActionRecord
 
@@ -158,7 +159,7 @@ class ActionHistory:
             Dict mapping match count to frequency
         """
         records = self._filter_records(state_name, action_type)
-        distribution = defaultdict(int)
+        distribution: defaultdict[int, int] = defaultdict(int)
 
         for record in records:
             match_count = len(record.match_list)
@@ -166,7 +167,7 @@ class ActionHistory:
 
         return dict(distribution)
 
-    def get_failure_patterns(self, window_minutes: int = 60) -> list[dict]:
+    def get_failure_patterns(self, window_minutes: int = 60) -> list[dict[str, Any]]:
         """Analyze recent failure patterns.
 
         Args:
@@ -188,7 +189,7 @@ class ActionHistory:
                     failure_start = record
                 consecutive_failures += 1
             else:
-                if consecutive_failures >= 3:  # Pattern threshold
+                if consecutive_failures >= 3 and failure_start is not None:  # Pattern threshold
                     patterns.append(
                         {
                             "start": failure_start.timestamp,
@@ -252,15 +253,6 @@ class ActionHistory:
             state_matches = [r for r in records if r.state_name in active_states]
             if state_matches:
                 return random.choice(state_matches)
-
-            # Then try records where active states overlap
-            overlap_matches = [
-                r
-                for r in records
-                if r.active_states and active_states.intersection(r.active_states)
-            ]
-            if overlap_matches:
-                return random.choice(overlap_matches)
 
         # Fall back to any record of the right type
         return random.choice(records)

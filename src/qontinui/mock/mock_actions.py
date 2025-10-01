@@ -4,7 +4,7 @@ All mock behavior is contained here, keeping application code clean.
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from ..actions.action_result import ActionResult
 
@@ -109,9 +109,10 @@ class MockActions:
         Returns:
             String representation
         """
+
         if hasattr(target, "name"):
-            return target.name
+            return cast(str, target.name)
         elif hasattr(target, "__class__"):
-            return target.__class__.__name__
+            return cast(str, target.__class__.__name__)
         else:
             return str(target)

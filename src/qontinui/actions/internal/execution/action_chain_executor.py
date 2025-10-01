@@ -3,7 +3,7 @@
 Executes a chain of actions according to a specified chaining strategy.
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from ...action_chain_options import ActionChainOptions, ChainingStrategy
 from ...action_config import ActionConfig
@@ -74,10 +74,10 @@ class ActionChainExecutor:
         )
 
         # Store the initial action's result in history
-        final_result.add_execution_record(self._create_action_record(current_result))
+        final_result.add_execution_record(self._create_action_record(current_result))  # type: ignore[arg-type]
 
         # If initial action failed, return immediately
-        if not current_result.is_success():
+        if not current_result.is_success:
             final_result.success = False
             return final_result
 
@@ -88,15 +88,15 @@ class ActionChainExecutor:
             )
 
             # Store each action's result in history
-            final_result.add_execution_record(self._create_action_record(current_result))
+            final_result.add_execution_record(self._create_action_record(current_result))  # type: ignore[arg-type]
 
             # If any action fails, stop the chain
-            if not current_result.is_success():
+            if not current_result.is_success:
                 break
 
         # Copy final state to the result
         final_result.match_list = current_result.match_list
-        final_result.success = current_result.is_success()
+        final_result.success = current_result.is_success
         final_result.duration = current_result.duration
         final_result.text = current_result.text
         final_result.active_states = current_result.active_states
@@ -112,7 +112,7 @@ class ActionChainExecutor:
         strategy: ChainingStrategy,
         previous_result: ActionResult,
         next_action: ActionConfig,
-        original_collections: tuple,
+        original_collections: tuple[Any, ...],
     ) -> ActionResult:
         """Execute the next action in the chain based on the chaining strategy.
 
@@ -160,10 +160,13 @@ class ActionChainExecutor:
         # Update the action configuration to search within these regions
         # This is a simplified approach - in full implementation would modify search regions
         # For now, execute with the original configuration
-        return self._execute_action(next_action, ActionResult(next_action))
+        return self._execute_action(next_action, ActionResult(next_action))  # type: ignore[arg-type]
 
     def _execute_confirming_action(
-        self, previous_result: ActionResult, next_action: ActionConfig, original_collections: tuple
+        self,
+        previous_result: ActionResult,
+        next_action: ActionConfig,
+        original_collections: tuple[Any, ...],
     ) -> ActionResult:
         """Execute an action in CONFIRM mode where it validates previous results.
 
@@ -177,10 +180,13 @@ class ActionChainExecutor:
         """
         # Execute the action with original collections
         # The action should confirm the previous results
-        return self._execute_action(next_action, ActionResult(next_action), original_collections)
+        return self._execute_action(next_action, ActionResult(next_action), original_collections)  # type: ignore[arg-type]
 
     def _execute_action(
-        self, action_config: ActionConfig, result: ActionResult, object_collections: tuple = ()
+        self,
+        action_config: ActionConfig,
+        result: ActionResult,
+        object_collections: tuple[Any, ...] = (),
     ) -> ActionResult:
         """Execute a single action.
 
@@ -208,7 +214,7 @@ class ActionChainExecutor:
         result.success = False
         return result
 
-    def _create_action_record(self, action_result: ActionResult) -> dict:
+    def _create_action_record(self, action_result: ActionResult) -> dict[str, Any]:
         """Create an action record for history tracking.
 
         Args:
@@ -218,7 +224,7 @@ class ActionChainExecutor:
             Dictionary containing action execution details
         """
         return {
-            "success": action_result.is_success(),
+            "success": action_result.is_success,
             "matches": len(action_result.match_list),
             "duration": action_result.duration,
             "text": action_result.text,
@@ -232,7 +238,11 @@ class ActionExecution:
     """
 
     def perform(
-        self, action: ActionInterface, description: str, config: ActionConfig, collections: tuple
+        self,
+        action: ActionInterface,
+        description: str,
+        config: ActionConfig,
+        collections: tuple[Any, ...],
     ) -> ActionResult:
         """Execute an action with lifecycle management.
 
@@ -245,7 +255,7 @@ class ActionExecution:
         Returns:
             Result of the action
         """
-        result = ActionResult(config)
+        result = ActionResult(config)  # type: ignore[arg-type]
         result.action_description = description
         action.perform(result, *collections)
         return result

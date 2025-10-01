@@ -10,8 +10,9 @@ Provides advanced navigation capabilities:
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
-from qontinui.model.transition.enhanced_state_transition import StateTransition
+from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
 from qontinui.state_management.state_memory import StateMemory
 
 from .enhanced_transition_executor import EnhancedTransitionExecutor
@@ -35,7 +36,7 @@ class NavigationPath:
 
     start_states: set[int]
     target_states: set[int]
-    transitions: list[StateTransition]
+    transitions: list[TaskSequenceStateTransition]
     total_cost: float
     estimated_duration: float = 0.0
     complexity: str = "simple"  # simple, moderate, complex
@@ -52,8 +53,8 @@ class NavigationContext:
 
     path: NavigationPath
     current_transition_index: int = 0
-    completed_transitions: list[StateTransition] = field(default_factory=list)
-    failed_transition: StateTransition | None = None
+    completed_transitions: list[TaskSequenceStateTransition] = field(default_factory=list)
+    failed_transition: TaskSequenceStateTransition | None = None
     rollback_performed: bool = False
     targets_reached: set[int] = field(default_factory=set)
 
@@ -95,7 +96,7 @@ class PathfindingNavigator:
         self.default_strategy = default_strategy
 
         # Path cache for performance
-        self.path_cache: dict[tuple[frozenset, frozenset], NavigationPath] = {}
+        self.path_cache: dict[tuple[frozenset[int], frozenset[int]], NavigationPath] = {}
 
         # Navigation history
         self.navigation_history: list[NavigationContext] = []
@@ -199,7 +200,10 @@ class PathfindingNavigator:
         return path
 
     def _build_navigation_path(
-        self, from_states: set[int], target_states: set[int], transitions: list[StateTransition]
+        self,
+        from_states: set[int],
+        target_states: set[int],
+        transitions: list[TaskSequenceStateTransition],
     ) -> NavigationPath:
         """Build NavigationPath from transitions.
 
@@ -358,7 +362,7 @@ class PathfindingNavigator:
         )
         return path is not None
 
-    def get_navigation_statistics(self) -> dict:
+    def get_navigation_statistics(self) -> dict[str, Any]:
         """Get statistics about navigation.
 
         Returns:

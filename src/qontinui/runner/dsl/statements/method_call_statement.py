@@ -6,7 +6,7 @@ Represents a method call statement in the DSL.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .statement import Statement
 
@@ -70,7 +70,7 @@ class MethodCallStatement(Statement):
         self.arguments = arguments or []
 
     @classmethod
-    def from_dict(cls, data: dict) -> MethodCallStatement:
+    def from_dict(cls, data: dict[str, Any]) -> MethodCallStatement:
         """Create MethodCallStatement from dictionary.
 
         Args:
@@ -87,7 +87,7 @@ class MethodCallStatement(Statement):
 
         return cls(object=data.get("object"), method=data.get("method", ""), arguments=arguments)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:

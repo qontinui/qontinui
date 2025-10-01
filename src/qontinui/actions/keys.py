@@ -219,7 +219,7 @@ class KeyCombo:
     Similar to SikuliX's approach for key combinations.
     """
 
-    def __init__(self, *keys):
+    def __init__(self, *keys) -> None:
         """Initialize a key combination.
 
         Args:
@@ -232,14 +232,16 @@ class KeyCombo:
         # Import KeyModifier here to avoid circular import
         try:
             from .action_options import KeyModifier
+
+            key_modifier_type = KeyModifier
         except ImportError:
-            KeyModifier = None
+            key_modifier_type = None  # type: ignore[assignment]
 
         # Separate modifiers from main key
         for key in keys:
             if isinstance(key, Key) and Key.is_modifier(key):
                 self.modifiers.append(key)
-            elif KeyModifier and isinstance(key, KeyModifier):
+            elif key_modifier_type is not None and isinstance(key, key_modifier_type):
                 # Convert KeyModifier to Key
                 modifier_key = Key.from_string(key.value)
                 self.modifiers.append(modifier_key)
@@ -256,22 +258,22 @@ class KeyCombo:
         return "+".join(parts)
 
     @staticmethod
-    def ctrl(key):
+    def ctrl(key) -> "KeyCombo":
         """Create a Ctrl+key combination."""
         return KeyCombo(Key.CTRL, key)
 
     @staticmethod
-    def alt(key):
+    def alt(key) -> "KeyCombo":
         """Create an Alt+key combination."""
         return KeyCombo(Key.ALT, key)
 
     @staticmethod
-    def shift(key):
+    def shift(key) -> "KeyCombo":
         """Create a Shift+key combination."""
         return KeyCombo(Key.SHIFT, key)
 
     @staticmethod
-    def meta(key):
+    def meta(key) -> "KeyCombo":
         """Create a Meta/Win/Cmd+key combination."""
         return KeyCombo(Key.META, key)
 

@@ -2,6 +2,8 @@
 Qontinui mock generator for creating equivalent Qontinui mocks from Brobot patterns.
 """
 
+from typing import cast
+
 from ..core.interfaces import MockGenerator
 from ..core.models import GuiModel, MockUsage
 
@@ -409,7 +411,7 @@ action_simulator = ActionSimulator()"""
 
     def create_mock_behavior_mapping(
         self, brobot_mock: MockUsage, qontinui_mock_code: str
-    ) -> dict[str, str]:
+    ) -> dict[str, str | dict[str, str]]:
         """
         Create behavior mapping from Brobot to Qontinui mock patterns.
 
@@ -420,7 +422,7 @@ action_simulator = ActionSimulator()"""
         Returns:
             Dictionary mapping Brobot behaviors to Qontinui equivalents
         """
-        behavior_mapping = {}
+        behavior_mapping: dict[str, str | dict[str, str]] = {}
 
         # Map mock setup patterns
         if "setup_code" in brobot_mock.configuration:
@@ -481,11 +483,11 @@ action_simulator = ActionSimulator()"""
 
     def get_qontinui_mock_classes(self) -> dict[str, str]:
         """Get mapping of Brobot to Qontinui mock classes."""
-        return self.mock_class_mapping.copy()
+        return cast(dict[str, str], self.mock_class_mapping.copy())
 
     def get_action_mappings(self) -> dict[str, str]:
         """Get mapping of Brobot to Qontinui actions."""
-        return self.action_mapping.copy()
+        return cast(dict[str, str], self.action_mapping.copy())
 
     def generate_integration_test_setup(self, mock_usages: list[MockUsage]) -> str:
         """

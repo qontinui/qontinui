@@ -4,15 +4,19 @@ LLM-based test translator for handling complex Java to Python test conversions.
 
 import json
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import TestTranslator
     from ..core.models import TestFile, TestType
-except ImportError:
-    # For standalone testing
-    from core.interfaces import TestTranslator
-    from core.models import TestFile, TestType
+else:
+    try:
+        from ..core.interfaces import TestTranslator
+        from ..core.models import TestFile, TestType
+    except ImportError:
+        # For standalone testing
+        from core.interfaces import TestTranslator
+        from core.models import TestFile, TestType
 
 
 class LLMTestTranslator(TestTranslator):
@@ -241,7 +245,7 @@ Return only the Python code, no explanations:
     def _get_java_content(self, test_file: TestFile) -> str:
         """Get the original Java content for the test file."""
         if hasattr(test_file, "original_content") and test_file.original_content:
-            return test_file.original_content
+            return cast(str, test_file.original_content)
 
         # Reconstruct from test file model
         java_content = f"""

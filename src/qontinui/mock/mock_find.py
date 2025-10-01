@@ -6,6 +6,8 @@ drives the mock behavior, not manual probability settings.
 
 import logging
 import random
+from datetime import timedelta
+from typing import cast
 
 from ..actions.action_result import ActionResult
 from ..mock.mock_mode_manager import MockModeManager
@@ -81,8 +83,11 @@ class MockFind:
             return None
 
         # Get random snapshot preferring ones matching active states
-        return pattern.match_history.get_random_snapshot(
-            active_states=active_states, action_type="FIND"
+        return cast(
+            ActionRecord | None,
+            pattern.match_history.get_random_snapshot(
+                active_states=active_states, action_type="FIND"
+            ),
         )
 
     def _create_result_from_snapshot(self, snapshot: ActionRecord) -> ActionResult:
@@ -98,17 +103,18 @@ class MockFind:
 
         if snapshot.was_found():
             result.success = True
-            result.set_match_list(snapshot.match_list)
+            result.set_match_list(snapshot.match_list)  # type: ignore[arg-type]
 
             if snapshot.text:
-                result.text = snapshot.text
+                result.text = snapshot.text  # type: ignore[assignment]
 
             logger.debug(f"Created successful result with {len(snapshot.match_list)} matches")
         else:
             result.success = False
             logger.debug("Created failed result (snapshot had no matches)")
 
-        result.duration = snapshot.duration if snapshot.duration > 0 else 0.1
+        duration_val = snapshot.duration if snapshot.duration > 0 else 0.1
+        result.duration = timedelta(seconds=duration_val)
         return result
 
     def _generate_mock_result(
@@ -148,7 +154,7 @@ class MockFind:
             # Generate a mock match
             match = self._create_mock_match(pattern, search_region)
             result.success = True
-            result.add_match(match)
+            result.add_match(match)  # type: ignore[arg-type]
             logger.debug(f"Generated mock match at {match.get_region()}")
         else:
             result.success = False
@@ -182,7 +188,7 @@ class MockFind:
         match = Match(
             target=Location(region=Region(x, y, width, height)),
             score=random.uniform(0.85, 0.99),
-            text="",
+            ocr_text="",
         )
 
         return match
@@ -198,7 +204,8 @@ class MockFind:
             List of Match objects
         """
         result = self.find(pattern, search_region)
-        return result.get_match_list() if result.success else []
+        # Access match_list directly to maintain correct type
+        return result.match_list if result.success else []  # type: ignore[return-value]
 
     def wait_for(self, pattern: Pattern, timeout: float = 5.0) -> Match | None:
         """Simulate waiting for a pattern.
@@ -213,7 +220,8 @@ class MockFind:
         # In mock mode, decide immediately based on probability
         result = self.find(pattern)
 
-        if result.success and result.get_match_list():
-            return result.get_match_list()[0]
+        # Access match_list directly to maintain correct type
+        if result.success and result.match_list:
+            return result.match_list[0]  # type: ignore[return-value]
 
         return None

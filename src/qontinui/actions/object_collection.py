@@ -8,8 +8,6 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from ..model.element import Location, Pattern, Region, Scene
-    from ..model.element.position import Position
-    from ..model.element.positions import Name as PositionName
     from ..model.match import Match
     from ..model.state import State, StateImage, StateLocation, StateRegion, StateString
     from .action_result import ActionResult
@@ -86,12 +84,12 @@ class ObjectCollection:
         """
         for sio in self.state_images:
             sio.set_times_acted_on(0)
-        for sio in self.state_locations:
-            sio.set_times_acted_on(0)
-        for sio in self.state_regions:
-            sio.set_times_acted_on(0)
-        for sio in self.state_strings:
-            sio.set_times_acted_on(0)
+        for sl in self.state_locations:
+            sl.set_times_acted_on(0)
+        for sr in self.state_regions:
+            sr.set_times_acted_on(0)
+        for ss in self.state_strings:
+            ss.set_times_acted_on(0)
         for m in self.matches:
             m.set_times_acted_on(0)
 
@@ -102,19 +100,24 @@ class ObjectCollection:
             Name of first object or empty string
         """
         if self.state_images:
-            if self.state_images[0].get_name():
-                return self.state_images[0].get_name()
-            elif (
-                self.state_images[0].get_patterns()
-                and self.state_images[0].get_patterns()[0].get_imgpath()
-            ):
-                return self.state_images[0].get_patterns()[0].get_imgpath()
-        if self.state_locations and self.state_locations[0].get_name():
-            return self.state_locations[0].get_name()
-        if self.state_regions and self.state_regions[0].get_name():
-            return self.state_regions[0].get_name()
+            name = self.state_images[0].get_name()
+            if name:
+                return str(name)
+            patterns = self.state_images[0].get_patterns()
+            if patterns and patterns[0].get_imgpath():
+                imgpath = patterns[0].get_imgpath()
+                return str(imgpath)
+        if self.state_locations:
+            loc_name = self.state_locations[0].get_name()
+            if loc_name:
+                return str(loc_name)
+        if self.state_regions:
+            reg_name = self.state_regions[0].get_name()
+            if reg_name:
+                return str(reg_name)
         if self.state_strings:
-            return self.state_strings[0].get_string()
+            string_val = self.state_strings[0].get_string()
+            return str(string_val)
         return ""
 
     def contains(self, obj) -> bool:
@@ -176,12 +179,14 @@ class ObjectCollection:
         """Get all image filenames from state images.
 
         Returns:
-            Set of unique image filenames
+            Set of unique image filenames (empty strings filtered out)
         """
         filenames = set()
         for si in self.state_images:
             for p in si.get_patterns():
-                filenames.add(p.get_imgpath())
+                imgpath = p.get_imgpath()
+                if imgpath:  # Only add non-None, non-empty paths
+                    filenames.add(imgpath)
         return filenames
 
     def get_all_owner_states(self) -> set[str]:
@@ -193,12 +198,12 @@ class ObjectCollection:
         states = set()
         for si in self.state_images:
             states.add(si.get_owner_state_name())
-        for si in self.state_locations:
-            states.add(si.get_owner_state_name())
-        for si in self.state_regions:
-            states.add(si.get_owner_state_name())
-        for si in self.state_strings:
-            states.add(si.get_owner_state_name())
+        for sl in self.state_locations:
+            states.add(sl.get_owner_state_name())
+        for sr in self.state_regions:
+            states.add(sr.get_owner_state_name())
+        for ss in self.state_strings:
+            states.add(ss.get_owner_state_name())
         return states
 
     def __str__(self) -> str:
@@ -216,10 +221,10 @@ class ObjectCollection:
 class ObjectCollectionBuilder:
     """Builder for creating ObjectCollection instances fluently.
 
-    Port of ObjectCollection from Qontinui framework.Builder class.
+    Port of ObjectCollection.Builder from Brobot framework.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder with empty lists."""
         self.state_locations: list[StateLocation] = []
         self.state_images: list[StateImage] = []
@@ -239,8 +244,10 @@ class ObjectCollectionBuilder:
         """
         for location in locations:
             if isinstance(location, Location):
-                state_location = location.as_state_location_in_null_state()
-                state_location.set_position(Position(PositionName.TOPLEFT))
+                # Convert Location to StateLocation
+                from ..model.state import StateLocation as SL
+
+                state_location = SL(location=location, name=location.name)
                 self.state_locations.append(state_location)
             elif isinstance(location, StateLocation):
                 self.state_locations.append(location)
@@ -332,7 +339,7 @@ class ObjectCollectionBuilder:
             # ConsoleReporter.print("null state passed| ")
             return self
         for state_image in state.get_state_images():
-            if not state_image.is_shared():
+            if not state_image.is_shared:
                 self.state_images.append(state_image)
         return self
 
@@ -347,7 +354,11 @@ class ObjectCollectionBuilder:
         """
         for region in regions:
             if isinstance(region, Region):
-                self.state_regions.append(region.in_null_state())
+                # Convert Region to StateRegion
+                from ..model.state import StateRegion as SR
+
+                state_region = SR(region=region, name=getattr(region, "name", None))
+                self.state_regions.append(state_region)
             elif isinstance(region, StateRegion):
                 self.state_regions.append(region)
         return self
@@ -375,14 +386,46 @@ class ObjectCollectionBuilder:
         Returns:
             This builder for method chaining
         """
+        from ..model.state import StateRegion as SR
+
         for region in regions:
             if isinstance(region, Region):
-                for grid_region in region.get_grid_regions(rows, columns):
-                    self.state_regions.append(grid_region.in_null_state())
+                # Split region into grid
+                grid_regions = self._create_grid_regions(region, rows, columns)
+                for grid_region in grid_regions:
+                    state_region = SR(region=grid_region)
+                    self.state_regions.append(state_region)
             elif isinstance(region, StateRegion):
-                for grid_region in region.get_search_region().get_grid_regions(rows, columns):
-                    self.state_regions.append(grid_region.in_null_state())
+                # Split state region's underlying region into grid
+                grid_regions = self._create_grid_regions(region.get_search_region(), rows, columns)
+                for grid_region in grid_regions:
+                    state_region = SR(region=grid_region)
+                    self.state_regions.append(state_region)
         return self
+
+    def _create_grid_regions(self, region: Region, rows: int, columns: int) -> list[Region]:
+        """Create grid of subregions from a region.
+
+        Args:
+            region: Region to split
+            rows: Number of rows
+            columns: Number of columns
+
+        Returns:
+            List of grid subregions
+        """
+        grid_regions = []
+        cell_width = region.width // columns
+        cell_height = region.height // rows
+
+        for row in range(rows):
+            for col in range(columns):
+                x = region.x + (col * cell_width)
+                y = region.y + (row * cell_height)
+                grid_region = Region(x=x, y=y, width=cell_width, height=cell_height)
+                grid_regions.append(grid_region)
+
+        return grid_regions
 
     def with_strings(self, *strings) -> "ObjectCollectionBuilder":
         """Add strings to collection.
@@ -448,15 +491,13 @@ class ObjectCollectionBuilder:
         Returns:
             This builder for method chaining
         """
-        for match in matches:
-            from ..model.state import StateRegionBuilder
+        from ..model.state import StateRegion as SR
 
-            self.state_regions.append(
-                StateRegionBuilder()
-                .set_search_region(match.get_region())
-                .set_owner_state_name("null")
-                .build()
-            )
+        for match in matches:
+            match_region = match.get_region()
+            if match_region:
+                state_region = SR(region=match_region, name="match_region")
+                self.state_regions.append(state_region)
         return self
 
     def with_match_objects_as_state_images(self, *matches: "Match") -> "ObjectCollectionBuilder":
@@ -483,9 +524,9 @@ class ObjectCollectionBuilder:
         """
         for item in scenes:
             if isinstance(item, str):
-                self.scenes.append(Scene(item))
+                self.scenes.append(Scene(filename=item))
             elif isinstance(item, Pattern):
-                self.scenes.append(Scene(item))
+                self.scenes.append(Scene(pattern=item))
             elif isinstance(item, Scene):
                 self.scenes.append(item)
             elif isinstance(item, list):
@@ -506,3 +547,8 @@ class ObjectCollectionBuilder:
         object_collection.matches = self.matches.copy()
         object_collection.scenes = self.scenes.copy()
         return object_collection
+
+
+# Add Builder class attribute to support Brobot's nested class pattern
+# This allows: ObjectCollection.Builder() instead of ObjectCollectionBuilder()
+ObjectCollection.Builder = ObjectCollectionBuilder  # type: ignore[attr-defined]

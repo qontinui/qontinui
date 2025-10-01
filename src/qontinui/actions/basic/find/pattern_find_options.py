@@ -108,14 +108,12 @@ class PatternFindOptions(BaseFindOptions):
         Returns:
             A PatternFindOptions configured for quick searches
         """
-        return (
-            PatternFindOptionsBuilder()
-            .set_strategy(Strategy.FIRST)
-            .set_similarity(0.7)
-            .set_capture_image(False)
-            .set_max_matches_to_act_on(1)
-            .build()
-        )
+        builder: PatternFindOptionsBuilder = PatternFindOptionsBuilder()
+        builder.set_strategy(Strategy.FIRST)
+        builder.set_similarity(0.7)
+        builder.set_capture_image(False)
+        builder.set_max_matches_to_act_on(1)
+        return builder.build()
 
     @staticmethod
     def for_precise_search() -> "PatternFindOptions":
@@ -131,22 +129,18 @@ class PatternFindOptions(BaseFindOptions):
         Returns:
             A PatternFindOptions configured for precise searches
         """
-        fusion_options = (
-            MatchFusionOptions.builder()
-            .set_fusion_method(FusionMethod.ABSOLUTE)
-            .set_max_fusion_distance_x(10)
-            .set_max_fusion_distance_y(10)
-            .build()
-        )
+        fusion_builder = MatchFusionOptions.builder()
+        fusion_builder.set_fusion_method(FusionMethod.ABSOLUTE)
+        fusion_builder.set_max_fusion_distance_x(10)
+        fusion_builder.set_max_fusion_distance_y(10)
+        fusion_options: MatchFusionOptions = fusion_builder.build()
 
-        return (
-            PatternFindOptionsBuilder()
-            .set_strategy(Strategy.BEST)
-            .set_similarity(0.9)
-            .set_capture_image(True)
-            .set_match_fusion(fusion_options)
-            .build()
-        )
+        builder: PatternFindOptionsBuilder = PatternFindOptionsBuilder()
+        builder.set_strategy(Strategy.BEST)
+        builder.set_similarity(0.9)
+        builder.set_capture_image(True)
+        builder.set_match_fusion(fusion_options)
+        return builder.build()
 
     @staticmethod
     def for_all_matches() -> "PatternFindOptions":
@@ -162,30 +156,30 @@ class PatternFindOptions(BaseFindOptions):
         Returns:
             A PatternFindOptions configured for finding all matches
         """
-        fusion_options = (
-            MatchFusionOptions.builder()
-            .set_fusion_method(FusionMethod.ABSOLUTE)
-            .set_max_fusion_distance_x(20)
-            .set_max_fusion_distance_y(20)
-            .build()
-        )
+        fusion_builder = MatchFusionOptions.builder()
+        fusion_builder.set_fusion_method(FusionMethod.ABSOLUTE)
+        fusion_builder.set_max_fusion_distance_x(20)
+        fusion_builder.set_max_fusion_distance_y(20)
+        fusion_options: MatchFusionOptions = fusion_builder.build()
 
-        return (
-            PatternFindOptionsBuilder()
-            .set_strategy(Strategy.ALL)
-            .set_similarity(0.8)
-            .set_capture_image(False)
-            .set_max_matches_to_act_on(-1)
-            .set_match_fusion(fusion_options)
-            .build()
-        )
+        builder: PatternFindOptionsBuilder = PatternFindOptionsBuilder()
+        builder.set_strategy(Strategy.ALL)
+        builder.set_similarity(0.8)
+        builder.set_capture_image(False)
+        builder.set_max_matches_to_act_on(-1)
+        builder.set_match_fusion(fusion_options)
+        return builder.build()
 
 
-class PatternFindOptionsBuilder(BaseFindOptionsBuilder):
+class PatternFindOptionsBuilder(BaseFindOptionsBuilder["PatternFindOptionsBuilder"]):
     """Builder for constructing PatternFindOptions with a fluent API.
 
     Port of PatternFindOptions from Qontinui framework.Builder.
     """
+
+    strategy: Strategy
+    do_on_each: DoOnEach
+    match_fusion_options: MatchFusionOptions
 
     def __init__(self, original: PatternFindOptions | None = None):
         """Initialize builder.

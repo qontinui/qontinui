@@ -5,15 +5,19 @@ LLM-based test translator for complex Java to Python test conversions.
 import json
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import TestTranslator
     from ..core.models import TestFile
-except ImportError:
-    # For standalone testing
-    from core.interfaces import TestTranslator
-    from core.models import TestFile
+else:
+    try:
+        from ..core.interfaces import TestTranslator
+        from ..core.models import TestFile
+    except ImportError:
+        # For standalone testing
+        from core.interfaces import TestTranslator
+        from core.models import TestFile
 
 
 @dataclass
@@ -326,7 +330,7 @@ class LLMTestTranslator(TestTranslator):
     def _extract_java_code(self, test_file: TestFile) -> str:
         """Extract or reconstruct Java code from TestFile object."""
         if hasattr(test_file, "original_content") and test_file.original_content:
-            return test_file.original_content
+            return cast(str, test_file.original_content)
 
         # Reconstruct basic Java structure from TestFile data
         java_code = f"""
@@ -372,7 +376,7 @@ public class {test_file.class_name} {{
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.1,  # Low temperature for consistent code generation
                 )
-                return response.choices[0].message.content
+                return cast(str, response.choices[0].message.content)
 
             # Anthropic Claude
             elif hasattr(self.llm_client, "messages"):
@@ -381,11 +385,11 @@ public class {test_file.class_name} {{
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=4000,
                 )
-                return response.content[0].text
+                return cast(str, response.content[0].text)
 
             # Generic client
             else:
-                return self.llm_client.complete(prompt)
+                return cast(str, self.llm_client.complete(prompt))
 
         except Exception as e:
             raise RuntimeError(f"LLM call failed: {str(e)}") from e
@@ -479,7 +483,7 @@ class TestExample:
     def _parse_validation_response(self, response: str) -> dict[str, Any]:
         """Parse validation response from LLM."""
         try:
-            return json.loads(response)
+            return cast(dict[str, Any], json.loads(response))
         except json.JSONDecodeError:
             return {
                 "is_valid": False,
@@ -496,7 +500,7 @@ class TestExample:
         matches = re.findall(code_pattern, response, re.DOTALL)
 
         if matches:
-            return matches[0].strip()
+            return cast(str, matches[0]).strip()
 
         # If no code blocks, return the whole response
         return response.strip()

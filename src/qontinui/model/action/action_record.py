@@ -150,10 +150,11 @@ class ActionRecord:
             print(f" {self.get_action_type()}", end="")
 
         for match in self.match_list:
-            print(
-                f" {match.region.x},{match.region.y},{match.region.width},{match.region.height}",
-                end="",
-            )
+            if match.region is not None:
+                print(
+                    f" {match.region.x},{match.region.y},{match.region.width},{match.region.height}",
+                    end="",
+                )
 
         if self.text:
             print(f" {self.text}", end="")

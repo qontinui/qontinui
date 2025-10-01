@@ -18,7 +18,7 @@ class TestPureActions:
     @pytest.fixture
     def actions(self):
         """Create PureActions instance."""
-        with patch("qontinui.actions.pure.pyautogui") as mock_pyautogui:
+        with patch("qontinui.actions.pure.pyautogui"):
             return PureActions()
 
     @patch("qontinui.actions.pure.pyautogui.mouseDown")
@@ -27,7 +27,7 @@ class TestPureActions:
         actions = PureActions()
         result = actions.mouse_down(100, 200, "left")
 
-        assert result.success == True
+        assert result.success
         mock_mouse_down.assert_called_once_with(100, 200, button="left")
 
     @patch("qontinui.actions.pure.pyautogui.mouseUp")
@@ -36,7 +36,7 @@ class TestPureActions:
         actions = PureActions()
         result = actions.mouse_up(100, 200, "left")
 
-        assert result.success == True
+        assert result.success
         mock_mouse_up.assert_called_once_with(100, 200, button="left")
 
     @patch("qontinui.actions.pure.pyautogui.moveTo")
@@ -45,7 +45,7 @@ class TestPureActions:
         actions = PureActions()
         result = actions.mouse_move(300, 400, duration=0.5)
 
-        assert result.success == True
+        assert result.success
         assert result.data == (300, 400)
         mock_move_to.assert_called_once_with(300, 400, duration=0.5)
 
@@ -55,7 +55,7 @@ class TestPureActions:
         actions = PureActions()
         result = actions.mouse_click(150, 250, "right")
 
-        assert result.success == True
+        assert result.success
         assert result.data == (150, 250)
         mock_click.assert_called_once_with(150, 250, button="right")
 
@@ -65,7 +65,7 @@ class TestPureActions:
         actions = PureActions()
         result = actions.key_down("ctrl")
 
-        assert result.success == True
+        assert result.success
         assert result.data == "ctrl"
         mock_key_down.assert_called_once_with("ctrl")
 
@@ -75,7 +75,7 @@ class TestPureActions:
         actions = PureActions()
         result = actions.key_up("ctrl")
 
-        assert result.success == True
+        assert result.success
         assert result.data == "ctrl"
         mock_key_up.assert_called_once_with("ctrl")
 
@@ -85,13 +85,13 @@ class TestPureActions:
         actions = PureActions()
         result = actions.type_character("a")
 
-        assert result.success == True
+        assert result.success
         assert result.data == "a"
         mock_typewrite.assert_called_once_with("a")
 
         # Test multi-character rejection
         result = actions.type_character("abc")
-        assert result.success == False
+        assert not result.success
         assert "Must be single character" in result.error
 
 
@@ -208,9 +208,9 @@ class TestFluentActions:
         actions.at(100, 200).click().type_text("Hi").execute()
 
         # Check success
-        assert actions.success == True
+        assert actions.success
         assert len(actions.results) > 0
 
         for result in actions.results:
             assert isinstance(result, ActionResult)
-            assert result.success == True
+            assert result.success

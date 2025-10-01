@@ -147,7 +147,8 @@ class StateTransitionsJointTable:
             entry = self._table[state_name]
 
             # Build StateTransitions container
-            builder = StateTransitions.builder(state_name)
+            builder = StateTransitions.builder()
+            builder.with_state_name(state_name)
             for transition in entry.transitions:
                 builder.add_transition(transition)
 

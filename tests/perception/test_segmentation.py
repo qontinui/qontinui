@@ -31,7 +31,7 @@ class TestScreenSegmenter:
     def test_init_without_sam(self):
         """Test initialization without SAM."""
         segmenter = ScreenSegmenter(use_sam=False)
-        assert segmenter.use_sam == False
+        assert not segmenter.use_sam
         assert segmenter.sam is None
         assert segmenter.mask_generator is None
 

@@ -60,12 +60,66 @@ class Process:
 
 
 @dataclass
+class SearchRegion:
+    """Search region for an image."""
+
+    id: str
+    name: str
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+@dataclass
 class StateImage:
     """Image reference for state identification."""
 
     image_id: str
     threshold: float
     required: bool = True
+    search_regions: list[SearchRegion] = field(default_factory=list)
+    fixed: bool = False
+    shared: bool = False
+    probability: float = 1.0
+
+
+@dataclass
+class StateRegion:
+    """Region associated with a state."""
+
+    id: str
+    name: str
+    bounds: dict[str, int]  # {x, y, width, height}
+    fixed: bool = True
+    is_search_region: bool = False
+    is_interaction_region: bool = False
+
+
+@dataclass
+class StateLocation:
+    """Location associated with a state."""
+
+    id: str
+    name: str
+    x: int
+    y: int
+    anchor: bool = False
+    fixed: bool = True
+    click_target: bool = False
+
+
+@dataclass
+class StateString:
+    """String associated with a state."""
+
+    id: str
+    name: str
+    value: str
+    identifier: bool = False
+    input_text: bool = False
+    expected_text: bool = False
+    regex: bool = False
 
 
 @dataclass
@@ -76,6 +130,9 @@ class State:
     name: str
     description: str
     identifying_images: list[StateImage] = field(default_factory=list)
+    state_regions: list[StateRegion] = field(default_factory=list)
+    state_locations: list[StateLocation] = field(default_factory=list)
+    state_strings: list[StateString] = field(default_factory=list)
     position: dict[str, int] = field(default_factory=dict)
     is_initial: bool = False
     is_final: bool = False
@@ -143,6 +200,7 @@ class QontinuiConfig:
     processes: list[Process]
     states: list[State]
     transitions: list[Transition]
+    categories: list[str]
     execution_settings: ExecutionSettings
     recognition_settings: RecognitionSettings
 
@@ -178,37 +236,28 @@ class ConfigParser:
 
     def parse_config(self, data: dict[str, Any]) -> QontinuiConfig:
         """Parse configuration dictionary into QontinuiConfig object."""
-        # Parse images
-        images = [self._parse_image(img) for img in data.get("images", [])]
+        images = [self._parse_image(img) for img in data["images"]]
+        processes = [self._parse_process(proc) for proc in data["processes"]]
+        states = [self._parse_state(state) for state in data["states"]]
+        transitions = [self._parse_transition(trans) for trans in data["transitions"]]
 
-        # Parse processes
-        processes = [self._parse_process(proc) for proc in data.get("processes", [])]
-
-        # Parse states
-        states = [self._parse_state(state) for state in data.get("states", [])]
-
-        # Parse transitions
-        transitions = [self._parse_transition(trans) for trans in data.get("transitions", [])]
-
-        # Parse settings
-        settings = data.get("settings", {})
-        execution_settings = self._parse_execution_settings(settings.get("execution", {}))
-        recognition_settings = self._parse_recognition_settings(settings.get("recognition", {}))
+        settings = data["settings"]
+        execution_settings = self._parse_execution_settings(settings["execution"])
+        recognition_settings = self._parse_recognition_settings(settings["recognition"])
 
         config = QontinuiConfig(
-            version=data.get("version", "1.0.0"),
-            metadata=data.get("metadata", {}),
+            version=data["version"],
+            metadata=data["metadata"],
             images=images,
             processes=processes,
             states=states,
             transitions=transitions,
+            categories=data["categories"],
             execution_settings=execution_settings,
             recognition_settings=recognition_settings,
         )
 
-        # Save images to temporary directory
         self._save_images(config)
-
         return config
 
     def _parse_image(self, data: dict[str, Any]) -> ImageAsset:
@@ -217,70 +266,226 @@ class ConfigParser:
             id=data["id"],
             name=data["name"],
             data=data["data"],
-            format=data.get("format", "png"),
-            width=data.get("width", 0),
-            height=data.get("height", 0),
+            format=data["format"],
+            width=data["width"],
+            height=data["height"],
             hash=data.get("hash", ""),
         )
 
     def _parse_process(self, data: dict[str, Any]) -> Process:
         """Parse process from dictionary."""
-        actions = [self._parse_action(action) for action in data.get("actions", [])]
+        actions = [self._parse_action(action) for action in data["actions"]]
         return Process(
             id=data["id"],
             name=data["name"],
             description=data.get("description", ""),
-            type=data.get("type", "sequence"),
+            type=data["type"],
             actions=actions,
         )
 
     def _parse_action(self, data: dict[str, Any]) -> Action:
         """Parse action from dictionary."""
+        action_type = data["type"]
+        config = data["config"]
+
+        # Validate action config based on type
+        self._validate_action_config(action_type, config)
+
         return Action(
             id=data["id"],
-            type=data["type"],
-            config=data.get("config", {}),
-            timeout=data.get("timeout", 5000),
-            retry_count=data.get("retryCount", 3),
+            type=action_type,
+            config=config,
+            timeout=data["timeout"],
+            retry_count=data["retryCount"],
             continue_on_error=data.get("continueOnError", False),
+        )
+
+    def _validate_action_config(self, action_type: str, config: dict[str, Any]) -> None:
+        """Validate action configuration based on action type.
+
+        Args:
+            action_type: Type of action
+            config: Action configuration dictionary
+
+        Raises:
+            ValueError: If configuration is invalid for the action type
+        """
+        # Define valid action types
+        valid_action_types = {
+            "FIND",
+            "CLICK",
+            "DOUBLE_CLICK",
+            "RIGHT_CLICK",
+            "TYPE",
+            "KEY_PRESS",
+            "DRAG",
+            "SCROLL",
+            "WAIT",
+            "VANISH",
+            "EXISTS",
+            "MOVE",
+            "SCREENSHOT",
+            "CONDITION",
+            "LOOP",
+            "GO_TO_STATE",
+            "RUN_PROCESS",
+        }
+
+        if action_type not in valid_action_types:
+            print(f"Warning: Unknown action type '{action_type}'")
+
+        # Validate type-specific required fields
+        if action_type == "TYPE":
+            if "stateStringSource" in config:
+                # Validate state string source
+                source = config["stateStringSource"]
+                if not isinstance(source, dict):
+                    raise ValueError(
+                        f"TYPE action stateStringSource must be a dict, got {type(source)}"
+                    )
+                if "stateId" not in source:
+                    raise ValueError("TYPE action stateStringSource must have 'stateId' field")
+            elif "text" not in config:
+                raise ValueError(
+                    "TYPE action must have either 'text' or 'stateStringSource' in config"
+                )
+
+        elif action_type == "GO_TO_STATE":
+            if "state" not in config:
+                raise ValueError("GO_TO_STATE action must have 'state' in config")
+
+        elif action_type == "RUN_PROCESS":
+            if "process" not in config:
+                raise ValueError("RUN_PROCESS action must have 'process' in config")
+
+        elif action_type == "KEY_PRESS":
+            if "keys" not in config and "key" not in config:
+                raise ValueError("KEY_PRESS action must have 'keys' or 'key' in config")
+
+        elif action_type == "SCROLL":
+            if "direction" not in config:
+                raise ValueError("SCROLL action must have 'direction' in config")
+
+        elif action_type == "DRAG":
+            if "destination" not in config:
+                raise ValueError("DRAG action must have 'destination' in config")
+
+        elif action_type == "WAIT":
+            if "duration" not in config:
+                raise ValueError("WAIT action must have 'duration' in config")
+
+        elif action_type == "CONDITION":
+            if "condition" not in config:
+                raise ValueError("CONDITION action must have 'condition' in config")
+
+        elif action_type == "LOOP":
+            if "loop" not in config:
+                raise ValueError("LOOP action must have 'loop' in config")
+
+    def _parse_search_region(self, data: dict[str, Any]) -> SearchRegion:
+        """Parse search region from dictionary."""
+        return SearchRegion(
+            id=data["id"],
+            name=data["name"],
+            x=data["x"],
+            y=data["y"],
+            width=data["width"],
+            height=data["height"],
+        )
+
+    def _parse_state_image(self, data: dict[str, Any]) -> StateImage:
+        """Parse state image from dictionary."""
+        search_regions = []
+        if "searchRegions" in data:
+            search_regions_data = data["searchRegions"]
+            if "regions" in search_regions_data:
+                search_regions = [
+                    self._parse_search_region(r) for r in search_regions_data["regions"]
+                ]
+
+        return StateImage(
+            image_id=data["imageId"],
+            threshold=data["threshold"],
+            required=data["required"],
+            search_regions=search_regions,
+            fixed=data.get("fixed", False),
+            shared=data.get("shared", False),
+            probability=data.get("probability", 1.0),
+        )
+
+    def _parse_state_region(self, data: dict[str, Any]) -> StateRegion:
+        """Parse state region from dictionary."""
+        return StateRegion(
+            id=data["id"],
+            name=data["name"],
+            bounds=data["bounds"],
+            fixed=data.get("fixed", True),
+            is_search_region=data.get("isSearchRegion", False),
+            is_interaction_region=data.get("isInteractionRegion", False),
+        )
+
+    def _parse_state_location(self, data: dict[str, Any]) -> StateLocation:
+        """Parse state location from dictionary."""
+        return StateLocation(
+            id=data["id"],
+            name=data["name"],
+            x=data["x"],
+            y=data["y"],
+            anchor=data.get("anchor", False),
+            fixed=data.get("fixed", True),
+            click_target=data.get("clickTarget", False),
+        )
+
+    def _parse_state_string(self, data: dict[str, Any]) -> StateString:
+        """Parse state string from dictionary."""
+        return StateString(
+            id=data["id"],
+            name=data["name"],
+            value=data["value"],
+            identifier=data.get("identifier", False),
+            input_text=data.get("inputText", False),
+            expected_text=data.get("expectedText", False),
+            regex=data.get("regex", False),
         )
 
     def _parse_state(self, data: dict[str, Any]) -> State:
         """Parse state from dictionary."""
-        identifying_images = []
-        for img_data in data.get("identifyingImages", []):
-            identifying_images.append(
-                StateImage(
-                    image_id=img_data.get("imageId"),
-                    threshold=img_data.get("threshold", 0.9),
-                    required=img_data.get("required", True),
-                )
-            )
+        identifying_images = [
+            self._parse_state_image(img) for img in data.get("identifyingImages", [])
+        ]
+        state_regions = [self._parse_state_region(r) for r in data.get("stateRegions", [])]
+        state_locations = [
+            self._parse_state_location(loc) for loc in data.get("stateLocations", [])
+        ]
+        state_strings = [self._parse_state_string(s) for s in data.get("stateStrings", [])]
 
         return State(
             id=data["id"],
             name=data["name"],
             description=data.get("description", ""),
             identifying_images=identifying_images,
-            position=data.get("position", {}),
+            state_regions=state_regions,
+            state_locations=state_locations,
+            state_strings=state_strings,
+            position=data["position"],
             is_initial=data.get("isInitial", False),
             is_final=data.get("isFinal", False),
         )
 
     def _parse_transition(self, data: dict[str, Any]) -> Transition:
         """Parse transition from dictionary."""
-        transition_type = data.get("type", "FromTransition")
+        transition_type = data["type"]
 
         if transition_type == "FromTransition":
             return FromTransition(
                 id=data["id"],
                 type=transition_type,
-                processes=data.get("processes", []),
-                timeout=data.get("timeout", 10000),
-                retry_count=data.get("retryCount", 3),
-                from_state=data.get("fromState", ""),
-                to_state=data.get("toState", ""),
-                stays_visible=data.get("staysVisible", False),
+                processes=data["processes"],
+                timeout=data["timeout"],
+                retry_count=data["retryCount"],
+                from_state=data["fromState"],
+                to_state=data["toState"],
+                stays_visible=data["staysVisible"],
                 activate_states=data.get("activateStates", []),
                 deactivate_states=data.get("deactivateStates", []),
             )
@@ -288,29 +493,29 @@ class ConfigParser:
             return ToTransition(
                 id=data["id"],
                 type=transition_type,
-                processes=data.get("processes", []),
-                timeout=data.get("timeout", 10000),
-                retry_count=data.get("retryCount", 3),
-                to_state=data.get("toState", ""),
+                processes=data["processes"],
+                timeout=data["timeout"],
+                retry_count=data["retryCount"],
+                to_state=data["toState"],
             )
 
     def _parse_execution_settings(self, data: dict[str, Any]) -> ExecutionSettings:
         """Parse execution settings."""
         return ExecutionSettings(
-            default_timeout=data.get("defaultTimeout", 10000),
-            default_retry_count=data.get("defaultRetryCount", 3),
-            action_delay=data.get("actionDelay", 100),
-            failure_strategy=data.get("failureStrategy", "stop"),
+            default_timeout=data["defaultTimeout"],
+            default_retry_count=data["defaultRetryCount"],
+            action_delay=data["actionDelay"],
+            failure_strategy=data["failureStrategy"],
             headless=data.get("headless", False),
         )
 
     def _parse_recognition_settings(self, data: dict[str, Any]) -> RecognitionSettings:
         """Parse recognition settings."""
         return RecognitionSettings(
-            default_threshold=data.get("defaultThreshold", 0.9),
-            search_algorithm=data.get("searchAlgorithm", "template_matching"),
-            multi_scale_search=data.get("multiScaleSearch", True),
-            color_space=data.get("colorSpace", "rgb"),
+            default_threshold=data["defaultThreshold"],
+            search_algorithm=data["searchAlgorithm"],
+            multi_scale_search=data["multiScaleSearch"],
+            color_space=data["colorSpace"],
             edge_detection=data.get("edgeDetection", False),
             ocr_enabled=data.get("ocrEnabled", False),
         )

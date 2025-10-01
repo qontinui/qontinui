@@ -4,14 +4,19 @@ Python test file generator for creating pytest-compatible test files from migrat
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 
-try:
+if TYPE_CHECKING:
     from ..core.interfaces import TestTranslator
     from ..core.models import Dependency, TestFile, TestMethod, TestType
-except ImportError:
-    # For standalone testing
-    from core.interfaces import TestTranslator
-    from core.models import Dependency, TestFile, TestMethod, TestType
+else:
+    try:
+        from ..core.interfaces import TestTranslator
+        from ..core.models import Dependency, TestFile, TestMethod, TestType
+    except ImportError:
+        # For standalone testing
+        from core.interfaces import TestTranslator
+        from core.models import Dependency, TestFile, TestMethod, TestType
 
 
 class PythonTestGenerator(TestTranslator):
@@ -298,7 +303,7 @@ class PythonTestGenerator(TestTranslator):
         """Generate teardown method with appropriate pytest fixture."""
         return self._generate_setup_method(teardown_method)  # Same logic
 
-    def _generate_mock_setup(self, mock_usages: list) -> list[str]:
+    def _generate_mock_setup(self, mock_usages: list[Any]) -> list[str]:
         """Generate mock setup code for test methods."""
         lines = []
 
@@ -364,7 +369,7 @@ class PythonTestGenerator(TestTranslator):
         if dependency.python_equivalent:
             return dependency.python_equivalent
 
-        return self.dependency_mappings.get(dependency.java_import)
+        return cast(str | None, self.dependency_mappings.get(dependency.java_import))
 
     def generate_test_file_path(self, test_file: TestFile, target_directory: Path) -> Path:
         """

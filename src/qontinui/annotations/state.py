@@ -47,10 +47,10 @@ def state(initial: bool = False, name: str = "", description: str = "") -> Any:
 
     def decorator(cls: type) -> type:
         # Store metadata on the class
-        cls._qontinui_state = True
-        cls._qontinui_state_initial = initial
-        cls._qontinui_state_name = name or _derive_state_name(cls)
-        cls._qontinui_state_description = description
+        cls._qontinui_state = True  # type: ignore[attr-defined]
+        cls._qontinui_state_initial = initial  # type: ignore[attr-defined]
+        cls._qontinui_state_name = name or _derive_state_name(cls)  # type: ignore[attr-defined]
+        cls._qontinui_state_description = description  # type: ignore[attr-defined]
 
         # Register with state registry if available
         # This will be handled by StateAnnotationProcessor
@@ -90,7 +90,7 @@ def is_state(obj: Any) -> bool:
     return hasattr(obj, "_qontinui_state") and obj._qontinui_state
 
 
-def get_state_metadata(cls: type) -> dict | None:
+def get_state_metadata(cls: type) -> dict[str, Any] | None:
     """Get state metadata from a decorated class.
 
     Args:

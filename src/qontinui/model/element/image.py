@@ -6,7 +6,7 @@ Physical representation of an image in the framework.
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import cv2
 import numpy as np
@@ -66,7 +66,7 @@ class Image:
         """
         path = Path(filename)
         try:
-            pil_image = PILImage.open(path)
+            pil_image: PILImage.Image = PILImage.open(path)  # type: ignore[assignment]
             # Convert to RGB if necessary
             if pil_image.mode != "RGB":
                 pil_image = pil_image.convert("RGB")
@@ -96,7 +96,7 @@ class Image:
         return cls(name=name, _pil_image=pil_image)
 
     @classmethod
-    def from_numpy(cls, numpy_array: np.ndarray, name: str | None = None) -> "Image":
+    def from_numpy(cls, numpy_array: np.ndarray[Any, Any], name: str | None = None) -> "Image":
         """Create Image from NumPy array (OpenCV format).
 
         Args:
@@ -143,7 +143,7 @@ class Image:
         """
         return self._pil_image
 
-    def get_mat_bgr(self) -> np.ndarray | None:
+    def get_mat_bgr(self) -> np.ndarray[Any, Any] | None:
         """Get BGR representation as NumPy array.
 
         Returns:
@@ -167,7 +167,7 @@ class Image:
             logger.error(f"BGR conversion failed for image {self.name}: {e}")
             return None
 
-    def get_mat_hsv(self) -> np.ndarray | None:
+    def get_mat_hsv(self) -> np.ndarray[Any, Any] | None:
         """Get HSV representation as NumPy array.
 
         Returns:

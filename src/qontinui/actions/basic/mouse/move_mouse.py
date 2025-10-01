@@ -90,31 +90,41 @@ class MoveMouse(ActionInterface):
 
         for obj_coll in object_collections:
             # Check if we have locations directly - no need to find anything
-            state_locations = obj_coll.get_state_locations()
+            state_locations = obj_coll.state_locations
             if state_locations:
                 # Move directly to the locations without finding
                 for state_location in state_locations:
-                    location = state_location.get_location()
+                    location = state_location.location
                     if self.move_mouse_wrapper:
                         self.move_mouse_wrapper.move(location)
                     matches.add_match_location(location)
                     # Create a Match object for success determination
-                    matches.add(location.to_match())
+                    from ....find.match import Match
+                    from ....model.match import Match as MatchObject
+
+                    match_obj = MatchObject(target=location, score=1.0)
+                    match = Match(match_object=match_obj)
+                    matches.add(match)
 
             # Check if we have regions
-            state_regions = obj_coll.get_state_regions()
+            state_regions = obj_coll.state_regions
             if state_regions:
                 # Move to center of regions without finding
                 for state_region in state_regions:
-                    location = state_region.get_search_region().get_location()
+                    location = state_region.get_search_region().get_center()
                     if self.move_mouse_wrapper:
                         self.move_mouse_wrapper.move(location)
                     matches.add_match_location(location)
                     # Create a Match object for success determination
-                    matches.add(location.to_match())
+                    from ....find.match import Match
+                    from ....model.match import Match as MatchObject
+
+                    match_obj = MatchObject(target=location, score=1.0)
+                    match = Match(match_object=match_obj)
+                    matches.add(match)
 
             # Only use find if we have images/patterns to search for
-            state_images = obj_coll.get_state_images()
+            state_images = obj_coll.state_images
             if state_images:
                 if self.find:
                     self.find.perform(matches, obj_coll)
