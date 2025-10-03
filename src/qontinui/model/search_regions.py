@@ -24,16 +24,19 @@ class SearchRegions:
     regions: list[Region] = field(default_factory=list)
     """The list of regions to search within."""
 
-    def __init__(self, other: Optional["SearchRegions"] = None):
+    def __init__(self, other: Optional["SearchRegions | list[Region]"] = None):
         """Initialize search regions.
 
         Args:
-            other: Another SearchRegions instance to copy from
+            other: Another SearchRegions instance to copy from, or a list of Regions to use
         """
         if other:
-            self.regions = [
-                Region(x=r.x, y=r.y, width=r.width, height=r.height) for r in other.regions
-            ]
+            if isinstance(other, list):
+                self.regions = other
+            else:
+                self.regions = [
+                    Region(x=r.x, y=r.y, width=r.width, height=r.height) for r in other.regions
+                ]
         else:
             self.regions = []
 

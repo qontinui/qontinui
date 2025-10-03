@@ -323,6 +323,33 @@ class ConfigurationManager:
             if self.settings.collect_dataset:
                 warnings.append("Dataset collection enabled in production")
 
+        # Validate Brobot-ported settings
+        props = self.get_properties()
+
+        # DPI and capture settings validation
+        if props.dpi.disable and props.capture.prefer_physical:
+            warnings.append(
+                "DPI disabled but prefer_physical capture enabled - may cause scaling issues"
+            )
+
+        # Logging settings validation
+        if props.logging.global_level not in ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"]:
+            warnings.append(f"Invalid logging level: {props.logging.global_level}")
+
+        # Automation settings validation
+        if props.automation.fail_fast and props.automation.max_retries > 0:
+            warnings.append("fail_fast enabled with max_retries > 0 - retries will be ignored")
+
+        # Highlight settings validation
+        if self.environment.is_headless() and props.highlight.enabled:
+            warnings.append("Highlight enabled in headless environment (will have no effect)")
+
+        # Console action settings validation
+        if props.console.console_actions and not props.console.report_individual_actions:
+            warnings.append(
+                "console_actions enabled but report_individual_actions disabled - no output will be shown"
+            )
+
         return warnings
 
     def save_current(self, path: Path, format: str = "yaml") -> None:

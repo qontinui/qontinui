@@ -106,7 +106,6 @@ class StateLocation:
     y: int
     anchor: bool = False
     fixed: bool = True
-    click_target: bool = False
 
 
 @dataclass
@@ -433,7 +432,6 @@ class ConfigParser:
             y=data["y"],
             anchor=data.get("anchor", False),
             fixed=data.get("fixed", True),
-            click_target=data.get("clickTarget", False),
         )
 
     def _parse_state_string(self, data: dict[str, Any]) -> StateString:

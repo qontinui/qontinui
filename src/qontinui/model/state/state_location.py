@@ -31,7 +31,6 @@ class StateLocation:
     # Location properties
     _anchor: bool = False  # If true, used as anchor point
     _fixed: bool = True  # If true, location is fixed
-    _click_target: bool = False  # If true, used as click target
 
     # Metadata
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -105,18 +104,6 @@ class StateLocation:
         self._fixed = fixed
         return self
 
-    def set_click_target(self, click_target: bool = True) -> StateLocation:
-        """Set whether this is a click target (fluent).
-
-        Args:
-            click_target: True if click target
-
-        Returns:
-            Self for chaining
-        """
-        self._click_target = click_target
-        return self
-
     @property
     def is_anchor(self) -> bool:
         """Check if this is an anchor point."""
@@ -126,11 +113,6 @@ class StateLocation:
     def is_fixed(self) -> bool:
         """Check if location is fixed."""
         return self._fixed
-
-    @property
-    def is_click_target(self) -> bool:
-        """Check if this is a click target."""
-        return self._click_target
 
     def get_name(self) -> str | None:
         """Get the location name.

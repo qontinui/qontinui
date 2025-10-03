@@ -480,6 +480,58 @@ class Find:
 
                 matches_list = [m for m in matches_list if m.similarity >= min_similarity]
                 print(f"[Find] After final filter: {len(matches_list)} matches")
+
+                # Filter by search regions using precedence hierarchy
+                # Precedence: 1. Options (self._search_region), 2. Pattern, 3. StateImage, 4. whole screen
+                search_regions_to_use: SearchRegions | None = None
+
+                # Level 1: Check Options-level search regions (highest priority)
+                if isinstance(self._search_region, SearchRegions) and self._search_region.regions:
+                    search_regions_to_use = self._search_region
+                    print(
+                        f"[Find] Using Options-level search regions ({len(self._search_region.regions)} regions)"
+                    )
+
+                # Level 2: Check Pattern-level search regions
+                elif (
+                    self._target
+                    and hasattr(self._target, "search_regions")
+                    and self._target.search_regions
+                ):
+                    # Convert Pattern's search_regions (list of dicts) to SearchRegions object
+                    pattern_regions = []
+                    for sr_dict in self._target.search_regions:
+                        region = Region(
+                            sr_dict.get("x", 0),
+                            sr_dict.get("y", 0),
+                            sr_dict.get("width", 0),
+                            sr_dict.get("height", 0),
+                        )
+                        pattern_regions.append(region)
+                    if pattern_regions:
+                        search_regions_to_use = SearchRegions(pattern_regions)
+                        print(
+                            f"[Find] Using Pattern-level search regions ({len(pattern_regions)} regions)"
+                        )
+
+                # Level 3: StateImage-level search regions would be passed via Options
+                # (StateImage.find() should set Options with its search_regions)
+
+                # Level 4: Whole screen (no filtering) - search_regions_to_use remains None
+
+                # Apply search region filtering if we have regions to use
+                if search_regions_to_use and search_regions_to_use.regions:
+                    filtered_matches = []
+                    for match in matches_list:
+                        if match.region:
+                            match_center = match.center
+                            # Check if match center is in ANY of the search regions
+                            for search_region in search_regions_to_use.regions:
+                                if search_region.contains(match_center):
+                                    filtered_matches.append(match)
+                                    break  # Found in at least one region, move to next match
+                    matches_list = filtered_matches
+                    print(f"[Find] After search region filter: {len(matches_list)} matches")
             else:
                 # Find best match only
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)

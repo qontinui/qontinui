@@ -10,6 +10,7 @@ from .color import HSV, RGB
 from .grid import Grid, GridBuilder
 from .image import Image
 from .location import Location
+from .match_adjustment_options import MatchAdjustmentOptions
 from .movement import Movement
 from .overlapping_grids import OverlappingGrids
 from .pattern import Pattern
@@ -17,6 +18,7 @@ from .position import Position
 from .positions import PositionName, Positions
 from .region import Region
 from .scene import Scene
+from .search_region_on_object import SearchRegionOnObject, StateObjectType
 from .text import Text
 
 __all__ = [
@@ -33,6 +35,9 @@ __all__ = [
     "Positions",
     "PositionName",
     "Movement",
+    "SearchRegionOnObject",
+    "StateObjectType",
+    "MatchAdjustmentOptions",
     # Image types
     "Image",
     "Pattern",

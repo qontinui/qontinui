@@ -30,11 +30,33 @@ class FrameworkSettings:
     - Environment variable support
 
     Setting categories:
+    - Core: Essential framework settings (image paths, mock mode, etc.)
     - Mouse Control: Fine-tune mouse action timing and movement
     - Mock Mode: Configure simulated execution for testing
-    - Data Collection: Control screenshot capture and dataset building
-    - Visual Analysis: Configure color profiling and image processing
-    - Testing Support: Settings for unit tests and testing scenarios
+    - Screenshot: Screen capture and history settings
+    - Illustration: Visual feedback and annotation settings
+    - Analysis: Color profiling and image processing
+    - Recording: Screen recording configuration
+    - Dataset: AI training data generation
+    - Testing: Test execution configuration
+    - Monitor: Monitor configuration settings
+    - DPI: DPI and scaling configuration (from Brobot)
+    - Capture: Screen capture provider configuration (from Brobot)
+    - Sikuli: SikuliX integration settings (from Brobot)
+    - Startup: Application startup configuration (from Brobot)
+    - Automation: Automation failure handling (from Brobot)
+    - AutoScaling: Automatic pattern scaling (from Brobot)
+    - Logging: Comprehensive logging configuration (from Brobot)
+    - Highlight: Visual highlighting configuration (from Brobot)
+    - Console: Console action reporting (from Brobot)
+    - ImageDebug: Image debugging configuration (from Brobot)
+    - GuiAccess: GUI access verification (from Brobot)
+
+    Access nested settings via get_properties():
+        props = settings.get_properties()
+        dpi_disabled = props.dpi.disable
+        capture_provider = props.capture.provider
+        log_level = props.logging.global_level
 
     Usage:
         # Get singleton instance

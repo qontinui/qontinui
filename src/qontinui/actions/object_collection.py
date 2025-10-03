@@ -403,7 +403,7 @@ class ObjectCollectionBuilder:
                     self.state_regions.append(state_region)
         return self
 
-    def _create_grid_regions(self, region: Region, rows: int, columns: int) -> list[Region]:
+    def _create_grid_regions(self, region: "Region", rows: int, columns: int) -> list["Region"]:
         """Create grid of subregions from a region.
 
         Args:

@@ -190,6 +190,291 @@ class TestingConfig(BaseModel):
     verbose_logging: bool = Field(default=True, description="Enable verbose logging during tests")
     parallel_execution: bool = Field(default=False, description="Enable parallel test execution")
     random_seed: int | None = Field(default=None, description="Random seed for reproducible tests")
+    iteration: int = Field(default=1, ge=1, description="Current test iteration")
+    send_logs: bool = Field(default=True, description="Send logs to external systems")
+
+
+class MonitorConfig(BaseModel):
+    """Monitor configuration settings."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    default_screen_index: int = Field(
+        default=-1,
+        ge=-1,
+        description="Monitor index to use for automation (0=primary, 1=secondary, -1=primary)",
+    )
+    multi_monitor_enabled: bool = Field(default=False, description="Enable multi-monitor support")
+    search_all_monitors: bool = Field(
+        default=False, description="Search across all monitors when finding elements"
+    )
+    log_monitor_info: bool = Field(
+        default=True, description="Log monitor information for each operation"
+    )
+    operation_monitor_map: dict[str, int] = Field(
+        default_factory=dict, description="Monitor assignment for specific operations"
+    )
+
+
+class DpiConfig(BaseModel):
+    """DPI and scaling configuration."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    disable: bool = Field(
+        default=True, description="Disable DPI awareness to force physical resolution capture"
+    )
+    resize_factor: float = Field(
+        default=1.0, ge=0.1, le=10.0, description="Resize factor for pattern matching"
+    )
+    pattern_source: str = Field(
+        default="WINDOWS_TOOL",
+        pattern="^(SIKULI_IDE|WINDOWS_TOOL|FFMPEG_TOOL)$",
+        description="Pattern source hint for scaling",
+    )
+
+
+class CaptureConfig(BaseModel):
+    """Screen capture provider configuration."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    provider: str = Field(
+        default="AUTO",
+        pattern="^(AUTO|ROBOT|FFMPEG|JAVACV_FFMPEG|SIKULIX|MSS)$",
+        description="Capture provider to use",
+    )
+    prefer_physical: bool = Field(default=True, description="Prefer physical resolution captures")
+    fallback_enabled: bool = Field(
+        default=True, description="Enable fallback to other providers if preferred fails"
+    )
+    fallback_chain: list[str] = Field(
+        default=["MSS", "ROBOT"], description="Fallback chain priority for capture providers"
+    )
+    enable_logging: bool = Field(default=False, description="Enable capture operation logging")
+    auto_retry: bool = Field(default=True, description="Auto-retry failed captures")
+    retry_count: int = Field(
+        default=3, ge=0, le=10, description="Number of retry attempts for failed captures"
+    )
+
+
+class SikuliConfig(BaseModel):
+    """SikuliX integration settings."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    highlight: bool = Field(default=False, description="Enable SikuliX highlighting")
+    highlight_duration: int = Field(default=2, ge=0, description="Highlight duration in seconds")
+    auto_wait_timeout: float = Field(default=0.0, ge=0, description="Auto wait timeout in seconds")
+    delay_before_mouse_down: float = Field(
+        default=0.0, ge=0, description="Delay before mouse down in seconds"
+    )
+    delay_after_drag: float = Field(default=0.0, ge=0, description="Delay after drag in seconds")
+    move_mouse_delay: float = Field(default=0.5, ge=0, description="Move mouse delay in seconds")
+
+
+class StartupConfig(BaseModel):
+    """Startup configuration settings."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    verify_initial_states: bool = Field(
+        default=False, description="Automatically verify initial states on startup"
+    )
+    initial_states: list[str] = Field(
+        default_factory=list, description="List of state names to verify at startup"
+    )
+    fallback_search: bool = Field(
+        default=False, description="Search all states if specified states not found"
+    )
+    activate_first_only: bool = Field(
+        default=False, description="Activate only the first found state"
+    )
+    startup_delay: int = Field(
+        default=0, ge=0, description="Delay in seconds before initial state verification"
+    )
+
+
+class AutomationConfig(BaseModel):
+    """Automation failure handling configuration."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    exit_on_failure: bool = Field(
+        default=False, description="Exit application when automation fails"
+    )
+    failure_exit_code: int = Field(
+        default=1, ge=0, description="Exit code when exitOnFailure is true"
+    )
+    throw_on_failure: bool = Field(
+        default=False, description="Throw exceptions when automation fails"
+    )
+    log_stack_traces: bool = Field(
+        default=True, description="Log stack traces for automation failures"
+    )
+    max_retries: int = Field(
+        default=0, ge=0, description="Maximum number of automation retry attempts"
+    )
+    retry_delay_ms: int = Field(
+        default=1000, ge=0, description="Delay in milliseconds between retry attempts"
+    )
+    continue_on_failure: bool = Field(
+        default=False, description="Continue with remaining automation steps after failure"
+    )
+    timeout_seconds: int = Field(
+        default=0,
+        ge=0,
+        description="Timeout in seconds for entire automation sequence (0=no timeout)",
+    )
+    fail_fast: bool = Field(
+        default=False, description="Stop immediately on first failure without retries"
+    )
+
+
+class AutoScalingConfig(BaseModel):
+    """Automatic pattern scaling configuration."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    enabled: bool = Field(default=True, description="Enable automatic pattern scaling detection")
+    cache_enabled: bool = Field(default=True, description="Enable scaling cache")
+    global_learning: bool = Field(
+        default=True, description="Enable global learning across patterns"
+    )
+    min_confidence: float = Field(
+        default=0.85, ge=0.0, le=1.0, description="Minimum confidence for scaling detection"
+    )
+
+
+class LoggingConfig(BaseModel):
+    """Comprehensive logging configuration."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    # Global settings
+    global_level: str = Field(
+        default="INFO",
+        pattern="^(OFF|ERROR|WARN|INFO|DEBUG|TRACE)$",
+        description="Global log level",
+    )
+
+    # Category-specific levels
+    actions_level: str = Field(default="INFO", description="Log level for actions")
+    transitions_level: str = Field(default="INFO", description="Log level for state transitions")
+    matching_level: str = Field(default="WARN", description="Log level for pattern matching")
+    performance_level: str = Field(default="INFO", description="Log level for performance metrics")
+    state_level: str = Field(default="DEBUG", description="Log level for state management")
+
+    # Output configuration
+    output_format: str = Field(
+        default="STRUCTURED", pattern="^(SIMPLE|STRUCTURED|JSON)$", description="Output format"
+    )
+    include_timestamp: bool = Field(default=True, description="Include timestamp in logs")
+    include_thread: bool = Field(default=False, description="Include thread name in logs")
+    include_correlation_id: bool = Field(default=True, description="Include correlation ID")
+
+    # Performance
+    async_logging: bool = Field(default=True, description="Use asynchronous logging")
+    buffer_size: int = Field(default=8192, ge=1024, description="Buffer size for async logging")
+
+    # Enrichment
+    include_screenshots: bool = Field(default=False, description="Attach screenshots to logs")
+    include_similarity_scores: bool = Field(default=True, description="Include similarity scores")
+    include_timing_breakdown: bool = Field(default=True, description="Include timing breakdown")
+
+
+class HighlightConfig(BaseModel):
+    """Visual highlighting configuration."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    # Global settings
+    enabled: bool = Field(default=True, description="Global highlighting enable/disable")
+    auto_highlight_finds: bool = Field(
+        default=True, description="Automatically highlight successful finds"
+    )
+
+    # Find highlighting
+    find_color: str = Field(default="#00FF00", description="Color for highlighting found images")
+    find_duration: float = Field(
+        default=2.0, ge=0, description="Duration to show highlight (seconds)"
+    )
+    find_border_width: int = Field(default=3, ge=1, le=10, description="Border width in pixels")
+
+    # Click highlighting
+    click_enabled: bool = Field(default=True, description="Enable click highlighting")
+    click_color: str = Field(default="#FFFF00", description="Color for click highlights")
+    click_duration: float = Field(default=0.5, ge=0, description="Duration (seconds)")
+    click_radius: int = Field(
+        default=20, ge=5, le=100, description="Radius of click indicator circle"
+    )
+
+
+class ConsoleActionConfig(BaseModel):
+    """Console action reporting configuration."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    enabled: bool = Field(default=True, description="Enable console action reporting")
+    level: str = Field(
+        default="NORMAL", pattern="^(QUIET|NORMAL|VERBOSE)$", description="Verbosity level"
+    )
+    show_timing: bool = Field(default=True, description="Show timing information for actions")
+    use_colors: bool = Field(default=True, description="Use colored output (ANSI)")
+    use_icons: bool = Field(default=True, description="Use unicode icons in output")
+
+    # Performance thresholds
+    performance_warn_threshold: int = Field(
+        default=1000, ge=0, description="Warning threshold (milliseconds)"
+    )
+    performance_error_threshold: int = Field(
+        default=5000, ge=0, description="Error threshold (milliseconds)"
+    )
+
+    # Action reporting settings
+    console_actions: bool = Field(default=True, description="Enable console action output")
+    report_individual_actions: bool = Field(
+        default=True, description="Report each individual action as it executes"
+    )
+
+
+class ImageDebugConfig(BaseModel):
+    """Image debugging configuration."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    enabled: bool = Field(default=False, description="Master switch for image debugging")
+    level: str = Field(
+        default="VISUAL", pattern="^(OFF|BASIC|DETAILED|VISUAL|FULL)$", description="Debug level"
+    )
+    save_screenshots: bool = Field(default=True, description="Save screenshots of entire screen")
+    save_patterns: bool = Field(default=True, description="Save pattern images")
+    save_comparisons: bool = Field(default=True, description="Save comparison images")
+    output_dir: str = Field(default="debug/image-finding", description="Output directory")
+
+    # Visual properties
+    show_search_regions: bool = Field(default=True, description="Show search regions")
+    show_match_scores: bool = Field(default=True, description="Show match scores")
+    create_heatmap: bool = Field(default=False, description="Create heatmap visualization")
+
+
+class GuiAccessConfig(BaseModel):
+    """GUI access verification configuration."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    report_problems: bool = Field(default=True, description="Report GUI access problems")
+    verbose_errors: bool = Field(default=True, description="Show verbose error details")
+    suggest_solutions: bool = Field(
+        default=True, description="Suggest solutions for detected problems"
+    )
+    check_on_startup: bool = Field(default=True, description="Check GUI access on startup")
+    continue_on_error: bool = Field(
+        default=True, description="Continue execution despite GUI problems"
+    )
+    platform_specific_advice: bool = Field(
+        default=True, description="Include platform-specific advice"
+    )
 
 
 class QontinuiProperties(BaseModel):
@@ -210,6 +495,18 @@ class QontinuiProperties(BaseModel):
     - Recording: Screen recording configuration
     - Dataset: AI training data generation settings
     - Testing: Test execution configuration
+    - Monitor: Monitor configuration settings
+    - DPI: DPI and scaling configuration
+    - Capture: Screen capture provider configuration
+    - Sikuli: SikuliX integration settings
+    - Startup: Startup configuration
+    - Automation: Automation failure handling
+    - AutoScaling: Automatic pattern scaling
+    - Logging: Comprehensive logging configuration
+    - Highlight: Visual highlighting configuration
+    - Console: Console action reporting
+    - ImageDebug: Image debugging configuration
+    - GuiAccess: GUI access verification
 
     Example usage:
         # Load from environment variables
@@ -258,6 +555,40 @@ class QontinuiProperties(BaseModel):
     )
     testing: TestingConfig = Field(
         default_factory=TestingConfig, description="Test execution settings"
+    )
+    monitor: MonitorConfig = Field(
+        default_factory=MonitorConfig, description="Monitor configuration settings"
+    )
+    dpi: DpiConfig = Field(default_factory=DpiConfig, description="DPI and scaling configuration")
+    capture: CaptureConfig = Field(
+        default_factory=CaptureConfig, description="Screen capture provider configuration"
+    )
+    sikuli: SikuliConfig = Field(
+        default_factory=SikuliConfig, description="SikuliX integration settings"
+    )
+    startup: StartupConfig = Field(
+        default_factory=StartupConfig, description="Startup configuration"
+    )
+    automation: AutomationConfig = Field(
+        default_factory=AutomationConfig, description="Automation failure handling"
+    )
+    autoscaling: AutoScalingConfig = Field(
+        default_factory=AutoScalingConfig, description="Automatic pattern scaling"
+    )
+    logging: LoggingConfig = Field(
+        default_factory=LoggingConfig, description="Comprehensive logging configuration"
+    )
+    highlight: HighlightConfig = Field(
+        default_factory=HighlightConfig, description="Visual highlighting configuration"
+    )
+    console: ConsoleActionConfig = Field(
+        default_factory=ConsoleActionConfig, description="Console action reporting"
+    )
+    image_debug: ImageDebugConfig = Field(
+        default_factory=ImageDebugConfig, description="Image debugging configuration"
+    )
+    gui_access: GuiAccessConfig = Field(
+        default_factory=GuiAccessConfig, description="GUI access verification"
     )
 
     def to_yaml(self, path: Path | None = None) -> str:

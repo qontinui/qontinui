@@ -33,13 +33,11 @@ class StateImage:
     _fixed: bool = False  # If true, always appears in same location
     _shared: bool = False  # If true, can appear in multiple states
     _probability: float = 1.0  # Probability this image appears in state
-    _index: int = 0  # Order/priority of image in state
 
     # Search configuration
     _search_region: Region | None = None
     _search_regions: SearchRegions | None = None  # SearchRegions associated with this StateImage
     _similarity: float = 0.7
-    _timeout: float = 5.0
 
     # Metadata
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -94,11 +92,14 @@ class StateImage:
         pattern = self.get_pattern()
         finder = FindImage(pattern.image)
 
-        if self._search_region:
+        # Use search regions with precedence: SearchRegions > single Region
+        # (Options and Pattern-level are handled in Find class)
+        if self._search_regions:
+            finder.search_region(self._search_regions)
+        elif self._search_region:
             finder.search_region(self._search_region)
 
         finder.similarity(self._similarity)
-        finder.timeout(self._timeout)
 
         results = finder.find_all(True).execute()
         return results.matches
@@ -112,20 +113,23 @@ class StateImage:
         matches = self.find()
         return matches.has_matches()
 
-    def wait_for(self, timeout: float | None = None) -> bool:
+    def wait_for(self, timeout: float = 5.0) -> bool:
         """Wait for image to appear.
 
         Args:
-            timeout: Maximum wait time
+            timeout: Maximum wait time (default: 5.0 seconds)
 
         Returns:
             True if image appeared
         """
-        timeout = timeout or self._timeout
         pattern = self.get_pattern()
         finder = FindImage(pattern.image)
 
-        if self._search_region:
+        # Use search regions with precedence: SearchRegions > single Region
+        # (Options and Pattern-level are handled in Find class)
+        if self._search_regions:
+            finder.search_region(self._search_regions)
+        elif self._search_region:
             finder.search_region(self._search_region)
 
         finder.similarity(self._similarity)
@@ -167,18 +171,6 @@ class StateImage:
             Self for chaining
         """
         self._probability = max(0.0, min(1.0, probability))
-        return self
-
-    def set_index(self, index: int) -> StateImage:
-        """Set image index/priority (fluent).
-
-        Args:
-            index: Index value
-
-        Returns:
-            Self for chaining
-        """
-        self._index = index
         return self
 
     def set_search_region(self, region: Region) -> StateImage:
@@ -236,11 +228,6 @@ class StateImage:
     def probability(self) -> float:
         """Get probability that image appears."""
         return self._probability
-
-    @property
-    def index(self) -> int:
-        """Get image index/priority."""
-        return self._index
 
     @property
     def patterns(self) -> list[Pattern]:

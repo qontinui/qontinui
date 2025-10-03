@@ -40,10 +40,19 @@ class Pattern:
     updated_at: datetime = field(default_factory=datetime.now)
 
     # Matching parameters
-    similarity_threshold: float = 0.95
+    # Pattern-level similarity threshold (overrides application-level default)
+    # This is the second level of precedence (below FindOptions, above application default)
+    similarity: float | None = None  # If None, uses application default
+    similarity_threshold: float = 0.95  # DEPRECATED: Use 'similarity' instead
     use_color: bool = True
     scale_invariant: bool = False
     rotation_invariant: bool = False
+
+    # Search regions - Pattern-level search regions (precedence level 2: below Options, above StateImage)
+    # These are regions from StateRegions that restrict where matches are valid
+    search_regions: list[dict[str, Any]] = field(
+        default_factory=list
+    )  # List of {id, name, x, y, width, height, referenceImageId}
 
     # Statistics
     match_count: int = 0
@@ -72,6 +81,11 @@ class Pattern:
             raise ValueError(
                 f"Mask shape {self.mask.shape} doesn't match image shape {self.pixel_data.shape[:2]}"
             )
+
+        # Handle backward compatibility: if similarity is None but similarity_threshold is set
+        # This allows migration from old code using similarity_threshold
+        if self.similarity is None and self.similarity_threshold != 0.95:
+            self.similarity = self.similarity_threshold
 
     @property
     def masked_pixel_hash(self) -> str:
@@ -328,7 +342,8 @@ class Pattern:
             "tags": self.tags,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
-            "similarity_threshold": self.similarity_threshold,
+            "similarity": self.similarity,  # New field with proper precedence support
+            "similarity_threshold": self.similarity_threshold,  # Kept for compatibility
             "use_color": self.use_color,
             "scale_invariant": self.scale_invariant,
             "rotation_invariant": self.rotation_invariant,
@@ -452,6 +467,51 @@ class Pattern:
         # depending on pattern type (some patterns may have background images)
         return None
 
+    def get_effective_similarity(
+        self, find_options_similarity: float | None = None, application_default: float = 0.7
+    ) -> float:
+        """Get the effective similarity threshold with proper precedence.
+
+        Similarity precedence (highest to lowest):
+        1. FindOptions similarity (passed as parameter) - HIGHEST PRECEDENCE
+        2. Pattern-level similarity (self.similarity)
+        3. Application-level default similarity - LOWEST PRECEDENCE
+
+        This matches Brobot's precedence order where:
+        - ActionOptions/FindOptions similarity takes precedence over everything
+        - Pattern similarity is checked second
+        - Application properties (Settings.MinSimilarity in Brobot) is the fallback
+
+        Args:
+            find_options_similarity: Similarity from FindOptions (highest precedence)
+            application_default: Application-level default similarity (lowest precedence)
+
+        Returns:
+            Effective similarity threshold to use (0.0-1.0)
+
+        Example:
+            # Pattern with no explicit similarity uses application default
+            pattern = Pattern(...)
+            sim = pattern.get_effective_similarity()  # Returns 0.7
+
+            # Pattern with explicit similarity uses that
+            pattern.similarity = 0.85
+            sim = pattern.get_effective_similarity()  # Returns 0.85
+
+            # FindOptions overrides pattern similarity
+            sim = pattern.get_effective_similarity(find_options_similarity=0.95)  # Returns 0.95
+        """
+        # 1. Highest precedence: FindOptions similarity
+        if find_options_similarity is not None:
+            return find_options_similarity
+
+        # 2. Medium precedence: Pattern-level similarity
+        if self.similarity is not None:
+            return self.similarity
+
+        # 3. Lowest precedence: Application-level default
+        return application_default
+
     def with_similarity(self, threshold: float) -> "Pattern":
         """Set similarity threshold and return self for chaining.
 
@@ -460,7 +520,13 @@ class Pattern:
 
         Returns:
             Self for method chaining
+
+        Note:
+            This sets the Pattern-level similarity which has medium precedence.
+            FindOptions similarity (if provided) will override this.
         """
+        self.similarity = threshold
+        # Also update similarity_threshold for backward compatibility
         self.similarity_threshold = threshold
         return self
 
