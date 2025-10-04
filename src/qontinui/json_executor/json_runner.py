@@ -104,12 +104,18 @@ class JSONRunner:
 
         return True
 
-    def run(self, mode: str = "state_machine", monitor_index: int | None = None) -> bool:
+    def run(
+        self,
+        mode: str = "state_machine",
+        monitor_index: int | None = None,
+        process_id: str | None = None,
+    ) -> bool:
         """Run the automation in specified mode.
 
         Args:
             mode: Execution mode (state_machine, process, single_action)
             monitor_index: Index of monitor to run automation on (0-based)
+            process_id: Optional specific process ID to run (only for mode='process')
         """
         if not self.config:
             print("No configuration loaded")
@@ -126,7 +132,7 @@ class JSONRunner:
             if mode == "state_machine":
                 return self._run_state_machine()
             elif mode == "process":
-                return self._run_processes()
+                return self._run_processes(process_id)
             elif mode == "single_action":
                 return self._run_single_actions()
             else:
@@ -159,8 +165,12 @@ class JSONRunner:
 
         return cast(bool, result)
 
-    def _run_processes(self) -> bool:
-        """Run all processes sequentially."""
+    def _run_processes(self, process_id: str | None = None) -> bool:
+        """Run processes sequentially.
+
+        Args:
+            process_id: Optional specific process ID to run. If None, runs all processes.
+        """
         print("\n=== Running Processes ===\n")
 
         # Type guards: ensure config and its attributes are not None
@@ -168,12 +178,24 @@ class JSONRunner:
             print("No processes to execute")
             return True
 
+        # Determine which processes to run
+        if process_id:
+            process = self.config.process_map.get(process_id)
+            if not process:
+                print(f"Process {process_id} not found")
+                return False
+            processes_to_run = [process]
+            print(f"Running specific process: {process.name}")
+        else:
+            processes_to_run = self.config.processes
+            print(f"Running all {len(processes_to_run)} processes")
+
         action_executor = ActionExecutor(self.config)
         # Pass monitor manager to action executor
         if hasattr(action_executor, "set_monitor_manager"):
             action_executor.set_monitor_manager(self.monitor_manager)
 
-        for process in self.config.processes:
+        for process in processes_to_run:
             print(f"\nExecuting process: {process.name}")
 
             for action in process.actions:
