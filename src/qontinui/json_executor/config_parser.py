@@ -403,9 +403,9 @@ class ConfigParser:
                 ]
 
         return StateImage(
-            image_id=data["imageId"],
-            threshold=data["threshold"],
-            required=data["required"],
+            image_id=data.get("imageId", ""),
+            threshold=data.get("threshold", 0.9),
+            required=data.get("required", True),
             search_regions=search_regions,
             fixed=data.get("fixed", False),
             shared=data.get("shared", False),
