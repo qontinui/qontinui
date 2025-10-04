@@ -143,13 +143,13 @@ class Transition:
 
     id: str
     type: str
-    processes: list[str] = field(default_factory=list)
+    process: str = ""
     timeout: int = 10000
     retry_count: int = 3
 
 
 @dataclass
-class FromTransition(Transition):
+class OutgoingTransition(Transition):
     """Transition from one state to another."""
 
     from_state: str = ""
@@ -160,7 +160,7 @@ class FromTransition(Transition):
 
 
 @dataclass
-class ToTransition(Transition):
+class IncomingTransition(Transition):
     """Transition to a state."""
 
     to_state: str = ""
@@ -448,14 +448,10 @@ class ConfigParser:
 
     def _parse_state(self, data: dict[str, Any]) -> State:
         """Parse state from dictionary."""
-        identifying_images = [
-            self._parse_state_image(img) for img in data.get("identifyingImages", [])
-        ]
-        state_regions = [self._parse_state_region(r) for r in data.get("stateRegions", [])]
-        state_locations = [
-            self._parse_state_location(loc) for loc in data.get("stateLocations", [])
-        ]
-        state_strings = [self._parse_state_string(s) for s in data.get("stateStrings", [])]
+        identifying_images = [self._parse_state_image(img) for img in data.get("stateImages", [])]
+        state_regions = [self._parse_state_region(r) for r in data.get("regions", [])]
+        state_locations = [self._parse_state_location(loc) for loc in data.get("locations", [])]
+        state_strings = [self._parse_state_string(s) for s in data.get("strings", [])]
 
         return State(
             id=data["id"],
@@ -474,27 +470,27 @@ class ConfigParser:
         """Parse transition from dictionary."""
         transition_type = data["type"]
 
-        if transition_type == "FromTransition":
-            return FromTransition(
+        if transition_type == "OutgoingTransition":
+            return OutgoingTransition(
                 id=data["id"],
                 type=transition_type,
-                processes=data["processes"],
-                timeout=data["timeout"],
-                retry_count=data["retryCount"],
-                from_state=data["fromState"],
-                to_state=data["toState"],
-                stays_visible=data["staysVisible"],
+                process=data.get("process", ""),
+                timeout=data.get("timeout", 10000),
+                retry_count=data.get("retryCount", 3),
+                from_state=data.get("fromState", ""),
+                to_state=data.get("toState", ""),
+                stays_visible=data.get("staysVisible", False),
                 activate_states=data.get("activateStates", []),
                 deactivate_states=data.get("deactivateStates", []),
             )
-        else:  # ToTransition
-            return ToTransition(
+        else:  # IncomingTransition
+            return IncomingTransition(
                 id=data["id"],
                 type=transition_type,
-                processes=data["processes"],
-                timeout=data["timeout"],
-                retry_count=data["retryCount"],
-                to_state=data["toState"],
+                process=data.get("process", ""),
+                timeout=data.get("timeout", 10000),
+                retry_count=data.get("retryCount", 3),
+                to_state=data.get("toState", ""),
             )
 
     def _parse_execution_settings(self, data: dict[str, Any]) -> ExecutionSettings:

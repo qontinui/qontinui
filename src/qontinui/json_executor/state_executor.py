@@ -4,7 +4,13 @@ import time
 from typing import Any
 
 from .action_executor import ActionExecutor
-from .config_parser import FromTransition, Process, QontinuiConfig, ToTransition, Transition
+from .config_parser import (
+    IncomingTransition,
+    OutgoingTransition,
+    Process,
+    QontinuiConfig,
+    Transition,
+)
 
 
 class StateExecutor:
@@ -120,28 +126,28 @@ class StateExecutor:
         if not self.current_state:
             return False
 
-        # Find FromTransitions from current state
-        from_transitions = self._find_from_transitions(self.current_state)
+        # Find OutgoingTransitions from current state
+        outgoing_transitions = self._find_outgoing_transitions(self.current_state)
 
-        for transition in from_transitions:
+        for transition in outgoing_transitions:
             if self._execute_transition(transition):
                 return True
 
         return False
 
-    def _find_from_transitions(self, state_id: str) -> list[FromTransition]:
-        """Find all FromTransitions from a given state."""
+    def _find_outgoing_transitions(self, state_id: str) -> list[OutgoingTransition]:
+        """Find all OutgoingTransitions from a given state."""
         transitions = []
         for trans in self.config.transitions:
-            if isinstance(trans, FromTransition) and trans.from_state == state_id:
+            if isinstance(trans, OutgoingTransition) and trans.from_state == state_id:
                 transitions.append(trans)
         return transitions
 
-    def _find_to_transitions(self, state_id: str) -> list[ToTransition]:
-        """Find all ToTransitions to a given state."""
+    def _find_incoming_transitions(self, state_id: str) -> list[IncomingTransition]:
+        """Find all IncomingTransitions to a given state."""
         transitions = []
         for trans in self.config.transitions:
-            if isinstance(trans, ToTransition) and trans.to_state == state_id:
+            if isinstance(trans, IncomingTransition) and trans.to_state == state_id:
                 transitions.append(trans)
         return transitions
 
@@ -149,18 +155,18 @@ class StateExecutor:
         """Execute a single transition."""
         print(f"\nExecuting transition: {transition.id}")
 
-        # Execute processes in the transition
-        for process_id in transition.processes:
-            process = self.config.process_map.get(process_id)
+        # Execute process in the transition
+        if transition.process:
+            process = self.config.process_map.get(transition.process)
             if process:
                 if not self._execute_process(process):
                     print(f"Process {process.name} failed")
                     return False
             else:
-                print(f"Process {process_id} not found")
+                print(f"Process {transition.process} not found")
 
-        # Handle state changes for FromTransition
-        if isinstance(transition, FromTransition):
+        # Handle state changes for OutgoingTransition
+        if isinstance(transition, OutgoingTransition):
             # Deactivate states
             for state_id in transition.deactivate_states:
                 self.active_states.discard(state_id)
@@ -189,10 +195,10 @@ class StateExecutor:
                 if target_state:
                     print(f"Transitioned to state: {target_state.name}")
 
-                # Execute ToTransitions for the new state
-                to_transitions = self._find_to_transitions(transition.to_state)
-                for to_trans in to_transitions:
-                    self._execute_transition(to_trans)
+                # Execute IncomingTransitions for the new state
+                incoming_transitions = self._find_incoming_transitions(transition.to_state)
+                for incoming_trans in incoming_transitions:
+                    self._execute_transition(incoming_trans)
 
             # Handle stays_visible
             if not transition.stays_visible and transition.from_state:

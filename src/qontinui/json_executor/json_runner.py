@@ -88,9 +88,8 @@ class JSONRunner:
         # Validate processes exist
         process_ids = {p.id for p in self.config.processes}
         for trans in self.config.transitions:
-            for pid in trans.processes:
-                if pid not in process_ids:
-                    errors.append(f"Transition {trans.id} references unknown process: {pid}")
+            if trans.process and trans.process not in process_ids:
+                errors.append(f"Transition {trans.id} references unknown process: {trans.process}")
 
         # Validate images exist and have valid data
         for img in self.config.images:
