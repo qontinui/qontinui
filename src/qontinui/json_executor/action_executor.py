@@ -475,8 +475,12 @@ class ActionExecutor:
         """Execute MOVE action - move mouse to position."""
         location = self._get_target_location(action.config)
         if location:
-            Mouse.move(location[0], location[1])
-            print(f"Moved mouse to {location}")
+            # Get duration from config (in milliseconds, convert to seconds)
+            duration_ms = action.config.get("duration", 0)
+            duration_seconds = duration_ms / 1000.0 if duration_ms else 0.0
+
+            Mouse.move(location[0], location[1], duration_seconds)
+            print(f"Moved mouse to {location} (duration: {duration_ms}ms)")
             return True
         return False
 
