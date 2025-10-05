@@ -1,8 +1,8 @@
 """State machine executor for Qontinui automation."""
 
-import time
 from typing import Any
 
+from ..wrappers import Time
 from .action_executor import ActionExecutor
 from .config_parser import (
     IncomingTransition,
@@ -18,10 +18,11 @@ class StateExecutor:
 
     def __init__(self, config: QontinuiConfig):
         self.config = config
-        self.action_executor = ActionExecutor(config)
         self.active_states: set[str] = set()
         self.current_state: str | None = None
         self.state_history: list[str] = []
+        # Pass self to action executor so it can change states
+        self.action_executor = ActionExecutor(config, state_executor=self)
 
     def initialize(self):
         """Initialize the state machine."""
@@ -74,7 +75,7 @@ class StateExecutor:
                 print("No applicable transitions found")
                 # Check if we should wait or exit
                 if self._should_continue():
-                    time.sleep(1)
+                    Time.wait(1)
                 else:
                     break
 
@@ -167,7 +168,12 @@ class StateExecutor:
 
         # Handle state changes for OutgoingTransition
         if isinstance(transition, OutgoingTransition):
-            # Deactivate states
+            # Collect all states to activate (to_state + activate_states)
+            states_to_activate = set(transition.activate_states)
+            if transition.to_state:
+                states_to_activate.add(transition.to_state)
+
+            # Deactivate states in deactivate_states
             for state_id in transition.deactivate_states:
                 self.active_states.discard(state_id)
                 state_obj: Any = self.config.state_map.get(state_id, {})
@@ -176,33 +182,43 @@ class StateExecutor:
                 else:
                     print(f"Deactivated state: {state_obj.name}")
 
-            # Activate states
-            for state_id in transition.activate_states:
-                self.active_states.add(state_id)
-                state_obj = self.config.state_map.get(state_id, {})
-                if isinstance(state_obj, dict):
-                    print(f"Activated state: {state_id}")
-                else:
-                    print(f"Activated state: {state_obj.name}")
+            # Activate target states with IncomingTransition verification
+            for state_id in states_to_activate:
+                # Check if state has IncomingTransitions
+                incoming_transitions = self._find_incoming_transitions(state_id)
 
-            # Move to target state
-            if transition.to_state:
-                self.current_state = transition.to_state
-                self.active_states.add(transition.to_state)
-                self.state_history.append(transition.to_state)
+                activation_allowed = True
+                if incoming_transitions:
+                    # Execute IncomingTransitions - if any fail, don't activate this state
+                    for incoming_trans in incoming_transitions:
+                        if not self._execute_transition(incoming_trans):
+                            print(f"IncomingTransition failed for state {state_id}, not activating")
+                            activation_allowed = False
+                            break
 
-                target_state = self.config.state_map.get(transition.to_state)
-                if target_state:
-                    print(f"Transitioned to state: {target_state.name}")
+                # Only activate if IncomingTransitions succeeded (or none exist)
+                if activation_allowed:
+                    self.active_states.add(state_id)
+                    state_obj = self.config.state_map.get(state_id, {})
+                    if isinstance(state_obj, dict):
+                        print(f"Activated state: {state_id}")
+                    else:
+                        print(f"Activated state: {state_obj.name}")
 
-                # Execute IncomingTransitions for the new state
-                incoming_transitions = self._find_incoming_transitions(transition.to_state)
-                for incoming_trans in incoming_transitions:
-                    self._execute_transition(incoming_trans)
+                    # Update current_state if this is the to_state
+                    if state_id == transition.to_state:
+                        self.current_state = transition.to_state
+                        self.state_history.append(transition.to_state)
+                        target_state = self.config.state_map.get(transition.to_state)
+                        if target_state:
+                            print(f"Transitioned to state: {target_state.name}")
 
-            # Handle stays_visible
-            if not transition.stays_visible and transition.from_state:
+            # Handle origin state: deactivate by DEFAULT unless stays_visible=True
+            if transition.from_state and not transition.stays_visible:
                 self.active_states.discard(transition.from_state)
+                from_state = self.config.state_map.get(transition.from_state)
+                if from_state:
+                    print(f"Deactivated origin state: {from_state.name}")
 
         return True
 

@@ -29,7 +29,7 @@ class MSSScreenCapture(IScreenCapture):
             config: HAL configuration
         """
         self.config = config or HALConfig()
-        self.sct = mss.mss()
+        self._sct = None  # Will be lazily initialized per thread
         self._monitors = self._detect_monitors()
 
         # Caching
@@ -43,6 +43,24 @@ class MSSScreenCapture(IScreenCapture):
             monitor_count=len(self._monitors),
             cache_enabled=self._cache_enabled,
         )
+
+    @property
+    def sct(self) -> mss.mss:
+        """Get or create thread-local mss instance.
+
+        This ensures each thread has its own mss instance to avoid
+        thread-local storage issues with Windows GDI.
+        """
+        import threading
+
+        if not hasattr(self, '_thread_local'):
+            self._thread_local = threading.local()
+
+        if not hasattr(self._thread_local, 'sct'):
+            self._thread_local.sct = mss.mss()
+            logger.debug("mss_instance_created", thread_id=threading.current_thread().ident)
+
+        return self._thread_local.sct
 
     def _detect_monitors(self) -> list[Monitor]:
         """Detect all available monitors.
@@ -374,8 +392,11 @@ class MSSScreenCapture(IScreenCapture):
 
     def close(self) -> None:
         """Close screen capture resources."""
-        if hasattr(self, "sct"):
-            self.sct.close()
+        if hasattr(self, '_thread_local') and hasattr(self._thread_local, 'sct'):
+            try:
+                self._thread_local.sct.close()
+            except Exception as e:
+                logger.debug(f"Error closing mss instance: {e}")
         self.clear_cache()
         logger.debug("mss_capture_closed")
 

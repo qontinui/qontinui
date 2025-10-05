@@ -1,6 +1,5 @@
 """Pynput-based input controller implementation."""
 
-import time
 from typing import Any, cast
 
 from pynput import keyboard, mouse
@@ -8,6 +7,7 @@ from pynput.keyboard import Key as PynputKey
 from pynput.mouse import Button as PynputButton
 
 from ...logging import get_logger
+from ...wrappers import Time
 from ..config import HALConfig
 from ..interfaces.input_controller import IInputController, Key, MouseButton, MousePosition
 
@@ -152,7 +152,7 @@ class PynputController(IInputController):
                     current_y = int(start_y + (y - start_y) * progress)
                     self.mouse_controller.position = (current_x, current_y)
                     if i < steps:
-                        time.sleep(delay)
+                        Time.wait(delay)
             else:
                 # Instant movement
                 self.mouse_controller.position = (x, y)
@@ -213,7 +213,7 @@ class PynputController(IInputController):
             for i in range(clicks):
                 self.mouse_controller.click(pynput_button)
                 if i < clicks - 1 and interval > 0:
-                    time.sleep(interval)
+                    Time.wait(interval)
 
             logger.debug(f"Mouse clicked {clicks} time(s) with {button}")
             return True
@@ -309,11 +309,11 @@ class PynputController(IInputController):
             self.mouse_controller.press(pynput_button)
 
             # Move to end position
-            time.sleep(0.1)  # Small delay before drag
+            Time.wait(0.1)  # Small delay before drag
             self.mouse_move(end_x, end_y, duration)
 
             # Release button
-            time.sleep(0.1)  # Small delay before release
+            Time.wait(0.1)  # Small delay before release
             self.mouse_controller.release(pynput_button)
 
             logger.debug(f"Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
@@ -456,7 +456,7 @@ class PynputController(IInputController):
                 self.keyboard_controller.press(pynput_key)
                 self.keyboard_controller.release(pynput_key)
                 if i < presses - 1 and interval > 0:
-                    time.sleep(interval)
+                    Time.wait(interval)
 
             logger.debug(f"Key '{key}' pressed {presses} time(s)")
             return True
@@ -519,7 +519,7 @@ class PynputController(IInputController):
             if interval > 0:
                 for char in text:
                     self.keyboard_controller.type(char)
-                    time.sleep(interval)
+                    Time.wait(interval)
             else:
                 self.keyboard_controller.type(text)
 
@@ -548,7 +548,7 @@ class PynputController(IInputController):
                 self.keyboard_controller.press(key)
 
             # Small delay
-            time.sleep(0.05)
+            Time.wait(0.05)
 
             # Release all keys in reverse order
             for key in reversed(pynput_keys):

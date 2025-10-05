@@ -27,6 +27,11 @@ class JSONRunner:
             return False
 
         try:
+            # Cleanup old temp directory before loading new config
+            if self.config:
+                self.cleanup()
+                print("Cleaned up previous configuration")
+
             print(f"Loading configuration from: {path}")
             self.config = self.parser.parse_file(path)
 
@@ -106,19 +111,26 @@ class JSONRunner:
 
     def run(
         self,
-        mode: str = "state_machine",
+        process_id: str,
         monitor_index: int | None = None,
-        process_id: str | None = None,
     ) -> bool:
-        """Run the automation in specified mode.
+        """Run model-based automation starting with a specific process.
+
+        Qontinui is a model-based framework that uses state traversal and pathfinding.
+        Execution starts by running a specified process, and the framework automatically
+        handles state navigation through the state graph.
 
         Args:
-            mode: Execution mode (state_machine, process, single_action)
+            process_id: ID of the process to execute (required entry point)
             monitor_index: Index of monitor to run automation on (0-based)
-            process_id: Optional specific process ID to run (only for mode='process')
         """
         if not self.config:
             print("No configuration loaded")
+            return False
+
+        # Validate process exists
+        if process_id not in self.config.process_map:
+            print(f"Process '{process_id}' not found in configuration")
             return False
 
         # Set monitor index if provided
@@ -129,15 +141,7 @@ class JSONRunner:
             self._configure_monitor(monitor_index)
 
         try:
-            if mode == "state_machine":
-                return self._run_state_machine()
-            elif mode == "process":
-                return self._run_processes(process_id)
-            elif mode == "single_action":
-                return self._run_single_actions()
-            else:
-                print(f"Unknown mode: {mode}")
-                return False
+            return self._run_process_with_state_machine(process_id)
 
         except KeyboardInterrupt:
             print("\n\nAutomation interrupted by user")
@@ -145,94 +149,45 @@ class JSONRunner:
         except Exception as e:
             print(f"Error during execution: {e}")
             return False
-        finally:
-            self.cleanup()
+        # Note: Don't cleanup here - temp images need to persist across multiple runs
+        # Cleanup happens when new config is loaded or runner is destroyed
 
-    def _run_state_machine(self) -> bool:
-        """Run automation using state machine mode."""
-        print("\n=== Starting State Machine Execution ===\n")
+    def _run_process_with_state_machine(self, process_id: str) -> bool:
+        """Run a process with full state machine support.
+
+        This executes the specified process while using state traversal for navigation.
+        All GO_TO_STATE actions automatically use pathfinding through the state graph.
+
+        Args:
+            process_id: Process to execute
+        """
+        print("\n=== Starting Model-Based Execution ===\n")
 
         if not self.state_executor:
             print("State executor not initialized")
             return False
 
-        # Execute the state machine
-        result = self.state_executor.execute()
+        process = self.config.process_map[process_id]
+        print(f"Running process: {process.name}")
 
-        print("\n=== State Machine Execution Complete ===")
+        # Initialize state machine if needed
+        if not self.state_executor.current_state:
+            self.state_executor.initialize()
+
+        # Execute the process through state executor's action executor
+        for action in process.actions:
+            if not self.state_executor.action_executor.execute_action(action):
+                print(f"Action {action.id} failed in process {process.name}")
+                if (
+                    self.config.execution_settings is not None
+                    and self.config.execution_settings.failure_strategy == "stop"
+                ):
+                    return False
+
+        print("\n=== Execution Complete ===")
         print(f"Active states: {self.state_executor.get_active_states()}")
         print(f"State history: {self.state_executor.get_state_history()}")
 
-        return cast(bool, result)
-
-    def _run_processes(self, process_id: str | None = None) -> bool:
-        """Run processes sequentially.
-
-        Args:
-            process_id: Optional specific process ID to run. If None, runs all processes.
-        """
-        print("\n=== Running Processes ===\n")
-
-        # Type guards: ensure config and its attributes are not None
-        if self.config is None or self.config.processes is None:
-            print("No processes to execute")
-            return True
-
-        # Determine which processes to run
-        if process_id:
-            process = self.config.process_map.get(process_id)
-            if not process:
-                print(f"Process {process_id} not found")
-                return False
-            processes_to_run = [process]
-            print(f"Running specific process: {process.name}")
-        else:
-            processes_to_run = self.config.processes
-            print(f"Running all {len(processes_to_run)} processes")
-
-        action_executor = ActionExecutor(self.config)
-        # Pass monitor manager to action executor
-        if hasattr(action_executor, "set_monitor_manager"):
-            action_executor.set_monitor_manager(self.monitor_manager)
-
-        for process in processes_to_run:
-            print(f"\nExecuting process: {process.name}")
-
-            for action in process.actions:
-                if not action_executor.execute_action(action):
-                    print(f"Action {action.id} failed in process {process.name}")
-                    if (
-                        self.config.execution_settings is not None
-                        and self.config.execution_settings.failure_strategy == "stop"
-                    ):
-                        return False
-
-        print("\n=== Process Execution Complete ===")
-        return True
-
-    def _run_single_actions(self) -> bool:
-        """Run all actions from all processes individually."""
-        print("\n=== Running Individual Actions ===\n")
-
-        # Type guards: ensure config and its attributes are not None
-        if self.config is None or self.config.processes is None:
-            print("No processes to execute")
-            return True
-
-        action_executor = ActionExecutor(self.config)
-
-        for process in self.config.processes:
-            for action in process.actions:
-                print(f"\nFrom process '{process.name}':")
-                if not action_executor.execute_action(action):
-                    print(f"Action {action.id} failed")
-                    if (
-                        self.config.execution_settings is not None
-                        and self.config.execution_settings.failure_strategy == "stop"
-                    ):
-                        return False
-
-        print("\n=== Action Execution Complete ===")
         return True
 
     def _configure_monitor(self, monitor_index: int):
@@ -264,6 +219,13 @@ class JSONRunner:
         if self.parser:
             self.parser.cleanup()
             print("Cleaned up temporary files")
+
+    def __del__(self):
+        """Destructor to ensure cleanup on object destruction."""
+        try:
+            self.cleanup()
+        except Exception:
+            pass  # Silently ignore errors during cleanup
 
     def get_summary(self) -> dict[str, Any]:
         """Get execution summary."""

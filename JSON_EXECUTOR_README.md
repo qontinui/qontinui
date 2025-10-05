@@ -25,27 +25,20 @@ python run_json.py path/to/config.json
 python run_json.py config.json [options]
 
 Options:
-  --mode {state_machine,process,single_action}
-                        Execution mode (default: state_machine)
   --verbose            Enable verbose output
   --dry-run           Validate configuration without executing
   -h, --help          Show help message
 ```
 
-### Execution Modes
+### Execution Mode
 
-1. **state_machine** (default): Execute using state machine logic with transitions
-2. **process**: Execute all processes sequentially
-3. **single_action**: Execute all individual actions
+Qontinui is a model-based GUI automation framework. All automation is executed using state machine logic with transitions between states. This ensures robust, predictable automation flows.
 
 ### Examples
 
 ```bash
-# Run with state machine (default)
+# Run automation (uses state machine mode)
 python run_json.py examples/simple_automation.json
-
-# Run processes only
-python run_json.py my_config.json --mode process
 
 # Validate configuration without running
 python run_json.py my_config.json --dry-run
@@ -67,8 +60,8 @@ runner = JSONRunner()
 # Load configuration
 runner.load_configuration('path/to/config.json')
 
-# Run automation
-runner.run(mode='state_machine')
+# Run automation (always uses state machine mode)
+runner.run()
 
 # Clean up
 runner.cleanup()

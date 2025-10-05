@@ -130,6 +130,7 @@ class Transition:
     action_data: dict[str, Any] = field(default_factory=dict)
     probability: float = 1.0
     conditions: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert transition to dictionary."""
@@ -141,6 +142,7 @@ class Transition:
             "action_data": self.action_data,
             "probability": self.probability,
             "conditions": self.conditions,
+            "metadata": self.metadata,
         }
 
     @classmethod
@@ -154,6 +156,7 @@ class Transition:
             action_data=data.get("action_data", {}),
             probability=data.get("probability", 1.0),
             conditions=data.get("conditions", []),
+            metadata=data.get("metadata", {}),
         )
 
 

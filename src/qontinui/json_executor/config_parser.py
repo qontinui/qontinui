@@ -2,11 +2,16 @@
 
 import base64
 import hashlib
+import io
 import json
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from PIL import Image
+
+from .constants import DEFAULT_SIMILARITY_THRESHOLD
 
 
 @dataclass
@@ -72,16 +77,29 @@ class SearchRegion:
 
 
 @dataclass
+class Pattern:
+    """Pattern data within a StateImage."""
+
+    id: str
+    name: str
+    image: str  # base64 encoded image data (data:image/png;base64,...)
+    mask: str | None = None  # optional mask data
+    search_regions: list[SearchRegion] = field(default_factory=list)
+    fixed: bool = False
+
+
+@dataclass
 class StateImage:
     """Image reference for state identification."""
 
-    image_id: str
-    threshold: float
+    id: str
+    name: str
+    patterns: list[Pattern] = field(default_factory=list)
+    threshold: float = DEFAULT_SIMILARITY_THRESHOLD
     required: bool = True
-    search_regions: list[SearchRegion] = field(default_factory=list)
-    fixed: bool = False
     shared: bool = False
-    probability: float = 1.0
+    source: str = ""
+    search_regions: list[SearchRegion] = field(default_factory=list)
 
 
 @dataclass
@@ -181,7 +199,7 @@ class ExecutionSettings:
 class RecognitionSettings:
     """Image recognition settings."""
 
-    default_threshold: float = 0.9
+    default_threshold: float = DEFAULT_SIMILARITY_THRESHOLD
     search_algorithm: str = "template_matching"
     multi_scale_search: bool = True
     color_space: str = "rgb"
@@ -214,6 +232,56 @@ class QontinuiConfig:
         self.process_map = {p.id: p for p in self.processes}
         self.state_map = {s.id: s for s in self.states}
         self.image_map = {i.id: i for i in self.images}
+
+        # Extract image data from StateImage patterns and create ImageAsset objects
+        # This allows actions to reference StateImages by their ID directly
+        stateimage_count = 0
+        for state in self.states:
+            for state_image in state.identifying_images:
+                if state_image.patterns:
+                    # Use the first pattern's image data
+                    # Future enhancement: handle multiple patterns per StateImage
+                    pattern = state_image.patterns[0]
+
+                    # Extract base64 data from data URL (data:image/png;base64,...)
+                    if pattern.image.startswith("data:"):
+                        try:
+                            # Parse data URL: data:image/png;base64,iVBORw0...
+                            header, base64_data = pattern.image.split(",", 1)
+
+                            # Extract format from header
+                            format_part = header.split(":")[1].split(";")[0]  # "image/png"
+                            image_format = format_part.split("/")[1]  # "png"
+
+                            # Decode to get image dimensions
+                            image_bytes = base64.b64decode(base64_data)
+                            pil_image = Image.open(io.BytesIO(image_bytes))
+                            width, height = pil_image.size
+
+                            # Create hash for integrity
+                            image_hash = hashlib.sha256(base64_data.encode()).hexdigest()
+
+                            # Create ImageAsset from StateImage pattern
+                            image_asset = ImageAsset(
+                                id=state_image.id,
+                                name=state_image.name,
+                                data=base64_data,
+                                format=image_format,
+                                width=width,
+                                height=height,
+                                hash=image_hash,
+                            )
+
+                            self.image_map[state_image.id] = image_asset
+                            stateimage_count += 1
+                            print(f"[DEBUG] Created ImageAsset from StateImage {state_image.id} ({width}x{height} {image_format})")
+                        except Exception as e:
+                            print(f"[ERROR] Failed to create ImageAsset from StateImage {state_image.id}: {e}")
+                else:
+                    print(f"[WARNING] StateImage {state_image.id} has no patterns")
+
+        print(f"[DEBUG] image_map now contains {len(self.image_map)} entries ({stateimage_count} StateImages added)")
+        print(f"[DEBUG] image_map keys: {list(self.image_map.keys())}")
 
 
 class ConfigParser:
@@ -392,32 +460,70 @@ class ConfigParser:
             height=data["height"],
         )
 
+    def _parse_pattern(self, data: dict[str, Any]) -> Pattern:
+        """Parse pattern from dictionary."""
+        search_regions = []
+        if "searchRegions" in data:
+            search_regions = [
+                self._parse_search_region(r) for r in data["searchRegions"]
+            ]
+
+        return Pattern(
+            id=data.get("id", ""),
+            name=data.get("name", ""),
+            image=data.get("image", ""),
+            mask=data.get("mask"),
+            search_regions=search_regions,
+            fixed=data.get("fixed", False),
+        )
+
     def _parse_state_image(self, data: dict[str, Any]) -> StateImage:
         """Parse state image from dictionary."""
         search_regions = []
         if "searchRegions" in data:
             search_regions_data = data["searchRegions"]
-            if "regions" in search_regions_data:
+            if isinstance(search_regions_data, list):
+                search_regions = [
+                    self._parse_search_region(r) for r in search_regions_data
+                ]
+            elif "regions" in search_regions_data:
                 search_regions = [
                     self._parse_search_region(r) for r in search_regions_data["regions"]
                 ]
 
+        patterns = []
+        if "patterns" in data:
+            patterns = [self._parse_pattern(p) for p in data["patterns"]]
+
         return StateImage(
-            image_id=data.get("imageId", ""),
-            threshold=data.get("threshold", 0.9),
+            id=data.get("id", ""),
+            name=data.get("name", ""),
+            patterns=patterns,
+            threshold=data.get("threshold", DEFAULT_SIMILARITY_THRESHOLD),
             required=data.get("required", True),
-            search_regions=search_regions,
-            fixed=data.get("fixed", False),
             shared=data.get("shared", False),
-            probability=data.get("probability", 1.0),
+            source=data.get("source", ""),
+            search_regions=search_regions,
         )
 
     def _parse_state_region(self, data: dict[str, Any]) -> StateRegion:
         """Parse state region from dictionary."""
+        # Handle both bounds format and direct x,y,w,h format
+        if "bounds" in data:
+            bounds = data["bounds"]
+        else:
+            # Build bounds from x, y, width, height
+            bounds = {
+                "x": data.get("x", 0),
+                "y": data.get("y", 0),
+                "width": data.get("width", 0),
+                "height": data.get("height", 0),
+            }
+
         return StateRegion(
-            id=data["id"],
-            name=data["name"],
-            bounds=data["bounds"],
+            id=data.get("id", ""),
+            name=data.get("name", ""),
+            bounds=bounds,
             fixed=data.get("fixed", True),
             is_search_region=data.get("isSearchRegion", False),
             is_interaction_region=data.get("isInteractionRegion", False),
@@ -520,13 +626,18 @@ class ConfigParser:
         self.temp_dir = Path(tempfile.mkdtemp(prefix="qontinui_images_"))
         config.image_directory = self.temp_dir
 
-        # Save each image
-        for image in config.images:
+        # Save all images from image_map (includes both regular images and StateImage-derived images)
+        saved_count = 0
+        for image_id, image in config.image_map.items():
             try:
-                image.save_to_file(self.temp_dir)
-                print(f"Saved image: {image.name} to {image.file_path}")
+                if image.file_path is None:  # Only save if not already saved
+                    image.save_to_file(self.temp_dir)
+                    print(f"Saved image: {image.name} to {image.file_path}")
+                    saved_count += 1
             except Exception as e:
                 print(f"Failed to save image {image.name}: {e}")
+
+        print(f"[DEBUG] Saved {saved_count} images to {self.temp_dir}")
 
     def cleanup(self):
         """Clean up temporary files."""

@@ -1,15 +1,18 @@
 """Pattern class with mask support for pattern optimization and matching.
 
 This is the unified Pattern class that combines basic pattern matching
-with advanced mask-based optimization capabilities.
+with advanced mask-based optimization capabilities. Port of Brobot's Pattern class.
 """
 
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from ..search_regions import SearchRegions
 
 
 @dataclass
@@ -17,6 +20,7 @@ class Pattern:
     """
     A pattern with an associated mask for matching.
     This is the core class for Pattern Optimization.
+    Port of Brobot's Pattern class with mask-based extensions.
     """
 
     id: str
@@ -43,16 +47,16 @@ class Pattern:
     # Pattern-level similarity threshold (overrides application-level default)
     # This is the second level of precedence (below FindOptions, above application default)
     similarity: float | None = None  # If None, uses application default
-    similarity_threshold: float = 0.95  # DEPRECATED: Use 'similarity' instead
     use_color: bool = True
     scale_invariant: bool = False
     rotation_invariant: bool = False
 
-    # Search regions - Pattern-level search regions (precedence level 2: below Options, above StateImage)
-    # These are regions from StateRegions that restrict where matches are valid
-    search_regions: list[dict[str, Any]] = field(
-        default_factory=list
-    )  # List of {id, name, x, y, width, height, referenceImageId}
+    # Brobot Pattern properties
+    fixed: bool = False  # An image that should always appear in the same location has fixed==true
+    dynamic: bool = False  # Dynamic images cannot be found using pattern matching
+
+    # Search regions - Following Brobot's model with SearchRegions object
+    search_regions: "SearchRegions" = field(default_factory=lambda: None)  # type: ignore
 
     # Statistics
     match_count: int = 0
@@ -71,6 +75,8 @@ class Pattern:
 
     def __post_init__(self):
         """Initialize computed fields."""
+        from ..search_regions import SearchRegions
+
         if self.width is None:
             self.width = self.pixel_data.shape[1]
         if self.height is None:
@@ -82,10 +88,9 @@ class Pattern:
                 f"Mask shape {self.mask.shape} doesn't match image shape {self.pixel_data.shape[:2]}"
             )
 
-        # Handle backward compatibility: if similarity is None but similarity_threshold is set
-        # This allows migration from old code using similarity_threshold
-        if self.similarity is None and self.similarity_threshold != 0.95:
-            self.similarity = self.similarity_threshold
+        # Initialize SearchRegions if not set
+        if self.search_regions is None:
+            self.search_regions = SearchRegions()
 
     @property
     def masked_pixel_hash(self) -> str:
@@ -538,16 +543,70 @@ class Pattern:
 
         Returns:
             Self for method chaining
-
-        Note:
-            This method stores the search region for later use but doesn't
-            directly affect Pattern matching. The Find class should use this
-            information when configuring search operations.
         """
-        # Pattern class doesn't store search_region directly, but we can
-        # add it for compatibility with StateImage.get_pattern()
-        # In practice, search region is handled by the Find class
+        self.search_regions.add_region(region)
         return self
+
+    def add_search_region(self, region: Any) -> None:
+        """Add a search region where this pattern should be looked for.
+
+        Args:
+            region: The region to add to the search areas
+        """
+        self.search_regions.add_search_regions(region)
+
+    def reset_fixed_search_region(self) -> None:
+        """Reset the fixed search region, allowing the pattern to be found anywhere."""
+        self.search_regions.reset_fixed_region()
+
+    def set_search_regions_to(self, *regions: Any) -> None:
+        """Set the search regions to the specified regions.
+
+        Args:
+            *regions: Variable number of Region objects
+        """
+        self.search_regions.set_regions(list(regions))
+
+    def get_regions(self) -> list[Any]:
+        """Get all search regions for this pattern.
+
+        If the image has a fixed location and has already been found, the region
+        where it was found is returned. Otherwise, all regions are returned.
+
+        Returns:
+            All usable regions
+        """
+        return self.search_regions.get_regions(self.fixed)
+
+    def get_regions_for_search(self) -> list[Any]:
+        """Get regions for searching, with full-screen default if none are configured.
+
+        This is the method to use when actually performing searches.
+
+        Returns:
+            Regions for searching (never empty)
+        """
+        return self.search_regions.get_regions_for_search()
+
+    def get_region(self) -> Any:
+        """Get a region for this pattern.
+
+        If the image has a fixed location and has already been found, the region
+        where it was found is returned. If there are multiple regions, returns
+        a random selection.
+
+        Returns:
+            A region
+        """
+        return self.search_regions.get_fixed_if_defined_or_random_region(self.fixed)
+
+    def is_defined(self) -> bool:
+        """Check if this pattern has defined search regions.
+
+        Returns:
+            True if regions are defined, False otherwise
+        """
+        return self.search_regions.is_defined(self.fixed)
 
     @classmethod
     def from_match(cls, match: Any, pattern_id: str | None = None) -> "Pattern":

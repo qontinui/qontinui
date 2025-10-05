@@ -5,7 +5,7 @@ Custom exception hierarchy for the Qontinui framework.
 
 from typing import Any
 
-from ..action_type import ActionType
+from ..actions.action_type import ActionType
 
 
 class QontinuiException(Exception):

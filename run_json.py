@@ -18,13 +18,6 @@ def main():
 
     parser.add_argument("config", help="Path to JSON configuration file")
 
-    parser.add_argument(
-        "--mode",
-        choices=["state_machine", "process", "single_action"],
-        default="state_machine",
-        help="Execution mode (default: state_machine)",
-    )
-
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
     parser.add_argument(
@@ -56,10 +49,10 @@ def main():
         sys.exit(0)
 
     # Run automation
-    print(f"\nRunning automation in {args.mode} mode...")
+    print("\nRunning automation in state machine mode...")
     print("Press Ctrl+C to stop\n")
 
-    success = runner.run(mode=args.mode)
+    success = runner.run()
 
     if success:
         print("\nAutomation completed successfully")
