@@ -83,3 +83,6 @@ class ActionType(Enum):
 
     DRAG = auto()
     """Drags from one location to another"""
+
+    RUN_PROCESS = auto()
+    """Executes a named process (sequence of actions) with optional repetition"""

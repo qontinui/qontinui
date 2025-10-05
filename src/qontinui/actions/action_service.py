@@ -20,6 +20,10 @@ from .basic.find.find import Find
 # Import find options
 from .basic.find.pattern_find_options import PatternFindOptions
 
+# Import composite actions
+from .composite.process.run_process import RunProcess
+from .composite.process.run_process_options import RunProcessOptions
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,6 +57,9 @@ class ActionService:
 
         # Register basic actions
         self.register(ClickOptions, Click)
+
+        # Register composite actions
+        self.register(RunProcessOptions, RunProcess)
 
         # Additional actions will be registered as they are implemented
 

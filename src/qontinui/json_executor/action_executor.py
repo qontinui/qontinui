@@ -5,7 +5,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-from ..wrappers import Time, Mouse, Keyboard, Screen
+from ..wrappers import Keyboard, Mouse, Screen, Time
 from .config_parser import Action, QontinuiConfig
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
 
@@ -30,7 +30,9 @@ class ActionExecutor:
         pause_before = action.config.get("pause_before_begin", 0)
         pause_after = action.config.get("pause_after_end", 0)
 
-        print(f"[DEBUG] Action config pause settings: pause_before={pause_before}ms, pause_after={pause_after}ms")
+        print(
+            f"[DEBUG] Action config pause settings: pause_before={pause_before}ms, pause_after={pause_after}ms"
+        )
 
         # Pause before action if specified
         if pause_before > 0:
@@ -53,12 +55,7 @@ class ActionExecutor:
                     # Emit success event
                     event_data = {**action_details, "attempts": attempt + 1}
                     print(f"[DEBUG] Emitting success event with data: {event_data}")
-                    self._emit_action_event(
-                        action.type,
-                        action.id,
-                        True,
-                        event_data
-                    )
+                    self._emit_action_event(action.type, action.id, True, event_data)
 
                     # Pause after action if specified
                     if pause_after > 0:
@@ -76,14 +73,14 @@ class ActionExecutor:
 
             except Exception as e:
                 # Sanitize error message to remove unicode characters
-                error_msg = str(e).encode('ascii', 'replace').decode('ascii')
+                error_msg = str(e).encode("ascii", "replace").decode("ascii")
                 print(f"Error executing action: {error_msg}")
                 # Emit error event
                 self._emit_action_event(
                     action.type,
                     action.id,
                     False,
-                    {**action_details, "error": error_msg, "attempts": attempt + 1}
+                    {**action_details, "error": error_msg, "attempts": attempt + 1},
                 )
                 if not action.continue_on_error and attempt == action.retry_count - 1:
                     raise
@@ -93,7 +90,7 @@ class ActionExecutor:
             action.type,
             action.id,
             False,
-            {**action_details, "attempts": action.retry_count, "reason": "All retries failed"}
+            {**action_details, "attempts": action.retry_count, "reason": "All retries failed"},
         )
         return action.continue_on_error
 
@@ -178,12 +175,13 @@ class ActionExecutor:
     def _emit_event(self, event_name: str, data: dict):
         """Emit event as JSON to stdout for Tauri to parse."""
         import json
+
         event = {
             "type": "event",
             "event": event_name,
             "timestamp": Time.now().timestamp(),
             "sequence": 0,  # Can be managed by caller if needed
-            "data": data
+            "data": data,
         }
         print(json.dumps(event), flush=True)
 
@@ -191,13 +189,11 @@ class ActionExecutor:
         """Emit image recognition event."""
         self._emit_event("image_recognition", data)
 
-    def _emit_action_event(self, action_type: str, action_id: str, success: bool, details: dict = None):
+    def _emit_action_event(
+        self, action_type: str, action_id: str, success: bool, details: dict = None
+    ):
         """Emit action execution event."""
-        data = {
-            "action_type": action_type,
-            "action_id": action_id,
-            "success": success
-        }
+        data = {"action_type": action_type, "action_id": action_id, "success": success}
         if details:
             data.update(details)
         self._emit_event("action_execution", data)
@@ -217,22 +213,24 @@ class ActionExecutor:
             if template is None:
                 error_msg = f"Failed to load template image: {image_path}"
                 print(f"[ERROR] {error_msg}")
-                self._emit_image_recognition_event({
-                    "image_path": image_path,
-                    "template_size": "unknown",
-                    "screenshot_size": f"{screenshot_gray.shape[1]}x{screenshot_gray.shape[0]}",
-                    "threshold": threshold,
-                    "confidence": 0,
-                    "found": False,
-                    "error": error_msg
-                })
+                self._emit_image_recognition_event(
+                    {
+                        "image_path": image_path,
+                        "template_size": "unknown",
+                        "screenshot_size": f"{screenshot_gray.shape[1]}x{screenshot_gray.shape[0]}",
+                        "threshold": threshold,
+                        "confidence": 0,
+                        "found": False,
+                        "error": error_msg,
+                    }
+                )
                 return None
 
             template_size = f"{template.shape[1]}x{template.shape[0]}"
             screenshot_size = f"{screenshot_gray.shape[1]}x{screenshot_gray.shape[0]}"
 
             # Debug info
-            print(f"[IMG] Image Recognition Debug:")
+            print("[IMG] Image Recognition Debug:")
             print(f"   Template: {image_path}")
             print(f"   Template size: {template_size}")
             print(f"   Screenshot size: {screenshot_size}")
@@ -256,15 +254,17 @@ class ActionExecutor:
                 self.last_find_location = (center_x, center_y)
 
                 # Emit success event
-                self._emit_image_recognition_event({
-                    "image_path": image_path,
-                    "template_size": template_size,
-                    "screenshot_size": screenshot_size,
-                    "threshold": threshold,
-                    "confidence": max_val,
-                    "found": True,
-                    "location": location_str
-                })
+                self._emit_image_recognition_event(
+                    {
+                        "image_path": image_path,
+                        "template_size": template_size,
+                        "screenshot_size": screenshot_size,
+                        "threshold": threshold,
+                        "confidence": max_val,
+                        "found": True,
+                        "location": location_str,
+                    }
+                )
                 return (center_x, center_y)
             else:
                 # Calculate how close we were
@@ -275,17 +275,19 @@ class ActionExecutor:
                 print(f"   Best match location: {best_match_str}")
 
                 # Emit failure event
-                self._emit_image_recognition_event({
-                    "image_path": image_path,
-                    "template_size": template_size,
-                    "screenshot_size": screenshot_size,
-                    "threshold": threshold,
-                    "confidence": max_val,
-                    "found": False,
-                    "gap": gap,
-                    "percent_off": percent_off,
-                    "best_match_location": best_match_str
-                })
+                self._emit_image_recognition_event(
+                    {
+                        "image_path": image_path,
+                        "template_size": template_size,
+                        "screenshot_size": screenshot_size,
+                        "threshold": threshold,
+                        "confidence": max_val,
+                        "found": False,
+                        "gap": gap,
+                        "percent_off": percent_off,
+                        "best_match_location": best_match_str,
+                    }
+                )
                 return None
 
         except Exception as e:
@@ -296,15 +298,17 @@ class ActionExecutor:
             # traceback.print_exc()
 
             # Emit error event
-            self._emit_image_recognition_event({
-                "image_path": image_path,
-                "template_size": "unknown",
-                "screenshot_size": "unknown",
-                "threshold": threshold,
-                "confidence": 0,
-                "found": False,
-                "error": error_msg
-            })
+            self._emit_image_recognition_event(
+                {
+                    "image_path": image_path,
+                    "template_size": "unknown",
+                    "screenshot_size": "unknown",
+                    "threshold": threshold,
+                    "confidence": 0,
+                    "found": False,
+                    "error": error_msg,
+                }
+            )
             return None
 
     def _execute_find(self, action: Action) -> bool:
@@ -360,15 +364,17 @@ class ActionExecutor:
             state_id = state_string_source.get("stateId")
             string_ids = state_string_source.get("stringIds", [])
 
-            print(f"[TYPE] Looking for state string:")
+            print("[TYPE] Looking for state string:")
             print(f"   State ID: {state_id}")
             print(f"   String IDs: {string_ids}")
             print(f"   Available states: {list(self.config.state_map.keys())}")
 
             if state_id and string_ids and state_id in self.config.state_map:
                 state = self.config.state_map[state_id]
-                state_strings = getattr(state, 'state_strings', [])
-                print(f"   State strings in '{state_id}': {[(s.id, s.value) for s in state_strings]}")
+                state_strings = getattr(state, "state_strings", [])
+                print(
+                    f"   State strings in '{state_id}': {[(s.id, s.value) for s in state_strings]}"
+                )
 
                 # Find the string in the state
                 for state_string in state_strings:
@@ -387,7 +393,7 @@ class ActionExecutor:
             print(f"[TYPE] Successfully typed: '{text}'")
             return {"typed_text": text}
 
-        print(f"[ERROR] TYPE action failed - no text to type")
+        print("[ERROR] TYPE action failed - no text to type")
         return False
 
     def _execute_key_press(self, action: Action) -> bool:
@@ -412,6 +418,7 @@ class ActionExecutor:
             duration = action.config.get("duration", 1000) / 1000.0
 
             from ..hal.interfaces import MouseButton
+
             Mouse.drag(start[0], start[1], end_x, end_y, MouseButton.LEFT, duration)
             print(f"Dragged from {start} to ({end_x}, {end_y})")
             return True
@@ -481,8 +488,7 @@ class ActionExecutor:
 
         if region:
             Screen.save(
-                filename,
-                region=(region["x"], region["y"], region["width"], region["height"])
+                filename, region=(region["x"], region["y"], region["width"], region["height"])
             )
         else:
             Screen.save(filename)
@@ -544,7 +550,7 @@ class ActionExecutor:
         transition_path = self._map_traversal_to_config_transitions(result.transitions)
 
         if not transition_path:
-            print(f"GO_TO_STATE: Failed to map traversal result to config transitions")
+            print("GO_TO_STATE: Failed to map traversal result to config transitions")
             return False
 
         # Execute each transition in the path
@@ -559,7 +565,16 @@ class ActionExecutor:
 
     def _build_state_graph(self):
         """Build a StateGraph from the JSON config for use with StateTraversal."""
-        from ..state_management.models import State as SMState, StateGraph, Transition as SMTransition, TransitionType
+        from ..state_management.models import (
+            State as SMState,
+        )
+        from ..state_management.models import (
+            StateGraph,
+            TransitionType,
+        )
+        from ..state_management.models import (
+            Transition as SMTransition,
+        )
 
         # Create StateGraph
         state_graph = StateGraph()
@@ -569,14 +584,14 @@ class ActionExecutor:
             sm_state = SMState(
                 name=state.name,
                 elements=[],  # StateGraph doesn't need the actual elements for traversal
-                transitions=[]
+                transitions=[],
             )
             state_graph.add_state(sm_state)
 
         # Add transitions
         for trans in self.config.transitions:
             # Handle OutgoingTransition (has from_state and activateStates/to_state)
-            if hasattr(trans, 'from_state') and trans.from_state:
+            if hasattr(trans, "from_state") and trans.from_state:
                 from_state = self.config.state_map.get(trans.from_state)
                 from_state_name = from_state.name if from_state else None
 
@@ -585,11 +600,11 @@ class ActionExecutor:
                     target_state_ids = []
 
                     # Add to_state if present
-                    if hasattr(trans, 'to_state') and trans.to_state:
+                    if hasattr(trans, "to_state") and trans.to_state:
                         target_state_ids.append(trans.to_state)
 
                     # Add activate_states if present
-                    if hasattr(trans, 'activate_states'):
+                    if hasattr(trans, "activate_states"):
                         target_state_ids.extend(trans.activate_states)
 
                     # Create edges for ALL target states
@@ -601,12 +616,12 @@ class ActionExecutor:
                                 to_state=to_state.name,
                                 action_type=TransitionType.CUSTOM,
                                 probability=1.0,
-                                metadata={"config_transition_id": trans.id}
+                                metadata={"config_transition_id": trans.id},
                             )
                             state_graph.add_transition(sm_transition)
 
             # Handle IncomingTransition (has to_state only, represents entry from any state)
-            elif hasattr(trans, 'to_state') and trans.to_state:
+            elif hasattr(trans, "to_state") and trans.to_state:
                 # IncomingTransitions don't create edges - they represent
                 # processes that verify you've reached a state
                 pass
@@ -641,7 +656,7 @@ class ActionExecutor:
         return config_transitions
 
     def _execute_run_process(self, action: Action) -> bool:
-        """Execute RUN_PROCESS action - runs a nested process and emits events for its actions."""
+        """Execute RUN_PROCESS action - runs a nested process with optional repetition."""
         process_id = action.config.get("process")
         if not process_id:
             print("RUN_PROCESS action missing 'process' config")
@@ -653,19 +668,85 @@ class ActionExecutor:
             print(f"RUN_PROCESS: Process '{process_id}' not found in config")
             return False
 
-        print(f"RUN_PROCESS: Executing nested process '{process.name}' ({process_id})")
+        # Get repetition configuration
+        repetition_config = action.config.get("processRepetition", {})
+        repetition_enabled = repetition_config.get("enabled", False)
+
+        if not repetition_enabled:
+            # No repetition - execute once
+            return self._execute_process_once(process, process_id, 1, 1)
+
+        # Repetition enabled
+        max_repeats = repetition_config.get("maxRepeats", 10)
+        delay_ms = repetition_config.get("delay", 0)
+        until_success = repetition_config.get("untilSuccess", False)
+        delay_seconds = delay_ms / 1000.0
+        total_runs = max_repeats + 1
+
+        print(f"RUN_PROCESS: Process '{process.name}' with repetition:")
+        print(f"   Max repeats: {max_repeats}")
+        print(f"   Delay: {delay_ms}ms")
+        print(f"   Until success: {until_success}")
+        print(f"   Total runs: {total_runs}")
+
+        if until_success:
+            # Mode: Repeat until success or max repeats
+            for run_num in range(1, total_runs + 1):
+                success = self._execute_process_once(process, process_id, run_num, total_runs)
+
+                if success:
+                    print(
+                        f"RUN_PROCESS: Process succeeded on run {run_num}/{total_runs}, stopping early"
+                    )
+                    return True
+
+                # Delay before next attempt (if not the last run)
+                if run_num < total_runs and delay_seconds > 0:
+                    print(f"RUN_PROCESS: Waiting {delay_ms}ms before next attempt")
+                    Time.wait(delay_seconds)
+
+            # Reached max repeats without success
+            print(f"RUN_PROCESS: Process failed after {total_runs} attempts")
+            return False
+        else:
+            # Mode: Run fixed count, aggregate results
+            results = []
+            for run_num in range(1, total_runs + 1):
+                success = self._execute_process_once(process, process_id, run_num, total_runs)
+                results.append(success)
+
+                # Delay before next run (if not the last run)
+                if run_num < total_runs and delay_seconds > 0:
+                    print(f"RUN_PROCESS: Waiting {delay_ms}ms before next run")
+                    Time.wait(delay_seconds)
+
+            # Success if at least one run succeeded
+            success_count = sum(1 for r in results if r)
+            overall_success = success_count > 0
+            print(f"RUN_PROCESS: Completed {total_runs} runs, {success_count} succeeded")
+            return overall_success
+
+    def _execute_process_once(
+        self, process, process_id: str, run_num: int, total_runs: int
+    ) -> bool:
+        """Execute a process once and emit events."""
+        print(f"RUN_PROCESS: Executing process '{process.name}' (run {run_num}/{total_runs})")
 
         # Emit process started event
-        self._emit_event("process_started", {
-            "process_id": process_id,
-            "process_name": process.name,
-            "process_type": process.type,
-            "action_count": len(process.actions)
-        })
+        self._emit_event(
+            "process_started",
+            {
+                "process_id": process_id,
+                "process_name": process.name,
+                "process_type": process.type,
+                "action_count": len(process.actions),
+                "run_number": run_num,
+                "total_runs": total_runs,
+            },
+        )
 
         success = True
         # Execute the nested process actions
-        # Each action in the process will emit its own action_execution event
         if process.type == "sequence":
             for nested_action in process.actions:
                 if not self.execute_action(nested_action):
@@ -678,11 +759,18 @@ class ActionExecutor:
                 self.execute_action(nested_action)
 
         # Emit process completed event
-        self._emit_event("process_completed", {
-            "process_id": process_id,
-            "process_name": process.name,
-            "success": success
-        })
+        self._emit_event(
+            "process_completed",
+            {
+                "process_id": process_id,
+                "process_name": process.name,
+                "success": success,
+                "run_number": run_num,
+                "total_runs": total_runs,
+            },
+        )
 
-        print(f"RUN_PROCESS: Completed nested process '{process.name}'")
+        print(
+            f"RUN_PROCESS: Completed process '{process.name}' (run {run_num}/{total_runs}): {'SUCCESS' if success else 'FAILED'}"
+        )
         return success
