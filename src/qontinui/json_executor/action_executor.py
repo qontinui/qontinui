@@ -30,10 +30,13 @@ class ActionExecutor:
         pause_before = action.config.get("pause_before_begin", 0)
         pause_after = action.config.get("pause_after_end", 0)
 
+        print(f"[DEBUG] Action config pause settings: pause_before={pause_before}ms, pause_after={pause_after}ms")
+
         # Pause before action if specified
         if pause_before > 0:
             print(f"[PAUSE] Waiting {pause_before}ms before action")
             Time.wait(pause_before / 1000.0)
+            print(f"[PAUSE] Completed waiting {pause_before}ms")
 
         # Retry logic
         for attempt in range(action.retry_count):
@@ -61,6 +64,7 @@ class ActionExecutor:
                     if pause_after > 0:
                         print(f"[PAUSE] Waiting {pause_after}ms after action")
                         Time.wait(pause_after / 1000.0)
+                        print(f"[PAUSE] Completed waiting {pause_after}ms")
 
                     return True
 
@@ -347,7 +351,10 @@ class ActionExecutor:
 
         # Check if text should come from a state string
         text_source = action.config.get("textSource")
-        if text_source == "stateString" and not text:
+        # Also check if stateStringSource exists even if textSource not explicitly set
+        has_state_string_source = "stateStringSource" in action.config
+
+        if (text_source == "stateString" or has_state_string_source) and not text:
             # Get text from state string
             state_string_source = action.config.get("stateStringSource", {})
             state_id = state_string_source.get("stateId")

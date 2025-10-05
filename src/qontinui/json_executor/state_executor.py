@@ -160,11 +160,14 @@ class StateExecutor:
         if transition.process:
             process = self.config.process_map.get(transition.process)
             if process:
-                if not self._execute_process(process):
+                process_result = self._execute_process(process)
+                print(f"[DEBUG] Process '{process.name}' execution result: {process_result}")
+                if not process_result:
                     print(f"Process {process.name} failed")
                     return False
             else:
                 print(f"Process {transition.process} not found")
+                return False
 
         # Handle state changes for OutgoingTransition
         if isinstance(transition, OutgoingTransition):
@@ -228,14 +231,18 @@ class StateExecutor:
 
         if process.type == "sequence":
             # Execute actions in sequence
-            for action in process.actions:
-                if not self.action_executor.execute_action(action):
+            for i, action in enumerate(process.actions):
+                action_result = self.action_executor.execute_action(action)
+                print(f"[DEBUG] Action {i+1}/{len(process.actions)} ({action.type}) result: {action_result}")
+                if not action_result:
+                    print(f"[DEBUG] Process '{process.name}' FAILED at action {i+1}")
                     return False
         elif process.type == "parallel":
             # For now, execute sequentially (parallel execution would need threading)
             for action in process.actions:
                 self.action_executor.execute_action(action)
 
+        print(f"[DEBUG] Process '{process.name}' COMPLETED successfully")
         return True
 
     def _should_continue(self) -> bool:
