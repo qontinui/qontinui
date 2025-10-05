@@ -523,7 +523,7 @@ class ConfigParser:
         return StateRegion(
             id=data.get("id", ""),
             name=data.get("name", ""),
-            bounds=bounds,
+            bounds=data.get("bounds", {"x": 0, "y": 0, "width": 0, "height": 0}),
             fixed=data.get("fixed", True),
             is_search_region=data.get("isSearchRegion", False),
             is_interaction_region=data.get("isInteractionRegion", False),
@@ -532,10 +532,10 @@ class ConfigParser:
     def _parse_state_location(self, data: dict[str, Any]) -> StateLocation:
         """Parse state location from dictionary."""
         return StateLocation(
-            id=data["id"],
-            name=data["name"],
-            x=data["x"],
-            y=data["y"],
+            id=data.get("id", ""),
+            name=data.get("name", ""),
+            x=data.get("x", 0),
+            y=data.get("y", 0),
             anchor=data.get("anchor", False),
             fixed=data.get("fixed", True),
         )
@@ -543,9 +543,9 @@ class ConfigParser:
     def _parse_state_string(self, data: dict[str, Any]) -> StateString:
         """Parse state string from dictionary."""
         return StateString(
-            id=data["id"],
-            name=data["name"],
-            value=data["value"],
+            id=data.get("id", ""),
+            name=data.get("name", ""),
+            value=data.get("value", ""),
             identifier=data.get("identifier", False),
             input_text=data.get("inputText", False),
             expected_text=data.get("expectedText", False),
