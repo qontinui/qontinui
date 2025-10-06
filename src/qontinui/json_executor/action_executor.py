@@ -5,6 +5,7 @@ from typing import Any
 import cv2
 import numpy as np
 
+from ..config import get_defaults
 from ..wrappers import Keyboard, Mouse, Screen, Time
 from .config_parser import Action, QontinuiConfig
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
@@ -18,6 +19,8 @@ class ActionExecutor:
         self.state_executor = state_executor
         # Track last find result for "Last Find Result" targeting
         self.last_find_location: tuple[int, int] | None = None
+        # Get action defaults configuration
+        self.defaults = get_defaults()
 
     def execute_action(self, action: Action) -> bool:
         """Execute a single action."""
@@ -97,18 +100,33 @@ class ActionExecutor:
     def _execute_action_type(self, action: Action) -> bool:
         """Execute specific action type."""
         action_map = {
-            "FIND": self._execute_find,
+            # Pure mouse actions
+            "MOUSE_MOVE": self._execute_mouse_move,
+            "MOUSE_DOWN": self._execute_mouse_down,
+            "MOUSE_UP": self._execute_mouse_up,
+            "MOUSE_SCROLL": self._execute_scroll,
+
+            # Pure keyboard actions
+            "KEY_DOWN": self._execute_key_down,
+            "KEY_UP": self._execute_key_up,
+            "KEY_PRESS": self._execute_key_press,
+
+            # Combined mouse actions (legacy + convenience)
+            "MOVE": self._execute_mouse_move,  # Alias for MOUSE_MOVE
             "CLICK": self._execute_click,
             "DOUBLE_CLICK": self._execute_double_click,
             "RIGHT_CLICK": self._execute_right_click,
-            "TYPE": self._execute_type,
-            "KEY_PRESS": self._execute_key_press,
             "DRAG": self._execute_drag,
             "SCROLL": self._execute_scroll,
+
+            # Combined keyboard actions
+            "TYPE": self._execute_type,
+
+            # Other actions
+            "FIND": self._execute_find,
             "WAIT": self._execute_wait,
             "VANISH": self._execute_vanish,
             "EXISTS": self._execute_exists,
-            "MOVE": self._execute_move,
             "SCREENSHOT": self._execute_screenshot,
             "GO_TO_STATE": self._execute_go_to_state,
             "RUN_PROCESS": self._execute_run_process,
@@ -317,37 +335,125 @@ class ActionExecutor:
         return location is not None
 
     def _execute_click(self, action: Action) -> bool:
-        """Execute CLICK action."""
-        location = self._get_target_location(action.config)
-        if location:
-            from ..hal.interfaces import MouseButton
+        """Execute CLICK action (combined) - composed of MOUSE_MOVE + MOUSE_DOWN + MOUSE_UP.
 
-            Mouse.click_at(location[0], location[1], MouseButton.LEFT)
-            print(f"Clicked at {location}")
-            return True
-        return False
+        This is a COMBINED action that orchestrates pure actions.
+        For problematic scenarios, use pure actions directly instead.
+
+        Timing values can be overridden in action config or set via action defaults configuration.
+        """
+        from ..hal.interfaces import MouseButton
+
+        location = self._get_target_location(action.config)
+        if not location:
+            return False
+
+        # Get click type from config (left, right, middle)
+        click_type = action.config.get("clickType", "left").lower()
+        button_map = {
+            "left": MouseButton.LEFT,
+            "right": MouseButton.RIGHT,
+            "middle": MouseButton.MIDDLE
+        }
+        button = button_map.get(click_type, MouseButton.LEFT)
+
+        # Get click count from config (default 1)
+        click_count = action.config.get("clickCount", 1)
+
+        # Get timing values from config or defaults
+        hold_duration = action.config.get(
+            "click_hold_duration", self.defaults.mouse.click_hold_duration
+        )
+        release_delay = action.config.get(
+            "click_release_delay", self.defaults.mouse.click_release_delay
+        )
+        safety_release = action.config.get(
+            "click_safety_release", self.defaults.mouse.click_safety_release
+        )
+        safety_delay = action.config.get(
+            "safety_release_delay", self.defaults.mouse.safety_release_delay
+        )
+
+        # Get current mouse position for debugging
+        current_pos = Mouse.position()
+        print(f"[COMBINED ACTION: CLICK] Current position: ({current_pos.x}, {current_pos.y})")
+        print(f"[COMBINED ACTION: CLICK] Target: {location}, Button: {click_type}, Count: {click_count}")
+        print(f"[COMBINED ACTION: CLICK] Timing: hold={hold_duration}s, release={release_delay}s")
+
+        # Step 1: Safety - Release all buttons first (if enabled)
+        if safety_release:
+            print(f"[COMBINED ACTION: CLICK] Step 1: Release all mouse buttons")
+            Mouse.up(button=MouseButton.LEFT)
+            Mouse.up(button=MouseButton.RIGHT)
+            Mouse.up(button=MouseButton.MIDDLE)
+            Time.wait(safety_delay)
+
+        # Step 2: Perform clicks at current position (mouse should already be positioned by MOVE)
+        print(f"[COMBINED ACTION: CLICK] Step 2: Perform {click_count} click(s) at current position")
+        for i in range(click_count):
+            print(f"[COMBINED ACTION: CLICK] Click {i+1}/{click_count}")
+
+            # Sub-action: MOUSE_DOWN
+            Mouse.down(button=button)
+            Time.wait(hold_duration)
+
+            # Sub-action: MOUSE_UP
+            Mouse.up(button=button)
+
+            if i < click_count - 1:
+                Time.wait(release_delay)
+
+        # Step 3: Final safety release
+        Time.wait(release_delay)
+        Mouse.up(button=button)
+        print(f"[COMBINED ACTION: CLICK] Step 3: Final safety release")
+
+        print(f"[COMBINED ACTION: CLICK] Completed {click_count} {click_type}-click(s)")
+        return True
 
     def _execute_double_click(self, action: Action) -> bool:
-        """Execute DOUBLE_CLICK action."""
-        location = self._get_target_location(action.config)
-        if location:
-            from ..hal.interfaces import MouseButton
+        """Execute DOUBLE_CLICK action - convenience wrapper for CLICK with clickCount=2.
 
-            Mouse.double_click_at(location[0], location[1], MouseButton.LEFT)
-            print(f"Double-clicked at {location}")
-            return True
-        return False
+        This is a convenience action that delegates to CLICK with clickCount=2.
+        It provides a simpler, more explicit action type for the common case of double-clicking.
+
+        For advanced scenarios (e.g., triple-click, right double-click), use CLICK with clickCount
+        and optionally clickType parameters.
+        """
+        print(f"[COMBINED ACTION: DOUBLE_CLICK] Delegating to CLICK with clickCount=2")
+
+        # Create new config with clickCount=2, preserving all other settings
+        # Note: double_click_interval maps to click_release_delay in CLICK
+        double_click_config = {**action.config, "clickCount": 2}
+
+        # If user specified double_click_interval, map it to click_release_delay
+        if "double_click_interval" in action.config:
+            double_click_config["click_release_delay"] = action.config["double_click_interval"]
+
+        # Create new action with CLICK type but preserve all timing overrides
+        click_action = Action(type="CLICK", config=double_click_config)
+
+        # Delegate to CLICK implementation
+        return self._execute_click(click_action)
 
     def _execute_right_click(self, action: Action) -> bool:
-        """Execute RIGHT_CLICK action."""
-        location = self._get_target_location(action.config)
-        if location:
-            from ..hal.interfaces import MouseButton
+        """Execute RIGHT_CLICK action - convenience wrapper for CLICK with clickType=right.
 
-            Mouse.click_at(location[0], location[1], MouseButton.RIGHT)
-            print(f"Right-clicked at {location}")
-            return True
-        return False
+        This is a convenience action that delegates to CLICK with clickType="right".
+        It provides a simpler, more explicit action type for the common case of right-clicking.
+
+        For advanced scenarios (e.g., right double-click), use CLICK with both clickType and clickCount.
+        """
+        print(f"[COMBINED ACTION: RIGHT_CLICK] Delegating to CLICK with clickType=right")
+
+        # Create new config with clickType=right, preserving all other settings
+        right_click_config = {**action.config, "clickType": "right"}
+
+        # Create new action with CLICK type but preserve all timing overrides
+        click_action = Action(type="CLICK", config=right_click_config)
+
+        # Delegate to CLICK implementation
+        return self._execute_click(click_action)
 
     def _execute_type(self, action: Action) -> bool:
         """Execute TYPE action."""
@@ -396,33 +502,101 @@ class ActionExecutor:
         print("[ERROR] TYPE action failed - no text to type")
         return False
 
+    def _execute_key_down(self, action: Action) -> bool:
+        """Execute KEY_DOWN action (pure) - press and hold key.
+
+        This is a PURE action that only presses the key down.
+        The key remains pressed until KEY_UP is called.
+        """
+        key = action.config.get("key")
+        if not key:
+            print("[ERROR] KEY_DOWN requires 'key' parameter")
+            return False
+
+        Keyboard.down(key)
+        print(f"[PURE ACTION] Key '{key}' pressed down")
+        return True
+
+    def _execute_key_up(self, action: Action) -> bool:
+        """Execute KEY_UP action (pure) - release key.
+
+        This is a PURE action that only releases the key.
+        """
+        key = action.config.get("key")
+        if not key:
+            print("[ERROR] KEY_UP requires 'key' parameter")
+            return False
+
+        Keyboard.up(key)
+        print(f"[PURE ACTION] Key '{key}' released")
+        return True
+
     def _execute_key_press(self, action: Action) -> bool:
-        """Execute KEY_PRESS action."""
+        """Execute KEY_PRESS action (pure) - press and release key.
+
+        This is a PURE action that presses and immediately releases a key.
+        Equivalent to KEY_DOWN + KEY_UP.
+        """
         keys = action.config.get("keys", [])
         if not keys and "key" in action.config:
             keys = [action.config["key"]]
 
         for key in keys:
             Keyboard.press(key)
-            print(f"Pressed key: {key}")
+            print(f"[PURE ACTION] Key '{key}' pressed and released")
         return True
 
     def _execute_drag(self, action: Action) -> bool:
-        """Execute DRAG action."""
+        """Execute DRAG action (combined) - MOUSE_MOVE + MOUSE_DOWN + MOUSE_MOVE + MOUSE_UP.
+
+        This is a COMBINED action using pure actions:
+        1. Move to start position
+        2. Press button
+        3. Move to end position (with button held)
+        4. Release button
+
+        Timing values can be overridden in action config or set via defaults.
+        """
+        from ..hal.interfaces import MouseButton
+
         start = self._get_target_location(action.config)
         destination = action.config.get("destination", {})
 
-        if start and destination:
-            end_x = destination.get("x", 0)
-            end_y = destination.get("y", 0)
-            duration = action.config.get("duration", 1000) / 1000.0
+        if not start or not destination:
+            return False
 
-            from ..hal.interfaces import MouseButton
+        end_x = destination.get("x", 0)
+        end_y = destination.get("y", 0)
 
-            Mouse.drag(start[0], start[1], end_x, end_y, MouseButton.LEFT, duration)
-            print(f"Dragged from {start} to ({end_x}, {end_y})")
-            return True
-        return False
+        # Get timing values from config or defaults
+        duration = action.config.get("duration", self.defaults.mouse.drag_default_duration * 1000) / 1000.0
+        start_delay = action.config.get("drag_start_delay", self.defaults.mouse.drag_start_delay)
+        end_delay = action.config.get("drag_end_delay", self.defaults.mouse.drag_end_delay)
+
+        print(f"[COMBINED ACTION: DRAG] From {start} to ({end_x}, {end_y})")
+        print(f"[COMBINED ACTION: DRAG] Timing: duration={duration}s, start_delay={start_delay}s, end_delay={end_delay}s")
+
+        # Step 1: Move to start position
+        print(f"[COMBINED ACTION: DRAG] Step 1: Move to start")
+        Mouse.move(start[0], start[1], 0)
+
+        # Step 2: Press button
+        Time.wait(start_delay)
+        print(f"[COMBINED ACTION: DRAG] Step 2: Press left button")
+        Mouse.down(button=MouseButton.LEFT)
+
+        # Step 3: Move to end position (dragging)
+        Time.wait(start_delay)
+        print(f"[COMBINED ACTION: DRAG] Step 3: Move to end (dragging)")
+        Mouse.move(end_x, end_y, duration)
+
+        # Step 4: Release button
+        Time.wait(end_delay)
+        print(f"[COMBINED ACTION: DRAG] Step 4: Release left button")
+        Mouse.up(button=MouseButton.LEFT)
+
+        print(f"[COMBINED ACTION: DRAG] Completed")
+        return True
 
     def _execute_scroll(self, action: Action) -> bool:
         """Execute SCROLL action."""
@@ -471,8 +645,11 @@ class ActionExecutor:
         print(f"Element exists: {exists}")
         return exists
 
-    def _execute_move(self, action: Action) -> bool:
-        """Execute MOVE action - move mouse to position."""
+    def _execute_mouse_move(self, action: Action) -> bool:
+        """Execute MOUSE_MOVE action (pure) - move mouse to position.
+
+        This is a PURE action that only moves the mouse cursor.
+        """
         location = self._get_target_location(action.config)
         if location:
             # Get duration from config (in milliseconds, convert to seconds)
@@ -480,9 +657,66 @@ class ActionExecutor:
             duration_seconds = duration_ms / 1000.0 if duration_ms else 0.0
 
             Mouse.move(location[0], location[1], duration_seconds)
-            print(f"Moved mouse to {location} (duration: {duration_ms}ms)")
+            print(f"[PURE ACTION] Mouse moved to {location} (duration: {duration_ms}ms)")
             return True
         return False
+
+    def _execute_mouse_down(self, action: Action) -> bool:
+        """Execute MOUSE_DOWN action (pure) - press and hold mouse button.
+
+        This is a PURE action that only presses the mouse button.
+        The button remains pressed until MOUSE_UP is called.
+        """
+        from ..hal.interfaces import MouseButton
+
+        # Get button type from config
+        button_type = action.config.get("button", "left").lower()
+        button_map = {
+            "left": MouseButton.LEFT,
+            "right": MouseButton.RIGHT,
+            "middle": MouseButton.MIDDLE
+        }
+        button = button_map.get(button_type, MouseButton.LEFT)
+
+        # Get optional position
+        location = self._get_target_location(action.config) if "target" in action.config else None
+
+        if location:
+            Mouse.down(location[0], location[1], button)
+            print(f"[PURE ACTION] Mouse {button_type} button pressed at {location}")
+        else:
+            Mouse.down(button=button)
+            print(f"[PURE ACTION] Mouse {button_type} button pressed at current position")
+
+        return True
+
+    def _execute_mouse_up(self, action: Action) -> bool:
+        """Execute MOUSE_UP action (pure) - release mouse button.
+
+        This is a PURE action that only releases the mouse button.
+        """
+        from ..hal.interfaces import MouseButton
+
+        # Get button type from config
+        button_type = action.config.get("button", "left").lower()
+        button_map = {
+            "left": MouseButton.LEFT,
+            "right": MouseButton.RIGHT,
+            "middle": MouseButton.MIDDLE
+        }
+        button = button_map.get(button_type, MouseButton.LEFT)
+
+        # Get optional position
+        location = self._get_target_location(action.config) if "target" in action.config else None
+
+        if location:
+            Mouse.up(location[0], location[1], button)
+            print(f"[PURE ACTION] Mouse {button_type} button released at {location}")
+        else:
+            Mouse.up(button=button)
+            print(f"[PURE ACTION] Mouse {button_type} button released at current position")
+
+        return True
 
     def _execute_screenshot(self, action: Action) -> bool:
         """Execute SCREENSHOT action."""

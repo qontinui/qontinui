@@ -1,0 +1,33 @@
+{
+  "description": "Default configuration for Qontinui actions. Similar to Brobot's application.properties",
+  "version": "1.0.0",
+  "mouse": {
+    "click_hold_duration": 0.05,
+    "click_release_delay": 0.1,
+    "click_safety_release": true,
+    "double_click_interval": 0.1,
+    "drag_start_delay": 0.1,
+    "drag_end_delay": 0.1,
+    "drag_default_duration": 1.0,
+    "move_default_duration": 0.0,
+    "safety_release_delay": 0.2
+  },
+  "keyboard": {
+    "key_hold_duration": 0.05,
+    "key_release_delay": 0.05,
+    "typing_interval": 0.05,
+    "hotkey_hold_duration": 0.05,
+    "hotkey_press_interval": 0.01
+  },
+  "find": {
+    "default_similarity_threshold": 0.7,
+    "default_timeout": 10.0,
+    "default_retry_count": 3,
+    "search_interval": 0.5
+  },
+  "wait": {
+    "default_wait_duration": 1.0,
+    "pause_before_action": 0.0,
+    "pause_after_action": 0.0
+  }
+}
