@@ -33,18 +33,15 @@ class ActionExecutor:
         pause_before = action.config.get("pause_before_begin", 0)
         pause_after = action.config.get("pause_after_end", 0)
 
-        print(
-            f"[DEBUG] Action config pause settings: pause_before={pause_before}ms, pause_after={pause_after}ms"
-        )
-
         # Pause before action if specified
         if pause_before > 0:
             print(f"[PAUSE] Waiting {pause_before}ms before action")
             Time.wait(pause_before / 1000.0)
-            print(f"[PAUSE] Completed waiting {pause_before}ms")
 
-        # Retry logic
-        for attempt in range(action.retry_count):
+        # Retry logic: initial attempt + retry_count additional attempts on failure
+        total_attempts = 1 + action.retry_count
+
+        for attempt in range(total_attempts):
             try:
                 result = self._execute_action_type(action)
                 if result:
@@ -68,9 +65,9 @@ class ActionExecutor:
 
                     return True
 
-                if attempt < action.retry_count - 1:
+                if attempt < total_attempts - 1:
                     print(
-                        f"Action failed, retrying... (attempt {attempt + 2}/{action.retry_count})"
+                        f"Action failed, retrying... (attempt {attempt + 2}/{total_attempts})"
                     )
                     Time.wait(1)
 
@@ -85,7 +82,7 @@ class ActionExecutor:
                     False,
                     {**action_details, "error": error_msg, "attempts": attempt + 1},
                 )
-                if not action.continue_on_error and attempt == action.retry_count - 1:
+                if not action.continue_on_error and attempt == total_attempts - 1:
                     raise
 
         # Emit failure event after all retries
@@ -93,9 +90,10 @@ class ActionExecutor:
             action.type,
             action.id,
             False,
-            {**action_details, "attempts": action.retry_count, "reason": "All retries failed"},
+            {**action_details, "attempts": total_attempts, "reason": "All retries failed"},
         )
-        return action.continue_on_error
+        # Always return False for failed actions - continue_on_error only controls exception raising
+        return False
 
     def _execute_action_type(self, action: Action) -> bool:
         """Execute specific action type."""

@@ -235,6 +235,9 @@ class StateExecutor:
                 action_result = self.action_executor.execute_action(action)
                 print(f"[DEBUG] Action {i+1}/{len(process.actions)} ({action.type}) result: {action_result}")
                 if not action_result:
+                    if action.continue_on_error:
+                        print(f"[DEBUG] Action {i+1} failed but continue_on_error=True, continuing...")
+                        continue
                     print(f"[DEBUG] Process '{process.name}' FAILED at action {i+1}")
                     return False
         elif process.type == "parallel":

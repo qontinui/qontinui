@@ -18,6 +18,7 @@ class JSONRunner:
         self.state_executor: StateExecutor | None = None
         self.monitor_index: int = 0  # Default to primary monitor
         self.monitor_manager = MonitorManager()
+        self._should_stop = False  # Flag to request execution stop
 
     def load_configuration(self, config_path: str | None = None) -> bool:
         """Load configuration from JSON file."""
@@ -44,6 +45,20 @@ class JSONRunner:
             # Pass monitor manager to state executor
             if hasattr(self.state_executor, "set_monitor_manager"):
                 self.state_executor.set_monitor_manager(self.monitor_manager)
+
+            # Pre-initialize HAL instances to avoid first-run delays
+            print("Pre-initializing HAL backends...")
+            from ..hal.factory import HALFactory
+            from ..mock.mock_mode_manager import MockModeManager
+
+            if not MockModeManager.is_mock_mode():
+                # Initialize input controller (keyboard/mouse)
+                _ = HALFactory.get_input_controller()
+                # Initialize screen capture
+                _ = HALFactory.get_screen_capture()
+                # Initialize pattern matcher
+                _ = HALFactory.get_pattern_matcher()
+                print("HAL backends initialized")
 
             print("Configuration loaded successfully:")
             print(f"  Version: {self.config.version}")
@@ -109,6 +124,11 @@ class JSONRunner:
 
         return True
 
+    def request_stop(self):
+        """Request execution to stop gracefully."""
+        print("Stop requested - execution will stop at next opportunity")
+        self._should_stop = True
+
     def run(
         self,
         process_id: str,
@@ -140,6 +160,9 @@ class JSONRunner:
             # Configure monitor manager to use specified monitor
             self._configure_monitor(monitor_index)
 
+        # Reset stop flag before starting
+        self._should_stop = False
+
         try:
             return self._run_process_with_state_machine(process_id)
 
@@ -147,7 +170,9 @@ class JSONRunner:
             print("\n\nAutomation interrupted by user")
             return False
         except Exception as e:
+            import traceback
             print(f"Error during execution: {e}")
+            print(f"Traceback: {traceback.format_exc()}")
             return False
         # Note: Don't cleanup here - temp images need to persist across multiple runs
         # Cleanup happens when new config is loaded or runner is destroyed
@@ -176,6 +201,11 @@ class JSONRunner:
 
         # Execute the process through state executor's action executor
         for action in process.actions:
+            # Check stop flag before each action
+            if self._should_stop:
+                print("\n=== Execution Stopped by User ===")
+                return False
+
             if not self.state_executor.action_executor.execute_action(action):
                 print(f"Action {action.id} failed in process {process.name}")
                 if (
