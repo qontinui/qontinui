@@ -274,13 +274,19 @@ class QontinuiConfig:
 
                             self.image_map[state_image.id] = image_asset
                             stateimage_count += 1
-                            print(f"[DEBUG] Created ImageAsset from StateImage {state_image.id} ({width}x{height} {image_format})")
+                            print(
+                                f"[DEBUG] Created ImageAsset from StateImage {state_image.id} ({width}x{height} {image_format})"
+                            )
                         except Exception as e:
-                            print(f"[ERROR] Failed to create ImageAsset from StateImage {state_image.id}: {e}")
+                            print(
+                                f"[ERROR] Failed to create ImageAsset from StateImage {state_image.id}: {e}"
+                            )
                 else:
                     print(f"[WARNING] StateImage {state_image.id} has no patterns")
 
-        print(f"[DEBUG] image_map now contains {len(self.image_map)} entries ({stateimage_count} StateImages added)")
+        print(
+            f"[DEBUG] image_map now contains {len(self.image_map)} entries ({stateimage_count} StateImages added)"
+        )
         print(f"[DEBUG] image_map keys: {list(self.image_map.keys())}")
 
 
@@ -289,6 +295,7 @@ class ConfigParser:
 
     def __init__(self):
         self.temp_dir = None
+        self._execution_settings_data = None
 
     def parse_file(self, file_path: str) -> QontinuiConfig:
         """Parse a JSON configuration file."""
@@ -303,12 +310,15 @@ class ConfigParser:
 
     def parse_config(self, data: dict[str, Any]) -> QontinuiConfig:
         """Parse configuration dictionary into QontinuiConfig object."""
+        settings = data["settings"]
+        # Store execution settings data for use during action parsing
+        self._execution_settings_data = settings["execution"]
+
         images = [self._parse_image(img) for img in data["images"]]
         processes = [self._parse_process(proc) for proc in data["processes"]]
         states = [self._parse_state(state) for state in data["states"]]
         transitions = [self._parse_transition(trans) for trans in data["transitions"]]
 
-        settings = data["settings"]
         execution_settings = self._parse_execution_settings(settings["execution"])
         recognition_settings = self._parse_recognition_settings(settings["recognition"])
 
@@ -358,12 +368,16 @@ class ConfigParser:
         # Validate action config based on type
         self._validate_action_config(action_type, config)
 
+        # Get defaults from execution settings
+        default_timeout = self._execution_settings_data.get("defaultTimeout", 10000)
+        default_retry_count = self._execution_settings_data.get("defaultRetryCount", 0)
+
         return Action(
             id=data["id"],
             type=action_type,
             config=config,
-            timeout=data["timeout"],
-            retry_count=data["retryCount"],
+            timeout=data.get("timeout", default_timeout),
+            retry_count=data.get("retryCount", default_retry_count),
             continue_on_error=data.get("continueOnError", False),
         )
 
@@ -464,9 +478,7 @@ class ConfigParser:
         """Parse pattern from dictionary."""
         search_regions = []
         if "searchRegions" in data:
-            search_regions = [
-                self._parse_search_region(r) for r in data["searchRegions"]
-            ]
+            search_regions = [self._parse_search_region(r) for r in data["searchRegions"]]
 
         return Pattern(
             id=data.get("id", ""),
@@ -483,9 +495,7 @@ class ConfigParser:
         if "searchRegions" in data:
             search_regions_data = data["searchRegions"]
             if isinstance(search_regions_data, list):
-                search_regions = [
-                    self._parse_search_region(r) for r in search_regions_data
-                ]
+                search_regions = [self._parse_search_region(r) for r in search_regions_data]
             elif "regions" in search_regions_data:
                 search_regions = [
                     self._parse_search_region(r) for r in search_regions_data["regions"]
@@ -523,7 +533,7 @@ class ConfigParser:
         return StateRegion(
             id=data.get("id", ""),
             name=data.get("name", ""),
-            bounds=data.get("bounds", {"x": 0, "y": 0, "width": 0, "height": 0}),
+            bounds=bounds,
             fixed=data.get("fixed", True),
             is_search_region=data.get("isSearchRegion", False),
             is_interaction_region=data.get("isInteractionRegion", False),
@@ -628,7 +638,7 @@ class ConfigParser:
 
         # Save all images from image_map (includes both regular images and StateImage-derived images)
         saved_count = 0
-        for image_id, image in config.image_map.items():
+        for _image_id, image in config.image_map.items():
             try:
                 if image.file_path is None:  # Only save if not already saved
                     image.save_to_file(self.temp_dir)
