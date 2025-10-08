@@ -90,7 +90,50 @@ class Pattern:
 
 @dataclass
 class StateImage:
-    """Image reference for state identification."""
+    """Image reference for state identification and visual recognition.
+
+    StateImage represents a visual element used to identify when a state is active
+    or to locate targets for actions. Images are matched using template matching
+    with configurable similarity thresholds.
+
+    State identification works by checking if all required StateImages are visible
+    on screen. Optional images (required=False) can be present but aren't necessary
+    for state activation.
+
+    Attributes:
+        id: Unique identifier for this state image.
+        name: Human-readable name (e.g., "login_button", "dialog_title").
+        patterns: List of Pattern objects containing actual image data and masks.
+            Multiple patterns allow matching different variations of the same element.
+        threshold: Similarity threshold for template matching (0.0-1.0).
+            Higher values require closer matches. Default is defined by DEFAULT_SIMILARITY_THRESHOLD.
+        required: If True, this image must be visible for the state to be considered active.
+            If False, image is optional and used only when explicitly targeted by actions.
+        shared: If True, this image can appear in multiple states (e.g., common toolbar).
+            Shared images alone don't uniquely identify a state.
+        source: Source description for this image (e.g., "login_screen_v2.1").
+        search_regions: List of SearchRegion objects defining where to look for this image.
+            If empty, searches the entire screen.
+
+    Example:
+        >>> login_button = StateImage(
+        ...     id="login_btn",
+        ...     name="Login Button",
+        ...     patterns=[button_pattern],
+        ...     threshold=0.9,
+        ...     required=True
+        ... )
+
+    Note:
+        - At least one pattern is required
+        - Threshold values typically range from 0.7 (fuzzy) to 0.95 (exact)
+        - Multiple patterns enable matching across different themes or resolutions
+
+    See Also:
+        :class:`Pattern`: Actual image data within a StateImage
+        :class:`SearchRegion`: Defines where to search for an image
+        :class:`State`: Container for StateImages used in state identification
+    """
 
     id: str
     name: str
@@ -104,7 +147,28 @@ class StateImage:
 
 @dataclass
 class StateRegion:
-    """Region associated with a state."""
+    """Rectangular region associated with a state for search or interaction.
+
+    StateRegions define rectangular areas within a state that have special meaning,
+    such as search regions for limiting image searches or interaction regions for
+    targeting actions.
+
+    Attributes:
+        id: Unique identifier for this region.
+        name: Human-readable name (e.g., "sidebar", "content_area").
+        bounds: Dictionary with keys 'x', 'y', 'width', 'height' defining the rectangle.
+        fixed: If True, bounds are absolute screen coordinates. If False, relative to state position.
+        is_search_region: If True, this region can be used to limit image search areas.
+        is_interaction_region: If True, this region defines an area for user interactions.
+
+    Example:
+        >>> sidebar_region = StateRegion(
+        ...     id="sidebar",
+        ...     name="Left Sidebar",
+        ...     bounds={"x": 0, "y": 0, "width": 200, "height": 1080},
+        ...     is_search_region=True
+        ... )
+    """
 
     id: str
     name: str
@@ -116,7 +180,28 @@ class StateRegion:
 
 @dataclass
 class StateLocation:
-    """Location associated with a state."""
+    """Specific point location associated with a state.
+
+    StateLocations represent precise points within a state that can be used as
+    click targets, anchors for relative positioning, or verification points.
+
+    Attributes:
+        id: Unique identifier for this location.
+        name: Human-readable name (e.g., "submit_button_center", "logo_position").
+        x: X coordinate of the location.
+        y: Y coordinate of the location.
+        anchor: If True, this location serves as a reference point for relative positioning.
+        fixed: If True, coordinates are absolute screen positions. If False, relative to state.
+
+    Example:
+        >>> button_location = StateLocation(
+        ...     id="submit_btn",
+        ...     name="Submit Button",
+        ...     x=400,
+        ...     y=500,
+        ...     fixed=True
+        ... )
+    """
 
     id: str
     name: str
@@ -128,7 +213,28 @@ class StateLocation:
 
 @dataclass
 class StateString:
-    """String associated with a state."""
+    """Text string associated with a state for identification or input.
+
+    StateStrings can serve multiple purposes: identifying states through text verification,
+    providing input values for forms, or validating expected text content.
+
+    Attributes:
+        id: Unique identifier for this string.
+        name: Human-readable name (e.g., "username_field", "welcome_message").
+        value: The actual text value.
+        identifier: If True, this string helps identify when the state is active.
+        input_text: If True, this string should be typed into an input field.
+        expected_text: If True, this string is expected to appear in the state.
+        regex: If True, value is interpreted as a regular expression pattern.
+
+    Example:
+        >>> welcome_msg = StateString(
+        ...     id="welcome",
+        ...     name="Welcome Message",
+        ...     value="Welcome back",
+        ...     expected_text=True
+        ... )
+    """
 
     id: str
     name: str
@@ -141,7 +247,47 @@ class StateString:
 
 @dataclass
 class State:
-    """Represents a state in the state machine."""
+    """Represents a state in the automation state machine.
+
+    A State represents a distinct screen, dialog, or condition in your application.
+    States are identified by visual elements (images) and can contain regions,
+    locations, and strings for interaction and verification.
+
+    In model-based automation, states form the nodes of a state machine graph.
+    The automation system navigates between states using transitions and identifies
+    the current state by matching identifying images on screen.
+
+    Attributes:
+        id: Unique identifier for the state.
+        name: Human-readable name (e.g., "Login Screen", "Dashboard").
+        description: Detailed description of what this state represents.
+        identifying_images: List of StateImage objects used to identify when this state is active.
+            At least one required image must be visible for the state to be considered active.
+        state_regions: List of rectangular regions associated with this state (e.g., buttons, forms).
+        state_locations: List of specific points associated with this state (e.g., click targets).
+        state_strings: List of text strings associated with this state (e.g., labels, input values).
+        position: Visual position of state in the state diagram (x, y coordinates).
+        is_initial: If True, this is the starting state for automation execution.
+        is_final: If True, automation stops when this state is reached.
+
+    Example:
+        >>> login_state = State(
+        ...     id="login",
+        ...     name="Login Screen",
+        ...     description="Application login page",
+        ...     identifying_images=[login_image],
+        ...     is_initial=True
+        ... )
+
+    Note:
+        - Only one state should have is_initial=True
+        - States are identified visually, not by hardcoded positions
+        - Multiple states can be active simultaneously (parallel states)
+
+    See Also:
+        :class:`StateImage`: Visual elements for state identification
+        :class:`OutgoingTransition`: Transitions from this state to others
+    """
 
     id: str
     name: str
