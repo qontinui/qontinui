@@ -168,7 +168,7 @@ class StateExecutor:
         # Check all required images
         for state_image in state.identifying_images:
             if state_image.required:
-                image = self.config.image_map.get(state_image.image_id)
+                image = self.config.image_map.get(state_image.id)
                 if image and image.file_path:
                     location = self.action_executor._find_image_on_screen(
                         image.file_path, state_image.threshold

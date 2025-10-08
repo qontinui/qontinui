@@ -242,8 +242,8 @@ class JSONRunner:
         """
         print("\n=== Starting Model-Based Execution ===\n")
 
-        if not self.state_executor:
-            print("State executor not initialized")
+        if not self.state_executor or not self.config:
+            print("State executor or config not initialized")
             return False
 
         process = self.config.process_map[process_id]
