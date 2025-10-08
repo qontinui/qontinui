@@ -280,7 +280,7 @@ class State:
         ... )
 
     Note:
-        - Only one state should have is_initial=True
+        - Multiple states can have is_initial=True for parallel starting states
         - States are identified visually, not by hardcoded positions
         - Multiple states can be active simultaneously (parallel states)
 
