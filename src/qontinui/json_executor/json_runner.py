@@ -1,15 +1,42 @@
 """Main runner for executing Qontinui JSON configurations."""
 
-from typing import Any, cast
+from typing import Any
 
 from ..monitor.monitor_manager import MonitorManager
-from .action_executor import ActionExecutor
 from .config_parser import ConfigParser, QontinuiConfig
 from .state_executor import StateExecutor
 
 
 class JSONRunner:
-    """Main class for running Qontinui JSON configurations."""
+    """Main class for executing Qontinui automation workflows from JSON configuration.
+
+    JSONRunner loads automation configurations exported from qontinui-web and executes
+    them using state-based or process-based execution. It manages the complete lifecycle
+    of automation including configuration loading, state management, and execution control.
+
+    The runner supports:
+        - State machine execution with automatic state transitions
+        - Process-based execution for sequential actions
+        - Multi-monitor support for targeting specific displays
+        - Graceful stopping and cleanup
+
+    Attributes:
+        config_path: Path to the JSON configuration file.
+        config: Parsed configuration containing states, processes, images, and transitions.
+        state_executor: Executor for state machine-based automation.
+        monitor_index: Index of the monitor to use for automation (0-based).
+        monitor_manager: Manager for multi-monitor support.
+
+    Example:
+        >>> runner = JSONRunner("automation.json")
+        >>> if runner.load_configuration():
+        ...     success = runner.run(process_id="login", monitor_index=0)
+        ...     runner.cleanup()
+
+    Note:
+        This class is designed for REAL GUI automation only. Mock execution
+        is handled by qontinui-web for testing and configuration validation.
+    """
 
     def __init__(self, config_path: str | None = None):
         self.config_path = config_path
@@ -21,7 +48,33 @@ class JSONRunner:
         self._should_stop = False  # Flag to request execution stop
 
     def load_configuration(self, config_path: str | None = None) -> bool:
-        """Load configuration from JSON file."""
+        """Load and validate an automation configuration from a JSON file.
+
+        Parses the JSON configuration file, validates its structure, and initializes
+        the necessary executors and HAL backends. This must be called before running
+        any automation.
+
+        Args:
+            config_path: Path to the JSON configuration file. If None, uses the path
+                provided during initialization.
+
+        Returns:
+            bool: True if configuration loaded successfully, False otherwise.
+
+        Raises:
+            FileNotFoundError: If the configuration file doesn't exist.
+            JSONDecodeError: If the file contains invalid JSON.
+            ValidationError: If the configuration structure is invalid.
+
+        Example:
+            >>> runner = JSONRunner()
+            >>> if runner.load_configuration("my_automation.json"):
+            ...     print("Config loaded successfully")
+
+        Note:
+            Loading a new configuration automatically cleans up any previous
+            configuration to avoid resource leaks.
+        """
         path = config_path or self.config_path
         if not path:
             print("No configuration file specified")
@@ -171,6 +224,7 @@ class JSONRunner:
             return False
         except Exception as e:
             import traceback
+
             print(f"Error during execution: {e}")
             print(f"Traceback: {traceback.format_exc()}")
             return False

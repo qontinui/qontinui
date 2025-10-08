@@ -12,7 +12,54 @@ from .constants import DEFAULT_SIMILARITY_THRESHOLD
 
 
 class ActionExecutor:
-    """Executes individual automation actions."""
+    """Executes individual automation actions from JSON configuration.
+
+    ActionExecutor translates high-level action definitions (CLICK, TYPE, FIND, etc.)
+    into actual GUI interactions using the Hardware Abstraction Layer (HAL). It handles
+    image recognition, coordinate calculation, retry logic, and event emission for monitoring.
+
+    Supported action types:
+        Mouse actions:
+            - CLICK, DOUBLE_CLICK, RIGHT_CLICK - Click at coordinates or image
+            - DRAG - Drag from one location to another
+            - MOUSE_MOVE, MOVE - Move mouse to coordinates
+            - MOUSE_DOWN, MOUSE_UP - Press/release mouse button
+            - SCROLL, MOUSE_SCROLL - Scroll wheel
+
+        Keyboard actions:
+            - TYPE - Type text string
+            - KEY_DOWN, KEY_UP - Press/release key
+            - KEY_PRESS - Press and release key
+
+        Vision actions:
+            - FIND - Locate image on screen
+            - EXISTS - Check if image exists
+            - VANISH - Wait for image to disappear
+
+        Navigation actions:
+            - GO_TO_STATE - Navigate to target state via state machine
+            - RUN_PROCESS - Execute a process by ID
+
+        Utility actions:
+            - WAIT - Pause execution
+            - SCREENSHOT - Capture screen
+
+    Attributes:
+        config: Parsed automation configuration containing states, processes, images.
+        state_executor: Reference to StateExecutor for GO_TO_STATE navigation.
+        defaults: Default action configuration from system settings.
+        last_find_location: Coordinates (x, y) of most recent FIND result.
+
+    Example:
+        >>> config = ConfigParser().parse_file("automation.json")
+        >>> executor = ActionExecutor(config)
+        >>> action = Action(type="CLICK", config={"x": 100, "y": 200})
+        >>> success = executor.execute_action(action)
+
+    Note:
+        This executor performs REAL GUI automation only. It requires an active
+        display and performs actual mouse/keyboard actions.
+    """
 
     def __init__(self, config: QontinuiConfig, state_executor=None):
         self.config = config
@@ -23,7 +70,53 @@ class ActionExecutor:
         self.defaults = get_defaults()
 
     def execute_action(self, action: Action) -> bool:
-        """Execute a single action."""
+        """Execute a single automation action with retry logic.
+
+        Handles the complete lifecycle of action execution including pre-action pauses,
+        the main action execution, retries on failure, post-action pauses, and event
+        emission for real-time monitoring.
+
+        Args:
+            action: Action object containing type, configuration, and execution parameters.
+                Required fields:
+                    - type (str): Action type (CLICK, TYPE, FIND, etc.)
+                    - config (dict): Action-specific configuration parameters
+                Optional fields:
+                    - retry_count (int): Number of retry attempts (default: 3)
+                    - pause_before (int): Milliseconds to pause before action
+                    - pause_after (int): Milliseconds to pause after action
+                    - timeout (int): Maximum execution time in milliseconds
+                    - continue_on_error (bool): Continue if action fails
+
+        Returns:
+            bool: True if action executed successfully within retry attempts,
+                False if all attempts failed.
+
+        Raises:
+            QontinuiException: If action configuration is invalid or malformed.
+            TimeoutError: If action exceeds configured timeout limit.
+
+        Example:
+            >>> action = Action(
+            ...     type="CLICK",
+            ...     config={"x": 100, "y": 200},
+            ...     retry_count=3,
+            ...     pause_after=500
+            ... )
+            >>> success = executor.execute_action(action)
+            >>> if success:
+            ...     print("Click performed successfully")
+
+        Note:
+            - Each failed attempt waits 1 second before retrying
+            - Events are emitted for action start, success, and failure
+            - The last_find_location is updated after successful FIND actions
+            - Pause times are respected even if action fails
+
+        See Also:
+            - :meth:`_execute_action_type`: Internal action type dispatcher
+            - :class:`Action`: Action configuration dataclass
+        """
         print(f"Executing action: {action.type} (ID: {action.id})")
 
         # Extract action details for logging
@@ -66,9 +159,7 @@ class ActionExecutor:
                     return True
 
                 if attempt < total_attempts - 1:
-                    print(
-                        f"Action failed, retrying... (attempt {attempt + 2}/{total_attempts})"
-                    )
+                    print(f"Action failed, retrying... (attempt {attempt + 2}/{total_attempts})")
                     Time.wait(1)
 
             except Exception as e:
@@ -103,12 +194,10 @@ class ActionExecutor:
             "MOUSE_DOWN": self._execute_mouse_down,
             "MOUSE_UP": self._execute_mouse_up,
             "MOUSE_SCROLL": self._execute_scroll,
-
             # Pure keyboard actions
             "KEY_DOWN": self._execute_key_down,
             "KEY_UP": self._execute_key_up,
             "KEY_PRESS": self._execute_key_press,
-
             # Combined mouse actions (legacy + convenience)
             "MOVE": self._execute_mouse_move,  # Alias for MOUSE_MOVE
             "CLICK": self._execute_click,
@@ -116,10 +205,8 @@ class ActionExecutor:
             "RIGHT_CLICK": self._execute_right_click,
             "DRAG": self._execute_drag,
             "SCROLL": self._execute_scroll,
-
             # Combined keyboard actions
             "TYPE": self._execute_type,
-
             # Other actions
             "FIND": self._execute_find,
             "WAIT": self._execute_wait,
@@ -351,7 +438,7 @@ class ActionExecutor:
         button_map = {
             "left": MouseButton.LEFT,
             "right": MouseButton.RIGHT,
-            "middle": MouseButton.MIDDLE
+            "middle": MouseButton.MIDDLE,
         }
         button = button_map.get(click_type, MouseButton.LEFT)
 
@@ -375,19 +462,23 @@ class ActionExecutor:
         # Get current mouse position for debugging
         current_pos = Mouse.position()
         print(f"[COMBINED ACTION: CLICK] Current position: ({current_pos.x}, {current_pos.y})")
-        print(f"[COMBINED ACTION: CLICK] Target: {location}, Button: {click_type}, Count: {click_count}")
+        print(
+            f"[COMBINED ACTION: CLICK] Target: {location}, Button: {click_type}, Count: {click_count}"
+        )
         print(f"[COMBINED ACTION: CLICK] Timing: hold={hold_duration}s, release={release_delay}s")
 
         # Step 1: Safety - Release all buttons first (if enabled)
         if safety_release:
-            print(f"[COMBINED ACTION: CLICK] Step 1: Release all mouse buttons")
+            print("[COMBINED ACTION: CLICK] Step 1: Release all mouse buttons")
             Mouse.up(button=MouseButton.LEFT)
             Mouse.up(button=MouseButton.RIGHT)
             Mouse.up(button=MouseButton.MIDDLE)
             Time.wait(safety_delay)
 
         # Step 2: Perform clicks at current position (mouse should already be positioned by MOVE)
-        print(f"[COMBINED ACTION: CLICK] Step 2: Perform {click_count} click(s) at current position")
+        print(
+            f"[COMBINED ACTION: CLICK] Step 2: Perform {click_count} click(s) at current position"
+        )
         for i in range(click_count):
             print(f"[COMBINED ACTION: CLICK] Click {i+1}/{click_count}")
 
@@ -404,7 +495,7 @@ class ActionExecutor:
         # Step 3: Final safety release
         Time.wait(release_delay)
         Mouse.up(button=button)
-        print(f"[COMBINED ACTION: CLICK] Step 3: Final safety release")
+        print("[COMBINED ACTION: CLICK] Step 3: Final safety release")
 
         print(f"[COMBINED ACTION: CLICK] Completed {click_count} {click_type}-click(s)")
         return True
@@ -418,7 +509,7 @@ class ActionExecutor:
         For advanced scenarios (e.g., triple-click, right double-click), use CLICK with clickCount
         and optionally clickType parameters.
         """
-        print(f"[COMBINED ACTION: DOUBLE_CLICK] Delegating to CLICK with clickCount=2")
+        print("[COMBINED ACTION: DOUBLE_CLICK] Delegating to CLICK with clickCount=2")
 
         # Create new config with clickCount=2, preserving all other settings
         # Note: double_click_interval maps to click_release_delay in CLICK
@@ -442,7 +533,7 @@ class ActionExecutor:
 
         For advanced scenarios (e.g., right double-click), use CLICK with both clickType and clickCount.
         """
-        print(f"[COMBINED ACTION: RIGHT_CLICK] Delegating to CLICK with clickType=right")
+        print("[COMBINED ACTION: RIGHT_CLICK] Delegating to CLICK with clickType=right")
 
         # Create new config with clickType=right, preserving all other settings
         right_click_config = {**action.config, "clickType": "right"}
@@ -567,33 +658,37 @@ class ActionExecutor:
         end_y = destination.get("y", 0)
 
         # Get timing values from config or defaults
-        duration = action.config.get("duration", self.defaults.mouse.drag_default_duration * 1000) / 1000.0
+        duration = (
+            action.config.get("duration", self.defaults.mouse.drag_default_duration * 1000) / 1000.0
+        )
         start_delay = action.config.get("drag_start_delay", self.defaults.mouse.drag_start_delay)
         end_delay = action.config.get("drag_end_delay", self.defaults.mouse.drag_end_delay)
 
         print(f"[COMBINED ACTION: DRAG] From {start} to ({end_x}, {end_y})")
-        print(f"[COMBINED ACTION: DRAG] Timing: duration={duration}s, start_delay={start_delay}s, end_delay={end_delay}s")
+        print(
+            f"[COMBINED ACTION: DRAG] Timing: duration={duration}s, start_delay={start_delay}s, end_delay={end_delay}s"
+        )
 
         # Step 1: Move to start position
-        print(f"[COMBINED ACTION: DRAG] Step 1: Move to start")
+        print("[COMBINED ACTION: DRAG] Step 1: Move to start")
         Mouse.move(start[0], start[1], 0)
 
         # Step 2: Press button
         Time.wait(start_delay)
-        print(f"[COMBINED ACTION: DRAG] Step 2: Press left button")
+        print("[COMBINED ACTION: DRAG] Step 2: Press left button")
         Mouse.down(button=MouseButton.LEFT)
 
         # Step 3: Move to end position (dragging)
         Time.wait(start_delay)
-        print(f"[COMBINED ACTION: DRAG] Step 3: Move to end (dragging)")
+        print("[COMBINED ACTION: DRAG] Step 3: Move to end (dragging)")
         Mouse.move(end_x, end_y, duration)
 
         # Step 4: Release button
         Time.wait(end_delay)
-        print(f"[COMBINED ACTION: DRAG] Step 4: Release left button")
+        print("[COMBINED ACTION: DRAG] Step 4: Release left button")
         Mouse.up(button=MouseButton.LEFT)
 
-        print(f"[COMBINED ACTION: DRAG] Completed")
+        print("[COMBINED ACTION: DRAG] Completed")
         return True
 
     def _execute_scroll(self, action: Action) -> bool:
@@ -672,7 +767,7 @@ class ActionExecutor:
         button_map = {
             "left": MouseButton.LEFT,
             "right": MouseButton.RIGHT,
-            "middle": MouseButton.MIDDLE
+            "middle": MouseButton.MIDDLE,
         }
         button = button_map.get(button_type, MouseButton.LEFT)
 
@@ -700,7 +795,7 @@ class ActionExecutor:
         button_map = {
             "left": MouseButton.LEFT,
             "right": MouseButton.RIGHT,
-            "middle": MouseButton.MIDDLE
+            "middle": MouseButton.MIDDLE,
         }
         button = button_map.get(button_type, MouseButton.LEFT)
 

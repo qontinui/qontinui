@@ -14,7 +14,50 @@ from .config_parser import (
 
 
 class StateExecutor:
-    """Executes state machine based automation."""
+    """Executes state machine-based automation workflows.
+
+    StateExecutor manages the complete lifecycle of state-based automation including
+    state activation/deactivation, state verification through image matching, transition
+    discovery and execution, and process execution within transitions.
+
+    The executor implements a state machine pattern:
+        1. Initialize to initial state (marked with is_initial=True)
+        2. Verify current state is active (by checking identifying images)
+        3. Find applicable outgoing transitions from current state
+        4. Execute transition's process (sequence of actions)
+        5. Verify incoming transitions to target state (if any)
+        6. Activate target state(s) and deactivate origin state
+        7. Repeat until final state reached or no transitions available
+
+    State Visibility Rules:
+        - Origin state deactivated by default after transition
+        - Set stays_visible=True to keep origin state active
+        - Multiple states can be active simultaneously
+        - activate_states and deactivate_states control parallel states
+
+    Attributes:
+        config: Automation configuration with states, transitions, processes, images.
+        active_states: Set of currently active state IDs.
+        current_state: ID of the primary current state.
+        state_history: Chronological list of visited state IDs.
+        action_executor: Executor for running individual actions.
+
+    Example:
+        >>> config = ConfigParser().parse_file("automation.json")
+        >>> executor = StateExecutor(config)
+        >>> executor.initialize()
+        >>> success = executor.execute()
+
+    Note:
+        States are verified by checking if their identifying images are visible
+        on screen. This requires actual GUI environment (not headless).
+
+    See Also:
+        - :class:`ActionExecutor`: Executes individual actions within processes
+        - :class:`Process`: Sequence of actions in a transition
+        - :class:`OutgoingTransition`: Transition from a state
+        - :class:`IncomingTransition`: Verification when entering a state
+    """
 
     def __init__(self, config: QontinuiConfig):
         self.config = config
@@ -41,7 +84,38 @@ class StateExecutor:
             print(f"Using first state as initial: {self.config.states[0].name}")
 
     def execute(self):
-        """Execute the state machine."""
+        """Execute the state machine automation workflow.
+
+        Runs the complete state machine from initial state to final state (or until
+        no transitions are available). The execution loop continuously verifies the
+        current state, finds applicable transitions, executes them, and updates the
+        active states.
+
+        The execution stops when:
+            - A final state (is_final=True) is reached
+            - No applicable transitions are found
+            - Maximum iterations reached (prevents infinite loops)
+            - Failure strategy indicates stop (execution_settings.failure_strategy)
+
+        Returns:
+            bool: True if execution completed normally, False if errors occurred.
+
+        Example:
+            >>> executor = StateExecutor(config)
+            >>> success = executor.execute()
+            >>> if success:
+            ...     print(f"Final states: {executor.get_active_states()}")
+            ...     print(f"History: {executor.get_state_history()}")
+
+        Note:
+            - Max iterations is set to 1000 to prevent infinite loops
+            - States are verified by checking if identifying images are visible
+            - Waits 1 second between iterations if no transitions found
+
+        See Also:
+            - :meth:`initialize`: Sets up initial state
+            - :meth:`_execute_transitions`: Finds and executes transitions
+        """
         self.initialize()
 
         if not self.current_state:
@@ -233,10 +307,14 @@ class StateExecutor:
             # Execute actions in sequence
             for i, action in enumerate(process.actions):
                 action_result = self.action_executor.execute_action(action)
-                print(f"[DEBUG] Action {i+1}/{len(process.actions)} ({action.type}) result: {action_result}")
+                print(
+                    f"[DEBUG] Action {i+1}/{len(process.actions)} ({action.type}) result: {action_result}"
+                )
                 if not action_result:
                     if action.continue_on_error:
-                        print(f"[DEBUG] Action {i+1} failed but continue_on_error=True, continuing...")
+                        print(
+                            f"[DEBUG] Action {i+1} failed but continue_on_error=True, continuing..."
+                        )
                         continue
                     print(f"[DEBUG] Process '{process.name}' FAILED at action {i+1}")
                     return False

@@ -352,7 +352,6 @@ venv.bak/
 # OS
 .DS_Store
 Thumbs.db
-docs/
 CLAUDE.md
 test_venv
 test_*.py
@@ -368,3 +367,5 @@ temp_dev/
 mypy_errors_by_category/
 
 *.backup
+# Sphinx build output
+docs/_build/
