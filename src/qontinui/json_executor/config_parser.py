@@ -415,7 +415,37 @@ class State:
 
 @dataclass
 class Transition:
-    """Base class for transitions."""
+    """Base class for state machine transitions.
+
+    Transitions define how automation moves between states. Each transition can
+    execute a process (sequence of actions) and has configurable timeout and retry
+    settings. Transitions are the edges in the state machine graph connecting states.
+
+    In model-based automation, transitions represent the "paths" between states and
+    define both the navigation logic (which actions to perform) and the state changes
+    (which states become active/inactive).
+
+    Attributes:
+        id: Unique identifier for this transition.
+        type: Transition type string. Common types:
+            - "automatic": Execute immediately when conditions are met
+            - "conditional": Execute only if specific conditions are satisfied
+            - "manual": Require user confirmation before execution
+        process: ID of the process to execute during this transition.
+            Empty string means transition performs state change only, no actions.
+        timeout: Maximum time in milliseconds to wait for transition completion (default: 10000).
+        retry_count: Number of retry attempts if transition fails (default: 3).
+
+    Note:
+        - Transition is typically subclassed as OutgoingTransition or IncomingTransition
+        - Process execution happens before state changes are applied
+        - Failed transitions can be retried based on retry_count
+
+    See Also:
+        :class:`OutgoingTransition`: Transition from a state to another
+        :class:`IncomingTransition`: Verification transition when entering a state
+        :class:`Process`: Sequence of actions executed during transition
+    """
 
     id: str
     type: str
@@ -426,7 +456,62 @@ class Transition:
 
 @dataclass
 class OutgoingTransition(Transition):
-    """Transition from one state to another."""
+    """Transition from one state to another with state activation control.
+
+    OutgoingTransition represents a directed edge in the state machine graph,
+    defining the navigation from a source state to a destination state. It controls
+    which states become active or inactive after the transition executes.
+
+    When an OutgoingTransition executes:
+    1. The transition's process (if any) is executed
+    2. The to_state becomes active
+    3. The from_state is deactivated (unless stays_visible=True)
+    4. Additional states in activate_states become active
+    5. States in deactivate_states become inactive
+
+    This allows fine-grained control over parallel states during state transitions.
+
+    Attributes:
+        from_state: ID of the source state where this transition originates.
+        to_state: ID of the destination state where this transition leads.
+        stays_visible: If True, from_state remains active after transition (default: False).
+            Use this for transitions where the origin state should stay visible
+            (e.g., opening a dialog over a background screen).
+        activate_states: List of additional state IDs to activate after transition.
+            Useful for parallel states that should become active alongside to_state.
+        deactivate_states: List of state IDs to deactivate after transition.
+            Useful for explicitly closing parallel states during transition.
+
+    Example:
+        >>> # Simple transition from login to dashboard
+        >>> login_transition = OutgoingTransition(
+        ...     id="login_submit",
+        ...     type="automatic",
+        ...     from_state="login_screen",
+        ...     to_state="dashboard",
+        ...     process="login_process"
+        ... )
+        >>>
+        >>> # Complex transition with parallel states
+        >>> open_dialog = OutgoingTransition(
+        ...     id="open_settings_dialog",
+        ...     type="automatic",
+        ...     from_state="dashboard",
+        ...     to_state="settings_dialog",
+        ...     stays_visible=True,  # Keep dashboard visible
+        ...     process="click_settings_button"
+        ... )
+
+    Note:
+        - By default, from_state is deactivated after transition
+        - Multiple states can be active simultaneously after transition
+        - State changes happen after process execution completes
+
+    See Also:
+        :class:`Transition`: Base transition class
+        :class:`IncomingTransition`: Verification when entering a state
+        :class:`State`: State nodes in the state machine
+    """
 
     from_state: str = ""
     to_state: str = ""
@@ -437,7 +522,49 @@ class OutgoingTransition(Transition):
 
 @dataclass
 class IncomingTransition(Transition):
-    """Transition to a state."""
+    """Verification transition when entering a state.
+
+    IncomingTransition represents verification or setup actions that should be
+    performed when entering a specific state. Unlike OutgoingTransition which defines
+    navigation from a state, IncomingTransition defines what to verify or prepare
+    when arriving at a state.
+
+    IncomingTransitions are executed after the state is activated but before
+    considering the state fully ready. They are commonly used for:
+    - Verifying the state was reached successfully
+    - Waiting for animations or loading screens to complete
+    - Performing initialization actions needed in the new state
+
+    Attributes:
+        to_state: ID of the state this transition verifies or prepares.
+
+    Example:
+        >>> # Wait for dashboard to fully load
+        >>> dashboard_verification = IncomingTransition(
+        ...     id="dashboard_load_wait",
+        ...     type="automatic",
+        ...     to_state="dashboard",
+        ...     process="wait_for_dashboard_load"
+        ... )
+        >>>
+        >>> # Verify error dialog appeared
+        >>> error_check = IncomingTransition(
+        ...     id="verify_error_dialog",
+        ...     type="automatic",
+        ...     to_state="error_dialog",
+        ...     process="check_error_message"
+        ... )
+
+    Note:
+        - IncomingTransitions execute after state activation
+        - They don't change active states, only verify or prepare
+        - Useful for ensuring state is fully loaded before continuing
+
+    See Also:
+        :class:`Transition`: Base transition class
+        :class:`OutgoingTransition`: Transition from a state to another
+        :class:`State`: State nodes in the state machine
+    """
 
     to_state: str = ""
 
