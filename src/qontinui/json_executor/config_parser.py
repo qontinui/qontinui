@@ -43,7 +43,75 @@ class ImageAsset:
 
 @dataclass
 class Action:
-    """Represents an action in a process."""
+    """Represents a single automation action within a process.
+
+    Actions are the atomic operations performed during automation, such as clicking,
+    typing, finding images, or waiting. Each action has a type that determines what
+    operation is performed, and a configuration dictionary containing type-specific
+    parameters.
+
+    Action Types:
+        Mouse Actions:
+            - CLICK: Click at coordinates or image location
+            - DOUBLE_CLICK: Double-click at target
+            - RIGHT_CLICK: Right-click at target
+            - DRAG: Drag from source to destination
+            - MOUSE_MOVE, MOVE: Move mouse without clicking
+            - MOUSE_DOWN, MOUSE_UP: Press or release mouse button
+            - SCROLL, MOUSE_SCROLL: Scroll mouse wheel
+
+        Keyboard Actions:
+            - TYPE: Type text string
+            - KEY_DOWN, KEY_UP: Press or release keyboard key
+            - KEY_PRESS: Press and release key
+
+        Vision Actions:
+            - FIND: Locate image on screen and store location
+            - EXISTS: Check if image exists (boolean result)
+            - VANISH: Wait for image to disappear
+
+        Navigation Actions:
+            - GO_TO_STATE: Navigate to target state via state machine
+            - RUN_PROCESS: Execute another process by ID
+
+        Utility Actions:
+            - WAIT: Pause execution for specified duration
+            - SCREENSHOT: Capture screen image
+
+    Attributes:
+        id: Unique identifier for this action.
+        type: Action type string (see Action Types above).
+        config: Type-specific configuration dictionary. Common fields:
+            - target: Target location (image, coordinates, region, or "Last Find Result")
+            - similarity: Similarity threshold for image matching (0.0-1.0)
+            - pause_before_begin: Milliseconds to pause before action
+            - pause_after_end: Milliseconds to pause after action
+            - offset: Offset from target location (dict with x, y keys)
+        timeout: Maximum execution time in milliseconds (default: 5000).
+        retry_count: Number of retry attempts on failure (default: 3).
+        continue_on_error: If True, continue execution even if action fails (default: False).
+
+    Example:
+        >>> click_action = Action(
+        ...     id="click_login",
+        ...     type="CLICK",
+        ...     config={
+        ...         "target": {"type": "image", "imageId": "login_button"},
+        ...         "similarity": 0.9
+        ...     },
+        ...     retry_count=3
+        ... )
+
+    Note:
+        - Actions are executed sequentially within a Process
+        - Failed actions are retried based on retry_count
+        - The last FIND result can be used as a target with "Last Find Result"
+        - Similarity thresholds range from 0.7 (fuzzy) to 0.95 (exact)
+
+    See Also:
+        :class:`Process`: Container for sequences of actions
+        :class:`ActionExecutor`: Executes actions during automation
+    """
 
     id: str
     type: str
@@ -55,7 +123,51 @@ class Action:
 
 @dataclass
 class Process:
-    """Represents a process containing actions."""
+    """Represents a sequence of actions forming an automation workflow.
+
+    A Process is a named collection of actions that are executed together to accomplish
+    a specific automation task. Processes can be executed sequentially or in parallel,
+    and can be invoked from transitions or other processes.
+
+    In model-based automation, processes define the "how" - the specific steps to perform
+    when navigating between states or accomplishing a goal within a state.
+
+    Process Types:
+        - sequence: Execute actions one after another (default)
+        - parallel: Execute actions concurrently (not fully implemented)
+
+    Attributes:
+        id: Unique identifier for this process.
+        name: Human-readable name (e.g., "login_sequence", "submit_form").
+        description: Detailed description of what this process accomplishes.
+        type: Execution type - "sequence" or "parallel" (default: "sequence").
+        actions: Ordered list of Action objects to execute.
+
+    Example:
+        >>> login_process = Process(
+        ...     id="login",
+        ...     name="Login Sequence",
+        ...     description="Complete login workflow",
+        ...     type="sequence",
+        ...     actions=[
+        ...         Action(type="FIND", config={"target": {"imageId": "username_field"}}),
+        ...         Action(type="CLICK", config={"target": "Last Find Result"}),
+        ...         Action(type="TYPE", config={"text": "admin"}),
+        ...         Action(type="CLICK", config={"target": {"imageId": "submit_button"}})
+        ...     ]
+        ... )
+
+    Note:
+        - Processes are typically executed during state transitions
+        - Sequential execution stops on first failure unless continue_on_error is True
+        - Processes can call other processes using RUN_PROCESS action
+        - Empty processes are valid and execute immediately
+
+    See Also:
+        :class:`Action`: Individual automation actions
+        :class:`OutgoingTransition`: Uses processes during state transitions
+        :class:`StateExecutor`: Executes processes during automation
+    """
 
     id: str
     name: str
