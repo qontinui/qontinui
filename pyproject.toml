@@ -71,6 +71,7 @@ types-pynput = "^1.8.1.20250809"
 types-reportlab = "^4.4.4.20250926"
 sphinx-autodoc-typehints = ">=1.20,<3.0"
 myst-parser = "^4.0.1"
+types-pyyaml = "^6.0.12.20250915"
 
 [tool.poetry.extras]
 sam = ["segment-anything"]
