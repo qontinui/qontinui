@@ -744,7 +744,45 @@ class IncomingTransition(Transition):
 
 @dataclass
 class ExecutionSettings:
-    """Execution settings for automation."""
+    """Global configuration for automation execution behavior.
+
+    ExecutionSettings controls how Qontinui executes automations including timing,
+    retry behavior, failure handling, and execution mode. These settings apply to
+    all actions and transitions unless overridden at the individual level.
+
+    Attributes:
+        default_timeout: Default maximum execution time in milliseconds for actions
+            and transitions (default: 10000). Individual actions/transitions can override.
+        default_retry_count: Default number of retry attempts for failed actions
+            and transitions (default: 3). Retries happen automatically with exponential backoff.
+        action_delay: Milliseconds to wait between consecutive actions (default: 100).
+            Helps ensure UI has time to respond between actions.
+        failure_strategy: How to handle action failures (default: "stop"). Options:
+            - "stop": Stop execution immediately on first failure
+            - "continue": Log error but continue with next action
+            - "retry": Retry failed action up to retry_count times, then stop
+        headless: If True, run without displaying GUI (default: False).
+            Note: Most GUI automation requires visible windows, headless is experimental.
+
+    Example:
+        >>> settings = ExecutionSettings(
+        ...     default_timeout=15000,  # 15 seconds
+        ...     default_retry_count=5,
+        ...     action_delay=200,  # 200ms between actions
+        ...     failure_strategy="stop"
+        ... )
+
+    Note:
+        - Individual actions can override timeout and retry_count
+        - Longer delays improve reliability but slow execution
+        - "continue" strategy useful for optional actions
+        - Most users should keep default settings
+
+    See Also:
+        :class:`Action`: Can override timeout and retry_count per action
+        :class:`Transition`: Can override timeout and retry_count per transition
+        :class:`RecognitionSettings`: Related image recognition configuration
+    """
 
     default_timeout: int = 10000
     default_retry_count: int = 3
