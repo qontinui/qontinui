@@ -16,7 +16,52 @@ from .constants import DEFAULT_SIMILARITY_THRESHOLD
 
 @dataclass
 class ImageAsset:
-    """Represents an image asset from the configuration."""
+    """Represents an image asset from the configuration with storage and verification.
+
+    ImageAsset stores image data in base64 format from the configuration file and
+    provides utilities for saving to disk and verifying data integrity. Image assets
+    are created from StateImage patterns and used throughout the automation system
+    for visual recognition.
+
+    The image data lifecycle:
+    1. Images captured in Qontinui Web (screenshot tool or upload)
+    2. Encoded as base64 and stored in JSON configuration
+    3. Loaded as ImageAsset objects during configuration parsing
+    4. Saved to temporary files for OpenCV template matching
+    5. Cached for efficient reuse during automation execution
+
+    Attributes:
+        id: Unique identifier for this image asset.
+        name: Filename including extension (e.g., "login_button.png").
+        data: Base64-encoded image data string.
+        format: Image format (e.g., "png", "jpg", "bmp").
+        width: Image width in pixels.
+        height: Image height in pixels.
+        hash: SHA256 hash of the image data for integrity verification.
+        file_path: Path to the saved image file on disk (set after save_to_file).
+
+    Example:
+        >>> image = ImageAsset(
+        ...     id="img_001",
+        ...     name="button.png",
+        ...     data="iVBORw0KGgoAAAANSUhEUgAA...",
+        ...     format="png",
+        ...     width=100,
+        ...     height=50,
+        ...     hash="a3f5d..."
+        ... )
+        >>> image.save_to_file(Path("/tmp/qontinui_images"))
+        >>> image.verify_hash()  # True if data is intact
+
+    Note:
+        - Images are automatically saved to temporary directory during execution
+        - Hash verification ensures images weren't corrupted during transfer
+        - Base64 encoding increases JSON file size by ~33%
+
+    See Also:
+        :class:`StateImage`: References ImageAssets for state identification
+        :class:`Pattern`: Contains image data that becomes ImageAssets
+    """
 
     id: str
     name: str
@@ -28,7 +73,21 @@ class ImageAsset:
     file_path: str | None = None  # Path to saved image file
 
     def save_to_file(self, directory: Path) -> str:
-        """Save base64 image to file and return path."""
+        """Save base64 image data to a file on disk.
+
+        Decodes the base64 image data and writes it to a file in the specified
+        directory. Updates the file_path attribute with the saved file location.
+
+        Args:
+            directory: Target directory path where image should be saved.
+
+        Returns:
+            str: Full path to the saved image file.
+
+        Example:
+            >>> image.save_to_file(Path("/tmp/qontinui_images"))
+            '/tmp/qontinui_images/login_button.png'
+        """
         image_data = base64.b64decode(self.data)
         file_path = directory / self.name
         file_path.write_bytes(image_data)
@@ -36,7 +95,18 @@ class ImageAsset:
         return self.file_path
 
     def verify_hash(self) -> bool:
-        """Verify image integrity using SHA256 hash."""
+        """Verify image data integrity using SHA256 hash.
+
+        Calculates SHA256 hash of the current image data and compares it against
+        the stored hash. Used to detect corruption during file transfer or storage.
+
+        Returns:
+            bool: True if calculated hash matches stored hash, False otherwise.
+
+        Example:
+            >>> if not image.verify_hash():
+            ...     print("Image data corrupted!")
+        """
         calculated_hash = hashlib.sha256(self.data.encode()).hexdigest()
         return calculated_hash == self.hash
 
@@ -178,7 +248,55 @@ class Process:
 
 @dataclass
 class SearchRegion:
-    """Search region for an image."""
+    """Rectangular region that limits image search area.
+
+    SearchRegion defines a rectangular area on screen where image template matching
+    should be performed. Using search regions significantly improves performance and
+    accuracy by limiting searches to relevant screen areas and preventing false matches
+    in other parts of the screen.
+
+    Search regions are especially useful for:
+    - Focusing on specific UI sections (sidebars, toolbars, content areas)
+    - Avoiding ambiguous matches when similar elements appear multiple times
+    - Improving performance by reducing search area
+    - Handling multi-monitor setups by restricting to specific monitors
+
+    Attributes:
+        id: Unique identifier for this search region.
+        name: Human-readable name (e.g., "left_sidebar", "toolbar_region").
+        x: X coordinate of top-left corner (pixels from screen left edge).
+        y: Y coordinate of top-left corner (pixels from screen top edge).
+        width: Region width in pixels.
+        height: Region height in pixels.
+
+    Example:
+        >>> sidebar_region = SearchRegion(
+        ...     id="sidebar_01",
+        ...     name="Left Sidebar",
+        ...     x=0,
+        ...     y=0,
+        ...     width=250,
+        ...     height=1080
+        ... )
+        >>> # Use in StateImage to limit where button can be found
+        >>> button_image = StateImage(
+        ...     id="save_btn",
+        ...     name="Save Button",
+        ...     patterns=[pattern],
+        ...     search_regions=[sidebar_region]
+        ... )
+
+    Note:
+        - Coordinates are absolute screen positions
+        - Region must be within screen bounds
+        - Empty search_regions list means search entire screen
+        - Multiple search regions can be defined per image
+
+    See Also:
+        :class:`StateImage`: Uses SearchRegions to limit image matching
+        :class:`Pattern`: Can also have search_regions for pattern-specific limits
+        :class:`StateRegion`: Similar concept but at state level
+    """
 
     id: str
     name: str
@@ -190,7 +308,62 @@ class SearchRegion:
 
 @dataclass
 class Pattern:
-    """Pattern data within a StateImage."""
+    """Image pattern with optional mask for template matching.
+
+    Pattern represents a single image template used for visual recognition. Each
+    StateImage can contain multiple patterns representing different variations of
+    the same UI element (e.g., button in light/dark theme, different languages,
+    hover states).
+
+    Patterns support optional masks that define which pixels should be considered
+    during template matching. Masks enable matching on partial images or ignoring
+    dynamic content within an otherwise static element.
+
+    Template Matching Process:
+    1. Pattern image is compared against screen regions using OpenCV
+    2. If mask is provided, only non-transparent mask pixels are compared
+    3. Similarity score (0.0-1.0) is calculated based on pixel correlation
+    4. Match succeeds if score exceeds the StateImage's threshold
+
+    Attributes:
+        id: Unique identifier for this pattern.
+        name: Human-readable name (e.g., "button_normal", "button_hover").
+        image: Base64-encoded image data with data URI format
+            (e.g., "data:image/png;base64,iVBORw0KG...").
+        mask: Optional base64-encoded mask image. White pixels (255) indicate areas
+            to match, black pixels (0) are ignored. Useful for matching partial elements
+            or ignoring dynamic text within buttons.
+        search_regions: List of SearchRegion objects limiting where to search for this pattern.
+        fixed: If True, pattern represents a fixed screen element that doesn't move.
+            Enables optimizations for static UI elements.
+
+    Example:
+        >>> # Pattern for button without mask
+        >>> button_pattern = Pattern(
+        ...     id="login_btn_pattern",
+        ...     name="Login Button",
+        ...     image="data:image/png;base64,iVBORw0KGgo..."
+        ... )
+        >>>
+        >>> # Pattern with mask to ignore button text
+        >>> dynamic_button = Pattern(
+        ...     id="btn_with_text",
+        ...     name="Button (ignore text)",
+        ...     image="data:image/png;base64,iVBORw0KGgo...",
+        ...     mask="data:image/png;base64,iVBORw0KGgo..."  # Mask out text area
+        ... )
+
+    Note:
+        - Multiple patterns per StateImage enable matching across themes/resolutions
+        - Masks must match pattern dimensions
+        - Smaller patterns (cropped to essential features) perform better
+        - PNG format recommended for lossless quality
+
+    See Also:
+        :class:`StateImage`: Container for patterns used in state identification
+        :class:`SearchRegion`: Limits where patterns are searched
+        :class:`ImageAsset`: Processed pattern data saved to disk
+    """
 
     id: str
     name: str
@@ -582,7 +755,50 @@ class ExecutionSettings:
 
 @dataclass
 class RecognitionSettings:
-    """Image recognition settings."""
+    """Global configuration for image recognition and template matching.
+
+    RecognitionSettings controls how Qontinui performs visual recognition across
+    all states and actions. These settings affect accuracy, performance, and the
+    types of matching algorithms used.
+
+    Template matching is the core recognition technique, using OpenCV to compare
+    pattern images against screen captures. Additional techniques like multi-scale
+    search and edge detection can be enabled for specific scenarios.
+
+    Attributes:
+        default_threshold: Default similarity threshold for template matching (0.0-1.0).
+            Used when StateImage doesn't specify a threshold. Typical: 0.85.
+        search_algorithm: Algorithm for image matching (default: "template_matching").
+            Currently only template_matching is fully supported.
+        multi_scale_search: If True, search for images at multiple scales/resolutions.
+            Useful for resolution-independent matching but slower. Default: True.
+        color_space: Color space for image comparison (default: "rgb").
+            Options: "rgb", "grayscale", "hsv". Grayscale is faster, RGB more accurate.
+        edge_detection: If True, use edge detection preprocessing for matching.
+            Helps with matching when lighting conditions vary. Default: False.
+        ocr_enabled: If True, enable OCR (Optical Character Recognition) for text.
+            Allows text-based identification and verification. Default: False.
+
+    Example:
+        >>> settings = RecognitionSettings(
+        ...     default_threshold=0.85,
+        ...     multi_scale_search=True,
+        ...     color_space="rgb",
+        ...     edge_detection=False,
+        ...     ocr_enabled=False
+        ... )
+
+    Note:
+        - Higher thresholds (0.9+) reduce false positives but may miss valid matches
+        - Lower thresholds (0.7-0.8) are more forgiving but may cause false matches
+        - Multi-scale search significantly increases execution time
+        - Grayscale matching is faster but less accurate than RGB
+
+    See Also:
+        :class:`StateImage`: Can override default_threshold per image
+        :class:`Pattern`: Individual patterns used in template matching
+        :class:`ExecutionSettings`: Related execution configuration
+    """
 
     default_threshold: float = DEFAULT_SIMILARITY_THRESHOLD
     search_algorithm: str = "template_matching"
