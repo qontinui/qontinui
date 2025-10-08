@@ -121,6 +121,11 @@ explicit_package_bases = true
 module = "pydantic"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "qontinui.hal.implementations.mss_capture"
+warn_return_any = false
+disallow_any_unimported = false
+
 [tool.black]
 line-length = 100
 target-version = ['py311', 'py312']

@@ -7,7 +7,7 @@ with advanced mask-based optimization capabilities. Port of Brobot's Pattern cla
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -640,7 +640,7 @@ class Pattern:
             y=region.y if region else 0,
             width=region.width if region else pixel_data.shape[1],
             height=region.height if region else pixel_data.shape[0],
-            similarity_threshold=match.score if hasattr(match, "score") else 0.95,
+            similarity=match.score if hasattr(match, "score") else 0.95,
         )
 
     @classmethod

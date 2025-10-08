@@ -498,20 +498,11 @@ class Find:
                     and hasattr(self._target, "search_regions")
                     and self._target.search_regions
                 ):
-                    # Convert Pattern's search_regions (list of dicts) to SearchRegions object
-                    pattern_regions = []
-                    for sr_dict in self._target.search_regions:
-                        region = Region(
-                            sr_dict.get("x", 0),
-                            sr_dict.get("y", 0),
-                            sr_dict.get("width", 0),
-                            sr_dict.get("height", 0),
-                        )
-                        pattern_regions.append(region)
-                    if pattern_regions:
-                        search_regions_to_use = SearchRegions(pattern_regions)
+                    # Pattern's search_regions is already a SearchRegions object with Region objects
+                    if self._target.search_regions.regions:
+                        search_regions_to_use = self._target.search_regions
                         print(
-                            f"[Find] Using Pattern-level search regions ({len(pattern_regions)} regions)"
+                            f"[Find] Using Pattern-level search regions ({len(self._target.search_regions.regions)} regions)"
                         )
 
                 # Level 3: StateImage-level search regions would be passed via Options

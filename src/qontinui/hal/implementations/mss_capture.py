@@ -45,7 +45,7 @@ class MSSScreenCapture(IScreenCapture):
         )
 
     @property
-    def sct(self) -> mss.mss:
+    def sct(self) -> mss.mss:  # type: ignore[valid-type]
         """Get or create thread-local mss instance.
 
         This ensures each thread has its own mss instance to avoid
@@ -53,14 +53,14 @@ class MSSScreenCapture(IScreenCapture):
         """
         import threading
 
-        if not hasattr(self, '_thread_local'):
+        if not hasattr(self, "_thread_local"):
             self._thread_local = threading.local()
 
-        if not hasattr(self._thread_local, 'sct'):
+        if not hasattr(self._thread_local, "sct"):
             self._thread_local.sct = mss.mss()
             logger.debug("mss_instance_created", thread_id=threading.current_thread().ident)
 
-        return self._thread_local.sct
+        return self._thread_local.sct  # type: ignore[no-any-return]
 
     def _detect_monitors(self) -> list[Monitor]:
         """Detect all available monitors.
@@ -71,7 +71,7 @@ class MSSScreenCapture(IScreenCapture):
         monitors = []
 
         # Skip index 0 as it's the combined virtual monitor
-        for i, mon in enumerate(self.sct.monitors[1:], 1):
+        for i, mon in enumerate(self.sct.monitors[1:], 1):  # type: ignore[attr-defined]
             monitor = Monitor(
                 index=i - 1,  # 0-based index
                 x=mon["left"],
@@ -143,15 +143,15 @@ class MSSScreenCapture(IScreenCapture):
             if monitor is None:
                 if self.config.enable_multi_monitor:
                     # Capture all monitors (virtual desktop)
-                    sct_img = self.sct.grab(self.sct.monitors[0])
+                    sct_img = self.sct.grab(self.sct.monitors[0])  # type: ignore[attr-defined]
                 else:
                     # Capture primary monitor
-                    sct_img = self.sct.grab(self.sct.monitors[1])
+                    sct_img = self.sct.grab(self.sct.monitors[1])  # type: ignore[attr-defined]
             else:
                 # Capture specific monitor
                 if 0 <= monitor < len(self._monitors):
-                    mon_dict = self.sct.monitors[monitor + 1]  # +1 for mss indexing
-                    sct_img = self.sct.grab(mon_dict)
+                    mon_dict = self.sct.monitors[monitor + 1]  # type: ignore[attr-defined]
+                    sct_img = self.sct.grab(mon_dict)  # type: ignore[attr-defined]
                 else:
                     raise ValueError(f"Invalid monitor index: {monitor}")
 
@@ -198,7 +198,7 @@ class MSSScreenCapture(IScreenCapture):
             # Adjust for monitor offset if specified
             if monitor is not None:
                 if 0 <= monitor < len(self._monitors):
-                    mon = self.sct.monitors[monitor + 1]
+                    mon = self.sct.monitors[monitor + 1]  # type: ignore[attr-defined]
                     region["left"] += mon["left"]
                     region["top"] += mon["top"]
                 else:
@@ -210,7 +210,7 @@ class MSSScreenCapture(IScreenCapture):
                 return self._cache[cache_key]
 
             # Capture region
-            sct_img = self.sct.grab(region)
+            sct_img = self.sct.grab(region)  # type: ignore[attr-defined]
 
             # Convert to PIL Image
             image = Image.frombytes(
@@ -288,12 +288,12 @@ class MSSScreenCapture(IScreenCapture):
             # Capture single pixel
             region = {"left": x, "top": y, "width": 1, "height": 1}
 
-            sct_img = self.sct.grab(region)
+            sct_img = self.sct.grab(region)  # type: ignore[attr-defined]
 
             # Extract RGB values from BGRA
             # MSS returns BGRA format
             pixel = sct_img.pixel(0, 0)  # Get pixel at (0,0) of 1x1 capture
-            return pixel[:3]  # Return RGB, ignore alpha
+            return pixel[:3]  # type: ignore[no-any-return]
 
         except Exception as e:
             logger.error("get_pixel_color_failed", x=x, y=y, monitor=monitor, error=str(e))
@@ -392,7 +392,7 @@ class MSSScreenCapture(IScreenCapture):
 
     def close(self) -> None:
         """Close screen capture resources."""
-        if hasattr(self, '_thread_local') and hasattr(self._thread_local, 'sct'):
+        if hasattr(self, "_thread_local") and hasattr(self._thread_local, "sct"):
             try:
                 self._thread_local.sct.close()
             except Exception as e:

@@ -293,7 +293,7 @@ class ActionExecutor:
         self._emit_event("image_recognition", data)
 
     def _emit_action_event(
-        self, action_type: str, action_id: str, success: bool, details: dict = None
+        self, action_type: str, action_id: str, success: bool, details: dict | None = None
     ):
         """Emit action execution event."""
         data = {"action_type": action_type, "action_id": action_id, "success": success}
@@ -520,7 +520,7 @@ class ActionExecutor:
             double_click_config["click_release_delay"] = action.config["double_click_interval"]
 
         # Create new action with CLICK type but preserve all timing overrides
-        click_action = Action(type="CLICK", config=double_click_config)
+        click_action = Action(id=action.id, type="CLICK", config=double_click_config)
 
         # Delegate to CLICK implementation
         return self._execute_click(click_action)
@@ -539,7 +539,7 @@ class ActionExecutor:
         right_click_config = {**action.config, "clickType": "right"}
 
         # Create new action with CLICK type but preserve all timing overrides
-        click_action = Action(type="CLICK", config=right_click_config)
+        click_action = Action(id=action.id, type="CLICK", config=right_click_config)
 
         # Delegate to CLICK implementation
         return self._execute_click(click_action)
@@ -586,7 +586,7 @@ class ActionExecutor:
         if text:
             Keyboard.type(text)
             print(f"[TYPE] Successfully typed: '{text}'")
-            return {"typed_text": text}
+            return True
 
         print("[ERROR] TYPE action failed - no text to type")
         return False
