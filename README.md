@@ -1,7 +1,8 @@
 # Qontinui
 
+[![PyPI version](https://badge.fury.io/py/qontinui.svg)](https://badge.fury.io/py/qontinui)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 A Python library for model-based GUI automation with intelligent state management and visual recognition.
@@ -18,11 +19,17 @@ Qontinui is a Python port of [Brobot](https://github.com/jspinak/brobot), a Java
 
 ## Installation
 
+### From PyPI (Recommended)
+
+```bash
+pip install qontinui
+```
+
 ### From Source (Development)
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/qontinui.git
+git clone https://github.com/jspinak/qontinui.git
 cd qontinui
 
 # Install with Poetry
@@ -141,6 +148,8 @@ poetry run pytest tests/json_executor/test_json_runner.py
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+Please note that this project is released with a [Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
 
 Qontinui is a faithful port of Brobot. When contributing, please preserve Brobot's architecture and behavior.
 
