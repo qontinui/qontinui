@@ -3,6 +3,7 @@
 from typing import Any
 
 from ..monitor.monitor_manager import MonitorManager
+from ..scheduling import SchedulerExecutor
 from .config_parser import ConfigParser, QontinuiConfig
 from .state_executor import StateExecutor
 
@@ -43,6 +44,7 @@ class JSONRunner:
         self.parser = ConfigParser()
         self.config: QontinuiConfig | None = None
         self.state_executor: StateExecutor | None = None
+        self.scheduler_executor: SchedulerExecutor | None = None  # State-aware scheduler
         self.monitor_index: int = 0  # Default to primary monitor
         self.monitor_manager = MonitorManager()
         self._should_stop = False  # Flag to request execution stop
@@ -113,6 +115,16 @@ class JSONRunner:
                 _ = HALFactory.get_pattern_matcher()
                 print("HAL backends initialized")
 
+            # Initialize scheduler if schedules exist
+            if self.config.schedules:
+                print(f"Initializing scheduler with {len(self.config.schedules)} schedules...")
+                self.scheduler_executor = SchedulerExecutor(
+                    runner=self,
+                    state_executor=self.state_executor,
+                    schedules=self.config.schedules,
+                )
+                print("Scheduler initialized")
+
             print("Configuration loaded successfully:")
             print(f"  Version: {self.config.version}")
             print(f"  Name: {self.config.metadata.get('name', 'Unnamed')}")
@@ -120,6 +132,7 @@ class JSONRunner:
             print(f"  Processes: {len(self.config.processes)}")
             print(f"  Transitions: {len(self.config.transitions)}")
             print(f"  Images: {len(self.config.images)}")
+            print(f"  Schedules: {len(self.config.schedules)}")
 
             return True
 
@@ -298,8 +311,55 @@ class JSONRunner:
             print("Using default monitor")
             self.monitor_manager.primary_monitor_index = 0
 
+    def start_scheduler(self):
+        """Start the scheduler service.
+
+        This enables all registered schedules to begin execution
+        according to their trigger configurations.
+        """
+        if not self.scheduler_executor:
+            print("No scheduler initialized")
+            return False
+
+        self.scheduler_executor.start()
+        print("Scheduler started")
+        return True
+
+    def stop_scheduler(self):
+        """Stop the scheduler service.
+
+        This stops all running schedules.
+        """
+        if not self.scheduler_executor:
+            print("No scheduler initialized")
+            return False
+
+        self.scheduler_executor.stop()
+        print("Scheduler stopped")
+        return True
+
+    def get_scheduler_statistics(self) -> dict[str, Any]:
+        """Get scheduler statistics.
+
+        Returns:
+            Dictionary with scheduler statistics
+        """
+        if not self.scheduler_executor:
+            return {}
+
+        return self.scheduler_executor.get_statistics()
+
     def cleanup(self):
         """Clean up resources."""
+        # Stop scheduler if running
+        if self.scheduler_executor:
+            try:
+                self.scheduler_executor.shutdown()
+                print("Scheduler shutdown complete")
+            except Exception as e:
+                print(f"Error shutting down scheduler: {e}")
+
+        # Clean up temporary files
         if self.parser:
             self.parser.cleanup()
             print("Cleaned up temporary files")
@@ -316,13 +376,20 @@ class JSONRunner:
         if not self.config:
             return {}
 
-        return {
+        summary = {
             "config_name": self.config.metadata.get("name", "Unnamed"),
             "version": self.config.version,
             "states": len(self.config.states),
             "processes": len(self.config.processes),
             "transitions": len(self.config.transitions),
             "images": len(self.config.images),
+            "schedules": len(self.config.schedules),
             "current_state": self.state_executor.current_state if self.state_executor else None,
             "active_states": list(self.state_executor.active_states) if self.state_executor else [],
         }
+
+        # Add scheduler info if available
+        if self.scheduler_executor:
+            summary["scheduler"] = self.get_scheduler_statistics()
+
+        return summary

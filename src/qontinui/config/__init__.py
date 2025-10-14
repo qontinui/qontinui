@@ -62,16 +62,18 @@ from .qontinui_properties import (
     ScreenshotConfig,
     TestingConfig,
 )
-from .action_defaults import (
-    ActionDefaults,
-    KeyboardActionDefaults,
-    MouseActionDefaults,
-    FindActionDefaults,
-    WaitActionDefaults,
-    get_defaults,
-    set_defaults,
-    load_defaults_from_file,
-)
+
+# action_defaults module removed or not yet implemented
+# from .action_defaults import (
+#     ActionDefaults,
+#     KeyboardActionDefaults,
+#     MouseActionDefaults,
+#     FindActionDefaults,
+#     WaitActionDefaults,
+#     get_defaults,
+#     set_defaults,
+#     load_defaults_from_file,
+# )
 
 __all__ = [
     # Properties
@@ -101,13 +103,13 @@ __all__ = [
     # Manager
     "ConfigurationManager",
     "get_config_manager",
-    # Action Defaults
-    "ActionDefaults",
-    "MouseActionDefaults",
-    "KeyboardActionDefaults",
-    "FindActionDefaults",
-    "WaitActionDefaults",
-    "get_defaults",
-    "set_defaults",
-    "load_defaults_from_file",
+    # Action Defaults - removed or not yet implemented
+    # "ActionDefaults",
+    # "MouseActionDefaults",
+    # "KeyboardActionDefaults",
+    # "FindActionDefaults",
+    # "WaitActionDefaults",
+    # "get_defaults",
+    # "set_defaults",
+    # "load_defaults_from_file",
 ]

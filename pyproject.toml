@@ -5,8 +5,8 @@ description = "Model-based GUI automation with AI-enhanced perception"
 authors = ["Your Name <your.email@example.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/your-org/qontinui-core"
-repository = "https://github.com/your-org/qontinui-core"
+homepage = "https://github.com/qontinui/qontinui"
+repository = "https://github.com/qontinui/qontinui"
 documentation = "https://qontinui.github.io"
 keywords = ["gui", "automation", "ai", "testing", "rpa"]
 classifiers = [
@@ -49,6 +49,7 @@ prometheus-client = "^0.19"
 psutil = "^5.9"
 sqlalchemy = "^2.0"
 pydantic = "^2.11.9"
+croniter = "^5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"

@@ -859,18 +859,21 @@ class QontinuiConfig:
     categories: list[str]
     execution_settings: ExecutionSettings
     recognition_settings: RecognitionSettings
+    schedules: list[Any] = field(default_factory=list)  # List of ScheduleConfig objects
 
     # Runtime data
     image_directory: Path | None = None
     process_map: dict[str, Process] = field(default_factory=dict)
     state_map: dict[str, State] = field(default_factory=dict)
     image_map: dict[str, ImageAsset] = field(default_factory=dict)
+    schedule_map: dict[str, Any] = field(default_factory=dict)  # Schedule ID -> ScheduleConfig
 
     def __post_init__(self):
         """Build lookup maps for efficient access."""
         self.process_map = {p.id: p for p in self.processes}
         self.state_map = {s.id: s for s in self.states}
         self.image_map = {i.id: i for i in self.images}
+        self.schedule_map = {s.id: s for s in self.schedules}
 
         # Extract image data from StateImage patterns and create ImageAsset objects
         # This allows actions to reference StateImages by their ID directly
@@ -957,6 +960,7 @@ class ConfigParser:
         processes = [self._parse_process(proc) for proc in data["processes"]]
         states = [self._parse_state(state) for state in data["states"]]
         transitions = [self._parse_transition(trans) for trans in data["transitions"]]
+        schedules = [self._parse_schedule(sched) for sched in data.get("schedules", [])]
 
         execution_settings = self._parse_execution_settings(settings["execution"])
         recognition_settings = self._parse_recognition_settings(settings["recognition"])
@@ -971,6 +975,7 @@ class ConfigParser:
             categories=data["categories"],
             execution_settings=execution_settings,
             recognition_settings=recognition_settings,
+            schedules=schedules,
         )
 
         self._save_images(config)
@@ -1268,6 +1273,19 @@ class ConfigParser:
             edge_detection=data.get("edgeDetection", False),
             ocr_enabled=data.get("ocrEnabled", False),
         )
+
+    def _parse_schedule(self, data: dict[str, Any]) -> Any:
+        """Parse schedule configuration from dictionary.
+
+        Args:
+            data: Schedule data dictionary from JSON
+
+        Returns:
+            ScheduleConfig object
+        """
+        from ..scheduling import ScheduleConfig
+
+        return ScheduleConfig.from_dict(data)
 
     def _save_images(self, config: QontinuiConfig):
         """Save base64 images to temporary files."""

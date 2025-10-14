@@ -1,0 +1,224 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "name": "Scheduler Example",
+    "description": "Example configuration showing state-aware scheduling",
+    "author": "Qontinui",
+    "created": "2025-01-13"
+  },
+  "schedules": [
+    {
+      "id": "schedule-daily-check",
+      "name": "Daily Health Check",
+      "description": "Runs a health check process daily at 9 AM",
+      "processId": "health-check-process",
+      "triggerType": "TIME",
+      "scheduleType": "FIXED_RATE",
+      "cronExpression": "0 9 * * *",
+      "checkMode": "CHECK_INACTIVE_ONLY",
+      "maxIterations": 1,
+      "stateCheckDelaySeconds": 2.0,
+      "stateRebuildDelaySeconds": 1.0,
+      "failureThreshold": 3,
+      "enabled": true,
+      "projectName": "scheduler-example",
+      "createdAt": "2025-01-13T00:00:00Z"
+    },
+    {
+      "id": "schedule-monitor-errors",
+      "name": "Error Monitoring",
+      "description": "Checks for errors every 5 minutes",
+      "processId": "check-errors-process",
+      "triggerType": "INTERVAL",
+      "scheduleType": "FIXED_DELAY",
+      "intervalSeconds": 300,
+      "checkMode": "CHECK_ALL",
+      "maxIterations": null,
+      "stateCheckDelaySeconds": 2.0,
+      "stateRebuildDelaySeconds": 1.0,
+      "failureThreshold": 3,
+      "enabled": true,
+      "projectName": "scheduler-example",
+      "createdAt": "2025-01-13T00:00:00Z"
+    },
+    {
+      "id": "schedule-backup",
+      "name": "Periodic Backup",
+      "description": "Backs up data every hour with limited iterations",
+      "processId": "backup-process",
+      "triggerType": "INTERVAL",
+      "scheduleType": "FIXED_RATE",
+      "intervalSeconds": 3600,
+      "checkMode": "CHECK_INACTIVE_ONLY",
+      "maxIterations": 24,
+      "stateCheckDelaySeconds": 2.0,
+      "stateRebuildDelaySeconds": 1.0,
+      "failureThreshold": 5,
+      "enabled": false,
+      "projectName": "scheduler-example",
+      "createdAt": "2025-01-13T00:00:00Z"
+    },
+    {
+      "id": "schedule-state-trigger",
+      "name": "Error State Handler",
+      "description": "Automatically handles error dialog when it appears",
+      "processId": "handle-error-process",
+      "triggerType": "STATE",
+      "triggerState": "error-dialog",
+      "scheduleType": "FIXED_RATE",
+      "checkMode": "CHECK_ALL",
+      "maxIterations": 3,
+      "stateCheckDelaySeconds": 1.0,
+      "stateRebuildDelaySeconds": 0.5,
+      "failureThreshold": 3,
+      "enabled": true,
+      "projectName": "scheduler-example",
+      "createdAt": "2025-01-13T00:00:00Z"
+    },
+    {
+      "id": "schedule-manual",
+      "name": "Manual Backup",
+      "description": "Manual schedule for one-time backup execution",
+      "processId": "backup-process",
+      "triggerType": "MANUAL",
+      "scheduleType": "FIXED_RATE",
+      "checkMode": "CHECK_ALL",
+      "maxIterations": 1,
+      "stateCheckDelaySeconds": 2.0,
+      "stateRebuildDelaySeconds": 1.0,
+      "failureThreshold": 1,
+      "enabled": false,
+      "projectName": "scheduler-example",
+      "createdAt": "2025-01-13T00:00:00Z"
+    }
+  ],
+  "executionRecords": [
+    {
+      "id": "exec-1",
+      "scheduleId": "schedule-daily-check",
+      "processId": "health-check-process",
+      "startTime": "2025-01-15T09:00:00Z",
+      "endTime": "2025-01-15T09:00:45Z",
+      "success": true,
+      "iterationCount": 1,
+      "errors": [],
+      "metadata": {
+        "states_checked": 2,
+        "states_active": 2,
+        "final_state": "main-menu"
+      }
+    },
+    {
+      "id": "exec-2",
+      "scheduleId": "schedule-monitor-errors",
+      "processId": "check-errors-process",
+      "startTime": "2025-01-15T09:05:00Z",
+      "endTime": "2025-01-15T09:05:30Z",
+      "success": true,
+      "iterationCount": 1,
+      "errors": [],
+      "metadata": {
+        "states_checked": 3,
+        "states_active": 1
+      }
+    },
+    {
+      "id": "exec-3",
+      "scheduleId": "schedule-state-trigger",
+      "processId": "handle-error-process",
+      "startTime": "2025-01-15T10:30:00Z",
+      "endTime": "2025-01-15T10:31:00Z",
+      "success": false,
+      "iterationCount": 3,
+      "errors": [
+        "Max iterations reached",
+        "Error dialog still present after recovery attempts"
+      ],
+      "metadata": {
+        "states_checked": 3,
+        "states_active": 1,
+        "trigger_state": "error-dialog",
+        "recovery_attempted": true
+      }
+    }
+  ],
+  "images": [],
+  "processes": [
+    {
+      "id": "health-check-process",
+      "name": "Health Check",
+      "description": "Verifies system health",
+      "type": "sequence",
+      "actions": []
+    },
+    {
+      "id": "check-errors-process",
+      "name": "Check Errors",
+      "description": "Monitors for error conditions",
+      "type": "sequence",
+      "actions": []
+    },
+    {
+      "id": "backup-process",
+      "name": "Backup",
+      "description": "Backs up application data",
+      "type": "sequence",
+      "actions": []
+    },
+    {
+      "id": "handle-error-process",
+      "name": "Handle Error",
+      "description": "Attempts to recover from error conditions",
+      "type": "sequence",
+      "actions": []
+    }
+  ],
+  "states": [
+    {
+      "id": "main-menu",
+      "name": "Main Menu",
+      "description": "Application main menu",
+      "stateImages": [],
+      "position": {"x": 100, "y": 100},
+      "isInitial": true,
+      "isFinal": false
+    },
+    {
+      "id": "logged-in",
+      "name": "Logged In",
+      "description": "User is authenticated",
+      "stateImages": [],
+      "position": {"x": 300, "y": 100},
+      "isInitial": false,
+      "isFinal": false
+    },
+    {
+      "id": "error-dialog",
+      "name": "Error Dialog",
+      "description": "Error message displayed",
+      "stateImages": [],
+      "position": {"x": 100, "y": 300},
+      "isInitial": false,
+      "isFinal": false
+    }
+  ],
+  "transitions": [],
+  "categories": ["Main", "Monitoring", "Maintenance"],
+  "settings": {
+    "execution": {
+      "defaultTimeout": 10000,
+      "defaultRetryCount": 3,
+      "actionDelay": 100,
+      "failureStrategy": "stop",
+      "headless": false
+    },
+    "recognition": {
+      "defaultThreshold": 0.85,
+      "searchAlgorithm": "template_matching",
+      "multiScaleSearch": true,
+      "colorSpace": "rgb",
+      "edgeDetection": false,
+      "ocrEnabled": false
+    }
+  }
+}
