@@ -227,20 +227,24 @@ class StateExecutor:
         return transitions
 
     def _execute_transition(self, transition: Transition) -> bool:
-        """Execute a single transition."""
+        """Execute a single transition.
+
+        Note: transition.process field references workflow IDs in v2.0.0,
+        but the field name is kept as 'process' for backward compatibility.
+        """
         print(f"\nExecuting transition: {transition.id}")
 
-        # Execute process in the transition
+        # Execute workflow in the transition (v2.0.0: workflow_map, v1.0.0: process_map)
         if transition.process:
-            process = self.config.process_map.get(transition.process)
-            if process:
-                process_result = self._execute_process(process)
-                print(f"[DEBUG] Process '{process.name}' execution result: {process_result}")
-                if not process_result:
-                    print(f"Process {process.name} failed")
+            workflow = self.config.workflow_map.get(transition.process)
+            if workflow:
+                workflow_result = self._execute_process(workflow)
+                print(f"[DEBUG] Workflow '{workflow.name}' execution result: {workflow_result}")
+                if not workflow_result:
+                    print(f"Workflow {workflow.name} failed")
                     return False
             else:
-                print(f"Process {transition.process} not found")
+                print(f"Workflow {transition.process} not found")
                 return False
 
         # Handle state changes for OutgoingTransition
@@ -299,16 +303,20 @@ class StateExecutor:
 
         return True
 
-    def _execute_process(self, process: Process) -> bool:
-        """Execute a process (sequence of actions)."""
-        print(f"Executing process: {process.name}")
+    def _execute_process(self, workflow: Process) -> bool:
+        """Execute a workflow (sequence of actions).
 
-        if process.type == "sequence":
+        Note: Method parameter is named 'workflow' to reflect v2.0.0 terminology,
+        but the Process class name is kept for backward compatibility.
+        """
+        print(f"Executing workflow: {workflow.name}")
+
+        if workflow.type == "sequence":
             # Execute actions in sequence
-            for i, action in enumerate(process.actions):
+            for i, action in enumerate(workflow.actions):
                 action_result = self.action_executor.execute_action(action)
                 print(
-                    f"[DEBUG] Action {i+1}/{len(process.actions)} ({action.type}) result: {action_result}"
+                    f"[DEBUG] Action {i+1}/{len(workflow.actions)} ({action.type}) result: {action_result}"
                 )
                 if not action_result:
                     if action.continue_on_error:
@@ -316,14 +324,14 @@ class StateExecutor:
                             f"[DEBUG] Action {i+1} failed but continue_on_error=True, continuing..."
                         )
                         continue
-                    print(f"[DEBUG] Process '{process.name}' FAILED at action {i+1}")
+                    print(f"[DEBUG] Workflow '{workflow.name}' FAILED at action {i+1}")
                     return False
-        elif process.type == "parallel":
+        elif workflow.type == "parallel":
             # For now, execute sequentially (parallel execution would need threading)
-            for action in process.actions:
+            for action in workflow.actions:
                 self.action_executor.execute_action(action)
 
-        print(f"[DEBUG] Process '{process.name}' COMPLETED successfully")
+        print(f"[DEBUG] Workflow '{workflow.name}' COMPLETED successfully")
         return True
 
     def _should_continue(self) -> bool:

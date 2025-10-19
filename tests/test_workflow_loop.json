@@ -1,0 +1,66 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "name": "Test Workflow - Loop",
+    "description": "Test workflow for FOR loop functionality"
+  },
+  "states": [
+    {
+      "id": "state-1",
+      "name": "Initial State",
+      "is_initial": true,
+      "is_final": false,
+      "identifying_images": [],
+      "state_strings": []
+    }
+  ],
+  "transitions": [],
+  "processes": [
+    {
+      "id": "process-loop-test",
+      "name": "Loop Test Process",
+      "type": "sequence",
+      "actions": [
+        {
+          "id": "action-set-counter",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "counter",
+            "value": 0,
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-loop",
+          "type": "LOOP",
+          "config": {
+            "loopType": "FOR",
+            "iterations": 5,
+            "iteratorVariable": "i",
+            "actions": [
+              "action-increment-counter"
+            ]
+          }
+        },
+        {
+          "id": "action-increment-counter",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "counter",
+            "valueSource": {
+              "type": "expression",
+              "expression": "counter + 1"
+            },
+            "scope": "local"
+          }
+        }
+      ]
+    }
+  ],
+  "images": [],
+  "schedules": [],
+  "execution_settings": {
+    "failure_strategy": "stop",
+    "max_retries": 3
+  }
+}

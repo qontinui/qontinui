@@ -41,6 +41,9 @@ from .basic.wait.wait import WaitOptions
 # Import composite action options
 from .composite import DragOptions, DragOptionsBuilder
 from .composite.chains.action_chain import ActionChain
+
+# Import control flow
+from .control_flow import BreakLoop, ContinueLoop, ControlFlowExecutor
 from .fluent import FluentActions
 from .keys import Key, KeyCombo, KeyCombos
 from .object_collection import ObjectCollection, ObjectCollectionBuilder
@@ -107,6 +110,10 @@ __all__ = [
     "Actions",
     # Wait options
     "WaitOptions",
+    # Control flow
+    "ControlFlowExecutor",
+    "BreakLoop",
+    "ContinueLoop",
     # Aliases for convenience
     "MoveOptions",  # Alias for MouseMoveOptions
 ]

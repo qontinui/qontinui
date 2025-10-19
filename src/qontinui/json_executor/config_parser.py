@@ -848,12 +848,16 @@ class RecognitionSettings:
 
 @dataclass
 class QontinuiConfig:
-    """Complete Qontinui configuration."""
+    """Complete Qontinui configuration.
+
+    Supports both v1.0.0 (processes) and v2.0.0 (workflows) config formats.
+    Internally uses 'workflows' terminology for consistency with v2.0.0.
+    """
 
     version: str
     metadata: dict[str, Any]
     images: list[ImageAsset]
-    processes: list[Process]
+    workflows: list[Process]  # v2.0.0: workflows, v1.0.0: processes
     states: list[State]
     transitions: list[Transition]
     categories: list[str]
@@ -863,14 +867,27 @@ class QontinuiConfig:
 
     # Runtime data
     image_directory: Path | None = None
-    process_map: dict[str, Process] = field(default_factory=dict)
+    workflow_map: dict[str, Process] = field(
+        default_factory=dict
+    )  # v2.0.0: workflow_map, v1.0.0: process_map
     state_map: dict[str, State] = field(default_factory=dict)
     image_map: dict[str, ImageAsset] = field(default_factory=dict)
     schedule_map: dict[str, Any] = field(default_factory=dict)  # Schedule ID -> ScheduleConfig
 
+    # Backward compatibility alias for v1.0.0
+    @property
+    def processes(self) -> list[Process]:
+        """Alias for workflows to maintain v1.0.0 compatibility."""
+        return self.workflows
+
+    @property
+    def process_map(self) -> dict[str, Process]:
+        """Alias for workflow_map to maintain v1.0.0 compatibility."""
+        return self.workflow_map
+
     def __post_init__(self):
         """Build lookup maps for efficient access."""
-        self.process_map = {p.id: p for p in self.processes}
+        self.workflow_map = {p.id: p for p in self.workflows}
         self.state_map = {s.id: s for s in self.states}
         self.image_map = {i.id: i for i in self.images}
         self.schedule_map = {s.id: s for s in self.schedules}
@@ -951,13 +968,21 @@ class ConfigParser:
         return self.parse_config(data)
 
     def parse_config(self, data: dict[str, Any]) -> QontinuiConfig:
-        """Parse configuration dictionary into QontinuiConfig object."""
+        """Parse configuration dictionary into QontinuiConfig object.
+
+        Supports both v1.0.0 (processes) and v2.0.0 (workflows) formats.
+        v2.0.0 configs have a 'workflows' array, v1.0.0 has 'processes' array.
+        """
         settings = data["settings"]
         # Store execution settings data for use during action parsing
         self._execution_settings_data = settings["execution"]
 
         images = [self._parse_image(img) for img in data["images"]]
-        processes = [self._parse_process(proc) for proc in data["processes"]]
+
+        # v2.0.0: Read from 'workflows' array if present, otherwise fall back to 'processes' (v1.0.0)
+        workflows_data = data.get("workflows", data.get("processes", []))
+        workflows = [self._parse_process(proc) for proc in workflows_data]
+
         states = [self._parse_state(state) for state in data["states"]]
         transitions = [self._parse_transition(trans) for trans in data["transitions"]]
         schedules = [self._parse_schedule(sched) for sched in data.get("schedules", [])]
@@ -969,7 +994,7 @@ class ConfigParser:
             version=data["version"],
             metadata=data["metadata"],
             images=images,
-            processes=processes,
+            workflows=workflows,
             states=states,
             transitions=transitions,
             categories=data["categories"],

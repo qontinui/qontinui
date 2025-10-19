@@ -1,0 +1,136 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "name": "Test Workflow - Nested Loops with Conditionals",
+    "description": "Test workflow for nested loops with conditional logic"
+  },
+  "states": [
+    {
+      "id": "state-1",
+      "name": "Initial State",
+      "is_initial": true,
+      "is_final": false,
+      "identifying_images": [],
+      "state_strings": []
+    }
+  ],
+  "transitions": [],
+  "processes": [
+    {
+      "id": "process-nested-test",
+      "name": "Nested Loop Test Process",
+      "type": "sequence",
+      "actions": [
+        {
+          "id": "action-init-matrix",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "matrix",
+            "value": [],
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-outer-loop",
+          "type": "LOOP",
+          "config": {
+            "loopType": "FOR",
+            "iterations": 3,
+            "iteratorVariable": "row",
+            "actions": [
+              "action-init-row",
+              "action-inner-loop"
+            ]
+          }
+        },
+        {
+          "id": "action-init-row",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "currentRow",
+            "value": [],
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-inner-loop",
+          "type": "LOOP",
+          "config": {
+            "loopType": "FOR",
+            "iterations": 3,
+            "iteratorVariable": "col",
+            "actions": [
+              "action-calculate-value",
+              "action-check-even",
+              "action-add-to-row"
+            ]
+          }
+        },
+        {
+          "id": "action-calculate-value",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "cellValue",
+            "valueSource": {
+              "type": "expression",
+              "expression": "row * 3 + col"
+            },
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-check-even",
+          "type": "IF",
+          "config": {
+            "condition": {
+              "type": "expression",
+              "expression": "cellValue % 2 == 0"
+            },
+            "thenActions": [
+              "action-set-even-flag"
+            ],
+            "elseActions": [
+              "action-set-odd-flag"
+            ]
+          }
+        },
+        {
+          "id": "action-set-even-flag",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "isEven",
+            "value": true,
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-set-odd-flag",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "isEven",
+            "value": false,
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-add-to-row",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "currentRow",
+            "valueSource": {
+              "type": "expression",
+              "expression": "currentRow + [cellValue]"
+            },
+            "scope": "local"
+          }
+        }
+      ]
+    }
+  ],
+  "images": [],
+  "schedules": [],
+  "execution_settings": {
+    "failure_strategy": "stop",
+    "max_retries": 3
+  }
+}
