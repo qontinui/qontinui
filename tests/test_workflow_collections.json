@@ -1,0 +1,87 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "name": "Test Workflow - Collections",
+    "description": "Test workflow for MAP, FILTER, SORT, and REDUCE operations"
+  },
+  "states": [
+    {
+      "id": "state-1",
+      "name": "Initial State",
+      "is_initial": true,
+      "is_final": false,
+      "identifying_images": [],
+      "state_strings": []
+    }
+  ],
+  "transitions": [],
+  "processes": [
+    {
+      "id": "process-collections-test",
+      "name": "Collections Test Process",
+      "type": "sequence",
+      "actions": [
+        {
+          "id": "action-create-list",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "numbers",
+            "value": [5, 2, 8, 1, 9, 3, 7, 4, 6],
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-sort-numbers",
+          "type": "SORT",
+          "config": {
+            "target": "variable",
+            "variableName": "numbers",
+            "order": "ASC",
+            "comparator": "NUMERIC",
+            "outputVariable": "sortedNumbers"
+          }
+        },
+        {
+          "id": "action-filter-greater-than-5",
+          "type": "FILTER",
+          "config": {
+            "variableName": "sortedNumbers",
+            "condition": {
+              "type": "expression",
+              "expression": "item > 5"
+            },
+            "outputVariable": "filtered"
+          }
+        },
+        {
+          "id": "action-map-double",
+          "type": "MAP",
+          "config": {
+            "variableName": "filtered",
+            "transform": {
+              "type": "expression",
+              "expression": "item * 2"
+            },
+            "outputVariable": "doubled"
+          }
+        },
+        {
+          "id": "action-reduce-sum",
+          "type": "REDUCE",
+          "config": {
+            "variableName": "doubled",
+            "operation": "sum",
+            "initialValue": 0,
+            "outputVariable": "total"
+          }
+        }
+      ]
+    }
+  ],
+  "images": [],
+  "schedules": [],
+  "execution_settings": {
+    "failure_strategy": "stop",
+    "max_retries": 3
+  }
+}

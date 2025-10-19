@@ -209,11 +209,14 @@ class StateDetector:
         timeout = timeout or self.max_search_time
         logger.info(f"Waiting for states {expected_state_ids} (timeout: {timeout}s)")
 
-        import time
+        # Use TimeWrapper for mock/real agnostic waiting
+        from ..wrappers import get_controller
 
-        start_time = time.time()
+        controller = get_controller()
 
-        while time.time() - start_time < timeout:
+        start_time = controller.time.timestamp()
+
+        while controller.time.timestamp() - start_time < timeout:
             found_all = True
 
             for state_id in expected_state_ids:
@@ -228,7 +231,7 @@ class StateDetector:
                 logger.info("All expected states found")
                 return True
 
-            time.sleep(0.5)  # Check twice per second
+            controller.time.wait(0.5)  # Check twice per second (instant in mock mode)
 
         logger.warning(f"Timeout waiting for states {expected_state_ids}")
         return False

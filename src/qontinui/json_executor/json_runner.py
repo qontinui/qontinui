@@ -129,7 +129,8 @@ class JSONRunner:
             print(f"  Version: {self.config.version}")
             print(f"  Name: {self.config.metadata.get('name', 'Unnamed')}")
             print(f"  States: {len(self.config.states)}")
-            print(f"  Processes: {len(self.config.processes)}")
+            # v2.0.0: workflows, v1.0.0: processes (property alias maintains compatibility)
+            print(f"  Workflows: {len(self.config.workflows)}")
             print(f"  Transitions: {len(self.config.transitions)}")
             print(f"  Images: {len(self.config.images)}")
             print(f"  Schedules: {len(self.config.schedules)}")
@@ -171,11 +172,11 @@ class JSONRunner:
                         f"Transition {trans.id} references unknown to_state: {trans.to_state}"
                     )
 
-        # Validate processes exist
-        process_ids = {p.id for p in self.config.processes}
+        # Validate workflows exist (v2.0.0 terminology, but transition.process field kept for backward compat)
+        workflow_ids = {w.id for w in self.config.workflows}
         for trans in self.config.transitions:
-            if trans.process and trans.process not in process_ids:
-                errors.append(f"Transition {trans.id} references unknown process: {trans.process}")
+            if trans.process and trans.process not in workflow_ids:
+                errors.append(f"Transition {trans.id} references unknown workflow: {trans.process}")
 
         # Validate images exist and have valid data
         for img in self.config.images:
@@ -200,23 +201,24 @@ class JSONRunner:
         process_id: str,
         monitor_index: int | None = None,
     ) -> bool:
-        """Run model-based automation starting with a specific process.
+        """Run model-based automation starting with a specific workflow.
 
         Qontinui is a model-based framework that uses state traversal and pathfinding.
-        Execution starts by running a specified process, and the framework automatically
-        handles state navigation through the state graph.
+        Execution starts by running a specified workflow (v2.0.0) / process (v1.0.0),
+        and the framework automatically handles state navigation through the state graph.
 
         Args:
-            process_id: ID of the process to execute (required entry point)
+            process_id: ID of the workflow/process to execute (required entry point).
+                Named 'process_id' for backward compatibility with v1.0.0.
             monitor_index: Index of monitor to run automation on (0-based)
         """
         if not self.config:
             print("No configuration loaded")
             return False
 
-        # Validate process exists
-        if process_id not in self.config.process_map:
-            print(f"Process '{process_id}' not found in configuration")
+        # Validate workflow exists (using process_map property alias for backward compatibility)
+        if process_id not in self.config.workflow_map:
+            print(f"Workflow '{process_id}' not found in configuration")
             return False
 
         # Set monitor index if provided
@@ -245,13 +247,14 @@ class JSONRunner:
         # Cleanup happens when new config is loaded or runner is destroyed
 
     def _run_process_with_state_machine(self, process_id: str) -> bool:
-        """Run a process with full state machine support.
+        """Run a workflow with full state machine support.
 
-        This executes the specified process while using state traversal for navigation.
-        All GO_TO_STATE actions automatically use pathfinding through the state graph.
+        This executes the specified workflow (v2.0.0) / process (v1.0.0) while using
+        state traversal for navigation. All GO_TO_STATE actions automatically use
+        pathfinding through the state graph.
 
         Args:
-            process_id: Process to execute
+            process_id: Workflow/process ID to execute
         """
         print("\n=== Starting Model-Based Execution ===\n")
 
@@ -259,22 +262,22 @@ class JSONRunner:
             print("State executor or config not initialized")
             return False
 
-        process = self.config.process_map[process_id]
-        print(f"Running process: {process.name}")
+        workflow = self.config.workflow_map[process_id]
+        print(f"Running workflow: {workflow.name}")
 
         # Initialize state machine if needed
         if not self.state_executor.current_state:
             self.state_executor.initialize()
 
-        # Execute the process through state executor's action executor
-        for action in process.actions:
+        # Execute the workflow through state executor's action executor
+        for action in workflow.actions:
             # Check stop flag before each action
             if self._should_stop:
                 print("\n=== Execution Stopped by User ===")
                 return False
 
             if not self.state_executor.action_executor.execute_action(action):
-                print(f"Action {action.id} failed in process {process.name}")
+                print(f"Action {action.id} failed in workflow {workflow.name}")
                 if (
                     self.config.execution_settings is not None
                     and self.config.execution_settings.failure_strategy == "stop"
@@ -380,7 +383,8 @@ class JSONRunner:
             "config_name": self.config.metadata.get("name", "Unnamed"),
             "version": self.config.version,
             "states": len(self.config.states),
-            "processes": len(self.config.processes),
+            # v2.0.0: workflows, v1.0.0: processes
+            "workflows": len(self.config.workflows),
             "transitions": len(self.config.transitions),
             "images": len(self.config.images),
             "schedules": len(self.config.schedules),

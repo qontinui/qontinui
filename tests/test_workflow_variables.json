@@ -1,0 +1,92 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "name": "Test Workflow - Variables",
+    "description": "Test workflow for SET_VARIABLE and GET_VARIABLE functionality"
+  },
+  "states": [
+    {
+      "id": "state-1",
+      "name": "Initial State",
+      "is_initial": true,
+      "is_final": false,
+      "identifying_images": [],
+      "state_strings": []
+    }
+  ],
+  "transitions": [],
+  "processes": [
+    {
+      "id": "process-variables-test",
+      "name": "Variables Test Process",
+      "type": "sequence",
+      "actions": [
+        {
+          "id": "action-set-string",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "greeting",
+            "value": "Hello World",
+            "scope": "global"
+          }
+        },
+        {
+          "id": "action-set-number",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "count",
+            "value": 100,
+            "scope": "process"
+          }
+        },
+        {
+          "id": "action-set-expression",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "doubled",
+            "valueSource": {
+              "type": "expression",
+              "expression": "count * 2"
+            },
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-get-doubled",
+          "type": "GET_VARIABLE",
+          "config": {
+            "variableName": "doubled",
+            "outputVariable": "result"
+          }
+        },
+        {
+          "id": "action-math-add",
+          "type": "MATH_OPERATION",
+          "config": {
+            "operation": "ADD",
+            "operands": [10, 20, 30],
+            "outputVariable": "sum"
+          }
+        },
+        {
+          "id": "action-string-concat",
+          "type": "STRING_OPERATION",
+          "config": {
+            "operation": "CONCAT",
+            "input": "Hello",
+            "parameters": {
+              "strings": [" ", "World", "!"]
+            },
+            "outputVariable": "message"
+          }
+        }
+      ]
+    }
+  ],
+  "images": [],
+  "schedules": [],
+  "execution_settings": {
+    "failure_strategy": "stop",
+    "max_retries": 3
+  }
+}

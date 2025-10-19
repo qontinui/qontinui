@@ -1,0 +1,78 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "name": "Test Workflow - If/Else",
+    "description": "Test workflow for IF/ELSE conditional functionality"
+  },
+  "states": [
+    {
+      "id": "state-1",
+      "name": "Initial State",
+      "is_initial": true,
+      "is_final": false,
+      "identifying_images": [],
+      "state_strings": []
+    }
+  ],
+  "transitions": [],
+  "processes": [
+    {
+      "id": "process-if-test",
+      "name": "If/Else Test Process",
+      "type": "sequence",
+      "actions": [
+        {
+          "id": "action-set-value",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "testValue",
+            "value": 42,
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-if-greater",
+          "type": "IF",
+          "config": {
+            "condition": {
+              "type": "variable",
+              "variableName": "testValue",
+              "operator": ">",
+              "expectedValue": 30
+            },
+            "thenActions": [
+              "action-set-result-true"
+            ],
+            "elseActions": [
+              "action-set-result-false"
+            ]
+          }
+        },
+        {
+          "id": "action-set-result-true",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "result",
+            "value": "value is greater than 30",
+            "scope": "local"
+          }
+        },
+        {
+          "id": "action-set-result-false",
+          "type": "SET_VARIABLE",
+          "config": {
+            "variableName": "result",
+            "value": "value is not greater than 30",
+            "scope": "local"
+          }
+        }
+      ]
+    }
+  ],
+  "images": [],
+  "schedules": [],
+  "execution_settings": {
+    "failure_strategy": "stop",
+    "max_retries": 3
+  }
+}

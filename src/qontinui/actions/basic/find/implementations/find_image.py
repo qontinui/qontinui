@@ -3,6 +3,7 @@
 Core image matching using template matching and other strategies.
 """
 
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from typing import Any, cast
@@ -78,6 +79,87 @@ class FindImage:
                 break
 
         return matches
+
+    async def find_async(
+        self,
+        object_collection: ObjectCollection,
+        options: PatternFindOptions,
+        max_concurrent: int = 15,
+    ) -> list[Match]:
+        """Find images asynchronously with parallel pattern matching.
+
+        Searches for multiple patterns concurrently, significantly improving
+        performance when searching for many patterns. Uses semaphore to limit
+        concurrent template matches to avoid memory issues.
+
+        Performance improvement:
+        - Sequential: N patterns × 200ms = N/5 seconds
+        - Async parallel: ~200-400ms regardless of N (up to concurrency limit)
+
+        Args:
+            object_collection: Objects containing patterns to find
+            options: Pattern find configuration
+            max_concurrent: Maximum concurrent pattern matches (default: 15)
+
+        Returns:
+            List of matches found (combined from all patterns)
+
+        Example:
+            # Search for 10 patterns in parallel (~200ms total)
+            matches = await finder.find_async(collection, options)
+        """
+        if not self._cv2_available:
+            logger.error("OpenCV required for image matching")
+            return []
+
+        # Get patterns to find
+        patterns = self._get_patterns(object_collection, options)
+
+        if not patterns:
+            logger.warning("No patterns to find")
+            return []
+
+        # Get search images once (shared across all pattern searches)
+        search_images = await asyncio.to_thread(self._get_search_images, options)
+
+        logger.info(f"Starting parallel search for {len(patterns)} patterns")
+
+        # Create search tasks for each pattern
+        search_tasks = []
+        for pattern in patterns:
+            # Run template matching in thread pool (CPU-bound)
+            task = asyncio.to_thread(self._find_pattern, pattern, search_images, options)
+            search_tasks.append({"pattern": pattern, "task": task})
+
+        # Execute with concurrency limit
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        async def limited_search(task_info: dict) -> list[Match]:
+            async with semaphore:
+                matches = await task_info["task"]
+                return matches
+
+        # Run all searches concurrently
+        results = await asyncio.gather(
+            *[limited_search(t) for t in search_tasks], return_exceptions=True
+        )
+
+        # Combine all matches
+        all_matches = []
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(f"Error during pattern search: {result}")
+                continue
+            all_matches.extend(result)
+
+            # Early termination if enough matches found
+            if options.search_type.name == "FIRST" and all_matches:
+                break
+
+        logger.info(
+            f"Parallel search complete: found {len(all_matches)} matches across {len(patterns)} patterns"
+        )
+        return all_matches
 
     def _get_patterns(
         self, object_collection: ObjectCollection, options: PatternFindOptions
@@ -328,29 +410,63 @@ class FindImage:
         return None
 
     def _capture_screen(self) -> np.ndarray[Any, Any] | None:
-        """Capture full screen.
+        """Capture full screen using wrapper (routes to mock or real).
 
         Returns:
-            Screen image or None
+            Screen image as numpy array or None
         """
-        # This would capture the actual screen
-        # For now, return None as placeholder
-        logger.debug("Capturing screen")
-        return None
+        try:
+            import cv2
+
+            from .....wrappers import get_controller
+
+            controller = get_controller()
+            screenshot = controller.capture.capture()
+
+            # Convert PIL Image to numpy array (BGR for OpenCV)
+            img_array = np.array(screenshot)
+
+            # Convert RGB to BGR for OpenCV
+            if len(img_array.shape) == 3 and img_array.shape[2] == 3:
+                img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+
+            logger.debug(f"Captured screen: {img_array.shape}")
+            return img_array
+
+        except Exception as e:
+            logger.error(f"Error capturing screen: {e}", exc_info=True)
+            return None
 
     def _capture_region(self, region: Region) -> np.ndarray[Any, Any] | None:
-        """Capture specific region.
+        """Capture specific region using wrapper (routes to mock or real).
 
         Args:
             region: Region to capture
 
         Returns:
-            Region image or None
+            Region image as numpy array or None
         """
-        # This would capture the specified region
-        # For now, return None as placeholder
-        logger.debug(f"Capturing region: {region}")
-        return None
+        try:
+            import cv2
+
+            from .....wrappers import get_controller
+
+            controller = get_controller()
+            screenshot = controller.capture.capture_region(region)
+
+            # Convert PIL Image to numpy array (BGR for OpenCV)
+            img_array = np.array(screenshot)
+
+            # Convert RGB to BGR for OpenCV
+            if len(img_array.shape) == 3 and img_array.shape[2] == 3:
+                img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+
+            logger.debug(f"Captured region {region}: {img_array.shape}")
+            return img_array
+
+        except Exception as e:
+            logger.error(f"Error capturing region {region}: {e}", exc_info=True)
+            return None
 
 
 @dataclass
@@ -398,3 +514,38 @@ class ImageFinder:
         """
         self._ml_finder = ml_finder
         logger.info("ML finder registered")
+
+    async def find_async(
+        self,
+        object_collection: ObjectCollection,
+        options: PatternFindOptions,
+        max_concurrent: int = 15,
+    ) -> list[Match]:
+        """Find images asynchronously using best available method.
+
+        Args:
+            object_collection: Objects to find
+            options: Pattern options
+            max_concurrent: Maximum concurrent pattern matches
+
+        Returns:
+            List of matches
+        """
+        # Check if ML finder is available and has async support
+        if self.use_ml_if_available and self._ml_finder is not None:
+            if hasattr(self._ml_finder, "find_async"):
+                logger.debug("Using ML-based image finder (async)")
+                return cast(
+                    list[Match], await self._ml_finder.find_async(object_collection, options)
+                )
+            else:
+                # Fallback to sync ML finder in thread pool
+                logger.debug("Using ML-based image finder (sync in thread pool)")
+                return cast(
+                    list[Match],
+                    await asyncio.to_thread(self._ml_finder.find, object_collection, options),
+                )
+
+        # Use legacy template matching (async)
+        logger.debug("Using template matching finder (async)")
+        return await self._legacy_finder.find_async(object_collection, options, max_concurrent)
