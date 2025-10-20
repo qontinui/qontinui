@@ -355,17 +355,18 @@ Thumbs.db
 CLAUDE.md
 test_venv
 test_*.py
-requirements.txt
 
 # Temporary development files
 temp_dev/
 
-*.txt
-*.md
-*.py
 *.sh
 mypy_errors_by_category/
 
 *.backup
 # Sphinx build output
 docs/_build/
+
+# Development utility scripts
+analyze_mypy_report.py
+generate_summary.py
+validate_run_process.py
