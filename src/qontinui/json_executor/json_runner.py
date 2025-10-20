@@ -172,11 +172,14 @@ class JSONRunner:
                         f"Transition {trans.id} references unknown to_state: {trans.to_state}"
                     )
 
-        # Validate workflows exist (v2.0.0 terminology, but transition.process field kept for backward compat)
+        # Validate workflows exist
         workflow_ids = {w.id for w in self.config.workflows}
         for trans in self.config.transitions:
-            if trans.process and trans.process not in workflow_ids:
-                errors.append(f"Transition {trans.id} references unknown workflow: {trans.process}")
+            for workflow_id in trans.workflows:
+                if workflow_id not in workflow_ids:
+                    errors.append(
+                        f"Transition {trans.id} references unknown workflow: {workflow_id}"
+                    )
 
         # Validate images exist and have valid data
         for img in self.config.images:

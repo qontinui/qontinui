@@ -591,8 +591,8 @@ class Transition:
     """Base class for state machine transitions.
 
     Transitions define how automation moves between states. Each transition can
-    execute a process (sequence of actions) and has configurable timeout and retry
-    settings. Transitions are the edges in the state machine graph connecting states.
+    execute one or more workflows (sequences of actions) and has configurable timeout
+    and retry settings. Transitions are the edges in the state machine graph connecting states.
 
     In model-based automation, transitions represent the "paths" between states and
     define both the navigation logic (which actions to perform) and the state changes
@@ -604,25 +604,25 @@ class Transition:
             - "automatic": Execute immediately when conditions are met
             - "conditional": Execute only if specific conditions are satisfied
             - "manual": Require user confirmation before execution
-        process: ID of the process to execute during this transition.
-            Empty string means transition performs state change only, no actions.
+        workflows: List of workflow IDs to execute during this transition.
+            Empty list means transition performs state change only, no actions.
         timeout: Maximum time in milliseconds to wait for transition completion (default: 10000).
         retry_count: Number of retry attempts if transition fails (default: 3).
 
     Note:
         - Transition is typically subclassed as OutgoingTransition or IncomingTransition
-        - Process execution happens before state changes are applied
+        - Workflow execution happens before state changes are applied
         - Failed transitions can be retried based on retry_count
 
     See Also:
         :class:`OutgoingTransition`: Transition from a state to another
         :class:`IncomingTransition`: Verification transition when entering a state
-        :class:`Process`: Sequence of actions executed during transition
+        :class:`Process`: Sequence of actions executed during transition (now called workflows)
     """
 
     id: str
     type: str
-    process: str = ""
+    workflows: list[str] = field(default_factory=list)
     timeout: int = 10000
     retry_count: int = 3
 
@@ -636,7 +636,7 @@ class OutgoingTransition(Transition):
     which states become active or inactive after the transition executes.
 
     When an OutgoingTransition executes:
-    1. The transition's process (if any) is executed
+    1. The transition's workflows (if any) are executed
     2. The to_state becomes active
     3. The from_state is deactivated (unless stays_visible=True)
     4. Additional states in activate_states become active
@@ -662,7 +662,7 @@ class OutgoingTransition(Transition):
         ...     type="automatic",
         ...     from_state="login_screen",
         ...     to_state="dashboard",
-        ...     process="login_process"
+        ...     workflows=["login_workflow"]
         ... )
         >>>
         >>> # Complex transition with parallel states
@@ -672,13 +672,13 @@ class OutgoingTransition(Transition):
         ...     from_state="dashboard",
         ...     to_state="settings_dialog",
         ...     stays_visible=True,  # Keep dashboard visible
-        ...     process="click_settings_button"
+        ...     workflows=["click_settings_button"]
         ... )
 
     Note:
         - By default, from_state is deactivated after transition
         - Multiple states can be active simultaneously after transition
-        - State changes happen after process execution completes
+        - State changes happen after workflow execution completes
 
     See Also:
         :class:`Transition`: Base transition class
@@ -717,7 +717,7 @@ class IncomingTransition(Transition):
         ...     id="dashboard_load_wait",
         ...     type="automatic",
         ...     to_state="dashboard",
-        ...     process="wait_for_dashboard_load"
+        ...     workflows=["wait_for_dashboard_load"]
         ... )
         >>>
         >>> # Verify error dialog appeared
@@ -725,7 +725,7 @@ class IncomingTransition(Transition):
         ...     id="verify_error_dialog",
         ...     type="automatic",
         ...     to_state="error_dialog",
-        ...     process="check_error_message"
+        ...     workflows=["check_error_message"]
         ... )
 
     Note:
@@ -1255,11 +1255,14 @@ class ConfigParser:
         """Parse transition from dictionary."""
         transition_type = data["type"]
 
+        # Read workflows array from JSON
+        workflows = data.get("workflows", [])
+
         if transition_type == "OutgoingTransition":
             return OutgoingTransition(
                 id=data["id"],
                 type=transition_type,
-                process=data.get("process", ""),
+                workflows=workflows,
                 timeout=data.get("timeout", 10000),
                 retry_count=data.get("retryCount", 3),
                 from_state=data.get("fromState", ""),
@@ -1272,7 +1275,7 @@ class ConfigParser:
             return IncomingTransition(
                 id=data["id"],
                 type=transition_type,
-                process=data.get("process", ""),
+                workflows=workflows,
                 timeout=data.get("timeout", 10000),
                 retry_count=data.get("retryCount", 3),
                 to_state=data.get("toState", ""),
