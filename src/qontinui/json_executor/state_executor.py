@@ -229,14 +229,14 @@ class StateExecutor:
     def _execute_transition(self, transition: Transition) -> bool:
         """Execute a single transition.
 
-        Note: transition.process field references workflow IDs in v2.0.0,
-        but the field name is kept as 'process' for backward compatibility.
+        Executes all workflows defined in the transition's workflows list.
+        If any workflow fails, the entire transition fails.
         """
         print(f"\nExecuting transition: {transition.id}")
 
-        # Execute workflow in the transition (v2.0.0: workflow_map, v1.0.0: process_map)
-        if transition.process:
-            workflow = self.config.workflow_map.get(transition.process)
+        # Execute all workflows in the transition
+        for workflow_id in transition.workflows:
+            workflow = self.config.workflow_map.get(workflow_id)
             if workflow:
                 workflow_result = self._execute_process(workflow)
                 print(f"[DEBUG] Workflow '{workflow.name}' execution result: {workflow_result}")
@@ -244,7 +244,7 @@ class StateExecutor:
                     print(f"Workflow {workflow.name} failed")
                     return False
             else:
-                print(f"Workflow {transition.process} not found")
+                print(f"Workflow {workflow_id} not found")
                 return False
 
         # Handle state changes for OutgoingTransition
