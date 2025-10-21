@@ -1,417 +1,242 @@
-"""StateService - ported from Qontinui framework.
+"""StateService - manages all State objects in the automation framework.
 
-Service for managing state operations and navigation.
+This module provides a centralized service for managing State objects with
+bidirectional ID mapping between string IDs (from JSON config) and integer IDs
+(used internally by the library).
+
+This is part of Phases 1 & 6 of the State/Transition Loading Implementation Plan.
 """
 
-import time
-from dataclasses import dataclass, field
-from typing import Any, cast
+import logging
+from typing import Any
 
-from ..transition.state_transition import StateTransition
-from .path import Path
-from .path_finder import PathFinder
 from .state import State
-from .state_memory import StateMemory
+
+logger = logging.getLogger(__name__)
 
 
-@dataclass
 class StateService:
-    """Service for managing states and navigation.
+    """Service for managing all State objects in the automation framework.
 
-    Port of StateService from Qontinui framework class.
-    Provides high-level state management operations.
+    This service provides centralized management of State objects with support for:
+    - Storage and retrieval by integer ID
+    - Storage and retrieval by state name
+    - Bidirectional ID mapping between string IDs (from JSON config) and integer IDs
+    - Auto-incrementing ID generation
+
+    The StateService is the foundation of the state management system, enabling
+    the rest of the framework to work with States through a consistent interface.
+
+    Attributes:
+        states_by_id: Map of integer IDs to State objects
+        states_by_name: Map of state names to State objects
+        string_id_to_int_id: Map of string IDs (from config) to integer IDs
+        int_id_to_string_id: Map of integer IDs to string IDs (from config)
+        next_id: Auto-incrementing counter for generating new integer IDs
     """
 
-    states: dict[str, State] = field(default_factory=dict)
-    current_state: State | None = None
-    state_memory: StateMemory = field(default_factory=StateMemory)
-    path_finder: PathFinder = field(default_factory=PathFinder)
+    def __init__(self):
+        """Initialize the StateService with empty state storage."""
+        self.states_by_id: dict[int, State] = {}
+        self.states_by_name: dict[str, State] = {}
+        self.string_id_to_int_id: dict[str, int] = {}
+        self.int_id_to_string_id: dict[int, str] = {}
+        self.next_id: int = 1
 
-    # Service configuration
-    _max_transition_attempts: int = 3
-    _transition_timeout: float = 30.0
-    _state_check_interval: float = 0.5
-    _auto_navigate: bool = True
+        logger.info("StateService initialized")
 
-    # Statistics
-    _transitions_executed: int = 0
-    _transitions_failed: int = 0
-    _states_visited: set[str] = field(default_factory=set)
+    def add_state(self, state: State) -> None:
+        """Add a state to the service.
 
-    def add_state(self, state: State) -> "StateService":
-        """Add a state to the service (fluent).
+        The state must have either an ID already set, or the service will
+        generate one automatically. The state is indexed by both ID and name.
 
         Args:
-            state: State to add
+            state: State object to add
 
-        Returns:
-            Self for chaining
+        Raises:
+            ValueError: If a state with the same name already exists
         """
-        self.states[state.name] = state
-        self.path_finder.add_state(state)
-        return self
+        # Check for duplicate names
+        if state.name in self.states_by_name:
+            logger.warning(f"State with name '{state.name}' already exists, replacing")
 
-    def add_states(self, states: list[State]) -> "StateService":
-        """Add multiple states (fluent).
+        # Assign ID if not set
+        if state.id is None:
+            state.id = self.next_id
+            self.next_id += 1
+
+        # Ensure next_id stays ahead
+        if state.id >= self.next_id:
+            self.next_id = state.id + 1
+
+        # Store in both indexes
+        self.states_by_id[state.id] = state
+        self.states_by_name[state.name] = state
+
+        logger.debug(f"Added state: id={state.id}, name='{state.name}'")
+
+    def get_state(self, state_id: int) -> State | None:
+        """Get a state by its integer ID.
 
         Args:
-            states: List of states to add
+            state_id: Integer ID of the state
 
         Returns:
-            Self for chaining
+            State object if found, None otherwise
         """
-        for state in states:
-            self.add_state(state)
-        return self
+        return self.states_by_id.get(state_id)
 
-    def get_state(self, name: str) -> State | None:
-        """Get state by name.
+    def get_state_by_name(self, name: str) -> State | None:
+        """Get a state by its name.
 
         Args:
-            name: State name
+            name: Name of the state
 
         Returns:
-            State or None
+            State object if found, None otherwise
         """
-        return self.states.get(name)
+        return self.states_by_name.get(name)
 
-    def get_current_state(self) -> State | None:
-        """Get the current state.
+    def get_all_states(self) -> list[State]:
+        """Get all states managed by this service.
 
         Returns:
-            Current state or None
+            List of all State objects, in no particular order
         """
-        # First check if stored current state is still active
-        if self.current_state and self.current_state.exists():
-            return self.current_state
+        return list(self.states_by_id.values())
 
-        # Otherwise, find which state is currently active
-        for state in self.states.values():
-            if state.exists():
-                self.set_current_state(state)
-                return state
+    def remove_state(self, state_id: int) -> None:
+        """Remove a state from the service.
 
-        return None
-
-    def set_current_state(self, state: State) -> "StateService":
-        """Set the current state (fluent).
+        Removes the state from all indexes and cleans up any ID mappings.
 
         Args:
-            state: State to set as current
-
-        Returns:
-            Self for chaining
+            state_id: Integer ID of the state to remove
         """
-        self.current_state = state
-        self.state_memory.record_state(state)
-        self._states_visited.add(state.name)
-        return self
+        state = self.states_by_id.get(state_id)
+        if state is None:
+            logger.warning(f"Cannot remove state: ID {state_id} not found")
+            return
 
-    def navigate_to(self, target_state: str | State) -> bool:
-        """Navigate to a target state.
+        # Remove from all indexes
+        del self.states_by_id[state_id]
+        if state.name in self.states_by_name:
+            del self.states_by_name[state.name]
+
+        # Clean up ID mappings
+        if state_id in self.int_id_to_string_id:
+            string_id = self.int_id_to_string_id[state_id]
+            del self.int_id_to_string_id[state_id]
+            if string_id in self.string_id_to_int_id:
+                del self.string_id_to_int_id[string_id]
+
+        logger.debug(f"Removed state: id={state_id}, name='{state.name}'")
+
+    def generate_id_for_string_id(self, string_id: str) -> int:
+        """Generate or retrieve an integer ID for a string ID.
+
+        This method maintains bidirectional mapping between string IDs (from JSON
+        config) and integer IDs (used internally). If the string ID has already
+        been mapped, the existing integer ID is returned. Otherwise, a new integer
+        ID is generated and the mapping is stored.
 
         Args:
-            target_state: Target state or state name
+            string_id: String ID from configuration (e.g., "state-start")
 
         Returns:
-            True if navigation succeeded
+            Integer ID corresponding to the string ID
         """
-        # Get target state object
-        if isinstance(target_state, str):
-            target = self.get_state(target_state)
-            if not target:
-                return False
-        else:
-            target = target_state
+        # Return existing mapping if available
+        if string_id in self.string_id_to_int_id:
+            return self.string_id_to_int_id[string_id]
 
-        # Check if already at target
-        current = self.get_current_state()
-        if current == target:
-            return True
+        # Generate new ID and create bidirectional mapping
+        new_id = self.next_id
+        self.next_id += 1
 
-        # Check if target is directly accessible
-        if target.exists():
-            self.set_current_state(target)
-            return True
+        self.string_id_to_int_id[string_id] = new_id
+        self.int_id_to_string_id[new_id] = string_id
 
-        # Find path if auto-navigate enabled
-        if self._auto_navigate and current:
-            path = self.path_finder.find_path(current, target)
-            if path:
-                return self.execute_path(path)
+        logger.debug(f"Generated ID mapping: '{string_id}' -> {new_id}")
 
-        # Try to reach target directly
-        return self.go_to_state(target)
+        return new_id
 
-    def go_to_state(self, state: State, timeout: float | None = None) -> bool:
-        """Go directly to a state.
+    def get_string_id(self, int_id: int) -> str | None:
+        """Get the string ID corresponding to an integer ID.
 
         Args:
-            state: Target state
-            timeout: Maximum time to wait
+            int_id: Integer ID to look up
 
         Returns:
-            True if reached state
+            String ID if mapping exists, None otherwise
         """
-        timeout = timeout or self._transition_timeout
-        start_time = time.time()
+        return self.int_id_to_string_id.get(int_id)
 
-        # First check if state already exists
-        if state.wait_for(min(5.0, timeout / 2)):
-            self.set_current_state(state)
-            return True
+    def get_int_id(self, string_id: str) -> int | None:
+        """Get the integer ID corresponding to a string ID.
 
-        # Try transitions from current state
-        current = self.get_current_state()
-        if current:
-            transitions = current.get_transitions_to(state.name)
-            for transition in transitions:
-                if time.time() - start_time > timeout:
-                    break
-
-                if self.execute_transition(transition):
-                    if state.wait_for(min(5.0, timeout - (time.time() - start_time))):
-                        self.set_current_state(state)
-                        return True
-
-        return False
-
-    def execute_transition(self, transition: StateTransition) -> bool:
-        """Execute a single transition.
+        This method only performs lookup - it does not generate new IDs.
+        Use generate_id_for_string_id() to create new mappings.
 
         Args:
-            transition: Transition to execute
+            string_id: String ID to look up
 
         Returns:
-            True if transition succeeded
+            Integer ID if mapping exists, None otherwise
         """
-        attempts = 0
-        while attempts < self._max_transition_attempts:
-            attempts += 1
+        return self.string_id_to_int_id.get(string_id)
 
-            try:
-                if transition.execute():
-                    self._transitions_executed += 1
-                    self.state_memory.record_transition(transition)
+    def clear(self) -> None:
+        """Clear all states and ID mappings.
 
-                    # Update current state if transition succeeded
-                    if transition.to_state:
-                        target_state = self.get_state(transition.to_state)
-                        if target_state and target_state.wait_for(5.0):
-                            self.set_current_state(target_state)
-
-                    return True
-            except Exception as e:
-                print(f"Transition failed: {e}")
-
-            if attempts < self._max_transition_attempts:
-                time.sleep(1.0)  # Wait before retry
-
-        self._transitions_failed += 1
-        return False
-
-    def execute_path(self, path: Path) -> bool:
-        """Execute a path of states.
-
-        Args:
-            path: Path to execute
-
-        Returns:
-            True if reached end of path
+        Resets the service to its initial empty state. The ID counter
+        is also reset to 1.
         """
-        for i, state in enumerate(path.states):
-            # Check if already at state
-            if state.exists():
-                self.set_current_state(state)
-                continue
+        self.states_by_id.clear()
+        self.states_by_name.clear()
+        self.string_id_to_int_id.clear()
+        self.int_id_to_string_id.clear()
+        self.next_id = 1
 
-            # Get transition to next state
-            if i > 0:
-                path.states[i - 1]
-                transition = path.get_transition(i - 1)
-
-                if transition:
-                    if not self.execute_transition(transition):
-                        return False
-                else:
-                    # No specific transition, try to navigate
-                    if not self.go_to_state(state):
-                        return False
-            else:
-                # First state in path
-                if not self.go_to_state(state):
-                    return False
-
-        return True
-
-    def find_state(self, timeout: float = 30.0) -> State | None:
-        """Find which state is currently active.
-
-        Args:
-            timeout: Maximum search time
-
-        Returns:
-            Active state or None
-        """
-        start_time = time.time()
-
-        while time.time() - start_time < timeout:
-            for state in self.states.values():
-                if state.exists():
-                    self.set_current_state(state)
-                    return state
-
-            time.sleep(self._state_check_interval)
-
-        return None
-
-    def wait_for_state(self, state: State, timeout: float = 30.0) -> bool:
-        """Wait for a specific state to appear.
-
-        Args:
-            state: State to wait for
-            timeout: Maximum wait time
-
-        Returns:
-            True if state appeared
-        """
-        if state.wait_for(timeout):
-            self.set_current_state(state)
-            return True
-        return False
-
-    def wait_for_any_state(self, states: list[State], timeout: float = 30.0) -> State | None:
-        """Wait for any of the specified states.
-
-        Args:
-            states: List of states to wait for
-            timeout: Maximum wait time
-
-        Returns:
-            First state that appears or None
-        """
-        start_time = time.time()
-
-        while time.time() - start_time < timeout:
-            for state in states:
-                if state.exists():
-                    self.set_current_state(state)
-                    return state
-
-            time.sleep(self._state_check_interval)
-
-        return None
-
-    def get_possible_states(self) -> list[State]:
-        """Get all states reachable from current state.
-
-        Returns:
-            List of reachable states
-        """
-
-        current = self.get_current_state()
-        if not current:
-            return []
-
-        return cast(list[State], current.get_possible_next_states())
-
-    def get_state_history(self) -> list[State]:
-        """Get history of visited states.
-
-        Returns:
-            List of states in visit order
-        """
-        return self.state_memory.get_state_history()
-
-    def get_transition_history(self) -> list[StateTransition]:
-        """Get history of executed transitions.
-
-        Returns:
-            List of transitions in execution order
-        """
-        return self.state_memory.get_transition_history()
-
-    def reset(self) -> "StateService":
-        """Reset service state (fluent).
-
-        Returns:
-            Self for chaining
-        """
-        self.current_state = None
-        self.state_memory.clear()
-        self._transitions_executed = 0
-        self._transitions_failed = 0
-        self._states_visited.clear()
-        return self
-
-    def set_auto_navigate(self, enable: bool = True) -> "StateService":
-        """Enable/disable auto-navigation (fluent).
-
-        Args:
-            enable: True to enable auto-navigation
-
-        Returns:
-            Self for chaining
-        """
-        self._auto_navigate = enable
-        return self
-
-    def set_max_attempts(self, attempts: int) -> "StateService":
-        """Set maximum transition attempts (fluent).
-
-        Args:
-            attempts: Maximum attempts
-
-        Returns:
-            Self for chaining
-        """
-        self._max_transition_attempts = attempts
-        return self
+        logger.info("StateService cleared")
 
     def get_statistics(self) -> dict[str, Any]:
-        """Get service statistics.
+        """Get statistics about the managed states.
 
         Returns:
-            Dictionary of statistics
+            Dictionary containing state count and ID mapping count
         """
         return {
-            "states_visited": len(self._states_visited),
-            "transitions_executed": self._transitions_executed,
-            "transitions_failed": self._transitions_failed,
-            "success_rate": (
-                self._transitions_executed
-                / max(1, self._transitions_executed + self._transitions_failed)
-            ),
-            "current_state": self.current_state.name if self.current_state else None,
-            "total_states": len(self.states),
+            "total_states": len(self.states_by_id),
+            "states_by_name": len(self.states_by_name),
+            "string_to_int_mappings": len(self.string_id_to_int_id),
+            "int_to_string_mappings": len(self.int_id_to_string_id),
+            "next_id": self.next_id,
         }
 
-    def save(self, state: State) -> bool:
-        """Save a state to persistent storage.
-
-        Args:
-            state: State to save
-
-        Returns:
-            True if save succeeded
-        """
-        # This is a placeholder implementation
-        # The actual implementation should save to database
-        self.states[state.name] = state
-        return True
-
-    def get_state_name(self, state: State) -> str:
-        """Get the name of a state.
-
-        Args:
-            state: State to get name from
-
-        Returns:
-            State name
-        """
-        return state.name
-
     def __str__(self) -> str:
-        """String representation."""
-        current = self.current_state.name if self.current_state else "None"
-        return f"StateService(states={len(self.states)}, current='{current}')"
+        """String representation of the StateService.
+
+        Returns:
+            Human-readable string describing the service state
+        """
+        return (
+            f"StateService(states={len(self.states_by_id)}, "
+            f"mappings={len(self.string_id_to_int_id)}, "
+            f"next_id={self.next_id})"
+        )
+
+    def __repr__(self) -> str:
+        """Detailed representation of the StateService.
+
+        Returns:
+            String representation suitable for debugging
+        """
+        return (
+            f"StateService(states_by_id={len(self.states_by_id)}, "
+            f"states_by_name={len(self.states_by_name)}, "
+            f"string_id_to_int_id={len(self.string_id_to_int_id)}, "
+            f"int_id_to_string_id={len(self.int_id_to_string_id)}, "
+            f"next_id={self.next_id})"
+        )

@@ -138,7 +138,7 @@ from .schema import (
     WaitActionConfig,
     # Workflow graph format support
     Workflow,
-    WorkflowFormat,
+    # WorkflowFormat,  # Does not exist in schema.py
     WorkflowMetadata,
     WorkflowSettings,
     get_typed_config,
@@ -282,7 +282,7 @@ __all__ = [
     "get_typed_config",
     # Workflow Schema
     "Workflow",
-    "WorkflowFormat",
+    # "WorkflowFormat",  # Does not exist in schema.py
     "Connection",
     "Connections",
     "WorkflowMetadata",
