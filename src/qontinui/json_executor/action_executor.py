@@ -1350,69 +1350,65 @@ class ActionExecutor:
     ) -> bool:
         """Execute GO_TO_STATE action.
 
-        This navigates from the current state to the target state using
-        Qontinui's StateTraversal library to find and execute the appropriate
-        transition path.
+        Navigates to one or more target states using the qontinui library's
+        pathfinding (which uses the multistate library for multi-target pathfinding).
+
+        The multistate library will find the optimal path to reach ALL specified states.
+        Note: Transitions may activate additional states beyond the targets. For example,
+        if there's a transition A -> {B,C} and you request GO_TO_STATE([B]), the
+        transition will be executed, activating both B and C.
         """
-        state_id = action.config.get("state")
-        if not state_id:
-            print("GO_TO_STATE action missing 'state' config")
+        # Get target state IDs from config
+        state_ids = typed_config.state_ids if typed_config else action.config.get("stateIds", [])
+
+        if not state_ids:
+            print("GO_TO_STATE action missing 'stateIds' config")
             return False
 
         if not self.state_executor:
-            print(f"GO_TO_STATE: {state_id} (no state executor available)")
+            print(f"GO_TO_STATE: {state_ids} (no state executor available)")
             return False
 
-        # Validate target state exists
-        if state_id not in self.config.state_map:
-            print(f"GO_TO_STATE: State '{state_id}' not found")
-            return False
+        # Validate all target states exist
+        target_states = []
+        for state_id in state_ids:
+            if state_id not in self.config.state_map:
+                print(f"GO_TO_STATE: State '{state_id}' not found")
+                return False
+            target_states.append(self.config.state_map[state_id])
 
-        target_state = self.config.state_map[state_id]
         current_state_id = self.state_executor.current_state
 
-        # If already at target state, nothing to do
-        if current_state_id == state_id:
-            print(f"GO_TO_STATE: Already at state {target_state.name}")
+        # Check if already at all target states
+        if all(current_state_id == sid for sid in state_ids):
+            target_names = [self.config.state_map[sid].name for sid in state_ids]
+            print(f"GO_TO_STATE: Already at state(s) {', '.join(target_names)}")
             return True
 
-        # Use StateTraversal library to find optimal path
-        from ..state_management.traversal import StateTraversal, TraversalStrategy
+        # Delegate to qontinui library's pathfinding (which uses multistate)
+        # This handles multi-target pathfinding automatically
+        from ..model.state.state_service import StateService
 
-        # Build state graph from config
-        state_graph = self._build_state_graph()
-        traversal = StateTraversal(state_graph)
+        state_service = StateService(self.state_executor.state_memory)
 
-        # Find path using shortest path strategy (BFS/Dijkstra)
-        current_name = self.config.state_map[current_state_id].name if current_state_id else None
-        target_name = target_state.name
+        # Convert state IDs to integer IDs for the library
+        target_ids = [
+            int(sid) if isinstance(sid, str) and sid.isdigit() else sid for sid in state_ids
+        ]
 
-        if not current_name:
-            print("GO_TO_STATE: No current state")
-            return False
+        # Find and execute path to reach ALL target states
+        target_names = [st.name for st in target_states]
+        print(f"GO_TO_STATE: Navigating to {len(target_ids)} state(s): {', '.join(target_names)}")
 
-        result = traversal.find_path(current_name, target_name, TraversalStrategy.SHORTEST_PATH)
+        # The state_service.go_to_states method uses multistate pathfinding
+        success = state_service.go_to_states(target_ids)
 
-        if not result or not result.success:
-            print(f"GO_TO_STATE: No path found from {current_name} to {target_name}")
-            return False
+        if success:
+            print(f"GO_TO_STATE: Successfully navigated to {', '.join(target_names)}")
+        else:
+            print(f"GO_TO_STATE: Failed to navigate to {', '.join(target_names)}")
 
-        # Map state names back to IDs and get corresponding config transitions
-        transition_path = self._map_traversal_to_config_transitions(result.transitions)
-
-        if not transition_path:
-            print("GO_TO_STATE: Failed to map traversal result to config transitions")
-            return False
-
-        # Execute each transition in the path
-        print(f"GO_TO_STATE: Navigating to {target_name} via {len(transition_path)} transition(s)")
-        for transition in transition_path:
-            if not self.state_executor._execute_transition(transition):
-                print(f"GO_TO_STATE: Failed to execute transition {transition.id}")
-                return False
-
-        print(f"GO_TO_STATE: Successfully navigated to {target_name}")
-        return True
+        return success
 
     def _build_state_graph(self):
         """Build a StateGraph from the JSON config for use with StateTraversal."""
