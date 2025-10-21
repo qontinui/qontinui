@@ -57,6 +57,9 @@ class State:
     name: str = ""
     """Name of this state."""
 
+    description: str = ""
+    """Optional description of this state."""
+
     id: int | None = None
     """Database ID, set when saved."""
 
@@ -335,6 +338,7 @@ class StateBuilder:
             name: Name of the state
         """
         self.name = name
+        self.description = ""
         self.state_text: set[str] = set()
         self.state_images: list[StateImage] = []  # List instead of set for unhashable objects
         self.state_strings: list[StateString] = []  # List instead of set for unhashable objects
@@ -348,6 +352,18 @@ class StateBuilder:
         self.base_probability_exists = 100
         self.scenes: list[Scene] = []
         self.usable_area = Region()
+
+    def with_description(self, description: str) -> StateBuilder:
+        """Set state description.
+
+        Args:
+            description: Description of the state
+
+        Returns:
+            Self for chaining
+        """
+        self.description = description
+        return self
 
     def with_text(self, *state_text: str) -> StateBuilder:
         """Add state text.
@@ -487,7 +503,7 @@ class StateBuilder:
         Returns:
             Constructed State
         """
-        state = State(name=self.name)
+        state = State(name=self.name, description=self.description)
 
         # Set all fields
         state.state_text = self.state_text
