@@ -800,11 +800,21 @@ class MathOperationActionConfig(BaseModel):
 
 
 class GoToStateActionConfig(BaseModel):
-    """GO_TO_STATE action configuration."""
+    """GO_TO_STATE action configuration.
 
-    state_id: str = Field(alias="stateId")
+    Supports pathfinding to multiple target states using the multistate library.
+    The runner will find the optimal path to reach ALL specified states.
+
+    Note: Transitions may activate additional states beyond the targets.
+    For example, if there's a transition A -> {B,C} and you request GO_TO_STATE([B]),
+    the transition will be executed, activating both B and C.
+    """
+
+    state_ids: list[str] = Field(alias="stateIds")
+    state_names: list[str] | None = Field(None, alias="stateNames")  # For readability
     timeout: int | None = None
     verify: bool | None = None
+    strategy: str | None = None  # "all", "any", or "optimal"
 
     model_config = {"populate_by_name": True}
 
