@@ -92,7 +92,6 @@ class StateExecutor:
         active states.
 
         The execution stops when:
-            - A final state (is_final=True) is reached
             - No applicable transitions are found
             - Maximum iterations reached (prevents infinite loops)
             - Failure strategy indicates stop (execution_settings.failure_strategy)
@@ -128,9 +127,6 @@ class StateExecutor:
         while iteration < max_iterations:
             iteration += 1
 
-            # Check if we're in a final state
-            current = self.config.state_map.get(self.current_state)
-            if current and current.is_final:
                 print(f"Reached final state: {current.name}")
                 break
 

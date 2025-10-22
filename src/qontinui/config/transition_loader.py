@@ -47,7 +47,7 @@ def load_transitions_from_config(config: dict[str, Any], state_service: StateSer
         ...     "transitions": [
         ...         {
         ...             "id": "trans-1",
-        ...             "type": "FromTransition",
+        ...             "type": "OutgoingTransition",
         ...             "processes": ["process-demo-1"],
         ...             "timeout": 10000,
         ...             "retryCount": 3,
@@ -106,12 +106,25 @@ def _load_single_transition(
         True if transition loaded successfully, False otherwise
     """
     transition_id = transition_def.get("id", "<unknown>")
+    transition_type = transition_def.get("type", "OutgoingTransition")
 
     # Validate required fields
-    if not _validate_transition_definition(transition_def, transition_id):
+    if not _validate_transition_definition(transition_def, transition_id, transition_type):
         return False
 
-    # Look up fromState
+    # IncomingTransition types don't require a fromState - they represent
+    # the completion/arrival at a target state from any source
+    if transition_type == "IncomingTransition":
+        logger.debug(
+            f"Transition '{transition_id}': IncomingTransition type - skipping as these "
+            "are handled implicitly through OutgoingTransitions"
+        )
+        # IncomingTransitions don't create actual transition objects - they're just
+        # documentation that a state can be reached. The actual transitions are created
+        # by OutgoingTransitions.
+        return True
+
+    # Look up fromState (required for OutgoingTransition)
     from_state_id = transition_def["fromState"]
     from_state = state_service.get_state_by_name(from_state_id)
     if from_state is None:
@@ -146,33 +159,39 @@ def _load_single_transition(
     # Add transition to the source state
     from_state.add_transition(transition)
 
-    logger.debug(
-        f"Loaded transition '{transition_id}': {from_state.name} -> {to_state.name}"
-    )
+    # Debug print to bypass logging
+    print(f"DEBUG: ADDED transition '{transition_id}' to state '{from_state.name}' - state now has {len(from_state.transitions)} transitions", flush=True)
 
     return True
 
 
 def _validate_transition_definition(
-    transition_def: dict[str, Any], transition_id: str
+    transition_def: dict[str, Any], transition_id: str, transition_type: str
 ) -> bool:
     """Validate that a transition definition has all required fields.
 
     Args:
         transition_def: Transition definition to validate
         transition_id: ID of transition (for error messages)
+        transition_type: Type of transition (OutgoingTransition or IncomingTransition)
 
     Returns:
         True if valid, False otherwise
     """
-    required_fields = ["fromState", "toState"]
+    # All transitions require a toState
+    if "toState" not in transition_def:
+        logger.error(
+            f"Transition '{transition_id}': missing required field 'toState'"
+        )
+        return False
 
-    for field in required_fields:
-        if field not in transition_def:
-            logger.error(
-                f"Transition '{transition_id}': missing required field '{field}'"
-            )
-            return False
+    # OutgoingTransitions require a fromState
+    # IncomingTransitions do not (they represent arrival from any source)
+    if transition_type == "OutgoingTransition" and "fromState" not in transition_def:
+        logger.error(
+            f"Transition '{transition_id}': OutgoingTransition missing required field 'fromState'"
+        )
+        return False
 
     return True
 

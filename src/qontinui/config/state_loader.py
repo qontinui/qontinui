@@ -8,7 +8,7 @@ The loader handles:
 - Creating State objects from config definitions
 - Looking up Image objects from the registry
 - Creating StateImage objects and linking them to states
-- Setting state properties (name, description, isInitial, isFinal)
+- Setting state properties (name, description, isInitial)
 - Managing ID mapping between string IDs (from config) and integer IDs (library)
 - Error handling for missing images or malformed config
 """
@@ -38,7 +38,7 @@ def load_states_from_config(config: dict[str, Any], state_service: StateService)
     1. Generates an integer ID from the string ID
     2. Creates a State object using StateBuilder
     3. Creates StateImage objects for each identifying image
-    4. Sets state properties (isInitial, isFinal flags stored as metadata)
+    4. Sets state properties (isInitial flag)
     5. Adds the state to the StateService
 
     Args:
@@ -57,8 +57,7 @@ def load_states_from_config(config: dict[str, Any], state_service: StateService)
         ...             "description": "Initial state",
         ...             "identifyingImages": ["image-id-1", "image-id-2"],
         ...             "position": {"x": 100, "y": 100},
-        ...             "isInitial": true,
-        ...             "isFinal": false
+        ...             "isInitial": true
         ...         }
         ...     ]
         ... }
@@ -168,21 +167,14 @@ def _load_single_state(state_def: dict[str, Any], state_service: StateService) -
     # Set the integer ID
     state.id = int_id
 
-    # Store isInitial and isFinal flags as state properties
-    # These are boolean flags from the config that indicate special states
+    # Store isInitial flag as state property
+    # This boolean flag from the config indicates the starting state
     is_initial = state_def.get("isInitial", False)
-    is_final = state_def.get("isFinal", False)
 
     if is_initial:
         # Mark as initial state (used by navigation to determine starting points)
-        state.base_probability_exists = 100
-        state.probability_exists = 100
+        state.is_initial = True
         logger.debug(f"State '{name}' marked as initial state")
-
-    if is_final:
-        # Mark as final state (used by navigation to determine goal states)
-        # Store as metadata since State doesn't have a dedicated field
-        logger.debug(f"State '{name}' marked as final state")
 
     # Optional: parse position (currently not used by State class)
     position = state_def.get("position")
@@ -196,7 +188,7 @@ def _load_single_state(state_def: dict[str, Any], state_service: StateService) -
 
     logger.debug(
         f"Loaded state '{name}': id={int_id}, images={image_count}, "
-        f"initial={is_initial}, final={is_final}"
+        f"initial={is_initial}"
     )
 
     return True

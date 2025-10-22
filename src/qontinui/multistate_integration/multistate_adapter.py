@@ -67,6 +67,9 @@ class MultiStateAdapter:
         self.state_mappings: dict[int, StateMapping] = {}
         self.reverse_mappings: dict[str, StateMapping] = {}
 
+        # Transition mapping: MultiState transition ID -> Qontinui transition
+        self.transition_mappings: dict[str, StateTransition] = {}
+
         # Qontinui integration
         self.state_memory = state_memory
 
@@ -138,27 +141,36 @@ class MultiStateAdapter:
         if transition.from_states:
             for state_id in transition.from_states:
                 if state_id in self.state_mappings:
-                    from_states.add(self.state_mappings[state_id].multistate_state)
+                    from_states.add(self.state_mappings[state_id].multistate_id)
 
         # Convert activate states (ALL will be activated together)
         for state_id in transition.activate:
             if state_id in self.state_mappings:
-                activate_states.add(self.state_mappings[state_id].multistate_state)
+                activate_states.add(self.state_mappings[state_id].multistate_id)
 
         # Convert exit states
         for state_id in transition.exit:
             if state_id in self.state_mappings:
-                exit_states.add(self.state_mappings[state_id].multistate_state)
+                exit_states.add(self.state_mappings[state_id].multistate_id)
 
         # Create MultiState transition
+        multi_transition_id = f"trans_{transition.id}"
         multi_transition = self.manager.add_transition(
-            id=f"trans_{transition.id}",
+            id=multi_transition_id,
             name=transition.name or f"Transition {transition.id}",
             from_states=list(from_states),
             activate_states=list(activate_states),
             exit_states=list(exit_states),
             path_cost=transition.score,  # Use Brobot's score as path cost
         )
+
+        # Store mapping for reverse lookup during pathfinding
+        # Use the actual transition ID from the returned MultiState transition object
+        # in case the manager modified it
+        actual_multi_id = multi_transition.id
+        self.transition_mappings[actual_multi_id] = transition
+
+        logger.info(f"Registered transition mapping: Qontinui '{transition.id}' -> MultiState '{actual_multi_id}'")
 
         return multi_transition
 
@@ -241,9 +253,18 @@ class MultiStateAdapter:
             return None
 
         # Convert path to Qontinui transitions
-        # (This would require reverse lookup of transitions - simplified here)
+        # MultiState returns transition IDs - we need to look up the actual Qontinui transitions
         logger.info(f"Found path with {len(path.transitions_sequence)} transitions")
-        return []  # Would return actual Qontinui transitions
+
+        qontinui_transitions = []
+        for multi_transition_id in path.transitions_sequence:
+            if multi_transition_id in self.transition_mappings:
+                qontinui_transitions.append(self.transition_mappings[multi_transition_id])
+            else:
+                logger.warning(f"Transition '{multi_transition_id}' not found in mappings")
+
+        logger.info(f"Converted to {len(qontinui_transitions)} Qontinui transitions")
+        return qontinui_transitions
 
     def generate_reveal_transition(
         self, covering_state_id: int, hidden_state_ids: set[int]

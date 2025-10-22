@@ -29,6 +29,9 @@ from .actions import (
 # DSL Parser
 from .dsl import QontinuiDSLParser
 
+# Navigation API
+from . import navigation_api, registry
+
 # Find System (Brobot-style)
 from .find import Find, FindImage, FindResults, Match, Matches
 
@@ -91,6 +94,9 @@ from .state_management.traversal import StateTraversal
 __version__ = "0.1.0"
 
 __all__ = [
+    # Navigation API
+    "navigation_api",
+    "registry",
     # Original State Management (from state_management)
     "QontinuiStateManager",
     "State",

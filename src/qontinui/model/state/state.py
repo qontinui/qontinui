@@ -102,8 +102,12 @@ class State:
     last_accessed: datetime | None = None
     """When this state was last accessed."""
 
-    base_probability_exists: int = 100
-    """Base probability that this state exists."""
+    is_initial: bool = False
+    """Whether this is an initial/starting state."""
+
+
+    baseMockFindStochasticModifier: int = 100
+    """Base probability modifier for mock find operations (stochastic testing)."""
 
     probability_exists: int = 0
     """Current probability that the state exists (used for mocks)."""
@@ -244,7 +248,7 @@ class State:
 
     def set_probability_to_base_probability(self) -> None:
         """Reset probability to base probability."""
-        self.probability_exists = self.base_probability_exists
+        self.probability_exists = self.baseMockFindStochasticModifier
 
     def add_hidden_state(self, state_id: int) -> None:
         """Add a hidden state ID.
@@ -349,7 +353,8 @@ class StateBuilder:
         self.hidden: set[str] = set()
         self.path_score = 1
         self.last_accessed = None
-        self.base_probability_exists = 100
+        self.is_initial = False
+        self.baseMockFindStochasticModifier = 100
         self.scenes: list[Scene] = []
         self.usable_area = Region()
 
@@ -461,17 +466,30 @@ class StateBuilder:
         self.path_score = score
         return self
 
-    def set_base_probability_exists(self, probability: int) -> StateBuilder:
-        """Set base probability.
+    def set_base_mock_find_stochastic_modifier(self, probability: int) -> StateBuilder:
+        """Set base mock find stochastic modifier.
 
         Args:
-            probability: Base probability (0-100)
+            probability: Base probability modifier for mock find operations (0-100)
 
         Returns:
             Self for chaining
         """
-        self.base_probability_exists = probability
+        self.baseMockFindStochasticModifier = probability
         return self
+
+    def set_is_initial(self, is_initial: bool) -> StateBuilder:
+        """Set whether this is an initial state.
+
+        Args:
+            is_initial: True if this is an initial/starting state
+
+        Returns:
+            Self for chaining
+        """
+        self.is_initial = is_initial
+        return self
+
 
     def with_scenes(self, *scenes: Scene) -> StateBuilder:
         """Add scenes.
@@ -512,7 +530,8 @@ class StateBuilder:
         state.hidden_state_names = self.hidden
         state.path_score = self.path_score
         state.last_accessed = self.last_accessed
-        state.base_probability_exists = self.base_probability_exists
+        state.is_initial = self.is_initial
+        state.baseMockFindStochasticModifier = self.baseMockFindStochasticModifier
         state.probability_exists = 0
         state.scenes = self.scenes
         state.usable_area = self.usable_area
