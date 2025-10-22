@@ -582,7 +582,8 @@ class State:
     state_strings: list[StateString] = field(default_factory=list)
     position: dict[str, int] = field(default_factory=dict)
     is_initial: bool = False
-    
+    outgoing_transitions: list["OutgoingTransition"] = field(default_factory=list)
+    incoming_transitions: list["IncomingTransition"] = field(default_factory=list)
 
 
 @dataclass
@@ -858,7 +859,6 @@ class QontinuiConfig:
     images: list[ImageAsset]
     workflows: list[Process]  # v2.0.0: workflows, v1.0.0: processes
     states: list[State]
-    transitions: list[Transition]
     categories: list[str]
     execution_settings: ExecutionSettings
     recognition_settings: RecognitionSettings
@@ -983,7 +983,6 @@ class ConfigParser:
         workflows = [self._parse_process(proc) for proc in workflows_data]
 
         states = [self._parse_state(state) for state in data["states"]]
-        transitions = [self._parse_transition(trans) for trans in data["transitions"]]
         schedules = [self._parse_schedule(sched) for sched in data.get("schedules", [])]
 
         execution_settings = self._parse_execution_settings(settings["execution"])
@@ -995,12 +994,34 @@ class ConfigParser:
             images=images,
             workflows=workflows,
             states=states,
-            transitions=transitions,
             categories=data["categories"],
             execution_settings=execution_settings,
             recognition_settings=recognition_settings,
             schedules=schedules,
         )
+
+        # Parse transitions and add them directly to states
+        # This establishes states as the primary owner of transitions
+        for trans_data in data["transitions"]:
+            transition = self._parse_transition(trans_data)
+
+            if isinstance(transition, OutgoingTransition):
+                # Add to source state's outgoing transitions
+                if transition.from_state in config.state_map:
+                    config.state_map[transition.from_state].outgoing_transitions.append(transition)
+                else:
+                    print(
+                        f"[WARNING] Transition {transition.id} references unknown fromState: {transition.from_state}"
+                    )
+
+            if isinstance(transition, IncomingTransition):
+                # Add to target state's incoming transitions
+                if transition.to_state in config.state_map:
+                    config.state_map[transition.to_state].incoming_transitions.append(transition)
+                else:
+                    print(
+                        f"[WARNING] Transition {transition.id} references unknown toState: {transition.to_state}"
+                    )
 
         self._save_images(config)
         return config

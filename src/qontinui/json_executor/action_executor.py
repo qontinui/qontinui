@@ -1435,43 +1435,35 @@ class ActionExecutor:
             )
             state_graph.add_state(sm_state)
 
-        # Add transitions
-        for trans in self.config.transitions:
-            # Handle OutgoingTransition (has from_state and activateStates/to_state)
-            if hasattr(trans, "from_state") and trans.from_state:
-                from_state = self.config.state_map.get(trans.from_state)
-                from_state_name = from_state.name if from_state else None
+        # Add transitions - iterate through states and their outgoing transitions
+        for state in self.config.states:
+            for trans in state.outgoing_transitions:
+                # Collect all target states (to_state + activate_states)
+                target_state_ids = []
 
-                if from_state_name:
-                    # Collect all target states (to_state + activate_states)
-                    target_state_ids = []
+                # Add to_state if present
+                if hasattr(trans, "to_state") and trans.to_state:
+                    target_state_ids.append(trans.to_state)
 
-                    # Add to_state if present
-                    if hasattr(trans, "to_state") and trans.to_state:
-                        target_state_ids.append(trans.to_state)
+                # Add activate_states if present
+                if hasattr(trans, "activate_states"):
+                    target_state_ids.extend(trans.activate_states)
 
-                    # Add activate_states if present
-                    if hasattr(trans, "activate_states"):
-                        target_state_ids.extend(trans.activate_states)
+                # Create edges for ALL target states
+                for state_id in target_state_ids:
+                    to_state = self.config.state_map.get(state_id)
+                    if to_state:
+                        sm_transition = SMTransition(
+                            from_state=state.name,
+                            to_state=to_state.name,
+                            action_type=TransitionType.CUSTOM,
+                            probability=1.0,
+                            metadata={"config_transition_id": trans.id},
+                        )
+                        state_graph.add_transition(sm_transition)
 
-                    # Create edges for ALL target states
-                    for state_id in target_state_ids:
-                        to_state = self.config.state_map.get(state_id)
-                        if to_state:
-                            sm_transition = SMTransition(
-                                from_state=from_state_name,
-                                to_state=to_state.name,
-                                action_type=TransitionType.CUSTOM,
-                                probability=1.0,
-                                metadata={"config_transition_id": trans.id},
-                            )
-                            state_graph.add_transition(sm_transition)
-
-            # Handle IncomingTransition (has to_state only, represents entry from any state)
-            elif hasattr(trans, "to_state") and trans.to_state:
-                # IncomingTransitions don't create edges - they represent
-                # processes that verify you've reached a state
-                pass
+            # IncomingTransitions don't create edges - they represent
+            # processes that verify you've reached a state, so we skip them
 
         return state_graph
 
@@ -1493,11 +1485,17 @@ class ActionExecutor:
 
             # Only add each config transition once
             if trans_id and trans_id not in seen_ids:
-                # Find the config transition by ID
-                for config_trans in self.config.transitions:
-                    if config_trans.id == trans_id:
-                        config_transitions.append(config_trans)
-                        seen_ids.add(trans_id)
+                # Find the config transition by ID across all states
+                found = False
+                for state in self.config.states:
+                    # Check outgoing transitions
+                    for config_trans in state.outgoing_transitions:
+                        if config_trans.id == trans_id:
+                            config_transitions.append(config_trans)
+                            seen_ids.add(trans_id)
+                            found = True
+                            break
+                    if found:
                         break
 
         return config_transitions
