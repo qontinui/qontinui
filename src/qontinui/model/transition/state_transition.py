@@ -74,7 +74,7 @@ class StateTransition(ABC):
         """Get visibility behavior after transition.
 
         When set, takes precedence over the same variable in StateTransitions.
-        Only applies to FromTransitions.
+        Only applies to OutgoingTransitions.
 
         Returns:
             StaysVisible enum value

@@ -56,7 +56,7 @@ class StateTransitions:
     stays_visible_after_transition: bool = False
     """Default visibility behavior for outgoing transitions.
     When set, the same variable in a Transition takes precedence over this one.
-    Only applies to FromTransitions."""
+    Only applies to OutgoingTransitions."""
 
     def get_transition_function_by_activated_state_id(self, to: int) -> StateTransition | None:
         """Find the transition that activates a specific target state.

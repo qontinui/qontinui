@@ -90,13 +90,56 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
 
         logger.info("Loaded transitions from configuration")
 
+        # Debug: Check if transitions were actually added to states
+        print("DEBUG: Checking states after transition loading:", flush=True)
+        for state in _state_service.get_all_states():
+            print(f"DEBUG: State '{state.name}' has {len(state.transitions)} transitions", flush=True)
+
         # Step 4: Initialize StateMemory with populated StateService
         _state_memory = StateMemory(state_service=_state_service)
         logger.debug("StateMemory initialized")
 
-        # Step 5: Initialize PathfindingNavigator
+        # Step 5: Activate initial states
+        initial_states = []
+        for state in _state_service.get_all_states():
+            # States marked with is_initial = True are activated as starting states
+            if state.is_initial and state.id is not None:
+                initial_states.append(state.id)
+                _state_memory.add_active_state(state.id)
+                logger.debug(f"Activated initial state: {state.name} (ID: {state.id})")
+
+        if initial_states:
+            logger.info(f"Activated {len(initial_states)} initial state(s)")
+        else:
+            logger.warning("No initial states found - navigation may require explicit state activation")
+
+        # Step 6: Initialize PathfindingNavigator
         _navigator = PathfindingNavigator(_state_memory)
         logger.debug("PathfindingNavigator initialized")
+
+        # Step 7: Register all states with the multistate adapter
+        registered_count = 0
+        for state in _state_service.get_all_states():
+            if state.id is not None:
+                _navigator.multistate_adapter.register_qontinui_state(state)
+                registered_count += 1
+
+        logger.info(f"Registered {registered_count} states with multistate adapter")
+
+        # Step 8: Register all transitions with the multistate adapter
+        transition_count = 0
+        states_with_transitions = 0
+        for state in _state_service.get_all_states():
+            if state.transitions:
+                states_with_transitions += 1
+                logger.info(f"State '{state.name}' has {len(state.transitions)} transitions")
+            for transition in state.transitions:
+                logger.info(f"Registering transition: {transition.id} from state '{state.name}'")
+                _navigator.multistate_adapter.register_qontinui_transition(transition)
+                transition_count += 1
+
+        logger.info(f"Found {states_with_transitions} states with transitions")
+        logger.info(f"Registered {transition_count} total transitions with multistate adapter")
 
         _initialized = True
 
@@ -156,6 +199,85 @@ def open_state(state_name: str) -> bool:
         return True
     else:
         logger.warning(f"Failed to navigate to state '{state_name}'")
+        return False
+
+
+def open_states(state_identifiers: list[str | int]) -> bool:
+    """Navigate to multiple specified states.
+
+    This function finds a path that activates ALL specified target states.
+    The library handles all pathfinding, state detection, and transition execution.
+
+    Args:
+        state_identifiers: List of state names (str) or state IDs (int) to navigate to.
+                          All states must be reached for the navigation to succeed.
+
+    Returns:
+        True if navigation succeeded and ALL target states were reached, False otherwise
+    """
+    if not _initialized:
+        logger.error(
+            "Navigation system not initialized - call load_configuration() first"
+        )
+        return False
+
+    if not _navigator:
+        logger.error("Navigator not available")
+        return False
+
+    if not _state_service:
+        logger.error(
+            "State service not available - state/transition loading from config not yet implemented"
+        )
+        return False
+
+    if not state_identifiers:
+        logger.error("No state identifiers provided")
+        return False
+
+    # Convert all identifiers to state IDs
+    target_state_ids = []
+    for identifier in state_identifiers:
+        if isinstance(identifier, int):
+            state_id = identifier
+            state = _state_service.get_state_by_id(state_id)
+            if not state:
+                logger.error(f"State ID {state_id} not found in state service")
+                return False
+        elif isinstance(identifier, str):
+            state = _state_service.get_state_by_name(identifier)
+            if not state or not state.id:
+                logger.error(f"State '{identifier}' not found in state service")
+                return False
+            state_id = state.id
+        else:
+            logger.error(f"Invalid state identifier type: {type(identifier)}")
+            return False
+
+        target_state_ids.append(state_id)
+
+    logger.info(f"Navigating to states: {state_identifiers} (IDs: {target_state_ids})")
+
+    # Get current active states for debugging
+    active_states = _state_memory.get_active_state_names() if _state_memory else []
+    logger.info(f"Current active states: {active_states}")
+
+    # Navigate using PathfindingNavigator with multiple targets
+    context = _navigator.navigate_to_states(target_state_ids, execute=True)
+
+    if context:
+        logger.info(f"Navigation context: targets_reached={context.targets_reached}, "
+                   f"target_states={context.path.target_states if context.path else None}")
+    else:
+        logger.error("Navigation returned no context - pathfinding failed")
+        return False
+
+    if context.targets_reached == context.path.target_states:
+        logger.info(f"Successfully navigated to all target states: {state_identifiers}")
+        return True
+    else:
+        logger.warning(f"Failed to navigate to all target states: {state_identifiers}")
+        logger.warning(f"Targets reached: {context.targets_reached}, Expected: {context.path.target_states}")
         return False
 
 

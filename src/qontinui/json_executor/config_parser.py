@@ -553,7 +553,6 @@ class State:
         state_strings: List of text strings associated with this state (e.g., labels, input values).
         position: Visual position of state in the state diagram (x, y coordinates).
         is_initial: If True, this is the starting state for automation execution.
-        is_final: If True, automation stops when this state is reached.
 
     Example:
         >>> login_state = State(
@@ -583,7 +582,7 @@ class State:
     state_strings: list[StateString] = field(default_factory=list)
     position: dict[str, int] = field(default_factory=dict)
     is_initial: bool = False
-    is_final: bool = False
+    
 
 
 @dataclass
@@ -1248,7 +1247,6 @@ class ConfigParser:
             state_strings=state_strings,
             position=data["position"],
             is_initial=data.get("isInitial", False),
-            is_final=data.get("isFinal", False),
         )
 
     def _parse_transition(self, data: dict[str, Any]) -> Transition:
