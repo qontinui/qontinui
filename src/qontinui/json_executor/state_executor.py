@@ -69,15 +69,21 @@ class StateExecutor:
 
     def initialize(self):
         """Initialize the state machine."""
-        # Find initial state
+        # Find all initial states
+        initial_states = []
         for state in self.config.states:
             if state.is_initial:
-                self.current_state = state.id
+                if not self.current_state:
+                    self.current_state = state.id  # Set first as current
                 self.active_states.add(state.id)
-                print(f"Initial state: {state.name}")
-                break
+                initial_states.append(state.name)
 
-        if not self.current_state and self.config.states:
+        if initial_states:
+            if len(initial_states) == 1:
+                print(f"Initial state: {initial_states[0]}")
+            else:
+                print(f"Initial states: {', '.join(initial_states)}")
+        elif self.config.states:
             # Use first state as initial if none marked
             self.current_state = self.config.states[0].id
             self.active_states.add(self.current_state)
@@ -208,19 +214,17 @@ class StateExecutor:
 
     def _find_outgoing_transitions(self, state_id: str) -> list[OutgoingTransition]:
         """Find all OutgoingTransitions from a given state."""
-        transitions = []
-        for trans in self.config.transitions:
-            if isinstance(trans, OutgoingTransition) and trans.from_state == state_id:
-                transitions.append(trans)
-        return transitions
+        state = self.config.state_map.get(state_id)
+        if state:
+            return state.outgoing_transitions
+        return []
 
     def _find_incoming_transitions(self, state_id: str) -> list[IncomingTransition]:
         """Find all IncomingTransitions to a given state."""
-        transitions = []
-        for trans in self.config.transitions:
-            if isinstance(trans, IncomingTransition) and trans.to_state == state_id:
-                transitions.append(trans)
-        return transitions
+        state = self.config.state_map.get(state_id)
+        if state:
+            return state.incoming_transitions
+        return []
 
     def _execute_transition(self, transition: Transition) -> bool:
         """Execute a single transition.

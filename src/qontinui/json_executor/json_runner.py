@@ -131,7 +131,12 @@ class JSONRunner:
             print(f"  States: {len(self.config.states)}")
             # v2.0.0: workflows, v1.0.0: processes (property alias maintains compatibility)
             print(f"  Workflows: {len(self.config.workflows)}")
-            print(f"  Transitions: {len(self.config.transitions)}")
+            # Count transitions from all states
+            transition_count = sum(
+                len(s.outgoing_transitions) + len(s.incoming_transitions)
+                for s in self.config.states
+            )
+            print(f"  Transitions: {transition_count}")
             print(f"  Images: {len(self.config.images)}")
             print(f"  Schedules: {len(self.config.schedules)}")
 
@@ -158,28 +163,39 @@ class JSONRunner:
         if not has_initial and self.config.states:
             print("Warning: No initial state marked, using first state")
 
-        # Validate transitions reference existing states
+        # Validate transitions reference existing states and workflows
         state_ids = {s.id for s in self.config.states}
-        for trans in self.config.transitions:
-            if hasattr(trans, "from_state") and trans.from_state:
+        workflow_ids = {w.id for w in self.config.workflows}
+
+        for state in self.config.states:
+            # Validate outgoing transitions
+            for trans in state.outgoing_transitions:
                 if trans.from_state not in state_ids:
                     errors.append(
                         f"Transition {trans.id} references unknown from_state: {trans.from_state}"
                     )
-            if hasattr(trans, "to_state") and trans.to_state:
+                if hasattr(trans, "to_state") and trans.to_state:
+                    if trans.to_state not in state_ids:
+                        errors.append(
+                            f"Transition {trans.id} references unknown to_state: {trans.to_state}"
+                        )
+                for workflow_id in trans.workflows:
+                    if workflow_id not in workflow_ids:
+                        errors.append(
+                            f"Transition {trans.id} references unknown workflow: {workflow_id}"
+                        )
+
+            # Validate incoming transitions
+            for trans in state.incoming_transitions:
                 if trans.to_state not in state_ids:
                     errors.append(
                         f"Transition {trans.id} references unknown to_state: {trans.to_state}"
                     )
-
-        # Validate workflows exist
-        workflow_ids = {w.id for w in self.config.workflows}
-        for trans in self.config.transitions:
-            for workflow_id in trans.workflows:
-                if workflow_id not in workflow_ids:
-                    errors.append(
-                        f"Transition {trans.id} references unknown workflow: {workflow_id}"
-                    )
+                for workflow_id in trans.workflows:
+                    if workflow_id not in workflow_ids:
+                        errors.append(
+                            f"Transition {trans.id} references unknown workflow: {workflow_id}"
+                        )
 
         # Validate images exist and have valid data
         for img in self.config.images:
@@ -382,13 +398,18 @@ class JSONRunner:
         if not self.config:
             return {}
 
+        # Count transitions from all states
+        transition_count = sum(
+            len(s.outgoing_transitions) + len(s.incoming_transitions) for s in self.config.states
+        )
+
         summary = {
             "config_name": self.config.metadata.get("name", "Unnamed"),
             "version": self.config.version,
             "states": len(self.config.states),
             # v2.0.0: workflows, v1.0.0: processes
             "workflows": len(self.config.workflows),
-            "transitions": len(self.config.transitions),
+            "transitions": transition_count,
             "images": len(self.config.images),
             "schedules": len(self.config.schedules),
             "current_state": self.state_executor.current_state if self.state_executor else None,
