@@ -1101,8 +1101,8 @@ class ConfigParser:
                 )
 
         elif action_type == "GO_TO_STATE":
-            if "state" not in config:
-                raise ValueError("GO_TO_STATE action must have 'state' in config")
+            if "stateIds" not in config:
+                raise ValueError("GO_TO_STATE action must have 'stateIds' in config")
 
         elif action_type == "RUN_PROCESS":
             if "process" not in config:
