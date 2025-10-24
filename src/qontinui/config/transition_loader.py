@@ -113,18 +113,39 @@ def _load_single_transition(
         return False
 
     # IncomingTransition types don't require a fromState - they represent
-    # the completion/arrival at a target state from any source
+    # verification workflows that execute when entering a state
     if transition_type == "IncomingTransition":
-        logger.debug(
-            f"Transition '{transition_id}': IncomingTransition type - skipping as these "
-            "are handled implicitly through OutgoingTransitions"
+        # Look up toState
+        to_state_id = transition_def["toState"]
+        to_state = state_service.get_state_by_name(to_state_id)
+        if to_state is None:
+            logger.error(
+                f"Transition '{transition_id}': toState '{to_state_id}' not found"
+            )
+            return False
+
+        # Create the transition object (no fromState for incoming)
+        transition = _create_transition_object(
+            transition_def, None, to_state.id, state_service
         )
-        # IncomingTransitions don't create actual transition objects - they're just
-        # documentation that a state can be reached. The actual transitions are created
-        # by OutgoingTransitions.
+        if transition is None:
+            return False
+
+        # Link workflows to the transition
+        if not _link_workflows_to_transition(transition_def, transition, transition_id):
+            logger.warning(
+                f"Transition '{transition_id}': No workflows linked (this may be intentional)"
+            )
+
+        # Add to target state's incoming_transitions
+        to_state.incoming_transitions.append(transition)
+        logger.info(
+            f"Loaded IncomingTransition '{transition_id}' to state '{to_state.name}' "
+            f"with {len(transition.workflow_ids)} workflows"
+        )
         return True
 
-    # Look up fromState (required for OutgoingTransition)
+    # OutgoingTransition - requires both fromState and toState
     from_state_id = transition_def["fromState"]
     from_state = state_service.get_state_by_name(from_state_id)
     if from_state is None:
@@ -196,6 +217,27 @@ def _validate_transition_definition(
     return True
 
 
+def _extract_numeric_id(transition_id: str) -> int:
+    """Extract or generate a numeric ID from a string transition ID.
+
+    Args:
+        transition_id: String ID from config (e.g., "transition-1759519237735")
+
+    Returns:
+        Integer ID suitable for use in TaskSequenceStateTransition
+    """
+    # Try to extract the last numeric part from the ID
+    # Format is typically "transition-<timestamp>" or similar
+    parts = transition_id.split("-")
+    for part in reversed(parts):
+        if part.isdigit():
+            return int(part)
+
+    # If no numeric part found, use hash of the string
+    # Use abs() to ensure positive integer
+    return abs(hash(transition_id))
+
+
 def _create_transition_object(
     transition_def: dict[str, Any],
     from_state_int_id: int | None,
@@ -216,8 +258,13 @@ def _create_transition_object(
     transition_id = transition_def.get("id", "<unknown>")
 
     try:
-        # Create the transition with basic properties
+        # Extract numeric ID from string ID (e.g., "transition-1759519237735" -> 1759519237735)
+        # If extraction fails, use hash of the string ID
+        numeric_id = _extract_numeric_id(transition_id)
+
+        # Create the transition with basic properties including the ID
         transition = TaskSequenceStateTransition(
+            id=numeric_id,
             name=transition_def.get("type", "Transition"),
             description=f"Transition {transition_id}",
             path_cost=1,  # Default cost
@@ -306,38 +353,33 @@ def _link_workflows_to_transition(
     Returns:
         True if at least one workflow was linked, False otherwise
     """
-    processes = transition_def.get("processes", [])
-    if not isinstance(processes, list):
+    workflows = transition_def.get("workflows", [])
+    if not isinstance(workflows, list):
         logger.warning(
-            f"Transition '{transition_id}': 'processes' field is not a list"
+            f"Transition '{transition_id}': 'workflows' field is not a list"
         )
         return False
 
-    if len(processes) == 0:
+    if len(workflows) == 0:
         # No workflows specified - this may be intentional (e.g., state just appears)
         return False
 
     linked_count = 0
 
-    for process_id in processes:
-        workflow = registry.get_workflow(process_id)
+    for workflow_id in workflows:
+        workflow = registry.get_workflow(workflow_id)
         if workflow is None:
             logger.error(
-                f"Transition '{transition_id}': workflow '{process_id}' not found in registry"
+                f"Transition '{transition_id}': workflow '{workflow_id}' not found in registry"
             )
             continue
 
-        # Store workflow reference in transition
-        # NOTE: TaskSequenceStateTransition has a task_sequence field, but we don't have
-        # a TaskSequence object yet. For now, we just log that we found the workflow.
-        # When TaskSequence is implemented, this is where we'd create it from the workflow.
+        # Store workflow ID in transition for later execution
+        transition.workflow_ids.append(workflow_id)
         logger.debug(
-            f"Transition '{transition_id}': linked to workflow '{process_id}'"
+            f"Transition '{transition_id}': linked to workflow '{workflow_id}'"
         )
         linked_count += 1
-
-        # TODO: When TaskSequence is implemented, create it here:
-        # transition.task_sequence = TaskSequence.from_workflow(workflow)
 
     return linked_count > 0
 

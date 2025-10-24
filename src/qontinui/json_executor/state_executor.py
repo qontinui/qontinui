@@ -133,9 +133,6 @@ class StateExecutor:
         while iteration < max_iterations:
             iteration += 1
 
-                print(f"Reached final state: {current.name}")
-                break
-
             # Verify current state is active
             if not self._verify_state(self.current_state):
                 print(f"State {self.current_state} is not active")
@@ -238,7 +235,7 @@ class StateExecutor:
         for workflow_id in transition.workflows:
             workflow = self.config.workflow_map.get(workflow_id)
             if workflow:
-                workflow_result = self._execute_process(workflow)
+                workflow_result = self._execute_workflow(workflow)
                 print(f"[DEBUG] Workflow '{workflow.name}' execution result: {workflow_result}")
                 if not workflow_result:
                     print(f"Workflow {workflow.name} failed")
@@ -303,12 +300,8 @@ class StateExecutor:
 
         return True
 
-    def _execute_process(self, workflow: Process) -> bool:
-        """Execute a workflow (sequence of actions).
-
-        Note: Method parameter is named 'workflow' to reflect v2.0.0 terminology,
-        but the Process class name is kept for backward compatibility.
-        """
+    def _execute_workflow(self, workflow: Process) -> bool:
+        """Execute a workflow (sequence of actions)."""
         print(f"Executing workflow: {workflow.name}")
 
         if workflow.type == "sequence":

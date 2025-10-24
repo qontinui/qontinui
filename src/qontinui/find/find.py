@@ -527,6 +527,8 @@ class Find:
                 # Find best match only
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
+                print(f"[Find] BEST MATCH: confidence={max_val}, min_similarity={min_similarity}, passes={max_val >= min_similarity}")
+
                 if max_val >= min_similarity:
                     x = int(max_loc[0]) + offset_x
                     y = int(max_loc[1]) + offset_y
@@ -537,6 +539,9 @@ class Find:
                         name=self._target.name if self._target else "match",
                     )
                     matches_list.append(Match(match_obj))
+                    print(f"[Find] Added match at ({x}, {y}) with confidence {max_val}")
+                else:
+                    print(f"[Find] Match rejected: {max_val} < {min_similarity}")
 
             return Matches(matches_list)
 

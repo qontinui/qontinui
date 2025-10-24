@@ -57,6 +57,7 @@ class NavigationContext:
     failed_transition: TaskSequenceStateTransition | None = None
     rollback_performed: bool = False
     targets_reached: set[int] = field(default_factory=set)
+    recovery_attempts: int = 0  # Track recovery attempts to prevent infinite recursion
 
 
 class PathfindingNavigator:
@@ -78,6 +79,7 @@ class PathfindingNavigator:
         state_memory: StateMemory,
         transition_executor: EnhancedTransitionExecutor | None = None,
         multistate_adapter: MultiStateAdapter | None = None,
+        workflow_executor: Any | None = None,
         default_strategy: NavigationStrategy = NavigationStrategy.DIJKSTRA,
     ):
         """Initialize pathfinding navigator.
@@ -86,12 +88,13 @@ class PathfindingNavigator:
             state_memory: Qontinui's state memory
             transition_executor: Executor for transitions
             multistate_adapter: MultiState adapter
+            workflow_executor: Executor that can run workflows
             default_strategy: Default search strategy
         """
         self.state_memory = state_memory
         self.multistate_adapter = multistate_adapter or MultiStateAdapter(state_memory)
         self.transition_executor = transition_executor or EnhancedTransitionExecutor(
-            state_memory, self.multistate_adapter
+            state_memory, self.multistate_adapter, workflow_executor
         )
         self.default_strategy = default_strategy
 
@@ -292,7 +295,18 @@ class PathfindingNavigator:
         Returns:
             True if recovery successful
         """
-        logger.info("Attempting navigation recovery...")
+        # Check if we've exceeded maximum recovery attempts
+        MAX_RECOVERY_ATTEMPTS = 3
+        context.recovery_attempts += 1
+
+        if context.recovery_attempts > MAX_RECOVERY_ATTEMPTS:
+            logger.error(
+                f"Maximum recovery attempts ({MAX_RECOVERY_ATTEMPTS}) exceeded. "
+                "Navigation cannot proceed. Please check transition configuration."
+            )
+            return False
+
+        logger.info(f"Attempting navigation recovery (attempt {context.recovery_attempts}/{MAX_RECOVERY_ATTEMPTS})...")
 
         # Get current states after failure
         current_states = self.state_memory.active_states
@@ -313,6 +327,16 @@ class PathfindingNavigator:
 
         if not alternative_path:
             logger.warning("No alternative path found for recovery")
+            return False
+
+        # Check if we're about to try the same transition again
+        if (context.failed_transition and
+            alternative_path.transitions and
+            alternative_path.transitions[0].id == context.failed_transition.id):
+            logger.error(
+                f"Recovery would retry the same failed transition '{context.failed_transition.name}'. "
+                "This indicates a configuration problem - the transition likely has no workflows linked."
+            )
             return False
 
         # Execute alternative path

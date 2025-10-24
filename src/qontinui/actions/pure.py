@@ -218,6 +218,21 @@ class PureActions:
         except Exception as e:
             return ActionResult(success=False, error=str(e))
 
+    def type_character(self, char: str) -> ActionResult:
+        """Type a single character.
+
+        Args:
+            char: Character to type
+
+        Returns:
+            ActionResult with success status
+        """
+        try:
+            self.controller.type_text(char, 0.0)
+            return ActionResult(success=True, data=char)
+        except Exception as e:
+            return ActionResult(success=False, error=str(e))
+
     # Utility Actions
 
     def wait(self, duration: float) -> ActionResult:
