@@ -142,11 +142,21 @@ class MultiStateAdapter:
             for state_id in transition.from_states:
                 if state_id in self.state_mappings:
                     from_states.add(self.state_mappings[state_id].multistate_id)
+                else:
+                    logger.error(
+                        f"Transition {transition.id}: from_state ID {state_id} not found in state_mappings. "
+                        f"Available mappings: {list(self.state_mappings.keys())}"
+                    )
 
         # Convert activate states (ALL will be activated together)
         for state_id in transition.activate:
             if state_id in self.state_mappings:
                 activate_states.add(self.state_mappings[state_id].multistate_id)
+            else:
+                logger.error(
+                    f"Transition {transition.id}: activate state ID {state_id} not found in state_mappings. "
+                    f"Available mappings: {list(self.state_mappings.keys())}"
+                )
 
         # Convert exit states
         for state_id in transition.exit:
@@ -244,24 +254,28 @@ class MultiStateAdapter:
             return None
 
         # Find path using MultiState
-        path = self.manager.find_path_to(
-            [ms.id for ms in target_multi], from_states={ms.id for ms in current_multi}
-        )
+        target_ids = [ms.id for ms in target_multi]
+        from_ids = {ms.id for ms in current_multi}
+
+        path = self.manager.find_path_to(target_ids, from_states=from_ids)
 
         if not path:
             logger.info(f"No path found to states: {target_state_ids}")
             return None
 
         # Convert path to Qontinui transitions
-        # MultiState returns transition IDs - we need to look up the actual Qontinui transitions
+        # MultiState returns transition objects - we need to extract IDs and look up Qontinui transitions
         logger.info(f"Found path with {len(path.transitions_sequence)} transitions")
 
         qontinui_transitions = []
-        for multi_transition_id in path.transitions_sequence:
+        for multi_transition in path.transitions_sequence:
+            # Extract the ID from the MultiState Transition object
+            multi_transition_id = multi_transition.id if hasattr(multi_transition, 'id') else str(multi_transition)
+
             if multi_transition_id in self.transition_mappings:
                 qontinui_transitions.append(self.transition_mappings[multi_transition_id])
             else:
-                logger.warning(f"Transition '{multi_transition_id}' not found in mappings")
+                logger.warning(f"Transition '{multi_transition_id}' not found in mappings. Available: {list(self.transition_mappings.keys())}")
 
         logger.info(f"Converted to {len(qontinui_transitions)} Qontinui transitions")
         return qontinui_transitions

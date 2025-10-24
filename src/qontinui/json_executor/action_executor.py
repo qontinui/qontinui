@@ -24,7 +24,7 @@ from ..config import (
     MouseMoveActionConfig,
     MouseUpActionConfig,
     RightClickActionConfig,
-    RunProcessActionConfig,
+    RunWorkflowActionConfig,
     ScreenshotActionConfig,
     ScrollActionConfig,
     TypeActionConfig,
@@ -534,7 +534,7 @@ class ActionExecutor:
             "EXISTS": self._execute_exists,
             "SCREENSHOT": self._execute_screenshot,
             "GO_TO_STATE": self._execute_go_to_state,
-            "RUN_PROCESS": self._execute_run_process,
+            "RUN_WORKFLOW": self._execute_run_workflow,
             # Control flow actions
             "LOOP": self._execute_loop,
             "IF": self._execute_if,
@@ -1387,21 +1387,17 @@ class ActionExecutor:
 
         # Delegate to qontinui library's pathfinding (which uses multistate)
         # This handles multi-target pathfinding automatically
-        from ..model.state.state_service import StateService
+        from .. import navigation_api
 
-        state_service = StateService(self.state_executor.state_memory)
+        # Set workflow executor so transitions can execute workflows
+        navigation_api.set_workflow_executor(self)
 
-        # Convert state IDs to integer IDs for the library
-        target_ids = [
-            int(sid) if isinstance(sid, str) and sid.isdigit() else sid for sid in state_ids
-        ]
-
-        # Find and execute path to reach ALL target states
+        # Convert state IDs to state names for the navigation API
         target_names = [st.name for st in target_states]
         print(f"GO_TO_STATE: Navigating to {len(target_ids)} state(s): {', '.join(target_names)}")
 
-        # The state_service.go_to_states method uses multistate pathfinding
-        success = state_service.go_to_states(target_ids)
+        # Call navigation_api.open_states with state names
+        success = navigation_api.open_states(target_names)
 
         if success:
             print(f"GO_TO_STATE: Successfully navigated to {', '.join(target_names)}")
@@ -1500,33 +1496,27 @@ class ActionExecutor:
 
         return config_transitions
 
-    def _execute_run_process(
-        self, action: Action, typed_config: RunProcessActionConfig = None
+    def _execute_run_workflow(
+        self, action: Action, typed_config: RunWorkflowActionConfig = None
     ) -> bool:
-        """Execute RUN_PROCESS action - runs a nested workflow with optional repetition.
-
-        Note: Action is named RUN_PROCESS for backward compatibility with v1.0.0,
-        but it runs workflows in v2.0.0. The 'process' config field is also kept
-        for backward compatibility.
-        """
-        process_id = action.config.get("process")
-        if not process_id:
-            print("RUN_PROCESS action missing 'process' config")
+        """Execute RUN_WORKFLOW action - runs a nested workflow with optional repetition."""
+        workflow_id = action.config.get("workflowId")
+        if not workflow_id:
+            print("RUN_WORKFLOW action missing 'workflowId' config")
             return False
 
-        # Get the workflow from config (v2.0.0: workflow_map, v1.0.0: process_map)
-        workflow = self.config.workflow_map.get(process_id)
+        workflow = self.config.workflow_map.get(workflow_id)
         if not workflow:
-            print(f"RUN_PROCESS: Workflow '{process_id}' not found in config")
+            print(f"RUN_WORKFLOW: Workflow '{workflow_id}' not found in config")
             return False
 
         # Get repetition configuration
-        repetition_config = action.config.get("processRepetition", {})
+        repetition_config = action.config.get("workflowRepetition", {})
         repetition_enabled = repetition_config.get("enabled", False)
 
         if not repetition_enabled:
             # No repetition - execute once
-            return self._execute_process_once(workflow, process_id, 1, 1)
+            return self._execute_workflow_once(workflow, workflow_id, 1, 1)
 
         # Repetition enabled
         max_repeats = repetition_config.get("maxRepeats", 10)
@@ -1535,7 +1525,7 @@ class ActionExecutor:
         delay_seconds = delay_ms / 1000.0
         total_runs = max_repeats + 1
 
-        print(f"RUN_PROCESS: Workflow '{workflow.name}' with repetition:")
+        print(f"RUN_WORKFLOW: Workflow '{workflow.name}' with repetition:")
         print(f"   Max repeats: {max_repeats}")
         print(f"   Delay: {delay_ms}ms")
         print(f"   Until success: {until_success}")
@@ -1544,7 +1534,7 @@ class ActionExecutor:
         if until_success:
             # Mode: Repeat until success or max repeats
             for run_num in range(1, total_runs + 1):
-                success = self._execute_process_once(workflow, process_id, run_num, total_runs)
+                success = self._execute_workflow_once(workflow, workflow_id, run_num, total_runs)
 
                 if success:
                     print(
@@ -1554,46 +1544,43 @@ class ActionExecutor:
 
                 # Delay before next attempt (if not the last run)
                 if run_num < total_runs and delay_seconds > 0:
-                    print(f"RUN_PROCESS: Waiting {delay_ms}ms before next attempt")
+                    print(f"RUN_WORKFLOW: Waiting {delay_ms}ms before next attempt")
                     Time.wait(delay_seconds)
 
             # Reached max repeats without success
-            print(f"RUN_PROCESS: Workflow failed after {total_runs} attempts")
+            print(f"RUN_WORKFLOW: Workflow failed after {total_runs} attempts")
             return False
         else:
             # Mode: Run fixed count, aggregate results
             results = []
             for run_num in range(1, total_runs + 1):
-                success = self._execute_process_once(workflow, process_id, run_num, total_runs)
+                success = self._execute_workflow_once(workflow, workflow_id, run_num, total_runs)
                 results.append(success)
 
                 # Delay before next run (if not the last run)
                 if run_num < total_runs and delay_seconds > 0:
-                    print(f"RUN_PROCESS: Waiting {delay_ms}ms before next run")
+                    print(f"RUN_WORKFLOW: Waiting {delay_ms}ms before next run")
                     Time.wait(delay_seconds)
 
             # Success if at least one run succeeded
             success_count = sum(1 for r in results if r)
             overall_success = success_count > 0
-            print(f"RUN_PROCESS: Completed {total_runs} runs, {success_count} succeeded")
+            print(f"RUN_WORKFLOW: Completed {total_runs} runs, {success_count} succeeded")
             return overall_success
 
-    def _execute_process_once(
-        self, workflow, process_id: str, run_num: int, total_runs: int
+    def _execute_workflow_once(
+        self, workflow, workflow_id: str, run_num: int, total_runs: int
     ) -> bool:
         """Execute a workflow once and emit events.
-
-        Note: Method is named _execute_process_once for backward compatibility,
-        but it executes workflows in v2.0.0.
         """
-        print(f"RUN_PROCESS: Executing workflow '{workflow.name}' (run {run_num}/{total_runs})")
+        print(f"RUN_WORKFLOW: Executing workflow '{workflow.name}' (run {run_num}/{total_runs})")
 
-        # Emit process started event (event name kept for backward compatibility)
+        # Emit workflow started event
         self._emit_event(
-            "process_started",
+            "workflow_started",
             {
-                "process_id": process_id,
-                "process_name": workflow.name,
+                "workflow_id": workflow_id,
+                "workflow_name": workflow.name,
                 "process_type": workflow.type,
                 "action_count": len(workflow.actions),
                 "run_number": run_num,
@@ -1606,7 +1593,7 @@ class ActionExecutor:
         if workflow.type == "sequence":
             for nested_action in workflow.actions:
                 if not self.execute_action(nested_action):
-                    print(f"RUN_PROCESS: Nested action failed in workflow '{workflow.name}'")
+                    print(f"RUN_WORKFLOW: Nested action failed in workflow '{workflow.name}'")
                     success = False
                     break
         elif workflow.type == "parallel":
@@ -1616,10 +1603,10 @@ class ActionExecutor:
 
         # Emit process completed event (event name kept for backward compatibility)
         self._emit_event(
-            "process_completed",
+            "workflow_completed",
             {
-                "process_id": process_id,
-                "process_name": workflow.name,
+                "workflow_id": workflow_id,
+                "workflow_name": workflow.name,
                 "success": success,
                 "run_number": run_num,
                 "total_runs": total_runs,

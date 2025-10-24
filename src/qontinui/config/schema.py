@@ -819,8 +819,8 @@ class GoToStateActionConfig(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class ProcessRepetition(BaseModel):
-    """Process repetition configuration."""
+class WorkflowRepetition(BaseModel):
+    """Workflow repetition configuration."""
 
     enabled: bool
     max_repeats: int = Field(alias="maxRepeats")
@@ -830,12 +830,12 @@ class ProcessRepetition(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class RunProcessActionConfig(BaseModel):
-    """RUN_PROCESS action configuration."""
+class RunWorkflowActionConfig(BaseModel):
+    """RUN_WORKFLOW action configuration."""
 
-    process_id: str = Field(alias="processId")
+    workflow_id: str = Field(alias="workflowId")
     variables: dict[str, Any] | None = None
-    repetition: ProcessRepetition | None = None
+    repetition: WorkflowRepetition | None = None
     output_variable: str | None = Field(None, alias="outputVariable")
 
     model_config = {"populate_by_name": True}
@@ -926,7 +926,7 @@ ACTION_CONFIG_MAP = {
     "MATH_OPERATION": MathOperationActionConfig,
     # State actions
     "GO_TO_STATE": GoToStateActionConfig,
-    "RUN_PROCESS": RunProcessActionConfig,
+    "RUN_WORKFLOW": RunWorkflowActionConfig,
     "SCREENSHOT": ScreenshotActionConfig,
 }
 

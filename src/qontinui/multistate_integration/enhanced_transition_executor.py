@@ -80,6 +80,7 @@ class EnhancedTransitionExecutor:
         self,
         state_memory: StateMemory,
         multistate_adapter: MultiStateAdapter | None = None,
+        workflow_executor: Any | None = None,
         success_policy: SuccessPolicy = SuccessPolicy.STRICT,
         success_threshold: float = 0.7,
     ):
@@ -88,11 +89,13 @@ class EnhancedTransitionExecutor:
         Args:
             state_memory: Qontinui's state memory
             multistate_adapter: MultiState adapter for advanced features
+            workflow_executor: Executor that can run workflows (e.g., ActionExecutor)
             success_policy: Policy for determining success
             success_threshold: Threshold for THRESHOLD policy (0.0-1.0)
         """
         self.state_memory = state_memory
         self.multistate_adapter = multistate_adapter or MultiStateAdapter(state_memory)
+        self.workflow_executor = workflow_executor
         self.success_policy = success_policy
         self.success_threshold = success_threshold
 
@@ -210,6 +213,8 @@ class EnhancedTransitionExecutor:
     def _execute_outgoing(self, context: ExecutionContext) -> bool:
         """Execute outgoing transitions from current states.
 
+        This executes the workflows associated with the transition.
+
         Args:
             context: Execution context
 
@@ -218,15 +223,51 @@ class EnhancedTransitionExecutor:
         """
         transition = context.transition
 
-        # In Qontinui, outgoing transitions are the exit actions
-        # This would execute any cleanup or state exit logic
+        # Check if transition has workflows to execute
+        if not hasattr(transition, 'workflow_ids') or not transition.workflow_ids:
+            logger.warning(
+                f"Transition '{transition.name}' has no workflows to execute. "
+                "Navigation will fail unless workflows are linked to this transition."
+            )
+            return False
+
+        # Execute each workflow associated with this transition
+        for workflow_id in transition.workflow_ids:
+            logger.info(f"Executing workflow '{workflow_id}' for transition '{transition.name}'")
+
+            try:
+                if self.workflow_executor:
+                    # Use the injected workflow executor
+                    result = self.workflow_executor.execute_workflow(workflow_id)
+                    if not result.get('success', False):
+                        logger.error(f"Workflow '{workflow_id}' failed")
+                        return False
+                else:
+                    # Fall back to using registry and direct execution
+                    from qontinui import registry
+                    workflow = registry.get_workflow(workflow_id)
+                    if not workflow:
+                        logger.error(f"Workflow '{workflow_id}' not found in registry")
+                        return False
+
+                    # TODO: Execute workflow directly
+                    # For now, log a warning that workflow execution is not implemented
+                    logger.error(
+                        f"No workflow_executor provided and direct execution not implemented. "
+                        f"Cannot execute workflow '{workflow_id}'"
+                    )
+                    return False
+
+            except Exception as e:
+                logger.error(f"Error executing workflow '{workflow_id}': {e}", exc_info=True)
+                return False
 
         # Run phase callbacks
         for callback in self.phase_callbacks[ExecutionPhase.OUTGOING]:
             if not callback(context):
                 return False
 
-        logger.debug(f"Outgoing transitions executed for {transition.name}")
+        logger.debug(f"Outgoing transitions executed successfully for {transition.name}")
         return True
 
     def _execute_activate(self, context: ExecutionContext) -> None:
@@ -285,30 +326,54 @@ class EnhancedTransitionExecutor:
         return self._evaluate_success(context)
 
     def _execute_single_incoming(self, state_id: int, context: ExecutionContext) -> bool:
-        """Execute incoming transition for a single state.
+        """Execute incoming transition workflows for a single state.
+
+        IncomingTransitions are verification workflows that run when entering a state.
+        They verify that the state should actually be activated.
 
         Args:
             state_id: State to execute incoming for
             context: Execution context
 
         Returns:
-            True if incoming successful
+            True if all incoming transitions successful, False otherwise
         """
-        # In Qontinui, this would execute the state's entry actions
-        # For now, we simulate with a success check
-
         if not self.state_memory.state_service:
-            return True
+            logger.warning("No state_service available")
+            return True  # No way to verify, assume success
 
         state = self.state_memory.state_service.get_state(state_id)
         if not state:
+            logger.error(f"State {state_id} not found")
             return False
 
-        # Execute state's incoming transition
-        # This would run state.on_entry() or similar
-        logger.debug(f"Executing incoming for state {state.name}")
+        # Check if state has incoming transitions
+        if not hasattr(state, 'incoming_transitions') or not state.incoming_transitions:
+            logger.debug(f"State {state.name} has no incoming transitions - verification skipped")
+            return True  # No incoming transitions = no verification needed = success
 
-        # Simulate execution (in real implementation, would call state methods)
+        logger.info(f"Executing {len(state.incoming_transitions)} incoming transitions for state {state.name}")
+
+        # Execute all incoming transitions for this state
+        for incoming_transition in state.incoming_transitions:
+            if not hasattr(incoming_transition, 'workflow_ids') or not incoming_transition.workflow_ids:
+                logger.warning(f"IncomingTransition has no workflows - skipping")
+                continue
+
+            # Execute each workflow in the incoming transition
+            for workflow_id in incoming_transition.workflow_ids:
+                logger.info(f"Executing incoming workflow '{workflow_id}' for state '{state.name}'")
+
+                if not self.workflow_executor:
+                    logger.error("No workflow_executor available for incoming transition")
+                    return False
+
+                result = self.workflow_executor.execute_workflow(workflow_id)
+                if not result.get('success', False):
+                    logger.error(f"Incoming workflow '{workflow_id}' failed for state '{state.name}'")
+                    return False
+
+        logger.info(f"All incoming transitions succeeded for state {state.name}")
         return True
 
     def _execute_exit(self, context: ExecutionContext) -> None:

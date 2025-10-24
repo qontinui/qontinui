@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 _navigator: Optional["PathfindingNavigator"] = None
 _state_memory: Optional["StateMemory"] = None
 _state_service: Optional["StateService"] = None
+_workflow_executor: Optional[Any] = None
 _initialized = False
 
 
@@ -114,7 +115,7 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
             logger.warning("No initial states found - navigation may require explicit state activation")
 
         # Step 6: Initialize PathfindingNavigator
-        _navigator = PathfindingNavigator(_state_memory)
+        _navigator = PathfindingNavigator(_state_memory, workflow_executor=_workflow_executor)
         logger.debug("PathfindingNavigator initialized")
 
         # Step 7: Register all states with the multistate adapter
@@ -279,6 +280,26 @@ def open_states(state_identifiers: list[str | int]) -> bool:
         logger.warning(f"Failed to navigate to all target states: {state_identifiers}")
         logger.warning(f"Targets reached: {context.targets_reached}, Expected: {context.path.target_states}")
         return False
+
+
+def set_workflow_executor(workflow_executor: Any) -> None:
+    """Set the workflow executor for executing transition workflows.
+
+    This should be called by the runner after load_configuration() to enable
+    workflow execution during navigation.
+
+    Args:
+        workflow_executor: An executor that can run workflows (e.g., ActionExecutor)
+    """
+    global _workflow_executor, _navigator
+
+    _workflow_executor = workflow_executor
+    logger.info("Workflow executor set for navigation")
+
+    # Update the navigator's transition executor if navigator exists
+    if _navigator and _navigator.transition_executor:
+        _navigator.transition_executor.workflow_executor = workflow_executor
+        logger.info("Updated existing navigator with workflow executor")
 
 
 def get_active_states() -> list[str]:

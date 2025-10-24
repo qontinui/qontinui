@@ -119,7 +119,7 @@ from .schema import (
     Region,
     RepetitionOptions,
     RightClickActionConfig,
-    RunProcessActionConfig,
+    RunWorkflowActionConfig,
     ScreenshotActionConfig,
     ScrollActionConfig,
     SearchOptions,
@@ -276,7 +276,7 @@ __all__ = [
     "MathOperationActionConfig",
     # Action Schema - State actions
     "GoToStateActionConfig",
-    "RunProcessActionConfig",
+    "RunWorkflowActionConfig",
     "ScreenshotActionConfig",
     # Action Schema - Utils
     "get_typed_config",

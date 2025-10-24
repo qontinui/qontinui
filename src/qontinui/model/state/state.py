@@ -125,7 +125,10 @@ class State:
     """History of actions performed in this state."""
 
     transitions: list[StateTransition] = field(default_factory=list)
-    """List of transitions from this state."""
+    """List of outgoing transitions from this state."""
+
+    incoming_transitions: list[StateTransition] = field(default_factory=list)
+    """List of incoming transitions to this state (verification workflows executed when entering)."""
 
     def exists(self, timeout: float = 0.0) -> bool:
         """Check if this state exists.
