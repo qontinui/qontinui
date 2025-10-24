@@ -77,6 +77,7 @@ if TYPE_CHECKING:
 # Global registries - private to this module
 _image_registry: dict[str, "Image"] = {}
 _workflow_registry: dict[str, Any] = {}
+_workflow_definitions: dict[str, dict[str, Any]] = {}  # Stores full workflow definitions for graph workflows
 
 
 def register_image(image_id: str, image: "Image") -> None:
@@ -104,7 +105,7 @@ def register_image(image_id: str, image: "Image") -> None:
     logger.debug(f"Registered image: {image_id}")
 
 
-def register_workflow(workflow_id: str, workflow: Any) -> None:
+def register_workflow(workflow_id: str, workflow: Any, workflow_name: str | None = None) -> None:
     """Register a workflow for use by the library.
 
     This should be called by the runner after loading workflows from configuration.
@@ -114,18 +115,20 @@ def register_workflow(workflow_id: str, workflow: Any) -> None:
     Args:
         workflow_id: Unique identifier for the workflow (typically from config)
         workflow: Workflow object to register (type depends on workflow implementation)
+        workflow_name: Optional human-readable name for logging purposes
 
     Example:
         >>> from qontinui import registry
         >>> workflow = load_workflow_from_config(workflow_dict)
-        >>> registry.register_workflow("login_flow", workflow)
+        >>> registry.register_workflow("login_flow", workflow, "Login Flow")
     """
+    display_name = workflow_name or workflow_id
     if workflow_id in _workflow_registry:
         logger.warning(
-            f"Workflow '{workflow_id}' already registered - replacing with new workflow"
+            f"Workflow '{display_name}' already registered - replacing with new workflow"
         )
     _workflow_registry[workflow_id] = workflow
-    logger.debug(f"Registered workflow: {workflow_id}")
+    logger.debug(f"Registered workflow: {display_name}")
 
 
 def get_image(image_id: str) -> "Image | None":
@@ -191,8 +194,57 @@ def clear_images() -> None:
     logger.debug("Cleared all registered images")
 
 
+def register_workflow_definition(workflow_id: str, workflow_def: dict[str, Any]) -> None:
+    """Register a full workflow definition (for graph workflows).
+
+    This stores the complete workflow definition including connections, metadata, etc.
+    Used for graph-based workflows that need more than just the actions array.
+
+    Args:
+        workflow_id: Unique identifier for the workflow
+        workflow_def: Full workflow definition dictionary from config
+
+    Example:
+        >>> from qontinui import registry
+        >>> workflow_def = {
+        ...     "id": "my-workflow",
+        ...     "format": "graph",
+        ...     "actions": [...],
+        ...     "connections": {...}
+        ... }
+        >>> registry.register_workflow_definition("my-workflow", workflow_def)
+    """
+    if workflow_id in _workflow_definitions:
+        logger.warning(
+            f"Workflow definition '{workflow_id}' already registered - replacing"
+        )
+    _workflow_definitions[workflow_id] = workflow_def
+    logger.debug(f"Registered workflow definition: {workflow_id}")
+
+
+def get_workflow_definition(workflow_id: str) -> dict[str, Any] | None:
+    """Retrieve a full workflow definition by ID.
+
+    Args:
+        workflow_id: Unique identifier of the workflow definition
+
+    Returns:
+        Workflow definition dictionary if found, None otherwise
+
+    Example:
+        >>> from qontinui import registry
+        >>> workflow_def = registry.get_workflow_definition("my-workflow")
+        >>> if workflow_def and workflow_def.get("format") == "graph":
+        ...     execute_graph_workflow(workflow_def)
+    """
+    workflow_def = _workflow_definitions.get(workflow_id)
+    if workflow_def is None:
+        logger.debug(f"Workflow definition '{workflow_id}' not found in registry")
+    return workflow_def
+
+
 def clear_workflows() -> None:
-    """Clear all registered workflows.
+    """Clear all registered workflows and workflow definitions.
 
     This is primarily useful for testing to ensure clean state between tests.
     Should NOT be called during normal operation.
@@ -203,7 +255,8 @@ def clear_workflows() -> None:
         >>> registry.clear_workflows()
     """
     _workflow_registry.clear()
-    logger.debug("Cleared all registered workflows")
+    _workflow_definitions.clear()
+    logger.debug("Cleared all registered workflows and definitions")
 
 
 def clear_all() -> None:
