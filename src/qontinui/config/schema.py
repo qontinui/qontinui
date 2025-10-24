@@ -292,8 +292,21 @@ class StateStringTarget(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class CurrentPositionTarget(BaseModel):
+    """Current position target - clicks at current mouse position (pure action)."""
+
+    type: Literal["currentPosition"] = "currentPosition"
+
+
 # Union type for all target configurations
-TargetConfig = ImageTarget | RegionTarget | TextTarget | CoordinatesTarget | StateStringTarget
+TargetConfig = (
+    ImageTarget
+    | RegionTarget
+    | TextTarget
+    | CoordinatesTarget
+    | StateStringTarget
+    | CurrentPositionTarget
+)
 
 
 # ============================================================================
@@ -320,9 +333,13 @@ class VerificationConfig(BaseModel):
 
 
 class ClickActionConfig(BaseModel):
-    """CLICK action configuration."""
+    """CLICK action configuration.
 
-    target: TargetConfig
+    If no target is provided, clicks at the current mouse position (pure action).
+    Providing a target makes this a composite action (move + click).
+    """
+
+    target: TargetConfig | None = None  # Optional - defaults to current position
     number_of_clicks: int | None = Field(None, alias="numberOfClicks")
     mouse_button: MouseButton | None = Field(None, alias="mouseButton")
     press_duration: int | None = Field(None, alias="pressDuration")
@@ -334,9 +351,12 @@ class ClickActionConfig(BaseModel):
 
 
 class DoubleClickActionConfig(BaseModel):
-    """DOUBLE_CLICK action configuration."""
+    """DOUBLE_CLICK action configuration.
 
-    target: TargetConfig
+    If no target is provided, clicks at the current mouse position (pure action).
+    """
+
+    target: TargetConfig | None = None  # Optional - defaults to current position
     mouse_button: MouseButton | None = Field(None, alias="mouseButton")
     click_interval: int | None = Field(None, alias="clickInterval")
     press_duration: int | None = Field(None, alias="pressDuration")
@@ -346,9 +366,12 @@ class DoubleClickActionConfig(BaseModel):
 
 
 class RightClickActionConfig(BaseModel):
-    """RIGHT_CLICK action configuration."""
+    """RIGHT_CLICK action configuration.
 
-    target: TargetConfig
+    If no target is provided, clicks at the current mouse position (pure action).
+    """
+
+    target: TargetConfig | None = None  # Optional - defaults to current position
     press_duration: int | None = Field(None, alias="pressDuration")
     verify: VerificationConfig | None = None
 
