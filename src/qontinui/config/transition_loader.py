@@ -353,19 +353,29 @@ def _link_workflows_to_transition(
     Returns:
         True if at least one workflow was linked, False otherwise
     """
+    # Check for regular workflow references
     workflows = transition_def.get("workflows", [])
     if not isinstance(workflows, list):
         logger.warning(
             f"Transition '{transition_id}': 'workflows' field is not a list"
         )
-        return False
+        workflows = []
 
-    if len(workflows) == 0:
+    # Check for inline workflows (workflows defined inline in the transition)
+    inline_workflows = transition_def.get("inlineWorkflows", [])
+    if not isinstance(inline_workflows, list):
+        logger.warning(
+            f"Transition '{transition_id}': 'inlineWorkflows' field is not a list"
+        )
+        inline_workflows = []
+
+    if len(workflows) == 0 and len(inline_workflows) == 0:
         # No workflows specified - this may be intentional (e.g., state just appears)
         return False
 
     linked_count = 0
 
+    # Link regular workflows by ID
     for workflow_id in workflows:
         workflow = registry.get_workflow(workflow_id)
         if workflow is None:
@@ -380,6 +390,54 @@ def _link_workflows_to_transition(
             f"Transition '{transition_id}': linked to workflow '{workflow_id}'"
         )
         linked_count += 1
+
+    # Register and link inline workflows
+    for idx, inline_workflow_def in enumerate(inline_workflows):
+        if not isinstance(inline_workflow_def, dict):
+            logger.warning(
+                f"Transition '{transition_id}': inlineWorkflow at index {idx} is not a dict"
+            )
+            continue
+
+        # Get or generate an ID for the inline workflow
+        inline_workflow_id = inline_workflow_def.get("id", f"{transition_id}_inline_{idx}")
+        inline_workflow_name = inline_workflow_def.get("name", inline_workflow_id)
+
+        # Register the inline workflow directly in the registry
+        try:
+            # Extract actions from the inline workflow definition
+            actions = inline_workflow_def.get("actions", [])
+            if not actions:
+                logger.warning(
+                    f"Transition '{transition_id}': inline workflow at index {idx} has no actions"
+                )
+                continue
+
+            # Register the workflow in the registry with name
+            # The registry signature is: register_workflow(id, actions, name)
+            registry.register_workflow(inline_workflow_id, actions, inline_workflow_name)
+
+            # Also store the full workflow definition in the registry for graph execution
+            # Check if this is a graph workflow
+            if inline_workflow_def.get("format") == "graph":
+                # Store the full workflow definition for graph-based execution
+                registry.register_workflow_definition(inline_workflow_id, inline_workflow_def)
+                logger.debug(
+                    f"Transition '{transition_id}': registered graph workflow '{inline_workflow_name}' with {len(actions)} actions and connections"
+                )
+            else:
+                logger.debug(
+                    f"Transition '{transition_id}': registered sequential workflow '{inline_workflow_name}' with {len(actions)} actions"
+                )
+
+            # Store workflow ID in transition for later execution
+            transition.workflow_ids.append(inline_workflow_id)
+            linked_count += 1
+        except Exception as e:
+            logger.error(
+                f"Transition '{transition_id}': failed to register inline workflow at index {idx}: {e}",
+                exc_info=True
+            )
 
     return linked_count > 0
 
