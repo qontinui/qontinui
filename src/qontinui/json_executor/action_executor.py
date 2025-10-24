@@ -859,10 +859,16 @@ class ActionExecutor:
         # Use typed config if available, otherwise fall back to dict access
         if typed_config:
             logger.debug("Using typed ClickActionConfig")
-            location = self._get_target_location_from_typed(typed_config.target)
-            if not location:
-                logger.error("Failed to get target location from typed config")
-                return False
+
+            # Check if target is None or currentPosition (pure action)
+            location = None
+            if typed_config.target and typed_config.target.type != "currentPosition":
+                location = self._get_target_location_from_typed(typed_config.target)
+                if not location:
+                    logger.error("Failed to get target location from typed config")
+                    return False
+            else:
+                logger.debug("No target specified - clicking at current position (pure action)")
 
             # Get button from typed config
             button = MouseButton.LEFT
