@@ -10,6 +10,7 @@ from ..hal.factory import HALFactory
 from ..hal.interfaces.input_controller import MouseButton, MousePosition
 from ..mock.mock_mode_manager import MockModeManager
 from ..mock.mock_input import MockInput
+from ..reporting import emit_event, EventType
 
 logger = logging.getLogger(__name__)
 
@@ -50,15 +51,29 @@ class Mouse:
         Returns:
             True if successful
         """
-        if MockModeManager.is_mock_mode():
+        is_mock = MockModeManager.is_mock_mode()
+
+        if is_mock:
             result = cls._mock_input.mouse_move(x, y, duration)
             logger.debug(f"[MOCK] Mouse moved to ({x}, {y})")
-            return result
         else:
             controller = HALFactory.get_input_controller()
             result = controller.mouse_move(x, y, duration)
             logger.debug(f"[LIVE] Mouse moved to ({x}, {y})")
-            return result
+
+        # Emit event after successful move
+        if result:
+            emit_event(
+                EventType.MOUSE_MOVED,
+                data={
+                    "x": x,
+                    "y": y,
+                    "duration": duration,
+                    "mode": "mock" if is_mock else "live",
+                },
+            )
+
+        return result
 
     @classmethod
     def move_relative(cls, dx: int, dy: int, duration: float = 0.0) -> bool:
@@ -97,15 +112,30 @@ class Mouse:
         Returns:
             True if successful
         """
-        if MockModeManager.is_mock_mode():
+        is_mock = MockModeManager.is_mock_mode()
+
+        if is_mock:
             result = cls._mock_input.mouse_click(x, y, button, clicks)
             logger.debug(f"[MOCK] Mouse clicked {button.value} at ({x}, {y}) x{clicks}")
-            return result
         else:
             controller = HALFactory.get_input_controller()
             result = controller.mouse_click(x, y, button, clicks)
             logger.debug(f"[LIVE] Mouse clicked {button.value} at ({x}, {y}) x{clicks}")
-            return result
+
+        # Emit event after successful click
+        if result:
+            emit_event(
+                EventType.MOUSE_CLICKED,
+                data={
+                    "x": x,
+                    "y": y,
+                    "button": button.value,
+                    "clicks": clicks,
+                    "mode": "mock" if is_mock else "live",
+                },
+            )
+
+        return result
 
     @classmethod
     def click_at(cls, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
@@ -206,15 +236,32 @@ class Mouse:
         Returns:
             True if successful
         """
-        if MockModeManager.is_mock_mode():
+        is_mock = MockModeManager.is_mock_mode()
+
+        if is_mock:
             result = cls._mock_input.mouse_drag(start_x, start_y, end_x, end_y, button, duration)
             logger.debug(f"[MOCK] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
-            return result
         else:
             controller = HALFactory.get_input_controller()
             result = controller.mouse_drag(start_x, start_y, end_x, end_y, button, duration)
             logger.debug(f"[LIVE] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
-            return result
+
+        # Emit event after successful drag
+        if result:
+            emit_event(
+                EventType.MOUSE_DRAGGED,
+                data={
+                    "from_x": start_x,
+                    "from_y": start_y,
+                    "to_x": end_x,
+                    "to_y": end_y,
+                    "button": button.value,
+                    "duration": duration,
+                    "mode": "mock" if is_mock else "live",
+                },
+            )
+
+        return result
 
     @classmethod
     def scroll(cls, clicks: int, x: int | None = None, y: int | None = None) -> bool:

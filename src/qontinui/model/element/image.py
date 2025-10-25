@@ -241,6 +241,24 @@ class Image:
         """
         return self.height
 
+    @property
+    def pixel_data(self) -> np.ndarray[Any, Any] | None:
+        """Get pixel data as BGR numpy array (Pattern compatibility).
+
+        Returns:
+            BGR numpy array or None
+        """
+        return self.get_mat_bgr()
+
+    @property
+    def mask(self) -> np.ndarray[Any, Any] | None:
+        """Get mask (Pattern compatibility).
+
+        Returns:
+            None (Images don't have masks by default)
+        """
+        return None
+
     def save(self, filename: str | Path) -> bool:
         """Save image to file.
 

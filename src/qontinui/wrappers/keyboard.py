@@ -10,6 +10,7 @@ from ..hal.factory import HALFactory
 from ..hal.interfaces.input_controller import Key
 from ..mock.mock_mode_manager import MockModeManager
 from ..mock.mock_input import MockInput
+from ..reporting import emit_event, EventType
 
 logger = logging.getLogger(__name__)
 
@@ -50,15 +51,29 @@ class Keyboard:
         Returns:
             True if successful
         """
-        if MockModeManager.is_mock_mode():
+        is_mock = MockModeManager.is_mock_mode()
+
+        if is_mock:
             result = cls._mock_input.type_text(text, interval)
             logger.debug(f"[MOCK] Typed text: '{text}'")
-            return result
         else:
             controller = HALFactory.get_input_controller()
             result = controller.type_text(text, interval)
             logger.debug(f"[LIVE] Typed text: '{text}'")
-            return result
+
+        # Emit event after successful typing
+        if result:
+            emit_event(
+                EventType.TEXT_TYPED,
+                data={
+                    "text": text,
+                    "length": len(text),
+                    "interval": interval,
+                    "mode": "mock" if is_mock else "live",
+                },
+            )
+
+        return result
 
     @classmethod
     def press(cls, key: str | Key, presses: int = 1, interval: float = 0.0) -> bool:
