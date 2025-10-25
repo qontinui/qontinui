@@ -22,8 +22,6 @@ class ActionType(Enum):
     DRAG = "DRAG"
     SCROLL = "SCROLL"
     WAIT = "WAIT"
-    DOUBLE_CLICK = "DOUBLE_CLICK"
-    RIGHT_CLICK = "RIGHT_CLICK"
     KEY = "KEY"
     HOVER = "HOVER"
 
