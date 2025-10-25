@@ -21,13 +21,7 @@ class ActionType(Enum):
     """Finds patterns, text, or regions on the screen"""
 
     CLICK = auto()
-    """Performs single left mouse click on found elements"""
-
-    DOUBLE_CLICK = auto()
-    """Performs double click on found elements"""
-
-    RIGHT_CLICK = auto()
-    """Performs right mouse click on found elements"""
+    """Performs mouse click on found elements (left/right/middle/double)"""
 
     MIDDLE_CLICK = auto()
     """Performs middle mouse click on found elements"""
