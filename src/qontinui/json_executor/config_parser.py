@@ -122,9 +122,7 @@ class Action:
 
     Action Types:
         Mouse Actions:
-            - CLICK: Click at coordinates or image location
-            - DOUBLE_CLICK: Double-click at target
-            - RIGHT_CLICK: Right-click at target
+            - CLICK: Click at coordinates or image location (supports left/right/middle/double)
             - DRAG: Drag from source to destination
             - MOUSE_MOVE, MOVE: Move mouse without clicking
             - MOUSE_DOWN, MOUSE_UP: Press or release mouse button
@@ -1084,8 +1082,6 @@ class ConfigParser:
         valid_action_types = {
             "FIND",
             "CLICK",
-            "DOUBLE_CLICK",
-            "RIGHT_CLICK",
             "TYPE",
             "KEY_PRESS",
             "DRAG",

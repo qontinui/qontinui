@@ -350,34 +350,6 @@ class ClickActionConfig(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class DoubleClickActionConfig(BaseModel):
-    """DOUBLE_CLICK action configuration.
-
-    If no target is provided, clicks at the current mouse position (pure action).
-    """
-
-    target: TargetConfig | None = None  # Optional - defaults to current position
-    mouse_button: MouseButton | None = Field(None, alias="mouseButton")
-    click_interval: int | None = Field(None, alias="clickInterval")
-    press_duration: int | None = Field(None, alias="pressDuration")
-    verify: VerificationConfig | None = None
-
-    model_config = {"populate_by_name": True}
-
-
-class RightClickActionConfig(BaseModel):
-    """RIGHT_CLICK action configuration.
-
-    If no target is provided, clicks at the current mouse position (pure action).
-    """
-
-    target: TargetConfig | None = None  # Optional - defaults to current position
-    press_duration: int | None = Field(None, alias="pressDuration")
-    verify: VerificationConfig | None = None
-
-    model_config = {"populate_by_name": True}
-
-
 class MouseMoveActionConfig(BaseModel):
     """MOUSE_MOVE action configuration."""
 
@@ -918,8 +890,6 @@ ACTION_CONFIG_MAP = {
     "WAIT": WaitActionConfig,
     # Mouse actions
     "CLICK": ClickActionConfig,
-    "DOUBLE_CLICK": DoubleClickActionConfig,
-    "RIGHT_CLICK": RightClickActionConfig,
     "MOUSE_MOVE": MouseMoveActionConfig,
     "MOUSE_DOWN": MouseDownActionConfig,
     "MOUSE_UP": MouseUpActionConfig,
