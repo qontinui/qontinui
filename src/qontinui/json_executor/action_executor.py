@@ -1400,7 +1400,7 @@ class ActionExecutor:
 
         # Convert state IDs to state names for the navigation API
         target_names = [st.name for st in target_states]
-        print(f"GO_TO_STATE: Navigating to {len(target_ids)} state(s): {', '.join(target_names)}")
+        print(f"GO_TO_STATE: Navigating to {len(state_ids)} state(s): {', '.join(target_names)}")
 
         # Call navigation_api.open_states with state names
         success = navigation_api.open_states(target_names)

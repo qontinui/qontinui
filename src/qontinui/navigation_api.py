@@ -327,3 +327,45 @@ def is_state_active(state_name: str) -> bool:
         return False
 
     return _state_memory.is_state_active(state_name)
+
+
+def reset_to_initial_state() -> bool:
+    """Reset navigation state to initial conditions.
+
+    This function clears all active states and re-activates only the initial states.
+    Should be called before each automation run to ensure consistent starting state.
+
+    Returns:
+        True if reset succeeded, False otherwise
+    """
+    global _state_memory, _state_service, _initialized
+
+    if not _initialized:
+        logger.warning("Navigation system not initialized - cannot reset state")
+        return False
+
+    if not _state_memory or not _state_service:
+        logger.error("State memory or state service not available")
+        return False
+
+    try:
+        logger.info("Resetting navigation state to initial conditions")
+
+        # Clear all active states
+        _state_memory.clear_active_states()
+        logger.debug("Cleared all active states")
+
+        # Re-activate initial states
+        initial_state_count = 0
+        for state in _state_service.get_all_states():
+            if state.is_initial and state.id is not None:
+                _state_memory.add_active_state(state.id)
+                logger.debug(f"Re-activated initial state: {state.name} (ID: {state.id})")
+                initial_state_count += 1
+
+        logger.info(f"Reset complete - activated {initial_state_count} initial state(s)")
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to reset navigation state: {e}", exc_info=True)
+        return False
