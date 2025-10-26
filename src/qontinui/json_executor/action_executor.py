@@ -1021,87 +1021,50 @@ class ActionExecutor:
 
         Args:
             action: Pydantic Action model
-            typed_config: Pre-validated TypeActionConfig or None for config format
+            typed_config: Pre-validated TypeActionConfig
 
         Returns:
             bool: True if text was typed successfully
         """
         logger.debug("Executing TYPE action")
 
+        if not typed_config:
+            logger.error("TYPE action requires valid TypeActionConfig")
+            return False
+
         text = ""
 
-        # Use typed config if available
-        if typed_config:
-            logger.debug("Using typed TypeActionConfig")
+        # Get text directly or from text_source
+        if typed_config.text:
+            text = typed_config.text
+            logger.debug(f"Using direct text: '{text}'")
+        elif typed_config.text_source:
+            # Get text from state string
+            state_id = typed_config.text_source.state_id
+            string_ids = typed_config.text_source.string_ids
 
-            # Get text directly or from text_source
-            if typed_config.text:
-                text = typed_config.text
-                logger.debug(f"Using direct text: '{text}'")
-            elif typed_config.text_source:
-                # Get text from state string
-                state_id = typed_config.text_source.state_id
-                string_ids = typed_config.text_source.string_ids
+            logger.debug(
+                f"Looking for state string: state_id={state_id}, string_ids={string_ids}"
+            )
 
+            if state_id and string_ids and state_id in self.config.state_map:
+                state = self.config.state_map[state_id]
+                state_strings = getattr(state, "state_strings", [])
                 logger.debug(
-                    f"Looking for state string: state_id={state_id}, string_ids={string_ids}"
+                    f"State strings in '{state_id}': {[(s.id, s.value) for s in state_strings]}"
                 )
 
-                if state_id and string_ids and state_id in self.config.state_map:
-                    state = self.config.state_map[state_id]
-                    state_strings = getattr(state, "state_strings", [])
-                    logger.debug(
-                        f"State strings in '{state_id}': {[(s.id, s.value) for s in state_strings]}"
-                    )
+                # Find the string in the state
+                for state_string in state_strings:
+                    if state_string.id in string_ids:
+                        text = state_string.value
+                        logger.debug(f"Found matching string: '{text}'")
+                        break
 
-                    # Find the string in the state
-                    for state_string in state_strings:
-                        if state_string.id in string_ids:
-                            text = state_string.value
-                            logger.debug(f"Found matching string: '{text}'")
-                            break
-
-                    if not text:
-                        logger.error(f"No matching string found for IDs: {string_ids}")
-                else:
-                    logger.error(f"State '{state_id}' not found or no string IDs provided")
-        else:
-            # Legacy dict-based access
-            logger.debug("Using legacy dict-based config")
-            text = action.config.get("text", "")
-
-            # Check if text should come from a state string
-            text_source = action.config.get("textSource")
-            has_state_string_source = "stateStringSource" in action.config
-
-            if (text_source == "stateString" or has_state_string_source) and not text:
-                # Get text from state string
-                state_string_source = action.config.get("stateStringSource", {})
-                state_id = state_string_source.get("stateId")
-                string_ids = state_string_source.get("stringIds", [])
-
-                logger.debug(
-                    f"Looking for state string: state_id={state_id}, string_ids={string_ids}"
-                )
-
-                if state_id and string_ids and state_id in self.config.state_map:
-                    state = self.config.state_map[state_id]
-                    state_strings = getattr(state, "state_strings", [])
-                    logger.debug(
-                        f"State strings in '{state_id}': {[(s.id, s.value) for s in state_strings]}"
-                    )
-
-                    # Find the string in the state
-                    for state_string in state_strings:
-                        if state_string.id in string_ids:
-                            text = state_string.value
-                            logger.debug(f"Found matching string: '{text}'")
-                            break
-
-                    if not text:
-                        logger.error(f"No matching string found for IDs: {string_ids}")
-                else:
-                    logger.error(f"State '{state_id}' not found or no string IDs provided")
+                if not text:
+                    logger.error(f"No matching string found for IDs: {string_ids}")
+            else:
+                logger.error(f"State '{state_id}' not found or no string IDs provided")
 
         # Type the text if we have it
         if text:
