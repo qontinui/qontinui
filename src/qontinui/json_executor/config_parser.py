@@ -234,7 +234,8 @@ class Pattern(BaseModel):
 
     id: str = ""
     name: str = ""
-    image: str = ""  # base64 encoded image data (data:image/png;base64,...)
+    image: str = ""  # LEGACY: base64 encoded image data (data:image/png;base64,...)
+    image_id: str | None = Field(default=None, alias="imageId")  # NEW: reference to image in images array
     mask: str | None = None  # optional mask data
     search_regions: list[SearchRegion] = Field(default_factory=list, alias="searchRegions")
     fixed: bool = False
@@ -858,8 +859,23 @@ class QontinuiConfig(BaseModel):
                     # Future enhancement: handle multiple patterns per StateImage
                     pattern = state_image.patterns[0]
 
-                    # Extract base64 data from data URL (data:image/png;base64,...)
-                    if pattern.image.startswith("data:"):
+                    # NEW FORMAT: Pattern has imageId reference
+                    if pattern.image_id:
+                        # Pattern references an existing image in the images array
+                        # Just create a reference in image_map from StateImage.id -> existing ImageAsset
+                        if pattern.image_id in self.image_map:
+                            # Add StateImage ID as an alias to the existing image
+                            self.image_map[state_image.id] = self.image_map[pattern.image_id]
+                            stateimage_count += 1
+                            print(
+                                f"[DEBUG] StateImage {state_image.id} -> references image {pattern.image_id}"
+                            )
+                        else:
+                            print(
+                                f"[WARNING] StateImage {state_image.id} references missing image {pattern.image_id}"
+                            )
+                    # LEGACY FORMAT: Pattern has embedded base64 data
+                    elif pattern.image and pattern.image.startswith("data:"):
                         try:
                             # Parse data URL: data:image/png;base64,iVBORw0...
                             header, base64_data = pattern.image.split(",", 1)
@@ -896,6 +912,8 @@ class QontinuiConfig(BaseModel):
                             print(
                                 f"[ERROR] Failed to create ImageAsset from StateImage {state_image.id}: {e}"
                             )
+                    else:
+                        print(f"[WARNING] StateImage {state_image.id} has no image reference (no imageId or embedded data)")
                 else:
                     print(f"[WARNING] StateImage {state_image.id} has no patterns")
 
