@@ -12,18 +12,18 @@ class JSONRunner:
     """Main class for executing Qontinui automation workflows from JSON configuration.
 
     JSONRunner loads automation configurations exported from qontinui-web and executes
-    them using state-based or process-based execution. It manages the complete lifecycle
+    them using state-based or workflow-based execution. It manages the complete lifecycle
     of automation including configuration loading, state management, and execution control.
 
     The runner supports:
         - State machine execution with automatic state transitions
-        - Process-based execution for sequential actions
+        - Workflow-based execution for sequential actions (v2.0.0+)
         - Multi-monitor support for targeting specific displays
         - Graceful stopping and cleanup
 
     Attributes:
         config_path: Path to the JSON configuration file.
-        config: Parsed configuration containing states, processes, images, and transitions.
+        config: Parsed configuration containing states, workflows, images, and transitions.
         state_executor: Executor for state machine-based automation.
         monitor_index: Index of the monitor to use for automation (0-based).
         monitor_manager: Manager for multi-monitor support.
@@ -31,7 +31,8 @@ class JSONRunner:
     Example:
         >>> runner = JSONRunner("automation.json")
         >>> if runner.load_configuration():
-        ...     success = runner.run(process_id="login", monitor_index=0)
+        ...     # process_id parameter name maintained for backward compatibility
+        ...     success = runner.run(process_id="login_workflow", monitor_index=0)
         ...     runner.cleanup()
 
     Note:

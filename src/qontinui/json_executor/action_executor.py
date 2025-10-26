@@ -31,8 +31,7 @@ from ..config import (
     get_typed_config,
 )
 from ..wrappers import Keyboard, Mouse, Screen, TimeWrapper
-from .config_parser import Action as ConfigAction
-from .config_parser import QontinuiConfig
+from .config_parser import QontinuiConfig, Workflow
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
 
 # Set up logger
@@ -66,14 +65,14 @@ class ActionExecutor:
 
         Navigation actions:
             - GO_TO_STATE - Navigate to target state via state machine
-            - RUN_PROCESS - Execute a process by ID
+            - RUN_WORKFLOW - Execute a workflow by ID
 
         Utility actions:
             - WAIT - Pause execution
             - SCREENSHOT - Capture screen
 
     Attributes:
-        config: Parsed automation configuration containing states, processes, images.
+        config: Parsed automation configuration containing states, workflows, images.
         state_executor: Reference to StateExecutor for GO_TO_STATE navigation.
         defaults: Default action configuration from system settings.
         last_find_location: Coordinates (x, y) of most recent FIND result.
@@ -142,6 +141,9 @@ class ActionExecutor:
     def execute_workflow(self, workflow_id: str, initial_context: dict | None = None) -> dict:
         """Execute a workflow by ID, using graph or sequential execution based on configuration.
 
+        Supports both v2.0.0 Workflow format (from schema.py) and v1.0.0 Process format
+        (from config_parser.py) for backward compatibility.
+
         Args:
             workflow_id: ID of the workflow to execute
             initial_context: Optional initial context variables
@@ -175,11 +177,15 @@ class ActionExecutor:
             logger.info(f"Using SEQUENTIAL EXECUTION for workflow '{workflow.name}'")
             return self._execute_workflow_sequential(workflow)
 
-    def _execute_workflow_graph(self, workflow, initial_context: dict | None = None) -> dict:
+    def _execute_workflow_graph(
+        self, workflow: Workflow, initial_context: dict | None = None
+    ) -> dict:
         """Execute workflow using graph-based execution.
 
+        Supports both v2.0.0 Workflow and v1.0.0 Process formats.
+
         Args:
-            workflow: Workflow object with connections
+            workflow: Workflow/Process object with connections
             initial_context: Optional initial context variables
 
         Returns:
@@ -203,11 +209,13 @@ class ActionExecutor:
 
         return result
 
-    def _execute_workflow_sequential(self, workflow) -> dict:
+    def _execute_workflow_sequential(self, workflow: Workflow) -> dict:
         """Execute workflow using sequential execution (legacy mode).
 
+        Supports both v2.0.0 Workflow and v1.0.0 Process formats.
+
         Args:
-            workflow: Workflow object
+            workflow: Workflow/Process object
 
         Returns:
             Dictionary with execution results
@@ -284,7 +292,7 @@ class ActionExecutor:
             ),
         )
 
-    def _is_new_format(self, action: ConfigAction) -> bool:
+    def _is_new_format(self, action: Action) -> bool:
         """Check if action is using new Pydantic format.
 
         New format has 'base' and 'execution' fields at the root level.
@@ -292,7 +300,7 @@ class ActionExecutor:
         """
         return hasattr(action, "base") or hasattr(action, "execution")
 
-    def _convert_to_new_action(self, config_action: ConfigAction) -> Action:
+    def _convert_to_new_action(self, config_action: Action) -> Action:
         """Convert legacy action format to new Pydantic Action format.
 
         Args:
@@ -340,7 +348,7 @@ class ActionExecutor:
             # Return minimal valid action
             return Action(id=config_action.id, type=config_action.type, config=config_action.config)
 
-    def execute_action(self, action: ConfigAction | Action) -> bool:
+    def execute_action(self, action: Action) -> bool:
         """Execute a single automation action with retry logic.
 
         Handles the complete lifecycle of action execution including pre-action pauses,
@@ -349,7 +357,10 @@ class ActionExecutor:
 
         Supports both old and new action formats:
         - Old format: Configuration Action from config_parser with config dict
-        - New format: Pydantic Action with base/execution separation
+        - New format: Pydantic Action with base/execution separation and optional position field
+
+        The new Action model from schema.py includes an optional position field for graph-based
+        workflow visualization. This field is not used during execution and is safely ignored.
 
         Args:
             action: Action object containing type, configuration, and execution parameters.
@@ -372,9 +383,9 @@ class ActionExecutor:
             ... )
             >>> success = executor.execute_action(action)
         """
-        # Convert ConfigAction to Pydantic Action if needed
-        if isinstance(action, ConfigAction):
-            logger.info(f"Processing config format action: {action.type} (ID: {action.id})")
+        # Convert legacy action format to new format if needed
+        if not self._is_new_format(action):
+            logger.info(f"Processing legacy format action: {action.type} (ID: {action.id})")
             pydantic_action = self._convert_to_new_action(action)
         else:
             logger.info(f"Processing new format action: {action.type} (ID: {action.id})")
@@ -430,14 +441,8 @@ class ActionExecutor:
             continue_on_error = pydantic_action.execution.continue_on_error or False
         else:
             # Fallback to legacy action attributes if present
-            retry_count = (
-                getattr(action, "retry_count", 0) if isinstance(action, ConfigAction) else 0
-            )
-            continue_on_error = (
-                getattr(action, "continue_on_error", False)
-                if isinstance(action, ConfigAction)
-                else False
-            )
+            retry_count = getattr(action, "retry_count", 0)
+            continue_on_error = getattr(action, "continue_on_error", False)
 
         logger.debug(
             f"Retry configuration: retry_count={retry_count}, continue_on_error={continue_on_error}"
@@ -1043,9 +1048,7 @@ class ActionExecutor:
             state_id = typed_config.text_source.state_id
             string_ids = typed_config.text_source.string_ids
 
-            logger.debug(
-                f"Looking for state string: state_id={state_id}, string_ids={string_ids}"
-            )
+            logger.debug(f"Looking for state string: state_id={state_id}, string_ids={string_ids}")
 
             if state_id and string_ids and state_id in self.config.state_map:
                 state = self.config.state_map[state_id]
@@ -1512,7 +1515,7 @@ class ActionExecutor:
 
                 if success:
                     print(
-                        f"RUN_PROCESS: Workflow succeeded on run {run_num}/{total_runs}, stopping early"
+                        f"RUN_WORKFLOW: Workflow succeeded on run {run_num}/{total_runs}, stopping early"
                     )
                     return True
 
@@ -1543,9 +1546,20 @@ class ActionExecutor:
             return overall_success
 
     def _execute_workflow_once(
-        self, workflow, workflow_id: str, run_num: int, total_runs: int
+        self, workflow: Workflow, workflow_id: str, run_num: int, total_runs: int
     ) -> bool:
         """Execute a workflow once and emit events.
+
+        Supports both v2.0.0 Workflow and v1.0.0 Process formats.
+
+        Args:
+            workflow: Workflow/Process object to execute
+            workflow_id: ID of the workflow
+            run_num: Current run number
+            total_runs: Total number of runs
+
+        Returns:
+            bool: True if workflow execution succeeded
         """
         print(f"RUN_WORKFLOW: Executing workflow '{workflow.name}' (run {run_num}/{total_runs})")
 
@@ -1588,7 +1602,7 @@ class ActionExecutor:
         )
 
         print(
-            f"RUN_PROCESS: Completed workflow '{workflow.name}' (run {run_num}/{total_runs}): {'SUCCESS' if success else 'FAILED'}"
+            f"RUN_WORKFLOW: Completed workflow '{workflow.name}' (run {run_num}/{total_runs}): {'SUCCESS' if success else 'FAILED'}"
         )
         return success
 
