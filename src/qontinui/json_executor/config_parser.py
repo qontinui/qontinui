@@ -5,17 +5,16 @@ import hashlib
 import io
 import json
 import tempfile
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from PIL import Image
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
 
 
-@dataclass
-class ImageAsset:
+class ImageAsset(BaseModel):
     """Represents an image asset from the configuration with storage and verification.
 
     ImageAsset stores image data in base64 format from the configuration file and
@@ -66,11 +65,13 @@ class ImageAsset:
     id: str
     name: str
     data: str  # base64 encoded
-    format: str
-    width: int
-    height: int
-    hash: str
+    format: str = "png"
+    width: int = 0
+    height: int = 0
+    hash: str = ""
     file_path: str | None = None  # Path to saved image file
+
+    model_config = {"populate_by_name": True}
 
     def save_to_file(self, directory: Path) -> str:
         """Save base64 image data to a file on disk.
@@ -111,8 +112,7 @@ class ImageAsset:
         return calculated_hash == self.hash
 
 
-@dataclass
-class Action:
+class Action(BaseModel):
     """Represents a single automation action within a process.
 
     Actions are the atomic operations performed during automation, such as clicking,
@@ -185,12 +185,13 @@ class Action:
     type: str
     config: dict[str, Any]
     timeout: int = 5000
-    retry_count: int = 3
-    continue_on_error: bool = False
+    retry_count: int = Field(default=3, alias="retryCount")
+    continue_on_error: bool = Field(default=False, alias="continueOnError")
+
+    model_config = {"populate_by_name": True}
 
 
-@dataclass
-class Process:
+class Process(BaseModel):
     """Represents a sequence of actions forming an automation workflow.
 
     A Process is a named collection of actions that are executed together to accomplish
@@ -239,13 +240,14 @@ class Process:
 
     id: str
     name: str
-    description: str
-    type: str
-    actions: list[Action] = field(default_factory=list)
+    description: str = ""
+    type: str = "sequence"
+    actions: list[Action] = Field(default_factory=list)
+
+    model_config = {"populate_by_name": True}
 
 
-@dataclass
-class SearchRegion:
+class SearchRegion(BaseModel):
     """Rectangular region that limits image search area.
 
     SearchRegion defines a rectangular area on screen where image template matching
@@ -303,9 +305,10 @@ class SearchRegion:
     width: int
     height: int
 
+    model_config = {"populate_by_name": True}
 
-@dataclass
-class Pattern:
+
+class Pattern(BaseModel):
     """Image pattern with optional mask for template matching.
 
     Pattern represents a single image template used for visual recognition. Each
@@ -363,16 +366,17 @@ class Pattern:
         :class:`ImageAsset`: Processed pattern data saved to disk
     """
 
-    id: str
-    name: str
-    image: str  # base64 encoded image data (data:image/png;base64,...)
+    id: str = ""
+    name: str = ""
+    image: str = ""  # base64 encoded image data (data:image/png;base64,...)
     mask: str | None = None  # optional mask data
-    search_regions: list[SearchRegion] = field(default_factory=list)
+    search_regions: list[SearchRegion] = Field(default_factory=list, alias="searchRegions")
     fixed: bool = False
 
+    model_config = {"populate_by_name": True}
 
-@dataclass
-class StateImage:
+
+class StateImage(BaseModel):
     """Image reference for state identification and visual recognition.
 
     StateImage represents a visual element used to identify when a state is active
@@ -418,18 +422,19 @@ class StateImage:
         :class:`State`: Container for StateImages used in state identification
     """
 
-    id: str
-    name: str
-    patterns: list[Pattern] = field(default_factory=list)
+    id: str = ""
+    name: str = ""
+    patterns: list[Pattern] = Field(default_factory=list)
     threshold: float = DEFAULT_SIMILARITY_THRESHOLD
     required: bool = True
     shared: bool = False
     source: str = ""
-    search_regions: list[SearchRegion] = field(default_factory=list)
+    search_regions: list[SearchRegion] = Field(default_factory=list, alias="searchRegions")
+
+    model_config = {"populate_by_name": True}
 
 
-@dataclass
-class StateRegion:
+class StateRegion(BaseModel):
     """Rectangular region associated with a state for search or interaction.
 
     StateRegions define rectangular areas within a state that have special meaning,
@@ -453,16 +458,17 @@ class StateRegion:
         ... )
     """
 
-    id: str
-    name: str
-    bounds: dict[str, int]  # {x, y, width, height}
+    id: str = ""
+    name: str = ""
+    bounds: dict[str, int] = Field(default_factory=dict)  # {x, y, width, height}
     fixed: bool = True
-    is_search_region: bool = False
-    is_interaction_region: bool = False
+    is_search_region: bool = Field(default=False, alias="isSearchRegion")
+    is_interaction_region: bool = Field(default=False, alias="isInteractionRegion")
+
+    model_config = {"populate_by_name": True}
 
 
-@dataclass
-class StateLocation:
+class StateLocation(BaseModel):
     """Specific point location associated with a state.
 
     StateLocations represent precise points within a state that can be used as
@@ -486,16 +492,17 @@ class StateLocation:
         ... )
     """
 
-    id: str
-    name: str
-    x: int
-    y: int
+    id: str = ""
+    name: str = ""
+    x: int = 0
+    y: int = 0
     anchor: bool = False
     fixed: bool = True
 
+    model_config = {"populate_by_name": True}
 
-@dataclass
-class StateString:
+
+class StateString(BaseModel):
     """Text string associated with a state for identification or input.
 
     StateStrings can serve multiple purposes: identifying states through text verification,
@@ -519,17 +526,18 @@ class StateString:
         ... )
     """
 
-    id: str
-    name: str
-    value: str
+    id: str = ""
+    name: str = ""
+    value: str = ""
     identifier: bool = False
-    input_text: bool = False
-    expected_text: bool = False
+    input_text: bool = Field(default=False, alias="inputText")
+    expected_text: bool = Field(default=False, alias="expectedText")
     regex: bool = False
 
+    model_config = {"populate_by_name": True}
 
-@dataclass
-class State:
+
+class State(BaseModel):
     """Represents a state in the automation state machine.
 
     A State represents a distinct screen, dialog, or condition in your application.
@@ -573,19 +581,20 @@ class State:
 
     id: str
     name: str
-    description: str
-    identifying_images: list[StateImage] = field(default_factory=list)
-    state_regions: list[StateRegion] = field(default_factory=list)
-    state_locations: list[StateLocation] = field(default_factory=list)
-    state_strings: list[StateString] = field(default_factory=list)
-    position: dict[str, int] = field(default_factory=dict)
-    is_initial: bool = False
-    outgoing_transitions: list["OutgoingTransition"] = field(default_factory=list)
-    incoming_transitions: list["IncomingTransition"] = field(default_factory=list)
+    description: str = ""
+    identifying_images: list[StateImage] = Field(default_factory=list, alias="stateImages")
+    state_regions: list[StateRegion] = Field(default_factory=list, alias="regions")
+    state_locations: list[StateLocation] = Field(default_factory=list, alias="locations")
+    state_strings: list[StateString] = Field(default_factory=list, alias="strings")
+    position: dict[str, int] = Field(default_factory=dict)
+    is_initial: bool = Field(default=False, alias="isInitial")
+    outgoing_transitions: list["OutgoingTransition"] = Field(default_factory=list)
+    incoming_transitions: list["IncomingTransition"] = Field(default_factory=list)
+
+    model_config = {"populate_by_name": True}
 
 
-@dataclass
-class Transition:
+class Transition(BaseModel):
     """Base class for state machine transitions.
 
     Transitions define how automation moves between states. Each transition can
@@ -620,12 +629,22 @@ class Transition:
 
     id: str
     type: str
-    workflows: list[str] = field(default_factory=list)
+    workflows: list[str] = Field(default_factory=list)
     timeout: int = 10000
-    retry_count: int = 3
+    retry_count: int = Field(default=3, alias="retryCount")
+
+    model_config = {"populate_by_name": True}
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_processes_field(cls, data: Any) -> Any:
+        """Handle v1.0.0 (processes) to v2.0.0 (workflows) compatibility."""
+        if isinstance(data, dict):
+            if "processes" in data and "workflows" not in data:
+                data["workflows"] = data["processes"]
+        return data
 
 
-@dataclass
 class OutgoingTransition(Transition):
     """Transition from one state to another with state activation control.
 
@@ -684,14 +703,13 @@ class OutgoingTransition(Transition):
         :class:`State`: State nodes in the state machine
     """
 
-    from_state: str = ""
-    to_state: str = ""
-    stays_visible: bool = False
-    activate_states: list[str] = field(default_factory=list)
-    deactivate_states: list[str] = field(default_factory=list)
+    from_state: str = Field(default="", alias="fromState")
+    to_state: str = Field(default="", alias="toState")
+    stays_visible: bool = Field(default=False, alias="staysVisible")
+    activate_states: list[str] = Field(default_factory=list, alias="activateStates")
+    deactivate_states: list[str] = Field(default_factory=list, alias="deactivateStates")
 
 
-@dataclass
 class IncomingTransition(Transition):
     """Verification transition when entering a state.
 
@@ -737,11 +755,10 @@ class IncomingTransition(Transition):
         :class:`State`: State nodes in the state machine
     """
 
-    to_state: str = ""
+    to_state: str = Field(default="", alias="toState")
 
 
-@dataclass
-class ExecutionSettings:
+class ExecutionSettings(BaseModel):
     """Global configuration for automation execution behavior.
 
     ExecutionSettings controls how Qontinui executes automations including timing,
@@ -782,15 +799,16 @@ class ExecutionSettings:
         :class:`RecognitionSettings`: Related image recognition configuration
     """
 
-    default_timeout: int = 10000
-    default_retry_count: int = 3
-    action_delay: int = 100
-    failure_strategy: str = "stop"
+    default_timeout: int = Field(default=10000, alias="defaultTimeout")
+    default_retry_count: int = Field(default=3, alias="defaultRetryCount")
+    action_delay: int = Field(default=100, alias="actionDelay")
+    failure_strategy: str = Field(default="stop", alias="failureStrategy")
     headless: bool = False
 
+    model_config = {"populate_by_name": True}
 
-@dataclass
-class RecognitionSettings:
+
+class RecognitionSettings(BaseModel):
     """Global configuration for image recognition and template matching.
 
     RecognitionSettings controls how Qontinui performs visual recognition across
@@ -836,53 +854,66 @@ class RecognitionSettings:
         :class:`ExecutionSettings`: Related execution configuration
     """
 
-    default_threshold: float = DEFAULT_SIMILARITY_THRESHOLD
-    search_algorithm: str = "template_matching"
-    multi_scale_search: bool = True
-    color_space: str = "rgb"
-    edge_detection: bool = False
-    ocr_enabled: bool = False
+    default_threshold: float = Field(default=DEFAULT_SIMILARITY_THRESHOLD, alias="defaultThreshold")
+    search_algorithm: str = Field(default="template_matching", alias="searchAlgorithm")
+    multi_scale_search: bool = Field(default=True, alias="multiScaleSearch")
+    color_space: str = Field(default="rgb", alias="colorSpace")
+    edge_detection: bool = Field(default=False, alias="edgeDetection")
+    ocr_enabled: bool = Field(default=False, alias="ocrEnabled")
+
+    model_config = {"populate_by_name": True}
 
 
-@dataclass
-class QontinuiConfig:
+class QontinuiConfig(BaseModel):
     """Complete Qontinui configuration.
 
     Supports both v1.0.0 (processes) and v2.0.0 (workflows) config formats.
     Internally uses 'workflows' terminology for consistency with v2.0.0.
     """
 
-    version: str
-    metadata: dict[str, Any]
-    images: list[ImageAsset]
-    workflows: list[Process]  # v2.0.0: workflows, v1.0.0: processes
-    states: list[State]
-    categories: list[str]
-    execution_settings: ExecutionSettings
-    recognition_settings: RecognitionSettings
-    schedules: list[Any] = field(default_factory=list)  # List of ScheduleConfig objects
+    version: str = "1.0.0"
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    images: list[ImageAsset] = Field(default_factory=list)
+    workflows: list[Process] = Field(default_factory=list)  # v2.0.0: workflows, v1.0.0: processes
+    states: list[State] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=list)
+    execution_settings: ExecutionSettings = Field(default_factory=ExecutionSettings)
+    recognition_settings: RecognitionSettings = Field(default_factory=RecognitionSettings)
+    schedules: list[Any] = Field(default_factory=list)  # List of ScheduleConfig objects
+    transitions: list[Transition] = Field(default_factory=list)
+    settings: dict[str, Any] = Field(default_factory=dict)
 
     # Runtime data
     image_directory: Path | None = None
-    workflow_map: dict[str, Process] = field(
+    workflow_map: dict[str, Process] = Field(
         default_factory=dict
     )  # v2.0.0: workflow_map, v1.0.0: process_map
-    state_map: dict[str, State] = field(default_factory=dict)
-    image_map: dict[str, ImageAsset] = field(default_factory=dict)
-    schedule_map: dict[str, Any] = field(default_factory=dict)  # Schedule ID -> ScheduleConfig
+    state_map: dict[str, State] = Field(default_factory=dict)
+    image_map: dict[str, ImageAsset] = Field(default_factory=dict)
+    schedule_map: dict[str, Any] = Field(default_factory=dict)  # Schedule ID -> ScheduleConfig
 
-    # Backward compatibility alias for v1.0.0
-    @property
-    def processes(self) -> list[Process]:
-        """Alias for workflows to maintain v1.0.0 compatibility."""
-        return self.workflows
+    model_config = {"populate_by_name": True, "arbitrary_types_allowed": True}
 
-    @property
-    def process_map(self) -> dict[str, Process]:
-        """Alias for workflow_map to maintain v1.0.0 compatibility."""
-        return self.workflow_map
+    @model_validator(mode="before")
+    @classmethod
+    def handle_legacy_fields(cls, data: Any) -> Any:
+        """Handle v1.0.0 (processes) to v2.0.0 (workflows) field name compatibility."""
+        if isinstance(data, dict):
+            # Handle workflows/processes compatibility
+            if "processes" in data and "workflows" not in data:
+                data["workflows"] = data["processes"]
 
-    def __post_init__(self):
+            # Handle settings extraction
+            if "settings" in data:
+                settings = data["settings"]
+                if "execution" in settings:
+                    data["execution_settings"] = settings["execution"]
+                if "recognition" in settings:
+                    data["recognition_settings"] = settings["recognition"]
+
+        return data
+
+    def model_post_init(self, __context: Any) -> None:
         """Build lookup maps for efficient access."""
         self.workflow_map = {p.id: p for p in self.workflows}
         self.state_map = {s.id: s for s in self.states}
@@ -947,11 +978,13 @@ class QontinuiConfig:
 
 
 class ConfigParser:
-    """Parser for Qontinui JSON configuration files."""
+    """Parser for Qontinui JSON configuration files.
+
+    Uses Pydantic validation for clean, declarative parsing.
+    """
 
     def __init__(self):
         self.temp_dir = None
-        self._execution_settings_data = None
 
     def parse_file(self, file_path: str) -> QontinuiConfig:
         """Parse a JSON configuration file."""
@@ -968,43 +1001,19 @@ class ConfigParser:
         """Parse configuration dictionary into QontinuiConfig object.
 
         Supports both v1.0.0 (processes) and v2.0.0 (workflows) formats.
-        v2.0.0 configs have a 'workflows' array, v1.0.0 has 'processes' array.
+        Uses Pydantic's model_validate() for clean, declarative parsing.
         """
-        settings = data["settings"]
-        # Store execution settings data for use during action parsing
-        self._execution_settings_data = settings["execution"]
+        # Parse transitions separately to assign them to states
+        transitions_data = data.get("transitions", [])
 
-        images = [self._parse_image(img) for img in data["images"]]
+        # Use Pydantic validation directly
+        config = QontinuiConfig.model_validate(data)
 
-        # v2.0.0: Read from 'workflows' array if present, otherwise fall back to 'processes' (v1.0.0)
-        workflows_data = data.get("workflows", data.get("processes", []))
-        workflows = [self._parse_process(proc) for proc in workflows_data]
-
-        states = [self._parse_state(state) for state in data["states"]]
-        schedules = [self._parse_schedule(sched) for sched in data.get("schedules", [])]
-
-        execution_settings = self._parse_execution_settings(settings["execution"])
-        recognition_settings = self._parse_recognition_settings(settings["recognition"])
-
-        config = QontinuiConfig(
-            version=data["version"],
-            metadata=data["metadata"],
-            images=images,
-            workflows=workflows,
-            states=states,
-            categories=data["categories"],
-            execution_settings=execution_settings,
-            recognition_settings=recognition_settings,
-            schedules=schedules,
-        )
-
-        # Parse transitions and add them directly to states
-        # This establishes states as the primary owner of transitions
-        for trans_data in data["transitions"]:
+        # Assign transitions to their respective states
+        for trans_data in transitions_data:
             transition = self._parse_transition(trans_data)
 
             if isinstance(transition, OutgoingTransition):
-                # Add to source state's outgoing transitions
                 if transition.from_state in config.state_map:
                     config.state_map[transition.from_state].outgoing_transitions.append(transition)
                 else:
@@ -1013,7 +1022,6 @@ class ConfigParser:
                     )
 
             if isinstance(transition, IncomingTransition):
-                # Add to target state's incoming transitions
                 if transition.to_state in config.state_map:
                     config.state_map[transition.to_state].incoming_transitions.append(transition)
                 else:
@@ -1024,298 +1032,19 @@ class ConfigParser:
         self._save_images(config)
         return config
 
-    def _parse_image(self, data: dict[str, Any]) -> ImageAsset:
-        """Parse image asset from dictionary."""
-        return ImageAsset(
-            id=data["id"],
-            name=data["name"],
-            data=data["data"],
-            format=data["format"],
-            width=data["width"],
-            height=data["height"],
-            hash=data.get("hash", ""),
-        )
-
-    def _parse_process(self, data: dict[str, Any]) -> Process:
-        """Parse process from dictionary."""
-        actions = [self._parse_action(action) for action in data["actions"]]
-        return Process(
-            id=data["id"],
-            name=data["name"],
-            description=data.get("description", ""),
-            type=data["type"],
-            actions=actions,
-        )
-
-    def _parse_action(self, data: dict[str, Any]) -> Action:
-        """Parse action from dictionary."""
-        action_type = data["type"]
-        config = data["config"]
-
-        # Validate action config based on type
-        self._validate_action_config(action_type, config)
-
-        # Get defaults from execution settings
-        default_timeout = self._execution_settings_data.get("defaultTimeout", 10000)
-        default_retry_count = self._execution_settings_data.get("defaultRetryCount", 0)
-
-        return Action(
-            id=data["id"],
-            type=action_type,
-            config=config,
-            timeout=data.get("timeout", default_timeout),
-            retry_count=data.get("retryCount", default_retry_count),
-            continue_on_error=data.get("continueOnError", False),
-        )
-
-    def _validate_action_config(self, action_type: str, config: dict[str, Any]) -> None:
-        """Validate action configuration based on action type.
-
-        Args:
-            action_type: Type of action
-            config: Action configuration dictionary
-
-        Raises:
-            ValueError: If configuration is invalid for the action type
-        """
-        # Define valid action types
-        valid_action_types = {
-            "FIND",
-            "CLICK",
-            "TYPE",
-            "KEY_PRESS",
-            "DRAG",
-            "SCROLL",
-            "WAIT",
-            "VANISH",
-            "EXISTS",
-            "MOVE",
-            "SCREENSHOT",
-            "CONDITION",
-            "LOOP",
-            "GO_TO_STATE",
-            "RUN_PROCESS",
-        }
-
-        if action_type not in valid_action_types:
-            print(f"Warning: Unknown action type '{action_type}'")
-
-        # Validate type-specific required fields
-        if action_type == "TYPE":
-            if "stateStringSource" in config:
-                # Validate state string source
-                source = config["stateStringSource"]
-                if not isinstance(source, dict):
-                    raise ValueError(
-                        f"TYPE action stateStringSource must be a dict, got {type(source)}"
-                    )
-                if "stateId" not in source:
-                    raise ValueError("TYPE action stateStringSource must have 'stateId' field")
-            elif "text" not in config:
-                raise ValueError(
-                    "TYPE action must have either 'text' or 'stateStringSource' in config"
-                )
-
-        elif action_type == "GO_TO_STATE":
-            if "stateIds" not in config:
-                raise ValueError("GO_TO_STATE action must have 'stateIds' in config")
-
-        elif action_type == "RUN_PROCESS":
-            if "process" not in config:
-                raise ValueError("RUN_PROCESS action must have 'process' in config")
-
-        elif action_type == "KEY_PRESS":
-            if "keys" not in config and "key" not in config:
-                raise ValueError("KEY_PRESS action must have 'keys' or 'key' in config")
-
-        elif action_type == "SCROLL":
-            if "direction" not in config:
-                raise ValueError("SCROLL action must have 'direction' in config")
-
-        elif action_type == "DRAG":
-            if "destination" not in config:
-                raise ValueError("DRAG action must have 'destination' in config")
-
-        elif action_type == "WAIT":
-            if "duration" not in config:
-                raise ValueError("WAIT action must have 'duration' in config")
-
-        elif action_type == "CONDITION":
-            if "condition" not in config:
-                raise ValueError("CONDITION action must have 'condition' in config")
-
-        elif action_type == "LOOP":
-            if "loop" not in config:
-                raise ValueError("LOOP action must have 'loop' in config")
-
-    def _parse_search_region(self, data: dict[str, Any]) -> SearchRegion:
-        """Parse search region from dictionary."""
-        return SearchRegion(
-            id=data["id"],
-            name=data["name"],
-            x=data["x"],
-            y=data["y"],
-            width=data["width"],
-            height=data["height"],
-        )
-
-    def _parse_pattern(self, data: dict[str, Any]) -> Pattern:
-        """Parse pattern from dictionary."""
-        search_regions = []
-        if "searchRegions" in data:
-            search_regions = [self._parse_search_region(r) for r in data["searchRegions"]]
-
-        return Pattern(
-            id=data.get("id", ""),
-            name=data.get("name", ""),
-            image=data.get("image", ""),
-            mask=data.get("mask"),
-            search_regions=search_regions,
-            fixed=data.get("fixed", False),
-        )
-
-    def _parse_state_image(self, data: dict[str, Any]) -> StateImage:
-        """Parse state image from dictionary."""
-        search_regions = []
-        if "searchRegions" in data:
-            search_regions_data = data["searchRegions"]
-            if isinstance(search_regions_data, list):
-                search_regions = [self._parse_search_region(r) for r in search_regions_data]
-            elif "regions" in search_regions_data:
-                search_regions = [
-                    self._parse_search_region(r) for r in search_regions_data["regions"]
-                ]
-
-        patterns = []
-        if "patterns" in data:
-            patterns = [self._parse_pattern(p) for p in data["patterns"]]
-
-        return StateImage(
-            id=data.get("id", ""),
-            name=data.get("name", ""),
-            patterns=patterns,
-            threshold=data.get("threshold", DEFAULT_SIMILARITY_THRESHOLD),
-            required=data.get("required", True),
-            shared=data.get("shared", False),
-            source=data.get("source", ""),
-            search_regions=search_regions,
-        )
-
-    def _parse_state_region(self, data: dict[str, Any]) -> StateRegion:
-        """Parse state region from dictionary."""
-        # Handle both bounds format and direct x,y,w,h format
-        if "bounds" in data:
-            bounds = data["bounds"]
-        else:
-            # Build bounds from x, y, width, height
-            bounds = {
-                "x": data.get("x", 0),
-                "y": data.get("y", 0),
-                "width": data.get("width", 0),
-                "height": data.get("height", 0),
-            }
-
-        return StateRegion(
-            id=data.get("id", ""),
-            name=data.get("name", ""),
-            bounds=bounds,
-            fixed=data.get("fixed", True),
-            is_search_region=data.get("isSearchRegion", False),
-            is_interaction_region=data.get("isInteractionRegion", False),
-        )
-
-    def _parse_state_location(self, data: dict[str, Any]) -> StateLocation:
-        """Parse state location from dictionary."""
-        return StateLocation(
-            id=data.get("id", ""),
-            name=data.get("name", ""),
-            x=data.get("x", 0),
-            y=data.get("y", 0),
-            anchor=data.get("anchor", False),
-            fixed=data.get("fixed", True),
-        )
-
-    def _parse_state_string(self, data: dict[str, Any]) -> StateString:
-        """Parse state string from dictionary."""
-        return StateString(
-            id=data.get("id", ""),
-            name=data.get("name", ""),
-            value=data.get("value", ""),
-            identifier=data.get("identifier", False),
-            input_text=data.get("inputText", False),
-            expected_text=data.get("expectedText", False),
-            regex=data.get("regex", False),
-        )
-
-    def _parse_state(self, data: dict[str, Any]) -> State:
-        """Parse state from dictionary."""
-        identifying_images = [self._parse_state_image(img) for img in data.get("stateImages", [])]
-        state_regions = [self._parse_state_region(r) for r in data.get("regions", [])]
-        state_locations = [self._parse_state_location(loc) for loc in data.get("locations", [])]
-        state_strings = [self._parse_state_string(s) for s in data.get("strings", [])]
-
-        return State(
-            id=data["id"],
-            name=data["name"],
-            description=data.get("description", ""),
-            identifying_images=identifying_images,
-            state_regions=state_regions,
-            state_locations=state_locations,
-            state_strings=state_strings,
-            position=data["position"],
-            is_initial=data.get("isInitial", False),
-        )
-
     def _parse_transition(self, data: dict[str, Any]) -> Transition:
-        """Parse transition from dictionary."""
-        transition_type = data["type"]
+        """Parse transition from dictionary using Pydantic validation."""
+        # Infer transition type based on presence of fromState
+        # OutgoingTransition has fromState, IncomingTransition does not
+        transition_type = data.get("type")
+        if transition_type is None:
+            transition_type = "OutgoingTransition" if "fromState" in data else "IncomingTransition"
 
-        # Read workflows array from JSON
-        workflows = data.get("workflows", [])
-
+        # Use Pydantic validation
         if transition_type == "OutgoingTransition":
-            return OutgoingTransition(
-                id=data["id"],
-                type=transition_type,
-                workflows=workflows,
-                timeout=data.get("timeout", 10000),
-                retry_count=data.get("retryCount", 3),
-                from_state=data.get("fromState", ""),
-                to_state=data.get("toState", ""),
-                stays_visible=data.get("staysVisible", False),
-                activate_states=data.get("activateStates", []),
-                deactivate_states=data.get("deactivateStates", []),
-            )
-        else:  # IncomingTransition
-            return IncomingTransition(
-                id=data["id"],
-                type=transition_type,
-                workflows=workflows,
-                timeout=data.get("timeout", 10000),
-                retry_count=data.get("retryCount", 3),
-                to_state=data.get("toState", ""),
-            )
-
-    def _parse_execution_settings(self, data: dict[str, Any]) -> ExecutionSettings:
-        """Parse execution settings."""
-        return ExecutionSettings(
-            default_timeout=data["defaultTimeout"],
-            default_retry_count=data["defaultRetryCount"],
-            action_delay=data["actionDelay"],
-            failure_strategy=data["failureStrategy"],
-            headless=data.get("headless", False),
-        )
-
-    def _parse_recognition_settings(self, data: dict[str, Any]) -> RecognitionSettings:
-        """Parse recognition settings."""
-        return RecognitionSettings(
-            default_threshold=data["defaultThreshold"],
-            search_algorithm=data["searchAlgorithm"],
-            multi_scale_search=data["multiScaleSearch"],
-            color_space=data["colorSpace"],
-            edge_detection=data.get("edgeDetection", False),
-            ocr_enabled=data.get("ocrEnabled", False),
-        )
+            return OutgoingTransition.model_validate(data)
+        else:
+            return IncomingTransition.model_validate(data)
 
     def _parse_schedule(self, data: dict[str, Any]) -> Any:
         """Parse schedule configuration from dictionary.

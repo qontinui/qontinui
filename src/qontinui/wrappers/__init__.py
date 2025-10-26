@@ -14,10 +14,10 @@ from .capture_wrapper import CaptureWrapper
 from .controller import ExecutionModeController, get_controller
 from .find_wrapper import FindWrapper
 from .input_wrapper import KeyboardWrapper, MouseWrapper
+from .keyboard import Keyboard
+from .mouse import Mouse
+from .screen import Screen
 from .time_wrapper import TimeWrapper
-
-# Alias for backward compatibility
-Time = TimeWrapper
 
 __all__ = [
     "ActionWrapper",
@@ -26,8 +26,10 @@ __all__ = [
     "CaptureWrapper",
     "MouseWrapper",
     "KeyboardWrapper",
+    "Keyboard",
+    "Mouse",
+    "Screen",
     "TimeWrapper",
-    "Time",  # Alias
     "ExecutionModeController",
     "get_controller",
 ]

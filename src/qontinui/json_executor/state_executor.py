@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from ..wrappers import Time
+from ..wrappers import TimeWrapper
 from .action_executor import ActionExecutor
 from .config_parser import (
     IncomingTransition,
@@ -148,7 +148,7 @@ class StateExecutor:
                 print("No applicable transitions found")
                 # Check if we should wait or exit
                 if self._should_continue():
-                    Time.wait(1)
+                    TimeWrapper.wait(1)
                 else:
                     break
 
