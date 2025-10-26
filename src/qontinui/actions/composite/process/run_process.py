@@ -1,6 +1,6 @@
 """RunProcess action implementation.
 
-Executes a named process with optional repetition control.
+Executes a named workflow (v2.0.0+) or process (v1.0.0 compatibility) with optional repetition control.
 """
 
 import time
@@ -12,25 +12,29 @@ from ....actions.action_type import ActionType
 from .run_process_options import RunProcessOptions
 
 if TYPE_CHECKING:
-    from ....json_executor.config_parser import Process, QontinuiConfig
+    from ....json_executor.config_parser import Process, QontinuiConfig, Workflow
     from ....model.object_collection import ObjectCollection
 
 
 class RunProcess(ActionInterface):
-    """Execute a named process with repetition support.
+    """Execute a named workflow with repetition support.
 
-    This action executes a process (sequence of actions) by its ID,
-    with support for:
+    This action executes a workflow (v2.0.0+) or process (v1.0.0 compatibility)
+    by its ID, with support for:
     - Fixed count repetition: Run exactly N additional times
     - Until success repetition: Stop early on success, otherwise run up to N times
     - Configurable delays between repetitions
+
+    Note:
+        The action is named RunProcess for backward compatibility, but executes
+        workflows. The process_id parameter accepts both workflow and process IDs.
     """
 
     def __init__(self, config: "QontinuiConfig | None" = None):
         """Initialize RunProcess action.
 
         Args:
-            config: QontinuiConfig containing process definitions
+            config: QontinuiConfig containing workflow/process definitions
         """
         self.config = config
 
@@ -38,7 +42,7 @@ class RunProcess(ActionInterface):
         """Set the configuration after initialization.
 
         Args:
-            config: QontinuiConfig containing process definitions
+            config: QontinuiConfig containing workflow/process definitions
         """
         self.config = config
 
@@ -51,11 +55,15 @@ class RunProcess(ActionInterface):
         return ActionType.RUN_PROCESS
 
     def perform(self, action_result: ActionResult, *object_collections: "ObjectCollection") -> None:
-        """Execute the process with optional repetition.
+        """Execute the workflow with optional repetition.
 
         Args:
             action_result: ActionResult containing configuration
             object_collections: Variable number of ObjectCollection arguments
+
+        Note:
+            The process_id from configuration can refer to either a workflow (v2.0.0+)
+            or process (v1.0.0 compatibility). Both are supported via workflow_map/process_map.
         """
         # Extract and validate configuration
         run_process_options = action_result.action_config
@@ -65,66 +73,79 @@ class RunProcess(ActionInterface):
         if not self.config:
             raise RuntimeError("RunProcess requires QontinuiConfig to be set")
 
-        process_id = run_process_options.get_process_id()
-        if not process_id:
+        # process_id can refer to either workflow or process (backward compatibility)
+        workflow_id = run_process_options.get_process_id()
+        if not workflow_id:
             action_result.success = False
-            action_result.output_text = "RUN_PROCESS: No process ID specified"
+            action_result.output_text = "RUN_PROCESS: No workflow/process ID specified"
             return
 
-        # Get the process
-        process = self._get_process(process_id)
-        if not process:
+        # Get the workflow (backward compatible with process)
+        workflow = self._get_workflow(workflow_id)
+        if not workflow:
             action_result.success = False
-            action_result.output_text = f"RUN_PROCESS: Process '{process_id}' not found"
+            action_result.output_text = f"RUN_PROCESS: Workflow/process '{workflow_id}' not found"
             return
 
         # Check if repetition is enabled
         repetition = run_process_options.get_process_repetition()
         if not repetition.get_enabled():
             # No repetition - execute once
-            success = self._execute_process_once(process, action_result)
+            success = self._execute_workflow_once(workflow, action_result)
             action_result.success = success
             return
 
         # Execute with repetition
         if repetition.get_until_success():
-            self._execute_until_success(process, repetition, action_result, object_collections)
+            self._execute_until_success(workflow, repetition, action_result, object_collections)
         else:
-            self._execute_fixed_count(process, repetition, action_result, object_collections)
+            self._execute_fixed_count(workflow, repetition, action_result, object_collections)
 
-    def _get_process(self, process_id: str) -> "Process | None":
-        """Get a process by ID from the configuration.
+    def _get_workflow(self, workflow_id: str) -> "Workflow | Process | None":
+        """Get a workflow by ID from the configuration.
 
         Args:
-            process_id: The process ID to look up
+            workflow_id: The workflow/process ID to look up
 
         Returns:
-            Process instance or None if not found
-        """
-        if not self.config or not hasattr(self.config, "process_map"):
-            return None
-        return self.config.process_map.get(process_id)
+            Workflow or Process instance, or None if not found
 
-    def _execute_process_once(self, process: "Process", action_result: ActionResult) -> bool:
-        """Execute a process once.
+        Note:
+            Supports both workflow_map (v2.0.0+) and process_map (v1.0.0 compatibility)
+            through the config's property alias system.
+        """
+        if not self.config:
+            return None
+        # workflow_map is aliased to process_map in config for backward compatibility
+        if hasattr(self.config, "workflow_map"):
+            return self.config.workflow_map.get(workflow_id)
+        # Fallback to process_map for older configs
+        if hasattr(self.config, "process_map"):
+            return self.config.process_map.get(workflow_id)
+        return None
+
+    def _execute_workflow_once(
+        self, workflow: "Workflow | Process", action_result: ActionResult
+    ) -> bool:
+        """Execute a workflow once.
 
         Args:
-            process: The process to execute
+            workflow: The workflow/process to execute
             action_result: ActionResult to update
 
         Returns:
-            True if process succeeded, False otherwise
+            True if workflow succeeded, False otherwise
         """
         # Import here to avoid circular dependency
 
-        # Create a temporary executor for this process
+        # Create a temporary executor for this workflow
         # Note: In a real scenario, this would use the existing executor
         # For now, we'll use a simplified approach
-        output_text = f"Executing process: {process.name}\n"
+        output_text = f"Executing workflow: {workflow.name}\n"
 
-        # Execute process actions sequentially
+        # Execute workflow actions sequentially
         success = True
-        for i, action in enumerate(process.actions):
+        for i, action in enumerate(workflow.actions):
             output_text += f"  Action {i + 1}: {action.type}\n"
 
             # TODO: Actually execute the action using the action executor
@@ -136,12 +157,16 @@ class RunProcess(ActionInterface):
         return success
 
     def _execute_until_success(
-        self, process: "Process", repetition, action_result: ActionResult, object_collections
+        self,
+        workflow: "Workflow | Process",
+        repetition,
+        action_result: ActionResult,
+        object_collections,
     ) -> None:
-        """Execute process repeatedly until success or max repeats reached.
+        """Execute workflow repeatedly until success or max repeats reached.
 
         Args:
-            process: The process to execute
+            workflow: The workflow/process to execute
             repetition: ProcessRepetitionOptions configuration
             action_result: ActionResult to update
             object_collections: ObjectCollection arguments
@@ -151,18 +176,18 @@ class RunProcess(ActionInterface):
         total_runs = max_repeats + 1  # Initial run + repeats
 
         results = []
-        output_text = f"RUN_PROCESS (until success): {process.name}\n"
+        output_text = f"RUN_PROCESS (until success): {workflow.name}\n"
 
         for run_num in range(total_runs):
             output_text += f"\n--- Attempt {run_num + 1}/{total_runs} ---\n"
 
-            # Execute the process
-            success = self._execute_process_once(process, action_result)
+            # Execute the workflow
+            success = self._execute_workflow_once(workflow, action_result)
             results.append(success)
 
             if success:
                 # Success! Stop early
-                output_text += f"\n✓ Process succeeded on attempt {run_num + 1}\n"
+                output_text += f"\n✓ Workflow succeeded on attempt {run_num + 1}\n"
                 output_text += f"Total attempts: {run_num + 1}\n"
 
                 action_result.success = True
@@ -175,17 +200,21 @@ class RunProcess(ActionInterface):
                 time.sleep(delay)
 
         # Reached max repeats without success
-        output_text += f"\n✗ Process failed after {total_runs} attempts\n"
+        output_text += f"\n✗ Workflow failed after {total_runs} attempts\n"
         action_result.success = False
         action_result.output_text = output_text
 
     def _execute_fixed_count(
-        self, process: "Process", repetition, action_result: ActionResult, object_collections
+        self,
+        workflow: "Workflow | Process",
+        repetition,
+        action_result: ActionResult,
+        object_collections,
     ) -> None:
-        """Execute process a fixed number of times.
+        """Execute workflow a fixed number of times.
 
         Args:
-            process: The process to execute
+            workflow: The workflow/process to execute
             repetition: ProcessRepetitionOptions configuration
             action_result: ActionResult to update
             object_collections: ObjectCollection arguments
@@ -195,14 +224,14 @@ class RunProcess(ActionInterface):
         total_runs = max_repeats + 1  # Initial run + repeats
 
         results = []
-        output_text = f"RUN_PROCESS (fixed count): {process.name}\n"
+        output_text = f"RUN_PROCESS (fixed count): {workflow.name}\n"
         output_text += f"Running {total_runs} times\n"
 
         for run_num in range(total_runs):
             output_text += f"\n--- Run {run_num + 1}/{total_runs} ---\n"
 
-            # Execute the process
-            success = self._execute_process_once(process, action_result)
+            # Execute the workflow
+            success = self._execute_workflow_once(workflow, action_result)
             results.append(success)
 
             # Delay between runs (but not after last)

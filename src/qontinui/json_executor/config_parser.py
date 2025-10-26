@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import Any
 
 from PIL import Image
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
+from ..config.schema import Workflow
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
 
 
@@ -110,141 +111,6 @@ class ImageAsset(BaseModel):
         """
         calculated_hash = hashlib.sha256(self.data.encode()).hexdigest()
         return calculated_hash == self.hash
-
-
-class Action(BaseModel):
-    """Represents a single automation action within a process.
-
-    Actions are the atomic operations performed during automation, such as clicking,
-    typing, finding images, or waiting. Each action has a type that determines what
-    operation is performed, and a configuration dictionary containing type-specific
-    parameters.
-
-    Action Types:
-        Mouse Actions:
-            - CLICK: Click at coordinates or image location (supports left/right/middle/double)
-            - DRAG: Drag from source to destination
-            - MOUSE_MOVE, MOVE: Move mouse without clicking
-            - MOUSE_DOWN, MOUSE_UP: Press or release mouse button
-            - SCROLL, MOUSE_SCROLL: Scroll mouse wheel
-
-        Keyboard Actions:
-            - TYPE: Type text string
-            - KEY_DOWN, KEY_UP: Press or release keyboard key
-            - KEY_PRESS: Press and release key
-
-        Vision Actions:
-            - FIND: Locate image on screen and store location
-            - EXISTS: Check if image exists (boolean result)
-            - VANISH: Wait for image to disappear
-
-        Navigation Actions:
-            - GO_TO_STATE: Navigate to target state via state machine
-            - RUN_PROCESS: Execute another process by ID
-
-        Utility Actions:
-            - WAIT: Pause execution for specified duration
-            - SCREENSHOT: Capture screen image
-
-    Attributes:
-        id: Unique identifier for this action.
-        type: Action type string (see Action Types above).
-        config: Type-specific configuration dictionary. Common fields:
-            - target: Target location (image, coordinates, region, or "Last Find Result")
-            - similarity: Similarity threshold for image matching (0.0-1.0)
-            - pause_before_begin: Milliseconds to pause before action
-            - pause_after_end: Milliseconds to pause after action
-            - offset: Offset from target location (dict with x, y keys)
-        timeout: Maximum execution time in milliseconds (default: 5000).
-        retry_count: Number of retry attempts on failure (default: 3).
-        continue_on_error: If True, continue execution even if action fails (default: False).
-
-    Example:
-        >>> click_action = Action(
-        ...     id="click_login",
-        ...     type="CLICK",
-        ...     config={
-        ...         "target": {"type": "image", "imageId": "login_button"},
-        ...         "similarity": 0.9
-        ...     },
-        ...     retry_count=3
-        ... )
-
-    Note:
-        - Actions are executed sequentially within a Process
-        - Failed actions are retried based on retry_count
-        - The last FIND result can be used as a target with "Last Find Result"
-        - Similarity thresholds range from 0.7 (fuzzy) to 0.95 (exact)
-
-    See Also:
-        :class:`Process`: Container for sequences of actions
-        :class:`ActionExecutor`: Executes actions during automation
-    """
-
-    id: str
-    type: str
-    config: dict[str, Any]
-    timeout: int = 5000
-    retry_count: int = Field(default=3, alias="retryCount")
-    continue_on_error: bool = Field(default=False, alias="continueOnError")
-
-    model_config = {"populate_by_name": True}
-
-
-class Process(BaseModel):
-    """Represents a sequence of actions forming an automation workflow.
-
-    A Process is a named collection of actions that are executed together to accomplish
-    a specific automation task. Processes can be executed sequentially or in parallel,
-    and can be invoked from transitions or other processes.
-
-    In model-based automation, processes define the "how" - the specific steps to perform
-    when navigating between states or accomplishing a goal within a state.
-
-    Process Types:
-        - sequence: Execute actions one after another (default)
-        - parallel: Execute actions concurrently (not fully implemented)
-
-    Attributes:
-        id: Unique identifier for this process.
-        name: Human-readable name (e.g., "login_sequence", "submit_form").
-        description: Detailed description of what this process accomplishes.
-        type: Execution type - "sequence" or "parallel" (default: "sequence").
-        actions: Ordered list of Action objects to execute.
-
-    Example:
-        >>> login_process = Process(
-        ...     id="login",
-        ...     name="Login Sequence",
-        ...     description="Complete login workflow",
-        ...     type="sequence",
-        ...     actions=[
-        ...         Action(type="FIND", config={"target": {"imageId": "username_field"}}),
-        ...         Action(type="CLICK", config={"target": "Last Find Result"}),
-        ...         Action(type="TYPE", config={"text": "admin"}),
-        ...         Action(type="CLICK", config={"target": {"imageId": "submit_button"}})
-        ...     ]
-        ... )
-
-    Note:
-        - Processes are typically executed during state transitions
-        - Sequential execution stops on first failure unless continue_on_error is True
-        - Processes can call other processes using RUN_PROCESS action
-        - Empty processes are valid and execute immediately
-
-    See Also:
-        :class:`Action`: Individual automation actions
-        :class:`OutgoingTransition`: Uses processes during state transitions
-        :class:`StateExecutor`: Executes processes during automation
-    """
-
-    id: str
-    name: str
-    description: str = ""
-    type: str = "sequence"
-    actions: list[Action] = Field(default_factory=list)
-
-    model_config = {"populate_by_name": True}
 
 
 class SearchRegion(BaseModel):
@@ -624,7 +490,7 @@ class Transition(BaseModel):
     See Also:
         :class:`OutgoingTransition`: Transition from a state to another
         :class:`IncomingTransition`: Verification transition when entering a state
-        :class:`Process`: Sequence of actions executed during transition (now called workflows)
+        :class:`Workflow`: Sequence of actions executed during transition
     """
 
     id: str
@@ -874,7 +740,7 @@ class QontinuiConfig(BaseModel):
     version: str = "1.0.0"
     metadata: dict[str, Any] = Field(default_factory=dict)
     images: list[ImageAsset] = Field(default_factory=list)
-    workflows: list[Process] = Field(default_factory=list)  # v2.0.0: workflows, v1.0.0: processes
+    workflows: list[Workflow] = Field(default_factory=list)  # v2.0.0: workflows, v1.0.0: processes
     states: list[State] = Field(default_factory=list)
     categories: list[str] = Field(default_factory=list)
     execution_settings: ExecutionSettings = Field(default_factory=ExecutionSettings)
@@ -885,7 +751,7 @@ class QontinuiConfig(BaseModel):
 
     # Runtime data
     image_directory: Path | None = None
-    workflow_map: dict[str, Process] = Field(
+    workflow_map: dict[str, Workflow] = Field(
         default_factory=dict
     )  # v2.0.0: workflow_map, v1.0.0: process_map
     state_map: dict[str, State] = Field(default_factory=dict)
@@ -903,6 +769,68 @@ class QontinuiConfig(BaseModel):
             if "processes" in data and "workflows" not in data:
                 data["workflows"] = data["processes"]
 
+            # Convert old Process format to new Workflow format
+            if "workflows" in data:
+                workflows = data["workflows"]
+                converted_workflows = []
+                for workflow in workflows:
+                    if isinstance(workflow, dict):
+                        # Check if it's old format (missing required Workflow fields)
+                        if "connections" not in workflow:
+                            # Old Process format - convert to new Workflow format
+
+                            # Convert old Action format to new Action format
+                            converted_actions = []
+                            for action in workflow.get("actions", []):
+                                if isinstance(action, dict):
+                                    # Check if old format (has timeout, retry_count at top level)
+                                    if (
+                                        "timeout" in action
+                                        or "retryCount" in action
+                                        or "continueOnError" in action
+                                    ):
+                                        # Move execution fields into execution object
+                                        new_action = {
+                                            "id": action.get("id", ""),
+                                            "type": action.get("type", ""),
+                                            "config": action.get("config", {}),
+                                        }
+                                        # Add execution settings if any exist
+                                        execution = {}
+                                        if "timeout" in action:
+                                            execution["timeout"] = action["timeout"]
+                                        if "retryCount" in action:
+                                            execution["retryCount"] = action["retryCount"]
+                                        if "continueOnError" in action:
+                                            execution["continueOnError"] = action["continueOnError"]
+                                        if execution:
+                                            new_action["execution"] = execution
+                                        converted_actions.append(new_action)
+                                    else:
+                                        # Already new format
+                                        converted_actions.append(action)
+                                else:
+                                    converted_actions.append(action)
+
+                            converted = {
+                                "id": workflow.get("id", ""),
+                                "name": workflow.get("name", ""),
+                                "version": workflow.get("version", "1.0.0"),
+                                "format": "graph",
+                                "actions": converted_actions,
+                                "connections": {},  # Empty connections for sequential workflow
+                            }
+                            # Add optional fields if present
+                            if "description" in workflow:
+                                converted["metadata"] = {"description": workflow["description"]}
+                            converted_workflows.append(converted)
+                        else:
+                            # New Workflow format - use as is
+                            converted_workflows.append(workflow)
+                    else:
+                        converted_workflows.append(workflow)
+                data["workflows"] = converted_workflows
+
             # Handle settings extraction
             if "settings" in data:
                 settings = data["settings"]
@@ -915,7 +843,7 @@ class QontinuiConfig(BaseModel):
 
     def model_post_init(self, __context: Any) -> None:
         """Build lookup maps for efficient access."""
-        self.workflow_map = {p.id: p for p in self.workflows}
+        self.workflow_map = {w.id: w for w in self.workflows}
         self.state_map = {s.id: s for s in self.states}
         self.image_map = {i.id: i for i in self.images}
         self.schedule_map = {s.id: s for s in self.schedules}
@@ -1085,3 +1013,12 @@ class ConfigParser:
 
             shutil.rmtree(self.temp_dir)
             print(f"Cleaned up temporary directory: {self.temp_dir}")
+
+
+# ============================================================================
+# Backward Compatibility Aliases (v1.0.0)
+# ============================================================================
+
+# Process is the v1.0.0 name for Workflow
+# Maintain backward compatibility for code using the old naming
+Process = Workflow

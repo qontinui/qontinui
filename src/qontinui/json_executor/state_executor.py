@@ -7,9 +7,10 @@ from .action_executor import ActionExecutor
 from .config_parser import (
     IncomingTransition,
     OutgoingTransition,
-    Process,
+    Process,  # Deprecated: Use Workflow instead
     QontinuiConfig,
     Transition,
+    Workflow,
 )
 
 
@@ -18,13 +19,13 @@ class StateExecutor:
 
     StateExecutor manages the complete lifecycle of state-based automation including
     state activation/deactivation, state verification through image matching, transition
-    discovery and execution, and process execution within transitions.
+    discovery and execution, and workflow execution within transitions.
 
     The executor implements a state machine pattern:
         1. Initialize to initial state (marked with is_initial=True)
         2. Verify current state is active (by checking identifying images)
         3. Find applicable outgoing transitions from current state
-        4. Execute transition's process (sequence of actions)
+        4. Execute transition's workflow (sequence of actions)
         5. Verify incoming transitions to target state (if any)
         6. Activate target state(s) and deactivate origin state
         7. Repeat until final state reached or no transitions available
@@ -53,8 +54,9 @@ class StateExecutor:
         on screen. This requires actual GUI environment (not headless).
 
     See Also:
-        - :class:`ActionExecutor`: Executes individual actions within processes
-        - :class:`Process`: Sequence of actions in a transition
+        - :class:`ActionExecutor`: Executes individual actions within workflows
+        - :class:`Workflow`: Sequence of actions in a transition (v2.0.0+)
+        - :class:`Process`: Deprecated alias for Workflow (v1.0.0 compatibility)
         - :class:`OutgoingTransition`: Transition from a state
         - :class:`IncomingTransition`: Verification when entering a state
     """
@@ -300,8 +302,15 @@ class StateExecutor:
 
         return True
 
-    def _execute_workflow(self, workflow: Process) -> bool:
-        """Execute a workflow (sequence of actions)."""
+    def _execute_workflow(self, workflow: Workflow | Process) -> bool:
+        """Execute a workflow (sequence of actions).
+
+        Args:
+            workflow: Workflow instance (v2.0.0+) or Process instance (v1.0.0 compatibility)
+
+        Returns:
+            bool: True if workflow completed successfully, False otherwise
+        """
         print(f"Executing workflow: {workflow.name}")
 
         if workflow.type == "sequence":
