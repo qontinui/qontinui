@@ -327,7 +327,7 @@ class FindOptions(ActionConfig):
         self._sort_by: str = "similarity"  # similarity, position, size
         self._cache_result: bool = False
         self._use_cache: bool = True
-        self._min_similarity: float = 0.95  # Default similarity threshold
+        self._min_similarity: float = 0.7  # Default similarity threshold
 
     def find_all(self, find_all: bool = True) -> "FindOptions":
         """Find all matches vs first (fluent)."""

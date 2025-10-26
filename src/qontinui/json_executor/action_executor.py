@@ -12,7 +12,6 @@ from ..actions.data_operations import DataOperationsExecutor, VariableContext
 from ..config import (
     Action,
     ClickActionConfig,
-    DoubleClickActionConfig,
     DragActionConfig,
     ExistsActionConfig,
     FindActionConfig,
@@ -23,7 +22,6 @@ from ..config import (
     MouseDownActionConfig,
     MouseMoveActionConfig,
     MouseUpActionConfig,
-    RightClickActionConfig,
     RunWorkflowActionConfig,
     ScreenshotActionConfig,
     ScrollActionConfig,
@@ -32,8 +30,8 @@ from ..config import (
     WaitActionConfig,
     get_typed_config,
 )
-from ..wrappers import Keyboard, Mouse, Screen, Time
-from .config_parser import Action as LegacyAction
+from ..wrappers import Keyboard, Mouse, Screen, TimeWrapper
+from .config_parser import Action as ConfigAction
 from .config_parser import QontinuiConfig
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
 
@@ -101,6 +99,12 @@ class ActionExecutor:
         self.last_find_location: tuple[int, int] | None = None
         # Get action defaults configuration
         self.defaults = self._create_defaults()
+
+        # Initialize wrappers
+        self.time_wrapper = TimeWrapper()
+        self.mouse_wrapper = Mouse()
+        self.keyboard_wrapper = Keyboard()
+        self.screen_wrapper = Screen()
 
         # Initialize variable context and executors for control flow and data operations
         self.variable_context = VariableContext()
@@ -280,7 +284,7 @@ class ActionExecutor:
             ),
         )
 
-    def _is_new_format(self, action: LegacyAction) -> bool:
+    def _is_new_format(self, action: ConfigAction) -> bool:
         """Check if action is using new Pydantic format.
 
         New format has 'base' and 'execution' fields at the root level.
@@ -288,43 +292,43 @@ class ActionExecutor:
         """
         return hasattr(action, "base") or hasattr(action, "execution")
 
-    def _convert_to_new_action(self, legacy_action: LegacyAction) -> Action:
+    def _convert_to_new_action(self, config_action: ConfigAction) -> Action:
         """Convert legacy action format to new Pydantic Action format.
 
         Args:
-            legacy_action: Legacy action from config_parser
+            config_action: Legacy action from config_parser
 
         Returns:
             New Pydantic Action model
         """
-        logger.debug(f"Converting legacy action {legacy_action.id} to new format")
+        logger.debug(f"Converting legacy action {config_action.id} to new format")
 
         # Build new action dict
         action_dict = {
-            "id": legacy_action.id,
-            "type": legacy_action.type,
-            "config": legacy_action.config,
+            "id": config_action.id,
+            "type": config_action.type,
+            "config": config_action.config,
         }
 
         # Extract base settings from config if present
         base_settings = {}
-        if "pause_before_begin" in legacy_action.config:
-            base_settings["pauseBeforeBegin"] = legacy_action.config["pause_before_begin"]
-        if "pause_after_end" in legacy_action.config:
-            base_settings["pauseAfterEnd"] = legacy_action.config["pause_after_end"]
-        if "illustrate" in legacy_action.config:
-            base_settings["illustrate"] = legacy_action.config["illustrate"]
+        if "pause_before_begin" in config_action.config:
+            base_settings["pauseBeforeBegin"] = config_action.config["pause_before_begin"]
+        if "pause_after_end" in config_action.config:
+            base_settings["pauseAfterEnd"] = config_action.config["pause_after_end"]
+        if "illustrate" in config_action.config:
+            base_settings["illustrate"] = config_action.config["illustrate"]
         if base_settings:
             action_dict["base"] = base_settings
 
         # Extract execution settings
         execution_settings = {}
-        if hasattr(legacy_action, "timeout"):
-            execution_settings["timeout"] = legacy_action.timeout
-        if hasattr(legacy_action, "retry_count"):
-            execution_settings["retryCount"] = legacy_action.retry_count
-        if hasattr(legacy_action, "continue_on_error"):
-            execution_settings["continueOnError"] = legacy_action.continue_on_error
+        if hasattr(config_action, "timeout"):
+            execution_settings["timeout"] = config_action.timeout
+        if hasattr(config_action, "retry_count"):
+            execution_settings["retryCount"] = config_action.retry_count
+        if hasattr(config_action, "continue_on_error"):
+            execution_settings["continueOnError"] = config_action.continue_on_error
         if execution_settings:
             action_dict["execution"] = execution_settings
 
@@ -334,9 +338,9 @@ class ActionExecutor:
         except ValidationError as e:
             logger.error(f"Failed to convert legacy action to new format: {e}")
             # Return minimal valid action
-            return Action(id=legacy_action.id, type=legacy_action.type, config=legacy_action.config)
+            return Action(id=config_action.id, type=config_action.type, config=config_action.config)
 
-    def execute_action(self, action: LegacyAction | Action) -> bool:
+    def execute_action(self, action: ConfigAction | Action) -> bool:
         """Execute a single automation action with retry logic.
 
         Handles the complete lifecycle of action execution including pre-action pauses,
@@ -344,12 +348,12 @@ class ActionExecutor:
         emission for real-time monitoring.
 
         Supports both old and new action formats:
-        - Old format: Legacy Action from config_parser with config dict
+        - Old format: Configuration Action from config_parser with config dict
         - New format: Pydantic Action with base/execution separation
 
         Args:
             action: Action object containing type, configuration, and execution parameters.
-                Can be either legacy format or new Pydantic format.
+                Can be either config format or new Pydantic format.
 
         Returns:
             bool: True if action executed successfully within retry attempts,
@@ -368,15 +372,16 @@ class ActionExecutor:
             ... )
             >>> success = executor.execute_action(action)
         """
-        # Detect format and convert if needed
-        if isinstance(action, LegacyAction):
-            logger.info(f"Processing legacy format action: {action.type} (ID: {action.id})")
+        # Convert ConfigAction to Pydantic Action if needed
+        if isinstance(action, ConfigAction):
+            logger.info(f"Processing config format action: {action.type} (ID: {action.id})")
             pydantic_action = self._convert_to_new_action(action)
         else:
             logger.info(f"Processing new format action: {action.type} (ID: {action.id})")
             pydantic_action = action
 
-        # Validate action configuration
+        # Validate action configuration using Pydantic schemas
+        typed_config = None
         try:
             typed_config = get_typed_config(pydantic_action)
             logger.debug(f"Action config validated successfully: {type(typed_config).__name__}")
@@ -390,9 +395,9 @@ class ActionExecutor:
             )
             return False
         except ValueError as e:
-            # Unknown action type - continue with legacy handling
+            # Unknown action type - continue without typed config
             logger.warning(
-                f"Unknown action type {pydantic_action.type}, using legacy handling: {e}"
+                f"Unknown action type {pydantic_action.type}, continuing without validation: {e}"
             )
             typed_config = None
 
@@ -408,14 +413,14 @@ class ActionExecutor:
             pause_before = pydantic_action.base.pause_before_begin or 0
             pause_after = pydantic_action.base.pause_after_end or 0
         else:
-            # Fallback to config for legacy format
+            # Fallback to config for config format
             pause_before = pydantic_action.config.get("pause_before_begin", 0)
             pause_after = pydantic_action.config.get("pause_after_end", 0)
 
         # Pause before action if specified
         if pause_before > 0:
             print(f"[PAUSE] Waiting {pause_before}ms before action")
-            Time.wait(pause_before / 1000.0)
+            self.time_wrapper.wait(pause_before / 1000.0)
 
         # Get retry count and continue_on_error from execution settings
         retry_count = 0
@@ -426,11 +431,11 @@ class ActionExecutor:
         else:
             # Fallback to legacy action attributes if present
             retry_count = (
-                getattr(action, "retry_count", 0) if isinstance(action, LegacyAction) else 0
+                getattr(action, "retry_count", 0) if isinstance(action, ConfigAction) else 0
             )
             continue_on_error = (
                 getattr(action, "continue_on_error", False)
-                if isinstance(action, LegacyAction)
+                if isinstance(action, ConfigAction)
                 else False
             )
 
@@ -461,14 +466,14 @@ class ActionExecutor:
                     # Pause after action if specified
                     if pause_after > 0:
                         print(f"[PAUSE] Waiting {pause_after}ms after action")
-                        Time.wait(pause_after / 1000.0)
+                        self.time_wrapper.wait(pause_after / 1000.0)
                         print(f"[PAUSE] Completed waiting {pause_after}ms")
 
                     return True
 
                 if attempt < total_attempts - 1:
                     print(f"Action failed, retrying... (attempt {attempt + 2}/{total_attempts})")
-                    Time.wait(1)
+                    self.time_wrapper.wait(1)
 
             except Exception as e:
                 # Sanitize error message to remove unicode characters
@@ -680,7 +685,7 @@ class ActionExecutor:
         event = {
             "type": "event",
             "event": event_name,
-            "timestamp": Time.now().timestamp(),
+            "timestamp": self.time_wrapper.now().timestamp(),
             "sequence": 0,  # Can be managed by caller if needed
             "data": data,
         }
@@ -817,7 +822,7 @@ class ActionExecutor:
 
         Args:
             action: Pydantic Action model
-            typed_config: Pre-validated FindActionConfig or None for legacy format
+            typed_config: Pre-validated FindActionConfig or None for config format
 
         Returns:
             bool: True if target was found
@@ -847,7 +852,7 @@ class ActionExecutor:
 
         Args:
             action: Pydantic Action model
-            typed_config: Pre-validated ClickActionConfig or None for legacy format
+            typed_config: Pre-validated ClickActionConfig or None for config format
 
         Returns:
             bool: True if click succeeded
@@ -936,7 +941,7 @@ class ActionExecutor:
             Mouse.up(button=MouseButton.LEFT)
             Mouse.up(button=MouseButton.RIGHT)
             Mouse.up(button=MouseButton.MIDDLE)
-            Time.wait(safety_delay)
+            self.time_wrapper.wait(safety_delay)
 
         # Step 2: Perform clicks at current position (mouse should already be positioned by MOVE)
         print(
@@ -947,16 +952,16 @@ class ActionExecutor:
 
             # Sub-action: MOUSE_DOWN
             Mouse.down(button=button)
-            Time.wait(hold_duration)
+            self.time_wrapper.wait(hold_duration)
 
             # Sub-action: MOUSE_UP
             Mouse.up(button=button)
 
             if i < click_count - 1:
-                Time.wait(release_delay)
+                self.time_wrapper.wait(release_delay)
 
         # Step 3: Final safety release
-        Time.wait(release_delay)
+        self.time_wrapper.wait(release_delay)
         Mouse.up(button=button)
         print("[COMBINED ACTION: CLICK] Step 3: Final safety release")
 
@@ -964,7 +969,7 @@ class ActionExecutor:
         return True
 
     def _execute_double_click(
-        self, action: Action, typed_config: DoubleClickActionConfig = None
+        self, action: Action, typed_config: ClickActionConfig | None = None
     ) -> bool:
         """Execute DOUBLE_CLICK action - convenience wrapper for CLICK with clickCount=2.
 
@@ -991,7 +996,7 @@ class ActionExecutor:
         return self._execute_click(click_action)
 
     def _execute_right_click(
-        self, action: Action, typed_config: RightClickActionConfig = None
+        self, action: Action, typed_config: ClickActionConfig | None = None
     ) -> bool:
         """Execute RIGHT_CLICK action - convenience wrapper for CLICK with clickType=right.
 
@@ -1016,7 +1021,7 @@ class ActionExecutor:
 
         Args:
             action: Pydantic Action model
-            typed_config: Pre-validated TypeActionConfig or None for legacy format
+            typed_config: Pre-validated TypeActionConfig or None for config format
 
         Returns:
             bool: True if text was typed successfully
@@ -1192,17 +1197,17 @@ class ActionExecutor:
         Mouse.move(start[0], start[1], 0)
 
         # Step 2: Press button
-        Time.wait(start_delay)
+        self.time_wrapper.wait(start_delay)
         print("[COMBINED ACTION: DRAG] Step 2: Press left button")
         Mouse.down(button=MouseButton.LEFT)
 
         # Step 3: Move to end position (dragging)
-        Time.wait(start_delay)
+        self.time_wrapper.wait(start_delay)
         print("[COMBINED ACTION: DRAG] Step 3: Move to end (dragging)")
         Mouse.move(end_x, end_y, duration)
 
         # Step 4: Release button
-        Time.wait(end_delay)
+        self.time_wrapper.wait(end_delay)
         print("[COMBINED ACTION: DRAG] Step 4: Release left button")
         Mouse.up(button=MouseButton.LEFT)
 
@@ -1228,14 +1233,14 @@ class ActionExecutor:
     def _execute_wait(self, action: Action, typed_config: WaitActionConfig = None) -> bool:
         """Execute WAIT action."""
         duration = action.config.get("duration", 1000)
-        Time.wait(duration / 1000.0)
+        self.time_wrapper.wait(duration / 1000.0)
         print(f"Waited {duration}ms")
         return True
 
     def _execute_vanish(self, action: Action, typed_config: VanishActionConfig = None) -> bool:
         """Execute VANISH action - wait for element to disappear."""
         timeout = action.timeout / 1000.0
-        start_time = Time.now()
+        start_time = self.time_wrapper.now()
 
         elapsed = 0.0
         while elapsed < timeout:
@@ -1243,8 +1248,8 @@ class ActionExecutor:
             if location is None:
                 print("Element vanished")
                 return True
-            Time.wait(0.5)
-            elapsed = (Time.now() - start_time).total_seconds()
+            self.time_wrapper.wait(0.5)
+            elapsed = (self.time_wrapper.now() - start_time).total_seconds()
 
         print("Element did not vanish within timeout")
         return False
@@ -1338,7 +1343,7 @@ class ActionExecutor:
     ) -> bool:
         """Execute SCREENSHOT action."""
         region = action.config.get("region")
-        timestamp = int(Time.now().timestamp())
+        timestamp = int(self.time_wrapper.now().timestamp())
         filename = action.config.get("filename", f"screenshot_{timestamp}.png")
 
         if region:
@@ -1551,7 +1556,7 @@ class ActionExecutor:
                 # Delay before next attempt (if not the last run)
                 if run_num < total_runs and delay_seconds > 0:
                     print(f"RUN_WORKFLOW: Waiting {delay_ms}ms before next attempt")
-                    Time.wait(delay_seconds)
+                    self.time_wrapper.wait(delay_seconds)
 
             # Reached max repeats without success
             print(f"RUN_WORKFLOW: Workflow failed after {total_runs} attempts")
@@ -1566,7 +1571,7 @@ class ActionExecutor:
                 # Delay before next run (if not the last run)
                 if run_num < total_runs and delay_seconds > 0:
                     print(f"RUN_WORKFLOW: Waiting {delay_ms}ms before next run")
-                    Time.wait(delay_seconds)
+                    self.time_wrapper.wait(delay_seconds)
 
             # Success if at least one run succeeded
             success_count = sum(1 for r in results if r)

@@ -526,7 +526,7 @@ class WaitCondition(BaseModel):
 class WaitActionConfig(BaseModel):
     """WAIT action configuration."""
 
-    wait_for: Literal["time", "target", "state", "condition"] = Field(alias="waitFor")
+    wait_for: Literal["time", "target", "state", "condition"] = Field(default="time", alias="waitFor")
     duration: int | None = None
     target: TargetConfig | None = None
     state_id: str | None = Field(None, alias="stateId")
@@ -861,9 +861,9 @@ class ScreenshotActionConfig(BaseModel):
 
 class Action(BaseModel):
     """
-    Main action model - graph format only.
+    Main action model - supports both graph and sequential formats.
 
-    All actions have a required position in the graph.
+    Position is optional - required for graph format, not needed for sequential.
     Config can be parsed into type-specific models using get_typed_config().
     """
 
@@ -873,7 +873,7 @@ class Action(BaseModel):
     config: dict[str, Any]
     base: BaseActionSettings | None = None
     execution: ExecutionSettings | None = None
-    position: tuple[int, int]  # REQUIRED: [x, y] position in graph
+    position: tuple[int, int] | None = None  # Optional: only for graph format
 
 
 # ============================================================================
