@@ -1,6 +1,7 @@
 """Executor for individual actions in the automation."""
 
 import logging
+import sys
 from typing import Any
 
 import cv2
@@ -89,17 +90,43 @@ class ActionExecutor:
     """
 
     def __init__(
-        self, config: QontinuiConfig, state_executor=None, use_graph_execution: bool = False
+        self,
+        config: QontinuiConfig,
+        state_executor=None,
+        use_graph_execution: bool = False,
+        hal=None,
     ):
+        """Initialize ActionExecutor.
+
+        Args:
+            config: Parsed automation configuration
+            state_executor: Optional state executor for GO_TO_STATE navigation
+            use_graph_execution: Whether to use graph-based execution
+            hal: Optional HAL container for dependency injection. If None,
+                wrappers will use HALFactory (deprecated pattern).
+
+        Example:
+            # New pattern with dependency injection (recommended)
+            >>> from qontinui.hal import initialize_hal
+            >>> hal = initialize_hal()
+            >>> executor = ActionExecutor(config, hal=hal)
+
+            # Legacy pattern (deprecated)
+            >>> executor = ActionExecutor(config)
+        """
         self.config = config
         self.state_executor = state_executor
         self.use_graph_execution = use_graph_execution
+        self.hal = hal
+
         # Track last find result for "Last Find Result" targeting
         self.last_find_location: tuple[int, int] | None = None
         # Get action defaults configuration
         self.defaults = self._create_defaults()
 
         # Initialize wrappers
+        # Note: Wrappers currently use class methods with HALFactory for backward
+        # compatibility. In the future, these should be instance-based with HAL container.
         self.time_wrapper = TimeWrapper()
         self.mouse_wrapper = Mouse()
         self.keyboard_wrapper = Keyboard()
@@ -141,8 +168,7 @@ class ActionExecutor:
     def execute_workflow(self, workflow_id: str, initial_context: dict | None = None) -> dict:
         """Execute a workflow by ID, using graph or sequential execution based on configuration.
 
-        Supports both v2.0.0 Workflow format (from schema.py) and v1.0.0 Process format
-        (from config_parser.py) for backward compatibility.
+        Supports Workflow format from schema.py.
 
         Args:
             workflow_id: ID of the workflow to execute
@@ -168,7 +194,7 @@ class ActionExecutor:
             logger.info(f"Using GRAPH EXECUTION for workflow '{workflow.name}'")
             return self._execute_workflow_graph(workflow, initial_context)
         else:
-            # Use sequential execution (backward compatibility)
+            # Use sequential execution
             if self.use_graph_execution and not has_connections:
                 logger.warning(
                     f"Graph execution requested but workflow '{workflow.name}' has no connections. "
@@ -210,9 +236,7 @@ class ActionExecutor:
         return result
 
     def _execute_workflow_sequential(self, workflow: Workflow) -> dict:
-        """Execute workflow using sequential execution (legacy mode).
-
-        Supports both v2.0.0 Workflow and v1.0.0 Process formats.
+        """Execute workflow using sequential execution.
 
         Args:
             workflow: Workflow/Process object
@@ -236,7 +260,7 @@ class ActionExecutor:
                     # Check if we should stop on failure
                     continue_on_error = (
                         action.execution.continue_on_error
-                        if hasattr(action, "execution") and action.execution
+                        if action.execution
                         else False
                     )
                     if not continue_on_error:
@@ -252,7 +276,7 @@ class ActionExecutor:
                 # Check if we should stop on error
                 continue_on_error = (
                     action.execution.continue_on_error
-                    if hasattr(action, "execution") and action.execution
+                    if action.execution
                     else False
                 )
                 if not continue_on_error:
@@ -292,72 +316,12 @@ class ActionExecutor:
             ),
         )
 
-    def _is_new_format(self, action: Action) -> bool:
-        """Check if action is using new Pydantic format.
-
-        New format has 'base' and 'execution' fields at the root level.
-        Old format only has 'config' with everything inside it.
-        """
-        return hasattr(action, "base") or hasattr(action, "execution")
-
-    def _convert_to_new_action(self, config_action: Action) -> Action:
-        """Convert legacy action format to new Pydantic Action format.
-
-        Args:
-            config_action: Legacy action from config_parser
-
-        Returns:
-            New Pydantic Action model
-        """
-        logger.debug(f"Converting legacy action {config_action.id} to new format")
-
-        # Build new action dict
-        action_dict = {
-            "id": config_action.id,
-            "type": config_action.type,
-            "config": config_action.config,
-        }
-
-        # Extract base settings from config if present
-        base_settings = {}
-        if "pause_before_begin" in config_action.config:
-            base_settings["pauseBeforeBegin"] = config_action.config["pause_before_begin"]
-        if "pause_after_end" in config_action.config:
-            base_settings["pauseAfterEnd"] = config_action.config["pause_after_end"]
-        if "illustrate" in config_action.config:
-            base_settings["illustrate"] = config_action.config["illustrate"]
-        if base_settings:
-            action_dict["base"] = base_settings
-
-        # Extract execution settings
-        execution_settings = {}
-        if hasattr(config_action, "timeout"):
-            execution_settings["timeout"] = config_action.timeout
-        if hasattr(config_action, "retry_count"):
-            execution_settings["retryCount"] = config_action.retry_count
-        if hasattr(config_action, "continue_on_error"):
-            execution_settings["continueOnError"] = config_action.continue_on_error
-        if execution_settings:
-            action_dict["execution"] = execution_settings
-
-        # Validate and return
-        try:
-            return Action.model_validate(action_dict)
-        except ValidationError as e:
-            logger.error(f"Failed to convert legacy action to new format: {e}")
-            # Return minimal valid action
-            return Action(id=config_action.id, type=config_action.type, config=config_action.config)
-
     def execute_action(self, action: Action) -> bool:
         """Execute a single automation action with retry logic.
 
         Handles the complete lifecycle of action execution including pre-action pauses,
         the main action execution, retries on failure, post-action pauses, and event
         emission for real-time monitoring.
-
-        Supports both old and new action formats:
-        - Old format: Configuration Action from config_parser with config dict
-        - New format: Pydantic Action with base/execution separation and optional position field
 
         The new Action model from schema.py includes an optional position field for graph-based
         workflow visualization. This field is not used during execution and is safely ignored.
@@ -383,77 +347,221 @@ class ActionExecutor:
             ... )
             >>> success = executor.execute_action(action)
         """
-        # Convert legacy action format to new format if needed
-        if not self._is_new_format(action):
-            logger.info(f"Processing legacy format action: {action.type} (ID: {action.id})")
-            pydantic_action = self._convert_to_new_action(action)
-        else:
-            logger.info(f"Processing new format action: {action.type} (ID: {action.id})")
-            pydantic_action = action
+        # MARKER: This is the execute_action method - EDITED VERSION 2025-01-26
+        import sys
+        sys.stdout.flush()
+        sys.stderr.flush()
+        print(f"[DEBUG] ========== execute_action CALLED ==========", file=sys.stderr, flush=True)
+        print(f"[DEBUG] Action: {action.type} (ID: {action.id})", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        # CRITICAL DEBUG: Log immediately after first debug print
+        print(f"[DEBUG-LINE-331] After first debug print, about to call logger.info", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        # Wrap logger.info in try-except to catch any silent failures
+        try:
+            print(f"[DEBUG-LINE-332] BEFORE logger.info call", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            logger.info(f"Executing action: {action.type} (ID: {action.id})")
+            print(f"[DEBUG-LINE-332] AFTER logger.info call", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+        except Exception as e:
+            print(f"[DEBUG-ERROR] logger.info FAILED: {e}", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
 
         # Validate action configuration using Pydantic schemas
+        print(f"[DEBUG-LINE-335] About to initialize typed_config variable", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+
         typed_config = None
+
+        print(f"[DEBUG-LINE-336] typed_config initialized to None", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+
         try:
-            typed_config = get_typed_config(pydantic_action)
-            logger.debug(f"Action config validated successfully: {type(typed_config).__name__}")
+            print(f"[DEBUG-LINE-337] BEFORE get_typed_config call", file=sys.stderr, flush=True)
+            print(f"[DEBUG-LINE-337] action.type={action.type}, action.config={action.config}", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+
+            typed_config = get_typed_config(action)
+
+            print(f"[DEBUG-LINE-337] AFTER get_typed_config call", file=sys.stderr, flush=True)
+            print(f"[DEBUG-LINE-337] typed_config type: {type(typed_config).__name__}", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+
+            print(f"[DEBUG-LINE-338] BEFORE logger.debug call", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+
+            logger.debug(f"Action config validated: {type(typed_config).__name__}")
+
+            print(f"[DEBUG-LINE-338] AFTER logger.debug call", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
         except ValidationError as e:
-            logger.error(f"Action configuration validation failed: {e}")
+            print(f"[DEBUG-LINE-340] ValidationError caught: {e}", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            logger.error(f"Action config validation failed: {e}")
             self._emit_action_event(
-                pydantic_action.type,
-                pydantic_action.id,
+                action.type,
+                action.id,
                 False,
                 {"error": f"Validation failed: {str(e)}"},
             )
             return False
         except ValueError as e:
-            # Unknown action type - continue without typed config
-            logger.warning(
-                f"Unknown action type {pydantic_action.type}, continuing without validation: {e}"
-            )
+            print(f"[DEBUG-LINE-349] ValueError caught: {e}", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            logger.warning(f"Unknown action type {action.type}, continuing without validation: {e}")
             typed_config = None
 
-        print(f"Executing action: {pydantic_action.type} (ID: {pydantic_action.id})")
-
         # Extract action details for logging
-        action_details = {"config": pydantic_action.config}
+        print(f"[DEBUG-LINE-353] BEFORE creating action_details dict", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
 
-        # Get pause settings from base config (new format) or config (old format)
+        try:
+            print(f"[DEBUG-LINE-353] Accessing action.config property", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            action_details = {"config": action.config}
+            print(f"[DEBUG-LINE-353] action_details created successfully", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+        except Exception as e:
+            print(f"[DEBUG-ERROR] Failed to create action_details: {e}", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            action_details = {"config": {}}
+
+        # Get pause settings from base config
+        print(f"[DEBUG-LINE-356] Getting pause settings from base config", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+
         pause_before = 0
         pause_after = 0
-        if pydantic_action.base:
-            pause_before = pydantic_action.base.pause_before_begin or 0
-            pause_after = pydantic_action.base.pause_after_end or 0
-        else:
-            # Fallback to config for config format
-            pause_before = pydantic_action.config.get("pause_before_begin", 0)
-            pause_after = pydantic_action.config.get("pause_after_end", 0)
+        try:
+            print(f"[DEBUG-LINE-358] Accessing action.base property", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            if action.base:
+                print(f"[DEBUG-LINE-359] action.base exists, accessing pause_before_begin", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+                pause_before = action.base.pause_before_begin or 0
+                print(f"[DEBUG-LINE-360] pause_before={pause_before}, accessing pause_after_end", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+                pause_after = action.base.pause_after_end or 0
+                print(f"[DEBUG-LINE-360] pause_after={pause_after}", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+            else:
+                print(f"[DEBUG-LINE-358] action.base is None", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+        except Exception as e:
+            print(f"[DEBUG-ERROR] Failed to get pause settings: {e}", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
 
         # Pause before action if specified
+        print(f"[DEBUG-LINE-363] Checking if pause_before > 0", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+
         if pause_before > 0:
             print(f"[PAUSE] Waiting {pause_before}ms before action")
-            self.time_wrapper.wait(pause_before / 1000.0)
+            try:
+                print(f"[DEBUG-LINE-365] Calling time_wrapper.wait({pause_before / 1000.0})", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+                self.time_wrapper.wait(pause_before / 1000.0)
+                print(f"[DEBUG-LINE-365] time_wrapper.wait completed", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+            except Exception as e:
+                print(f"[DEBUG-ERROR] time_wrapper.wait failed: {e}", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
 
         # Get retry count and continue_on_error from execution settings
+        print(f"[DEBUG-LINE-368] Getting retry settings", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+
         retry_count = 0
         continue_on_error = False
-        if pydantic_action.execution:
-            retry_count = pydantic_action.execution.retry_count or 0
-            continue_on_error = pydantic_action.execution.continue_on_error or False
-        else:
-            # Fallback to legacy action attributes if present
-            retry_count = getattr(action, "retry_count", 0)
-            continue_on_error = getattr(action, "continue_on_error", False)
+        try:
+            print(f"[DEBUG-LINE-370] Accessing action.execution property", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            if action.execution:
+                print(f"[DEBUG-LINE-371] action.execution exists, accessing retry_count", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+                retry_count = action.execution.retry_count or 0
+                print(f"[DEBUG-LINE-371] retry_count={retry_count}, accessing continue_on_error", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+                continue_on_error = action.execution.continue_on_error or False
+                print(f"[DEBUG-LINE-372] continue_on_error={continue_on_error}", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+            else:
+                print(f"[DEBUG-LINE-370] action.execution is None", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+        except Exception as e:
+            print(f"[DEBUG-ERROR] Failed to get retry settings: {e}", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
 
-        logger.debug(
-            f"Retry configuration: retry_count={retry_count}, continue_on_error={continue_on_error}"
-        )
+        print(f"[DEBUG-LINE-374] BEFORE logger.debug call", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        print(f"[DEBUG-LINE-550] About to call logger.debug with retry_count={retry_count}, continue_on_error={continue_on_error}", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        logger.debug(f"Retry config: retry_count={retry_count}, continue_on_error={continue_on_error}")
+        print(f"[DEBUG-LINE-550] logger.debug completed", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        print(f"[DEBUG-LINE-374] AFTER logger.debug call", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
 
         # Retry logic: initial attempt + retry_count additional attempts on failure
+        print(f"[DEBUG-LINE-557] BEFORE total_attempts calculation, retry_count={retry_count}", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
         total_attempts = 1 + retry_count
+        print(f"[DEBUG-LINE-558] AFTER total_attempts calculation, total_attempts={total_attempts}", file=sys.stderr, flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        print(f"[DEBUG] Starting retry loop: total_attempts={total_attempts}")
 
         for attempt in range(total_attempts):
+            print(f"[DEBUG] Retry attempt {attempt + 1}/{total_attempts}")
             try:
-                result = self._execute_action_type(pydantic_action, typed_config)
+                print(f"[DEBUG] About to call _execute_action_type for {action.type}")
+                result = self._execute_action_type(action, typed_config)
+                print(f"[DEBUG] _execute_action_type returned: {result}")
                 if result:
                     # Add execution details if available
                     if isinstance(result, dict):
@@ -465,7 +573,7 @@ class ActionExecutor:
                     event_data = {**action_details, "attempts": attempt + 1}
                     logger.debug(f"Emitting success event with data: {event_data}")
                     self._emit_action_event(
-                        pydantic_action.type, pydantic_action.id, True, event_data
+                        action.type, action.id, True, event_data
                     )
 
                     # Pause after action if specified
@@ -487,8 +595,8 @@ class ActionExecutor:
                 print(f"Error executing action: {error_msg}")
                 # Emit error event
                 self._emit_action_event(
-                    pydantic_action.type,
-                    pydantic_action.id,
+                    action.type,
+                    action.id,
                     False,
                     {**action_details, "error": error_msg, "attempts": attempt + 1},
                 )
@@ -496,10 +604,10 @@ class ActionExecutor:
                     raise
 
         # Emit failure event after all retries
-        logger.warning(f"Action {pydantic_action.type} failed after {total_attempts} attempts")
+        logger.warning(f"Action {action.type} failed after {total_attempts} attempts")
         self._emit_action_event(
-            pydantic_action.type,
-            pydantic_action.id,
+            action.type,
+            action.id,
             False,
             {**action_details, "attempts": total_attempts, "reason": "All retries failed"},
         )
@@ -516,6 +624,7 @@ class ActionExecutor:
         Returns:
             bool: True if action succeeded, False otherwise
         """
+        print(f"[DEBUG] _execute_action_type called with action.type={action.type}")
         logger.debug(f"Executing action type: {action.type}")
 
         action_map = {
@@ -528,7 +637,7 @@ class ActionExecutor:
             "KEY_DOWN": self._execute_key_down,
             "KEY_UP": self._execute_key_up,
             "KEY_PRESS": self._execute_key_press,
-            # Combined mouse actions (legacy + convenience)
+            # Combined mouse actions
             "MOVE": self._execute_mouse_move,  # Alias for MOUSE_MOVE
             "CLICK": self._execute_click,
             "DOUBLE_CLICK": self._execute_double_click,
@@ -561,13 +670,27 @@ class ActionExecutor:
             "MATH_OPERATION": self._execute_math_operation,
         }
 
+        print(f"[DEBUG] Looking up handler for action type: {action.type}")
         handler = action_map.get(action.type)
+        print(f"[DEBUG] Handler found: {handler is not None}")
+
         if handler:
+            print(f"[DEBUG] Calling handler for {action.type}...", file=sys.stderr, flush=True)
             # Pass typed_config if available
             if typed_config is not None:
-                return handler(action, typed_config)
+                print(f"[DEBUG-HANDLER-698] About to call handler with typed_config", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+                result = handler(action, typed_config)
+                print(f"[DEBUG-HANDLER-700] Handler returned: {result}", file=sys.stderr, flush=True)
+                sys.stdout.flush()
+                sys.stderr.flush()
+                return result
             else:
-                return handler(action)
+                print(f"[DEBUG] Calling handler without typed_config", file=sys.stderr, flush=True)
+                result = handler(action)
+                print(f"[DEBUG] Handler returned: {result}", file=sys.stderr, flush=True)
+                return result
         else:
             logger.error(f"Unknown action type: {action.type}")
             print(f"Unknown action type: {action.type}")
@@ -633,7 +756,18 @@ class ActionExecutor:
         return None
 
     def _get_target_location(self, config: dict[str, Any]) -> tuple[int, int] | None:
-        """Get target location from legacy action config dict."""
+        """DEPRECATED: Get target location from legacy action config dict.
+
+        This method exists only for backward compatibility and should not be used.
+        Use _get_target_location_from_typed() with typed configs instead.
+        """
+        raise NotImplementedError(
+            "Legacy dict-based config is no longer supported. "
+            "All actions must use typed Pydantic configs via get_typed_config()."
+        )
+
+    def _get_target_location_legacy(self, config: dict[str, Any]) -> tuple[int, int] | None:
+        """Legacy implementation - kept for reference only, not to be used."""
         target = config.get("target", {})
 
         # Handle "Last Find Result" string target
@@ -822,25 +956,18 @@ class ActionExecutor:
             )
             return None
 
-    def _execute_find(self, action: Action, typed_config: FindActionConfig = None) -> bool:
+    def _execute_find(self, action: Action, typed_config: FindActionConfig) -> bool:
         """Execute FIND action with type-safe config.
 
         Args:
             action: Pydantic Action model
-            typed_config: Pre-validated FindActionConfig or None for config format
+            typed_config: Pre-validated FindActionConfig (required)
 
         Returns:
             bool: True if target was found
         """
         logger.debug("Executing FIND action")
-
-        # Use typed config if available
-        if typed_config:
-            logger.debug("Using typed FindActionConfig")
-            location = self._get_target_location_from_typed(typed_config.target)
-        else:
-            logger.debug("Using legacy dict-based config")
-            location = self._get_target_location(action.config)
+        location = self._get_target_location_from_typed(typed_config.target)
 
         if location:
             logger.info(f"FIND action succeeded: found at {location}")
@@ -849,7 +976,7 @@ class ActionExecutor:
             logger.warning("FIND action failed: target not found")
             return False
 
-    def _execute_click(self, action: Action, typed_config: ClickActionConfig = None) -> bool:
+    def _execute_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
         """Execute CLICK action with type-safe config.
 
         This is a COMBINED action that orchestrates pure actions.
@@ -857,7 +984,7 @@ class ActionExecutor:
 
         Args:
             action: Pydantic Action model
-            typed_config: Pre-validated ClickActionConfig or None for config format
+            typed_config: Pre-validated ClickActionConfig (required)
 
         Returns:
             bool: True if click succeeded
@@ -866,67 +993,38 @@ class ActionExecutor:
 
         logger.debug("Executing CLICK action")
 
-        # Use typed config if available, otherwise fall back to dict access
-        if typed_config:
-            logger.debug("Using typed ClickActionConfig")
-
-            # Check if target is None or currentPosition (pure action)
-            location = None
-            if typed_config.target and typed_config.target.type != "currentPosition":
-                location = self._get_target_location_from_typed(typed_config.target)
-                if not location:
-                    logger.error("Failed to get target location from typed config")
-                    return False
-            else:
-                logger.debug("No target specified - clicking at current position (pure action)")
-
-            # Get button from typed config
-            button = MouseButton.LEFT
-            if typed_config.mouse_button:
-                button_map = {
-                    "LEFT": MouseButton.LEFT,
-                    "RIGHT": MouseButton.RIGHT,
-                    "MIDDLE": MouseButton.MIDDLE,
-                }
-                button = button_map.get(typed_config.mouse_button.value, MouseButton.LEFT)
-
-            # Get click count
-            click_count = typed_config.number_of_clicks or 1
-
-            # Get timing values
-            hold_duration = (
-                typed_config.press_duration or self.defaults.mouse.click_hold_duration
-            ) / 1000.0
-            release_delay = (
-                typed_config.pause_after_release or self.defaults.mouse.click_release_delay
-            )
-        else:
-            # Legacy dict-based access
-            logger.debug("Using legacy dict-based config")
-            location = self._get_target_location(action.config)
+        # Check if target is None or currentPosition (pure action)
+        location = None
+        if typed_config.target and typed_config.target.type != "currentPosition":
+            location = self._get_target_location_from_typed(typed_config.target)
             if not location:
-                logger.error("Failed to get target location from legacy config")
+                logger.error("Failed to get target location from typed config")
                 return False
+        else:
+            logger.debug("No target specified - clicking at current position (pure action)")
 
-            # Get click type from config (left, right, middle)
-            click_type = action.config.get("clickType", "left").lower()
+        # Get button from typed config
+        button = MouseButton.LEFT
+        button_name = "LEFT"
+        if typed_config.mouse_button:
             button_map = {
-                "left": MouseButton.LEFT,
-                "right": MouseButton.RIGHT,
-                "middle": MouseButton.MIDDLE,
+                "LEFT": MouseButton.LEFT,
+                "RIGHT": MouseButton.RIGHT,
+                "MIDDLE": MouseButton.MIDDLE,
             }
-            button = button_map.get(click_type, MouseButton.LEFT)
+            button = button_map.get(typed_config.mouse_button.value, MouseButton.LEFT)
+            button_name = typed_config.mouse_button.value
 
-            # Get click count from config (default 1)
-            click_count = action.config.get("clickCount", 1)
+        # Get click count
+        click_count = typed_config.number_of_clicks or 1
 
-            # Get timing values from config or defaults
-            hold_duration = action.config.get(
-                "click_hold_duration", self.defaults.mouse.click_hold_duration
-            )
-            release_delay = action.config.get(
-                "click_release_delay", self.defaults.mouse.click_release_delay
-            )
+        # Get timing values
+        hold_duration = (
+            typed_config.press_duration or self.defaults.mouse.click_hold_duration
+        ) / 1000.0
+        release_delay = (
+            typed_config.pause_after_release or self.defaults.mouse.click_release_delay
+        )
 
         # Safety settings (not yet in typed config, use defaults)
         safety_release = self.defaults.mouse.click_safety_release
@@ -936,7 +1034,7 @@ class ActionExecutor:
         current_pos = Mouse.position()
         print(f"[COMBINED ACTION: CLICK] Current position: ({current_pos.x}, {current_pos.y})")
         print(
-            f"[COMBINED ACTION: CLICK] Target: {location}, Button: {click_type}, Count: {click_count}"
+            f"[COMBINED ACTION: CLICK] Target: {location}, Button: {button_name}, Count: {click_count}"
         )
         print(f"[COMBINED ACTION: CLICK] Timing: hold={hold_duration}s, release={release_delay}s")
 
@@ -970,7 +1068,7 @@ class ActionExecutor:
         Mouse.up(button=button)
         print("[COMBINED ACTION: CLICK] Step 3: Final safety release")
 
-        print(f"[COMBINED ACTION: CLICK] Completed {click_count} {click_type}-click(s)")
+        print(f"[COMBINED ACTION: CLICK] Completed {click_count} {button_name}-click(s)")
         return True
 
     def _execute_double_click(
@@ -1031,33 +1129,44 @@ class ActionExecutor:
         Returns:
             bool: True if text was typed successfully
         """
+        print(f"[DEBUG-TYPE-1171] Executing TYPE action", file=sys.stderr, flush=True)
         logger.debug("Executing TYPE action")
 
+        print(f"[DEBUG-TYPE-1173] Checking if typed_config exists", file=sys.stderr, flush=True)
         if not typed_config:
             logger.error("TYPE action requires valid TypeActionConfig")
             return False
 
+        print(f"[DEBUG-TYPE-1177] Initializing text variable", file=sys.stderr, flush=True)
         text = ""
 
         # Get text directly or from text_source
+        print(f"[DEBUG-TYPE-1180] Checking typed_config.text", file=sys.stderr, flush=True)
         if typed_config.text:
             text = typed_config.text
             logger.debug(f"Using direct text: '{text}'")
         elif typed_config.text_source:
+            print(f"[DEBUG-TYPE-1191] Processing text_source", file=sys.stderr, flush=True)
             # Get text from state string
             state_id = typed_config.text_source.state_id
             string_ids = typed_config.text_source.string_ids
 
+            print(f"[DEBUG-TYPE-1195] state_id={state_id}, string_ids={string_ids}", file=sys.stderr, flush=True)
             logger.debug(f"Looking for state string: state_id={state_id}, string_ids={string_ids}")
 
+            print(f"[DEBUG-TYPE-1198] Checking if state exists in state_map", file=sys.stderr, flush=True)
             if state_id and string_ids and state_id in self.config.state_map:
+                print(f"[DEBUG-TYPE-1199] Getting state from state_map", file=sys.stderr, flush=True)
                 state = self.config.state_map[state_id]
-                state_strings = getattr(state, "state_strings", [])
+                print(f"[DEBUG-TYPE-1200] Accessing state.state_strings", file=sys.stderr, flush=True)
+                state_strings = state.state_strings
+                print(f"[DEBUG-TYPE-1201] Got state_strings, count={len(state_strings)}", file=sys.stderr, flush=True)
                 logger.debug(
                     f"State strings in '{state_id}': {[(s.id, s.value) for s in state_strings]}"
                 )
 
                 # Find the string in the state
+                print(f"[DEBUG-TYPE-1206] Iterating through state_strings", file=sys.stderr, flush=True)
                 for state_string in state_strings:
                     if state_string.id in string_ids:
                         text = state_string.value
@@ -1070,6 +1179,7 @@ class ActionExecutor:
                 logger.error(f"State '{state_id}' not found or no string IDs provided")
 
         # Type the text if we have it
+        print(f"[DEBUG-TYPE-1218] Checking if text exists, text='{text}'", file=sys.stderr, flush=True)
         if text:
             Keyboard.type(text)
             logger.info(f"Successfully typed: '{text}'")
@@ -1124,7 +1234,7 @@ class ActionExecutor:
             print(f"[PURE ACTION] Key '{key}' pressed and released")
         return True
 
-    def _execute_drag(self, action: Action, typed_config: DragActionConfig = None) -> bool:
+    def _execute_drag(self, action: Action, typed_config: DragActionConfig) -> bool:
         """Execute DRAG action (combined) - MOUSE_MOVE + MOUSE_DOWN + MOUSE_MOVE + MOUSE_UP.
 
         This is a COMBINED action using pure actions:
@@ -1137,23 +1247,34 @@ class ActionExecutor:
         """
         from ..hal.interfaces import MouseButton
 
-        start = self._get_target_location(action.config)
-        destination = action.config.get("destination", {})
-
-        if not start or not destination:
+        start = self._get_target_location_from_typed(typed_config.source)
+        if not start:
+            logger.error("Failed to get start location for DRAG")
             return False
 
-        end_x = destination.get("x", 0)
-        end_y = destination.get("y", 0)
+        # Get destination - can be TargetConfig, Coordinates, or Region
+        end = None
+        if isinstance(typed_config.destination, dict):
+            # It's a Coordinates or Region
+            end_x = typed_config.destination.get("x", 0)
+            end_y = typed_config.destination.get("y", 0)
+            end = (end_x, end_y)
+        else:
+            # It's a TargetConfig - get location
+            end = self._get_target_location_from_typed(typed_config.destination)
 
-        # Get timing values from config or defaults
+        if not end:
+            logger.error("Failed to get destination location for DRAG")
+            return False
+
+        # Get timing values from typed config or defaults
         duration = (
-            action.config.get("duration", self.defaults.mouse.drag_default_duration * 1000) / 1000.0
-        )
-        start_delay = action.config.get("drag_start_delay", self.defaults.mouse.drag_start_delay)
-        end_delay = action.config.get("drag_end_delay", self.defaults.mouse.drag_end_delay)
+            typed_config.drag_duration or self.defaults.mouse.drag_default_duration * 1000
+        ) / 1000.0
+        start_delay = typed_config.delay_before_move or self.defaults.mouse.drag_start_delay
+        end_delay = typed_config.delay_after_drag or self.defaults.mouse.drag_end_delay
 
-        print(f"[COMBINED ACTION: DRAG] From {start} to ({end_x}, {end_y})")
+        print(f"[COMBINED ACTION: DRAG] From {start} to {end}")
         print(
             f"[COMBINED ACTION: DRAG] Timing: duration={duration}s, start_delay={start_delay}s, end_delay={end_delay}s"
         )
@@ -1170,7 +1291,7 @@ class ActionExecutor:
         # Step 3: Move to end position (dragging)
         self.time_wrapper.wait(start_delay)
         print("[COMBINED ACTION: DRAG] Step 3: Move to end (dragging)")
-        Mouse.move(end_x, end_y, duration)
+        Mouse.move(end[0], end[1], duration)
 
         # Step 4: Release button
         self.time_wrapper.wait(end_delay)
@@ -1335,8 +1456,11 @@ class ActionExecutor:
         if there's a transition A -> {B,C} and you request GO_TO_STATE([B]), the
         transition will be executed, activating both B and C.
         """
+        print(f"[DEBUG] ===== _execute_go_to_state CALLED =====")
         # Get target state IDs from config
+        print(f"[DEBUG] Getting state IDs from config...")
         state_ids = typed_config.state_ids if typed_config else action.config.get("stateIds", [])
+        print(f"[DEBUG] State IDs: {state_ids}")
 
         if not state_ids:
             print("GO_TO_STATE action missing 'stateIds' config")
@@ -1354,21 +1478,28 @@ class ActionExecutor:
                 return False
             target_states.append(self.config.state_map[state_id])
 
+        print(f"[DEBUG] Getting current state from state_executor...")
         current_state_id = self.state_executor.current_state
+        print(f"[DEBUG] Current state: {current_state_id}")
 
         # Check if already at all target states
+        print(f"[DEBUG] Checking if already at target states...")
         if all(current_state_id == sid for sid in state_ids):
             target_names = [self.config.state_map[sid].name for sid in state_ids]
             print(f"GO_TO_STATE: Already at state(s) {', '.join(target_names)}")
             return True
 
+        print(f"[DEBUG] Not at target states, need to navigate")
         # Delegate to qontinui library's pathfinding (which uses multistate)
         # This handles multi-target pathfinding automatically
+        print(f"[DEBUG] Importing navigation_api...")
         from .. import navigation_api
 
+        print(f"[DEBUG] Setting workflow executor...")
         # Set workflow executor so transitions can execute workflows
         navigation_api.set_workflow_executor(self)
 
+        print(f"[DEBUG] Converting state IDs to names...")
         # Convert state IDs to state names for the navigation API
         target_names = [st.name for st in target_states]
         print(f"GO_TO_STATE: Navigating to {len(state_ids)} state(s): {', '.join(target_names)}")
@@ -1415,11 +1546,11 @@ class ActionExecutor:
                 target_state_ids = []
 
                 # Add to_state if present
-                if hasattr(trans, "to_state") and trans.to_state:
+                if trans.to_state:
                     target_state_ids.append(trans.to_state)
 
                 # Add activate_states if present
-                if hasattr(trans, "activate_states"):
+                if trans.activate_states:
                     target_state_ids.extend(trans.activate_states)
 
                 # Create edges for ALL target states

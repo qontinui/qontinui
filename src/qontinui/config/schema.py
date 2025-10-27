@@ -1022,6 +1022,18 @@ class WorkflowSettings(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class WorkflowVisibility(str, Enum):
+    """Workflow visibility levels for UI filtering.
+
+    - PUBLIC: Normal workflows visible in UI dropdowns and lists
+    - INTERNAL: Inline/helper workflows hidden from UI (but executable)
+    - SYSTEM: Framework-generated workflows for internal use
+    """
+    PUBLIC = "public"
+    INTERNAL = "internal"
+    SYSTEM = "system"
+
+
 class Workflow(BaseModel):
     """
     Complete workflow definition - graph format only.
@@ -1038,6 +1050,10 @@ class Workflow(BaseModel):
     )
     actions: list[Action] = Field(..., description="List of actions in workflow")
     connections: Connections = Field(..., description="Action connections (REQUIRED)")
+    visibility: WorkflowVisibility = Field(
+        default=WorkflowVisibility.PUBLIC,
+        description="Workflow visibility level (public, internal, or system)"
+    )
     variables: Variables | None = Field(
         None, description="Workflow variables (local, process, global)"
     )

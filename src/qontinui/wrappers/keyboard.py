@@ -5,8 +5,13 @@ to mock or live implementation based on execution mode.
 """
 
 import logging
+import threading
+from typing import TYPE_CHECKING
 
-from ..hal.factory import HALFactory
+if TYPE_CHECKING:
+    from ..hal.container import HALContainer
+    from ..hal.interfaces.input_controller import IInputController
+
 from ..hal.interfaces.input_controller import Key
 from ..mock.mock_mode_manager import MockModeManager
 from ..mock.mock_input import MockInput
@@ -30,12 +35,50 @@ class Keyboard:
     - Actual system keyboard control
 
     Example usage:
-        Keyboard.type("Hello World")  # Type text (real or simulated)
-        Keyboard.press(Key.ENTER)  # Press key
-        Keyboard.hotkey(Key.CTRL, "c")  # Key combination
+        # Instance method usage with HAL container (recommended)
+        hal = initialize_hal()
+        keyboard = Keyboard(hal)
+        keyboard.type("Hello World")
+        keyboard.press(Key.ENTER)
+
+        # Legacy class method usage (deprecated, uses HALFactory)
+        Keyboard.type("Hello World")
+        Keyboard.press(Key.ENTER)
     """
 
     _mock_input = MockInput()
+    _controller: 'IInputController | None' = None
+    _controller_lock = threading.Lock()
+
+    def __init__(self, hal: "HALContainer | None" = None):
+        """Initialize keyboard wrapper with optional HAL container.
+
+        Args:
+            hal: HAL container providing input controller. If None,
+                instance methods will fall back to class methods.
+        """
+        self._hal = hal
+        self._instance_controller = hal.input_controller if hal else None
+
+    @classmethod
+    def _get_controller(cls) -> 'IInputController':
+        """Lazy initialization of input controller (for legacy class methods).
+
+        Uses double-check locking pattern for thread-safe singleton.
+        DEPRECATED: Use instance methods with HAL container instead.
+        """
+        if cls._controller is None:
+            with cls._controller_lock:
+                if cls._controller is None:
+                    from ..hal.factory import HALFactory
+                    cls._controller = HALFactory.get_input_controller()
+        return cls._controller
+
+    def _get_active_controller(self) -> 'IInputController':
+        """Get the active controller (instance or class-level)."""
+        if self._instance_controller:
+            return self._instance_controller
+        return self._get_controller()
 
     @classmethod
     def type(cls, text: str, interval: float = 0.0) -> bool:
@@ -51,14 +94,24 @@ class Keyboard:
         Returns:
             True if successful
         """
+        import sys
+        print(f"[KEYBOARD-TYPE] About to type text: '{text}', interval={interval}", file=sys.stderr, flush=True)
+
         is_mock = MockModeManager.is_mock_mode()
+        print(f"[KEYBOARD-TYPE] is_mock={is_mock}", file=sys.stderr, flush=True)
 
         if is_mock:
             result = cls._mock_input.type_text(text, interval)
             logger.debug(f"[MOCK] Typed text: '{text}'")
         else:
-            controller = HALFactory.get_input_controller()
+            print(f"[KEYBOARD-TYPE] Getting input controller from lazy init", file=sys.stderr, flush=True)
+            controller = cls._get_controller()
+            print(f"[KEYBOARD-TYPE] Got controller: {controller}", file=sys.stderr, flush=True)
+            print(f"[KEYBOARD-TYPE] About to call controller.type_text('{text}', {interval})", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            sys.stderr.flush()
             result = controller.type_text(text, interval)
+            print(f"[KEYBOARD-TYPE] controller.type_text returned: {result}", file=sys.stderr, flush=True)
             logger.debug(f"[LIVE] Typed text: '{text}'")
 
         # Emit event after successful typing
@@ -93,7 +146,7 @@ class Keyboard:
             logger.debug(f"[MOCK] Pressed key: '{key_str}' x{presses}")
             return result
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             result = controller.key_press(key, presses, interval)
             key_str = key.value if isinstance(key, Key) else key
             logger.debug(f"[LIVE] Pressed key: '{key_str}' x{presses}")
@@ -115,7 +168,7 @@ class Keyboard:
             logger.debug(f"[MOCK] Key down: '{key_str}'")
             return result
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             result = controller.key_down(key)
             key_str = key.value if isinstance(key, Key) else key
             logger.debug(f"[LIVE] Key down: '{key_str}'")
@@ -137,7 +190,7 @@ class Keyboard:
             logger.debug(f"[MOCK] Key up: '{key_str}'")
             return result
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             result = controller.key_up(key)
             key_str = key.value if isinstance(key, Key) else key
             logger.debug(f"[LIVE] Key up: '{key_str}'")
@@ -159,7 +212,7 @@ class Keyboard:
             logger.debug(f"[MOCK] Hotkey: {'+'.join(key_strs)}")
             return result
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             result = controller.hotkey(*keys)
             key_strs = [k.value if isinstance(k, Key) else k for k in keys]
             logger.debug(f"[LIVE] Hotkey: {'+'.join(key_strs)}")
@@ -178,7 +231,7 @@ class Keyboard:
         if MockModeManager.is_mock_mode():
             return cls._mock_input.is_key_pressed(key)
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             return controller.is_key_pressed(key)
 
     @classmethod

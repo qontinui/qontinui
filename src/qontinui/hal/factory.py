@@ -1,6 +1,34 @@
-"""HAL Factory for creating implementation instances."""
+"""HAL Factory for creating implementation instances.
+
+DEPRECATED: This factory pattern is deprecated in favor of explicit dependency
+injection using HALContainer. The global singleton pattern causes circular
+dependencies and makes testing difficult.
+
+Migration Guide:
+    Old (deprecated):
+        >>> from qontinui.hal import HALFactory
+        >>> controller = HALFactory.get_input_controller()
+
+    New (recommended):
+        >>> from qontinui.hal import initialize_hal
+        >>> hal = initialize_hal()
+        >>> controller = hal.input_controller
+
+    For ActionExecutor:
+        Old:
+            >>> executor = ActionExecutor(config)
+            >>> # Uses HALFactory internally
+
+        New:
+            >>> hal = initialize_hal(config)
+            >>> executor = ActionExecutor(config, hal=hal)
+
+See HALContainer and initialize_hal() for the new dependency injection pattern.
+"""
 
 import sys
+import threading
+import warnings
 from typing import Any, cast
 
 from .config import HALConfig, get_config
@@ -22,6 +50,7 @@ class HALFactory:
 
     # Cached instances
     _instances: dict[str, Any] = {}
+    _lock = threading.Lock()
 
     @classmethod
     def get_screen_capture(cls, config: HALConfig | None = None) -> IScreenCapture:
@@ -112,28 +141,30 @@ class HALFactory:
         config = config or get_config()
         cache_key = f"input_controller_{config.input_backend}"
 
-        if cache_key not in cls._instances:
-            backend = config.input_backend.lower()
+        # Use lock to prevent concurrent imports that could cause deadlock
+        with cls._lock:
+            if cache_key not in cls._instances:
+                backend = config.input_backend.lower()
 
-            if backend == "pynput":
-                from .implementations.pynput_controller import PynputController
+                if backend == "pynput":
+                    from .implementations.pynput_controller import PynputController
 
-                cls._instances[cache_key] = PynputController(config)
-            elif backend == "pyautogui":
-                from .implementations.pyautogui_controller import PyAutoGUIController
+                    cls._instances[cache_key] = PynputController(config)
+                elif backend == "pyautogui":
+                    from .implementations.pyautogui_controller import PyAutoGUIController
 
-                cls._instances[cache_key] = PyAutoGUIController(config)
-            elif backend == "selenium":
-                from .implementations.selenium_controller import SeleniumController
+                    cls._instances[cache_key] = PyAutoGUIController(config)
+                elif backend == "selenium":
+                    from .implementations.selenium_controller import SeleniumController
 
-                cls._instances[cache_key] = SeleniumController(config)
-            elif backend == "native":
-                cls._instances[cache_key] = cls._get_native_input_controller(config)
-            else:
-                raise ValueError(f"Unsupported input controller backend: {backend}")
+                    cls._instances[cache_key] = SeleniumController(config)
+                elif backend == "native":
+                    cls._instances[cache_key] = cls._get_native_input_controller(config)
+                else:
+                    raise ValueError(f"Unsupported input controller backend: {backend}")
 
-        instance: IInputController = cls._instances[cache_key]
-        return instance
+            instance: IInputController = cls._instances[cache_key]
+            return instance
 
     @classmethod
     def get_ocr_engine(cls, config: HALConfig | None = None) -> IOCREngine:

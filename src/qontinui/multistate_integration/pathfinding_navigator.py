@@ -128,23 +128,29 @@ class PathfindingNavigator:
         Returns:
             NavigationContext with results, or None if no path found
         """
+        logger.info(f"[DEBUG] navigate_to_states called with target_state_ids={target_state_ids}, execute={execute}")
         strategy = strategy or self.default_strategy
 
         # Find path
+        logger.info(f"[DEBUG] Finding path to states...")
         path = self.find_path_to_states(
             target_state_ids=target_state_ids, strategy=strategy, use_cache=use_cache
         )
+        logger.info(f"[DEBUG] Path found: {path is not None}")
 
         if not path:
             logger.info(f"No path found to states: {target_state_ids}")
             return None
 
         # Create navigation context
+        logger.info(f"[DEBUG] Creating navigation context...")
         context = NavigationContext(path=path)
 
         # Execute if requested
         if execute:
+            logger.info(f"[DEBUG] Executing navigation path...")
             self._execute_navigation(context)
+            logger.info(f"[DEBUG] Navigation execution completed")
 
         # Record navigation
         self.navigation_history.append(context)
@@ -170,7 +176,9 @@ class PathfindingNavigator:
             NavigationPath or None if no path exists
         """
         # Get current states
+        logger.info(f"[DEBUG] Getting current states for pathfinding...")
         from_states = from_state_ids or self.state_memory.active_states
+        logger.info(f"[DEBUG] From states: {from_states}")
         if not from_states:
             logger.warning("No starting states for pathfinding")
             return None
@@ -184,9 +192,11 @@ class PathfindingNavigator:
                 return cached_path
 
         # Compute path using MultiState
+        logger.info(f"[DEBUG] Computing path using multistate_adapter...")
         transitions = self.multistate_adapter.find_path_to_states(
             target_state_ids=target_state_ids, current_state_ids=from_states
         )
+        logger.info(f"[DEBUG] Multistate adapter returned {len(transitions) if transitions else 0} transitions")
 
         if not transitions:
             return None

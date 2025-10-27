@@ -15,6 +15,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from ..exceptions import ActionExecutionError, ConfigurationError
+
 try:
     import pyperclip
 
@@ -417,7 +419,8 @@ class SafeEvaluator:
                 if type(node) not in cls.ALLOWED_NODES:
                     return False
             return True
-        except Exception:
+        except (SyntaxError, ValueError) as e:
+            # Invalid Python expression
             return False
 
 
@@ -825,7 +828,8 @@ class DataOperationsExecutor:
                         # Try to parse as ISO format
                         try:
                             return datetime.fromisoformat(value)
-                        except Exception:
+                        except (ValueError, TypeError) as e:
+                            # Invalid date format, use minimum date for sorting
                             return datetime.min
                     return datetime.min
 
@@ -842,7 +846,8 @@ class DataOperationsExecutor:
                             custom_comparator,
                             {"item": x, **self.variable_context.get_all_variables()},
                         )
-                    except Exception:
+                    except (ValueError, SyntaxError, TypeError, NameError) as e:
+                        # Expression evaluation failed, return default sort value
                         return 0
 
                 key_func = custom_key

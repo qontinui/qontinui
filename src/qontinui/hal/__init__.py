@@ -5,6 +5,15 @@ allowing for flexible switching between implementations via environment variable
 """
 
 from .config import HALConfig
+from .container import HALContainer
 from .factory import HALFactory
+from .initialization import HALInitializationError, initialize_hal, shutdown_hal
 
-__all__ = ["HALFactory", "HALConfig"]
+__all__ = [
+    "HALFactory",
+    "HALConfig",
+    "HALContainer",
+    "initialize_hal",
+    "shutdown_hal",
+    "HALInitializationError",
+]

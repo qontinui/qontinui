@@ -6,8 +6,9 @@ from pynput import keyboard, mouse
 from pynput.keyboard import Key as PynputKey
 from pynput.mouse import Button as PynputButton
 
+from ...exceptions import InputControlError
 from ...logging import get_logger
-from ...wrappers import TimeWrapper
+from ...wrappers.time_wrapper import TimeWrapper
 from ..config import HALConfig
 from ..interfaces.input_controller import IInputController, Key, MouseButton, MousePosition
 
@@ -162,7 +163,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Mouse move failed: {e}")
-            return False
+            raise InputControlError("mouse_move", str(e)) from e
 
     def mouse_move_relative(self, dx: int, dy: int, duration: float = 0.0) -> bool:
         """Move mouse relative to current position.
@@ -181,7 +182,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Relative mouse move failed: {e}")
-            return False
+            raise InputControlError("mouse_move_relative", str(e)) from e
 
     def mouse_click(
         self,
@@ -220,7 +221,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Mouse click failed: {e}")
-            return False
+            raise InputControlError("mouse_click", str(e)) from e
 
     def mouse_down(
         self, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
@@ -248,7 +249,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Mouse down failed: {e}")
-            return False
+            raise InputControlError("mouse_down", str(e)) from e
 
     def mouse_up(
         self, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
@@ -276,7 +277,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Mouse up failed: {e}")
-            return False
+            raise InputControlError("mouse_up", str(e)) from e
 
     def mouse_drag(
         self,
@@ -326,7 +327,7 @@ class PynputController(IInputController):
                 self.mouse_controller.release(self._get_pynput_button(button))
             except Exception:
                 pass
-            return False
+            raise InputControlError("mouse_drag", str(e)) from e
 
     def mouse_scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
         """Scroll mouse wheel.
@@ -352,7 +353,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Mouse scroll failed: {e}")
-            return False
+            raise InputControlError("mouse_scroll", str(e)) from e
 
     def get_mouse_position(self) -> MousePosition:
         """Get current mouse position.
@@ -365,7 +366,7 @@ class PynputController(IInputController):
             return MousePosition(x=int(x), y=int(y))
         except Exception as e:
             logger.error(f"Get mouse position failed: {e}")
-            return MousePosition(x=0, y=0)
+            raise InputControlError("get_mouse_position", str(e)) from e
 
     def click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
         """Click at specific coordinates.
@@ -463,7 +464,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Key press failed: {e}")
-            return False
+            raise InputControlError("key_press", str(e)) from e
 
     def key_down(self, key: str | Key) -> bool:
         """Press and hold key.
@@ -483,7 +484,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Key down failed: {e}")
-            return False
+            raise InputControlError("key_down", str(e)) from e
 
     def key_up(self, key: str | Key) -> bool:
         """Release key.
@@ -503,7 +504,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Key up failed: {e}")
-            return False
+            raise InputControlError("key_up", str(e)) from e
 
     def type_text(self, text: str, interval: float = 0.0) -> bool:
         """Type text string.
@@ -528,7 +529,7 @@ class PynputController(IInputController):
 
         except Exception as e:
             logger.error(f"Type text failed: {e}")
-            return False
+            raise InputControlError("type_text", str(e)) from e
 
     def hotkey(self, *keys: str | Key) -> bool:
         """Press key combination.
@@ -568,7 +569,7 @@ class PynputController(IInputController):
                     self.keyboard_controller.release(pynput_key)
                 except Exception:
                     pass
-            return False
+            raise InputControlError("hotkey", str(e)) from e
 
     def is_key_pressed(self, key: str | Key) -> bool:
         """Check if key is currently pressed.

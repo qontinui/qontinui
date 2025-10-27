@@ -92,9 +92,10 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         logger.info("Loaded transitions from configuration")
 
         # Debug: Check if transitions were actually added to states
-        print("DEBUG: Checking states after transition loading:", flush=True)
+        import sys
+        print("DEBUG: Checking states after transition loading:", file=sys.stderr, flush=True)
         for state in _state_service.get_all_states():
-            print(f"DEBUG: State '{state.name}' has {len(state.transitions)} transitions", flush=True)
+            print(f"DEBUG: State '{state.name}' has {len(state.transitions)} transitions", file=sys.stderr, flush=True)
 
         # Step 4: Initialize StateMemory with populated StateService
         _state_memory = StateMemory(state_service=_state_service)

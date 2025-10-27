@@ -5,10 +5,16 @@ to mock or live implementation based on execution mode.
 """
 
 import logging
+import threading
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from ..hal.factory import HALFactory
+if TYPE_CHECKING:
+    from ..hal.interfaces.ocr_engine import IOCREngine
+    from ..hal.interfaces.pattern_matcher import IPatternMatcher
+    from ..hal.interfaces.screen_capture import IScreenCapture
+
 from ..mock.mock_mode_manager import MockModeManager
 from ..mock.mock_screen import MockScreen
 
@@ -35,6 +41,51 @@ class Screen:
     """
 
     _mock_screen = MockScreen()
+    _screen_capture: 'IScreenCapture | None' = None
+    _screen_capture_lock = threading.Lock()
+    _pattern_matcher: 'IPatternMatcher | None' = None
+    _pattern_matcher_lock = threading.Lock()
+    _ocr_engine: 'IOCREngine | None' = None
+    _ocr_engine_lock = threading.Lock()
+
+    @classmethod
+    def _get_screen_capture(cls) -> 'IScreenCapture':
+        """Lazy initialization of screen capture.
+
+        Uses double-check locking pattern for thread-safe singleton.
+        """
+        if cls._screen_capture is None:
+            with cls._screen_capture_lock:
+                if cls._screen_capture is None:
+                    from ..hal.factory import HALFactory
+                    cls._screen_capture = HALFactory.get_screen_capture()
+        return cls._screen_capture
+
+    @classmethod
+    def _get_pattern_matcher(cls) -> 'IPatternMatcher':
+        """Lazy initialization of pattern matcher.
+
+        Uses double-check locking pattern for thread-safe singleton.
+        """
+        if cls._pattern_matcher is None:
+            with cls._pattern_matcher_lock:
+                if cls._pattern_matcher is None:
+                    from ..hal.factory import HALFactory
+                    cls._pattern_matcher = HALFactory.get_pattern_matcher()
+        return cls._pattern_matcher
+
+    @classmethod
+    def _get_ocr_engine(cls) -> 'IOCREngine':
+        """Lazy initialization of OCR engine.
+
+        Uses double-check locking pattern for thread-safe singleton.
+        """
+        if cls._ocr_engine is None:
+            with cls._ocr_engine_lock:
+                if cls._ocr_engine is None:
+                    from ..hal.factory import HALFactory
+                    cls._ocr_engine = HALFactory.get_ocr_engine()
+        return cls._ocr_engine
 
     @classmethod
     def capture(cls, monitor_index: int = 0) -> np.ndarray:
@@ -54,7 +105,7 @@ class Screen:
             logger.debug(f"[MOCK] Screen captured (monitor {monitor_index})")
             return result
         else:
-            capture = HALFactory.get_screen_capture()
+            capture = cls._get_screen_capture()
             result = capture.capture_screen(monitor_index)
             logger.debug(f"[LIVE] Screen captured (monitor {monitor_index})")
             return result
@@ -80,7 +131,7 @@ class Screen:
             logger.debug(f"[MOCK] Region captured ({x}, {y}, {width}x{height})")
             return result
         else:
-            capture = HALFactory.get_screen_capture()
+            capture = cls._get_screen_capture()
             result = capture.capture_region(x, y, width, height, monitor_index)
             logger.debug(f"[LIVE] Region captured ({x}, {y}, {width}x{height})")
             return result
@@ -107,7 +158,7 @@ class Screen:
             logger.debug(f"[MOCK] Screenshot saved to {file_path}")
             return result
         else:
-            capture = HALFactory.get_screen_capture()
+            capture = cls._get_screen_capture()
             result = capture.save_screenshot(file_path, monitor_index, region)
             logger.debug(f"[LIVE] Screenshot saved to {file_path}")
             return result
@@ -125,7 +176,7 @@ class Screen:
         if MockModeManager.is_mock_mode():
             return cls._mock_screen.get_screen_size(monitor_index)
         else:
-            capture = HALFactory.get_screen_capture()
+            capture = cls._get_screen_capture()
             return capture.get_screen_size(monitor_index)
 
     @classmethod
@@ -138,7 +189,7 @@ class Screen:
         if MockModeManager.is_mock_mode():
             return cls._mock_screen.get_monitor_count()
         else:
-            capture = HALFactory.get_screen_capture()
+            capture = cls._get_screen_capture()
             return capture.get_monitor_count()
 
     @classmethod

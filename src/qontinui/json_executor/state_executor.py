@@ -1,5 +1,6 @@
 """State machine executor for Qontinui automation."""
 
+import sys
 from typing import Any
 
 from ..wrappers import TimeWrapper
@@ -82,14 +83,14 @@ class StateExecutor:
 
         if initial_states:
             if len(initial_states) == 1:
-                print(f"Initial state: {initial_states[0]}")
+                print(f"Initial state: {initial_states[0]}", file=sys.stderr)
             else:
-                print(f"Initial states: {', '.join(initial_states)}")
+                print(f"Initial states: {', '.join(initial_states)}", file=sys.stderr)
         elif self.config.states:
             # Use first state as initial if none marked
             self.current_state = self.config.states[0].id
             self.active_states.add(self.current_state)
-            print(f"Using first state as initial: {self.config.states[0].name}")
+            print(f"Using first state as initial: {self.config.states[0].name}", file=sys.stderr)
 
     def execute(self):
         """Execute the state machine automation workflow.
@@ -126,7 +127,7 @@ class StateExecutor:
         self.initialize()
 
         if not self.current_state:
-            print("No initial state found")
+            print("No initial state found", file=sys.stderr)
             return False
 
         max_iterations = 1000  # Prevent infinite loops
@@ -137,17 +138,17 @@ class StateExecutor:
 
             # Verify current state is active
             if not self._verify_state(self.current_state):
-                print(f"State {self.current_state} is not active")
+                print(f"State {self.current_state} is not active", file=sys.stderr)
                 # Try to find active state
                 if not self._find_active_state():
-                    print("No active state found")
+                    print("No active state found", file=sys.stderr)
                     break
 
             # Find and execute applicable transitions
             transition_executed = self._execute_transitions()
 
             if not transition_executed:
-                print("No applicable transitions found")
+                print("No applicable transitions found", file=sys.stderr)
                 # Check if we should wait or exit
                 if self._should_continue():
                     TimeWrapper.wait(1)
@@ -184,7 +185,7 @@ class StateExecutor:
         for state_id in self.active_states:
             if self._verify_state(state_id):
                 self.current_state = state_id
-                print(f"Found active state: {self.config.state_map[state_id].name}")
+                print(f"Found active state: {self.config.state_map[state_id].name}", file=sys.stderr)
                 return True
 
         # Check all states if none of the active ones match
@@ -192,7 +193,7 @@ class StateExecutor:
             if self._verify_state(state.id):
                 self.current_state = state.id
                 self.active_states = {state.id}
-                print(f"Found state: {state.name}")
+                print(f"Found state: {state.name}", file=sys.stderr)
                 return True
 
         return False
@@ -231,19 +232,23 @@ class StateExecutor:
         Executes all workflows defined in the transition's workflows list.
         If any workflow fails, the entire transition fails.
         """
-        print(f"\nExecuting transition: {transition.id}")
+        print(f"\nExecuting transition: {transition.id}", file=sys.stderr)
 
         # Execute all workflows in the transition
         for workflow_id in transition.workflows:
             workflow = self.config.workflow_map.get(workflow_id)
             if workflow:
                 workflow_result = self._execute_workflow(workflow)
-                print(f"[DEBUG] Workflow '{workflow.name}' execution result: {workflow_result}")
+                print(f"[DEBUG] Workflow '{workflow.name}' execution result: {workflow_result}", file=sys.stderr)
                 if not workflow_result:
-                    print(f"Workflow {workflow.name} failed")
+                    print(f"Workflow {workflow.name} failed", file=sys.stderr)
                     return False
             else:
-                print(f"Workflow {workflow_id} not found")
+                # Workflow not found - fail fast with clear error
+                print(f"ERROR: Workflow {workflow_id} not found in workflow_map", file=sys.stderr)
+                print(f"Available workflows: {list(self.config.workflow_map.keys())}", file=sys.stderr)
+                print(f"This workflow was not loaded during configuration parsing.", file=sys.stderr)
+                print(f"If this is an inline workflow, it may have invalid format - please re-export your configuration.", file=sys.stderr)
                 return False
 
         # Handle state changes for OutgoingTransition
@@ -258,9 +263,9 @@ class StateExecutor:
                 self.active_states.discard(state_id)
                 state_obj: Any = self.config.state_map.get(state_id, {})
                 if isinstance(state_obj, dict):
-                    print(f"Deactivated state: {state_id}")
+                    print(f"Deactivated state: {state_id}", file=sys.stderr)
                 else:
-                    print(f"Deactivated state: {state_obj.name}")
+                    print(f"Deactivated state: {state_obj.name}", file=sys.stderr)
 
             # Activate target states with IncomingTransition verification
             for state_id in states_to_activate:
@@ -272,7 +277,7 @@ class StateExecutor:
                     # Execute IncomingTransitions - if any fail, don't activate this state
                     for incoming_trans in incoming_transitions:
                         if not self._execute_transition(incoming_trans):
-                            print(f"IncomingTransition failed for state {state_id}, not activating")
+                            print(f"IncomingTransition failed for state {state_id}, not activating", file=sys.stderr)
                             activation_allowed = False
                             break
 
@@ -281,9 +286,9 @@ class StateExecutor:
                     self.active_states.add(state_id)
                     state_obj = self.config.state_map.get(state_id, {})
                     if isinstance(state_obj, dict):
-                        print(f"Activated state: {state_id}")
+                        print(f"Activated state: {state_id}", file=sys.stderr)
                     else:
-                        print(f"Activated state: {state_obj.name}")
+                        print(f"Activated state: {state_obj.name}", file=sys.stderr)
 
                     # Update current_state if this is the to_state
                     if state_id == transition.to_state:
@@ -291,14 +296,14 @@ class StateExecutor:
                         self.state_history.append(transition.to_state)
                         target_state = self.config.state_map.get(transition.to_state)
                         if target_state:
-                            print(f"Transitioned to state: {target_state.name}")
+                            print(f"Transitioned to state: {target_state.name}", file=sys.stderr)
 
             # Handle origin state: deactivate by DEFAULT unless stays_visible=True
             if transition.from_state and not transition.stays_visible:
                 self.active_states.discard(transition.from_state)
                 from_state = self.config.state_map.get(transition.from_state)
                 if from_state:
-                    print(f"Deactivated origin state: {from_state.name}")
+                    print(f"Deactivated origin state: {from_state.name}", file=sys.stderr)
 
         return True
 
@@ -311,29 +316,31 @@ class StateExecutor:
         Returns:
             bool: True if workflow completed successfully, False otherwise
         """
-        print(f"Executing workflow: {workflow.name}")
+        print(f"Executing workflow: {workflow.name}", file=sys.stderr)
 
         if workflow.type == "sequence":
             # Execute actions in sequence
             for i, action in enumerate(workflow.actions):
                 action_result = self.action_executor.execute_action(action)
                 print(
-                    f"[DEBUG] Action {i+1}/{len(workflow.actions)} ({action.type}) result: {action_result}"
+                    f"[DEBUG] Action {i+1}/{len(workflow.actions)} ({action.type}) result: {action_result}",
+                    file=sys.stderr
                 )
                 if not action_result:
                     if action.continue_on_error:
                         print(
-                            f"[DEBUG] Action {i+1} failed but continue_on_error=True, continuing..."
+                            f"[DEBUG] Action {i+1} failed but continue_on_error=True, continuing...",
+                            file=sys.stderr
                         )
                         continue
-                    print(f"[DEBUG] Workflow '{workflow.name}' FAILED at action {i+1}")
+                    print(f"[DEBUG] Workflow '{workflow.name}' FAILED at action {i+1}", file=sys.stderr)
                     return False
         elif workflow.type == "parallel":
             # For now, execute sequentially (parallel execution would need threading)
             for action in workflow.actions:
                 self.action_executor.execute_action(action)
 
-        print(f"[DEBUG] Workflow '{workflow.name}' COMPLETED successfully")
+        print(f"[DEBUG] Workflow '{workflow.name}' COMPLETED successfully", file=sys.stderr)
         return True
 
     def _should_continue(self) -> bool:
