@@ -337,19 +337,39 @@ class PerformanceLogger:
             return stats
 
 
-# Create default loggers
-action_logger = ActionLogger()
-state_logger = StateLogger()
-performance_logger = PerformanceLogger()
+# Create default loggers (lazy initialization - only created when first accessed)
+action_logger: ActionLogger | None = None
+state_logger: StateLogger | None = None
+performance_logger: PerformanceLogger | None = None
+
+_logging_initialized = False
 
 
-# Initialize logging on import with defaults
-settings = get_settings()
-if hasattr(settings, "log_path") and hasattr(settings, "debug_mode"):
-    log_file = settings.log_path / f"qontinui_{datetime.now().strftime('%Y%m%d')}.log"
-    setup_logging(
-        level="DEBUG" if settings.debug_mode else "INFO",
-        log_file=log_file,
-        structured=not settings.debug_mode,  # Use readable format in debug mode
-        colorize=settings.debug_mode,
-    )
+def _ensure_logging_initialized() -> None:
+    """Ensure logging is initialized (called lazily, not at import time)."""
+    global _logging_initialized, action_logger, state_logger, performance_logger
+
+    if _logging_initialized:
+        return
+
+    # Initialize default loggers
+    action_logger = ActionLogger()
+    state_logger = StateLogger()
+    performance_logger = PerformanceLogger()
+
+    # Initialize logging with defaults
+    try:
+        settings = get_settings()
+        if hasattr(settings, "log_path") and hasattr(settings, "debug_mode"):
+            log_file = settings.log_path / f"qontinui_{datetime.now().strftime('%Y%m%d')}.log"
+            setup_logging(
+                level="DEBUG" if settings.debug_mode else "INFO",
+                log_file=log_file,
+                structured=not settings.debug_mode,  # Use readable format in debug mode
+                colorize=settings.debug_mode,
+            )
+    except (ImportError, AttributeError, OSError, ValueError) as e:
+        # If settings fail or log path is invalid, just use basic logging
+        setup_logging(level="INFO", structured=False)
+
+    _logging_initialized = True

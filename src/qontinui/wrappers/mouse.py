@@ -5,8 +5,12 @@ to mock or live implementation based on execution mode.
 """
 
 import logging
+import threading
+from typing import TYPE_CHECKING
 
-from ..hal.factory import HALFactory
+if TYPE_CHECKING:
+    from ..hal.interfaces.input_controller import IInputController
+
 from ..hal.interfaces.input_controller import MouseButton, MousePosition
 from ..mock.mock_mode_manager import MockModeManager
 from ..mock.mock_input import MockInput
@@ -35,6 +39,21 @@ class Mouse:
     """
 
     _mock_input = MockInput()
+    _controller: 'IInputController | None' = None
+    _controller_lock = threading.Lock()
+
+    @classmethod
+    def _get_controller(cls) -> 'IInputController':
+        """Lazy initialization of input controller.
+
+        Uses double-check locking pattern for thread-safe singleton.
+        """
+        if cls._controller is None:
+            with cls._controller_lock:
+                if cls._controller is None:
+                    from ..hal.factory import HALFactory
+                    cls._controller = HALFactory.get_input_controller()
+        return cls._controller
 
     @classmethod
     def move(cls, x: int, y: int, duration: float = 0.0) -> bool:
@@ -57,7 +76,7 @@ class Mouse:
             result = cls._mock_input.mouse_move(x, y, duration)
             logger.debug(f"[MOCK] Mouse moved to ({x}, {y})")
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             result = controller.mouse_move(x, y, duration)
             logger.debug(f"[LIVE] Mouse moved to ({x}, {y})")
 
@@ -90,7 +109,7 @@ class Mouse:
         if MockModeManager.is_mock_mode():
             return cls._mock_input.mouse_move_relative(dx, dy, duration)
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             return controller.mouse_move_relative(dx, dy, duration)
 
     @classmethod
@@ -118,7 +137,7 @@ class Mouse:
             result = cls._mock_input.mouse_click(x, y, button, clicks)
             logger.debug(f"[MOCK] Mouse clicked {button.value} at ({x}, {y}) x{clicks}")
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             result = controller.mouse_click(x, y, button, clicks)
             logger.debug(f"[LIVE] Mouse clicked {button.value} at ({x}, {y}) x{clicks}")
 
@@ -152,7 +171,7 @@ class Mouse:
         if MockModeManager.is_mock_mode():
             return cls._mock_input.click_at(x, y, button)
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             return controller.click_at(x, y, button)
 
     @classmethod
@@ -170,7 +189,7 @@ class Mouse:
         if MockModeManager.is_mock_mode():
             return cls._mock_input.double_click_at(x, y, button)
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             return controller.double_click_at(x, y, button)
 
     @classmethod
@@ -190,7 +209,7 @@ class Mouse:
         if MockModeManager.is_mock_mode():
             return cls._mock_input.mouse_down(x, y, button)
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             return controller.mouse_down(x, y, button)
 
     @classmethod
@@ -210,7 +229,7 @@ class Mouse:
         if MockModeManager.is_mock_mode():
             return cls._mock_input.mouse_up(x, y, button)
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             return controller.mouse_up(x, y, button)
 
     @classmethod
@@ -242,7 +261,7 @@ class Mouse:
             result = cls._mock_input.mouse_drag(start_x, start_y, end_x, end_y, button, duration)
             logger.debug(f"[MOCK] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             result = controller.mouse_drag(start_x, start_y, end_x, end_y, button, duration)
             logger.debug(f"[LIVE] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
 
@@ -280,7 +299,7 @@ class Mouse:
             logger.debug(f"[MOCK] Mouse scrolled {clicks} clicks")
             return result
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             result = controller.mouse_scroll(clicks, x, y)
             logger.debug(f"[LIVE] Mouse scrolled {clicks} clicks")
             return result
@@ -295,7 +314,7 @@ class Mouse:
         if MockModeManager.is_mock_mode():
             return cls._mock_input.get_mouse_position()
         else:
-            controller = HALFactory.get_input_controller()
+            controller = cls._get_controller()
             return controller.get_mouse_position()
 
     @classmethod

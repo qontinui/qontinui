@@ -9,6 +9,7 @@ import time
 from typing import Any
 
 from ..actions import FindOptions
+from ..exceptions import ImageProcessingError
 from ..model.element import Image, Location, Pattern, Region
 from ..model.search_regions import SearchRegions
 from ..reporting.events import EventType, emit_event
@@ -395,7 +396,8 @@ class Find:
                     screenshot = cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR)
                 else:
                     return Matches()
-            except Exception:
+            except (ImportError, ValueError, TypeError) as e:
+                # PIL not available or image conversion failed
                 return Matches()
 
         if screenshot is None:

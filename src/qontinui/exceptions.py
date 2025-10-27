@@ -377,3 +377,168 @@ class VectorDatabaseException(AIException):
             error_code="VECTOR_DB_FAILED",
             context={"operation": operation, "reason": reason, **kwargs},
         )
+
+
+# HAL (Hardware Abstraction Layer) exceptions
+class HALError(QontinuiException):
+    """Base exception for HAL layer errors."""
+
+    pass
+
+
+class ScreenCaptureError(HALError):
+    """Raised when screen capture operation fails."""
+
+    def __init__(self, reason: str, monitor: int | None = None, **kwargs):
+        """Initialize with capture details."""
+        message = "Screen capture failed"
+        if monitor is not None:
+            message += f" on monitor {monitor}"
+        message += f": {reason}"
+
+        super().__init__(
+            message,
+            error_code="SCREEN_CAPTURE_FAILED",
+            context={"reason": reason, "monitor": monitor, **kwargs},
+        )
+
+
+class InputControlError(HALError):
+    """Raised when input control operation fails."""
+
+    def __init__(self, operation: str, reason: str, **kwargs):
+        """Initialize with operation details."""
+        super().__init__(
+            f"Input control operation '{operation}' failed: {reason}",
+            error_code="INPUT_CONTROL_FAILED",
+            context={"operation": operation, "reason": reason, **kwargs},
+        )
+
+
+class PatternMatchError(HALError):
+    """Raised when pattern matching operation fails."""
+
+    def __init__(self, reason: str, pattern_path: str | None = None, **kwargs):
+        """Initialize with pattern matching details."""
+        message = "Pattern matching failed"
+        if pattern_path:
+            message += f" for pattern '{pattern_path}'"
+        message += f": {reason}"
+
+        super().__init__(
+            message,
+            error_code="PATTERN_MATCH_FAILED",
+            context={"reason": reason, "pattern_path": pattern_path, **kwargs},
+        )
+
+
+class OCRError(HALError):
+    """Raised when OCR operation fails."""
+
+    def __init__(self, reason: str, **kwargs):
+        """Initialize with OCR details."""
+        super().__init__(
+            f"OCR operation failed: {reason}",
+            error_code="OCR_FAILED",
+            context={"reason": reason, **kwargs},
+        )
+
+
+class ActionExecutionError(QontinuiException):
+    """Raised when action execution fails."""
+
+    def __init__(self, action_type: str, reason: str, **kwargs):
+        """Initialize with action execution details."""
+        super().__init__(
+            f"Failed to execute {action_type} action: {reason}",
+            error_code="ACTION_EXECUTION_FAILED",
+            context={"action_type": action_type, "reason": reason, **kwargs},
+        )
+
+
+class ConfigurationError(QontinuiException):
+    """Raised when configuration is invalid."""
+
+    def __init__(self, config_key: str, reason: str, **kwargs):
+        """Initialize with configuration details."""
+        super().__init__(
+            f"Configuration error for '{config_key}': {reason}",
+            error_code="CONFIGURATION_ERROR",
+            context={"config_key": config_key, "reason": reason, **kwargs},
+        )
+
+
+class ImageProcessingError(QontinuiException):
+    """Raised when image processing operation fails."""
+
+    def __init__(self, reason: str, image_path: str | None = None, **kwargs):
+        """Initialize with image processing details."""
+        message = "Image processing failed"
+        if image_path:
+            message += f" for image '{image_path}'"
+        message += f": {reason}"
+
+        super().__init__(
+            message,
+            error_code="IMAGE_PROCESSING_FAILED",
+            context={"reason": reason, "image_path": image_path, **kwargs},
+        )
+
+
+# Error context helpers
+from contextlib import contextmanager
+from typing import Any, Iterator
+
+
+@contextmanager
+def action_error_context(action_type: str, **action_details: Any) -> Iterator[None]:
+    """Context manager to add action context to exceptions.
+
+    Usage:
+        with action_error_context("click", x=100, y=200):
+            perform_click(100, 200)
+
+    Args:
+        action_type: Type of action being performed
+        **action_details: Additional details about the action
+
+    Raises:
+        ActionExecutionError: Wraps any QontinuiException with action context
+    """
+    try:
+        yield
+    except QontinuiException as e:
+        # Re-raise with action context
+        raise ActionExecutionError(
+            action_type=action_type, reason=str(e), **action_details
+        ) from e
+    except Exception as e:
+        # Wrap non-Qontinui exceptions
+        raise ActionExecutionError(
+            action_type=action_type, reason=f"Unexpected error: {e}", **action_details
+        ) from e
+
+
+@contextmanager
+def hal_error_context(operation: str, **details: Any) -> Iterator[None]:
+    """Context manager to add HAL operation context to exceptions.
+
+    Usage:
+        with hal_error_context("screen_capture", monitor=0):
+            capture_screen()
+
+    Args:
+        operation: HAL operation being performed
+        **details: Additional details about the operation
+
+    Raises:
+        HALError: Wraps exceptions with HAL context
+    """
+    try:
+        yield
+    except QontinuiException:
+        # Already a Qontinui exception, re-raise as-is
+        raise
+    except Exception as e:
+        # Wrap in appropriate HAL error
+        raise HALError(f"{operation} failed: {e}") from e

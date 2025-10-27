@@ -362,13 +362,16 @@ class EnhancedTransitionExecutor:
 
             # Execute each workflow in the incoming transition
             for workflow_id in incoming_transition.workflow_ids:
-                logger.info(f"Executing incoming workflow '{workflow_id}' for state '{state.name}'")
+                logger.info(f"[DEBUG] About to execute incoming workflow '{workflow_id}' for state '{state.name}'")
 
                 if not self.workflow_executor:
                     logger.error("No workflow_executor available for incoming transition")
                     return False
 
+                logger.info(f"[DEBUG] Calling workflow_executor.execute_workflow('{workflow_id}')...")
                 result = self.workflow_executor.execute_workflow(workflow_id)
+                logger.info(f"[DEBUG] Workflow '{workflow_id}' returned: {result}")
+
                 if not result.get('success', False):
                     logger.error(f"Incoming workflow '{workflow_id}' failed for state '{state.name}'")
                     return False

@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, cast
 
+from ..exceptions import ConfigurationError
+
 logger = logging.getLogger(__name__)
 
 
@@ -247,8 +249,9 @@ class ExecutionEnvironment:
 
             return screen_count, (width, height), int(dpi)
 
-        except Exception:
-            # Fallback to platform-specific methods
+        except (ImportError, OSError, RuntimeError) as e:
+            # Fallback to platform-specific methods if tkinter fails
+            # This can happen in headless environments or display issues
             if self.system_info and self.system_info.platform == Platform.LINUX:
                 try:
                     # Try xrandr for Linux
@@ -275,7 +278,8 @@ class ExecutionEnvironment:
 
                     return screens, primary_res, None
 
-                except Exception:
+                except (subprocess.CalledProcessError, FileNotFoundError, ValueError) as e:
+                    # xrandr not available or failed to parse
                     pass
 
             # Default fallback
@@ -302,7 +306,8 @@ class ExecutionEnvironment:
                             vm in content for vm in ["vmware", "virtualbox", "qemu", "kvm", "xen"]
                         ):
                             return True
-                except Exception:
+                except (OSError, IOError, PermissionError) as e:
+                    # File not readable or doesn't exist
                     pass
 
         # Check environment variables
@@ -331,7 +336,8 @@ class ExecutionEnvironment:
             with open("/proc/1/cgroup") as f:
                 if "docker" in f.read() or "kubepods" in f.read():
                     return True
-        except Exception:
+        except (OSError, IOError, FileNotFoundError) as e:
+            # /proc/1/cgroup doesn't exist or not readable
             pass
 
         return False
@@ -351,7 +357,8 @@ class ExecutionEnvironment:
             with open("/proc/version") as f:
                 if "microsoft" in f.read().lower():
                     return True
-        except Exception:
+        except (OSError, IOError, FileNotFoundError) as e:
+            # /proc/version doesn't exist or not readable
             pass
 
         return False

@@ -9,6 +9,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from ..exceptions import ConfigurationError
 from .schema import ACTION_CONFIG_MAP, Action, get_typed_config
 
 
@@ -195,8 +196,9 @@ class ActionValidator:
                 if config.finally_actions:
                     referenced_ids.update(config.finally_actions)
 
-        except Exception:
-            # If config parsing fails, skip reference checking
+        except (ValidationError, AttributeError, KeyError) as e:
+            # If config parsing fails, skip reference checking for this action
+            # This can happen with malformed or incomplete action configs
             pass
 
         return referenced_ids

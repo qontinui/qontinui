@@ -9,6 +9,7 @@ import numpy as np
 from transitions import Machine
 from transitions.extensions import HierarchicalMachine
 
+from ..exceptions import StateException, StateTransitionException
 from .models import Element, State, StateGraph, Transition
 
 logger = logging.getLogger(__name__)
@@ -443,7 +444,9 @@ class QontinuiStateManager:
         if self.state_graph.initial_state:
             try:
                 self.machine.to(self.state_graph.initial_state)
-            except Exception:
+            except (ValueError, AttributeError) as e:
+                # Initial state doesn't exist or transition failed
+                logger.warning(f"Failed to reset to initial state: {e}")
                 self.machine.to("unknown")
         else:
             self.machine.to("unknown")

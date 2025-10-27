@@ -4,6 +4,7 @@ import base64
 import hashlib
 import io
 import json
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -868,11 +869,13 @@ class QontinuiConfig(BaseModel):
                             self.image_map[state_image.id] = self.image_map[pattern.image_id]
                             stateimage_count += 1
                             print(
-                                f"[DEBUG] StateImage {state_image.id} -> references image {pattern.image_id}"
+                                f"[DEBUG] StateImage {state_image.id} -> references image {pattern.image_id}",
+                                file=sys.stderr
                             )
                         else:
                             print(
-                                f"[WARNING] StateImage {state_image.id} references missing image {pattern.image_id}"
+                                f"[WARNING] StateImage {state_image.id} references missing image {pattern.image_id}",
+                                file=sys.stderr
                             )
                     # LEGACY FORMAT: Pattern has embedded base64 data
                     elif pattern.image and pattern.image.startswith("data:"):
@@ -906,21 +909,24 @@ class QontinuiConfig(BaseModel):
                             self.image_map[state_image.id] = image_asset
                             stateimage_count += 1
                             print(
-                                f"[DEBUG] Created ImageAsset from StateImage {state_image.id} ({width}x{height} {image_format})"
+                                f"[DEBUG] Created ImageAsset from StateImage {state_image.id} ({width}x{height} {image_format})",
+                                file=sys.stderr
                             )
                         except Exception as e:
                             print(
-                                f"[ERROR] Failed to create ImageAsset from StateImage {state_image.id}: {e}"
+                                f"[ERROR] Failed to create ImageAsset from StateImage {state_image.id}: {e}",
+                                file=sys.stderr
                             )
                     else:
-                        print(f"[WARNING] StateImage {state_image.id} has no image reference (no imageId or embedded data)")
+                        print(f"[WARNING] StateImage {state_image.id} has no image reference (no imageId or embedded data)", file=sys.stderr)
                 else:
-                    print(f"[WARNING] StateImage {state_image.id} has no patterns")
+                    print(f"[WARNING] StateImage {state_image.id} has no patterns", file=sys.stderr)
 
         print(
-            f"[DEBUG] image_map now contains {len(self.image_map)} entries ({stateimage_count} StateImages added)"
+            f"[DEBUG] image_map now contains {len(self.image_map)} entries ({stateimage_count} StateImages added)",
+            file=sys.stderr
         )
-        print(f"[DEBUG] image_map keys: {list(self.image_map.keys())}")
+        print(f"[DEBUG] image_map keys: {list(self.image_map.keys())}", file=sys.stderr)
 
 
 class ConfigParser:
@@ -964,7 +970,8 @@ class ConfigParser:
                     config.state_map[transition.from_state].outgoing_transitions.append(transition)
                 else:
                     print(
-                        f"[WARNING] Transition {transition.id} references unknown fromState: {transition.from_state}"
+                        f"[WARNING] Transition {transition.id} references unknown fromState: {transition.from_state}",
+                        file=sys.stderr
                     )
 
             if isinstance(transition, IncomingTransition):
@@ -972,7 +979,8 @@ class ConfigParser:
                     config.state_map[transition.to_state].incoming_transitions.append(transition)
                 else:
                     print(
-                        f"[WARNING] Transition {transition.id} references unknown toState: {transition.to_state}"
+                        f"[WARNING] Transition {transition.id} references unknown toState: {transition.to_state}",
+                        file=sys.stderr
                     )
 
         self._save_images(config)
@@ -1017,12 +1025,12 @@ class ConfigParser:
             try:
                 if image.file_path is None:  # Only save if not already saved
                     image.save_to_file(self.temp_dir)
-                    print(f"Saved image: {image.name} to {image.file_path}")
+                    print(f"Saved image: {image.name} to {image.file_path}", file=sys.stderr)
                     saved_count += 1
             except Exception as e:
-                print(f"Failed to save image {image.name}: {e}")
+                print(f"Failed to save image {image.name}: {e}", file=sys.stderr)
 
-        print(f"[DEBUG] Saved {saved_count} images to {self.temp_dir}")
+        print(f"[DEBUG] Saved {saved_count} images to {self.temp_dir}", file=sys.stderr)
 
     def cleanup(self):
         """Clean up temporary files."""
@@ -1030,7 +1038,7 @@ class ConfigParser:
             import shutil
 
             shutil.rmtree(self.temp_dir)
-            print(f"Cleaned up temporary directory: {self.temp_dir}")
+            print(f"Cleaned up temporary directory: {self.temp_dir}", file=sys.stderr)
 
 
 # ============================================================================

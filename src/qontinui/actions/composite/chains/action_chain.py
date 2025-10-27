@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any
 
+from ....exceptions import ActionExecutionError
 from ....model.action.action_record import ActionRecord
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
@@ -66,7 +67,8 @@ class ChainAction:
         if self.condition:
             try:
                 return self.condition()
-            except Exception:
+            except (TypeError, ValueError, AttributeError) as e:
+                # Condition evaluation failed, skip this action
                 return False
         return True
 
