@@ -46,7 +46,7 @@ class BrobotConverter:
 
     def __init__(
         self, input_dir: str, output_dir: str, use_sam: bool = False, use_clip: bool = False
-    ):
+    ) -> None:
         """Initialize BrobotConverter.
 
         Args:

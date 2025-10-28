@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class IntelligentRegionDetector:
     """Intelligent detection of UI regions using perceptual grouping and heuristics."""
 
-    def __init__(self, min_region_size=(20, 20), max_region_size=(500, 500)):
+    def __init__(self, min_region_size=(20, 20), max_region_size=(500, 500)) -> None:
         self.min_region_size = min_region_size
         self.max_region_size = max_region_size
 

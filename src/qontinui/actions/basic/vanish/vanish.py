@@ -26,7 +26,7 @@ class Vanish(ActionInterface):
     - Ensuring temporary UI elements are gone
     """
 
-    def __init__(self, find: Find | None = None):
+    def __init__(self, find: Find | None = None) -> None:
         """Initialize Vanish action.
 
         Args:

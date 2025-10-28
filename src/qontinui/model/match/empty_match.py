@@ -38,7 +38,7 @@ class EmptyMatch:
 
     def __init__(
         self, name: str = "no match", search_image: Image | None = None, scene: Scene | None = None
-    ):
+    ) -> None:
         """Initialize EmptyMatch.
 
         Args:
@@ -113,7 +113,7 @@ class EmptyMatch:
 class EmptyMatchBuilder:
     """Builder for EmptyMatch class."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder with defaults."""
         self.name = "no match"
         self.region = Region(0, 0, 0, 0)

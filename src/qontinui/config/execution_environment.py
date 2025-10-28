@@ -105,7 +105,7 @@ class ExecutionEnvironment:
     - Automatic setting adjustments
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize and detect environment."""
         self.mode = self._detect_mode()
         self.system_info = self._detect_system_info()
@@ -372,35 +372,35 @@ class ExecutionEnvironment:
         # Headless environment adjustments
         if self.system_info.display_server == DisplayServer.HEADLESS:
             logger.info("Headless environment detected - adjusting settings")
-            settings.headless = True
-            settings.illustration_enabled = False
-            settings.save_snapshots = False
+            settings.core.headless = True
+            settings.illustration.enabled = False
+            settings.screenshot.save_snapshots = False
 
         # Container/CI adjustments
         if self.system_info.is_container or self.mode == ExecutionMode.CI_CD:
             logger.info("Container/CI environment detected - adjusting settings")
-            settings.headless = True
-            settings.timeout_multiplier = 2.0
+            settings.core.headless = True
+            settings.testing.timeout_multiplier = 2.0
 
         # WSL adjustments
         if self.system_info.is_wsl:
             logger.info("WSL environment detected - adjusting settings")
             # WSL may have display issues
-            settings.mouse_move_delay = 1.0
+            settings.mouse.move_delay = 1.0
 
         # Production mode adjustments
         if self.mode == ExecutionMode.PRODUCTION:
             logger.info("Production mode - optimizing settings")
-            settings.save_snapshots = False
-            settings.collect_dataset = False
-            settings.illustration_enabled = False
+            settings.screenshot.save_snapshots = False
+            settings.dataset.collect = False
+            settings.illustration.enabled = False
 
         # Testing mode adjustments
         elif self.mode == ExecutionMode.TESTING:
             logger.info("Testing mode - enabling test settings")
-            settings.mock = True
-            settings.timeout_multiplier = 2.0
-            settings.screenshot_path = "test_screenshots/"
+            settings.core.mock = True
+            settings.testing.timeout_multiplier = 2.0
+            settings.screenshot.path = "test_screenshots/"
 
     def get_info(self) -> dict[str, Any]:
         """Get environment information as dictionary.

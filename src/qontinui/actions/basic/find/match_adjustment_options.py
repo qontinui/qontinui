@@ -64,7 +64,7 @@ class MatchAdjustmentOptions:
 class MatchAdjustmentOptionsBuilder:
     """Builder for MatchAdjustmentOptions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.x_adjustment = 0.0
         self.y_adjustment = 0.0
         self.width_factor = 1.0

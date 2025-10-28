@@ -1,9 +1,14 @@
 """Execution context for workflow orchestration.
 
 Manages variable storage, state tracking, and execution statistics during workflow execution.
+
+Thread Safety:
+    This module is thread-safe. All mutable shared state is protected by RLock.
+    Multiple threads can safely access and modify the execution context concurrently.
 """
 
 import re
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -112,14 +117,19 @@ class ExecutionContext:
 
     Manages variables, state tracking, and execution statistics throughout
     the lifecycle of a workflow execution.
+
+    Thread Safety:
+        All methods are thread-safe. Concurrent access is protected by an RLock.
+        This allows safe usage in multi-threaded workflow execution scenarios.
     """
 
-    def __init__(self, initial_variables: dict[str, Any] | None = None):
+    def __init__(self, initial_variables: dict[str, Any] | None = None) -> None:
         """Initialize execution context.
 
         Args:
             initial_variables: Optional initial variable values
         """
+        self._lock = threading.RLock()
         self._variables: dict[str, Any] = initial_variables or {}
         self._action_states: list[ActionState] = []
         self._statistics = ExecutionStatistics()
@@ -131,8 +141,12 @@ class ExecutionContext:
 
         Returns:
             Dictionary of variable names to values
+
+        Thread Safety:
+            Returns a copy to prevent external modifications.
         """
-        return self._variables.copy()
+        with self._lock:
+            return self._variables.copy()
 
     @property
     def statistics(self) -> ExecutionStatistics:
@@ -140,8 +154,13 @@ class ExecutionContext:
 
         Returns:
             ExecutionStatistics instance
+
+        Thread Safety:
+            Returns the statistics object. Note that ExecutionStatistics itself
+            is a dataclass and modifications should be done through ExecutionContext methods.
         """
-        return self._statistics
+        with self._lock:
+            return self._statistics
 
     @property
     def action_states(self) -> list[ActionState]:
@@ -149,8 +168,12 @@ class ExecutionContext:
 
         Returns:
             List of ActionState instances
+
+        Thread Safety:
+            Returns a copy to prevent external modifications.
         """
-        return self._action_states.copy()
+        with self._lock:
+            return self._action_states.copy()
 
     @property
     def metadata(self) -> dict[str, Any]:
@@ -158,8 +181,12 @@ class ExecutionContext:
 
         Returns:
             Dictionary of metadata
+
+        Thread Safety:
+            Returns a copy to prevent external modifications.
         """
-        return self._metadata.copy()
+        with self._lock:
+            return self._metadata.copy()
 
     def set_variable(self, name: str, value: Any) -> None:
         """Set a variable value.
@@ -167,8 +194,12 @@ class ExecutionContext:
         Args:
             name: Variable name
             value: Variable value
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        self._variables[name] = value
+        with self._lock:
+            self._variables[name] = value
 
     def get_variable(self, name: str, default: Any = None) -> Any:
         """Get a variable value.
@@ -179,8 +210,12 @@ class ExecutionContext:
 
         Returns:
             Variable value or default
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        return self._variables.get(name, default)
+        with self._lock:
+            return self._variables.get(name, default)
 
     def has_variable(self, name: str) -> bool:
         """Check if a variable exists.
@@ -190,20 +225,33 @@ class ExecutionContext:
 
         Returns:
             True if variable exists
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        return name in self._variables
+        with self._lock:
+            return name in self._variables
 
     def delete_variable(self, name: str) -> None:
         """Delete a variable.
 
         Args:
             name: Variable name
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        self._variables.pop(name, None)
+        with self._lock:
+            self._variables.pop(name, None)
 
     def clear_variables(self) -> None:
-        """Clear all variables."""
-        self._variables.clear()
+        """Clear all variables.
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            self._variables.clear()
 
     def substitute_variables(self, text: str) -> str:
         """Substitute variable placeholders in text.
@@ -215,16 +263,20 @@ class ExecutionContext:
 
         Returns:
             Text with variables substituted
+
+        Thread Safety:
+            Protected by lock to ensure consistent variable reads.
         """
         if not text:
             return text
 
-        def replace_var(match: re.Match[str]) -> str:
-            var_name = match.group(1)
-            value = self.get_variable(var_name)
-            return str(value) if value is not None else match.group(0)
+        with self._lock:
+            def replace_var(match: re.Match[str]) -> str:
+                var_name = match.group(1)
+                value = self._variables.get(var_name)
+                return str(value) if value is not None else match.group(0)
 
-        return re.sub(r"\$\{([^}]+)\}", replace_var, text)
+            return re.sub(r"\$\{([^}]+)\}", replace_var, text)
 
     def start_action(self, index: int, name: str) -> ActionState:
         """Record the start of an action execution.
@@ -235,11 +287,15 @@ class ExecutionContext:
 
         Returns:
             ActionState instance
+
+        Thread Safety:
+            Protected by lock for concurrent action tracking.
         """
-        state = ActionState(action_index=index, action_name=name, start_time=time.time())
-        self._action_states.append(state)
-        self._statistics.total_actions += 1
-        return state
+        with self._lock:
+            state = ActionState(action_index=index, action_name=name, start_time=time.time())
+            self._action_states.append(state)
+            self._statistics.total_actions += 1
+            return state
 
     def complete_action(self, state: ActionState, success: bool, error: Exception | None = None) -> None:
         """Record the completion of an action.
@@ -248,36 +304,54 @@ class ExecutionContext:
             state: ActionState instance
             success: Whether action succeeded
             error: Error that occurred, if any
-        """
-        state.end_time = time.time()
-        state.success = success
-        state.error = error
 
-        if success:
-            self._statistics.successful_actions += 1
-        else:
-            self._statistics.failed_actions += 1
+        Thread Safety:
+            Protected by lock for concurrent statistics updates.
+        """
+        with self._lock:
+            state.end_time = time.time()
+            state.success = success
+            state.error = error
+
+            if success:
+                self._statistics.successful_actions += 1
+            else:
+                self._statistics.failed_actions += 1
 
     def record_retry(self, state: ActionState) -> None:
         """Record a retry attempt for an action.
 
         Args:
             state: ActionState instance
-        """
-        state.attempt_count += 1
-        self._statistics.total_retries += 1
 
-        if state.attempt_count == 1:
-            # First retry - increment retried actions count
-            self._statistics.retried_actions += 1
+        Thread Safety:
+            Protected by lock for concurrent retry tracking.
+        """
+        with self._lock:
+            state.attempt_count += 1
+            self._statistics.total_retries += 1
+
+            if state.attempt_count == 1:
+                # First retry - increment retried actions count
+                self._statistics.retried_actions += 1
 
     def start_workflow(self) -> None:
-        """Mark the start of workflow execution."""
-        self._statistics.start_time = datetime.now()
+        """Mark the start of workflow execution.
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            self._statistics.start_time = datetime.now()
 
     def complete_workflow(self) -> None:
-        """Mark the completion of workflow execution."""
-        self._statistics.end_time = datetime.now()
+        """Mark the completion of workflow execution.
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            self._statistics.end_time = datetime.now()
 
     def set_metadata(self, key: str, value: Any) -> None:
         """Set metadata value.
@@ -285,8 +359,12 @@ class ExecutionContext:
         Args:
             key: Metadata key
             value: Metadata value
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        self._metadata[key] = value
+        with self._lock:
+            self._metadata[key] = value
 
     def get_metadata(self, key: str, default: Any = None) -> Any:
         """Get metadata value.
@@ -297,27 +375,44 @@ class ExecutionContext:
 
         Returns:
             Metadata value or default
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        return self._metadata.get(key, default)
+        with self._lock:
+            return self._metadata.get(key, default)
 
     def get_last_action_state(self) -> ActionState | None:
         """Get the state of the last executed action.
 
         Returns:
             ActionState or None if no actions executed
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        if self._action_states:
-            return self._action_states[-1]
-        return None
+        with self._lock:
+            if self._action_states:
+                return self._action_states[-1]
+            return None
 
     def get_failed_actions(self) -> list[ActionState]:
         """Get all failed action states.
 
         Returns:
             List of failed ActionState instances
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        return [state for state in self._action_states if not state.success]
+        with self._lock:
+            return [state for state in self._action_states if not state.success]
 
     def __str__(self) -> str:
-        """String representation of context."""
-        return f"ExecutionContext(variables={len(self._variables)}, {self._statistics})"
+        """String representation of context.
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            return f"ExecutionContext(variables={len(self._variables)}, {self._statistics})"

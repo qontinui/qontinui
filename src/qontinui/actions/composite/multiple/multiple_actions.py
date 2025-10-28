@@ -5,17 +5,24 @@ Execute multiple actions in parallel or with specific ordering.
 
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any
 
 from ....model.action.action_record import ActionRecord
-from ...action_config import ActionConfig
+from ...action_config import ActionConfig, ActionConfigBuilder
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
+from .executor import TaskExecutor
+from .strategies import (
+    BaseExecutionStrategy,
+    GroupedStrategy,
+    ParallelStrategy,
+    PriorityStrategy,
+    RoundRobinStrategy,
+)
+from .task import ActionTask
 
 
 class ExecutionStrategy(Enum):
@@ -27,157 +34,257 @@ class ExecutionStrategy(Enum):
     GROUPED = auto()  # Execute in groups
 
 
-class ActionTask:
-    """Individual action task for multiple execution."""
-
-    def __init__(
-        self,
-        action: ActionInterface,
-        target: Any | None = None,
-        priority: int = 0,
-        group: int = 0,
-        name: str | None = None,
-    ):
-        """Initialize action task.
-
-        Args:
-            action: Action to execute
-            target: Target for action
-            priority: Priority (higher = earlier)
-            group: Group number for grouped execution
-            name: Optional name for identification
-        """
-        self.action = action
-        self.target = target
-        self.priority = priority
-        self.group = group
-        self.name = name or f"Task_{id(self)}"
-        self.result: bool | None = None
-        self.error: Exception | None = None
-        self.start_time: float | None = None
-        self.end_time: float | None = None
-
-    def execute(self) -> bool:
-        """Execute the action task.
-
-        Returns:
-            True if successful
-        """
-        self.start_time = time.time()
-        try:
-            if self.target is not None:
-                if hasattr(self.action, "execute"):
-                    self.result = self.action.execute(self.target)
-                elif callable(self.action):
-                    self.result = self.action(self.target)  # type: ignore
-                else:
-                    raise RuntimeError(f"Action {self.action} is not executable")
-            else:
-                if hasattr(self.action, "execute"):
-                    self.result = self.action.execute()
-                elif callable(self.action):
-                    self.result = self.action()  # type: ignore
-                else:
-                    raise RuntimeError(f"Action {self.action} is not executable")
-
-            self.end_time = time.time()
-            return self.result
-
-        except Exception as e:
-            self.error = e
-            self.result = False
-            self.end_time = time.time()
-            return False
-
-    @property
-    def duration(self) -> float:
-        """Get execution duration.
-
-        Returns:
-            Duration in seconds
-        """
-        if self.start_time and self.end_time:
-            return self.end_time - self.start_time
-        return 0.0
-
-
-@dataclass
 class MultipleActionsOptions(ActionConfig):
     """Options for multiple actions execution.
 
     Port of MultipleActionsOptions from Qontinui framework.
+
+    This class encapsulates all parameters for executing multiple actions with
+    various strategies including parallel execution, priority-based, round-robin,
+    and grouped execution. It is an immutable object and must be constructed using
+    its inner Builder.
+
+    Example usage:
+        options = MultipleActionsOptionsBuilder()
+            .set_strategy(ExecutionStrategy.PARALLEL)
+            .set_max_parallel(10)
+            .set_timeout(30.0)
+            .set_fail_fast(True)
+            .build()
     """
 
-    strategy: ExecutionStrategy = ExecutionStrategy.PARALLEL
-    max_parallel: int = 10  # Maximum parallel executions
-    timeout: float = 30.0  # Timeout for all actions
-    wait_between_groups: float = 0.5  # Wait between groups
-    fail_fast: bool = False  # Stop on first failure
-    record_actions: bool = True
+    def __init__(self, builder: "MultipleActionsOptionsBuilder") -> None:
+        """Initialize MultipleActionsOptions from builder.
 
-    def parallel(self, max_workers: int = 10) -> "MultipleActionsOptions":
-        """Use parallel execution.
+        Args:
+            builder: The builder instance containing configuration values
+        """
+        super().__init__(builder)
+        self.strategy: ExecutionStrategy = builder.strategy
+        self.max_parallel: int = builder.max_parallel
+        self.timeout: float = builder.timeout
+        self.wait_between_groups: float = builder.wait_between_groups
+        self.fail_fast: bool = builder.fail_fast
+        self.record_actions: bool = builder.record_actions
+        self._pause_before_begin: float = builder.pause_before_begin
+        self._pause_after_end: float = builder.pause_after_end
+
+    def get_strategy(self) -> ExecutionStrategy:
+        """Get the execution strategy."""
+        return self.strategy
+
+    def get_max_parallel(self) -> int:
+        """Get the maximum number of parallel executions."""
+        return self.max_parallel
+
+    def get_timeout(self) -> float:
+        """Get the timeout for all actions."""
+        return self.timeout
+
+    def get_wait_between_groups(self) -> float:
+        """Get the wait time between groups."""
+        return self.wait_between_groups
+
+    def get_fail_fast(self) -> bool:
+        """Get whether fail-fast mode is enabled."""
+        return self.fail_fast
+
+    def get_record_actions(self) -> bool:
+        """Get whether action recording is enabled."""
+        return self.record_actions
+
+    # Override parent methods to return the private attributes
+    def get_pause_before_begin(self) -> float:
+        """Get pause duration before action begins."""
+        return self._pause_before_begin
+
+    def get_pause_after_end(self) -> float:
+        """Get pause duration after action ends."""
+        return self._pause_after_end
+
+
+class MultipleActionsOptionsBuilder(ActionConfigBuilder):
+    """Builder for constructing MultipleActionsOptions with a fluent API.
+
+    Port of MultipleActionsOptions.Builder from Qontinui framework.
+    """
+
+    def __init__(self, original: MultipleActionsOptions | None = None) -> None:
+        """Initialize builder.
+
+        Args:
+            original: Optional MultipleActionsOptions instance to copy values from
+        """
+        super().__init__(original)
+
+        if original:
+            self.strategy = original.strategy
+            self.max_parallel = original.max_parallel
+            self.timeout = original.timeout
+            self.wait_between_groups = original.wait_between_groups
+            self.fail_fast = original.fail_fast
+            self.record_actions = original.record_actions
+        else:
+            self.strategy = ExecutionStrategy.PARALLEL
+            self.max_parallel = 10
+            self.timeout = 30.0
+            self.wait_between_groups = 0.5
+            self.fail_fast = False
+            self.record_actions = True
+
+    def set_strategy(self, strategy: ExecutionStrategy) -> "MultipleActionsOptionsBuilder":
+        """Set the execution strategy.
+
+        Args:
+            strategy: The execution strategy to use
+
+        Returns:
+            This builder instance for chaining
+        """
+        self.strategy = strategy
+        return self
+
+    def set_max_parallel(self, max_parallel: int) -> "MultipleActionsOptionsBuilder":
+        """Set the maximum number of parallel executions.
+
+        Args:
+            max_parallel: Maximum parallel workers
+
+        Returns:
+            This builder instance for chaining
+        """
+        self.max_parallel = max_parallel
+        return self
+
+    def set_timeout(self, timeout: float) -> "MultipleActionsOptionsBuilder":
+        """Set the overall timeout for all actions.
+
+        Args:
+            timeout: Timeout in seconds
+
+        Returns:
+            This builder instance for chaining
+        """
+        self.timeout = timeout
+        return self
+
+    def set_wait_between_groups(
+        self, wait_between_groups: float
+    ) -> "MultipleActionsOptionsBuilder":
+        """Set the wait time between groups.
+
+        Args:
+            wait_between_groups: Wait time in seconds
+
+        Returns:
+            This builder instance for chaining
+        """
+        self.wait_between_groups = wait_between_groups
+        return self
+
+    def set_fail_fast(self, fail_fast: bool) -> "MultipleActionsOptionsBuilder":
+        """Set whether to stop on first failure.
+
+        Args:
+            fail_fast: True to stop on first failure, False otherwise
+
+        Returns:
+            This builder instance for chaining
+        """
+        self.fail_fast = fail_fast
+        return self
+
+    def set_record_actions(self, record_actions: bool) -> "MultipleActionsOptionsBuilder":
+        """Set whether to record action execution.
+
+        Args:
+            record_actions: True to record actions, False otherwise
+
+        Returns:
+            This builder instance for chaining
+        """
+        self.record_actions = record_actions
+        return self
+
+    def parallel(self, max_workers: int = 10) -> "MultipleActionsOptionsBuilder":
+        """Configure for parallel execution.
 
         Args:
             max_workers: Maximum parallel workers
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
         self.strategy = ExecutionStrategy.PARALLEL
         self.max_parallel = max_workers
         return self
 
-    def round_robin(self) -> "MultipleActionsOptions":
-        """Use round-robin execution.
+    def round_robin(self) -> "MultipleActionsOptionsBuilder":
+        """Configure for round-robin execution.
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
         self.strategy = ExecutionStrategy.ROUND_ROBIN
         return self
 
-    def by_priority(self) -> "MultipleActionsOptions":
-        """Execute by priority.
+    def by_priority(self) -> "MultipleActionsOptionsBuilder":
+        """Configure for priority-based execution.
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
         self.strategy = ExecutionStrategy.PRIORITY
         return self
 
-    def grouped(self, wait_between: float = 0.5) -> "MultipleActionsOptions":
-        """Execute in groups.
+    def grouped(self, wait_between: float = 0.5) -> "MultipleActionsOptionsBuilder":
+        """Configure for grouped execution.
 
         Args:
-            wait_between: Wait time between groups
+            wait_between: Wait time between groups in seconds
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
         self.strategy = ExecutionStrategy.GROUPED
         self.wait_between_groups = wait_between
         return self
 
-    def with_timeout(self, seconds: float) -> "MultipleActionsOptions":
-        """Set overall timeout.
+    def with_timeout(self, seconds: float) -> "MultipleActionsOptionsBuilder":
+        """Set overall timeout (convenience method).
 
         Args:
             seconds: Timeout in seconds
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
         self.timeout = seconds
         return self
 
-    def fail_fast_enabled(self) -> "MultipleActionsOptions":
-        """Enable fail-fast mode.
+    def fail_fast_enabled(self) -> "MultipleActionsOptionsBuilder":
+        """Enable fail-fast mode (convenience method).
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
         self.fail_fast = True
+        return self
+
+    def build(self) -> MultipleActionsOptions:
+        """Build the immutable MultipleActionsOptions object.
+
+        Returns:
+            A new instance of MultipleActionsOptions
+        """
+        return MultipleActionsOptions(self)
+
+    def _self(self) -> "MultipleActionsOptionsBuilder":
+        """Return self for fluent interface.
+
+        Returns:
+            This builder instance
+        """
         return self
 
 
@@ -190,16 +297,54 @@ class MultipleActions(ActionInterface):
     parallel execution, priority-based, round-robin, and grouped.
     """
 
-    def __init__(self, options: MultipleActionsOptions | None = None):
+    def __init__(self, options: MultipleActionsOptions | None = None) -> None:
         """Initialize MultipleActions.
 
         Args:
             options: Execution options
         """
-        self.options = options or MultipleActionsOptions()
+        self.options = options or MultipleActionsOptionsBuilder().build()
         self._tasks: list[ActionTask] = []
-        self._execution_history: list[ActionRecord] = []
+        self._executor = TaskExecutor(
+            max_workers=self.options.max_parallel,
+            timeout=self.options.timeout,
+            record_actions=self.options.record_actions,
+        )
+        self._strategy: BaseExecutionStrategy = self._create_strategy()
         self._stop_flag = threading.Event()
+
+    def _create_strategy(self) -> BaseExecutionStrategy:
+        """Create execution strategy based on options.
+
+        Returns:
+            Execution strategy instance
+        """
+        if self.options.strategy == ExecutionStrategy.PARALLEL:
+            return ParallelStrategy(
+                fail_fast=self.options.fail_fast,
+                record_actions=self.options.record_actions,
+            )
+        elif self.options.strategy == ExecutionStrategy.ROUND_ROBIN:
+            return RoundRobinStrategy(
+                fail_fast=self.options.fail_fast,
+                record_actions=self.options.record_actions,
+            )
+        elif self.options.strategy == ExecutionStrategy.PRIORITY:
+            return PriorityStrategy(
+                fail_fast=self.options.fail_fast,
+                record_actions=self.options.record_actions,
+            )
+        elif self.options.strategy == ExecutionStrategy.GROUPED:
+            return GroupedStrategy(
+                fail_fast=self.options.fail_fast,
+                record_actions=self.options.record_actions,
+                wait_between_groups=self.options.wait_between_groups,
+            )
+        else:
+            return ParallelStrategy(
+                fail_fast=self.options.fail_fast,
+                record_actions=self.options.record_actions,
+            )
 
     def get_action_type(self) -> ActionType:
         """Return the action type.
@@ -228,7 +373,7 @@ class MultipleActions(ActionInterface):
         matches.success = success
 
         # Add execution history to matches
-        for record in self._execution_history:
+        for record in self._executor.get_execution_history():
             matches.add_execution_record(record)  # type: ignore[arg-type]
 
     def add(
@@ -278,191 +423,28 @@ class MultipleActions(ActionInterface):
             return True
 
         self._stop_flag.clear()
-        self._execution_history.clear()
+        self._executor.clear_history()
 
         # Apply pre-action pause
         self._pause_before()
 
-        # Execute based on strategy
-        result = False
-        if self.options.strategy == ExecutionStrategy.PARALLEL:
-            result = self._execute_parallel()
-        elif self.options.strategy == ExecutionStrategy.ROUND_ROBIN:
-            result = self._execute_round_robin()
-        elif self.options.strategy == ExecutionStrategy.PRIORITY:
-            result = self._execute_by_priority()
-        elif self.options.strategy == ExecutionStrategy.GROUPED:
-            result = self._execute_grouped()
+        # Execute using strategy
+        result = self._strategy.execute(self._tasks, self._executor)
 
         # Apply post-action pause
         self._pause_after()
 
         return result
 
-    def _execute_parallel(self) -> bool:
-        """Execute actions in parallel.
-
-        Returns:
-            True if all successful or not fail-fast
-        """
-        with ThreadPoolExecutor(max_workers=self.options.max_parallel) as executor:
-            # Submit all tasks
-            futures = {executor.submit(task.execute): task for task in self._tasks}
-
-            all_success = True
-            completed = 0
-
-            # Process completed tasks
-            for future in as_completed(futures, timeout=self.options.timeout):
-                task = futures[future]
-                completed += 1
-
-                try:
-                    result = future.result()
-                    if not result:
-                        all_success = False
-                        if self.options.fail_fast:
-                            # Cancel remaining tasks
-                            for f in futures:
-                                f.cancel()
-                            break
-
-                    # Record action
-                    if self.options.record_actions:
-                        self._record_task(task)
-
-                except Exception as e:
-                    print(f"Task {task.name} failed: {e}")
-                    all_success = False
-                    if self.options.fail_fast:
-                        break
-
-            return all_success if self.options.fail_fast else completed > 0
-
-    def _execute_round_robin(self) -> bool:
-        """Execute actions in round-robin fashion.
-
-        Returns:
-            True if all successful
-        """
-        # Group tasks by target for round-robin
-        task_queues: dict[int, list[ActionTask]] = {}
-        for task in self._tasks:
-            key = hash(str(task.target))
-            if key not in task_queues:
-                task_queues[key] = []
-            task_queues[key].append(task)
-
-        all_success = True
-        max_rounds = max(len(queue) for queue in task_queues.values())
-
-        for round_num in range(max_rounds):
-            for queue in task_queues.values():
-                if round_num < len(queue):
-                    task = queue[round_num]
-
-                    if not task.execute():
-                        all_success = False
-                        if self.options.fail_fast:
-                            return False
-
-                    if self.options.record_actions:
-                        self._record_task(task)
-
-        return all_success
-
-    def _execute_by_priority(self) -> bool:
-        """Execute actions by priority.
-
-        Returns:
-            True if all successful
-        """
-        # Sort by priority (higher first)
-        sorted_tasks = sorted(self._tasks, key=lambda t: t.priority, reverse=True)
-
-        all_success = True
-        for task in sorted_tasks:
-            if not task.execute():
-                all_success = False
-                if self.options.fail_fast:
-                    return False
-
-            if self.options.record_actions:
-                self._record_task(task)
-
-        return all_success
-
-    def _execute_grouped(self) -> bool:
-        """Execute actions in groups.
-
-        Returns:
-            True if all successful
-        """
-        # Group tasks
-        groups: dict[int, list[ActionTask]] = {}
-        for task in self._tasks:
-            if task.group not in groups:
-                groups[task.group] = []
-            groups[task.group].append(task)
-
-        all_success = True
-
-        # Execute each group
-        for group_num in sorted(groups.keys()):
-            group_tasks = groups[group_num]
-
-            # Execute group in parallel
-            with ThreadPoolExecutor(max_workers=self.options.max_parallel) as executor:
-                futures = {executor.submit(task.execute): task for task in group_tasks}
-
-                for future in as_completed(futures, timeout=self.options.timeout):
-                    task = futures[future]
-
-                    try:
-                        result = future.result()
-                        if not result:
-                            all_success = False
-                            if self.options.fail_fast:
-                                return False
-
-                        if self.options.record_actions:
-                            self._record_task(task)
-
-                    except Exception as e:
-                        print(f"Task {task.name} failed: {e}")
-                        all_success = False
-                        if self.options.fail_fast:
-                            return False
-
-            # Wait between groups
-            if group_num < max(groups.keys()):
-                time.sleep(self.options.wait_between_groups)
-
-        return all_success
-
-    def _record_task(self, task: ActionTask):
-        """Record task execution.
-
-        Args:
-            task: Executed task
-        """
-        record = ActionRecord(
-            action_config=getattr(task.action, "options", None),
-            text=task.name,
-            duration=task.duration,
-            action_success=task.result or False,
-        )
-        self._execution_history.append(record)
-
     def _pause_before(self):
         """Apply pre-action pause from options."""
-        if self.options.pause_before > 0:
-            time.sleep(self.options.pause_before)
+        if self.options.pause_before_begin > 0:
+            time.sleep(self.options.pause_before_begin)
 
     def _pause_after(self):
         """Apply post-action pause from options."""
-        if self.options.pause_after > 0:
-            time.sleep(self.options.pause_after)
+        if self.options.pause_after_end > 0:
+            time.sleep(self.options.pause_after_end)
 
     def get_results(self) -> dict[str, bool]:
         """Get results of all tasks.
@@ -496,7 +478,7 @@ class MultipleActions(ActionInterface):
         Returns:
             List of action records
         """
-        return self._execution_history.copy()
+        return self._executor.get_execution_history()
 
     def clear(self) -> "MultipleActions":
         """Clear all tasks.
@@ -505,7 +487,7 @@ class MultipleActions(ActionInterface):
             Self for fluent interface
         """
         self._tasks.clear()
-        self._execution_history.clear()
+        self._executor.clear_history()
         return self
 
     def size(self) -> int:
@@ -526,6 +508,6 @@ class MultipleActions(ActionInterface):
         Returns:
             True if all successful
         """
-        ma = MultipleActions(MultipleActionsOptions().parallel())
+        ma = MultipleActions(MultipleActionsOptionsBuilder().parallel().build())
         ma.add_all(list(actions))
         return ma.execute()

@@ -1,0 +1,1 @@
+"""Tests for annotations module."""

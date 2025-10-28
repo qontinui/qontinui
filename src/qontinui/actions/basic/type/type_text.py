@@ -54,7 +54,7 @@ class TypeText(ActionInterface):
 
     def __init__(
         self, text_typer: Optional["TextTyper"] = None, time: Optional["TimeProvider"] = None
-    ):
+    ) -> None:
         """Initialize TypeText action.
 
         Args:

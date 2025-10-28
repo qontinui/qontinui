@@ -70,7 +70,7 @@ class ExecutionModeController:
     # Singleton instance
     _instance: Optional["ExecutionModeController"] = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize controller with all wrappers.
 
         Note: Use get_instance() instead of direct instantiation.

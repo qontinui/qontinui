@@ -38,7 +38,7 @@ class TransitionSetProcessor:
 
     def __init__(
         self, joint_table: StateTransitionsJointTable, transition_service: StateTransitionService
-    ):
+    ) -> None:
         """Initialize the transition set processor.
 
         Args:
@@ -245,7 +245,13 @@ class TransitionSetProcessor:
                 logger.debug(f"Transition successful: {source_name} -> {target_names_str}")
                 return True
 
-            except Exception as e:
+            except (RuntimeError, ValueError, AttributeError, TypeError) as e:
+                # Catch transition execution errors:
+                # - RuntimeError: Transition logic failures
+                # - ValueError: Invalid state or parameter values
+                # - AttributeError: Missing methods or attributes during transition
+                # - TypeError: Type mismatches in transition parameters
+                # Note: KeyboardInterrupt and SystemExit will propagate
                 logger.error(
                     f"Error executing transition from {source_name} to {target_names_str}",
                     exc_info=e,
@@ -313,8 +319,11 @@ class TransitionSetProcessor:
             for _name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and predicate(obj):
                     classes.append(obj)
-        except Exception:
-            # Some modules don't like being inspected
+        except (AttributeError, ImportError, TypeError):
+            # Some modules don't like being inspected due to:
+            # - AttributeError: Missing attributes during inspection
+            # - ImportError: Circular imports or missing dependencies
+            # - TypeError: Invalid module structure or metaclass issues
             pass
 
         return classes

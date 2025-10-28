@@ -3,17 +3,30 @@ Test validation and diagnostic components.
 """
 
 from .behavior_comparator import BehaviorComparatorImpl, ComparisonResult, TestIsolationConfig
-from .coverage_tracker import (
+from .coverage_models import (
     CoverageMetrics,
-    CoverageTracker,
     MigrationProgress,
     MigrationStatus,
     MigrationSummary,
     TestCategory,
     TestMapping,
 )
+from .coverage_tracker import CoverageTracker
+from .reporting import (
+    AssertionDifference,
+    ComprehensiveAnalyzer,
+    DependencyDifference,
+    DiagnosticReport,
+    DiagnosticReporterImpl,
+    ErrorAnalyzer,
+    ReportDataCollector,
+    ReportFormatter,
+    ReportFormatterFactory,
+    SetupDifference,
+    TextReportFormatter,
+)
 from .result_validator import (
-    BehavioralEquivalenceCheck,
+    BehavioralEquivalenceConfig,
     ComparisonType,
     PerformanceMetrics,
     ResultValidator,
@@ -33,7 +46,7 @@ __all__ = [
     "ValidationResult",
     "ComparisonType",
     "PerformanceMetrics",
-    "BehavioralEquivalenceCheck",
+    "BehavioralEquivalenceConfig",
     "CoverageTracker",
     "TestMapping",
     "MigrationStatus",
@@ -41,4 +54,15 @@ __all__ = [
     "MigrationProgress",
     "CoverageMetrics",
     "MigrationSummary",
+    "DiagnosticReporterImpl",
+    "ReportDataCollector",
+    "ErrorAnalyzer",
+    "ComprehensiveAnalyzer",
+    "ReportFormatter",
+    "TextReportFormatter",
+    "ReportFormatterFactory",
+    "DependencyDifference",
+    "SetupDifference",
+    "AssertionDifference",
+    "DiagnosticReport",
 ]

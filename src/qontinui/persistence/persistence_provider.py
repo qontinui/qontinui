@@ -24,7 +24,7 @@ class SessionMetadata:
     successful_actions: int = 0
     metadata: str = ""
 
-    def __init__(self, session_id: str = "", name: str = "", application: str = ""):
+    def __init__(self, session_id: str = "", name: str = "", application: str = "") -> None:
         """Initialize session metadata.
 
         Args:

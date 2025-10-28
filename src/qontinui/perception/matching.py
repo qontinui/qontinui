@@ -21,7 +21,7 @@ class MatchResult:
 class ElementMatcher:
     """Match UI elements using various similarity metrics."""
 
-    def __init__(self, use_faiss: bool = True, embedding_dim: int = 512):
+    def __init__(self, use_faiss: bool = True, embedding_dim: int = 512) -> None:
         """Initialize ElementMatcher.
 
         Args:
@@ -275,17 +275,25 @@ class ElementMatcher:
     def save_index(self, path: str):
         """Save the search index to disk.
 
+        SECURITY NOTE:
+        This method saves data using pickle serialization. Pickle files should only
+        be saved to trusted locations that you control.
+
         Args:
-            path: Path to save the index
+            path: Path to save the index (should be in a trusted directory)
         """
         import pickle
+        from pathlib import Path
+
+        # Validate path
+        save_path = Path(path).resolve()
 
         if self.use_faiss and self.index is not None:
             # Save FAISS index
-            faiss.write_index(self.index, f"{path}.faiss")
+            faiss.write_index(self.index, f"{save_path}.faiss")
 
             # Save metadata
-            with open(f"{path}.meta", "wb") as f:
+            with open(f"{save_path}.meta", "wb") as f:
                 pickle.dump(self.element_metadata, f)
         else:
             # Save sklearn data
@@ -293,33 +301,54 @@ class ElementMatcher:
                 "embeddings": self._embeddings if hasattr(self, "_embeddings") else [],
                 "metadata": self._metadata if hasattr(self, "_metadata") else [],
             }
-            with open(path, "wb") as f:
+            with open(save_path, "wb") as f:
                 pickle.dump(data, f)
 
     def load_index(self, path: str):
         """Load search index from disk.
 
+        SECURITY WARNING:
+        This method loads pickle files, which can execute arbitrary code during
+        deserialization. Only load files that:
+        - Were created by your own Qontinui installation
+        - Are stored in trusted locations you control
+        - Have not been modified by untrusted parties
+
+        DO NOT load pickle files from:
+        - Network sources or downloads
+        - User uploads
+        - Shared/world-writable directories
+        - Untrusted USB drives or external media
+        - Any location that could be modified by untrusted users
+
+        For untrusted data exchange, use JSON format instead.
+        See docs/SECURITY.md for details on pickle security.
+
         Args:
-            path: Path to load the index from
+            path: Path to load the index from (must be from a trusted source)
         """
         import pickle
+        from pathlib import Path
+
+        # Validate and resolve path
+        load_path = Path(path).resolve()
 
         if self.use_faiss:
             try:
                 # Load FAISS index
-                self.index = faiss.read_index(f"{path}.faiss")
+                self.index = faiss.read_index(f"{load_path}.faiss")
 
                 # Load metadata
-                with open(f"{path}.meta", "rb") as f:
+                with open(f"{load_path}.meta", "rb") as f:
                     self.element_metadata = pickle.load(f)
             except FileNotFoundError:
-                print(f"Index files not found at {path}")
+                print(f"Index files not found at {load_path}")
         else:
             # Load sklearn data
             try:
-                with open(path, "rb") as f:
+                with open(load_path, "rb") as f:
                     data = pickle.load(f)
                     self._embeddings = data.get("embeddings", [])
                     self._metadata = data.get("metadata", [])
             except FileNotFoundError:
-                print(f"Index file not found at {path}")
+                print(f"Index file not found at {load_path}")

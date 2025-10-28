@@ -80,7 +80,8 @@ class Breakpoint:
             if self.condition:
                 try:
                     return self.condition(context)
-                except Exception:
+                except (ValueError, TypeError, AttributeError, KeyError, RuntimeError):
+                    # Condition evaluation failed, treat as not breaking
                     return False
             return False
 
@@ -91,7 +92,8 @@ class Breakpoint:
             if self.condition:
                 try:
                     return self.condition(context)
-                except Exception:
+                except (ValueError, TypeError, AttributeError, KeyError, RuntimeError):
+                    # Condition evaluation failed, treat as not breaking
                     return False
             return False
 

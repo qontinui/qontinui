@@ -130,7 +130,7 @@ class StateText:
             print("On login screen")
     """
 
-    def __init__(self, name: str, state_enum: StateEnum | None = None):
+    def __init__(self, name: str, state_enum: StateEnum | None = None) -> None:
         """Initialize StateText.
 
         Args:

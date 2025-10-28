@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .execution.hybrid_test_translator import HybridTestTranslator
     from .execution.pytest_runner import PytestRunner
     from .validation.coverage_tracker import CoverageTracker
-    from .validation.diagnostic_reporter import DiagnosticReporterImpl
+    from .validation.reporting import DiagnosticReporterImpl
     from .validation.result_validator import ResultValidator
     from .validation.test_failure_analyzer import TestFailureAnalyzer
 else:
@@ -45,7 +45,7 @@ else:
         from .execution.hybrid_test_translator import HybridTestTranslator
         from .execution.pytest_runner import PytestRunner
         from .validation.coverage_tracker import CoverageTracker
-        from .validation.diagnostic_reporter import DiagnosticReporterImpl
+        from .validation.reporting import DiagnosticReporterImpl
         from .validation.result_validator import ResultValidator
         from .validation.test_failure_analyzer import TestFailureAnalyzer
     except ImportError:
@@ -64,7 +64,7 @@ else:
         from execution.hybrid_test_translator import HybridTestTranslator
         from execution.pytest_runner import PytestRunner
         from validation.coverage_tracker import CoverageTracker
-        from validation.diagnostic_reporter import DiagnosticReporterImpl
+        from validation.reporting import DiagnosticReporterImpl
         from validation.result_validator import ResultValidator
         from validation.test_failure_analyzer import TestFailureAnalyzer
 
@@ -85,7 +85,7 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
     - Progress tracking and reporting
     """
 
-    def __init__(self, config: MigrationConfig | None = None):
+    def __init__(self, config: MigrationConfig | None = None) -> None:
         """
         Initialize the migration orchestrator.
 

@@ -14,7 +14,7 @@ import pytest
 
 from ..core.models import TestResult, TestResults
 from ..validation.result_validator import (
-    BehavioralEquivalenceCheck,
+    BehavioralEquivalenceConfig,
     ComparisonType,
     PerformanceMetrics,
     ResultValidator,
@@ -248,7 +248,7 @@ class TestResultValidator:
 
     def test_custom_equivalence_config(self):
         """Test custom behavioral equivalence configuration."""
-        config = BehavioralEquivalenceCheck(
+        config = BehavioralEquivalenceConfig(
             ignore_whitespace=True, ignore_case=True, tolerance_threshold=0.8
         )
 
@@ -356,7 +356,7 @@ class TestResultValidator:
 
     def test_output_normalization(self):
         """Test output normalization functionality."""
-        config = BehavioralEquivalenceCheck(ignore_whitespace=True, ignore_case=True)
+        config = BehavioralEquivalenceConfig(ignore_whitespace=True, ignore_case=True)
         validator = ResultValidator(config)
 
         # Test whitespace normalization

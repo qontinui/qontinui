@@ -31,7 +31,7 @@ class MigrationReportingDashboard:
     - PDF reports for documentation
     """
 
-    def __init__(self, java_source_dir: Path | None = None, python_target_dir: Path | None = None):
+    def __init__(self, java_source_dir: Path | None = None, python_target_dir: Path | None = None) -> None:
         """Initialize the reporting dashboard."""
         # Use default paths if not provided
         if java_source_dir is None:
@@ -40,7 +40,7 @@ class MigrationReportingDashboard:
             python_target_dir = Path("./python_tests")
 
         self.coverage_tracker = CoverageTracker(java_source_dir, python_target_dir)
-        from validation.diagnostic_reporter import DiagnosticReporterImpl
+        from validation.reporting import DiagnosticReporterImpl
 
         self.diagnostic_reporter = DiagnosticReporterImpl()
 
@@ -192,7 +192,9 @@ class MigrationReportingDashboard:
                 if "@pytest.mark.integration" in content:
                     patterns["integration_tests"] += 1
 
-            except Exception:
+            except (OSError, UnicodeDecodeError):
+                # OSError: File system errors (permission denied, file not found, etc.)
+                # UnicodeDecodeError: Invalid file encoding
                 continue
 
         return patterns
@@ -223,7 +225,9 @@ class MigrationReportingDashboard:
                 if complexity["smallest_file"] is None or lines < file_sizes[0]:
                     complexity["smallest_file"] = {"file": str(test_file), "lines": lines}
 
-            except Exception:
+            except (OSError, UnicodeDecodeError):
+                # OSError: File system errors (permission denied, file not found, etc.)
+                # UnicodeDecodeError: Invalid file encoding
                 continue
 
         if file_sizes:

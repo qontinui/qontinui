@@ -19,7 +19,7 @@ class JavaToPythonTranslator(TestTranslator):
     - Import statement mapping
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the translator with mapping dictionaries."""
         self._java_to_python_types = {
             "String": "str",

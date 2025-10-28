@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class ExecutionState:
     """Tracks state during workflow execution."""
 
-    def __init__(self, workflow: Workflow):
+    def __init__(self, workflow: Workflow) -> None:
         """Initialize execution state.
 
         Args:
@@ -123,7 +123,7 @@ class GraphExecutor:
         execution_state: Current execution state
     """
 
-    def __init__(self, workflow: Workflow, action_executor: Any):
+    def __init__(self, workflow: Workflow, action_executor: Any) -> None:
         """Initialize graph executor.
 
         Args:

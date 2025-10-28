@@ -10,9 +10,10 @@ from ..actions import (
     ActionResult,
     ClickOptions,
     DragOptions,
-    MoveOptions,
+    MouseMoveOptions,
     ScrollOptions,
 )
+from ..actions.basic.mouse import MouseMoveOptionsBuilder
 from ..actions.pure import PureActions
 
 
@@ -23,14 +24,14 @@ class MouseMove(Action):
     Moves the mouse to a specific position.
     """
 
-    def __init__(self, config: MoveOptions | None = None) -> None:
-        """Initialize with optional MoveOptions.
+    def __init__(self, config: MouseMoveOptions | None = None) -> None:
+        """Initialize with optional MouseMoveOptions.
 
         Args:
-            config: MoveOptions instance or None for defaults
+            config: MouseMoveOptions instance or None for defaults
         """
         super().__init__()
-        self._config = config or MoveOptions()
+        self._config = config or MouseMoveOptionsBuilder().build()
         self._pure = PureActions()
 
     def execute_at(self, x: int, y: int, duration: float | None = None) -> ActionResult:

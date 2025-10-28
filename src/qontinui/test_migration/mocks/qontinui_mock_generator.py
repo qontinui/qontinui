@@ -14,7 +14,7 @@ class QontinuiMockGenerator(MockGenerator):
     preserving GUI state simulation and behavior mapping.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Qontinui mock generator."""
         # Mapping from Brobot mock classes to Qontinui equivalents
         self.mock_class_mapping = {
@@ -60,7 +60,7 @@ class QontinuiMockGenerator(MockGenerator):
         self.state_simulation_templates = {
             "basic_state": """
 class MockState:
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
         self.elements = {}
         self.is_active = False
@@ -79,7 +79,7 @@ class MockState:
 """,
             "gui_simulation": """
 class GuiSimulator:
-    def __init__(self):
+    def __init__(self) -> None:
         self.states = {}
         self.current_state = None
 
@@ -245,7 +245,7 @@ def mock_get_element(element_name):
         mock_code = """
 # GUI Model Mock with element and action simulation
 class GuiModelMock:
-    def __init__(self):
+    def __init__(self) -> None:
         self.elements = {}
         self.actions = {}
         self.state_properties = {}
@@ -295,7 +295,7 @@ def qontinui_test_environment():
     \"\"\"Mock test environment that simulates Brobot's @BrobotTest functionality.\"\"\"
 
     class QontinuiTestEnvironment:
-        def __init__(self):
+        def __init__(self) -> None:
             self.state_manager = Mock(spec=StateManager)
             self.gui_simulator = Mock()
             self.action_executor = Mock()
@@ -373,7 +373,7 @@ mock_state = MockState("{gui_model.model_name}")"""
         action_code = """
 # Action simulation
 class ActionSimulator:
-    def __init__(self):
+    def __init__(self) -> None:
         self.action_history = []
 
     def simulate_action(self, action_name, element_name=None, **kwargs):
@@ -506,7 +506,7 @@ def integrated_mock_environment():
     \"\"\"Setup integrated mock environment for complex test scenarios.\"\"\"
 
     class IntegratedMockEnvironment:
-        def __init__(self):
+        def __init__(self) -> None:
             self.mocks = {}
             self.state_manager = Mock(spec=StateManager)
             self.gui_simulator = GuiSimulator()

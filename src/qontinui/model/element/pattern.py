@@ -11,6 +11,10 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from .pattern_factory import PatternFactory
+from .pattern_optimizer import PatternOptimizer
+from .similarity_calculator import SimilarityCalculator
+
 if TYPE_CHECKING:
     from ..search_regions import SearchRegions
 
@@ -22,6 +26,14 @@ class Pattern:
     This is the core class for Pattern Optimization.
     Port of Brobot's Pattern class with mask-based extensions.
     """
+
+    # Class-level optimizer (shared across all patterns)
+    _optimizer: PatternOptimizer = field(default_factory=PatternOptimizer, init=False, repr=False)
+
+    # Class-level similarity calculator (shared across all patterns)
+    _similarity_calculator: SimilarityCalculator = field(
+        default_factory=SimilarityCalculator, init=False, repr=False
+    )
 
     id: str
     name: str
@@ -115,6 +127,8 @@ class Pattern:
         """
         Calculate similarity between this pattern and another image.
 
+        Delegates to SimilarityCalculator for the actual computation.
+
         Args:
             other_image: Image to compare against
             other_mask: Optional mask for the other image
@@ -122,48 +136,9 @@ class Pattern:
         Returns:
             Similarity score (0.0-1.0)
         """
-        # Check shape compatibility
-        if other_image.shape != self.pixel_data.shape:
-            return 0.0
-
-        # Use full mask if other_mask not provided
-        if other_mask is None:
-            other_mask = np.ones(other_image.shape[:2], dtype=np.float32)
-
-        # Convert to float for precise calculation
-        img1 = self.pixel_data.astype(np.float32)
-        img2 = other_image.astype(np.float32)
-
-        # Apply masks
-        if len(img1.shape) == 3:
-            mask1_expanded = np.expand_dims(self.mask, axis=2)
-            mask2_expanded = np.expand_dims(other_mask, axis=2)
-        else:
-            mask1_expanded = self.mask
-            mask2_expanded = other_mask
-
-        masked_img1 = img1 * mask1_expanded
-        masked_img2 = img2 * mask2_expanded
-
-        # Combined mask (both pixels must be active)
-        combined_mask = mask1_expanded * mask2_expanded
-
-        # Calculate difference
-        diff = np.abs(masked_img1 - masked_img2)
-
-        # Normalize difference
-        normalized_diff = diff / 255.0
-
-        # Calculate similarity for active pixels only
-        active_pixels = np.sum(combined_mask > 0.5)
-        if active_pixels == 0:
-            return 0.0
-
-        weighted_diff_sum = np.sum(normalized_diff * combined_mask)
-        avg_diff = weighted_diff_sum / active_pixels
-
-        similarity = 1.0 - avg_diff
-        return float(similarity)
+        return self._similarity_calculator.calculate_similarity(
+            self.pixel_data, self.mask, other_image, other_mask
+        )
 
     def optimize_mask(
         self,
@@ -171,167 +146,46 @@ class Pattern:
         negative_samples: list[np.ndarray[Any, Any]] | None = None,
         method: str = "stability",
     ) -> tuple[np.ndarray[Any, Any], dict[str, Any]]:
-        """
-        Optimize the mask based on positive and negative samples.
+        """Optimize the mask based on positive and negative samples.
+
+        Delegates to PatternOptimizer for the actual optimization logic.
 
         Args:
             positive_samples: Images that should match
             negative_samples: Images that should not match
-            method: Optimization method
+            method: Optimization method ("stability" or "discriminative")
 
         Returns:
             Tuple of (optimized mask, optimization metrics)
         """
-        if method == "stability":
-            return self._optimize_by_stability(positive_samples)
-        elif method == "discriminative":
-            return self._optimize_discriminative(positive_samples, negative_samples)
-        else:
-            raise ValueError(f"Unknown optimization method: {method}")
-
-    def _optimize_by_stability(
-        self, positive_samples: list[np.ndarray[Any, Any]]
-    ) -> tuple[np.ndarray[Any, Any], dict[str, Any]]:
-        """
-        Optimize mask by finding stable pixels across positive samples.
-        """
-        if not positive_samples:
-            return self.mask, {"error": "No positive samples provided"}
-
-        # Stack all samples including original
-        all_samples = np.stack([self.pixel_data] + positive_samples, axis=0)
-
-        # Calculate pixel variance
-        if len(all_samples.shape) == 4:  # Color images
-            # Convert to grayscale for stability calculation
-            gray_samples = np.mean(all_samples, axis=3)
-        else:
-            gray_samples = all_samples
-
-        # Calculate standard deviation for each pixel
-        pixel_std = np.std(gray_samples, axis=0)
-
-        # Create stability mask (low variance = stable = important)
-        max_std = np.max(pixel_std)
-        if max_std > 0:
-            stability = 1.0 - (pixel_std / max_std)
-        else:
-            stability = np.ones_like(pixel_std)
-
-        # Threshold to create binary mask
-        threshold = 0.7
-        optimized_mask = np.where(stability >= threshold, 1.0, 0.0).astype(np.float32)
-
-        # Calculate metrics
-        metrics = {
-            "method": "stability",
-            "samples_used": len(positive_samples),
-            "avg_stability": float(np.mean(stability)),
-            "mask_density": float(np.sum(optimized_mask > 0.5) / optimized_mask.size),
-            "threshold": threshold,
-        }
-
-        return optimized_mask, metrics
-
-    def _optimize_discriminative(
-        self,
-        positive_samples: list[np.ndarray[Any, Any]],
-        negative_samples: list[np.ndarray[Any, Any]] | None = None,
-    ) -> tuple[np.ndarray[Any, Any], dict[str, Any]]:
-        """
-        Optimize mask to maximize discrimination between positive and negative samples.
-        """
-        # Start with stability-based mask
-        stability_mask, _ = self._optimize_by_stability(positive_samples)
-
-        if not negative_samples:
-            return stability_mask, {"method": "discriminative_stability_only"}
-
-        # For each pixel, calculate discrimination power
-        h, w = self.pixel_data.shape[:2]
-        discrimination = np.zeros((h, w), dtype=np.float32)
-
-        for y in range(h):
-            for x in range(w):
-                # Skip if pixel is not stable
-                if stability_mask[y, x] < 0.5:
-                    continue
-
-                # Get pixel values from positive samples
-                pos_values = [img[y, x] for img in positive_samples]
-                neg_values = [img[y, x] for img in negative_samples if img.shape[:2] == (h, w)]
-
-                if not neg_values:
-                    discrimination[y, x] = stability_mask[y, x]
-                    continue
-
-                # Calculate separation between positive and negative
-                pos_mean = np.mean(pos_values, axis=0)
-                neg_mean = np.mean(neg_values, axis=0)
-
-                # Distance between means
-                if len(pos_mean.shape) > 0:  # Color pixel
-                    dist = np.linalg.norm(pos_mean - neg_mean)
-                else:  # Grayscale pixel
-                    dist = abs(pos_mean - neg_mean)
-
-                discrimination[y, x] = min(dist / 255.0, 1.0)
-
-        # Combine stability and discrimination
-        optimized_mask = stability_mask * 0.5 + discrimination * 0.5
-
-        # Threshold
-        optimized_mask = np.where(optimized_mask >= 0.5, 1.0, 0.0).astype(np.float32)
-
-        metrics = {
-            "method": "discriminative",
-            "positive_samples": len(positive_samples),
-            "negative_samples": len(negative_samples) if negative_samples else 0,
-            "mask_density": float(np.sum(optimized_mask > 0.5) / optimized_mask.size),
-        }
-
-        return optimized_mask, metrics
+        return self._optimizer.optimize_mask(
+            self.pixel_data,
+            self.mask,
+            positive_samples,
+            negative_samples,
+            method,
+        )
 
     def update_mask(self, new_mask: np.ndarray[Any, Any], record_history: bool = True):
-        """
-        Update the pattern's mask.
+        """Update the pattern's mask.
+
+        Delegates to PatternOptimizer for update tracking.
 
         Args:
             new_mask: New mask array
             record_history: Whether to record this update in optimization history
         """
-        if new_mask.shape != self.mask.shape:
-            raise ValueError(
-                f"New mask shape {new_mask.shape} doesn't match current shape {self.mask.shape}"
-            )
-
-        old_density = self.mask_density
-
-        self.mask = new_mask
-        self.mask_density = float(np.sum(new_mask > 0.5) / new_mask.size)
-        self.updated_at = datetime.now()
-
-        if record_history:
-            self.optimization_history.append(
-                {
-                    "timestamp": self.updated_at.isoformat(),
-                    "old_density": old_density,
-                    "new_density": self.mask_density,
-                    "operation": "mask_update",
-                }
-            )
+        self._optimizer.update_mask(self, new_mask, record_history)
 
     def add_variation(self, image: np.ndarray[Any, Any]):
-        """
-        Add an image variation for optimization.
+        """Add an image variation for optimization.
+
+        Delegates to PatternOptimizer for variation management.
 
         Args:
             image: Image variation (same object, different screenshot)
         """
-        if image.shape != self.pixel_data.shape:
-            raise ValueError("Variation shape doesn't match pattern shape")
-
-        self.variations.append(image)
+        self._optimizer.add_variation(self, image)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -347,8 +201,7 @@ class Pattern:
             "tags": self.tags,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
-            "similarity": self.similarity,  # New field with proper precedence support
-            "similarity_threshold": self.similarity_threshold,  # Kept for compatibility
+            "similarity": self.similarity,
             "use_color": self.use_color,
             "scale_invariant": self.scale_invariant,
             "rotation_invariant": self.rotation_invariant,
@@ -366,7 +219,7 @@ class Pattern:
     def from_image(
         cls, image: Any, name: str | None = None, pattern_id: str | None = None
     ) -> "Pattern":
-        """Create Pattern from Image with full mask.
+        """Create Pattern from Image (delegates to factory).
 
         Args:
             image: Image object or numpy array
@@ -376,39 +229,11 @@ class Pattern:
         Returns:
             Pattern instance with full mask
         """
-        from .image import Image
-
-        # Convert to numpy array
-        if isinstance(image, Image):
-            pixel_data = image.get_mat_bgr()
-            if name is None:
-                name = image.name
-        elif isinstance(image, np.ndarray):
-            pixel_data = image
-        else:
-            raise ValueError(f"Invalid image type: {type(image)}")
-
-        if pixel_data is None:
-            raise ValueError("Could not extract pixel data from image")
-
-        # Create full mask (all pixels active)
-        mask = np.ones(pixel_data.shape[:2], dtype=np.float32)
-
-        if pattern_id is None:
-            pattern_id = f"pattern_{hashlib.md5(pixel_data.tobytes()).hexdigest()[:8]}"
-
-        return cls(
-            id=pattern_id,
-            name=name or "pattern",
-            pixel_data=pixel_data,
-            mask=mask,
-            width=pixel_data.shape[1],
-            height=pixel_data.shape[0],
-        )
+        return PatternFactory.from_image(image, name, pattern_id)
 
     @classmethod
     def from_file(cls, img_path: str, name: str | None = None) -> "Pattern":
-        """Create Pattern from image file.
+        """Create Pattern from image file (delegates to factory).
 
         Args:
             img_path: Path to image file
@@ -417,15 +242,7 @@ class Pattern:
         Returns:
             Pattern instance
         """
-        from .image import Image
-
-        image = Image.from_file(img_path)
-        if name is None:
-            from pathlib import Path
-
-            name = Path(img_path).stem
-
-        return cls.from_image(image, name=name)
+        return PatternFactory.from_file(img_path, name)
 
     @property
     def image(self) -> Any:
@@ -531,8 +348,6 @@ class Pattern:
             FindOptions similarity (if provided) will override this.
         """
         self.similarity = threshold
-        # Also update similarity_threshold for backward compatibility
-        self.similarity_threshold = threshold
         return self
 
     def with_search_region(self, region: Any) -> "Pattern":
@@ -610,7 +425,7 @@ class Pattern:
 
     @classmethod
     def from_match(cls, match: Any, pattern_id: str | None = None) -> "Pattern":
-        """Create Pattern from a Match object.
+        """Create Pattern from a Match object (delegates to factory).
 
         Args:
             match: Match object to create pattern from
@@ -619,34 +434,11 @@ class Pattern:
         Returns:
             Pattern instance
         """
-        if pattern_id is None:
-            pattern_id = f"pattern_{hashlib.md5(str(match).encode()).hexdigest()[:8]}"
-
-        # Extract pixel data from match
-        pixel_data = (
-            match.image.get_mat_bgr() if match.image else np.zeros((10, 10, 3), dtype=np.uint8)
-        )
-
-        # Create full mask
-        mask = np.ones(pixel_data.shape[:2], dtype=np.float32)
-
-        region = match.get_region()
-        return cls(
-            id=pattern_id,
-            name=match.name or "pattern_from_match",
-            pixel_data=pixel_data,
-            mask=mask,
-            x=region.x if region else 0,
-            y=region.y if region else 0,
-            width=region.width if region else pixel_data.shape[1],
-            height=region.height if region else pixel_data.shape[0],
-            similarity=match.score if hasattr(match, "score") else 0.95,
-        )
+        return PatternFactory.from_match(match, pattern_id)
 
     @classmethod
     def from_state_image(cls, state_image: Any, pattern_id: str | None = None) -> "Pattern":
-        """
-        Create a Pattern from a StateImage.
+        """Create a Pattern from a StateImage (delegates to factory).
 
         Args:
             state_image: StateImage object
@@ -655,26 +447,4 @@ class Pattern:
         Returns:
             Pattern instance
         """
-        if pattern_id is None:
-            pattern_id = f"pattern_{state_image.id}"
-
-        # Extract pixel data and mask
-        pixel_data = state_image.pixel_data
-        mask = state_image.mask if state_image.mask is not None else np.ones(pixel_data.shape[:2])
-
-        return cls(
-            id=pattern_id,
-            name=state_image.name,
-            pixel_data=pixel_data,
-            mask=mask,
-            x=state_image.x,
-            y=state_image.y,
-            width=state_image.x2 - state_image.x,
-            height=state_image.y2 - state_image.y,
-            mask_density=state_image.mask_density if hasattr(state_image, "mask_density") else 1.0,
-            mask_type="imported",
-            tags=state_image.tags if hasattr(state_image, "tags") else [],
-            created_at=(
-                state_image.created_at if hasattr(state_image, "created_at") else datetime.now()
-            ),
-        )
+        return PatternFactory.from_state_image(state_image, pattern_id)

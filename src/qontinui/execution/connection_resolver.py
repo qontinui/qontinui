@@ -38,7 +38,7 @@ class ConnectionResolver:
         "default": {"main", "error"},
     }
 
-    def __init__(self, workflow: Workflow):
+    def __init__(self, workflow: Workflow) -> None:
         """
         Initialize the connection resolver.
 

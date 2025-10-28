@@ -86,9 +86,8 @@ class StateTransitions:
         Returns:
             List of transitions from state
         """
-        # TODO: StateTransition doesn't have from_state attribute
-        # Need to check how to properly identify source states
-        return []
+        # Filter transitions where from_state matches
+        return [t for t in self.transitions if t.from_state == state.name]
 
     def get_to_state(self, state: State) -> list[StateTransition]:
         """Get all transitions to a specific state.
@@ -99,10 +98,8 @@ class StateTransitions:
         Returns:
             List of transitions to state
         """
-        # TODO: StateTransition doesn't have to_state attribute
-        # Need to check how to properly identify target states
-        # (might use activate set for CodeStateTransition)
-        return []
+        # Filter transitions where to_state matches
+        return [t for t in self.transitions if t.to_state == state.name]
 
     def get_between_states(self, from_state: State, to_state: State) -> list[StateTransition]:
         """Get transitions between two states.
@@ -114,9 +111,12 @@ class StateTransitions:
         Returns:
             List of transitions between states
         """
-        # TODO: StateTransition doesn't have from_state/to_state attributes
-        # Need to check how to properly identify source/target states
-        return []
+        # Filter transitions matching both from and to states
+        return [
+            t
+            for t in self.transitions
+            if t.from_state == from_state.name and t.to_state == to_state.name
+        ]
 
     def get_by_type(self, transition_type: TransitionType) -> list[StateTransition]:
         """Get transitions of a specific type.
@@ -252,7 +252,7 @@ class StateTransitions:
 class StateTransitionsBuilder:
     """Builder for creating StateTransitions objects."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder."""
         self._transitions: list[StateTransition] = []
         self._name: str | None = None

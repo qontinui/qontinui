@@ -114,7 +114,7 @@ class PerformanceMonitoringAspect:
         report_interval_seconds: int = 300,
         track_memory: bool = True,
         warning_threshold_ms: float = 5000,
-    ):
+    ) -> None:
         """Initialize the aspect.
 
         Args:

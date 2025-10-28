@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class PairwiseStateAnalyzer:
     """Analyzes screenshots pairwise to find states present in any subset."""
 
-    def __init__(self, similarity_threshold: float = 0.95):
+    def __init__(self, similarity_threshold: float = 0.95) -> None:
         self.similarity_threshold = similarity_threshold
 
     def analyze_screenshots(

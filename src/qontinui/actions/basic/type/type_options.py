@@ -21,7 +21,7 @@ class TypeOptions(ActionConfig):
     It is an immutable object and must be constructed using its inner Builder.
     """
 
-    def __init__(self, builder: "TypeOptionsBuilder"):
+    def __init__(self, builder: "TypeOptionsBuilder") -> None:
         """Initialize TypeOptions from builder.
 
         Args:
@@ -46,7 +46,7 @@ class TypeOptionsBuilder(ActionConfigBuilder):
     Port of TypeOptions from Qontinui framework.Builder.
     """
 
-    def __init__(self, original: TypeOptions | None = None):
+    def __init__(self, original: TypeOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

@@ -24,7 +24,7 @@ class MockScreen(IScreenCapture):
     Returns synthetic images for pattern matching in mock mode.
     """
 
-    def __init__(self, width: int = 1920, height: int = 1080):
+    def __init__(self, width: int = 1920, height: int = 1080) -> None:
         """Initialize mock screen capture.
 
         Args:

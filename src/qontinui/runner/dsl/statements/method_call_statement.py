@@ -56,7 +56,7 @@ class MethodCallStatement(Statement):
         object: str | None = None,
         method: str = "",
         arguments: list[Expression] | None = None,
-    ):
+    ) -> None:
         """Initialize method call statement.
 
         Args:

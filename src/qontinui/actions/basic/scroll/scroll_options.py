@@ -26,7 +26,7 @@ class ScrollOptions(ActionConfig):
     including direction, amount, and target location.
     """
 
-    def __init__(self, builder: "ScrollOptionsBuilder"):
+    def __init__(self, builder: "ScrollOptionsBuilder") -> None:
         """Initialize ScrollOptions from builder.
 
         Args:
@@ -61,7 +61,7 @@ class ScrollOptionsBuilder(ActionConfigBuilder):
     Port of ScrollOptions from Qontinui framework.Builder.
     """
 
-    def __init__(self, original: ScrollOptions | None = None):
+    def __init__(self, original: ScrollOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

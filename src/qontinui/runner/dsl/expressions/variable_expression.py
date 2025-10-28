@@ -27,7 +27,7 @@ class VariableExpression(Expression):
     """The name of the variable to reference.
     Must correspond to a variable in the current scope."""
 
-    def __init__(self, name: str = ""):
+    def __init__(self, name: str = "") -> None:
         """Initialize variable expression.
 
         Args:

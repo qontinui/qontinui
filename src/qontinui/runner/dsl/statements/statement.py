@@ -26,7 +26,7 @@ class Statement:
     statement types from JSON based on the "statementType" discriminator field.
     """
 
-    def __init__(self, statement_type: str):
+    def __init__(self, statement_type: str) -> None:
         """Initialize statement with its type.
 
         Args:

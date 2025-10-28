@@ -50,7 +50,7 @@ class CaptureWrapper(BaseWrapper):
         hal_capture: Screen capture for real mode
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize CaptureWrapper.
 
         Sets up both mock and real implementations. The actual implementation

@@ -15,7 +15,7 @@ class BrobotMockAnalyzer(MockAnalyzer):
     GUI models for migration to Qontinui equivalents.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Brobot mock analyzer."""
         # Common Brobot mock classes and patterns
         self.brobot_mock_classes = {

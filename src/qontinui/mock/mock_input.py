@@ -18,7 +18,7 @@ class MockInput(IInputController):
     Tracks state for verification in tests.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize mock input controller."""
         self._mouse_position = MousePosition(x=0, y=0)
         self._pressed_keys: set[str] = set()

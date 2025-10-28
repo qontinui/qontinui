@@ -24,7 +24,7 @@ class StateRegistrationService:
     - State counts are accurately tracked
     """
 
-    def __init__(self, state_service: StateService):
+    def __init__(self, state_service: StateService) -> None:
         """Initialize the registration service.
 
         Args:

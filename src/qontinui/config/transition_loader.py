@@ -180,9 +180,7 @@ def _load_single_transition(
     # Add transition to the source state
     from_state.add_transition(transition)
 
-    # Debug print to bypass logging
-    import sys
-    print(f"DEBUG: ADDED transition '{transition_id}' to state '{from_state.name}' - state now has {len(from_state.transitions)} transitions", file=sys.stderr, flush=True)
+    logger.debug(f"ADDED transition '{transition_id}' to state '{from_state.name}' - state now has {len(from_state.transitions)} transitions")
 
     return True
 

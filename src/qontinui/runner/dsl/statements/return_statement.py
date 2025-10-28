@@ -39,7 +39,7 @@ class ReturnStatement(Statement):
     """The expression whose value to return.
     None for void functions that don't return a value."""
 
-    def __init__(self, value: Expression | None = None):
+    def __init__(self, value: Expression | None = None) -> None:
         """Initialize return statement.
 
         Args:

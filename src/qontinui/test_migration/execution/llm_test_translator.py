@@ -30,7 +30,7 @@ class LLMTestTranslator(TestTranslator):
     - Framework-specific patterns not covered by utility translator
     """
 
-    def __init__(self, llm_client=None, model_name: str = "gpt-4"):
+    def __init__(self, llm_client=None, model_name: str = "gpt-4") -> None:
         """
         Initialize the LLM test translator.
 

@@ -19,12 +19,23 @@ JSON Executor
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: qontinui.json_executor.action_executor
+.. automodule:: qontinui.json_executor.config_parser
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: qontinui.json_executor.config_parser
+Action Executors
+----------------
+
+The action execution system has been refactored into a modular architecture.
+For the legacy monolithic implementation, see :mod:`qontinui.json_executor.action_executor` (deprecated).
+
+.. automodule:: qontinui.action_executors
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: qontinui.action_executors.delegating_executor
    :members:
    :undoc-members:
    :show-inheritance:

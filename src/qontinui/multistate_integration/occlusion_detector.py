@@ -72,7 +72,7 @@ class OcclusionDetector:
 
     def __init__(
         self, state_memory: StateMemory, multistate_adapter: MultiStateAdapter | None = None
-    ):
+    ) -> None:
         """Initialize occlusion detector.
 
         Args:

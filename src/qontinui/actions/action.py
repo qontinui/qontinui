@@ -46,7 +46,7 @@ class Action:
         action_execution: ActionExecution | None = None,
         action_service: ActionService | None = None,
         action_chain_executor: Optional["ActionChainExecutor"] = None,
-    ):
+    ) -> None:
         """Construct an Action instance with required dependencies.
 
         Uses dependency injection to wire the action execution engine, service

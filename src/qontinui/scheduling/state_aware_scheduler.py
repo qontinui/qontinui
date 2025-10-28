@@ -40,7 +40,7 @@ class StateAwareScheduler:
         state_detector: Any | None = None,
         state_memory: Any | None = None,
         max_workers: int = 4,
-    ):
+    ) -> None:
         """Initialize the state-aware scheduler.
 
         Args:

@@ -39,7 +39,7 @@ class ApplicationLifecycleService:
         >>> lifecycle.perform_cleanup()
     """
 
-    def __init__(self, shutdown_handler: QontinuiShutdownHandler | None = None):
+    def __init__(self, shutdown_handler: QontinuiShutdownHandler | None = None) -> None:
         """Initialize ApplicationLifecycleService.
 
         Args:

@@ -17,7 +17,7 @@ class StableRegionExtractor:
         min_area: int = 400,  # 20x20
         max_area: int = 250000,  # 500x500
         min_stability: float = 0.95,
-    ):
+    ) -> None:
         """
         Initialize extractor.
 

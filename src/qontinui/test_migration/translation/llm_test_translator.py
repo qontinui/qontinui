@@ -42,7 +42,7 @@ class LLMTestTranslator(TestTranslator):
     - Intelligent mock mapping
     """
 
-    def __init__(self, llm_client=None, model_name: str = "gpt-4"):
+    def __init__(self, llm_client=None, model_name: str = "gpt-4") -> None:
         """
         Initialize the LLM translator.
 

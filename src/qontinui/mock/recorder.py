@@ -64,7 +64,7 @@ class SnapshotRecorder:
         snapshot_dir = recorder.get_snapshot_directory()
     """
 
-    def __init__(self, config: RecorderConfig):
+    def __init__(self, config: RecorderConfig) -> None:
         """Initialize recorder.
 
         Args:

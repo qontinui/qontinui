@@ -50,7 +50,7 @@ class MultiStateAdapter:
     5. Multi-target pathfinding
     """
 
-    def __init__(self, state_memory: StateMemory | None = None):
+    def __init__(self, state_memory: StateMemory | None = None) -> None:
         """Initialize the MultiState adapter.
 
         Args:

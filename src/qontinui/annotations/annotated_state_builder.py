@@ -30,7 +30,7 @@ class AnnotatedStateBuilder:
     - Proper state configuration from the @state annotation
     """
 
-    def __init__(self, component_extractor: StateComponentExtractor):
+    def __init__(self, component_extractor: StateComponentExtractor) -> None:
         """Initialize the builder.
 
         Args:

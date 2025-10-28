@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class DeletionManager:
     """Manages StateImage deletion with proper cascading and recovery."""
 
-    def __init__(self, state_manager=None, db_connection=None):
+    def __init__(self, state_manager=None, db_connection=None) -> None:
         """
         Initialize deletion manager.
 

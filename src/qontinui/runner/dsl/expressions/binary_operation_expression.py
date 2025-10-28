@@ -54,7 +54,7 @@ class BinaryOperationExpression(Expression):
         operator: str = "",
         left: Expression | None = None,
         right: Expression | None = None,
-    ):
+    ) -> None:
         """Initialize binary operation expression.
 
         Args:

@@ -234,7 +234,7 @@ class ActionHistory:
         # Returns List[Match] directly (not ActionRecord)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize empty action history."""
         self.snapshots: list[ActionRecord] = []
         self.times_searched: int = 0

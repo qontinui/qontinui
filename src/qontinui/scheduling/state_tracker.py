@@ -33,7 +33,7 @@ class StateTracker:
     - Notifies scheduler of state changes
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the state tracker."""
         self._active_states: set[str] = set()
         self._state_history: list[StateTransitionEvent] = []

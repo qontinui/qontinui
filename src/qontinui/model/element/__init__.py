@@ -17,6 +17,9 @@ from .pattern import Pattern
 from .position import Position
 from .positions import PositionName, Positions
 from .region import Region
+from .region_factory import RegionFactory
+from .region_geometry import RegionGeometry
+from .region_transforms import RegionTransforms
 from .scene import Scene
 from .search_region_on_object import SearchRegionOnObject, StateObjectType
 from .text import Text
@@ -24,6 +27,9 @@ from .text import Text
 __all__ = [
     # Spatial types
     "Region",
+    "RegionFactory",
+    "RegionGeometry",
+    "RegionTransforms",
     "Location",
     "Position",
     "Anchor",

@@ -28,7 +28,7 @@ class StateScheduler:
     - Handles state transitions for tasks
     """
 
-    def __init__(self, actions: Actions | None = None, path_finder: PathFinder | None = None):
+    def __init__(self, actions: Actions | None = None, path_finder: PathFinder | None = None) -> None:
         """Initialize the scheduler.
 
         Args:

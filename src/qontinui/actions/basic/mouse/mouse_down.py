@@ -7,9 +7,8 @@ import logging
 import time
 from dataclasses import dataclass
 
-import pyautogui
-
 from ....action_interface import ActionInterface
+from ....hal.factory import HALFactory
 from ....action_result import ActionResult
 from ....action_type import ActionType
 from ....object_collection import ObjectCollection
@@ -74,8 +73,9 @@ class MouseDown(ActionInterface):
         }
         button = button_map.get(press_options.button, "left")
 
-        # Press button
-        pyautogui.mouseDown(button=button)
+        # Press button using HAL
+        controller = HALFactory.get_input_controller()
+        controller.mouse_down(button)
         logger.debug(f"Mouse down: {button} button")
 
         # Pause after press

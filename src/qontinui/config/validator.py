@@ -22,7 +22,7 @@ class ActionValidationError(Exception):
 class ActionValidator:
     """Validator for action configurations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the validator."""
         self.known_action_types = set(ACTION_CONFIG_MAP.keys())
 

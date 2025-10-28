@@ -4,8 +4,10 @@ Each primitive keyboard action does exactly one thing and extends Action
 to get lifecycle management capabilities.
 """
 
-from ..actions import Action, ActionConfig, ActionResult, KeyDownOptions, KeyUpOptions, TypeOptions
-from ..actions.pure import PureActions
+from ..actions import Action, ActionConfig, TypeOptions
+from ..actions.action_options import KeyDownOptions as KeyDownOptionsLegacy
+from ..actions.basic.type.key_up_options import KeyUpOptions, KeyUpOptionsBuilder
+from ..actions.pure import ActionResult, PureActions
 
 
 class KeyPress(Action):
@@ -15,7 +17,7 @@ class KeyPress(Action):
     Presses and releases a single key.
     """
 
-    def __init__(self, config: ActionConfig | None = None):
+    def __init__(self, config: ActionConfig | None = None) -> None:
         """Initialize with optional ActionConfig.
 
         Args:
@@ -44,14 +46,14 @@ class KeyDown(Action):
     Presses and holds a key.
     """
 
-    def __init__(self, config: KeyDownOptions | None = None):
+    def __init__(self, config: KeyDownOptionsLegacy | None = None) -> None:
         """Initialize with optional KeyDownOptions.
 
         Args:
             config: KeyDownOptions instance or None for defaults
         """
         super().__init__()
-        self._config = config or KeyDownOptions()
+        self._config = config or KeyDownOptionsLegacy()
         self._pure = PureActions()
 
     def execute_key(self, key: str) -> ActionResult:
@@ -97,14 +99,14 @@ class KeyUp(Action):
     Releases a held key.
     """
 
-    def __init__(self, config: KeyUpOptions | None = None):
+    def __init__(self, config: KeyUpOptions | None = None) -> None:
         """Initialize with optional KeyUpOptions.
 
         Args:
             config: KeyUpOptions instance or None for defaults
         """
         super().__init__()
-        self._config = config or KeyUpOptions()
+        self._config = config or KeyUpOptionsBuilder().build()
         self._pure = PureActions()
 
     def execute_key(self, key: str) -> ActionResult:
@@ -128,8 +130,9 @@ class KeyUp(Action):
                 for mod in ["ctrl", "alt", "shift", "meta", "cmd", "win"]:
                     try:
                         self._pure.key_up(mod)
-                    except Exception:
-                        pass  # Ignore if modifier wasn't pressed
+                    except (OSError, RuntimeError, ValueError):
+                        # OK to ignore if modifier wasn't pressed
+                        pass
 
             return result
 
@@ -143,7 +146,7 @@ class TypeText(Action):
     Types a string of text character by character.
     """
 
-    def __init__(self, config: TypeOptions | None = None):
+    def __init__(self, config: TypeOptions | None = None) -> None:
         """Initialize with optional TypeOptions.
 
         Args:

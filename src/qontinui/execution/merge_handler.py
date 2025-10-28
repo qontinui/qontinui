@@ -32,7 +32,7 @@ class MergePoint:
         action_id: str,
         incoming_paths: list[str],
         strategy: MergeStrategy = MergeStrategy.WAIT_ALL,
-    ):
+    ) -> None:
         """Initialize merge point.
 
         Args:
@@ -165,7 +165,7 @@ class MergeHandler:
         merge_points: Dictionary of merge point objects
     """
 
-    def __init__(self, connections: Connections, action_map: dict[str, Action]):
+    def __init__(self, connections: Connections, action_map: dict[str, Action]) -> None:
         """Initialize merge handler.
 
         Args:

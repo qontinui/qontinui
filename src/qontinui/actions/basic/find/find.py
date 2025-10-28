@@ -46,7 +46,7 @@ class Find(ActionInterface):
     enables the framework to maintain an accurate understanding of the current GUI state.
     """
 
-    def __init__(self, find_pipeline: Optional["FindPipeline"] = None):
+    def __init__(self, find_pipeline: Optional["FindPipeline"] = None) -> None:
         """Initialize Find action.
 
         Args:

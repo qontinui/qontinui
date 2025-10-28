@@ -68,7 +68,7 @@ class MousePressOptions:
 class MousePressOptionsBuilder:
     """Builder for MousePressOptions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.button = MouseButton.LEFT
         self.press_duration = 0.0
         self.pause_after_press = 0.0

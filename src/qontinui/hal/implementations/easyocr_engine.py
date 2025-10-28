@@ -24,7 +24,7 @@ class EasyOCREngine(IOCREngine):
     - Built-in text detection and recognition
     """
 
-    def __init__(self, config: HALConfig | None = None):
+    def __init__(self, config: HALConfig | None = None) -> None:
         """Initialize EasyOCR engine.
 
         Args:

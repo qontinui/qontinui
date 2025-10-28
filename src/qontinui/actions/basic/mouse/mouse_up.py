@@ -7,9 +7,8 @@ import logging
 import time
 from dataclasses import dataclass
 
-import pyautogui
-
 from ....action_interface import ActionInterface
+from ....hal.factory import HALFactory
 from ....action_result import ActionResult
 from ....action_type import ActionType
 from ....object_collection import ObjectCollection
@@ -75,7 +74,8 @@ class MouseUp(ActionInterface):
         button = button_map.get(press_options.button, "left")
 
         # Release button
-        pyautogui.mouseUp(button=button)
+        controller = HALFactory.get_input_controller()
+        controller.mouse_up(button)
         logger.debug(f"Mouse up: {button} button")
 
         # Pause after release

@@ -24,7 +24,7 @@ class TaskExecutor:
     - Thread-safe execution
     """
 
-    def __init__(self, max_workers: int = 4, default_timeout: float = 60.0):
+    def __init__(self, max_workers: int = 4, default_timeout: float = 60.0) -> None:
         """Initialize the task executor.
 
         Args:

@@ -45,7 +45,7 @@ class RoutingContext:
     analysis methods for debugging and visualization.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize routing context."""
         self.records: list[RouteRecord] = []
         self.current_path: list[PathSegment] = []

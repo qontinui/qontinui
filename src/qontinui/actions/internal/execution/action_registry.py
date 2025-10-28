@@ -54,7 +54,7 @@ class ActionRegistry:
                     cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize registry."""
         if not hasattr(self, "_initialized"):
             self._actions: dict[str, ActionMetadata] = {}
@@ -65,7 +65,7 @@ class ActionRegistry:
             self._register_builtin_actions()
             logger.info("ActionRegistry initialized")
 
-    def _register_builtin_actions(self):
+    def _register_builtin_actions(self) -> None:
         """Register built-in action types."""
         # Register basic actions
         try:
@@ -362,7 +362,7 @@ class ActionRegistry:
 
         return matches
 
-    def register_factory(self, name: str, factory: Callable[..., ActionInterface]):
+    def register_factory(self, name: str, factory: Callable[..., ActionInterface]) -> None:
         """Register a factory function for an action.
 
         Args:
@@ -382,7 +382,7 @@ class ActionRegistry:
         """
         return list(self._actions.values())
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all registrations."""
         with self._lock:
             self._actions.clear()
@@ -391,7 +391,7 @@ class ActionRegistry:
             self._factories.clear()
             logger.info("Registry cleared")
 
-    def reload_builtins(self):
+    def reload_builtins(self) -> None:
         """Reload built-in action registrations."""
         # Remove existing built-ins
         builtins = ["click", "type", "wait", "drag", "chain", "multiple"]

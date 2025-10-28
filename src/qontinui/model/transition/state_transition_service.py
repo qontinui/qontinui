@@ -39,7 +39,7 @@ class StateTransitionService:
     Based on Brobot's StateTransitionService pattern.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the state transition service."""
         # Map of state name to available transitions
         self._transitions: dict[str, list[StateTransition]] = {}
@@ -61,12 +61,21 @@ class StateTransitionService:
         Args:
             transition: The state transition to register
         """
-        # TODO: StateTransition doesn't have from_state/to_state attributes
-        # Need to determine how to properly register transitions
-        # For now, just add to the general list
-        logger.debug(
-            "Transition registration needs to be updated for new StateTransition structure"
-        )
+        # Register transition using from_state property
+        from_state = transition.from_state
+        if from_state:
+            if from_state not in self._transitions:
+                self._transitions[from_state] = []
+            self._transitions[from_state].append(transition)
+            self._registered_states.add(from_state)
+
+            # Track destination state if available
+            if transition.to_state:
+                self._registered_states.add(transition.to_state)
+
+            logger.debug(f"Registered transition: {from_state} -> {transition.to_state}")
+        else:
+            logger.warning("Cannot register transition without from_state")
 
     def register_transitions(self, transitions: StateTransitions) -> None:
         """Register multiple state transitions.

@@ -115,7 +115,7 @@ class StateTransitionAspect:
         enabled: bool = True,
         track_success_rates: bool = True,
         generate_visualizations: bool = True,
-    ):
+    ) -> None:
         """Initialize the aspect.
 
         Args:

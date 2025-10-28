@@ -50,7 +50,7 @@ class VariableDeclarationStatement(Statement):
         variable_name: str = "",
         variable_type: str = "",
         initial_value: Expression | None = None,
-    ):
+    ) -> None:
         """Initialize variable declaration statement.
 
         Args:

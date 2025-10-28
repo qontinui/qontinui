@@ -34,7 +34,7 @@ class PixelPattern:
 class PixelStabilityMatrixAnalyzer:
     """Discovers non-rectangular UI elements using pixel stability analysis"""
 
-    def __init__(self, config: AnalysisConfig):
+    def __init__(self, config: AnalysisConfig) -> None:
         self.config = config
         self.min_component_size = config.min_region_size[0] * config.min_region_size[1]
         self.max_component_size = config.max_region_size[0] * config.max_region_size[1]

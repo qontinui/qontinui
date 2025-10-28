@@ -10,12 +10,13 @@ from typing import cast
 from .config import HALConfig
 from .container import HALContainer
 from .interfaces import (
-    IInputController,
     IOCREngine,
     IPatternMatcher,
     IPlatformSpecific,
     IScreenCapture,
 )
+from .interfaces.keyboard_controller import IKeyboardController
+from .interfaces.mouse_controller import IMouseController
 
 
 class HALInitializationError(Exception):
@@ -251,14 +252,14 @@ def _create_native_pattern_matcher(config: HALConfig) -> IPatternMatcher:
     return OpenCVMatcher(config)
 
 
-def _create_input_controller(config: HALConfig) -> IInputController:
-    """Create input controller implementation.
+def _create_keyboard_controller(config: HALConfig) -> IKeyboardController:
+    """Create keyboard controller implementation.
 
     Args:
         config: HAL configuration
 
     Returns:
-        Input controller implementation
+        Keyboard controller implementation
 
     Raises:
         ImportError: If backend is not available
@@ -267,58 +268,102 @@ def _create_input_controller(config: HALConfig) -> IInputController:
     backend = config.input_backend.lower()
 
     if backend == "pynput":
-        from .implementations.pynput_controller import PynputController
+        from pynput import keyboard
 
-        return PynputController(config)
+        from .implementations.keyboard_operations import KeyboardOperations
+
+        return KeyboardOperations(keyboard.Controller())
 
     elif backend == "pyautogui":
-        from .implementations.pyautogui_controller import PyAutoGUIController
-
-        return PyAutoGUIController(config)
+        # TODO: Implement PyAutoGUI keyboard operations
+        raise NotImplementedError("PyAutoGUI keyboard backend not yet implemented")
 
     elif backend == "selenium":
-        from .implementations.selenium_controller import SeleniumController
-
-        return SeleniumController(config)
+        # TODO: Implement Selenium keyboard operations
+        raise NotImplementedError("Selenium keyboard backend not yet implemented")
 
     elif backend == "native":
-        return _create_native_input_controller(config)
+        return _create_native_keyboard_controller(config)
 
     else:
         raise ValueError(f"Unsupported input controller backend: {backend}")
 
 
-def _create_native_input_controller(config: HALConfig) -> IInputController:
-    """Create native input controller for current platform.
+def _create_mouse_controller(config: HALConfig) -> IMouseController:
+    """Create mouse controller implementation.
 
     Args:
         config: HAL configuration
 
     Returns:
-        Native input controller implementation
+        Mouse controller implementation
+
+    Raises:
+        ImportError: If backend is not available
+        ValueError: If backend is not supported
+    """
+    backend = config.input_backend.lower()
+
+    if backend == "pynput":
+        from pynput import mouse
+
+        from .implementations.mouse_operations import MouseOperations
+
+        return MouseOperations(mouse.Controller())
+
+    elif backend == "pyautogui":
+        # TODO: Implement PyAutoGUI mouse operations
+        raise NotImplementedError("PyAutoGUI mouse backend not yet implemented")
+
+    elif backend == "selenium":
+        # TODO: Implement Selenium mouse operations
+        raise NotImplementedError("Selenium mouse backend not yet implemented")
+
+    elif backend == "native":
+        return _create_native_mouse_controller(config)
+
+    else:
+        raise ValueError(f"Unsupported input controller backend: {backend}")
+
+
+def _create_native_keyboard_controller(config: HALConfig) -> IKeyboardController:
+    """Create native keyboard controller for current platform.
+
+    Args:
+        config: HAL configuration
+
+    Returns:
+        Native keyboard controller implementation
 
     Raises:
         ValueError: If no native implementation for platform
     """
-    platform = _detect_platform(config)
+    # For now, use pynput as the native keyboard controller on all platforms
+    from pynput import keyboard
 
-    if platform == "windows":
-        from .implementations.platform.windows_input import WindowsInputController
+    from .implementations.keyboard_operations import KeyboardOperations
 
-        return cast(IInputController, WindowsInputController(config))
+    return KeyboardOperations(keyboard.Controller())
 
-    elif platform == "macos":
-        from .implementations.platform.macos_input import MacOSInputController
 
-        return cast(IInputController, MacOSInputController(config))
+def _create_native_mouse_controller(config: HALConfig) -> IMouseController:
+    """Create native mouse controller for current platform.
 
-    elif platform == "linux":
-        from .implementations.platform.linux_input import LinuxInputController
+    Args:
+        config: HAL configuration
 
-        return cast(IInputController, LinuxInputController(config))
+    Returns:
+        Native mouse controller implementation
 
-    else:
-        raise ValueError(f"No native input controller for platform: {platform}")
+    Raises:
+        ValueError: If no native implementation for platform
+    """
+    # For now, use pynput as the native mouse controller on all platforms
+    from pynput import mouse
+
+    from .implementations.mouse_operations import MouseOperations
+
+    return MouseOperations(mouse.Controller())
 
 
 def _create_ocr_engine(config: HALConfig) -> IOCREngine:

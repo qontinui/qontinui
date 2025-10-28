@@ -19,6 +19,13 @@ from .state_id_resolver import StateIdResolver
 from .state_memory import StateMemory, StateMemoryEnum, StateService
 from .state_visibility_manager import StateVisibilityManager
 
+# Import model classes for convenience
+try:
+    from .models import Element, State, Transition
+except ImportError:
+    # Models may not be available in all configurations
+    pass
+
 __all__ = [
     "StateMemory",
     "StateMemoryEnum",
@@ -32,4 +39,8 @@ __all__ = [
     "SearchRegionDependencyInitializer",
     "QontinuiStateManager",
     "StateAutomator",
+    # Model classes (if available)
+    "Element",
+    "State",
+    "Transition",
 ]

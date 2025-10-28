@@ -38,7 +38,7 @@ class Scene:
     pattern: Pattern
     id: int = -1
 
-    def __init__(self, pattern: Pattern | None = None, filename: str | None = None):
+    def __init__(self, pattern: Pattern | None = None, filename: str | None = None) -> None:
         """Initialize Scene with pattern or filename.
 
         Args:

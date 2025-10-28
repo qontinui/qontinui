@@ -20,7 +20,7 @@ class DebugSession:
     thread-safe to support concurrent debugging operations.
     """
 
-    def __init__(self, name: str = ""):
+    def __init__(self, name: str = "") -> None:
         """Initialize a debug session.
 
         Args:

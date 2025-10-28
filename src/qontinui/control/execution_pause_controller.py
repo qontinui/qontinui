@@ -21,7 +21,7 @@ class PausePoint:
     paused for debugging or user intervention.
     """
 
-    def __init__(self, name: str, description: str = "", enabled: bool = True):
+    def __init__(self, name: str, description: str = "", enabled: bool = True) -> None:
         """Initialize a pause point.
 
         Args:
@@ -63,13 +63,17 @@ class ExecutionPauseController:
     - Step-through execution mode
     """
 
-    def __init__(self, execution_controller: ExecutionController | None = None):
+    def __init__(self, execution_controller: ExecutionController | None = None) -> None:
         """Initialize the pause controller.
 
         Args:
             execution_controller: Controller to use, or None for global
         """
-        # TODO: Implement global execution controller singleton
+        # Use provided controller or get global singleton
+        if execution_controller is None:
+            from .execution_controller_singleton import get_global_execution_controller
+            execution_controller = get_global_execution_controller()
+
         self.execution_controller = execution_controller
         self._pause_points: dict[str, PausePoint] = {}
         self._global_pause_enabled = True
@@ -247,12 +251,12 @@ class ExecutionPauseController:
         if self.execution_controller.is_running():
             self.execution_controller.pause()
 
-            # Wait for resume
-            # TODO: Implement await_not_paused method in ExecutionController protocol
-            # self.execution_controller.await_not_paused()
-            # For now, use a simple polling loop
-            while self.execution_controller.is_paused():
-                time.sleep(0.1)
+            # Wait for resume using check_pause_point which handles pause/stop
+            try:
+                self.execution_controller.check_pause_point()
+            except Exception as e:
+                logger.error(f"Error during pause wait: {e}")
+                raise
 
             # In step mode, prepare for next pause
             if self._step_mode:

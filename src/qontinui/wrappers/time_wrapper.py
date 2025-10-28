@@ -51,7 +51,7 @@ class TimeWrapper(BaseWrapper):
         mock_time: MockTime instance for virtual clock
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize TimeWrapper.
 
         Sets up both mock and real implementations. The actual implementation

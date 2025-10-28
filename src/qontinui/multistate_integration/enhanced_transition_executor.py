@@ -83,7 +83,7 @@ class EnhancedTransitionExecutor:
         workflow_executor: Any | None = None,
         success_policy: SuccessPolicy = SuccessPolicy.STRICT,
         success_threshold: float = 0.7,
-    ):
+    ) -> None:
         """Initialize enhanced transition executor.
 
         Args:
@@ -243,18 +243,17 @@ class EnhancedTransitionExecutor:
                         logger.error(f"Workflow '{workflow_id}' failed")
                         return False
                 else:
-                    # Fall back to using registry and direct execution
+                    # No workflow executor available - cannot proceed
+                    # Direct workflow execution requires ActionExecutor or similar
                     from qontinui import registry
                     workflow = registry.get_workflow(workflow_id)
                     if not workflow:
                         logger.error(f"Workflow '{workflow_id}' not found in registry")
                         return False
 
-                    # TODO: Execute workflow directly
-                    # For now, log a warning that workflow execution is not implemented
                     logger.error(
-                        f"No workflow_executor provided and direct execution not implemented. "
-                        f"Cannot execute workflow '{workflow_id}'"
+                        f"No workflow_executor provided. EnhancedTransitionExecutor requires "
+                        f"a workflow_executor to execute workflows. Cannot execute workflow '{workflow_id}'"
                     )
                     return False
 
@@ -362,15 +361,15 @@ class EnhancedTransitionExecutor:
 
             # Execute each workflow in the incoming transition
             for workflow_id in incoming_transition.workflow_ids:
-                logger.info(f"[DEBUG] About to execute incoming workflow '{workflow_id}' for state '{state.name}'")
+                logger.debug(f"About to execute incoming workflow '{workflow_id}' for state '{state.name}'")
 
                 if not self.workflow_executor:
                     logger.error("No workflow_executor available for incoming transition")
                     return False
 
-                logger.info(f"[DEBUG] Calling workflow_executor.execute_workflow('{workflow_id}')...")
+                logger.debug(f"Calling workflow_executor.execute_workflow('{workflow_id}')...")
                 result = self.workflow_executor.execute_workflow(workflow_id)
-                logger.info(f"[DEBUG] Workflow '{workflow_id}' returned: {result}")
+                logger.debug(f"Workflow '{workflow_id}' returned: {result}")
 
                 if not result.get('success', False):
                     logger.error(f"Incoming workflow '{workflow_id}' failed for state '{state.name}'")

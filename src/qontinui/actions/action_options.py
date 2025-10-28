@@ -129,39 +129,6 @@ class DragOptions(ActionConfig):
         return self
 
 
-class MoveOptions(ActionConfig):
-    """Options for mouse move actions.
-
-    Port of MoveOptions from Qontinui framework.
-    Inherits directly from ActionConfig.
-    """
-
-    def __init__(self) -> None:
-        """Initialize with move-specific defaults."""
-        super().__init__()
-        self._action_name = "move"
-        self._move_duration: float = 0.5
-        self._movement_path: str = "direct"  # direct, smooth, random
-        self._overshoot: bool = False
-        self._overshoot_amount: int = 10
-
-    def move_duration(self, seconds: float) -> "MoveOptions":
-        """Set movement duration (fluent)."""
-        self._move_duration = seconds
-        return self
-
-    def movement_path(self, path: str) -> "MoveOptions":
-        """Set movement path type (fluent)."""
-        self._movement_path = path
-        return self
-
-    def overshoot(self, overshoot: bool = True, amount: int = 10) -> "MoveOptions":
-        """Enable overshoot with amount (fluent)."""
-        self._overshoot = overshoot
-        self._overshoot_amount = amount
-        return self
-
-
 class TypeOptions(ActionConfig):
     """Options for typing/text input actions.
 

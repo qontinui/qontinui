@@ -20,7 +20,7 @@ class BreakpointManager:
     Thread-safe for concurrent access.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the breakpoint manager."""
         self._breakpoints: dict[str, Breakpoint] = {}
         self._lock = threading.RLock()

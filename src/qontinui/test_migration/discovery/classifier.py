@@ -22,7 +22,7 @@ else:
 class TestClassifier:
     """Classifier for categorizing tests as unit vs integration tests and analyzing mock usage."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the classifier with classification patterns."""
         self.integration_indicators = {
             # Path-based indicators
@@ -202,7 +202,10 @@ class TestClassifier:
             mockito_mocks = self._detect_mockito_mocks(content, test_file)
             mock_usages.extend(mockito_mocks)
 
-        except Exception as e:
+        except (OSError, UnicodeDecodeError, ValueError) as e:
+            # OSError: File system errors (permission denied, file not found, etc.)
+            # UnicodeDecodeError: Invalid file encoding
+            # ValueError: Invalid content parsing
             print(f"Warning: Could not analyze mock usage in {test_file.path}: {e}")
 
         return mock_usages
@@ -293,7 +296,9 @@ class TestClassifier:
                 for annotation in self.integration_indicators["spring_annotations"]:
                     if annotation in content:
                         return True
-            except Exception:
+            except (OSError, UnicodeDecodeError):
+                # OSError: File system errors (permission denied, file not found, etc.)
+                # UnicodeDecodeError: Invalid file encoding
                 pass
 
         return False
@@ -325,7 +330,9 @@ class TestClassifier:
                 if pattern in content:
                     return True
 
-        except Exception:
+        except (OSError, UnicodeDecodeError):
+            # OSError: File system errors (permission denied, file not found, etc.)
+            # UnicodeDecodeError: Invalid file encoding
             pass
 
         return False

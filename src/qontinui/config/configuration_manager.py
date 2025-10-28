@@ -53,7 +53,7 @@ class ConfigurationManager:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize configuration manager."""
         if not self._initialized:
             self.settings = get_settings()
@@ -310,17 +310,17 @@ class ConfigurationManager:
         warnings.extend(self.settings.validate())
 
         # Environment-specific validation
-        if self.environment.is_headless() and self.settings.illustration_enabled:
+        if self.environment.is_headless() and self.settings.illustration.enabled:
             warnings.append("Illustration enabled in headless environment")
 
-        if not self.environment.supports_screenshots() and self.settings.save_snapshots:
+        if not self.environment.supports_screenshots() and self.settings.screenshot.save_snapshots:
             warnings.append("Screenshot saving enabled but environment doesn't support it")
 
         # Mode-specific validation
         if self.environment.mode == ExecutionMode.PRODUCTION:
-            if self.settings.mock:
+            if self.settings.core.mock:
                 warnings.append("Mock mode enabled in production")
-            if self.settings.collect_dataset:
+            if self.settings.dataset.collect:
                 warnings.append("Dataset collection enabled in production")
 
         # Validate Brobot-ported settings
@@ -386,10 +386,10 @@ class ConfigurationManager:
             "available_profiles": list(self._profiles.keys()),
             "validation_warnings": self.validate(),
             "settings_summary": {
-                "mock": self.settings.mock,
-                "headless": self.settings.headless,
-                "save_snapshots": self.settings.save_snapshots,
-                "collect_dataset": self.settings.collect_dataset,
+                "mock": self.settings.core.mock,
+                "headless": self.settings.core.headless,
+                "save_snapshots": self.settings.screenshot.save_snapshots,
+                "collect_dataset": self.settings.dataset.collect,
             },
         }
 

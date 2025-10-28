@@ -40,7 +40,7 @@ class JSONRunner:
         is handled by qontinui-web for testing and configuration validation.
     """
 
-    def __init__(self, config_path: str | None = None):
+    def __init__(self, config_path: str | None = None) -> None:
         self.config_path = config_path
         self.parser = ConfigParser()
         self.config: QontinuiConfig | None = None
@@ -143,8 +143,11 @@ class JSONRunner:
 
             return True
 
-        except Exception as e:
-            print(f"Failed to load configuration: {e}")
+        except (FileNotFoundError, OSError) as e:
+            print(f"Failed to load configuration file: {e}")
+            return False
+        except (ValueError, KeyError) as e:
+            print(f"Invalid configuration format: {e}")
             return False
 
     def _validate_configuration(self) -> bool:
@@ -257,7 +260,7 @@ class JSONRunner:
         except KeyboardInterrupt:
             print("\n\nAutomation interrupted by user")
             return False
-        except Exception as e:
+        except (RuntimeError, ValueError, KeyError) as e:
             import traceback
 
             print(f"Error during execution: {e}")
@@ -329,7 +332,7 @@ class JSONRunner:
             else:
                 print(f"Warning: Monitor {monitor_index} not found, using default monitor")
                 self.monitor_manager.primary_monitor_index = 0
-        except Exception as e:
+        except (RuntimeError, IndexError, ValueError) as e:
             print(f"Error configuring monitor {monitor_index}: {e}")
             print("Using default monitor")
             self.monitor_manager.primary_monitor_index = 0
@@ -379,7 +382,7 @@ class JSONRunner:
             try:
                 self.scheduler_executor.shutdown()
                 print("Scheduler shutdown complete")
-            except Exception as e:
+            except (RuntimeError, OSError) as e:
                 print(f"Error shutting down scheduler: {e}")
 
         # Clean up temporary files
@@ -391,8 +394,10 @@ class JSONRunner:
         """Destructor to ensure cleanup on object destruction."""
         try:
             self.cleanup()
-        except Exception:
-            pass  # Silently ignore errors during cleanup
+        except (RuntimeError, OSError):
+            # OK to silently ignore cleanup errors in destructor
+            pass
+        # KeyboardInterrupt and SystemExit now propagate
 
     def get_summary(self) -> dict[str, Any]:
         """Get execution summary."""

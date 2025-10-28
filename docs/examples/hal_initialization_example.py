@@ -7,12 +7,12 @@ injection and pass them to ActionExecutor.
 import sys
 from pathlib import Path
 
+from qontinui.action_executors import DelegatingActionExecutor
 from qontinui.config import ConfigParser
 from qontinui.hal import HALConfig, HALInitializationError, initialize_hal, shutdown_hal
-from qontinui.json_executor import ActionExecutor
 
 
-def create_executor_with_hal(config_path: str | Path) -> ActionExecutor:
+def create_executor_with_hal(config_path: str | Path) -> DelegatingActionExecutor:
     """Create ActionExecutor with HAL dependency injection.
 
     This function demonstrates the recommended pattern for initializing
@@ -71,8 +71,8 @@ def create_executor_with_hal(config_path: str | Path) -> ActionExecutor:
         print("  - easyocr: pip install easyocr", file=sys.stderr)
         raise
 
-    # 4. Create ActionExecutor with HAL container
-    executor = ActionExecutor(config, hal=hal)
+    # 4. Create DelegatingActionExecutor with HAL container
+    executor = DelegatingActionExecutor(config, hal=hal)
 
     return executor
 
@@ -147,7 +147,7 @@ def main_with_context_manager():
 
     try:
         # Create and use executor
-        executor = ActionExecutor(config, hal=hal)
+        executor = DelegatingActionExecutor(config, hal=hal)
 
         for action in config.workflows[0].actions:
             executor.execute_action(action)
@@ -168,7 +168,7 @@ def create_hal_for_testing() -> "HALContainer":
 
     Example:
         >>> hal = create_hal_for_testing()
-        >>> executor = ActionExecutor(config, hal=hal)
+        >>> executor = DelegatingActionExecutor(config, hal=hal)
         >>> # Run tests
         >>> shutdown_hal(hal)
     """
@@ -206,7 +206,7 @@ def get_hal_from_env() -> "HALContainer":
         >>> # Set environment variables
         >>> os.environ['QONTINUI_INPUT_BACKEND'] = 'pyautogui'
         >>> hal = get_hal_from_env()
-        >>> executor = ActionExecutor(config, hal=hal)
+        >>> executor = DelegatingActionExecutor(config, hal=hal)
     """
     # HALConfig automatically reads from environment
     config = HALConfig()

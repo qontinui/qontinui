@@ -22,7 +22,7 @@ class ImportError(Exception):
 class ActionImporter:
     """Importer for action configurations from JSON."""
 
-    def __init__(self, validate: bool = True, strict: bool = False):
+    def __init__(self, validate: bool = True, strict: bool = False) -> None:
         """
         Initialize the importer.
 

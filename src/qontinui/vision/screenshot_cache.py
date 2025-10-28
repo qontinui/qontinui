@@ -47,7 +47,7 @@ class ScreenshotCache:
         Uses asyncio.Lock for safe concurrent access from multiple tasks.
     """
 
-    def __init__(self, ttl_seconds: float = 0.1):
+    def __init__(self, ttl_seconds: float = 0.1) -> None:
         """
         Initialize screenshot cache.
 

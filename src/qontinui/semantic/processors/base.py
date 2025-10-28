@@ -55,7 +55,7 @@ class ProcessorConfig:
 class ProcessorConfigBuilder:
     """Builder for ProcessorConfig using fluent interface."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._config = ProcessorConfig()
 
     def with_min_confidence(self, confidence: float) -> ProcessorConfigBuilder:
@@ -228,7 +228,7 @@ class SemanticProcessor(ABC):
     and extract semantic information.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize processor."""
         self._config = ProcessorConfig()
         self._processing_times: list[float] = []

@@ -67,7 +67,7 @@ class AdjacentStates:
         all_states_in_project_service: Optional["StateService"] = None,
         state_memory: StateMemory | None = None,
         state_transitions_in_project_service: Optional["StateTransitionService"] = None,
-    ):
+    ) -> None:
         """Initialize AdjacentStates.
 
         Args:

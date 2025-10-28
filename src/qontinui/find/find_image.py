@@ -16,7 +16,7 @@ class FindImage(Find):
     Extends Find with image-specific matching capabilities.
     """
 
-    def __init__(self, image: Image | str | None = None):
+    def __init__(self, image: Image | str | None = None) -> None:
         """Initialize FindImage with optional image.
 
         Args:

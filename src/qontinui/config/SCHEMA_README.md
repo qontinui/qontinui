@@ -431,13 +431,13 @@ These models integrate seamlessly with the existing Qontinui framework:
 
 ```python
 from qontinui.config import load_actions_from_file, get_typed_config
-from qontinui.actions import ActionExecutor
+from qontinui.action_executors import DelegatingActionExecutor
 
 # Load actions
 actions = load_actions_from_file('workflow.json')
 
 # Execute actions
-executor = ActionExecutor()
+executor = DelegatingActionExecutor()
 for action in actions:
     typed_config = get_typed_config(action)
     result = executor.execute(action.type, typed_config)

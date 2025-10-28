@@ -43,7 +43,7 @@ class MethodCallExpression(Expression):
 
     def __init__(
         self, object: str | None = None, method: str = "", arguments: list[Expression] | None = None
-    ):
+    ) -> None:
         """Initialize method call expression.
 
         Args:

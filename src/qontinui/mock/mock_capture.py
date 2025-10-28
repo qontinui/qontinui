@@ -41,7 +41,7 @@ class MockCapture:
         screenshot = capture.capture()  # Returns generated mock image
     """
 
-    def __init__(self, screenshot_dir: str | None = None):
+    def __init__(self, screenshot_dir: str | None = None) -> None:
         """Initialize MockCapture.
 
         Args:

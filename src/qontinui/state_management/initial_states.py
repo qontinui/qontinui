@@ -78,7 +78,7 @@ class InitialStates:
         state_finder: StateDetector | None = None,
         state_memory: StateMemory | None = None,
         all_states_in_project_service: Optional["StateService"] = None,
-    ):
+    ) -> None:
         """Initialize InitialStates.
 
         Args:

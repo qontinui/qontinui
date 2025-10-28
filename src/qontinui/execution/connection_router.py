@@ -29,7 +29,7 @@ class ConnectionRouter:
         workflow: Workflow | None = None,
         resolver: OutputResolver | None = None,
         context: RoutingContext | None = None,
-    ):
+    ) -> None:
         """
         Initialize connection router.
 

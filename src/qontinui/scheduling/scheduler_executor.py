@@ -28,7 +28,7 @@ class SchedulerExecutor:
         runner: Any,
         state_executor: Any | None = None,
         schedules: list[ScheduleConfig] | None = None,
-    ):
+    ) -> None:
         """Initialize the scheduler executor.
 
         Args:

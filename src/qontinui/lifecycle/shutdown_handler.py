@@ -27,7 +27,7 @@ class QontinuiShutdownHandler:
     - Native resources
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize shutdown handler."""
         self._shutdown_in_progress = False
         self._shutdown_lock = threading.Lock()
@@ -54,7 +54,7 @@ class QontinuiShutdownHandler:
                 signal.signal(signal.SIGBREAK, self._signal_handler)
 
             logger.debug("Signal handlers registered")
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             logger.warning(f"Could not register signal handlers: {e}")
 
     def _signal_handler(self, signum, frame):
@@ -114,7 +114,7 @@ class QontinuiShutdownHandler:
 
             logger.info("Shutdown sequence completed successfully")
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError, ImportError) as e:
             logger.error(f"Error during shutdown: {e}", exc_info=True)
             self._exit_code = 1
         finally:
@@ -133,7 +133,7 @@ class QontinuiShutdownHandler:
             controller = get_execution_controller()
             if controller:
                 controller.stop_all()
-        except Exception as e:
+        except (OSError, RuntimeError, ImportError, AttributeError) as e:
             logger.warning(f"Error stopping execution controller: {e}")
 
         # Give operations time to stop
@@ -155,11 +155,12 @@ class QontinuiShutdownHandler:
 
                 if _screen_capture is not None:
                     _screen_capture.close()
-            except Exception:
+            except (OSError, RuntimeError, ImportError):
+                # OK to ignore screen capture cleanup errors
                 pass
 
             logger.debug("HAL resources cleaned up")
-        except Exception as e:
+        except (OSError, RuntimeError, ImportError, AttributeError) as e:
             logger.warning(f"Error cleaning up HAL resources: {e}")
 
     def _cleanup_state_management(self):
@@ -176,7 +177,7 @@ class QontinuiShutdownHandler:
                 pass
 
             logger.debug("State management cleaned up")
-        except Exception as e:
+        except (OSError, RuntimeError, ImportError, AttributeError) as e:
             logger.warning(f"Error cleaning up state management: {e}")
 
     def _execute_cleanup_callbacks(self):
@@ -186,7 +187,7 @@ class QontinuiShutdownHandler:
         for callback in self._cleanup_callbacks:
             try:
                 callback()
-            except Exception as e:
+            except (OSError, RuntimeError, ValueError, TypeError) as e:
                 logger.warning(f"Error in cleanup callback: {e}")
 
     def _cleanup_resources(self):
@@ -203,7 +204,7 @@ class QontinuiShutdownHandler:
             time.sleep(0.2)
 
             logger.debug("Final cleanup completed")
-        except Exception as e:
+        except (OSError, RuntimeError, ImportError) as e:
             logger.warning(f"Error in final cleanup: {e}")
 
     def register_cleanup_callback(self, callback: Callable[..., Any]):

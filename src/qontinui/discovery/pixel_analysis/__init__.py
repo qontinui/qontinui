@@ -1,6 +1,6 @@
 """Pixel-level analysis for State Discovery."""
 
-from .analyzer import PixelStabilityAnalyzer
+from .analyzers import PixelStabilityAnalyzer
 from .decomposer import RectangleDecomposer
 from .extractor import StableRegionExtractor
 

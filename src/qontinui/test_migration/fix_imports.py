@@ -3,7 +3,10 @@ Quick fix for import issues in the test migration system.
 This script patches the import problems to make the full CLI work.
 """
 
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def fix_execution_init():
@@ -78,7 +81,7 @@ class WorkingTestMigrationCLI(StandaloneTestMigrationCLI):
     Enhanced CLI that adds working advanced features to the standalone version.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.has_advanced = ADVANCED_COMPONENTS
         if self.has_advanced:
@@ -95,7 +98,7 @@ class WorkingTestMigrationCLI(StandaloneTestMigrationCLI):
 
         # Validate source directory
         if not args.source.exists():
-            print(f"Error: Source directory does not exist: {args.source}", file=sys.stderr)
+            logging.error(f"Error: Source directory does not exist: {args.source}")
             return 1
 
         try:
@@ -133,7 +136,7 @@ class WorkingTestMigrationCLI(StandaloneTestMigrationCLI):
             return 0
 
         except Exception as e:
-            print(f"Migration failed: {str(e)}", file=sys.stderr)
+            logging.error(f"Migration failed: {str(e)}")
             return 1
 
     def _generate_python_template(self, test_file) -> str:

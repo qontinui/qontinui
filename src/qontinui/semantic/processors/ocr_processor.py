@@ -33,7 +33,7 @@ class OCRProcessor(SemanticProcessor):
     Can use either Tesseract or EasyOCR depending on availability.
     """
 
-    def __init__(self, engine: str = "auto"):
+    def __init__(self, engine: str = "auto") -> None:
         """Initialize OCR processor.
 
         Args:

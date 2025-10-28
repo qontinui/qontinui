@@ -177,13 +177,13 @@ class Match:
             return result
 
         from ..actions import Action
-        from ..actions.basic.mouse.mouse_move_options import MouseMoveOptions
+        from ..actions.basic.mouse.mouse_move_options import MouseMoveOptionsBuilder
         from ..actions.object_collection import ObjectCollectionBuilder
         from ..model.element import Location
 
         location = Location(x=self.target.x, y=self.target.y)
         collection = ObjectCollectionBuilder().with_locations(location).build()
-        move_options = MouseMoveOptions()
+        move_options = MouseMoveOptionsBuilder().build()
         action = Action()
         return action.perform(move_options, collection)
 

@@ -165,7 +165,7 @@ class WorkflowOrchestrator:
         index: int,
         context: ExecutionContext,
         retry_policy: RetryPolicy,
-    ) -> ActionResult:
+    ) -> "ActionResult":
         """Execute a single action with retry logic.
 
         Args:
@@ -316,7 +316,7 @@ class ActionResult:
     The full ActionResult from actions package is used for action execution.
     """
 
-    def __init__(self, success: bool = False, error: Exception | None = None):
+    def __init__(self, success: bool = False, error: Exception | None = None) -> None:
         """Initialize action result.
 
         Args:

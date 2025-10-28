@@ -66,7 +66,7 @@ class MonitorManager:
     Provides methods to detect, select, and work with multiple monitors.
     """
 
-    def __init__(self, properties: Optional["BrobotProperties"] = None):
+    def __init__(self, properties: Optional["BrobotProperties"] = None) -> None:
         """Initialize MonitorManager.
 
         Args:
@@ -351,7 +351,7 @@ class BrobotProperties:
     Will be implemented when migrating the config package.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize properties."""
         self.monitor = MonitorProperties()
 
@@ -359,7 +359,7 @@ class BrobotProperties:
 class MonitorProperties:
     """Placeholder for monitor properties."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize monitor properties."""
         self.multi_monitor_enabled = False
         self.log_monitor_info = False

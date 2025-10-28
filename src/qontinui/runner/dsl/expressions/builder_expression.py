@@ -49,7 +49,7 @@ class BuilderExpression(Expression):
 
     def __init__(
         self, builder_type: str = "", method_calls: list["BuilderMethodCall"] | None = None
-    ):
+    ) -> None:
         """Initialize builder expression.
 
         Args:

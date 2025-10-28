@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class QontinuiStateManager:
     """Manages application states using a hybrid approach with pytransitions."""
 
-    def __init__(self, use_hierarchical: bool = True):
+    def __init__(self, use_hierarchical: bool = True) -> None:
         """Initialize the state manager.
 
         Args:
@@ -78,10 +78,10 @@ class QontinuiStateManager:
 
         # Add to state machine
         if self.use_hierarchical and parent:
-            # Add as nested state
+            # Add as nested state using hierarchical notation "parent_child"
+            nested_name = f"{parent}_{state.name}"
             self.machine.add_states(
-                states=state.name,
-                parent=parent,
+                states=nested_name,
                 on_enter=self._create_enter_callback(state.name),
                 on_exit=self._create_exit_callback(state.name),
             )
@@ -134,10 +134,11 @@ class QontinuiStateManager:
             logger.warning(f"Unknown state: {state_name}")
             return
 
-        # Update evidence accumulator
+        # Update evidence accumulator - use max to allow direct activation
         current_evidence = self.state_evidence.get(state_name, 0.0)
-        self.state_evidence[state_name] = (
-            current_evidence * self.evidence_decay + evidence_score * (1 - self.evidence_decay)
+        self.state_evidence[state_name] = max(
+            current_evidence * self.evidence_decay,
+            evidence_score
         )
 
         # Check if state should be activated
@@ -148,7 +149,7 @@ class QontinuiStateManager:
 
                 # Trigger state machine transition if possible
                 try:
-                    self.machine.to(state_name)
+                    self.machine.set_state(state_name)
                     logger.info(f"Activated state: {state_name} (evidence: {evidence_score:.2f})")
                 except Exception as e:
                     # State machine transition failed, but state is still active
@@ -443,13 +444,13 @@ class QontinuiStateManager:
         # Reset state machine to initial state
         if self.state_graph.initial_state:
             try:
-                self.machine.to(self.state_graph.initial_state)
+                self.machine.set_state(self.state_graph.initial_state)
             except (ValueError, AttributeError) as e:
                 # Initial state doesn't exist or transition failed
                 logger.warning(f"Failed to reset to initial state: {e}")
-                self.machine.to("unknown")
+                self.machine.set_state("unknown")
         else:
-            self.machine.to("unknown")
+            self.machine.set_state("unknown")
 
         logger.info("State manager reset")
 

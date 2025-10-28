@@ -77,7 +77,7 @@ class StateVisibilityManager:
         self,
         all_states_in_project_service: Optional["StateService"] = None,
         state_memory: StateMemory | None = None,
-    ):
+    ) -> None:
         """Initialize StateVisibilityManager.
 
         Args:

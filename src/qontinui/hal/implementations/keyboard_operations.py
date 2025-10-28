@@ -20,7 +20,7 @@ class KeyboardOperations(IKeyboardController):
     it from mouse operations and following the Single Responsibility Principle.
     """
 
-    def __init__(self, keyboard_controller: keyboard.Controller):
+    def __init__(self, keyboard_controller: keyboard.Controller) -> None:
         """Initialize keyboard operations.
 
         Args:

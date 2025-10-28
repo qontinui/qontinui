@@ -26,7 +26,7 @@ class Scroll(ActionInterface):
     - Use smooth or discrete scrolling
     """
 
-    def __init__(self, find: Find | None = None):
+    def __init__(self, find: Find | None = None) -> None:
         """Initialize Scroll action.
 
         Args:
@@ -156,8 +156,8 @@ class Scroll(ActionInterface):
         else:
             _delta_x, _delta_y = 0, 0
 
-        # TODO: Use _delta_x and _delta_y with actual scroll API
-        # Currently these are placeholder values for future implementation
+        # Placeholder implementation - integrate with HAL scroll API
+        # Replace with: MouseWrapper.scroll(_delta_x, _delta_y, location) when HAL is available
         _ = (_delta_x, _delta_y)  # Acknowledge unused variables
 
         # Simulate scroll timing

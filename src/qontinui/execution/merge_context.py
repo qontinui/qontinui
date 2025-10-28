@@ -109,7 +109,7 @@ class MergeContext:
         expected_inputs: set[str],
         conflict_resolution: str = VariableConflictResolution.LAST_WINS,
         priority_order: list[str] | None = None,
-    ):
+    ) -> None:
         """
         Initialize a merge context.
 

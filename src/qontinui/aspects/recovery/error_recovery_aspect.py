@@ -201,7 +201,7 @@ class ErrorRecoveryAspect:
     - Error rate tracking
     """
 
-    def __init__(self, enabled: bool = True, default_policy: RetryPolicy | None = None):
+    def __init__(self, enabled: bool = True, default_policy: RetryPolicy | None = None) -> None:
         """Initialize the aspect.
 
         Args:
@@ -292,7 +292,7 @@ class ErrorRecoveryAspect:
 
                         return result
 
-                    except Exception as e:
+                    except (OSError, RuntimeError, ValueError, TypeError, AttributeError, ImportError) as e:
                         last_exception = e
 
                         # Update error count
@@ -326,7 +326,8 @@ class ErrorRecoveryAspect:
                                 if handler.can_handle(e):
                                     try:
                                         return handler.handle(e, context)
-                                    except Exception:
+                                    except (OSError, RuntimeError, ValueError, TypeError, AttributeError):
+                                        # Handler failed, try next handler
                                         continue
 
                             # Try fallback
@@ -334,7 +335,8 @@ class ErrorRecoveryAspect:
                                 logger.info(f"Using fallback for {method_name}")
                                 try:
                                     return fallback()
-                                except Exception as fallback_error:
+                                except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as fallback_error:
+                                    # Fallback failed, will re-raise original exception below
                                     logger.error(f"Fallback also failed: {fallback_error}")
 
                             # Re-raise original exception

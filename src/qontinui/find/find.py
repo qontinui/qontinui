@@ -9,13 +9,16 @@ import time
 from typing import Any
 
 from ..actions import FindOptions
-from ..exceptions import ImageProcessingError
-from ..model.element import Image, Location, Pattern, Region
+from ..model.element import Image, Pattern, Region
 from ..model.search_regions import SearchRegions
 from ..reporting.events import EventType, emit_event
+from .find_executor import FindExecutor
 from .find_results import FindResults
+from .filters import NMSFilter, RegionFilter, SimilarityFilter
 from .match import Match
 from .matches import Matches
+from .matchers import TemplateMatcher
+from .screenshot import CachedScreenshotProvider, PureActionsScreenshotProvider
 
 # Type alias for search regions
 SearchRegion = Region | SearchRegions
@@ -28,7 +31,7 @@ class Find:
     Provides fluent interface for configuring and executing find operations.
     """
 
-    def __init__(self, target: Pattern | Image | str | None = None):
+    def __init__(self, target: Pattern | Image | str | None = None) -> None:
         """Initialize Find with optional target.
 
         Args:
@@ -99,8 +102,7 @@ class Find:
         """
         self._options.min_similarity(similarity)
         if self._target:
-            # Pattern always has similarity_threshold attribute
-            self._target.similarity_threshold = similarity
+            self._target.similarity = similarity
         return self
 
     def search_region(self, region: Region | SearchRegions) -> Find:
@@ -218,7 +220,7 @@ class Find:
         return self
 
     def execute(self) -> FindResults:
-        """Execute the find operation.
+        """Execute the find operation using FindExecutor.
 
         Returns:
             FindResults with matches
@@ -228,12 +230,50 @@ class Find:
 
         start_time = time.time()
 
-        # Get screenshot if not provided
-        if self._screenshot is None:
-            self._screenshot = self._capture_screenshot()
+        # Configure screenshot provider with caching
+        base_provider = PureActionsScreenshotProvider()
+        screenshot_provider = CachedScreenshotProvider(
+            provider=base_provider,
+            ttl_seconds=0.1  # Cache for 100ms
+        )
 
-        # Perform the actual finding
-        matches = self._perform_find()
+        # Configure template matcher
+        matcher = TemplateMatcher(
+            method="TM_CCOEFF_NORMED",
+            nms_overlap_threshold=0.3
+        )
+
+        # Configure filters
+        filters = []
+
+        # Similarity filter (always applied)
+        filters.append(SimilarityFilter(min_similarity=self._options._min_similarity))
+
+        # NMS filter (for find_all mode)
+        if self._options._find_all:
+            filters.append(NMSFilter(iou_threshold=0.3))
+
+        # Region filter (if using SearchRegions with multiple regions)
+        if isinstance(self._search_region, SearchRegions) and self._search_region.regions:
+            filters.append(RegionFilter(self._search_region))
+
+        # Create executor
+        executor = FindExecutor(
+            screenshot_provider=screenshot_provider,
+            matcher=matcher,
+            filters=filters
+        )
+
+        # Execute find operation
+        match_list = executor.execute(
+            pattern=self._target,
+            search_region=self._search_region,
+            similarity=self._options._min_similarity,
+            find_all=self._options._find_all
+        )
+
+        # Convert to Matches collection
+        matches = Matches(match_list)
 
         # Sort matches if configured
         sort_criteria = self._options._sort_by
@@ -252,7 +292,10 @@ class Find:
 
         duration = time.time() - start_time
 
-        # Convert SearchRegions to Region if needed
+        # Emit match attempted event for reporting
+        self._emit_match_event(matches, match_list)
+
+        # Convert SearchRegions to Region if needed for results
         search_region_for_results = (
             self._search_region.regions[0]
             if isinstance(self._search_region, SearchRegions) and self._search_region.regions
@@ -264,7 +307,7 @@ class Find:
             pattern=self._target,
             search_region=search_region_for_results,
             duration=duration,
-            screenshot=self._screenshot,
+            screenshot=screenshot_provider._cache.image if screenshot_provider._cache else None,
             method=self._method,
         )
 
@@ -334,385 +377,50 @@ class Find:
 
         return False
 
-    def _capture_screenshot(self) -> Any:
-        """Capture screenshot for finding.
-
-        Returns:
-            Screenshot image
-        """
-        # This would capture actual screenshot
-        # For now, return placeholder
-        from ..actions.pure import PureActions
-
-        pure = PureActions()
-        region_tuple = None
-        if self._search_region is not None:
-            if isinstance(self._search_region, Region):
-                region_tuple = (
-                    self._search_region.x,
-                    self._search_region.y,
-                    self._search_region.width,
-                    self._search_region.height,
-                )
-            # SearchRegions doesn't have to_tuple method
-        result = pure.screenshot(region=region_tuple)
-        return result.data if result.success else None
-
-    def _perform_find(self) -> Matches:
-        """Perform the actual pattern matching.
-
-        Returns:
-            Matches found
-        """
-        if not self._target or not self._screenshot:
-            return Matches()
-
-        # Import required modules
-        import cv2
-        import numpy as np
-
-        from ..model.match import Match as MatchObject
-
-        # All Patterns now have pixel_data and mask
-        template = self._target.pixel_data
-        pattern_mask = self._target.mask
-
-        if template is None:
-            return Matches()
-
-        # Get screenshot as numpy array
-        if hasattr(self._screenshot, "get_mat_bgr"):
-            screenshot = self._screenshot.get_mat_bgr()
-        elif isinstance(self._screenshot, np.ndarray):
-            screenshot = self._screenshot
-        else:
-            # Try to handle PIL Image
-            try:
-                from PIL import Image as PILImage
-                if isinstance(self._screenshot, PILImage.Image):
-                    # Convert PIL Image to numpy array (RGB)
-                    rgb_array = np.array(self._screenshot)
-                    # Convert RGB to BGR for OpenCV
-                    screenshot = cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR)
-                else:
-                    return Matches()
-            except (ImportError, ValueError, TypeError) as e:
-                # PIL not available or image conversion failed
-                return Matches()
-
-        if screenshot is None:
-            return Matches()
-
-        # Apply search region if specified
-        search_img = screenshot
-        offset_x, offset_y = 0, 0
-        if self._search_region and isinstance(self._search_region, Region):
-            x, y = self._search_region.x, self._search_region.y
-            w, h = self._search_region.width, self._search_region.height
-            # Ensure region is within bounds
-            x = max(0, min(x, screenshot.shape[1]))
-            y = max(0, min(y, screenshot.shape[0]))
-            w = min(w, screenshot.shape[1] - x)
-            h = min(h, screenshot.shape[0] - y)
-            search_img = screenshot[y : y + h, x : x + w]
-            offset_x, offset_y = x, y
-
-        # Perform template matching
-        if self._method == "template":
-            # Store original template dimensions
-            template_height, template_width = template.shape[:2]
-
-            # Determine which mask to use (priority: pattern_mask > alpha channel)
-            mask = None
-            if pattern_mask is not None:
-                # Check if mask is all ones (equivalent to no mask)
-                # Using a mask of all ones with TM_CCOEFF_NORMED can cause NaN values
-                if np.all(pattern_mask == 1.0) or np.all(pattern_mask == 255):
-                    mask = None
-                else:
-                    # Use the pattern mask (from MaskedPattern)
-                    # Convert mask to uint8 format (0-255) if it's in float format (0.0-1.0)
-                    if pattern_mask.dtype == np.float32 or pattern_mask.dtype == np.float64:
-                        mask = (pattern_mask * 255).astype(np.uint8)
-                    else:
-                        mask = pattern_mask.astype(np.uint8)
-            elif template.shape[2] == 4 if len(template.shape) == 3 else False:
-                # Fall back to alpha channel if present and no pattern mask
-                alpha = template[:, :, 3]
-                mask = alpha.copy()
-
-            # Prepare template (remove alpha channel if present)
-            if len(template.shape) == 3 and template.shape[2] == 4:
-                template_bgr = template[:, :, :3]
-            else:
-                template_bgr = template
-
-            # Ensure screenshot is BGR (remove alpha if present)
-            if len(search_img.shape) == 3 and search_img.shape[2] == 4:
-                search_img = search_img[:, :, :3]
-
-            # Perform template matching with or without mask
-            # NOTE: All *_NORMED methods produce NaN with masks (OpenCV bug in 4.x)
-            # For masked matching, use TM_SQDIFF (non-normalized) and convert to similarity
-            # For unmasked, use TM_CCOEFF_NORMED (best quality, 0-1 range)
-            if mask is not None:
-                # Use squared difference for masked matching (only non-normalized method that works)
-                result = cv2.matchTemplate(
-                    search_img, template_bgr, cv2.TM_SQDIFF, mask=mask
-                )
-                # Convert TM_SQDIFF to similarity (lower diff = higher similarity)
-                # Normalize: similarity = 1 / (1 + sqdiff / max_possible_diff)
-                # This maps: sqdiff=0 -> 1.0, sqdiff=infinity -> 0.0
-                max_diff = 255.0 * 255.0 * template_bgr.shape[0] * template_bgr.shape[1] * 3
-                result = 1.0 / (1.0 + result / max_diff)
-            else:
-                # Use correlation coefficient for unmasked matching (best quality, already 0-1)
-                result = cv2.matchTemplate(search_img, template_bgr, cv2.TM_CCOEFF_NORMED)
-
-            matches_list = []
-            min_similarity = self._options._min_similarity
-
-            if self._options._find_all:
-                print(f"[Find] FIND_ALL mode: min_similarity={min_similarity}")
-
-                # Find all matches above threshold
-                locations = np.where(result >= min_similarity)
-
-                # Also get best match for reporting
-                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-                print(f"[Find] Best match in FIND_ALL: confidence={max_val}, threshold={min_similarity}, passes={max_val >= min_similarity}")
-
-                # Emit diagnostic event BEFORE filtering by threshold
-                image_id = self._target.name if self._target and hasattr(self._target, "name") else "unknown"
-                print(f"[Find] Emitting MATCH_ATTEMPTED event (FIND_ALL mode) for image_id={image_id}")
-                emit_event(
-                    EventType.MATCH_ATTEMPTED,
-                    data={
-                        "image_id": image_id,
-                        "image_name": self._target.name if self._target and hasattr(self._target, "name") else None,
-                        "template_dimensions": {
-                            "width": template_width,
-                            "height": template_height,
-                        },
-                        "screenshot_dimensions": {
-                            "width": screenshot.shape[1] if screenshot is not None else search_img.shape[1] + offset_x,
-                            "height": screenshot.shape[0] if screenshot is not None else search_img.shape[0] + offset_y,
-                        },
-                        "search_region": {
-                            "x": offset_x,
-                            "y": offset_y,
-                            "width": search_img.shape[1],
-                            "height": search_img.shape[0],
-                        } if offset_x > 0 or offset_y > 0 else None,
-                        "best_match_location": {
-                            "x": int(max_loc[0]) + offset_x,
-                            "y": int(max_loc[1]) + offset_y,
-                            "region": {
-                                "x": int(max_loc[0]) + offset_x,
-                                "y": int(max_loc[1]) + offset_y,
-                                "width": template_width,
-                                "height": template_height,
-                            },
-                        },
-                        "best_match_confidence": float(max_val),
-                        "similarity_threshold": float(min_similarity),
-                        "threshold_passed": bool(max_val >= min_similarity),
-                        "match_method": "CORRELATION_COEFFICIENT_NORMED",
-                        "find_all_mode": True,
-                    },
-                )
-
-                # Collect all potential matches
-                for pt in zip(*locations[::-1], strict=False):  # Switch x and y
-                    score = result[pt[1], pt[0]]
-                    x = int(pt[0]) + offset_x
-                    y = int(pt[1]) + offset_y
-
-                    # Debug: Check for inf scores
-                    import math
-
-                    if not math.isfinite(float(score)):
-                        print(f"[Find] WARNING: Non-finite score detected at ({x}, {y}): {score}")
-                        continue  # Skip non-finite scores
-
-                    match_obj = MatchObject(
-                        target=Location(x=x, y=y, region=Region(x, y, template_width, template_height)),
-                        score=float(score),
-                        name=self._target.name if self._target else "match",
-                    )
-                    matches_list.append(Match(match_obj))
-
-                # Apply Non-Maximum Suppression to remove overlapping matches
-                if len(matches_list) > 1:
-                    matches_list = self._apply_nms(matches_list, overlap_threshold=0.3)
-
-                # Final filter to ensure all matches meet minimum similarity
-                print(f"[Find] Before final filter: {len(matches_list)} matches")
-                for i, m in enumerate(matches_list):
-                    print(
-                        f"[Find]   Match {i}: similarity={m.similarity}, min_required={min_similarity}"
-                    )
-
-                matches_list = [m for m in matches_list if m.similarity >= min_similarity]
-                print(f"[Find] After final filter: {len(matches_list)} matches")
-
-                # Filter by search regions using precedence hierarchy
-                # Precedence: 1. Options (self._search_region), 2. Pattern, 3. StateImage, 4. whole screen
-                search_regions_to_use: SearchRegions | None = None
-
-                # Level 1: Check Options-level search regions (highest priority)
-                if isinstance(self._search_region, SearchRegions) and self._search_region.regions:
-                    search_regions_to_use = self._search_region
-                    print(
-                        f"[Find] Using Options-level search regions ({len(self._search_region.regions)} regions)"
-                    )
-
-                # Level 2: Check Pattern-level search regions
-                elif (
-                    self._target
-                    and hasattr(self._target, "search_regions")
-                    and self._target.search_regions
-                ):
-                    # Pattern's search_regions is already a SearchRegions object with Region objects
-                    if self._target.search_regions.regions:
-                        search_regions_to_use = self._target.search_regions
-                        print(
-                            f"[Find] Using Pattern-level search regions ({len(self._target.search_regions.regions)} regions)"
-                        )
-
-                # Level 3: StateImage-level search regions would be passed via Options
-                # (StateImage.find() should set Options with its search_regions)
-
-                # Level 4: Whole screen (no filtering) - search_regions_to_use remains None
-
-                # Apply search region filtering if we have regions to use
-                if search_regions_to_use and search_regions_to_use.regions:
-                    filtered_matches = []
-                    for match in matches_list:
-                        if match.region:
-                            match_center = match.center
-                            # Check if match center is in ANY of the search regions
-                            for search_region in search_regions_to_use.regions:
-                                if search_region.contains(match_center):
-                                    filtered_matches.append(match)
-                                    break  # Found in at least one region, move to next match
-                    matches_list = filtered_matches
-                    print(f"[Find] After search region filter: {len(matches_list)} matches")
-            else:
-                # Find best match only
-                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-
-                print(f"[Find] BEST MATCH: confidence={max_val}, min_similarity={min_similarity}, passes={max_val >= min_similarity}")
-
-                # Emit diagnostic event with match information (before threshold filtering)
-                # This provides visibility into match scores regardless of threshold
-                image_id = self._target.name if self._target and hasattr(self._target, "name") else "unknown"
-                print(f"[Find] Emitting MATCH_ATTEMPTED event for image_id={image_id}, confidence={max_val}, threshold={min_similarity}")
-                emit_event(
-                    EventType.MATCH_ATTEMPTED,
-                    data={
-                        "image_id": image_id,
-                        "image_name": self._target.name if self._target and hasattr(self._target, "name") else None,
-                        "template_dimensions": {
-                            "width": template_width,
-                            "height": template_height,
-                        },
-                        "screenshot_dimensions": {
-                            "width": screenshot.shape[1] if screenshot is not None else search_img.shape[1] + offset_x,
-                            "height": screenshot.shape[0] if screenshot is not None else search_img.shape[0] + offset_y,
-                        },
-                        "search_region": {
-                            "x": offset_x,
-                            "y": offset_y,
-                            "width": search_img.shape[1],
-                            "height": search_img.shape[0],
-                        } if offset_x > 0 or offset_y > 0 else None,
-                        "best_match_location": {
-                            "x": int(max_loc[0]) + offset_x,
-                            "y": int(max_loc[1]) + offset_y,
-                            "region": {
-                                "x": int(max_loc[0]) + offset_x,
-                                "y": int(max_loc[1]) + offset_y,
-                                "width": template_width,
-                                "height": template_height,
-                            },
-                        },
-                        "best_match_confidence": float(max_val),
-                        "similarity_threshold": float(min_similarity),
-                        "threshold_passed": bool(max_val >= min_similarity),
-                        "match_method": "CORRELATION_COEFFICIENT_NORMED",
-                    },
-                )
-
-                if max_val >= min_similarity:
-                    x = int(max_loc[0]) + offset_x
-                    y = int(max_loc[1]) + offset_y
-
-                    match_obj = MatchObject(
-                        target=Location(x=x, y=y, region=Region(x, y, template_width, template_height)),
-                        score=float(max_val),
-                        name=self._target.name if self._target else "match",
-                    )
-                    matches_list.append(Match(match_obj))
-                    print(f"[Find] Added match at ({x}, {y}) with confidence {max_val}")
-                else:
-                    print(f"[Find] Match rejected: {max_val} < {min_similarity}")
-
-            return Matches(matches_list)
-
-        # Other methods not implemented yet
-        return Matches()
-
-    def _apply_nms(self, matches: list[Match], overlap_threshold: float = 0.3) -> list[Match]:
-        """Apply Non-Maximum Suppression to remove overlapping matches.
+    def _emit_match_event(self, matches: Matches, raw_matches: list[Match]) -> None:
+        """Emit match attempted event for reporting.
 
         Args:
-            matches: List of matches to filter
-            overlap_threshold: IoU threshold for considering matches as overlapping
-
-        Returns:
-            Filtered list of matches
+            matches: Final filtered matches
+            raw_matches: Raw matches before final filtering
         """
-        if not matches:
-            return matches
+        if not self._target:
+            return
 
-        # Sort by score descending
-        sorted_matches = sorted(matches, key=lambda m: m.similarity, reverse=True)
+        # Get best match from raw matches for reporting
+        best_match = raw_matches[0] if raw_matches else None
+        best_confidence = best_match.similarity if best_match else 0.0
+        threshold_passed = best_confidence >= self._options._min_similarity
 
-        kept_matches: list[Match] = []
-        for match in sorted_matches:
-            # Skip matches without regions
-            if match.region is None:
-                continue
-
-            # Check if this match overlaps with any kept match
-            should_keep = True
-            for kept in kept_matches:
-                # Skip kept matches without regions
-                if kept.region is None:
-                    continue
-
-                # Calculate IoU (Intersection over Union)
-                x1 = max(match.region.x, kept.region.x)
-                y1 = max(match.region.y, kept.region.y)
-                x2 = min(match.region.x + match.region.width, kept.region.x + kept.region.width)
-                y2 = min(match.region.y + match.region.height, kept.region.y + kept.region.height)
-
-                if x2 > x1 and y2 > y1:
-                    intersection = (x2 - x1) * (y2 - y1)
-                    area1 = match.region.width * match.region.height
-                    area2 = kept.region.width * kept.region.height
-                    union = area1 + area2 - intersection
-                    iou = intersection / union if union > 0 else 0
-
-                    if iou > overlap_threshold:
-                        should_keep = False
-                        break
-
-            if should_keep:
-                kept_matches.append(match)
-
-        return kept_matches
+        # Emit diagnostic event
+        image_id = self._target.name if hasattr(self._target, "name") else "unknown"
+        emit_event(
+            EventType.MATCH_ATTEMPTED,
+            data={
+                "image_id": image_id,
+                "image_name": self._target.name if hasattr(self._target, "name") else None,
+                "template_dimensions": {
+                    "width": self._target.pixel_data.shape[1] if self._target.pixel_data is not None else 0,
+                    "height": self._target.pixel_data.shape[0] if self._target.pixel_data is not None else 0,
+                },
+                "best_match_location": {
+                    "x": best_match.x if best_match else 0,
+                    "y": best_match.y if best_match else 0,
+                    "region": {
+                        "x": best_match.region.x if best_match and best_match.region else 0,
+                        "y": best_match.region.y if best_match and best_match.region else 0,
+                        "width": best_match.region.width if best_match and best_match.region else 0,
+                        "height": best_match.region.height if best_match and best_match.region else 0,
+                    } if best_match and best_match.region else None,
+                } if best_match else None,
+                "best_match_confidence": float(best_confidence),
+                "similarity_threshold": float(self._options._min_similarity),
+                "threshold_passed": bool(threshold_passed),
+                "match_method": self._method,
+                "find_all_mode": self._options._find_all,
+                "num_matches_found": matches.size(),
+            },
+        )
 
     def __str__(self) -> str:
         """String representation."""

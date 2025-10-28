@@ -18,7 +18,7 @@ class MouseOperations(IMouseController):
     it from keyboard operations and following the Single Responsibility Principle.
     """
 
-    def __init__(self, mouse_controller: mouse.Controller):
+    def __init__(self, mouse_controller: mouse.Controller) -> None:
         """Initialize mouse operations.
 
         Args:

@@ -25,7 +25,7 @@ class Highlight(ActionInterface):
     - Demonstrating where actions will occur
     """
 
-    def __init__(self, find: Find | None = None):
+    def __init__(self, find: Find | None = None) -> None:
         """Initialize Highlight action.
 
         Args:

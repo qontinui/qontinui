@@ -342,7 +342,7 @@ class PipelineBuilder:
     Provides fluent interface for pipeline configuration.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder."""
         self._pipeline = FindPipeline()
 

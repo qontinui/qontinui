@@ -26,7 +26,7 @@ class TraversalState(str, Enum):
 class ExecutionPath:
     """Represents a single execution path through the graph."""
 
-    def __init__(self, workflow: Workflow):
+    def __init__(self, workflow: Workflow) -> None:
         """Initialize execution path.
 
         Args:
@@ -60,7 +60,7 @@ class GraphTraverser:
         execution_paths: List of execution paths through graph
     """
 
-    def __init__(self, workflow: Workflow):
+    def __init__(self, workflow: Workflow) -> None:
         """Initialize graph traverser.
 
         Args:

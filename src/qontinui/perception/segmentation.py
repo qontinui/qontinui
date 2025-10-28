@@ -9,7 +9,7 @@ import numpy as np
 class ScreenSegmenter:
     """Segment screenshots into UI elements using various methods."""
 
-    def __init__(self, use_sam: bool = False, sam_checkpoint: str | None = None):
+    def __init__(self, use_sam: bool = False, sam_checkpoint: str | None = None) -> None:
         """Initialize ScreenSegmenter.
 
         Args:

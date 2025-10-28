@@ -29,7 +29,7 @@ class ScreenCapture:
         - Screenshot caching
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize screen capture using HAL."""
         self.settings = get_settings()
 

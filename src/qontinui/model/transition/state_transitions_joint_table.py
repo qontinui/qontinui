@@ -38,7 +38,7 @@ class StateTransitionsJointTable:
     thread-safe access to the state machine configuration.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the joint table."""
         # Main table: state_name -> TransitionEntry
         self._table: dict[str, TransitionEntry] = {}

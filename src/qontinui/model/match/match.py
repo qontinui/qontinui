@@ -1,13 +1,18 @@
 """Match model - ported from Qontinui framework.
 
 Represents a successful pattern match found on the screen.
+
+Thread Safety:
+    MatchMetadata and Match classes are thread-safe for concurrent modifications.
+    All mutable state is protected by RLock.
 """
 
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -24,60 +29,19 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class Match:
-    """Represents a successful pattern match found on the screen.
+class MatchMetadata:
+    """Metadata associated with a match.
 
-    Port of Match from Qontinui framework class.
+    Groups optional contextual information about how and when a match was found.
+    This keeps the Match class cleaner by separating core match data from
+    contextual information.
 
-    A Match is created when a Find operation successfully locates a GUI element (image, text, or region)
-    on the screen. It encapsulates all information about the match including its location, similarity score,
-    the image content at that location, and metadata about how it was found.
-
-    In the model-based approach, matches are fundamental for:
-    - Providing targets for mouse and keyboard actions (clicks, typing, etc.)
-    - Verifying that GUI elements exist in expected States
-    - Building dynamic relationships between GUI elements
-    - Creating visual feedback through match highlighting
-    - Tracking interaction history with GUI elements
-
-    Key features:
-    - Score: Similarity score (0.0-1.0) indicating match quality
-    - Target: Location within the matched region for precise interactions
-    - Image content: Actual pixels from the screen at the match location
-    - Search image: The pattern that was searched for
-    - State context: Information about which State object found this match
-
-    Unlike MatchSnapshot which can represent failed matches, a Match object always
-    represents a successful find operation. Multiple Match objects are aggregated in
-    an ActionResult.
+    Thread Safety:
+        All mutations are protected by RLock for thread-safe concurrent access.
     """
-
-    score: float = 0.0
-    """Similarity score (0.0-1.0) indicating match quality."""
-
-    target: Location | None = None
-    """Location within the matched region for precise interactions."""
-
-    image: Image | None = None
-    """Actual pixels from the screen at the match location."""
-
-    ocr_text: str = ""
-    """Text extracted via OCR from the matched region."""
-
-    name: str = ""
-    """Name identifier for this match."""
-
-    search_image: Image | None = None
-    """The image used to find the match."""
-
-    anchors: Anchors | None = None
-    """Anchors associated with this match."""
 
     state_object_data: StateObjectMetadata | None = None
     """Metadata about the State object that found this match."""
-
-    histogram: np.ndarray[Any, Any] | None = field(default=None, repr=False)
-    """Histogram data for this match."""
 
     scene: Scene | None = None
     """Scene containing this match."""
@@ -88,45 +52,99 @@ class Match:
     times_acted_on: int = 0
     """Number of times actions have been performed on this match."""
 
+    histogram: np.ndarray[Any, Any] | None = field(default=None, repr=False)
+    """Histogram data for this match."""
+
+    _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
+    """Lock for thread-safe access."""
+
+    def increment_times_acted_on(self) -> None:
+        """Increment the times acted on counter.
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            self.times_acted_on += 1
+
+
+@dataclass
+class Match:
+    """Represents a successful pattern match found on the screen.
+
+    A Match is created when a Find operation successfully locates a GUI element (image, text, or region)
+    on the screen. It encapsulates all information about the match including its location, similarity score,
+    the image content at that location, and metadata about how it was found.
+
+    Core fields (always present):
+    - score: Similarity score (0.0-1.0) indicating match quality
+    - target: Location within the matched region for precise interactions
+
+    Optional fields (commonly used):
+    - image: Actual pixels from the screen at the match location
+    - search_image: The pattern that was searched for
+    - name: Name identifier for this match
+    - ocr_text: Text extracted via OCR from the matched region
+    - anchors: Anchors associated with this match
+
+    Metadata (contextual information):
+    - metadata: MatchMetadata instance containing state info, timestamps, etc.
+
+    Unlike MatchSnapshot which can represent failed matches, a Match object always
+    represents a successful find operation. Multiple Match objects are aggregated in
+    an ActionResult.
+
+    Thread Safety:
+        All mutable operations are protected by RLock for thread-safe concurrent access.
+    """
+
+    # Core fields
+    score: float = 0.0
+    """Similarity score (0.0-1.0) indicating match quality."""
+
+    target: Location | None = None
+    """Location within the matched region for precise interactions."""
+
+    # Common optional fields
+    image: Image | None = None
+    """Actual pixels from the screen at the match location."""
+
+    search_image: Image | None = None
+    """The image used to find the match."""
+
+    name: str = ""
+    """Name identifier for this match."""
+
+    ocr_text: str = ""
+    """Text extracted via OCR from the matched region."""
+
+    anchors: Anchors | None = None
+    """Anchors associated with this match."""
+
+    # Metadata
+    metadata: MatchMetadata = field(default_factory=MatchMetadata)
+    """Metadata about when and how this match was found."""
+
+    # Thread safety
+    _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
+    """Lock for thread-safe access."""
+
     def __post_init__(self):
         """Initialize match with region if not set."""
         if self.target is None:
             self.target = Location(region=Region())
-
-    @property
-    def region(self) -> Region | None:
-        """Get the region of this match as a property.
-
-        Returns:
-            Region or None
-        """
-        return self.get_region()
-
-    @property
-    def similarity(self) -> float:
-        """Get the similarity score as a property.
-
-        Returns:
-            Similarity score (0.0-1.0)
-        """
-        return self.score
-
-    @property
-    def confidence(self) -> float:
-        """Get the confidence score as a property (alias for score).
-
-        Returns:
-            Confidence score (0.0-1.0)
-        """
-        return self.score
 
     def get_target(self) -> Location | None:
         """Get the target location of this match.
 
         Returns:
             Target location or None
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        return self.target
+        with self._lock:
+            return self.target
 
     @classmethod
     def from_region(cls, region: Region) -> Match:
@@ -140,180 +158,57 @@ class Match:
         """
         return cls(target=Location(region=region))
 
-    @property
-    def center(self) -> Location:
-        """Get center location of match.
-
-        Returns:
-            Center location
-        """
-        region = self.get_region()
-        if region:
-            return Location(x=region.x + region.width // 2, y=region.y + region.height // 2)
-        return self.target if self.target else Location(0, 0)
-
-    @property
-    def x(self) -> int:
-        """Get x coordinate.
-
-        Returns:
-            X coordinate or 0
-        """
-        region = self.get_region()
-        return region.x if region else 0
-
-    @property
-    def y(self) -> int:
-        """Get y coordinate.
-
-        Returns:
-            Y coordinate or 0
-        """
-        region = self.get_region()
-        return region.y if region else 0
-
-    @property
-    def w(self) -> int:
-        """Get width.
-
-        Returns:
-            Width or 0
-        """
-        region = self.get_region()
-        return region.width if region else 0
-
-    @property
-    def h(self) -> int:
-        """Get height.
-
-        Returns:
-            Height or 0
-        """
-        region = self.get_region()
-        return region.height if region else 0
-
     def get_region(self) -> Region | None:
         """Get the region of this match.
 
         Returns:
             Region or None
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        if self.target is None:
-            return None
-        return self.target.region
+        with self._lock:
+            if self.target is None:
+                return None
+            return self.target.region
 
     def set_region(self, region: Region) -> None:
         """Set the region of this match.
 
         Args:
             region: New region
+
+        Thread Safety:
+            Protected by lock for concurrent access.
         """
-        if self.target is None:
-            self.target = Location(region=region)
-        else:
-            self.target.region = region
-
-    def get_mat(self) -> np.ndarray[Any, Any] | None:
-        """Get the image as BGR NumPy array.
-
-        Returns:
-            BGR array or None
-        """
-        return self.image.get_mat_bgr() if self.image else None
-
-    def compare_by_score(self, other: Match) -> float:
-        """Compare this match to another by score.
-
-        Args:
-            other: Other match
-
-        Returns:
-            Score difference
-        """
-        return self.score - other.score
-
-    def size(self) -> int:
-        """Get area of the match region.
-
-        Returns:
-            Area in pixels
-        """
-        region = self.get_region()
-        return region.area if region else 0
+        with self._lock:
+            if self.target is None:
+                self.target = Location(region=region)
+            else:
+                self.target.region = region
 
     def increment_times_acted_on(self) -> None:
-        """Increment the times acted on counter."""
-        self.times_acted_on += 1
+        """Increment the times acted on counter.
 
-    def set_image_with_scene(self) -> None:
-        """Set image from scene if available."""
-        if self.scene is None:
-            return
-
-        # Extract sub-image from scene
-        # This would need implementation of BufferedImageUtilities
-        # For now, just a placeholder
-        pass
-
-    def get_owner_state_name(self) -> str:
-        """Get the name of the owner state.
-
-        Returns:
-            Owner state name or empty string
+        Thread Safety:
+            Protected by metadata's internal lock.
         """
-
-        if self.state_object_data:
-            return cast(str, self.state_object_data.owner_state_name)
-        return ""
-
-    def to_state_image(self) -> StateImage:
-        """Convert this match to a StateImage.
-
-        If there is a StateObject, we try to recreate it as a StateImage.
-
-        Returns:
-            StateImage created from this match
-        """
-        from ..element.pattern import Pattern
-        from ..state.state_image import StateImage
-
-        # Create a Pattern from this match
-        pattern = Pattern.from_match(self)
-        state_image = StateImage(image=pattern, name=self.name)
-
-        if self.state_object_data:
-            state_image.owner_state_name = self.state_object_data.owner_state_name  # type: ignore[misc]
-            if self.state_object_data.state_object_name:
-                state_image.name = self.state_object_data.state_object_name
-
-        return state_image
+        self.metadata.increment_times_acted_on()
 
     def __str__(self) -> str:
-        """String representation."""
-        parts = ["M["]
+        """String representation.
 
-        if self.name:
-            parts.append(f"#{self.name}# ")
+        Delegates to MatchSerializer for implementation.
+        """
+        from .match_serializer import MatchSerializer
 
-        region = self.get_region()
-        if region:
-            parts.append(
-                f"R[{region.x},{region.y} {region.width}x{region.height}] simScore:{self.score:.1f}"
-            )
-        else:
-            parts.append(f"R[null] simScore:{self.score:.1f}")
-
-        if self.ocr_text:
-            parts.append(f" ocr_text:{self.ocr_text}")
-
-        parts.append("]")
-        return "".join(parts)
+        return MatchSerializer.to_string(self)
 
     def __repr__(self) -> str:
         """Detailed representation."""
         return self.__str__()
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Check equality."""
         if not isinstance(other, Match):
             return False
@@ -331,27 +226,40 @@ class Match:
 
 
 class MatchBuilder:
-    """Builder for creating Match objects.
+    """Builder for creating Match objects with fluent API.
 
-    Port of Match from Qontinui framework.Builder class.
+    Simplified builder that focuses on the most common use cases.
+    For simple matches, consider using Match() directly with keyword arguments.
+
+    Example:
+        match = MatchBuilder() \\
+            .set_region(Region(10, 20, 100, 50)) \\
+            .set_sim_score(0.95) \\
+            .set_name("button") \\
+            .build()
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder with defaults."""
+        # Core fields
         self.target = Location()
         self.position = Position()
         self.offset_x = 0
         self.offset_y = 0
-        self.image = None
-        self.search_image = None
-        self.region = None
-        self.name = None
-        self.ocr_text = None
-        self.anchors = None
-        self.state_object_data = None
-        self.histogram = None
-        self.scene = None
+        self.region: Region | None = None
         self.sim_score = -1
+
+        # Optional fields
+        self.image: Image | None = None
+        self.search_image: Image | None = None
+        self.name: str | None = None
+        self.ocr_text: str | None = None
+        self.anchors: Anchors | None = None
+
+        # Metadata fields
+        self.state_object_data: StateObjectMetadata | None = None
+        self.histogram: np.ndarray[Any, Any] | None = None
+        self.scene: Scene | None = None
 
     def set_match(self, match: Match) -> MatchBuilder:
         """Copy from existing match.
@@ -362,26 +270,24 @@ class MatchBuilder:
         Returns:
             Self for chaining
         """
-        if match.image:
-            self.image = match.image
-        if match.search_image:
-            self.search_image = match.search_image
+        # Copy core fields
+        self.sim_score = match.score
         region = match.get_region()
         if region is not None:
             self.set_region(region)
-        if match.name:
-            self.name = match.name
-        if match.ocr_text:
-            self.ocr_text = match.ocr_text
-        if match.anchors:
-            self.anchors = match.anchors
-        if match.state_object_data:
-            self.state_object_data = match.state_object_data
-        if match.histogram is not None:
-            self.histogram = match.histogram
-        if match.scene:
-            self.scene = match.scene
-        self.sim_score = match.score
+
+        # Copy optional fields
+        self.image = match.image
+        self.search_image = match.search_image
+        self.name = match.name if match.name else None
+        self.ocr_text = match.ocr_text if match.ocr_text else None
+        self.anchors = match.anchors
+
+        # Copy metadata
+        self.state_object_data = match.metadata.state_object_data
+        self.histogram = match.metadata.histogram
+        self.scene = match.metadata.scene
+
         return self
 
     def set_region(self, region: Region) -> MatchBuilder:
@@ -408,41 +314,21 @@ class MatchBuilder:
         self.position = position
         return self
 
-    def set_offset_x(self, offset_x: int) -> MatchBuilder:
-        """Set x offset.
+    def set_offset(self, offset: Location | tuple[int, int]) -> MatchBuilder:
+        """Set offset from location or coordinates.
 
         Args:
-            offset_x: X offset
+            offset: Offset location or (x, y) tuple
 
         Returns:
             Self for chaining
         """
-        self.offset_x = offset_x
-        return self
-
-    def set_offset_y(self, offset_y: int) -> MatchBuilder:
-        """Set y offset.
-
-        Args:
-            offset_y: Y offset
-
-        Returns:
-            Self for chaining
-        """
-        self.offset_y = offset_y
-        return self
-
-    def set_offset(self, offset: Location) -> MatchBuilder:
-        """Set offset from location.
-
-        Args:
-            offset: Offset location
-
-        Returns:
-            Self for chaining
-        """
-        self.offset_x = offset.get_final_location().x
-        self.offset_y = offset.get_final_location().y
+        if isinstance(offset, tuple):
+            self.offset_x, self.offset_y = offset
+        else:
+            final_loc = offset.get_final_location()
+            self.offset_x = final_loc.x
+            self.offset_y = final_loc.y
         return self
 
     def set_image(self, image: Image) -> MatchBuilder:
@@ -572,38 +458,37 @@ class MatchBuilder:
         """Build the Match object.
 
         Returns:
-            Constructed Match
+            Constructed Match instance
         """
-        match = Match(target=Location(region=Region()))
-
-        # Set target location
+        # Configure target location
         if self.region:
             self.target.region = self.region
         self.target.position = self.position
         self.target.offset_x = self.offset_x
         self.target.offset_y = self.offset_y
-        match.target = self.target
 
-        # Set other fields
-        match.scene = self.scene
+        # Create metadata
+        metadata = MatchMetadata(
+            state_object_data=self.state_object_data,
+            scene=self.scene,
+            histogram=self.histogram,
+            timestamp=datetime.now(),
+        )
 
-        # Set match image
-        if self.image:
-            match.image = self.image
-        elif match.scene:
+        # Create match
+        match = Match(
+            score=self.sim_score if self.sim_score >= 0 else 0.0,
+            target=self.target,
+            image=self.image,
+            search_image=self.search_image,
+            name=self.name or "",
+            ocr_text=self.ocr_text or "",
+            anchors=self.anchors,
+            metadata=metadata,
+        )
+
+        # Set image from scene if needed
+        if not self.image and self.scene:
             match.set_image_with_scene()
-
-        if self.name:
-            match.name = self.name
-        if self.ocr_text:
-            match.ocr_text = self.ocr_text
-        if self.sim_score >= 0:
-            match.score = self.sim_score
-
-        match.anchors = self.anchors
-        match.state_object_data = self.state_object_data
-        match.histogram = self.histogram
-        match.timestamp = datetime.now()
-        match.search_image = self.search_image
 
         return match

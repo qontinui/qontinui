@@ -88,7 +88,7 @@ class FluentActions:
     - Clear separation between atomic and composite actions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize fluent actions."""
         self.pure = PureActions()
         self.chain = ActionChain()

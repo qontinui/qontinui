@@ -267,7 +267,7 @@ class CrossStateAnchorBuilder:
     Provides fluent interface for constructing cross-state anchors.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder."""
         self._anchor = CrossStateAnchor()
 

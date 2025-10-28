@@ -53,7 +53,7 @@ class AspectRegistry:
     providing a single point of control for cross-cutting concerns.
     """
 
-    def __init__(self, config: AspectConfiguration | None = None):
+    def __init__(self, config: AspectConfiguration | None = None) -> None:
         """Initialize the registry.
 
         Args:

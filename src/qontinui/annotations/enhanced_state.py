@@ -86,7 +86,7 @@ def state(
     Example:
         @state(initial=True, priority=150, group="main_window")
         class MainMenuState:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.file_menu = StateObject.builder()\\
                     .with_image("file_menu")\\
                     .build()

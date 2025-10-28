@@ -77,7 +77,7 @@ class VerificationOptions:
 class VerificationOptionsBuilder:
     """Builder for VerificationOptions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.event = Event.NONE
         self.text = ""
         self.images = []

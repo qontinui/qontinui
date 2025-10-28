@@ -282,7 +282,7 @@ class ActiveStateSetBuilder:
     Provides fluent interface for building state sets.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder."""
         self._set = ActiveStateSet()
 

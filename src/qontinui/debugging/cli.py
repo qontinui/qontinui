@@ -23,7 +23,7 @@ class DebugCLI(cmd.Cmd):
     intro = "Qontinui Debugging CLI - Type 'help' for available commands"
     prompt = "(qontinui-debug) "
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the debug CLI."""
         super().__init__()
         self.debug_manager = DebugManager.get_instance()

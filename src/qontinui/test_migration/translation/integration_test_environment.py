@@ -56,7 +56,7 @@ class IntegrationTestEnvironment:
     - Manage test isolation and cleanup
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the integration test environment."""
         self._components: dict[str, ComponentConfiguration] = {}
         self._database_config: DatabaseConfiguration | None = None
@@ -100,7 +100,7 @@ class IntegrationTestEnvironment:
                 "class ComponentRegistry:",
                 '    """Registry for managing test components and their dependencies."""',
                 "    ",
-                "    def __init__(self):",
+                "    def __init__(self) -> None:",
                 "        self._components = {}",
                 "        self._mocks = {}",
                 "    ",
@@ -257,7 +257,7 @@ class IntegrationTestEnvironment:
                 "class MultiComponentScenario:",
                 '    """Helper class for managing multi-component test scenarios."""',
                 "    ",
-                "    def __init__(self, environment):",
+                "    def __init__(self, environment) -> None:",
                 "        self.environment = environment",
                 "        self.interactions = []",
                 "        self.state_snapshots = {}",
@@ -509,7 +509,7 @@ class IntegrationTestGenerator:
     Generates complete integration test files with environment setup.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the integration test generator."""
         self.environment = IntegrationTestEnvironment()
 

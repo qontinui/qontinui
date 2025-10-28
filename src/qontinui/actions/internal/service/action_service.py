@@ -36,7 +36,7 @@ class ActionService:
         self,
         basic_action: Optional["BasicActionRegistry"] = None,
         find_functions: Optional["FindStrategyRegistry"] = None,
-    ):
+    ) -> None:
         """Construct the ActionService with required action registries.
 
         Args:
@@ -132,7 +132,7 @@ class BasicActionRegistry:
     Placeholder for BasicActionRegistry class.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the registry with action implementations."""
         self._actions: dict[ActionType, ActionInterface] = {}
 
@@ -163,7 +163,7 @@ class FindStrategyRegistry:
     Placeholder for FindStrategyRegistry class.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the registry."""
         self._custom_finds = []
 
