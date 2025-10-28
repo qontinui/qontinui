@@ -357,7 +357,7 @@ venv.bak/
 Thumbs.db
 CLAUDE.md
 test_venv
-test_*.py
+/test_*.py
 
 # Temporary development files
 temp_dev/

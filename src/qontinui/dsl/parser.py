@@ -1,10 +1,13 @@
 """DSL parser for Qontinui automation scripts."""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from typing import Any, cast
 
-from lark import Lark, Transformer
+from lark import Lark, Token, Transformer, Tree
+from lark.exceptions import LarkError
 
 logger = logging.getLogger(__name__)
 
@@ -26,36 +29,58 @@ QONTINUI_GRAMMAR = r"""
 
     state_def: "state" IDENTIFIER "{" state_body "}"
     state_body: state_property*
-    state_property: "elements" ":" element_list
-                  | "min_elements" ":" NUMBER
-                  | "parent" ":" IDENTIFIER
-                  | "metadata" ":" json_value
+    state_property: elements_prop
+                  | min_elements_prop
+                  | parent_prop
+                  | metadata_prop
+
+    elements_prop: "elements" ":" element_list
+    min_elements_prop: "min_elements" ":" NUMBER
+    parent_prop: "parent" ":" IDENTIFIER
+    metadata_prop: "metadata" ":" json_value
 
     element_list: "[" [element ("," element)*] "]"
     element: IDENTIFIER | element_inline
 
     element_inline: "{" element_props "}"
     element_props: element_prop ("," element_prop)*
-    element_prop: "id" ":" STRING
-                | "type" ":" element_type
-                | "bbox" ":" bbox
-                | "text" ":" STRING
-                | "description" ":" STRING
+    element_prop: id_prop
+                | type_prop
+                | bbox_prop
+                | text_prop
+                | description_prop
 
-    element_type: "button" | "text" | "input" | "image" | "icon" | "link" | "checkbox"
+    id_prop: "id" ":" STRING
+    type_prop: "type" ":" element_type
+    bbox_prop: "bbox" ":" bbox
+    text_prop: "text" ":" STRING
+    description_prop: "description" ":" STRING
+
+    element_type: ELEMENT_TYPE_TOKEN
+
+    ELEMENT_TYPE_TOKEN: "button" | "text" | "input" | "image" | "icon" | "link" | "checkbox"
 
     bbox: "[" NUMBER "," NUMBER "," NUMBER "," NUMBER "]"
 
     transition_def: "transition" IDENTIFIER "{" transition_body "}"
     transition_body: transition_property*
-    transition_property: "from" ":" IDENTIFIER
-                       | "to" ":" IDENTIFIER
-                       | "action" ":" action_type
-                       | "trigger" ":" IDENTIFIER
-                       | "probability" ":" NUMBER
-                       | "conditions" ":" condition_list
+    transition_property: from_prop
+                       | to_prop
+                       | action_prop
+                       | trigger_prop
+                       | probability_prop
+                       | conditions_prop
 
-    action_type: "click" | "type" | "hover" | "drag" | "scroll" | "key_press" | "wait"
+    from_prop: "from" ":" IDENTIFIER
+    to_prop: "to" ":" IDENTIFIER
+    action_prop: "action" ":" action_type
+    trigger_prop: "trigger" ":" IDENTIFIER
+    probability_prop: "probability" ":" NUMBER
+    conditions_prop: "conditions" ":" condition_list
+
+    action_type: ACTION_TYPE_TOKEN
+
+    ACTION_TYPE_TOKEN: "click" | "type" | "hover" | "drag" | "scroll" | "key_press" | "wait"
 
     condition_list: "[" [condition ("," condition)*] "]"
     condition: expression
@@ -84,9 +109,11 @@ QONTINUI_GRAMMAR = r"""
     atom: NUMBER
         | STRING
         | IDENTIFIER
-        | "true" | "false"
+        | BOOLEAN
         | "(" expression ")"
         | function_call
+
+    BOOLEAN.2: "true" | "false"
 
     function_call: IDENTIFIER "(" [args] ")"
     args: value ("," value)*
@@ -99,7 +126,7 @@ QONTINUI_GRAMMAR = r"""
          | STRING
          | IDENTIFIER
          | json_value
-         | "true" | "false"
+         | BOOLEAN
          | "null"
 
     json_value: json_object | json_array
@@ -108,18 +135,18 @@ QONTINUI_GRAMMAR = r"""
     json_array: "[" [json_element ("," json_element)*] "]"
     json_element: STRING | NUMBER | "true" | "false" | "null" | json_object | json_array
 
-    COMMENT: "//" /[^\n]*/ NEWLINE
-           | "/*" /.*?/ "*/"
+    COMMENT: "//" /[^\n]*/
+           | "/*" /(.|\n)*?/ "*/"
 
     COMP_OP: "==" | "!=" | "<" | ">" | "<=" | ">="
     ADD_OP: "+" | "-"
     MUL_OP: "*" | "/" | "%"
 
-    %import common.CNAME -> IDENTIFIER
     %import common.NUMBER
     %import common.ESCAPED_STRING -> STRING
     %import common.WS
     %import common.NEWLINE
+    %import common.CNAME -> IDENTIFIER
     %ignore WS
     %ignore COMMENT
 """
@@ -141,8 +168,8 @@ class ParsedTransition:
     """Parsed transition definition."""
 
     name: str
-    from_state: str
-    to_state: str
+    from_state: str | None
+    to_state: str | None
     action: str
     trigger: str | None
     probability: float
@@ -160,15 +187,23 @@ class ParsedAction:
 class QontinuiTransformer(Transformer[Any, Any]):
     """Transform parsed DSL into Python objects."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.states = {}
-        self.transitions = {}
-        self.elements = {}
-        self.variables = {}
-        self.actions = []
+        self.states: dict[str, ParsedState] = {}
+        self.transitions: dict[str, ParsedTransition] = {}
+        self.elements: dict[str, dict[str, Any]] = {}
+        self.variables: dict[str, Any] = {}
+        self.actions: list[ParsedAction] = []
 
-    def program(self, items):
+    def program(self, items: list[Any]) -> dict[str, Any]:
+        """Process program items and return all parsed entities.
+
+        Args:
+            items: List of parsed items from the DSL program
+
+        Returns:
+            Dictionary containing states, transitions, elements, variables, and actions
+        """
         # Process all items to populate dictionaries
         for _item in items:
             pass  # Items are processed as side effects
@@ -181,9 +216,17 @@ class QontinuiTransformer(Transformer[Any, Any]):
             "actions": self.actions,
         }
 
-    def state_def(self, items):
+    def state_def(self, items: list[Any]) -> ParsedState:
+        """Parse state definition.
+
+        Args:
+            items: List containing state name and properties
+
+        Returns:
+            ParsedState object
+        """
         name = str(items[0])
-        properties = {}
+        properties: dict[str, Any] = {}
 
         # Collect properties from state_body
         if len(items) > 1 and isinstance(items[1], dict):
@@ -200,8 +243,27 @@ class QontinuiTransformer(Transformer[Any, Any]):
         self.states[name] = state
         return state
 
-    def state_body(self, items):
-        properties = {}
+    def state_property(self, items: list[Any]) -> Any:
+        """Pass through the property tuple from child rules.
+
+        Args:
+            items: List of property items
+
+        Returns:
+            First item or None
+        """
+        return items[0] if items else None
+
+    def state_body(self, items: list[Any]) -> dict[str, Any]:
+        """Parse state body and collect properties.
+
+        Args:
+            items: List of state properties
+
+        Returns:
+            Dictionary of state properties
+        """
+        properties: dict[str, Any] = {}
         for item in items:
             if isinstance(item, tuple) and len(item) == 2:
                 properties[item[0]] = item[1]
@@ -209,41 +271,206 @@ class QontinuiTransformer(Transformer[Any, Any]):
                 properties.update(item)
         return properties
 
-    def state_property(self, items):
-        # Return tuple of (key, value) for proper handling
-        if items[0] == "elements":
-            return ("elements", items[1])
-        elif items[0] == "min_elements":
-            return ("min_elements", items[1])
-        elif items[0] == "parent":
-            return ("parent", str(items[1]))
-        elif items[0] == "metadata":
-            return ("metadata", items[1])
-        return {}
+    def elements_prop(self, items: list[Any]) -> tuple[str, list[Any]]:
+        """Handle elements property.
 
-    def element_list(self, items):
+        Args:
+            items: List containing elements
+
+        Returns:
+            Tuple of property name and element list
+        """
+        return ("elements", items[0] if items else [])
+
+    def min_elements_prop(self, items: list[Any]) -> tuple[str, int]:
+        """Handle min_elements property.
+
+        Args:
+            items: List containing min_elements value
+
+        Returns:
+            Tuple of property name and integer value
+        """
+        return ("min_elements", int(items[0]) if items else 1)
+
+    def parent_prop(self, items: list[Any]) -> tuple[str, str | None]:
+        """Handle parent property.
+
+        Args:
+            items: List containing parent state name
+
+        Returns:
+            Tuple of property name and parent state name
+        """
+        return ("parent", str(items[0]) if items else None)
+
+    def metadata_prop(self, items: list[Any]) -> tuple[str, dict[str, Any]]:
+        """Handle metadata property.
+
+        Args:
+            items: List containing metadata dictionary
+
+        Returns:
+            Tuple of property name and metadata dictionary
+        """
+        return ("metadata", items[0] if items else {})
+
+    def element(self, items: list[Any]) -> Any:
+        """Handle element - can be IDENTIFIER or element_inline.
+
+        Args:
+            items: List containing element identifier or inline definition
+
+        Returns:
+            Element identifier or inline definition
+        """
+        return items[0] if items else None
+
+    def element_list(self, items: list[Any]) -> list[Any]:
+        """Return list of elements.
+
+        Args:
+            items: List of elements
+
+        Returns:
+            List of elements
+        """
         return items
 
-    def element_inline(self, items):
-        props = {}
+    def element_inline(self, items: list[Any]) -> dict[str, Any]:
+        """Handle inline element definition.
+
+        Args:
+            items: List containing element properties dictionary
+
+        Returns:
+            Element properties dictionary
+        """
+        # items[0] should be the element_props dict
+        if items:
+            result = items[0]
+            return result if isinstance(result, dict) else {}
+        return {}
+
+    def element_type(self, items: list[Any]) -> str:
+        """Handle element type - returns the element type string.
+
+        Args:
+            items: List containing element type token
+
+        Returns:
+            Element type string (defaults to 'button')
+        """
+        if items:
+            return str(items[0])
+        return "button"  # default element type
+
+    def id_prop(self, items: list[Any]) -> dict[str, str]:
+        """Handle id property.
+
+        Args:
+            items: List containing element id
+
+        Returns:
+            Dictionary with id property
+        """
+        return {"id": items[0] if items else ""}
+
+    def type_prop(self, items: list[Any]) -> dict[str, str]:
+        """Handle type property.
+
+        Args:
+            items: List containing element type
+
+        Returns:
+            Dictionary with type property
+        """
+        return {"type": items[0] if items else "button"}
+
+    def bbox_prop(self, items: list[Any]) -> dict[str, list[int]]:
+        """Handle bbox property.
+
+        Args:
+            items: List containing bounding box coordinates
+
+        Returns:
+            Dictionary with bbox property
+        """
+        return {"bbox": items[0] if items else [0, 0, 0, 0]}
+
+    def text_prop(self, items: list[Any]) -> dict[str, str]:
+        """Handle text property.
+
+        Args:
+            items: List containing text value
+
+        Returns:
+            Dictionary with text property
+        """
+        return {"text": items[0] if items else ""}
+
+    def description_prop(self, items: list[Any]) -> dict[str, str]:
+        """Handle description property.
+
+        Args:
+            items: List containing description value
+
+        Returns:
+            Dictionary with description property
+        """
+        return {"description": items[0] if items else ""}
+
+    def element_prop(self, items: list[Any]) -> dict[str, Any]:
+        """Pass through the property dict from child rules.
+
+        Args:
+            items: List containing element property dictionary
+
+        Returns:
+            Element property dictionary
+        """
+        if items:
+            result = items[0]
+            return result if isinstance(result, dict) else {}
+        return {}
+
+    def element_props(self, items: list[Any]) -> dict[str, Any]:
+        """Combine all element properties into a single dict.
+
+        Args:
+            items: List of element property dictionaries
+
+        Returns:
+            Combined element properties dictionary
+        """
+        props: dict[str, Any] = {}
         for item in items:
             if isinstance(item, dict):
                 props.update(item)
         return props
 
-    def element_prop(self, items):
-        if len(items) >= 2:
-            key = str(items[0])
-            value = items[1]
-            return {key: value}
-        return {}
+    def bbox(self, items: list[Any]) -> list[int]:
+        """Parse bounding box coordinates.
 
-    def bbox(self, items):
+        Args:
+            items: List of coordinate values
+
+        Returns:
+            List of integer coordinates [x, y, width, height]
+        """
         return [int(item) for item in items]
 
-    def transition_def(self, items):
+    def transition_def(self, items: list[Any]) -> ParsedTransition:
+        """Parse transition definition.
+
+        Args:
+            items: List containing transition name and properties
+
+        Returns:
+            ParsedTransition object
+        """
         name = str(items[0])
-        properties = {}
+        properties: dict[str, Any] = {}
 
         if len(items) > 1 and isinstance(items[1], dict):
             properties = items[1]
@@ -261,8 +488,27 @@ class QontinuiTransformer(Transformer[Any, Any]):
         self.transitions[name] = transition
         return transition
 
-    def transition_body(self, items):
-        properties = {}
+    def transition_property(self, items: list[Any]) -> Any:
+        """Pass through the property tuple from child rules.
+
+        Args:
+            items: List of property items
+
+        Returns:
+            First item or None
+        """
+        return items[0] if items else None
+
+    def transition_body(self, items: list[Any]) -> dict[str, Any]:
+        """Parse transition body and collect properties.
+
+        Args:
+            items: List of transition properties
+
+        Returns:
+            Dictionary of transition properties
+        """
+        properties: dict[str, Any] = {}
         for item in items:
             if isinstance(item, tuple) and len(item) == 2:
                 properties[item[0]] = item[1]
@@ -270,24 +516,83 @@ class QontinuiTransformer(Transformer[Any, Any]):
                 properties.update(item)
         return properties
 
-    def transition_property(self, items):
-        if items[0] == "from":
-            return ("from", str(items[1]))
-        elif items[0] == "to":
-            return ("to", str(items[1]))
-        elif items[0] == "action":
-            return ("action", str(items[1]))
-        elif items[0] == "trigger":
-            return ("trigger", str(items[1]))
-        elif items[0] == "probability":
-            return ("probability", float(items[1]))
-        elif items[0] == "conditions":
-            return ("conditions", items[1])
-        return {}
+    def from_prop(self, items: list[Any]) -> tuple[str, str | None]:
+        """Handle from property.
 
-    def action_def(self, items):
+        Args:
+            items: List containing from state name
+
+        Returns:
+            Tuple of property name and from state name
+        """
+        return ("from", str(items[0]) if items else None)
+
+    def to_prop(self, items: list[Any]) -> tuple[str, str | None]:
+        """Handle to property.
+
+        Args:
+            items: List containing to state name
+
+        Returns:
+            Tuple of property name and to state name
+        """
+        return ("to", str(items[0]) if items else None)
+
+    def action_prop(self, items: list[Any]) -> tuple[str, str]:
+        """Handle action property.
+
+        Args:
+            items: List containing action type
+
+        Returns:
+            Tuple of property name and action type
+        """
+        return ("action", str(items[0]) if items else "click")
+
+    def trigger_prop(self, items: list[Any]) -> tuple[str, str | None]:
+        """Handle trigger property.
+
+        Args:
+            items: List containing trigger element name
+
+        Returns:
+            Tuple of property name and trigger element name
+        """
+        return ("trigger", str(items[0]) if items else None)
+
+    def probability_prop(self, items: list[Any]) -> tuple[str, float]:
+        """Handle probability property.
+
+        Args:
+            items: List containing probability value
+
+        Returns:
+            Tuple of property name and probability value
+        """
+        return ("probability", float(items[0]) if items else 1.0)
+
+    def conditions_prop(self, items: list[Any]) -> tuple[str, list[str]]:
+        """Handle conditions property.
+
+        Args:
+            items: List containing conditions
+
+        Returns:
+            Tuple of property name and conditions list
+        """
+        return ("conditions", items[0] if items else [])
+
+    def action_def(self, items: list[Any]) -> ParsedAction:
+        """Parse action definition.
+
+        Args:
+            items: List containing action type and arguments
+
+        Returns:
+            ParsedAction object
+        """
         action_type = str(items[0])
-        args = {}
+        args: dict[str, Any] = {}
 
         if len(items) > 1 and isinstance(items[1], dict):
             args = items[1]
@@ -297,11 +602,29 @@ class QontinuiTransformer(Transformer[Any, Any]):
         self.actions.append(action)
         return action
 
-    def action_type(self, items):
-        return str(items[0])
+    def action_type(self, items: list[Any]) -> str:
+        """Handle action type - returns the action type string.
 
-    def action_args(self, items):
-        args = {}
+        Args:
+            items: List containing action type token
+
+        Returns:
+            Action type string (defaults to 'click')
+        """
+        if items:
+            return str(items[0])
+        return "click"  # default action type
+
+    def action_args(self, items: list[Any]) -> dict[str, Any]:
+        """Parse action arguments.
+
+        Args:
+            items: List of action arguments
+
+        Returns:
+            Dictionary of action arguments
+        """
+        args: dict[str, Any] = {}
         for item in items:
             if isinstance(item, dict):
                 args.update(item)
@@ -309,15 +632,31 @@ class QontinuiTransformer(Transformer[Any, Any]):
                 args[item[0]] = item[1]
         return args
 
-    def element_def(self, items):
+    def element_def(self, items: list[Any]) -> dict[str, dict[str, Any]]:
+        """Parse element definition.
+
+        Args:
+            items: List containing element name and properties
+
+        Returns:
+            Dictionary mapping element name to properties
+        """
         name = str(items[0])
-        props = items[1] if len(items) > 1 else {}
+        props: dict[str, Any] = items[1] if len(items) > 1 else {}
         self.elements[name] = props
         return {name: props}
 
-    def variable_def(self, items):
+    def variable_def(self, items: list[Any]) -> dict[str, Any]:
+        """Parse variable definition.
+
+        Args:
+            items: List containing variable name and value
+
+        Returns:
+            Dictionary mapping variable name to value
+        """
         name = str(items[0])
-        value = items[1] if len(items) > 1 else None
+        value: Any = items[1] if len(items) > 1 else None
 
         # Extract actual value if it's a Tree
         if hasattr(value, "data"):
@@ -327,42 +666,129 @@ class QontinuiTransformer(Transformer[Any, Any]):
         self.variables[name] = value
         return {name: value}
 
-    def value(self, items):
-        # Return the actual value from the parse tree
+    def value(self, items: list[Any]) -> Any:
+        """Return the actual value from the parse tree.
+
+        Args:
+            items: List containing value
+
+        Returns:
+            Value or None
+        """
         if items:
             return items[0]
         return None
 
-    def NUMBER(self, token):
+    def NUMBER(self, token: Token) -> float:
+        """Parse number token.
+
+        Args:
+            token: Number token
+
+        Returns:
+            Float value
+        """
         return float(token)
 
-    def STRING(self, token):
+    def STRING(self, token: Token) -> str:
+        """Parse string token.
+
+        Args:
+            token: String token
+
+        Returns:
+            String value with quotes removed
+        """
         return str(token)[1:-1]  # Remove quotes
 
-    def IDENTIFIER(self, token):
+    def IDENTIFIER(self, token: Token) -> str:
+        """Parse identifier token.
+
+        Args:
+            token: Identifier token
+
+        Returns:
+            Identifier string
+        """
         return str(token)
 
-    def json_object(self, items):
-        obj = {}
+    def ELEMENT_TYPE_TOKEN(self, token: Token) -> str:
+        """Parse element type token.
+
+        Args:
+            token: Element type token
+
+        Returns:
+            Element type string
+        """
+        return str(token)
+
+    def ACTION_TYPE_TOKEN(self, token: Token) -> str:
+        """Parse action type token.
+
+        Args:
+            token: Action type token
+
+        Returns:
+            Action type string
+        """
+        return str(token)
+
+    def BOOLEAN(self, token: Token) -> bool:
+        """Parse boolean token.
+
+        Args:
+            token: Boolean token
+
+        Returns:
+            Boolean value
+        """
+        return str(token) == "true"
+
+    def json_object(self, items: list[Any]) -> dict[str, Any]:
+        """Parse JSON object.
+
+        Args:
+            items: List of key-value tuples
+
+        Returns:
+            Dictionary representing JSON object
+        """
+        obj: dict[str, Any] = {}
         for item in items:
             if isinstance(item, tuple):
                 obj[item[0]] = item[1]
         return obj
 
-    def json_pair(self, items):
+    def json_pair(self, items: list[Any]) -> tuple[str, Any]:
+        """Parse JSON key-value pair.
+
+        Args:
+            items: List containing key and value
+
+        Returns:
+            Tuple of key and value
+        """
         return (items[0], items[1])
 
-    def json_array(self, items):
+    def json_array(self, items: list[Any]) -> list[Any]:
+        """Parse JSON array.
+
+        Args:
+            items: List of array elements
+
+        Returns:
+            List representing JSON array
+        """
         return list(items)
 
 
 class QontinuiDSLParser:
     """Parser for Qontinui DSL scripts."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the DSL parser."""
-        self.parser = Lark(QONTINUI_GRAMMAR, parser="lalr", transformer=QontinuiTransformer())
-        self.transformer = QontinuiTransformer()
+        self.parser: Lark = Lark(QONTINUI_GRAMMAR, parser="lalr")
 
     def parse(self, script: str) -> dict[str, Any]:
         """Parse a Qontinui DSL script.
@@ -375,8 +801,11 @@ class QontinuiDSLParser:
         """
         try:
             tree = self.parser.parse(script)
-            return cast(dict[str, Any], tree)
-        except Exception as e:
+            transformer = QontinuiTransformer()
+            result = transformer.transform(tree)
+            return cast(dict[str, Any], result)
+        except (ValueError, TypeError, AttributeError, RuntimeError) as e:
+            # Catch parsing errors from Lark parser and transformer
             logger.error(f"Failed to parse DSL script: {e}")
             raise
 
@@ -405,7 +834,8 @@ class QontinuiDSLParser:
         try:
             self.parse(script)
             return True
-        except Exception:
+        except (ValueError, TypeError, AttributeError, RuntimeError, LarkError):
+            # Catch parsing errors to indicate invalid DSL syntax
             return False
 
     def to_python(self, parsed: dict[str, Any]) -> str:
