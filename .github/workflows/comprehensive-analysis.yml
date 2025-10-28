@@ -1,0 +1,211 @@
+name: Weekly Comprehensive Analysis
+
+on:
+  schedule:
+    # Run every Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  full-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for trend analysis
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install qontinui-devtools
+        run: |
+          pip install --upgrade pip
+          pip install qontinui-devtools
+
+      - name: Create analysis directory
+        run: mkdir -p /tmp/weekly-analysis
+
+      # Run comprehensive analysis
+      - name: Generate comprehensive HTML report
+        run: |
+          echo "Generating comprehensive analysis report..."
+          qontinui-devtools report src/ \
+            --output /tmp/weekly-analysis/analysis_report.html \
+            --format html \
+            --include-all
+
+      # Generate individual reports
+      - name: Generate detailed JSON reports
+        run: |
+          echo "Generating detailed reports..."
+
+          # Import analysis
+          qontinui-devtools import check src/ \
+            --format json \
+            --output /tmp/weekly-analysis/import_analysis.json
+
+          # Architecture analysis
+          qontinui-devtools architecture analyze src/ \
+            --format json \
+            --output /tmp/weekly-analysis/architecture_analysis.json
+
+          # God classes
+          qontinui-devtools architecture god-classes src/ \
+            --threshold 0.9 \
+            --format json \
+            --output /tmp/weekly-analysis/god_classes.json
+
+          # Security scan
+          qontinui-devtools security scan src/ \
+            --severity all \
+            --format json \
+            --output /tmp/weekly-analysis/security_full.json
+
+          # Type coverage
+          qontinui-devtools types coverage src/ \
+            --format json \
+            --output /tmp/weekly-analysis/type_coverage.json
+
+          # Race conditions
+          qontinui-devtools concurrency detect src/ \
+            --format json \
+            --output /tmp/weekly-analysis/race_conditions.json
+
+      # Generate trend analysis
+      - name: Generate trend analysis
+        run: |
+          cat > /tmp/weekly-analysis/trends.json <<'EOF'
+          {
+            "date": "$(date -u +"%Y-%m-%d")",
+            "metrics": {
+              "circular_dependencies": $(jq '.cycles | length' /tmp/weekly-analysis/import_analysis.json),
+              "god_classes_total": $(jq '.god_classes | length' /tmp/weekly-analysis/god_classes.json),
+              "god_classes_critical": $(jq '[.god_classes[] | select(.num_lines > 500 or .num_methods > 30)] | length' /tmp/weekly-analysis/god_classes.json),
+              "security_critical": $(jq '[.vulnerabilities[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/security_full.json),
+              "security_total": $(jq '.vulnerabilities | length' /tmp/weekly-analysis/security_full.json),
+              "type_coverage": $(jq '.overall_coverage.coverage_percentage' /tmp/weekly-analysis/type_coverage.json),
+              "race_conditions_critical": $(jq '[.race_conditions[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/race_conditions.json),
+              "race_conditions_total": $(jq '.race_conditions | length' /tmp/weekly-analysis/race_conditions.json)
+            }
+          }
+          EOF
+
+      # Generate executive summary
+      - name: Generate executive summary
+        run: |
+          cat > /tmp/weekly-analysis/executive_summary.md <<'EOF'
+          # Weekly Code Quality Report
+
+          **Generated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Key Metrics
+
+          | Metric | Current | Baseline | Status |
+          |--------|---------|----------|--------|
+          | Circular Dependencies | $(jq '.cycles | length' /tmp/weekly-analysis/import_analysis.json) | 0 | $([ $(jq '.cycles | length' /tmp/weekly-analysis/import_analysis.json) -eq 0 ] && echo "✅ Pass" || echo "❌ Fail") |
+          | Critical God Classes | $(jq '[.god_classes[] | select(.num_lines > 500 or .num_methods > 30)] | length' /tmp/weekly-analysis/god_classes.json) | 43 | $([ $(jq '[.god_classes[] | select(.num_lines > 500 or .num_methods > 30)] | length' /tmp/weekly-analysis/god_classes.json) -le 43 ] && echo "✅ Pass" || echo "❌ Fail") |
+          | Critical Security Issues | $(jq '[.vulnerabilities[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/security_full.json) | 20 | $([ $(jq '[.vulnerabilities[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/security_full.json) -le 20 ] && echo "✅ Pass" || echo "❌ Fail") |
+          | Type Coverage | $(jq '.overall_coverage.coverage_percentage' /tmp/weekly-analysis/type_coverage.json)% | 85% | $([ $(echo "$(jq '.overall_coverage.coverage_percentage' /tmp/weekly-analysis/type_coverage.json) >= 85" | bc -l) -eq 1 ] && echo "✅ Pass" || echo "❌ Fail") |
+          | Critical Race Conditions | $(jq '[.race_conditions[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/race_conditions.json) | 474 | $([ $(jq '[.race_conditions[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/race_conditions.json) -le 474 ] && echo "✅ Pass" || echo "❌ Fail") |
+
+          ## Detailed Breakdown
+
+          ### Circular Dependencies
+          - **Total Cycles**: $(jq '.cycles | length' /tmp/weekly-analysis/import_analysis.json)
+          - **Target**: 0 (zero tolerance policy)
+
+          ### God Classes
+          - **Total God Classes**: $(jq '.god_classes | length' /tmp/weekly-analysis/god_classes.json)
+          - **Critical (>500 lines or >30 methods)**: $(jq '[.god_classes[] | select(.num_lines > 500 or .num_methods > 30)] | length' /tmp/weekly-analysis/god_classes.json)
+          - **Threshold**: LCOM > 0.9
+
+          ### Security Vulnerabilities
+          - **Critical**: $(jq '[.vulnerabilities[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/security_full.json)
+          - **High**: $(jq '[.vulnerabilities[] | select(.severity == "high")] | length' /tmp/weekly-analysis/security_full.json)
+          - **Medium**: $(jq '[.vulnerabilities[] | select(.severity == "medium")] | length' /tmp/weekly-analysis/security_full.json)
+          - **Total**: $(jq '.vulnerabilities | length' /tmp/weekly-analysis/security_full.json)
+
+          ### Type Hints
+          - **Coverage**: $(jq '.overall_coverage.coverage_percentage' /tmp/weekly-analysis/type_coverage.json)%
+          - **Functions with hints**: $(jq '.overall_coverage.functions_with_hints' /tmp/weekly-analysis/type_coverage.json) / $(jq '.overall_coverage.total_functions' /tmp/weekly-analysis/type_coverage.json)
+
+          ### Race Conditions
+          - **Critical**: $(jq '[.race_conditions[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/race_conditions.json)
+          - **High**: $(jq '[.race_conditions[] | select(.severity == "high")] | length' /tmp/weekly-analysis/race_conditions.json)
+          - **Total**: $(jq '.race_conditions | length' /tmp/weekly-analysis/race_conditions.json)
+
+          ## Recommendations
+
+          See the detailed HTML report for specific recommendations and actionable items.
+
+          ---
+
+          *This report is generated automatically every Sunday. For real-time quality checks, see the Quality Checks workflow on every PR.*
+          EOF
+
+      # Upload all reports
+      - name: Upload comprehensive reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-analysis-$(date +%Y-%m-%d)
+          path: /tmp/weekly-analysis/
+          retention-days: 90  # Keep 90 days for trend analysis
+
+      # Create GitHub Issue with summary
+      - name: Create summary issue
+        if: github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('/tmp/weekly-analysis/executive_summary.md', 'utf8');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Weekly Code Quality Report - ${new Date().toISOString().split('T')[0]}`,
+              body: summary,
+              labels: ['quality-report', 'automated']
+            });
+
+      # Optional: Send to Slack/Discord/Email
+      - name: Post to Slack (if configured)
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          CIRCULAR=$(jq '.cycles | length' /tmp/weekly-analysis/import_analysis.json)
+          GOD_CRITICAL=$(jq '[.god_classes[] | select(.num_lines > 500 or .num_methods > 30)] | length' /tmp/weekly-analysis/god_classes.json)
+          SECURITY_CRITICAL=$(jq '[.vulnerabilities[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/security_full.json)
+          TYPE_COV=$(jq '.overall_coverage.coverage_percentage' /tmp/weekly-analysis/type_coverage.json)
+          RACE_CRITICAL=$(jq '[.race_conditions[] | select(.severity == "critical")] | length' /tmp/weekly-analysis/race_conditions.json)
+
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "Weekly Code Quality Report",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "📊 Weekly Code Quality Report"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {"type": "mrkdwn", "text": "*Circular Deps:* '"$CIRCULAR"'/0"},
+                    {"type": "mrkdwn", "text": "*God Classes:* '"$GOD_CRITICAL"'/43"},
+                    {"type": "mrkdwn", "text": "*Security:* '"$SECURITY_CRITICAL"'/20"},
+                    {"type": "mrkdwn", "text": "*Type Coverage:* '"$TYPE_COV"'%/85%"},
+                    {"type": "mrkdwn", "text": "*Race Conditions:* '"$RACE_CRITICAL"'/474"}
+                  ]
+                }
+              ]
+            }'

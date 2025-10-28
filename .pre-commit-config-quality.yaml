@@ -1,0 +1,88 @@
+# Pre-commit configuration with qontinui-devtools quality gates
+# This extends the existing .pre-commit-config.yaml with quality checks
+# To use: ln -sf .pre-commit-config-quality.yaml .git/hooks/pre-commit
+
+repos:
+  # Quality gates using qontinui-devtools
+  - repo: local
+    hooks:
+      - id: check-circular-dependencies
+        name: Check for circular dependencies
+        entry: bash -c 'qontinui-devtools import check src/ --format json --output /tmp/circular_check.json && [ $(jq ".cycles | length" /tmp/circular_check.json) -eq 0 ] || (echo "❌ Circular dependencies detected!" && exit 1)'
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
+      - id: check-god-classes
+        name: Check for new god classes
+        entry: bash -c 'qontinui-devtools architecture god-classes src/ --threshold 0.9 --format json --output /tmp/god_check.json && [ $(jq "[.god_classes[] | select(.num_lines > 500 or .num_methods > 30)] | length" /tmp/god_check.json) -le 43 ] || (echo "❌ New critical god classes detected!" && exit 1)'
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
+      - id: security-scan
+        name: Security vulnerability scan
+        entry: bash -c 'qontinui-devtools security scan src/ --severity high --format json --output /tmp/security_check.json && [ $(jq "[.vulnerabilities[] | select(.severity == \"critical\")] | length" /tmp/security_check.json) -le 20 ] || (echo "❌ New critical security vulnerabilities!" && exit 1)'
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
+      - id: type-coverage
+        name: Check type hint coverage
+        entry: bash -c 'qontinui-devtools types coverage src/ --format json --output /tmp/type_check.json && [ $(echo "$(jq ".overall_coverage.coverage_percentage" /tmp/type_check.json) >= 85.0" | bc -l) -eq 1 ] || (echo "❌ Type coverage below 85%!" && exit 1)'
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
+      - id: race-condition-check
+        name: Check for new race conditions
+        entry: bash -c 'qontinui-devtools concurrency detect src/ --format json --output /tmp/race_check.json && [ $(jq "[.race_conditions[] | select(.severity == \"critical\")] | length" /tmp/race_check.json) -le 474 ] || (echo "❌ New critical race conditions detected!" && exit 1)'
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: debug-statements
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Black formatter
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3.12
+        args: ['--line-length=100']
+
+  # Ruff linter
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.6.0
+    hooks:
+      - id: ruff
+        args: ['--fix', '--exit-non-zero-on-fix']
+
+  # Optional: MyPy type checker (commented out due to isolated env issues)
+  # Uncomment if you want to run mypy in pre-commit
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.8.0
+  #   hooks:
+  #     - id: mypy
+  #       args: ['--config-file=pyproject.toml']
+  #       additional_dependencies: ['pydantic>=2.0', 'types-all']
+  #       pass_filenames: false
+
+# Configuration for quality checks
+# These can be overridden in pyproject.toml
+default_stages: [commit, push]
+fail_fast: false  # Run all checks even if one fails

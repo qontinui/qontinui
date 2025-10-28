@@ -1,0 +1,211 @@
+name: Quality Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install qontinui-devtools
+        run: |
+          pip install --upgrade pip
+          pip install qontinui-devtools
+
+      - name: Create reports directory
+        run: mkdir -p /tmp/quality-reports
+
+      # Circular Dependency Check
+      - name: Check for new circular dependencies
+        id: circular-deps
+        run: |
+          echo "Checking for circular dependencies..."
+          qontinui-devtools import check src/ --format json --output /tmp/quality-reports/circular_deps.json
+
+          # We currently have 0 circular dependencies after fixes
+          CYCLES=$(jq '.cycles | length' /tmp/quality-reports/circular_deps.json)
+          echo "cycles_found=$CYCLES" >> $GITHUB_OUTPUT
+
+          if [ "$CYCLES" -gt 0 ]; then
+            echo "ERROR: New circular dependencies detected!"
+            echo "Found $CYCLES circular dependency cycle(s)"
+            jq '.cycles' /tmp/quality-reports/circular_deps.json
+            exit 1
+          fi
+
+          echo "SUCCESS: No circular dependencies found"
+
+      # God Class Check
+      - name: Check for new god classes
+        id: god-classes
+        run: |
+          echo "Analyzing god classes..."
+          qontinui-devtools architecture god-classes src/ --threshold 0.9 --format json --output /tmp/quality-reports/god_classes.json
+
+          # Count critical god classes (>500 lines OR >30 methods)
+          # Current baseline: 43 critical god classes
+          CRITICAL=$(jq '[.god_classes[] | select(.num_lines > 500 or .num_methods > 30)] | length' /tmp/quality-reports/god_classes.json)
+          echo "critical_count=$CRITICAL" >> $GITHUB_OUTPUT
+
+          if [ "$CRITICAL" -gt 43 ]; then
+            echo "ERROR: New critical god classes detected!"
+            echo "Found $CRITICAL critical god classes (baseline: 43)"
+            jq '[.god_classes[] | select(.num_lines > 500 or .num_methods > 30)] | .[] | {class: .class_name, lines: .num_lines, methods: .num_methods}' /tmp/quality-reports/god_classes.json
+            exit 1
+          fi
+
+          echo "SUCCESS: God classes within threshold ($CRITICAL/43)"
+
+      # Security Vulnerability Scan
+      - name: Security vulnerability scan
+        id: security
+        run: |
+          echo "Running security scan..."
+          qontinui-devtools security scan src/ --severity high --format json --output /tmp/quality-reports/security.json
+
+          # Count critical vulnerabilities
+          # Current baseline: 20 critical issues (out of 25 real, 117 total)
+          CRITICAL=$(jq '[.vulnerabilities[] | select(.severity == "critical")] | length' /tmp/quality-reports/security.json)
+          HIGH=$(jq '[.vulnerabilities[] | select(.severity == "high")] | length' /tmp/quality-reports/security.json)
+          echo "critical_count=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high_count=$HIGH" >> $GITHUB_OUTPUT
+
+          if [ "$CRITICAL" -gt 20 ]; then
+            echo "ERROR: New critical security vulnerabilities detected!"
+            echo "Found $CRITICAL critical vulnerabilities (baseline: 20)"
+            jq '[.vulnerabilities[] | select(.severity == "critical")] | .[] | {file: .file, line: .line, issue: .message}' /tmp/quality-reports/security.json
+            exit 1
+          fi
+
+          echo "SUCCESS: Security vulnerabilities within threshold"
+          echo "Critical: $CRITICAL/20, High: $HIGH"
+
+      # Type Coverage Check
+      - name: Type hint coverage check
+        id: type-coverage
+        run: |
+          echo "Checking type coverage..."
+          qontinui-devtools types coverage src/ --format json --output /tmp/quality-reports/types.json
+
+          # Maintain at least 85% type coverage (current: 89.8%)
+          COVERAGE=$(jq '.overall_coverage.coverage_percentage' /tmp/quality-reports/types.json)
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+
+          # Use bc for floating point comparison
+          if (( $(echo "$COVERAGE < 85.0" | bc -l) )); then
+            echo "ERROR: Type coverage dropped below 85%!"
+            echo "Current coverage: $COVERAGE% (minimum: 85%)"
+            exit 1
+          fi
+
+          echo "SUCCESS: Type coverage is $COVERAGE% (target: 85%)"
+
+      # Race Condition Detection
+      - name: Race condition detection
+        id: race-conditions
+        run: |
+          echo "Detecting race conditions..."
+          qontinui-devtools concurrency detect src/ --format json --output /tmp/quality-reports/race.json
+
+          # Count critical race conditions
+          # Current baseline: 474 critical (out of 601 total)
+          CRITICAL=$(jq '[.race_conditions[] | select(.severity == "critical")] | length' /tmp/quality-reports/race.json)
+          TOTAL=$(jq '.race_conditions | length' /tmp/quality-reports/race.json)
+          echo "critical_count=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "total_count=$TOTAL" >> $GITHUB_OUTPUT
+
+          if [ "$CRITICAL" -gt 474 ]; then
+            echo "ERROR: New critical race conditions detected!"
+            echo "Found $CRITICAL critical race conditions (baseline: 474)"
+            jq '[.race_conditions[] | select(.severity == "critical")] | .[0:5] | .[] | {file: .file, line: .line, type: .type}' /tmp/quality-reports/race.json
+            echo "(Showing first 5 of $CRITICAL critical issues)"
+            exit 1
+          fi
+
+          echo "SUCCESS: Race conditions within threshold"
+          echo "Critical: $CRITICAL/474, Total: $TOTAL/601"
+
+      # Architecture Complexity Check
+      - name: Check architecture complexity
+        id: complexity
+        run: |
+          echo "Analyzing architecture complexity..."
+          qontinui-devtools architecture analyze src/ --format json --output /tmp/quality-reports/architecture.json
+
+          # Check for excessive coupling
+          AVG_COUPLING=$(jq '.metrics.average_coupling // 0' /tmp/quality-reports/architecture.json)
+          echo "avg_coupling=$AVG_COUPLING" >> $GITHUB_OUTPUT
+
+          # Check for high cyclomatic complexity
+          MAX_COMPLEXITY=$(jq '.metrics.max_complexity // 0' /tmp/quality-reports/architecture.json)
+          echo "max_complexity=$MAX_COMPLEXITY" >> $GITHUB_OUTPUT
+
+          echo "Architecture metrics:"
+          echo "  Average coupling: $AVG_COUPLING"
+          echo "  Max complexity: $MAX_COMPLEXITY"
+
+      # Generate quality summary
+      - name: Generate quality summary
+        if: always()
+        run: |
+          echo "# Quality Check Summary" > /tmp/quality-reports/summary.md
+          echo "" >> /tmp/quality-reports/summary.md
+          echo "## Results" >> /tmp/quality-reports/summary.md
+          echo "" >> /tmp/quality-reports/summary.md
+          echo "| Check | Status | Details |" >> /tmp/quality-reports/summary.md
+          echo "|-------|--------|---------|" >> /tmp/quality-reports/summary.md
+          echo "| Circular Dependencies | ${{ steps.circular-deps.outcome == 'success' && '✅ Pass' || '❌ Fail' }} | ${{ steps.circular-deps.outputs.cycles_found || 0 }} cycles found (max: 0) |" >> /tmp/quality-reports/summary.md
+          echo "| God Classes | ${{ steps.god-classes.outcome == 'success' && '✅ Pass' || '❌ Fail' }} | ${{ steps.god-classes.outputs.critical_count || 0 }}/43 critical |" >> /tmp/quality-reports/summary.md
+          echo "| Security | ${{ steps.security.outcome == 'success' && '✅ Pass' || '❌ Fail' }} | ${{ steps.security.outputs.critical_count || 0 }}/20 critical |" >> /tmp/quality-reports/summary.md
+          echo "| Type Coverage | ${{ steps.type-coverage.outcome == 'success' && '✅ Pass' || '❌ Fail' }} | ${{ steps.type-coverage.outputs.coverage || 0 }}% (min: 85%) |" >> /tmp/quality-reports/summary.md
+          echo "| Race Conditions | ${{ steps.race-conditions.outcome == 'success' && '✅ Pass' || '❌ Fail' }} | ${{ steps.race-conditions.outputs.critical_count || 0 }}/474 critical |" >> /tmp/quality-reports/summary.md
+          echo "" >> /tmp/quality-reports/summary.md
+          echo "## Thresholds" >> /tmp/quality-reports/summary.md
+          echo "" >> /tmp/quality-reports/summary.md
+          echo "- **Circular Dependencies**: 0 (zero tolerance)" >> /tmp/quality-reports/summary.md
+          echo "- **Critical God Classes**: 43 (>500 lines or >30 methods)" >> /tmp/quality-reports/summary.md
+          echo "- **Critical Security Issues**: 20" >> /tmp/quality-reports/summary.md
+          echo "- **Type Coverage**: 85% minimum" >> /tmp/quality-reports/summary.md
+          echo "- **Critical Race Conditions**: 474" >> /tmp/quality-reports/summary.md
+          echo "" >> /tmp/quality-reports/summary.md
+          echo "Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> /tmp/quality-reports/summary.md
+
+          cat /tmp/quality-reports/summary.md
+
+      # Upload all reports as artifacts
+      - name: Upload quality reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quality-reports
+          path: /tmp/quality-reports/
+          retention-days: 30
+
+      # Comment on PR with summary
+      - name: Comment PR with summary
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('/tmp/quality-reports/summary.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
