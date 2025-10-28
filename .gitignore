@@ -267,6 +267,9 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Quality reports
+/tmp/*.json
+
 # Pyre type checker
 .pyre/
 
