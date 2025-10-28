@@ -12,7 +12,6 @@ class CaptureBackend(Enum):
     MSS = "mss"
     PILLOW = "pillow"
     NATIVE = "native"
-    PYAUTOGUI = "pyautogui"  # Legacy fallback
 
 
 class InputBackend(Enum):
@@ -21,7 +20,6 @@ class InputBackend(Enum):
     PYNPUT = "pynput"
     NATIVE = "native"
     SELENIUM = "selenium"
-    PYAUTOGUI = "pyautogui"  # Legacy fallback
 
 
 class MatcherBackend(Enum):
@@ -30,7 +28,6 @@ class MatcherBackend(Enum):
     OPENCV = "opencv"
     TENSORFLOW = "tensorflow"
     NATIVE = "native"
-    PYAUTOGUI = "pyautogui"  # Legacy fallback
 
 
 class OCRBackend(Enum):

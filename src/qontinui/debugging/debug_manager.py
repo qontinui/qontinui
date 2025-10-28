@@ -40,7 +40,7 @@ class DebugManager:
                     cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the debug manager (only runs once)."""
         if self._initialized:
             return

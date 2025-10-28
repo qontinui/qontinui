@@ -295,7 +295,7 @@ def example_7_external_context():
 
     # Create a mock logger object
     class MockLogger:
-        def __init__(self):
+        def __init__(self) -> None:
             self.logs = []
 
         def log(self, message):

@@ -58,7 +58,7 @@ class RepetitionOptions:
 class RepetitionOptionsBuilder:
     """Builder for RepetitionOptions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.times_to_repeat_individual_action = 1
         self.pause_between_individual_actions = 0.0
         self.max_repetitions = 10

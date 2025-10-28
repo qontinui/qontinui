@@ -25,7 +25,7 @@ class CLIPDescriptionGenerator(DescriptionGenerator):
     classification and description generation.
     """
 
-    def __init__(self, model_name: str = "openai/clip-vit-base-patch32"):
+    def __init__(self, model_name: str = "openai/clip-vit-base-patch32") -> None:
         """Initialize CLIP generator.
 
         Args:

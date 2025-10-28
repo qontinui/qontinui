@@ -61,7 +61,7 @@ class NullState:
     - Not a singleton to allow multiple contexts if needed
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize NullState with a null state."""
         self._state = State(name="null", state_enum=NullStateName.NULL)
 

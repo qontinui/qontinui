@@ -16,7 +16,7 @@ class AssertionConverter:
     - Complex assertion patterns with multiple parameters
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the assertion converter with mapping dictionaries."""
         self._basic_assertion_mappings = {
             "assertTrue": self._convert_assert_true,

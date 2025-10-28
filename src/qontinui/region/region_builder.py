@@ -32,7 +32,7 @@ class RegionBuilder:
             .build())
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the region builder."""
         self._x: int = 0
         self._y: int = 0

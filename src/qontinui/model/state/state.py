@@ -7,10 +7,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from ..element.region import Region
-from ..search_regions import SearchRegions
+from .managers import (
+    StateMetricsManager,
+    StateObjectManager,
+    StateTransitionManager,
+    StateVisibilityManager,
+)
 
 if TYPE_CHECKING:
     from qontinui.model.element.scene import Scene
@@ -20,6 +25,8 @@ if TYPE_CHECKING:
     from qontinui.model.state.state_region import StateRegion
     from qontinui.model.state.state_string import StateString
     from qontinui.model.transition.state_transition import StateTransition
+
+    from .action_history import ActionHistory
 
 
 @dataclass
@@ -52,6 +59,14 @@ class State:
     This class embodies the core principle of model-based GUI automation: transforming
     implicit knowledge about GUI structure into an explicit, navigable model that enables
     robust and maintainable automation.
+
+    Architecture:
+    State is an aggregate root following DDD principles, delegating to specialized
+    managers for different concerns:
+    - StateObjectManager: Manages state objects (images, regions, locations, strings)
+    - StateTransitionManager: Manages transitions between states
+    - StateVisibilityManager: Handles hiding/blocking logic
+    - StateMetricsManager: Tracks visits, probability, statistics
     """
 
     name: str = ""
@@ -66,69 +81,174 @@ class State:
     state_enum: StateEnum | None = None
     """Optional enum value for this state."""
 
-    state_text: set[str] = field(default_factory=set)
-    """Text that appears on screen as a clue to look for images in this state."""
+    # Composed managers (DDD aggregate root pattern)
+    _objects: StateObjectManager = field(default_factory=StateObjectManager)
+    """Manages state objects (images, regions, locations, strings)."""
 
-    state_images: list[StateImage] = field(default_factory=list)
-    """Visual patterns that identify this state."""
+    _transitions: StateTransitionManager = field(default_factory=StateTransitionManager)
+    """Manages transitions from and to this state."""
 
-    state_strings: list[StateString] = field(default_factory=list)
-    """Text input fields that can change the expected state."""
+    _visibility: StateVisibilityManager = field(default_factory=StateVisibilityManager)
+    """Manages state visibility, hiding, and blocking."""
 
-    state_regions: list[StateRegion] = field(default_factory=list)
-    """Clickable/hoverable areas that can change state or retrieve text."""
+    _metrics: StateMetricsManager = field(default_factory=StateMetricsManager)
+    """Manages state metrics and statistics."""
 
-    state_locations: list[StateLocation] = field(default_factory=list)
-    """Specific points for precise interactions."""
+    # Properties that delegate to managers
+    @property
+    def state_text(self) -> set[str]:
+        """Text that appears on screen as a clue to look for images in this state."""
+        return self._objects.state_text
 
-    blocking: bool = False
-    """When true, this State needs to be acted on before accessing other States."""
+    @property
+    def state_images(self) -> list[StateImage]:
+        """Visual patterns that identify this state."""
+        return self._objects.state_images
 
-    can_hide: set[str] = field(default_factory=set)
-    """States that this State can hide when it becomes active."""
+    @property
+    def state_strings(self) -> list[StateString]:
+        """Text input fields that can change the expected state."""
+        return self._objects.state_strings
 
-    can_hide_ids: set[int] = field(default_factory=set)
-    """IDs of states that this State can hide."""
+    @property
+    def state_regions(self) -> list[StateRegion]:
+        """Clickable/hoverable areas that can change state or retrieve text."""
+        return self._objects.state_regions
 
-    hidden_state_names: set[str] = field(default_factory=set)
-    """Names of currently hidden states (used when initializing in code)."""
+    @property
+    def state_locations(self) -> list[StateLocation]:
+        """Specific points for precise interactions."""
+        return self._objects.state_locations
 
-    hidden_state_ids: set[int] = field(default_factory=set)
-    """IDs of currently hidden states (used at runtime)."""
+    @property
+    def blocking(self) -> bool:
+        """When true, this State needs to be acted on before accessing other States."""
+        return self._visibility.blocking
 
-    path_score: int = 1
-    """Larger path scores discourage taking a path with this state."""
+    @blocking.setter
+    def blocking(self, value: bool) -> None:
+        """Set blocking state."""
+        self._visibility.blocking = value
 
-    last_accessed: datetime | None = None
-    """When this state was last accessed."""
+    @property
+    def can_hide(self) -> set[str]:
+        """States that this State can hide when it becomes active."""
+        return self._visibility.can_hide
 
-    is_initial: bool = False
-    """Whether this is an initial/starting state."""
+    @property
+    def can_hide_ids(self) -> set[int]:
+        """IDs of states that this State can hide."""
+        return self._visibility.can_hide_ids
 
+    @property
+    def hidden_state_names(self) -> set[str]:
+        """Names of currently hidden states (used when initializing in code)."""
+        return self._visibility.hidden_state_names
 
-    baseMockFindStochasticModifier: int = 100
-    """Base probability modifier for mock find operations (stochastic testing)."""
+    @hidden_state_names.setter
+    def hidden_state_names(self, value: set[str]) -> None:
+        """Set hidden state names."""
+        self._visibility.hidden_state_names = value
 
-    probability_exists: int = 0
-    """Current probability that the state exists (used for mocks)."""
+    @property
+    def hidden_state_ids(self) -> set[int]:
+        """IDs of currently hidden states (used at runtime)."""
+        return self._visibility.hidden_state_ids
 
-    times_visited: int = 0
-    """Number of times this state has been visited."""
+    @property
+    def path_score(self) -> int:
+        """Larger path scores discourage taking a path with this state."""
+        return self._metrics.path_score
 
-    scenes: list[Scene] = field(default_factory=list)
-    """Screenshots where the state is found."""
+    @path_score.setter
+    def path_score(self, value: int) -> None:
+        """Set path score."""
+        self._metrics.path_score = value
 
-    usable_area: Region = field(default_factory=Region)
-    """The region used to find images."""
+    @property
+    def last_accessed(self) -> datetime | None:
+        """When this state was last accessed."""
+        return self._metrics.last_accessed
 
-    match_history: ActionHistory = field(default_factory=lambda: ActionHistory())
-    """History of actions performed in this state."""
+    @last_accessed.setter
+    def last_accessed(self, value: datetime | None) -> None:
+        """Set last accessed time."""
+        self._metrics.last_accessed = value
 
-    transitions: list[StateTransition] = field(default_factory=list)
-    """List of outgoing transitions from this state."""
+    @property
+    def is_initial(self) -> bool:
+        """Whether this is an initial/starting state."""
+        return self._metrics.is_initial
 
-    incoming_transitions: list[StateTransition] = field(default_factory=list)
-    """List of incoming transitions to this state (verification workflows executed when entering)."""
+    @is_initial.setter
+    def is_initial(self, value: bool) -> None:
+        """Set is_initial flag."""
+        self._metrics.is_initial = value
+
+    @property
+    def baseMockFindStochasticModifier(self) -> int:
+        """Base probability modifier for mock find operations (stochastic testing)."""
+        return self._metrics.base_mock_find_stochastic_modifier
+
+    @baseMockFindStochasticModifier.setter
+    def baseMockFindStochasticModifier(self, value: int) -> None:
+        """Set base mock find stochastic modifier."""
+        self._metrics.base_mock_find_stochastic_modifier = value
+
+    @property
+    def probability_exists(self) -> int:
+        """Current probability that the state exists (used for mocks)."""
+        return self._metrics.probability_exists
+
+    @probability_exists.setter
+    def probability_exists(self, value: int) -> None:
+        """Set probability exists."""
+        self._metrics.probability_exists = value
+
+    @property
+    def times_visited(self) -> int:
+        """Number of times this state has been visited."""
+        return self._metrics.times_visited
+
+    @times_visited.setter
+    def times_visited(self, value: int) -> None:
+        """Set times visited."""
+        self._metrics.times_visited = value
+
+    @property
+    def scenes(self) -> list[Scene]:
+        """Screenshots where the state is found."""
+        return self._metrics.scenes
+
+    @scenes.setter
+    def scenes(self, value: list[Scene]) -> None:
+        """Set scenes."""
+        self._metrics.scenes = value
+
+    @property
+    def usable_area(self) -> Region:
+        """The region used to find images."""
+        return self._metrics.usable_area
+
+    @usable_area.setter
+    def usable_area(self, value: Region) -> None:
+        """Set usable area."""
+        self._metrics.usable_area = value
+
+    @property
+    def match_history(self) -> ActionHistory:
+        """History of actions performed in this state."""
+        return self._metrics.match_history
+
+    @property
+    def transitions(self) -> list[StateTransition]:
+        """List of outgoing transitions from this state."""
+        return self._transitions.transitions
+
+    @property
+    def incoming_transitions(self) -> list[StateTransition]:
+        """List of incoming transitions to this state (verification workflows executed when entering)."""
+        return self._transitions.incoming_transitions
 
     def exists(self, timeout: float = 0.0) -> bool:
         """Check if this state exists.
@@ -156,6 +276,7 @@ class State:
         # The actual implementation should wait for state images to be visible
         return self.exists(timeout)
 
+    # Delegation methods - Transitions
     def get_transitions_to(self, target_state: str) -> list[StateTransition]:
         """Get transitions to a specific target state.
 
@@ -165,7 +286,7 @@ class State:
         Returns:
             List of transitions to the target state
         """
-        return [t for t in self.transitions if t.to_state == target_state]
+        return self._transitions.get_transitions_to(target_state)
 
     def get_possible_next_states(self) -> list[str]:
         """Get list of possible next states from this state.
@@ -173,11 +294,7 @@ class State:
         Returns:
             List of state names that can be reached from this state
         """
-        next_states = []
-        for transition in self.transitions:
-            if transition.to_state:
-                next_states.append(transition.to_state)
-        return list(set(next_states))  # Remove duplicates
+        return self._transitions.get_possible_next_states()
 
     def add_transition(self, transition: StateTransition) -> None:
         """Add a transition from this state.
@@ -185,15 +302,16 @@ class State:
         Args:
             transition: StateTransition to add
         """
-        self.transitions.append(transition)
+        self._transitions.add(transition)
 
+    # Delegation methods - Objects
     def get_state_images(self) -> list[StateImage]:
         """Get list of state images.
 
         Returns:
             List of StateImage objects
         """
-        return self.state_images
+        return self._objects.get_images()
 
     def add_state_image(self, state_image: StateImage) -> None:
         """Add a StateImage to this state.
@@ -201,8 +319,7 @@ class State:
         Args:
             state_image: StateImage to add
         """
-        state_image.owner_state = self
-        self.state_images.append(state_image)
+        self._objects.add_image(state_image, self)
 
     def add_state_region(self, state_region: StateRegion) -> None:
         """Add a StateRegion to this state.
@@ -210,8 +327,7 @@ class State:
         Args:
             state_region: StateRegion to add
         """
-        state_region.owner_state = self
-        self.state_regions.append(state_region)
+        self._objects.add_region(state_region, self)
 
     def add_state_location(self, state_location: StateLocation) -> None:
         """Add a StateLocation to this state.
@@ -219,8 +335,7 @@ class State:
         Args:
             state_location: StateLocation to add
         """
-        state_location.owner_state = self
-        self.state_locations.append(state_location)
+        self._objects.add_location(state_location, self)
 
     def add_state_string(self, state_string: StateString) -> None:
         """Add a StateString to this state.
@@ -228,8 +343,7 @@ class State:
         Args:
             state_string: StateString to add
         """
-        state_string.owner_state = self
-        self.state_strings.append(state_string)
+        self._objects.add_string(state_string, self)
 
     def add_state_text(self, text: str) -> None:
         """Add state text.
@@ -237,7 +351,7 @@ class State:
         Args:
             text: Text to add
         """
-        self.state_text.add(text)
+        self._objects.add_text(text)
 
     def set_search_region_for_all_images(self, search_region: Region) -> None:
         """Set the search region for all images.
@@ -245,29 +359,7 @@ class State:
         Args:
             search_region: Region to set
         """
-        search_regions = SearchRegions().add_region(search_region)
-        for image_obj in self.state_images:
-            image_obj.set_search_regions(search_regions)
-
-    def set_probability_to_base_probability(self) -> None:
-        """Reset probability to base probability."""
-        self.probability_exists = self.baseMockFindStochasticModifier
-
-    def add_hidden_state(self, state_id: int) -> None:
-        """Add a hidden state ID.
-
-        Args:
-            state_id: ID of state to hide
-        """
-        self.hidden_state_ids.add(state_id)
-
-    def reset_hidden(self) -> None:
-        """Reset hidden state names."""
-        self.hidden_state_names = set()
-
-    def add_visit(self) -> None:
-        """Increment visit counter."""
-        self.times_visited += 1
+        self._objects.set_search_region_for_all_images(search_region)
 
     def get_boundaries(self) -> Region:
         """Get the boundaries of the state using StateRegion, StateImage, and StateLocation objects.
@@ -277,58 +369,34 @@ class State:
         Returns:
             The boundaries of the state
         """
-        image_regions = []
+        return self._objects.get_boundaries()
 
-        # Add regions from StateImages
-        for state_image in self.state_images:
-            # Add fixed regions from search_regions
-            if state_image.search_regions:
-                fixed_region = state_image.search_regions.get_fixed_region()
-                if fixed_region and fixed_region.is_defined():
-                    image_regions.append(fixed_region)
+    # Delegation methods - Visibility
+    def add_hidden_state(self, state_id: int) -> None:
+        """Add a hidden state ID.
 
-            # Add snapshot locations
-            snapshots = state_image.get_all_match_snapshots()
-            for snapshot in snapshots:
-                for match in snapshot.match_list:
-                    image_regions.append(match.get_region())
+        Args:
+            state_id: ID of state to hide
+        """
+        self._visibility.add_hidden_state(state_id)
 
-        # Add regions from StateRegions
-        for state_region in self.state_regions:
-            image_regions.append(state_region.search_region)
+    def reset_hidden(self) -> None:
+        """Reset hidden state names."""
+        self._visibility.reset_hidden()
 
-        # Add regions from StateLocations
-        for state_location in self.state_locations:
-            loc = state_location.location
-            final_loc = loc.get_final_location()
-            image_regions.append(Region(x=final_loc.x, y=final_loc.y, width=0, height=0))
+    # Delegation methods - Metrics
+    def set_probability_to_base_probability(self) -> None:
+        """Reset probability to base probability."""
+        self._metrics.set_probability_to_base_probability()
 
-        if not image_regions:
-            return Region()  # Return undefined region
-
-        # Calculate union of all regions
-
-        union = image_regions[0]
-        for i in range(1, len(image_regions)):
-            union = union.union(image_regions[i])
-
-        return cast(Region, union)
+    def add_visit(self) -> None:
+        """Increment visit counter."""
+        self._metrics.add_visit()
 
     def __str__(self) -> str:
         """String representation."""
         parts = [f"State: {self.name}"]
-        parts.append(f"Images={len(self.state_images)}")
-        for img in self.state_images:
-            parts.append(str(img))
-        parts.append(f"Regions={len(self.state_regions)}")
-        for reg in self.state_regions:
-            parts.append(str(reg))
-        parts.append(f"Locations={len(self.state_locations)}")
-        for loc in self.state_locations:
-            parts.append(str(loc))
-        parts.append(f"Strings={len(self.state_strings)}")
-        for s in self.state_strings:
-            parts.append(str(s))
+        parts.append(str(self._objects))
         return "\n".join(parts)
 
 
@@ -338,7 +406,7 @@ class StateBuilder:
     Port of State from Qontinui framework.Builder class.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         """Initialize builder with state name.
 
         Args:
@@ -347,10 +415,10 @@ class StateBuilder:
         self.name = name
         self.description = ""
         self.state_text: set[str] = set()
-        self.state_images: list[StateImage] = []  # List instead of set for unhashable objects
-        self.state_strings: list[StateString] = []  # List instead of set for unhashable objects
-        self.state_regions: list[StateRegion] = []  # List instead of set for unhashable objects
-        self.state_locations: list[StateLocation] = []  # List instead of set for unhashable objects
+        self.state_images: list[StateImage] = []
+        self.state_strings: list[StateString] = []
+        self.state_regions: list[StateRegion] = []
+        self.state_locations: list[StateLocation] = []
         self.blocking = False
         self.can_hide: set[str] = set()
         self.hidden: set[str] = set()
@@ -493,7 +561,6 @@ class StateBuilder:
         self.is_initial = is_initial
         return self
 
-
     def with_scenes(self, *scenes: Scene) -> StateBuilder:
         """Add scenes.
 
@@ -526,11 +593,12 @@ class StateBuilder:
         """
         state = State(name=self.name, description=self.description)
 
-        # Set all fields
-        state.state_text = self.state_text
+        # Set visibility properties
         state.blocking = self.blocking
-        state.can_hide = self.can_hide
+        state._visibility.can_hide = self.can_hide
         state.hidden_state_names = self.hidden
+
+        # Set metrics properties
         state.path_score = self.path_score
         state.last_accessed = self.last_accessed
         state.is_initial = self.is_initial
@@ -539,7 +607,11 @@ class StateBuilder:
         state.scenes = self.scenes
         state.usable_area = self.usable_area
 
-        # Add state objects (which sets owner state name)
+        # Add state text
+        for text in self.state_text:
+            state.add_state_text(text)
+
+        # Add state objects (which sets owner state)
         for img in self.state_images:
             state.add_state_image(img)
         for reg in self.state_regions:
@@ -550,12 +622,3 @@ class StateBuilder:
             state.add_state_string(s)
 
         return state
-
-
-class ActionHistory:
-    """Placeholder for ActionHistory class.
-
-    Will be implemented when migrating the action package.
-    """
-
-    pass

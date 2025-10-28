@@ -47,7 +47,7 @@ class MouseWrapper(BaseWrapper):
         hal_input: Input controller for real mode
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize MouseWrapper.
 
         Sets up both mock and real implementations. The actual implementation
@@ -235,7 +235,7 @@ class KeyboardWrapper(BaseWrapper):
         hal_input: Input controller for real mode
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize KeyboardWrapper.
 
         Sets up both mock and real implementations. The actual implementation

@@ -69,7 +69,7 @@ class BaseWrapper:
 
     Example:
         class FindWrapper(BaseWrapper):
-            def __init__(self):
+            def __init__(self) -> None:
                 super().__init__()
                 self.mock_find = MockFind()
                 self.hal_matcher = OpenCVMatcher()
@@ -81,7 +81,7 @@ class BaseWrapper:
                     return self.hal_matcher.find_all_patterns(...)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize base wrapper.
 
         Sets up access to global ExecutionMode configuration.

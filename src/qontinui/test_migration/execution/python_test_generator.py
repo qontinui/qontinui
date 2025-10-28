@@ -30,7 +30,7 @@ class PythonTestGenerator(TestTranslator):
     - Preserving test logic and assertions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Python test generator."""
         self.dependency_mappings = self._initialize_dependency_mappings()
         self.pytest_fixtures = self._initialize_pytest_fixtures()

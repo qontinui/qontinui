@@ -1,16 +1,24 @@
 """
 Result validation and comparison system for test migration.
 
-This module provides functionality to compare Java and Python test outputs,
+This module provides a facade for comparing Java and Python test outputs,
 verify behavioral equivalence, and collect performance comparison metrics.
 """
 
-import json
-from collections.abc import Callable
 from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from .validation_strategies import (
+    AssertionValidator,
+    ExceptionValidator,
+    OutputValidator,
+    PerformanceValidator,
+    ValidationReporter,
+)
+from .validation_strategies.assertion_validator import BehavioralEquivalenceConfig
+from .validation_strategies.performance_validator import PerformanceMetrics
+from .validation_strategies.validation_reporter import ComparisonType, ValidationResult
 
 if TYPE_CHECKING:
     from ..core.models import TestResult, TestResults
@@ -19,7 +27,7 @@ else:
         from ..core.models import TestResult, TestResults
     except ImportError:
         # For standalone testing, define minimal models
-        pass  # dataclass and field are already imported above
+        pass
 
         @dataclass
         class TestResult:
@@ -36,49 +44,9 @@ else:
             total_tests: int
             passed_tests: int
             failed_tests: int
-
-        skipped_tests: int
-        execution_time: float
-        individual_results: list[TestResult] = field(default_factory=list)
-
-
-class ValidationResult(Enum):
-    """Result of validation comparison."""
-
-    EQUIVALENT = "equivalent"
-    DIFFERENT = "different"
-    INCONCLUSIVE = "inconclusive"
-    ERROR = "error"
-
-
-class ComparisonType(Enum):
-    """Type of comparison being performed."""
-
-    OUTPUT = "output"
-    BEHAVIOR = "behavior"
-    PERFORMANCE = "performance"
-    EXCEPTION = "exception"
-
-
-@dataclass
-class PerformanceMetrics:
-    """Performance comparison metrics."""
-
-    java_execution_time: float
-    python_execution_time: float
-    time_difference: float
-    time_ratio: float
-    memory_usage_java: int | None = None
-    memory_usage_python: int | None = None
-
-    @property
-    def performance_delta_percent(self) -> float:
-        """Calculate performance difference as percentage."""
-        if self.java_execution_time == 0:
-            return 0.0
-        return (
-            (self.python_execution_time - self.java_execution_time) / self.java_execution_time
-        ) * 100
+            skipped_tests: int
+            execution_time: float
+            individual_results: list[TestResult] = field(default_factory=list)
 
 
 @dataclass
@@ -101,39 +69,45 @@ class ValidationComparison:
         return self.validation_result == ValidationResult.EQUIVALENT
 
 
-@dataclass
-class BehavioralEquivalenceCheck:
-    """Configuration for behavioral equivalence verification."""
-
-    ignore_whitespace: bool = True
-    ignore_case: bool = False
-    ignore_order: bool = False
-    tolerance_threshold: float = 0.95
-    custom_comparators: dict[str, Callable[..., Any]] = field(default_factory=dict)
-
-
 class ResultValidator:
     """
     Validates and compares Java and Python test outputs for equivalence.
 
-    This class implements behavioral equivalence verification logic and
-    performance comparison metrics collection as specified in requirements 5.1, 5.2, 5.3.
+    This facade class coordinates multiple validation strategies to implement
+    behavioral equivalence verification and performance comparison metrics.
     """
 
-    def __init__(self, equivalence_config: BehavioralEquivalenceCheck | None = None):
+    def __init__(self, equivalence_config: BehavioralEquivalenceConfig | None = None) -> None:
         """
         Initialize the result validator.
 
         Args:
             equivalence_config: Configuration for behavioral equivalence checks
         """
-        self.equivalence_config = equivalence_config or BehavioralEquivalenceCheck()
-        self.validation_history: list[ValidationComparison] = []
+        self.equivalence_config = equivalence_config or BehavioralEquivalenceConfig()
+
+        # Initialize validation strategies
+        self.output_validator = OutputValidator(
+            ignore_whitespace=self.equivalence_config.ignore_whitespace,
+            ignore_case=self.equivalence_config.ignore_case,
+        )
+        self.exception_validator = ExceptionValidator(
+            ignore_whitespace=self.equivalence_config.ignore_whitespace,
+            ignore_case=self.equivalence_config.ignore_case,
+        )
+        self.assertion_validator = AssertionValidator(config=self.equivalence_config)
+        self.performance_validator = PerformanceValidator()
+        self.reporter = ValidationReporter()
+
+    @property
+    def validation_history(self) -> list[dict[str, Any]]:
+        """Access validation history from reporter."""
+        return self.reporter.validation_history
 
     def compare_test_outputs(
         self,
-        java_result: TestResult,
-        python_result: TestResult,
+        java_result: "TestResult",
+        python_result: "TestResult",
         comparison_type: ComparisonType = ComparisonType.OUTPUT,
     ) -> ValidationComparison:
         """
@@ -148,32 +122,53 @@ class ResultValidator:
             ValidationComparison with detailed comparison results
         """
         try:
-            # Create base comparison object
-            comparison = ValidationComparison(
-                test_name=java_result.test_name,
-                comparison_type=comparison_type,
-                validation_result=ValidationResult.INCONCLUSIVE,
-                java_output=java_result.output,
-                python_output=python_result.output,
-            )
-
-            # Add performance metrics
-            comparison.performance_metrics = self._calculate_performance_metrics(
+            # Calculate performance metrics
+            performance_metrics = self.performance_validator.calculate_metrics(
                 java_result, python_result
             )
 
             # Perform comparison based on type
             if comparison_type == ComparisonType.OUTPUT:
-                self._compare_outputs(comparison, java_result, python_result)
+                result, differences, similarity = self._compare_outputs(java_result, python_result)
             elif comparison_type == ComparisonType.BEHAVIOR:
-                self._compare_behavior(comparison, java_result, python_result)
+                result, differences, similarity = self._compare_behavior(
+                    java_result, python_result, performance_metrics
+                )
             elif comparison_type == ComparisonType.PERFORMANCE:
-                self._compare_performance(comparison, java_result, python_result)
+                result, differences = self._compare_performance(java_result, python_result)
+                similarity = 1.0 if result == "equivalent" else 0.0
             elif comparison_type == ComparisonType.EXCEPTION:
-                self._compare_exceptions(comparison, java_result, python_result)
+                result, differences, similarity = self._compare_exceptions(
+                    java_result, python_result
+                )
+            else:
+                result = "inconclusive"
+                differences = []
+                similarity = 0.0
 
-            # Store in history
-            self.validation_history.append(comparison)
+            # Create comparison object
+            comparison = ValidationComparison(
+                test_name=java_result.test_name,
+                comparison_type=comparison_type,
+                validation_result=ValidationResult(result),
+                java_output=java_result.output,
+                python_output=python_result.output,
+                differences=differences,
+                similarity_score=similarity,
+                performance_metrics=performance_metrics,
+            )
+
+            # Record in reporter
+            self.reporter.record_comparison(
+                test_name=comparison.test_name,
+                comparison_type=comparison.comparison_type,
+                validation_result=comparison.validation_result,
+                java_output=comparison.java_output,
+                python_output=comparison.python_output,
+                differences=comparison.differences,
+                similarity_score=comparison.similarity_score,
+                performance_metrics=comparison.performance_metrics,
+            )
 
             return comparison
 
@@ -186,11 +181,23 @@ class ResultValidator:
                 python_output=python_result.output,
                 error_details=str(e),
             )
-            self.validation_history.append(error_comparison)
+
+            # Record error in reporter
+            self.reporter.record_comparison(
+                test_name=error_comparison.test_name,
+                comparison_type=error_comparison.comparison_type,
+                validation_result=error_comparison.validation_result,
+                java_output=error_comparison.java_output,
+                python_output=error_comparison.python_output,
+                differences=[],
+                similarity_score=0.0,
+                error_details=error_comparison.error_details,
+            )
+
             return error_comparison
 
     def verify_behavioral_equivalence(
-        self, java_results: TestResults, python_results: TestResults
+        self, java_results: "TestResults", python_results: "TestResults"
     ) -> list[ValidationComparison]:
         """
         Verify behavioral equivalence between Java and Python test suites.
@@ -212,12 +219,8 @@ class ResultValidator:
         common_tests = set(java_map.keys()) & set(python_map.keys())
 
         for test_name in common_tests:
-            java_result = java_map[test_name]
-            python_result = python_map[test_name]
-
-            # Perform behavioral comparison
             comparison = self.compare_test_outputs(
-                java_result, python_result, ComparisonType.BEHAVIOR
+                java_map[test_name], python_map[test_name], ComparisonType.BEHAVIOR
             )
             comparisons.append(comparison)
 
@@ -250,7 +253,7 @@ class ResultValidator:
         return comparisons
 
     def collect_performance_metrics(
-        self, java_results: TestResults, python_results: TestResults
+        self, java_results: "TestResults", python_results: "TestResults"
     ) -> dict[str, PerformanceMetrics]:
         """
         Collect performance comparison metrics between Java and Python tests.
@@ -272,237 +275,19 @@ class ResultValidator:
         common_tests = set(java_map.keys()) & set(python_map.keys())
 
         for test_name in common_tests:
-            java_result = java_map[test_name]
-            python_result = python_map[test_name]
-
-            metrics[test_name] = self._calculate_performance_metrics(java_result, python_result)
+            metrics[test_name] = self.performance_validator.calculate_metrics(
+                java_map[test_name], python_map[test_name]
+            )
 
         return metrics
 
-    def _compare_outputs(
-        self, comparison: ValidationComparison, java_result: TestResult, python_result: TestResult
-    ) -> None:
-        """Compare raw test outputs."""
-        java_output = self._normalize_output(java_result.output)
-        python_output = self._normalize_output(python_result.output)
-
-        if java_output == python_output:
-            comparison.validation_result = ValidationResult.EQUIVALENT
-            comparison.similarity_score = 1.0
-        else:
-            comparison.validation_result = ValidationResult.DIFFERENT
-            comparison.differences = self._find_output_differences(java_output, python_output)
-            comparison.similarity_score = self._calculate_similarity_score(
-                java_output, python_output
-            )
-
-    def _compare_behavior(
-        self, comparison: ValidationComparison, java_result: TestResult, python_result: TestResult
-    ) -> None:
-        """Compare test behavior for equivalence."""
-        # Check if both tests have same pass/fail status
-        if java_result.passed != python_result.passed:
-            comparison.validation_result = ValidationResult.DIFFERENT
-            comparison.differences.append(
-                f"Test status differs: Java={'PASS' if java_result.passed else 'FAIL'}, "
-                f"Python={'PASS' if python_result.passed else 'FAIL'}"
-            )
-            return
-
-        # If both failed, compare error messages
-        if not java_result.passed and not python_result.passed:
-            self._compare_exceptions(comparison, java_result, python_result)
-            return
-
-        # If both passed, compare outputs
-        self._compare_outputs(comparison, java_result, python_result)
-
-        # Apply tolerance threshold
-        if comparison.similarity_score >= self.equivalence_config.tolerance_threshold:
-            comparison.validation_result = ValidationResult.EQUIVALENT
-
-    def _compare_performance(
-        self, comparison: ValidationComparison, java_result: TestResult, python_result: TestResult
-    ) -> None:
-        """Compare performance characteristics."""
-        metrics = comparison.performance_metrics
-        if not metrics:
-            comparison.validation_result = ValidationResult.ERROR
-            comparison.error_details = "Performance metrics not available"
-            return
-
-        # Consider performance equivalent if within 50% difference
-        if abs(metrics.performance_delta_percent) <= 50.0:
-            comparison.validation_result = ValidationResult.EQUIVALENT
-        else:
-            comparison.validation_result = ValidationResult.DIFFERENT
-            comparison.differences.append(
-                f"Performance difference: {metrics.performance_delta_percent:.1f}%"
-            )
-
-    def _compare_exceptions(
-        self, comparison: ValidationComparison, java_result: TestResult, python_result: TestResult
-    ) -> None:
-        """Compare exception messages and types."""
-        java_error = java_result.error_message or ""
-        python_error = python_result.error_message or ""
-
-        # Normalize error messages for comparison
-        java_error_normalized = self._normalize_error_message(java_error)
-        python_error_normalized = self._normalize_error_message(python_error)
-
-        if java_error_normalized == python_error_normalized:
-            comparison.validation_result = ValidationResult.EQUIVALENT
-            comparison.similarity_score = 1.0
-        else:
-            comparison.validation_result = ValidationResult.DIFFERENT
-            comparison.differences.append("Error messages differ")
-            comparison.similarity_score = self._calculate_similarity_score(
-                java_error_normalized, python_error_normalized
-            )
-
-    def _calculate_performance_metrics(
-        self, java_result: TestResult, python_result: TestResult
-    ) -> PerformanceMetrics:
-        """Calculate performance comparison metrics."""
-        time_diff = python_result.execution_time - java_result.execution_time
-        time_ratio = (
-            python_result.execution_time / java_result.execution_time
-            if java_result.execution_time > 0
-            else 0.0
-        )
-
-        return PerformanceMetrics(
-            java_execution_time=java_result.execution_time,
-            python_execution_time=python_result.execution_time,
-            time_difference=time_diff,
-            time_ratio=time_ratio,
-        )
-
-    def _normalize_output(self, output: str) -> str:
-        """Normalize output for comparison."""
-        if self.equivalence_config.ignore_whitespace:
-            output = " ".join(output.split())
-
-        if self.equivalence_config.ignore_case:
-            output = output.lower()
-
-        return output.strip()
-
-    def _normalize_error_message(self, error_msg: str) -> str:
-        """Normalize error messages for comparison."""
-        # Remove file paths and line numbers that may differ
-        import re
-
-        # Remove file paths
-        error_msg = re.sub(r"[A-Za-z]:[\\\/][^:\s]+", "<path>", error_msg)
-        error_msg = re.sub(r"\/[^:\s]+\.py", "<file>.py", error_msg)
-        error_msg = re.sub(r"\/[^:\s]+\.java", "<file>.java", error_msg)
-
-        # Remove line numbers
-        error_msg = re.sub(r"line \d+", "line <num>", error_msg)
-        error_msg = re.sub(r":\d+:", ":<num>:", error_msg)
-
-        return self._normalize_output(error_msg)
-
-    def _find_output_differences(self, output1: str, output2: str) -> list[str]:
-        """Find specific differences between outputs."""
-        differences = []
-
-        lines1 = output1.split("\n")
-        lines2 = output2.split("\n")
-
-        if len(lines1) != len(lines2):
-            differences.append(f"Line count differs: {len(lines1)} vs {len(lines2)}")
-
-        max_lines = max(len(lines1), len(lines2))
-        for i in range(max_lines):
-            line1 = lines1[i] if i < len(lines1) else ""
-            line2 = lines2[i] if i < len(lines2) else ""
-
-            if line1 != line2:
-                differences.append(f"Line {i+1}: '{line1}' vs '{line2}'")
-
-        return differences[:10]  # Limit to first 10 differences
-
-    def _calculate_similarity_score(self, text1: str, text2: str) -> float:
-        """Calculate similarity score between two texts."""
-        if not text1 and not text2:
-            return 1.0
-
-        if not text1 or not text2:
-            return 0.0
-
-        # Simple character-based similarity
-        max_len = max(len(text1), len(text2))
-        if max_len == 0:
-            return 1.0
-
-        # Count matching characters at same positions
-        matches = sum(1 for i in range(min(len(text1), len(text2))) if text1[i] == text2[i])
-
-        return matches / max_len
-
     def get_validation_summary(self) -> dict[str, Any]:
         """Get summary of all validation results."""
-        if not self.validation_history:
-            return {"total_comparisons": 0}
-
-        total = len(self.validation_history)
-        equivalent = sum(1 for c in self.validation_history if c.is_equivalent)
-        different = sum(
-            1 for c in self.validation_history if c.validation_result == ValidationResult.DIFFERENT
-        )
-        errors = sum(
-            1 for c in self.validation_history if c.validation_result == ValidationResult.ERROR
-        )
-
-        avg_similarity = sum(c.similarity_score for c in self.validation_history) / total
-
-        return {
-            "total_comparisons": total,
-            "equivalent": equivalent,
-            "different": different,
-            "errors": errors,
-            "equivalent_percentage": (equivalent / total) * 100,
-            "average_similarity_score": avg_similarity,
-            "comparison_types": {
-                comp_type.value: sum(
-                    1 for c in self.validation_history if c.comparison_type == comp_type
-                )
-                for comp_type in ComparisonType
-            },
-        }
+        return self.reporter.get_validation_summary()
 
     def export_validation_results(self, output_path: Path) -> None:
         """Export validation results to JSON file."""
-        results_data = {
-            "summary": self.get_validation_summary(),
-            "comparisons": [
-                {
-                    "test_name": c.test_name,
-                    "comparison_type": c.comparison_type.value,
-                    "validation_result": c.validation_result.value,
-                    "similarity_score": c.similarity_score,
-                    "differences": c.differences,
-                    "performance_metrics": (
-                        {
-                            "java_time": c.performance_metrics.java_execution_time,
-                            "python_time": c.performance_metrics.python_execution_time,
-                            "time_difference": c.performance_metrics.time_difference,
-                            "performance_delta_percent": c.performance_metrics.performance_delta_percent,
-                        }
-                        if c.performance_metrics
-                        else None
-                    ),
-                    "error_details": c.error_details,
-                }
-                for c in self.validation_history
-            ],
-        }
-
-        with open(output_path, "w") as f:
-            json.dump(results_data, f, indent=2)
+        self.reporter.export_validation_results(output_path)
 
     def validate_test_results(self, execution_results: Any) -> None:
         """
@@ -510,6 +295,151 @@ class ResultValidator:
 
         Args:
             execution_results: Results from test execution to validate
+
+        Raises:
+            ValueError: If validation fails
         """
-        # TODO: Implement validation logic
-        pass
+        if execution_results is None:
+            raise ValueError("Execution results cannot be None")
+
+        # Handle TestResults object
+        if hasattr(execution_results, "total_tests"):
+            self._validate_test_results_object(execution_results)
+        # Handle TestResult object
+        elif hasattr(execution_results, "test_name"):
+            self._validate_test_result_object(execution_results)
+        # Handle dict format
+        elif isinstance(execution_results, dict):
+            self._validate_results_dict(execution_results)
+        # Handle list of results
+        elif isinstance(execution_results, list):
+            for result in execution_results:
+                self.validate_test_results(result)
+        else:
+            raise ValueError(f"Unsupported execution results type: {type(execution_results)}")
+
+    def _compare_outputs(
+        self, java_result: "TestResult", python_result: "TestResult"
+    ) -> tuple[str, list[str], float]:
+        """Compare raw test outputs using OutputValidator."""
+        return self.output_validator.compare_outputs(java_result, python_result)
+
+    def _compare_behavior(
+        self,
+        java_result: "TestResult",
+        python_result: "TestResult",
+        performance_metrics: PerformanceMetrics,
+    ) -> tuple[str, list[str], float]:
+        """Compare test behavior using AssertionValidator and OutputValidator."""
+        java_output, python_output = self.output_validator.get_normalized_outputs(
+            java_result, python_result
+        )
+
+        # Calculate similarity first
+        similarity = self.output_validator.calculate_similarity_score(java_output, python_output)
+
+        # Use assertion validator for behavior check
+        result, differences = self.assertion_validator.validate_behavior(
+            java_result, python_result, java_output, python_output, similarity
+        )
+
+        # If behavior validator says to check exceptions, delegate to exception validator
+        if result == "check_exceptions":
+            result, differences, similarity = self._compare_exceptions(java_result, python_result)
+
+        return result, differences, similarity
+
+    def _compare_performance(
+        self, java_result: "TestResult", python_result: "TestResult"
+    ) -> tuple[str, list[str]]:
+        """Compare performance using PerformanceValidator."""
+        result, differences, _ = self.performance_validator.compare_performance(
+            java_result, python_result
+        )
+        return result, differences
+
+    def _compare_exceptions(
+        self, java_result: "TestResult", python_result: "TestResult"
+    ) -> tuple[str, list[str], float]:
+        """Compare exceptions using ExceptionValidator."""
+        return self.exception_validator.compare_exceptions(java_result, python_result)
+
+    def _normalize_output(self, output: str) -> str:
+        """Normalize output for comparison (delegates to OutputValidator)."""
+        return self.output_validator.normalize_output(output)
+
+    def _normalize_error_message(self, error_msg: str) -> str:
+        """Normalize error messages for comparison (delegates to ExceptionValidator)."""
+        return self.exception_validator.normalize_error_message(error_msg)
+
+    def _calculate_similarity_score(self, text1: str, text2: str) -> float:
+        """Calculate similarity score between two texts (delegates to OutputValidator)."""
+        return self.output_validator.calculate_similarity_score(text1, text2)
+
+    def _validate_test_results_object(self, results: "TestResults") -> None:
+        """Validate a TestResults object."""
+        if results.total_tests < 0:
+            raise ValueError("Total tests count cannot be negative")
+        if results.passed_tests < 0:
+            raise ValueError("Passed tests count cannot be negative")
+        if results.failed_tests < 0:
+            raise ValueError("Failed tests count cannot be negative")
+        if results.skipped_tests < 0:
+            raise ValueError("Skipped tests count cannot be negative")
+
+        calculated_total = results.passed_tests + results.failed_tests + results.skipped_tests
+        if calculated_total != results.total_tests:
+            raise ValueError(
+                f"Test counts inconsistent: {results.passed_tests} + {results.failed_tests} "
+                f"+ {results.skipped_tests} != {results.total_tests}"
+            )
+
+        if results.execution_time < 0:
+            raise ValueError("Execution time cannot be negative")
+
+        if results.individual_results:
+            for result in results.individual_results:
+                self._validate_test_result_object(result)
+
+    def _validate_test_result_object(self, result: "TestResult") -> None:
+        """Validate a single TestResult object."""
+        if not result.test_name:
+            raise ValueError("Test name is required")
+        if not result.test_file:
+            raise ValueError("Test file is required")
+        if result.execution_time < 0:
+            raise ValueError(f"Execution time cannot be negative for test {result.test_name}")
+
+        if not result.passed and not result.error_message:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed test {result.test_name} has no error message")
+
+    def _validate_results_dict(self, results: dict) -> None:
+        """Validate results in dictionary format."""
+        if "total_tests" in results:
+            if not isinstance(results["total_tests"], int) or results["total_tests"] < 0:
+                raise ValueError("Invalid total_tests value")
+
+        if "passed_tests" in results:
+            if not isinstance(results["passed_tests"], int) or results["passed_tests"] < 0:
+                raise ValueError("Invalid passed_tests value")
+
+        if "failed_tests" in results:
+            if not isinstance(results["failed_tests"], int) or results["failed_tests"] < 0:
+                raise ValueError("Invalid failed_tests value")
+
+        if "execution_time" in results:
+            if (
+                not isinstance(results["execution_time"], (int, float))
+                or results["execution_time"] < 0
+            ):
+                raise ValueError("Invalid execution_time value")
+
+        if "individual_results" in results and isinstance(results["individual_results"], list):
+            for result in results["individual_results"]:
+                if isinstance(result, dict):
+                    self._validate_results_dict(result)
+                else:
+                    self.validate_test_results(result)

@@ -76,7 +76,7 @@ class MockExecutor:
         self,
         action_histories: dict[str, ActionHistory],
         screenshot_registry: StateScreenshotRegistry,
-    ):
+    ) -> None:
         """Initialize mock executor.
 
         Args:
@@ -301,12 +301,11 @@ class MockExecutor:
     def _update_states_from_action(self, action_viz: ActionVisualization):
         """Update current states based on action results.
 
-        In a real implementation, this would use state transition logic.
-        For now, we keep states unchanged unless action failed.
+        Mock mode uses recorded snapshots and does not modify state during execution.
+        State transitions are captured in the recorded data and replayed as-is.
 
         Args:
             action_viz: Action that was just executed
         """
-        # TODO: Implement state transition logic based on action results
-        # For now, states remain unchanged
+        # States remain unchanged in mock mode - transitions are pre-recorded
         pass

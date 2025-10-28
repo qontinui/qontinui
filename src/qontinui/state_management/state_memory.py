@@ -58,7 +58,7 @@ class StateMemory:
     decisions about navigation and action execution.
     """
 
-    def __init__(self, state_service: Optional["StateService"] = None):
+    def __init__(self, state_service: Optional["StateService"] = None) -> None:
         """Initialize state memory.
 
         Args:

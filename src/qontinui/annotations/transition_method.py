@@ -36,7 +36,7 @@ def transition(
     Usage in a state class:
         @state
         class LoginState:
-            def __init__(self, actions):
+            def __init__(self, actions) -> None:
                 self.actions = actions
 
             @transition(to_state="Dashboard")
@@ -50,7 +50,7 @@ def transition(
 
     Usage in a transitions class:
         class AppTransitions:
-            def __init__(self, actions):
+            def __init__(self, actions) -> None:
                 self.actions = actions
 
             @transition(

@@ -16,7 +16,7 @@ class MouseUpOptions(ActionConfig):
     Used as part of drag operations or for custom mouse interactions.
     """
 
-    def __init__(self, builder: "MouseUpOptionsBuilder"):
+    def __init__(self, builder: "MouseUpOptionsBuilder") -> None:
         """Initialize MouseUpOptions from builder.
 
         Args:
@@ -36,7 +36,7 @@ class MouseUpOptionsBuilder(ActionConfigBuilder):
     Port of MouseUpOptions from Qontinui framework.Builder.
     """
 
-    def __init__(self, original: MouseUpOptions | None = None):
+    def __init__(self, original: MouseUpOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

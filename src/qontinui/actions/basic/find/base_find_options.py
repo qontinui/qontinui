@@ -36,7 +36,7 @@ class BaseFindOptions(ActionConfig, ABC):
     implementations while maintaining type safety and API clarity.
     """
 
-    def __init__(self, builder: "BaseFindOptionsBuilder[Any]"):
+    def __init__(self, builder: "BaseFindOptionsBuilder[Any]") -> None:
         """Initialize BaseFindOptions from builder.
 
         Args:
@@ -101,7 +101,7 @@ class BaseFindOptionsBuilder[TBuilder: "BaseFindOptionsBuilder[Any]"](ActionConf
     This pattern allows for fluent, inheritable builder methods.
     """
 
-    def __init__(self, original: BaseFindOptions | None = None):
+    def __init__(self, original: BaseFindOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

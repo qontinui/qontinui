@@ -16,7 +16,7 @@ class DescriptionGenerator(ABC):
     segmentation (e.g., SAM2) and description (e.g., CLIP, BLIP, GPT-4V).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the description generator."""
         self._config: dict[str, Any] = {}
 

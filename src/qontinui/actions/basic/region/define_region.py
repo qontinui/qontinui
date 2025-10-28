@@ -6,9 +6,8 @@ Central orchestrator for region definition operations.
 import logging
 from dataclasses import dataclass, field
 
-import pyautogui
-
 from ....action_interface import ActionInterface
+from ....hal.factory import HALFactory
 from ....action_result import ActionResult
 from ....model.element.location import Location
 from ....model.element.region import Region
@@ -32,7 +31,8 @@ class DefineWithWindow:
             object_collections: Not used for window definition
         """
         # Get screen dimensions as window bounds (simplified)
-        width, height = pyautogui.size()
+        screen_capture = HALFactory.get_screen_capture()
+        width, height = screen_capture.get_screen_size()
         region = Region(0, 0, width, height)
 
         match = Match(target=Location(region=region), score=1.0)
@@ -197,7 +197,8 @@ class DefineOutsideAnchors:
         # Clamp to screen bounds
         min_x = max(0, min_x)
         min_y = max(0, min_y)
-        width, height = pyautogui.size()
+        screen_capture = HALFactory.get_screen_capture()
+        width, height = screen_capture.get_screen_size()
         max_x = min(width, max_x)
         max_y = min(height, max_y)
 

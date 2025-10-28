@@ -21,7 +21,7 @@ class ExecutionRecorder:
     concurrent recording.
     """
 
-    def __init__(self, max_records: int = 10000):
+    def __init__(self, max_records: int = 10000) -> None:
         """Initialize the execution recorder.
 
         Args:

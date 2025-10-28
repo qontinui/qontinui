@@ -14,7 +14,7 @@ class ExecutionStoppedException(Exception):
     Port of ExecutionStoppedException from Qontinui framework.
     """
 
-    def __init__(self, message: str = "Execution has been stopped"):
+    def __init__(self, message: str = "Execution has been stopped") -> None:
         """Initialize exception.
 
         Args:

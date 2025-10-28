@@ -30,7 +30,7 @@ class MockKeyboard:
         keyboard.hotkey("ctrl", "c")  # Logs but doesn't send hotkey
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize MockKeyboard."""
         # Track operation history
         self.operations: list[dict] = []

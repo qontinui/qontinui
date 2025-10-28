@@ -21,7 +21,7 @@ def state(initial: bool = False, name: str = "", description: str = "") -> Any:
     Usage:
         @state
         class PromptState:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.submit_button = StateObject.builder()\\
                     .with_image("submit")\\
                     .build()

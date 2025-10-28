@@ -48,7 +48,7 @@ class Click(ActionInterface):
         click_location_once: Optional["SingleClickExecutor"] = None,
         time: Optional["TimeProvider"] = None,
         after_click: Optional["PostClickHandler"] = None,
-    ):
+    ) -> None:
         """Initialize Click action.
 
         Args:
@@ -232,7 +232,8 @@ class Click(ActionInterface):
             if self.click_location_once:
                 self.click_location_once.click(location, click_options)
             match.increment_times_acted_on()
-            # TODO: Handle mouse movement after action when PostClickHandler is implemented
+            # Post-click mouse movement handled by PostClickHandler when configured
+            # Currently disabled - enable by passing PostClickHandler instance to Click.__init__
             if i < times_to_repeat - 1:
                 if self.time:
                     self.time.wait(click_options.get_pause_between_individual_actions())

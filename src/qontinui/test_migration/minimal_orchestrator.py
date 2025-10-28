@@ -18,7 +18,7 @@ class MinimalMigrationOrchestrator:
     Minimal migration orchestrator for testing core functionality.
     """
 
-    def __init__(self, config: MigrationConfig | None = None):
+    def __init__(self, config: MigrationConfig | None = None) -> None:
         """Initialize the minimal orchestrator."""
         self.config = config or TestMigrationConfig.create_default_config(
             [], Path("tests/migrated")

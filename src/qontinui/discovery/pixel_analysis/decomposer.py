@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class RectangleDecomposer:
     """Decomposes complex shapes into rectangular regions."""
 
-    def __init__(self, min_rect_size: int = 20):
+    def __init__(self, min_rect_size: int = 20) -> None:
         """
         Initialize decomposer.
 

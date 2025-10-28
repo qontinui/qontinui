@@ -32,7 +32,7 @@ class PytestRunner(TestRunner):
     - Providing detailed error reporting and stack traces
     """
 
-    def __init__(self, python_executable: str | None = None):
+    def __init__(self, python_executable: str | None = None) -> None:
         """
         Initialize the pytest runner.
 
@@ -138,7 +138,10 @@ class PytestRunner(TestRunner):
                 stack_trace="",
                 output="",
             )
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
+            # OSError: File system errors, process execution failures
+            # RuntimeError: Pytest execution errors
+            # ValueError: Invalid command arguments or configuration
             execution_time = time.time() - start_time
             return TestResult(
                 test_name=test_file.name,
@@ -231,7 +234,10 @@ class PytestRunner(TestRunner):
                     for f in test_files
                 ],
             )
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
+            # OSError: File system errors, process execution failures
+            # RuntimeError: Pytest execution errors
+            # ValueError: Invalid command arguments or configuration
             execution_time = time.time() - start_time
             return TestResults(
                 total_tests=len(test_files),
@@ -288,7 +294,10 @@ class PytestRunner(TestRunner):
             # Parse results
             return self._parse_suite_results(base_directory, result, execution_time, [])
 
-        except Exception:
+        except (OSError, RuntimeError, ValueError):
+            # OSError: File system errors, process execution failures
+            # RuntimeError: Pytest execution errors
+            # ValueError: Invalid command arguments or configuration
             execution_time = time.time() - start_time
             return TestResults(
                 total_tests=0,
@@ -494,7 +503,9 @@ class PytestRunner(TestRunner):
                 "config": str(self.test_config),
             }
 
-        except Exception as e:
+        except (OSError, RuntimeError) as e:
+            # OSError: Process execution failures
+            # RuntimeError: Unexpected execution errors
             return {"error": f"Failed to get environment info: {str(e)}"}
 
     def validate_test_environment(self) -> list[str]:
@@ -513,7 +524,9 @@ class PytestRunner(TestRunner):
             )
             if result.returncode != 0:
                 errors.append(f"Python executable not working: {self.python_executable}")
-        except Exception as e:
+        except (OSError, RuntimeError) as e:
+            # OSError: Process execution failures
+            # RuntimeError: Unexpected execution errors
             errors.append(f"Cannot execute Python: {str(e)}")
 
         # Check pytest availability
@@ -526,7 +539,9 @@ class PytestRunner(TestRunner):
             )
             if result.returncode != 0:
                 errors.append("pytest is not available")
-        except Exception as e:
+        except (OSError, RuntimeError) as e:
+            # OSError: Process execution failures
+            # RuntimeError: Unexpected execution errors
             errors.append(f"Cannot execute pytest: {str(e)}")
 
         return errors

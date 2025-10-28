@@ -64,7 +64,7 @@ class VectorStore:
         gpu: bool = False,
         nlist: int = 100,
         nprobe: int = 10,
-    ):
+    ) -> None:
         """Initialize vector store.
 
         Args:
@@ -349,8 +349,12 @@ class VectorStore:
     def save(self, path: str | Path):
         """Save index and metadata to disk.
 
+        SECURITY NOTE:
+        Metadata is saved using pickle serialization. Ensure the target directory
+        is in a trusted location you control with appropriate file permissions.
+
         Args:
-            path: Directory to save to
+            path: Directory to save to (should be in a trusted location)
         """
         try:
             path = Path(path)
@@ -394,8 +398,23 @@ class VectorStore:
     def load(self, path: str | Path):
         """Load index and metadata from disk.
 
+        SECURITY WARNING:
+        This method loads pickle files containing metadata. Pickle deserialization
+        can execute arbitrary code. Only load files that:
+        - Were created by your own Qontinui installation
+        - Are stored in trusted locations you control
+        - Have not been tampered with or modified by untrusted parties
+
+        DO NOT load vector stores from:
+        - Network sources or downloads
+        - User-provided directories
+        - Shared/world-writable locations
+        - Any untrusted source
+
+        See docs/SECURITY.md for comprehensive pickle security guidance.
+
         Args:
-            path: Directory to load from
+            path: Directory to load from (must be from a trusted source)
         """
         try:
             path = Path(path)

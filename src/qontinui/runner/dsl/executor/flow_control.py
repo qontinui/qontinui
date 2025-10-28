@@ -41,7 +41,7 @@ class BreakException(FlowControlException):
         outside a loop is a runtime error that will be caught by the executor.
     """
 
-    def __init__(self, message: str = "Break statement executed"):
+    def __init__(self, message: str = "Break statement executed") -> None:
         """Initialize break exception.
 
         Args:
@@ -71,7 +71,7 @@ class ContinueException(FlowControlException):
         outside a loop is a runtime error that will be caught by the executor.
     """
 
-    def __init__(self, message: str = "Continue statement executed"):
+    def __init__(self, message: str = "Continue statement executed") -> None:
         """Initialize continue exception.
 
         Args:
@@ -101,7 +101,7 @@ class ReturnException(FlowControlException):
         value: The value to return from the function (can be None for void returns)
     """
 
-    def __init__(self, value: Any = None):
+    def __init__(self, value: Any = None) -> None:
         """Initialize return exception.
 
         Args:
@@ -131,7 +131,7 @@ class ExecutionError(Exception):
         statement_type: str | None = None,
         expression_type: str | None = None,
         context: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """Initialize execution error.
 
         Args:

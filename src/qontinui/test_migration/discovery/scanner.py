@@ -22,7 +22,7 @@ else:
 class BrobotTestScanner(TestScanner):
     """Scanner for discovering Java test files in Brobot directories."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the scanner with default patterns."""
         self.java_test_patterns = ["*Test.java", "*Tests.java"]
         self.exclude_patterns = ["**/target/**", "**/build/**", "**/.git/**"]
@@ -152,8 +152,10 @@ class BrobotTestScanner(TestScanner):
                 )
                 dependencies.append(dependency)
 
-        except Exception as e:
-            # Log error but don't fail completely
+        except (OSError, UnicodeDecodeError, ValueError) as e:
+            # OSError: File system errors (permission denied, file not found, etc.)
+            # UnicodeDecodeError: Invalid file encoding
+            # ValueError: Invalid regex or import parsing
             print(f"Warning: Could not extract dependencies from {test_file.path}: {e}")
 
         return dependencies
@@ -201,8 +203,9 @@ class BrobotTestScanner(TestScanner):
 
             return False
 
-        except Exception:
-            # If we can't read the file, assume it's not a test
+        except (OSError, UnicodeDecodeError):
+            # OSError: File system errors (permission denied, file not found, etc.)
+            # UnicodeDecodeError: Invalid file encoding
             return False
 
     def _create_test_file(self, java_file: Path) -> TestFile | None:
@@ -237,7 +240,10 @@ class BrobotTestScanner(TestScanner):
 
             return test_file
 
-        except Exception as e:
+        except (OSError, ValueError, AttributeError) as e:
+            # OSError: File system errors (permission denied, file not found, etc.)
+            # ValueError: Invalid data during TestFile creation
+            # AttributeError: Missing expected attributes or properties
             print(f"Warning: Could not create TestFile for {java_file}: {e}")
             return None
 
@@ -253,7 +259,9 @@ class BrobotTestScanner(TestScanner):
             if match:
                 return match.group(1)
 
-        except Exception:
+        except (OSError, UnicodeDecodeError):
+            # OSError: File system errors (permission denied, file not found, etc.)
+            # UnicodeDecodeError: Invalid file encoding
             pass
 
         return ""

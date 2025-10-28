@@ -7,6 +7,10 @@ from collections.abc import Callable, Iterator
 
 from ..model.element import Location, Region
 from .match import Match
+from .match_operations.match_filters import MatchFilters
+from .match_operations.match_queries import MatchQueries
+from .match_operations.match_sorters import MatchSorters
+from .match_operations.match_stats import MatchStats
 
 
 class Matches:
@@ -16,7 +20,7 @@ class Matches:
     Provides methods for working with collections of matches.
     """
 
-    def __init__(self, matches: list[Match] | None = None):
+    def __init__(self, matches: list[Match] | None = None) -> None:
         """Initialize with optional list of matches.
 
         Args:
@@ -55,7 +59,7 @@ class Matches:
         Returns:
             First match or None if empty
         """
-        return self._matches[0] if self._matches else None
+        return MatchQueries.get_first(self._matches)
 
     @property
     def last(self) -> Match | None:
@@ -64,7 +68,7 @@ class Matches:
         Returns:
             Last match or None if empty
         """
-        return self._matches[-1] if self._matches else None
+        return MatchQueries.get_last(self._matches)
 
     @property
     def best(self) -> Match | None:
@@ -73,9 +77,7 @@ class Matches:
         Returns:
             Best match or None if empty
         """
-        if not self._matches:
-            return None
-        return max(self._matches, key=lambda m: m.similarity)
+        return MatchQueries.get_best(self._matches)
 
     @property
     def worst(self) -> Match | None:
@@ -84,9 +86,7 @@ class Matches:
         Returns:
             Worst match or None if empty
         """
-        if not self._matches:
-            return None
-        return min(self._matches, key=lambda m: m.similarity)
+        return MatchQueries.get_worst(self._matches)
 
     def get(self, index: int) -> Match | None:
         """Get match at specific index.
@@ -97,9 +97,7 @@ class Matches:
         Returns:
             Match at index or None
         """
-        if 0 <= index < len(self._matches):
-            return self._matches[index]
-        return None
+        return MatchQueries.get_at_index(self._matches, index)
 
     def size(self) -> int:
         """Get number of matches.
@@ -107,7 +105,7 @@ class Matches:
         Returns:
             Number of matches
         """
-        return len(self._matches)
+        return MatchStats.size(self._matches)
 
     def is_empty(self) -> bool:
         """Check if collection is empty.
@@ -115,7 +113,7 @@ class Matches:
         Returns:
             True if no matches
         """
-        return len(self._matches) == 0
+        return MatchStats.is_empty(self._matches)
 
     def has_matches(self) -> bool:
         """Check if collection has matches.
@@ -123,7 +121,7 @@ class Matches:
         Returns:
             True if has matches
         """
-        return len(self._matches) > 0
+        return MatchStats.has_matches(self._matches)
 
     def sort_by_similarity(self, reverse: bool = True) -> "Matches":
         """Sort matches by similarity.
@@ -134,7 +132,7 @@ class Matches:
         Returns:
             Self for chaining
         """
-        self._matches.sort(key=lambda m: m.similarity, reverse=reverse)
+        MatchSorters.by_similarity(self._matches, reverse)
         return self
 
     def sort_by_position(self, top_to_bottom: bool = True, left_to_right: bool = True) -> "Matches":
@@ -147,13 +145,7 @@ class Matches:
         Returns:
             Self for chaining
         """
-
-        def position_key(match: Match):
-            y = match.target.y if top_to_bottom else -match.target.y
-            x = match.target.x if left_to_right else -match.target.x
-            return (y, x)
-
-        self._matches.sort(key=position_key)
+        MatchSorters.by_position(self._matches, top_to_bottom, left_to_right)
         return self
 
     def filter_by_similarity(self, min_similarity: float) -> "Matches":
@@ -165,7 +157,7 @@ class Matches:
         Returns:
             New Matches with filtered results
         """
-        filtered = [m for m in self._matches if m.similarity >= min_similarity]
+        filtered = MatchFilters.by_similarity(self._matches, min_similarity)
         return Matches(filtered)
 
     def filter_by_region(self, region: Region) -> "Matches":
@@ -177,7 +169,7 @@ class Matches:
         Returns:
             New Matches with filtered results
         """
-        filtered = [m for m in self._matches if region.contains(m.center)]
+        filtered = MatchFilters.by_region(self._matches, region)
         return Matches(filtered)
 
     def filter_by_distance(self, location: Location, max_distance: float) -> "Matches":
@@ -190,7 +182,7 @@ class Matches:
         Returns:
             New Matches with filtered results
         """
-        filtered = [m for m in self._matches if m.center.distance_to(location) <= max_distance]
+        filtered = MatchFilters.by_distance(self._matches, location, max_distance)
         return Matches(filtered)
 
     def filter(self, predicate: Callable[[Match], bool]) -> "Matches":
@@ -202,7 +194,7 @@ class Matches:
         Returns:
             New Matches with filtered results
         """
-        filtered = [m for m in self._matches if predicate(m)]
+        filtered = MatchFilters.by_predicate(self._matches, predicate)
         return Matches(filtered)
 
     def remove_overlapping(self, overlap_threshold: float = 0.5) -> "Matches":
@@ -214,34 +206,8 @@ class Matches:
         Returns:
             New Matches without overlaps
         """
-        if len(self._matches) <= 1:
-            return Matches(self._matches.copy())
-
-        # Sort by similarity (best first)
-        sorted_matches = sorted(self._matches, key=lambda m: m.similarity, reverse=True)
-        kept_matches: list[Match] = []
-
-        for match in sorted_matches:
-            # Check if overlaps with any kept match
-            overlaps = False
-            # Skip matches without regions
-            if match.region is None:
-                continue
-
-            for kept in kept_matches:
-                if kept.region is None:
-                    continue
-                intersection = match.region.intersection(kept.region)
-                if intersection:
-                    overlap_ratio = intersection.area / min(match.region.area, kept.region.area)
-                    if overlap_ratio > overlap_threshold:
-                        overlaps = True
-                        break
-
-            if not overlaps:
-                kept_matches.append(match)
-
-        return Matches(kept_matches)
+        filtered = MatchFilters.remove_overlapping(self._matches, overlap_threshold)
+        return Matches(filtered)
 
     def nearest_to(self, location: Location) -> Match | None:
         """Get match nearest to location.
@@ -252,9 +218,7 @@ class Matches:
         Returns:
             Nearest match or None if empty
         """
-        if not self._matches:
-            return None
-        return min(self._matches, key=lambda m: m.center.distance_to(location))
+        return MatchQueries.get_nearest_to(self._matches, location)
 
     def farthest_from(self, location: Location) -> Match | None:
         """Get match farthest from location.
@@ -265,9 +229,7 @@ class Matches:
         Returns:
             Farthest match or None if empty
         """
-        if not self._matches:
-            return None
-        return max(self._matches, key=lambda m: m.center.distance_to(location))
+        return MatchQueries.get_farthest_from(self._matches, location)
 
     def to_list(self) -> list[Match]:
         """Get list of all matches.

@@ -30,7 +30,7 @@ class ExecutionState(Enum):
     STOPPED = ("Stopped",)
     """Execution has been stopped and cannot be resumed"""
 
-    def __init__(self, description: str):
+    def __init__(self, description: str) -> None:
         """Initialize with description.
 
         Args:

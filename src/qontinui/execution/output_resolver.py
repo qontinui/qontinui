@@ -277,7 +277,7 @@ class OutputTypeValidator:
     Ensures connections in workflow use valid output types for their source actions.
     """
 
-    def __init__(self, resolver: OutputResolver | None = None):
+    def __init__(self, resolver: OutputResolver | None = None) -> None:
         """
         Initialize validator.
 

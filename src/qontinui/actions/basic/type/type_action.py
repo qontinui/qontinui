@@ -115,7 +115,7 @@ class TypeAction(ActionInterface):
     and options for clearing, selecting, and verifying.
     """
 
-    def __init__(self, options: TypeOptions | None = None):
+    def __init__(self, options: TypeOptions | None = None) -> None:
         """Initialize Type action.
 
         Args:

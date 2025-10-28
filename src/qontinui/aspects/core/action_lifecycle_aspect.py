@@ -78,7 +78,7 @@ class ActionLifecycleAspect:
         log_events: bool = True,
         capture_before_screenshot: bool = False,
         capture_after_screenshot: bool = True,
-    ):
+    ) -> None:
         """Initialize the aspect.
 
         Args:

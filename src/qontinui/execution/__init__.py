@@ -16,10 +16,12 @@ This module provides graph-based workflow execution with support for:
 
 from .connection_resolver import ConnectionResolver
 from .connection_router import ConnectionRouter
-from .execution_state import (
+from .execution_controller import ExecutionController
+from .execution_state import ExecutionState
+from .execution_tracker import ExecutionTracker
+from .execution_types import (
     ActionExecutionRecord,
     ActionStatus,
-    ExecutionState,
     ExecutionStatus,
     PendingAction,
 )
@@ -77,6 +79,8 @@ __all__ = [
     "ConnectionResolver",
     # Execution state
     "ExecutionState",
+    "ExecutionController",
+    "ExecutionTracker",
     "ExecutionStatus",
     "ActionStatus",
     "ActionExecutionRecord",

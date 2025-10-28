@@ -5,7 +5,15 @@ Provides color-based pattern matching, classification, and analysis.
 
 from .classify import Classify
 from .color_cluster import ColorCluster, ColorClusterAnalyzer
-from .color_find_options import AreaFilteringOptions, ColorFindOptions, ColorStrategy, HSVBinOptions
+from .color_find_options import (
+    AreaFilteringOptions,
+    AreaFilteringOptionsBuilder,
+    ColorFindOptions,
+    ColorFindOptionsBuilder,
+    ColorStrategy,
+    HSVBinOptions,
+    HSVBinOptionsBuilder,
+)
 from .color_statistics import ColorStatistics, ColorStatisticsAnalyzer
 from .find_color import ColorProfile, FindColor
 
@@ -15,9 +23,12 @@ __all__ = [
     "FindColor",
     # Options and configuration
     "ColorFindOptions",
+    "ColorFindOptionsBuilder",
     "ColorStrategy",
     "AreaFilteringOptions",
+    "AreaFilteringOptionsBuilder",
     "HSVBinOptions",
+    "HSVBinOptionsBuilder",
     # Analysis utilities
     "ColorProfile",
     "ColorCluster",

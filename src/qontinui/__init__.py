@@ -16,7 +16,7 @@ from .actions import (
     DragOptions,
     FindOptions,
     FluentActions,
-    MoveOptions,
+    MouseMoveOptions,
     PureActions,
     ScrollOptions,
     TypeOptions,
@@ -24,7 +24,8 @@ from .actions import (
 )
 
 # Migration Tools
-# TODO: Enable after installing AI dependencies
+# NOTE: BrobotConverter requires AI dependencies (faiss-cpu, torch, transformers)
+# Uncomment when these packages are installed in your environment
 # from .migrations import BrobotConverter
 # DSL Parser
 from .dsl import QontinuiDSLParser
@@ -36,7 +37,8 @@ from . import navigation_api, registry
 from .find import Find, FindImage, FindResults, Match, Matches
 
 # Perception Pipeline
-# TODO: Enable after installing AI dependencies (faiss, torch, transformers)
+# NOTE: Perception modules require AI dependencies (faiss-cpu, torch, transformers)
+# Uncomment when these packages are installed in your environment
 # from .perception import (
 #     ScreenSegmenter,
 #     ObjectVectorizer,
@@ -105,7 +107,7 @@ __all__ = [
     "StateGraph",
     "StateTraversal",
     # Perception
-    # TODO: Enable after installing AI dependencies
+    # NOTE: Perception exports require AI dependencies (faiss-cpu, torch, transformers)
     # "ScreenSegmenter",
     # "ObjectVectorizer",
     # "ElementMatcher",
@@ -134,7 +136,7 @@ __all__ = [
     "ActionInterface",
     "ClickOptions",
     "DragOptions",
-    "MoveOptions",
+    "MouseMoveOptions",
     "TypeOptions",
     "ScrollOptions",
     "WaitOptions",
@@ -155,7 +157,7 @@ __all__ = [
     "StateEnum",
     "StateImage",
     "StateObject",
-    "StateImageObject",
+    # "StateImageObject",  # REMOVED: Not imported - may be deprecated
     "StateLocation",
     "StateRegion",
     "StateString",
@@ -171,6 +173,6 @@ __all__ = [
     "MatchObject",
     "SearchRegions",
     # Tools
-    # "BrobotConverter",  # TODO: Enable after installing AI dependencies
+    # "BrobotConverter",  # NOTE: Requires AI dependencies (faiss-cpu, torch, transformers)
     "QontinuiDSLParser",
 ]

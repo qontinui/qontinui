@@ -75,7 +75,7 @@ class HybridTestTranslator(TestTranslator):
         llm_client=None,
         default_strategy: TranslationStrategy = TranslationStrategy.HYBRID_UTILITY_FIRST,
         enable_caching: bool = True,
-    ):
+    ) -> None:
         """
         Initialize the hybrid translator.
 

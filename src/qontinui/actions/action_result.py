@@ -127,7 +127,7 @@ class ActionResultBuilder:
                  .build())
     """
 
-    def __init__(self, action_config: "ActionConfig | None" = None):
+    def __init__(self, action_config: "ActionConfig | None" = None) -> None:
         """Initialize builder with optional configuration.
 
         Args:

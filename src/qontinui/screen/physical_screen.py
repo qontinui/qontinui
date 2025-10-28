@@ -36,7 +36,7 @@ class PhysicalScreen:
     scale_factor: float
     """Scale factor for DPI compensation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize physical screen with resolution detection."""
         # Try to get physical resolution
         self.physical_width, self.physical_height = self._get_physical_resolution()
@@ -92,7 +92,7 @@ class PhysicalScreen:
                 height = root.winfo_screenheight()
                 root.destroy()
                 return width, height
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError, ImportError, AttributeError) as e:
             logger.warning(f"Failed to get physical resolution: {e}")
             return self._get_logical_resolution()
 
@@ -109,8 +109,8 @@ class PhysicalScreen:
             height = root.winfo_screenheight()
             root.destroy()
             return width, height
-        except Exception:
-            # Fallback
+        except (OSError, RuntimeError, ValueError, ImportError):
+            # Fallback to common resolution
             return 1920, 1080
 
     def capture(self, region: Region | None = None) -> Image.Image:
@@ -167,7 +167,7 @@ class PhysicalScreen:
 
             return screenshot
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError, MemoryError) as e:
             logger.error(f"Failed to capture screen: {e}")
             return Image.new("RGB", (w if w > 0 else 1, h if h > 0 else 1))
 

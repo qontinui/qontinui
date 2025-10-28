@@ -19,7 +19,7 @@ class SpringTestAdapter:
     Python dependency injection or configuration patterns.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Spring test adapter with annotation mappings."""
         self._spring_annotation_mappings = {
             "@SpringBootTest": self._handle_spring_boot_test,
@@ -499,7 +499,7 @@ class DependencyContainer:
     Spring's ApplicationContext in test scenarios.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the dependency container."""
         self._components = {}
         self._singletons = {}

@@ -50,7 +50,7 @@ class ExecutionModeConfig:
         mode: MockMode = MockMode.REAL,
         screenshot_dir: str | None = None,
         cache_enabled: bool = True,
-    ):
+    ) -> None:
         """Initialize execution mode configuration.
 
         Args:

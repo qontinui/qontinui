@@ -68,7 +68,7 @@ class ProcessRepetitionOptions:
 class ProcessRepetitionOptionsBuilder:
     """Builder for ProcessRepetitionOptions using fluent API."""
 
-    def __init__(self, original: ProcessRepetitionOptions | None = None):
+    def __init__(self, original: ProcessRepetitionOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

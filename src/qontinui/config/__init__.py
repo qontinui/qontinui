@@ -17,7 +17,7 @@ Usage:
     from qontinui.config import get_settings, enable_mock_mode
 
     settings = get_settings()
-    settings.mock = True
+    settings.core.mock = True
 
     # Using configuration manager
     from qontinui.config import get_config_manager
@@ -71,14 +71,26 @@ from .importer import (
 )
 from .qontinui_properties import (
     AnalysisConfig,
+    AutomationConfig,
+    AutoScalingConfig,
+    CaptureConfig,
+    ConsoleActionConfig,
     CoreConfig,
     DatasetConfig,
+    DpiConfig,
+    GuiAccessConfig,
+    HighlightConfig,
     IllustrationConfig,
+    ImageDebugConfig,
+    LoggingConfig,
     MockConfig,
+    MonitorConfig,
     MouseConfig,
     QontinuiProperties,
     RecordingConfig,
     ScreenshotConfig,
+    SikuliConfig,
+    StartupConfig,
     TestingConfig,
 )
 
@@ -108,6 +120,7 @@ from .schema import (
     KeyUpActionConfig,
     LoggingOptions,
     LoopActionConfig,
+    LoopCollection,
     MapActionConfig,
     MathOperationActionConfig,
     MouseButton,
@@ -201,6 +214,18 @@ __all__ = [
     "RecordingConfig",
     "DatasetConfig",
     "TestingConfig",
+    "MonitorConfig",
+    "DpiConfig",
+    "CaptureConfig",
+    "SikuliConfig",
+    "StartupConfig",
+    "AutomationConfig",
+    "AutoScalingConfig",
+    "LoggingConfig",
+    "HighlightConfig",
+    "ConsoleActionConfig",
+    "ImageDebugConfig",
+    "GuiAccessConfig",
     # Settings
     "FrameworkSettings",
     "get_settings",
@@ -256,6 +281,7 @@ __all__ = [
     # Action Schema - Control flow actions
     "IfActionConfig",
     "LoopActionConfig",
+    "LoopCollection",
     "BreakActionConfig",
     "ContinueActionConfig",
     "SwitchActionConfig",

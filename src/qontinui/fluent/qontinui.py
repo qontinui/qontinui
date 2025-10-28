@@ -47,6 +47,6 @@ class Qontinui:
 
         return ActionSequenceBuilder()
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Private constructor to prevent instantiation."""
         raise RuntimeError("Qontinui is a utility class - not meant to be instantiated")

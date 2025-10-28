@@ -23,7 +23,7 @@ class OpenCVMatcher(IPatternMatcher):
     - Edge detection
     """
 
-    def __init__(self, config: HALConfig | None = None):
+    def __init__(self, config: HALConfig | None = None) -> None:
         """Initialize OpenCV matcher.
 
         Args:

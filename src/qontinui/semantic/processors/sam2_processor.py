@@ -34,7 +34,7 @@ class SAM2Processor(SemanticProcessor):
         model_type: str = "vit_h",
         checkpoint_path: str | None = None,
         description_generator: DescriptionGenerator | None = None,
-    ):
+    ) -> None:
         """Initialize SAM2 processor.
 
         Args:
@@ -246,7 +246,13 @@ class SAM2Processor(SemanticProcessor):
 
         except ImportError:
             return None
-        except Exception:
+        except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as e:
+            # Handle OCR and image processing errors:
+            # - OSError: File/system errors during OCR processing
+            # - RuntimeError: Tesseract processing failures
+            # - ValueError: Invalid image dimensions or color space
+            # - TypeError: Invalid array types or operations
+            # - AttributeError: Missing cv2 or pytesseract methods
             return None
 
     def process_with_prompts(

@@ -75,7 +75,7 @@ class ActionLifecycle:
     - Error handling
     """
 
-    def __init__(self, action: ActionInterface):
+    def __init__(self, action: ActionInterface) -> None:
         """Initialize lifecycle manager.
 
         Args:
@@ -88,7 +88,7 @@ class ActionLifecycle:
         self._setup_default_validators()
         logger.debug(f"Lifecycle created for {action.__class__.__name__}")
 
-    def _setup_default_validators(self):
+    def _setup_default_validators(self) -> None:
         """Setup default stage validators."""
         self._stage_validators[LifecycleStage.INITIALIZED] = self._validate_initialized
         self._stage_validators[LifecycleStage.VALIDATED] = self._validate_action
@@ -341,7 +341,7 @@ class ActionLifecycle:
             logger.error(f"Destroy failed: {e}")
             return False
 
-    def _transition_to(self, stage: LifecycleStage):
+    def _transition_to(self, stage: LifecycleStage) -> None:
         """Transition to new stage.
 
         Args:
@@ -351,7 +351,7 @@ class ActionLifecycle:
         self.state.stage = stage
         logger.debug(f"Lifecycle transition: {old_stage} -> {stage}")
 
-    def _fire_event(self, event: LifecycleEvent):
+    def _fire_event(self, event: LifecycleEvent) -> None:
         """Fire lifecycle event.
 
         Args:
@@ -364,7 +364,7 @@ class ActionLifecycle:
             except Exception as e:
                 logger.warning(f"Event listener failed: {e}")
 
-    def add_listener(self, event: LifecycleEvent, listener: Callable[..., Any]):
+    def add_listener(self, event: LifecycleEvent, listener: Callable[..., Any]) -> None:
         """Add event listener.
 
         Args:
@@ -375,7 +375,7 @@ class ActionLifecycle:
             self._listeners[event] = []
         self._listeners[event].append(listener)
 
-    def remove_listener(self, event: LifecycleEvent, listener: Callable[..., Any]):
+    def remove_listener(self, event: LifecycleEvent, listener: Callable[..., Any]) -> None:
         """Remove event listener.
 
         Args:
@@ -385,7 +385,7 @@ class ActionLifecycle:
         if event in self._listeners:
             self._listeners[event].remove(listener)
 
-    def add_validator(self, stage: LifecycleStage, validator: Callable[[], bool]):
+    def add_validator(self, stage: LifecycleStage, validator: Callable[[], bool]) -> None:
         """Add stage validator.
 
         Args:
@@ -437,7 +437,7 @@ class ActionLifecycle:
         """
         return self.state.error is not None
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset lifecycle to initial state."""
         self.state = LifecycleState()
         logger.debug("Lifecycle reset")

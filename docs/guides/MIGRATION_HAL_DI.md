@@ -321,7 +321,7 @@ keyboard = Keyboard(hal)
 
 ```python
 # main.py
-from qontinui.json_executor import ActionExecutor
+from qontinui.action_executors import DelegatingActionExecutor
 from qontinui.config import ConfigParser
 
 def main():
@@ -329,7 +329,7 @@ def main():
     config = parser.parse_file("automation.json")
 
     # HALFactory used implicitly
-    executor = ActionExecutor(config)
+    executor = DelegatingActionExecutor(config)
 
     for action in config.workflows[0].actions:
         executor.execute_action(action)
@@ -343,7 +343,7 @@ if __name__ == "__main__":
 ```python
 # main.py
 from qontinui.hal import initialize_hal, shutdown_hal, HALInitializationError
-from qontinui.json_executor import ActionExecutor
+from qontinui.action_executors import DelegatingActionExecutor
 from qontinui.config import ConfigParser
 import sys
 
@@ -361,7 +361,7 @@ def main():
 
     try:
         # Create executor with HAL
-        executor = ActionExecutor(config, hal=hal)
+        executor = DelegatingActionExecutor(config, hal=hal)
 
         # Execute actions
         for action in config.workflows[0].actions:

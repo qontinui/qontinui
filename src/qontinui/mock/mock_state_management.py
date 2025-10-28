@@ -26,7 +26,7 @@ class MockStateManagement:
     mock execution by managing probability settings.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize MockStateManagement."""
         self._state_configs: dict[str, StateConfig] = {}
         self._active_states: set[str] = set()

@@ -380,6 +380,11 @@ validate_run_process.py
 *IMPLEMENTATION_COMPLETE.md
 *_COMPLETE.md
 docs/implementation/
+docs/refactoring/
+docs/development/
+
+# Temporary analysis reports and session documentation
+docs/reports/
 
 # Temporary/scratch documentation
 *_SCRATCH.md

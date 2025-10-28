@@ -66,7 +66,7 @@ class MatchFusionOptions:
 class MatchFusionOptionsBuilder:
     """Builder for MatchFusionOptions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.fusion_method = FusionMethod.ABSOLUTE
         self.max_fusion_distance_x = 20
         self.max_fusion_distance_y = 20

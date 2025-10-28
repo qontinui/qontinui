@@ -14,7 +14,7 @@ class RunProcessOptions(ActionConfig):
     control including fixed count or until-success modes.
     """
 
-    def __init__(self, builder: "RunProcessOptionsBuilder"):
+    def __init__(self, builder: "RunProcessOptionsBuilder") -> None:
         """Initialize RunProcessOptions from builder.
 
         Args:
@@ -61,7 +61,7 @@ class RunProcessOptions(ActionConfig):
 class RunProcessOptionsBuilder(ActionConfigBuilder):
     """Builder for RunProcessOptions using fluent API."""
 
-    def __init__(self, original: RunProcessOptions | None = None):
+    def __init__(self, original: RunProcessOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

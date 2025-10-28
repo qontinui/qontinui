@@ -52,7 +52,7 @@ class EmbeddingGenerator:
         device: str | None = None,
         use_cache: bool = True,
         cache_size: int = 1000,
-    ):
+    ) -> None:
         """Initialize embedding generator.
 
         Args:

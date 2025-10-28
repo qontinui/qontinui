@@ -28,7 +28,7 @@ class SearchRegionDependencyInitializer:
         self,
         state_store: StateStore | None = None,
         dynamic_region_resolver: DynamicRegionResolver | None = None,
-    ):
+    ) -> None:
         """Initialize SearchRegionDependencyInitializer.
 
         Args:

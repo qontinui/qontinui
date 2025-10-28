@@ -10,7 +10,7 @@ from ...action_result import ActionResult
 from ...action_type import ActionType
 from ...basic.find.pattern_find_options import PatternFindOptions, PatternFindOptionsBuilder
 from ...basic.mouse.mouse_down_options import MouseDownOptions, MouseDownOptionsBuilder
-from ...basic.mouse.mouse_move_options import MouseMoveOptions
+from ...basic.mouse.mouse_move_options import MouseMoveOptions, MouseMoveOptionsBuilder
 from ...basic.mouse.mouse_press_options import MousePressOptions
 from ...basic.mouse.mouse_up_options import MouseUpOptions, MouseUpOptionsBuilder
 from ...internal.execution.action_chain_executor import ActionChainExecutor
@@ -41,7 +41,7 @@ class Drag(ActionInterface):
         self,
         action_chain_executor: ActionChainExecutor | None = None,
         action_service: ActionService | None = None,
-    ):
+    ) -> None:
         """Initialize Drag action.
 
         Args:
@@ -196,7 +196,7 @@ class Drag(ActionInterface):
             return base_options
 
         # Create default move options
-        return MouseMoveOptions()
+        return MouseMoveOptionsBuilder().build()
 
     def _create_mouse_down_options(self, base_options: MousePressOptions) -> MouseDownOptions:
         """Create mouse down options.

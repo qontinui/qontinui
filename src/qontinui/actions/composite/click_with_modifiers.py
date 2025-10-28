@@ -8,8 +8,10 @@ from typing import Any, cast
 
 from ..basic.click.click import Click
 from ..basic.click.click_options import ClickOptions, ClickOptionsBuilder
-from ..basic.type.key_down import KeyDown, KeyDownOptions
-from ..basic.type.key_up import KeyUp, KeyUpOptions
+from ..basic.type.key_down import KeyDown
+from ..basic.type.key_down_options import KeyDownOptionsBuilder
+from ..basic.type.key_up import KeyUp
+from ..basic.type.key_up_options import KeyUpOptionsBuilder
 
 
 class ClickWithModifiers:
@@ -30,9 +32,9 @@ class ClickWithModifiers:
         Returns:
             True if successful
         """
-        key_down = KeyDown(KeyDownOptions().add_key("SHIFT"))
+        key_down = KeyDown(KeyDownOptionsBuilder().add_key("SHIFT").build())
         click = Click(options or ClickOptionsBuilder().build())
-        key_up = KeyUp(KeyUpOptions().add_key("SHIFT"))
+        key_up = KeyUp(KeyUpOptionsBuilder().add_key("SHIFT").build())
 
         # Execute atomic actions in sequence
         if not key_down.execute():
@@ -57,9 +59,9 @@ class ClickWithModifiers:
         Returns:
             True if successful
         """
-        key_down = KeyDown(KeyDownOptions().add_key("CTRL"))
+        key_down = KeyDown(KeyDownOptionsBuilder().add_key("CTRL").build())
         click = Click(options or ClickOptionsBuilder().build())
-        key_up = KeyUp(KeyUpOptions().add_key("CTRL"))
+        key_up = KeyUp(KeyUpOptionsBuilder().add_key("CTRL").build())
 
         # Execute atomic actions in sequence
         if not key_down.execute():
@@ -84,9 +86,9 @@ class ClickWithModifiers:
         Returns:
             True if successful
         """
-        key_down = KeyDown(KeyDownOptions().add_key("ALT"))
+        key_down = KeyDown(KeyDownOptionsBuilder().add_key("ALT").build())
         click = Click(options or ClickOptionsBuilder().build())
-        key_up = KeyUp(KeyUpOptions().add_key("ALT"))
+        key_up = KeyUp(KeyUpOptionsBuilder().add_key("ALT").build())
 
         # Execute atomic actions in sequence
         if not key_down.execute():
@@ -111,9 +113,9 @@ class ClickWithModifiers:
         Returns:
             True if successful
         """
-        key_down = KeyDown(KeyDownOptions().add_key("CTRL").add_key("SHIFT"))
+        key_down = KeyDown(KeyDownOptionsBuilder().add_key("CTRL").add_key("SHIFT").build())
         click = Click(options or ClickOptionsBuilder().build())
-        key_up = KeyUp(KeyUpOptions().add_key("SHIFT").add_key("CTRL"))
+        key_up = KeyUp(KeyUpOptionsBuilder().add_key("SHIFT").add_key("CTRL").build())
 
         # Execute atomic actions in sequence
         if not key_down.execute():
@@ -138,9 +140,9 @@ class ClickWithModifiers:
         Returns:
             True if successful
         """
-        key_down = KeyDown(KeyDownOptions().add_key("META"))
+        key_down = KeyDown(KeyDownOptionsBuilder().add_key("META").build())
         click = Click(options or ClickOptionsBuilder().build())
-        key_up = KeyUp(KeyUpOptions().add_key("META"))
+        key_up = KeyUp(KeyUpOptionsBuilder().add_key("META").build())
 
         # Execute atomic actions in sequence
         if not key_down.execute():
@@ -161,7 +163,7 @@ class FluentClickWithModifiers:
     Allows chaining modifiers before executing the click action.
     """
 
-    def __init__(self, target: Any, options: ClickOptions | None = None):
+    def __init__(self, target: Any, options: ClickOptions | None = None) -> None:
         """Initialize fluent click builder.
 
         Args:
@@ -222,17 +224,17 @@ class FluentClickWithModifiers:
             # No modifiers, just do a regular click
             return cast(bool, Click(self.options).execute(self.target))
 
-        # Create key down action with all modifiers
-        key_down_options = KeyDownOptions()
+        # Create key down action with all modifiers using builder
+        key_down_builder = KeyDownOptionsBuilder()
         for modifier in self.modifiers:
-            key_down_options.add_key(modifier)
-        key_down = KeyDown(key_down_options)
+            key_down_builder.add_key(modifier)
+        key_down = KeyDown(key_down_builder.build())
 
         # Create key up action with modifiers in reverse order
-        key_up_options = KeyUpOptions()
+        key_up_options_builder = KeyUpOptionsBuilder()
         for modifier in reversed(self.modifiers):
-            key_up_options.add_key(modifier)
-        key_up = KeyUp(key_up_options)
+            key_up_options_builder.add_key(modifier)
+        key_up = KeyUp(key_up_options_builder.build())
 
         # Execute atomic actions in sequence
         if not key_down.execute():

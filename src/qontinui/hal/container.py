@@ -8,12 +8,13 @@ from dataclasses import dataclass
 
 from .config import HALConfig
 from .interfaces import (
-    IInputController,
     IOCREngine,
     IPatternMatcher,
     IPlatformSpecific,
     IScreenCapture,
 )
+from .interfaces.keyboard_controller import IKeyboardController
+from .interfaces.mouse_controller import IMouseController
 
 
 @dataclass
@@ -27,8 +28,12 @@ class HALContainer:
     Components are created once at application startup and shared across
     the application lifetime.
 
+    BREAKING CHANGE: input_controller has been split into keyboard_controller
+    and mouse_controller for better separation of concerns.
+
     Attributes:
-        input_controller: Input control implementation (keyboard/mouse)
+        keyboard_controller: Keyboard input control implementation
+        mouse_controller: Mouse input control implementation
         screen_capture: Screen capture implementation
         pattern_matcher: Image pattern matching implementation
         ocr_engine: OCR text recognition implementation
@@ -39,12 +44,13 @@ class HALContainer:
         >>> from qontinui.hal import HALConfig, initialize_hal
         >>> config = HALConfig()
         >>> hal = initialize_hal(config)
-        >>> # Pass hal to components that need it
-        >>> keyboard = Keyboard(hal)
-        >>> executor = ActionExecutor(config, hal=hal)
+        >>> # Use separate controllers
+        >>> hal.keyboard_controller.type_text("Hello")
+        >>> hal.mouse_controller.mouse_move(100, 200)
     """
 
-    input_controller: IInputController
+    keyboard_controller: IKeyboardController
+    mouse_controller: IMouseController
     screen_capture: IScreenCapture
     pattern_matcher: IPatternMatcher
     ocr_engine: IOCREngine
@@ -80,7 +86,8 @@ class HALContainer:
         """
         # Import the initialization module
         from .initialization import (
-            _create_input_controller,
+            _create_keyboard_controller,
+            _create_mouse_controller,
             _create_ocr_engine,
             _create_pattern_matcher,
             _create_platform_specific,
@@ -88,14 +95,16 @@ class HALContainer:
         )
 
         # Create all components eagerly
-        input_controller = _create_input_controller(config)
+        keyboard_controller = _create_keyboard_controller(config)
+        mouse_controller = _create_mouse_controller(config)
         screen_capture = _create_screen_capture(config)
         pattern_matcher = _create_pattern_matcher(config)
         ocr_engine = _create_ocr_engine(config)
         platform_specific = _create_platform_specific(config)
 
         return cls(
-            input_controller=input_controller,
+            keyboard_controller=keyboard_controller,
+            mouse_controller=mouse_controller,
             screen_capture=screen_capture,
             pattern_matcher=pattern_matcher,
             ocr_engine=ocr_engine,

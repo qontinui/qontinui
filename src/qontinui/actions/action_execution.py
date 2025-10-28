@@ -35,7 +35,7 @@ class ActionExecution:
     follows the same lifecycle pattern.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize ActionExecution."""
         self._execution_count = 0
         self._success_count = 0

@@ -22,7 +22,7 @@ class MSSScreenCapture(IScreenCapture):
     on GUI automation libraries, resulting in 10-50x faster captures.
     """
 
-    def __init__(self, config: HALConfig | None = None):
+    def __init__(self, config: HALConfig | None = None) -> None:
         """Initialize MSS screen capture.
 
         Args:
@@ -117,7 +117,7 @@ class MSSScreenCapture(IScreenCapture):
             else:
                 # Linux X11
                 return 1.0
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError, AttributeError) as e:
             logger.debug(f"Could not detect DPI scale: {e}")
             return 1.0
 
@@ -168,7 +168,7 @@ class MSSScreenCapture(IScreenCapture):
 
             return image
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError, MemoryError) as e:
             raise ScreenCaptureException(
                 f"Failed to capture screen (monitor={monitor}): {e}"
             ) from e
@@ -225,7 +225,7 @@ class MSSScreenCapture(IScreenCapture):
 
             return image
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError, MemoryError) as e:
             raise ScreenCaptureException(
                 f"Failed to capture region (monitor={monitor}): {e}"
             ) from e
@@ -295,7 +295,7 @@ class MSSScreenCapture(IScreenCapture):
             pixel = sct_img.pixel(0, 0)  # Get pixel at (0,0) of 1x1 capture
             return pixel[:3]  # type: ignore[no-any-return]
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             logger.error("get_pixel_color_failed", x=x, y=y, monitor=monitor, error=str(e))
             return (0, 0, 0)
 
@@ -335,7 +335,7 @@ class MSSScreenCapture(IScreenCapture):
 
             return str(path)
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError, MemoryError) as e:
             raise ScreenCaptureException(
                 f"Failed to save screenshot (monitor={monitor}): {e}"
             ) from e
@@ -386,8 +386,10 @@ class MSSScreenCapture(IScreenCapture):
 
     def clear_cache(self) -> None:
         """Clear screenshot cache."""
-        self._cache.clear()
-        self._cache_timestamps.clear()
+        if hasattr(self, '_cache'):
+            self._cache.clear()
+        if hasattr(self, '_cache_timestamps'):
+            self._cache_timestamps.clear()
         logger.debug("screenshot_cache_cleared")
 
     def close(self) -> None:
@@ -395,7 +397,7 @@ class MSSScreenCapture(IScreenCapture):
         if hasattr(self, "_thread_local") and hasattr(self._thread_local, "sct"):
             try:
                 self._thread_local.sct.close()
-            except Exception as e:
+            except (OSError, RuntimeError) as e:
                 logger.debug(f"Error closing mss instance: {e}")
         self.clear_cache()
         logger.debug("mss_capture_closed")
@@ -411,6 +413,10 @@ class MSSScreenCapture(IScreenCapture):
     def __del__(self):
         """Destructor to ensure resources are cleaned up."""
         try:
-            self.close()
-        except Exception:
+            # Only call close if object was fully initialized
+            if hasattr(self, '_cache'):
+                self.close()
+        except (OSError, RuntimeError):
+            # OK to silently ignore cleanup errors in destructor
             pass
+        # KeyboardInterrupt and SystemExit now propagate

@@ -23,7 +23,7 @@ class MaskedFind(FindImage):
     for compatibility but delegates to the standard Pattern class.
     """
 
-    def __init__(self, pattern: Image | Pattern | str | None = None):
+    def __init__(self, pattern: Image | Pattern | str | None = None) -> None:
         """Initialize MaskedFind with optional pattern.
 
         Args:
@@ -56,8 +56,8 @@ class MaskedFind(FindImage):
         super().pattern(pattern)
         self._pattern = pattern
         # Set similarity threshold from pattern
-        if pattern.similarity_threshold:
-            self.similarity(pattern.similarity_threshold)
+        if pattern.similarity:
+            self.similarity(pattern.similarity)
         return self
 
     def use_mask(self, enable: bool = True) -> "MaskedFind":
@@ -287,7 +287,7 @@ class MaskedFind(FindImage):
 class MaskedFindBuilder:
     """Builder for creating MaskedFind operations with various configurations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the builder."""
         self._find = MaskedFind()
 

@@ -30,7 +30,7 @@ class RunProcess(ActionInterface):
         workflows. The process_id parameter accepts both workflow and process IDs.
     """
 
-    def __init__(self, config: "QontinuiConfig | None" = None):
+    def __init__(self, config: "QontinuiConfig | None" = None) -> None:
         """Initialize RunProcess action.
 
         Args:
@@ -148,10 +148,10 @@ class RunProcess(ActionInterface):
         for i, action in enumerate(workflow.actions):
             output_text += f"  Action {i + 1}: {action.type}\n"
 
-            # TODO: Actually execute the action using the action executor
+            # Placeholder: Action execution requires ActionExecutor integration
+            # Integration point: Pass ActionExecutor instance to RunProcess.__init__
+            # Then call: self.action_executor.execute_action(action)
             # For now, we assume success
-            # In full implementation, this would call:
-            # action_executor.execute_action(action)
 
         action_result.output_text = output_text
         return success

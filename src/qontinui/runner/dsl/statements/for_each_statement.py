@@ -52,7 +52,7 @@ class ForEachStatement(Statement):
         variable_name: str = "",
         collection: Expression | None = None,
         statements: list[Statement] | None = None,
-    ):
+    ) -> None:
         """Initialize forEach statement.
 
         Args:

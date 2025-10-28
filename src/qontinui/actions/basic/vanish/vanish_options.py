@@ -16,7 +16,7 @@ class VanishOptions(ActionConfig):
     UI elements to go away before proceeding with automation.
     """
 
-    def __init__(self, builder: "VanishOptionsBuilder"):
+    def __init__(self, builder: "VanishOptionsBuilder") -> None:
         """Initialize VanishOptions from builder.
 
         Args:
@@ -46,7 +46,7 @@ class VanishOptionsBuilder(ActionConfigBuilder):
     Port of VanishOptions from Qontinui framework.Builder.
     """
 
-    def __init__(self, original: VanishOptions | None = None):
+    def __init__(self, original: VanishOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

@@ -40,7 +40,7 @@ class RegionDefinitions:
             .build())
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize region definitions."""
         self._static_regions: dict[str, Region] = {}
         self._dynamic_regions: dict[str, Callable[[], Region]] = {}

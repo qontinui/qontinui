@@ -45,7 +45,7 @@ class StateAutomator:
         automator.execute_transition("submit_prompt")
     """
 
-    def __init__(self, actions: Actions | None = None, state_store: StateStore | None = None):
+    def __init__(self, actions: Actions | None = None, state_store: StateStore | None = None) -> None:
         """Initialize StateAutomator.
 
         Args:
@@ -250,18 +250,20 @@ class StateAutomator:
                             logger.info(f"Transitioned to state: {trans.to_state}")
 
                         # Update statistics
-                        self.state_store._total_transitions += 1
+                        self.state_store.record_transition(current.name)
 
                         logger.info(f"✓ Transition '{transition_name}' succeeded")
                         return True
                     else:
                         # Update failure statistics
-                        self.state_store._failed_transitions += 1
+                        self.state_store.record_failed_transition(
+                            current.name, "Transition function returned False"
+                        )
                         logger.error(f"✗ Transition '{transition_name}' failed")
                         return False
 
                 except Exception as e:
-                    self.state_store._failed_transitions += 1
+                    self.state_store.record_failed_transition(current.name, str(e))
                     logger.error(f"Exception during transition '{transition_name}': {e}")
                     return False
 

@@ -166,3 +166,54 @@ exclude_lines = [
     "pass",
     "except ImportError:",
 ]
+
+# Quality gate configuration for qontinui-devtools
+[tool.qontinui-devtools]
+# God class detection thresholds
+max_god_class_lines = 500
+max_god_class_methods = 30
+max_lcom = 0.9
+
+# Type coverage requirements
+min_type_coverage = 85.0
+
+# Import analysis
+allow_circular_dependencies = false
+
+# Baselines (current state as of analysis)
+baseline_god_classes_critical = 43
+baseline_race_conditions_critical = 474
+baseline_security_critical = 20
+
+[tool.qontinui-devtools.security]
+# Security scan configuration
+fail_on_critical = true
+fail_on_high = false
+ignore_patterns = ["*/tests/*", "*/examples/*", "*/benchmarks/*"]
+
+# Severity levels to report
+report_levels = ["critical", "high", "medium"]
+
+[tool.qontinui-devtools.race-conditions]
+# Race condition detection
+fail_on_new_critical = true
+baseline_critical_count = 474
+
+# Patterns to check
+check_patterns = [
+    "shared_state_access",
+    "unprotected_modification",
+    "async_race",
+    "thread_race"
+]
+
+[tool.qontinui-devtools.architecture]
+# Architecture complexity thresholds
+max_coupling = 10
+max_cyclomatic_complexity = 15
+max_dependencies_per_module = 20
+
+# God class thresholds
+god_class_line_threshold = 500
+god_class_method_threshold = 30
+god_class_lcom_threshold = 0.9

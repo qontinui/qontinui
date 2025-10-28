@@ -9,6 +9,9 @@ from .action_interface import ActionInterface
 from .action_options import FindOptions, KeyModifier
 from .action_result import ActionResult
 from .action_type import ActionType
+from .result_builder import ActionResultBuilder
+from .result_extractors import ResultExtractor
+from .result_mergers import ResultMerger
 
 # Import unified Actions class
 from .actions import Actions
@@ -26,14 +29,15 @@ from .basic.mouse import (
     Direction,
     MouseButton,
     MouseMoveOptions,
+    MouseMoveOptionsBuilder,
     MousePressOptions,
     MousePressOptionsBuilder,
     ScrollOptions,
     ScrollOptionsBuilder,
 )
 from .basic.type import TypeOptions, TypeOptionsBuilder
-from .basic.type.key_down_options import KeyDownOptions
-from .basic.type.key_up_options import KeyUpOptions
+from .basic.type.key_down_options import KeyDownOptions, KeyDownOptionsBuilder
+from .basic.type.key_up_options import KeyUpOptions, KeyUpOptionsBuilder
 
 # Import wait options
 from .basic.wait.wait import WaitOptions
@@ -53,14 +57,14 @@ from .pure import PureActions
 from .repetition_options import RepetitionOptions, RepetitionOptionsBuilder
 from .verification_options import Event, VerificationOptions, VerificationOptionsBuilder
 
-# Create aliases
-MoveOptions = MouseMoveOptions
-
 __all__ = [
     # Core action classes
     "ObjectCollection",
     "ObjectCollectionBuilder",
     "ActionResult",
+    "ActionResultBuilder",
+    "ResultExtractor",
+    "ResultMerger",
     "ActionType",
     "ActionConfig",
     "ActionConfigBuilder",
@@ -87,7 +91,9 @@ __all__ = [
     "TypeOptions",
     "TypeOptionsBuilder",
     "KeyDownOptions",
+    "KeyDownOptionsBuilder",
     "KeyUpOptions",
+    "KeyUpOptionsBuilder",
     "KeyModifier",
     "Key",
     "KeyCombo",
@@ -97,6 +103,7 @@ __all__ = [
     "MousePressOptionsBuilder",
     "MouseButton",
     "MouseMoveOptions",
+    "MouseMoveOptionsBuilder",
     "ScrollOptions",
     "ScrollOptionsBuilder",
     "Direction",
@@ -114,6 +121,4 @@ __all__ = [
     "ControlFlowExecutor",
     "BreakLoop",
     "ContinueLoop",
-    # Aliases for convenience
-    "MoveOptions",  # Alias for MouseMoveOptions
 ]

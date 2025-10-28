@@ -32,7 +32,7 @@ class LiteralExpression(Expression):
     value: Any = None
     """The actual literal value."""
 
-    def __init__(self, value_type: str = "", value: Any = None):
+    def __init__(self, value_type: str = "", value: Any = None) -> None:
         """Initialize literal expression.
 
         Args:

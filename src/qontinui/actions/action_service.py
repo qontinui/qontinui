@@ -21,9 +21,8 @@ from .basic.find.find import Find
 from .basic.find.pattern_find_options import PatternFindOptions
 
 # Import composite actions
-# TODO: Re-enable when process module is implemented
-# from .composite.process.run_process import RunProcess
-# from .composite.process.run_process_options import RunProcessOptions
+from .composite.process.run_process import RunProcess
+from .composite.process.run_process_options import RunProcessOptions
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +43,14 @@ class ActionService:
     - Unknown config types are handled gracefully
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the action service with default registry."""
         self._registry: dict[type[ActionConfig], type[ActionInterface]] = {}
         self._action_instances: dict[type[ActionInterface], ActionInterface] = {}
         self._register_default_actions()
         logger.debug("ActionService initialized with default actions")
 
-    def _register_default_actions(self):
+    def _register_default_actions(self) -> None:
         """Register all default action mappings."""
         # Register find actions
         self.register(PatternFindOptions, Find)
@@ -64,7 +63,7 @@ class ActionService:
 
         # Additional actions will be registered as they are implemented
 
-    def register(self, config_type: type[ActionConfig], action_type: type[ActionInterface]):
+    def register(self, config_type: type[ActionConfig], action_type: type[ActionInterface]) -> None:
         """Register an action mapping.
 
         Args:
@@ -152,7 +151,7 @@ class ActionService:
         """
         return config_type in self._registry
 
-    def clear_instances(self):
+    def clear_instances(self) -> None:
         """Clear cached action instances."""
         self._action_instances.clear()
         logger.debug("Cleared action instance cache")

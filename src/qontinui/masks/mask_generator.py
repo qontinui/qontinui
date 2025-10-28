@@ -34,7 +34,7 @@ class MaskMetadata:
 class MaskGenerator:
     """Generate masks for image regions using various techniques."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the mask generator."""
         pass
 

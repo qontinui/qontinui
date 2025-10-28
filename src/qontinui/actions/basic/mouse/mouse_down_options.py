@@ -16,7 +16,7 @@ class MouseDownOptions(ActionConfig):
     Used as part of drag operations or for custom mouse interactions.
     """
 
-    def __init__(self, builder: "MouseDownOptionsBuilder"):
+    def __init__(self, builder: "MouseDownOptionsBuilder") -> None:
         """Initialize MouseDownOptions from builder.
 
         Args:
@@ -36,7 +36,7 @@ class MouseDownOptionsBuilder(ActionConfigBuilder):
     Port of MouseDownOptions from Qontinui framework.Builder.
     """
 
-    def __init__(self, original: MouseDownOptions | None = None):
+    def __init__(self, original: MouseDownOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

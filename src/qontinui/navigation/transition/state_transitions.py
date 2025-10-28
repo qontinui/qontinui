@@ -195,7 +195,7 @@ class StateTransitionsBuilder:
             .build()
     """
 
-    def __init__(self, state_name: str):
+    def __init__(self, state_name: str) -> None:
         """Create a builder for the specified state.
 
         Args:

@@ -244,7 +244,7 @@ class TaskSequenceStateTransition(StateTransition):
             self.record_success()
             result.execution_time = time.time() - start_time
 
-        except Exception as e:
+        except (RuntimeError, ValueError, TypeError) as e:
             result.add_error(f"Task sequence execution failed: {str(e)}")
             self.record_failure()
 
@@ -325,7 +325,7 @@ class CodeStateTransition(StateTransition):
             self.record_success()
             result.execution_time = time.time() - start_time
 
-        except Exception as e:
+        except (RuntimeError, ValueError, TypeError) as e:
             result.add_error(f"Code transition execution failed: {str(e)}")
             self.record_failure()
 
@@ -352,7 +352,8 @@ class CodeStateTransition(StateTransition):
             # No condition means always executable
             return True
 
-        except Exception:
+        except (RuntimeError, ValueError, TypeError):
+            # Condition check failed, transition cannot be executed
             return False
 
 

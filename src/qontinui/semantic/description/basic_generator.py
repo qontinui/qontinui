@@ -17,7 +17,7 @@ class BasicDescriptionGenerator(DescriptionGenerator):
     It analyzes basic visual properties like color, shape, size, and position.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize basic generator."""
         super().__init__()
 

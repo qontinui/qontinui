@@ -35,22 +35,17 @@ class Keyboard:
     - Actual system keyboard control
 
     Example usage:
-        # Instance method usage with HAL container (recommended)
         hal = initialize_hal()
         keyboard = Keyboard(hal)
         keyboard.type("Hello World")
         keyboard.press(Key.ENTER)
-
-        # Legacy class method usage (deprecated, uses HALFactory)
-        Keyboard.type("Hello World")
-        Keyboard.press(Key.ENTER)
     """
 
     _mock_input = MockInput()
     _controller: 'IInputController | None' = None
     _controller_lock = threading.Lock()
 
-    def __init__(self, hal: "HALContainer | None" = None):
+    def __init__(self, hal: "HALContainer | None" = None) -> None:
         """Initialize keyboard wrapper with optional HAL container.
 
         Args:
@@ -62,10 +57,9 @@ class Keyboard:
 
     @classmethod
     def _get_controller(cls) -> 'IInputController':
-        """Lazy initialization of input controller (for legacy class methods).
+        """Lazy initialization of input controller.
 
         Uses double-check locking pattern for thread-safe singleton.
-        DEPRECATED: Use instance methods with HAL container instead.
         """
         if cls._controller is None:
             with cls._controller_lock:
@@ -94,24 +88,21 @@ class Keyboard:
         Returns:
             True if successful
         """
-        import sys
-        print(f"[KEYBOARD-TYPE] About to type text: '{text}', interval={interval}", file=sys.stderr, flush=True)
+        logger.debug(f"About to type text: '{text}', interval={interval}")
 
         is_mock = MockModeManager.is_mock_mode()
-        print(f"[KEYBOARD-TYPE] is_mock={is_mock}", file=sys.stderr, flush=True)
+        logger.debug(f"is_mock={is_mock}")
 
         if is_mock:
             result = cls._mock_input.type_text(text, interval)
             logger.debug(f"[MOCK] Typed text: '{text}'")
         else:
-            print(f"[KEYBOARD-TYPE] Getting input controller from lazy init", file=sys.stderr, flush=True)
+            logger.debug("Getting input controller from lazy init")
             controller = cls._get_controller()
-            print(f"[KEYBOARD-TYPE] Got controller: {controller}", file=sys.stderr, flush=True)
-            print(f"[KEYBOARD-TYPE] About to call controller.type_text('{text}', {interval})", file=sys.stderr, flush=True)
-            sys.stdout.flush()
-            sys.stderr.flush()
+            logger.debug(f"Got controller: {controller}")
+            logger.debug(f"About to call controller.type_text('{text}', {interval})")
             result = controller.type_text(text, interval)
-            print(f"[KEYBOARD-TYPE] controller.type_text returned: {result}", file=sys.stderr, flush=True)
+            logger.debug(f"controller.type_text returned: {result}")
             logger.debug(f"[LIVE] Typed text: '{text}'")
 
         # Emit event after successful typing

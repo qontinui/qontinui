@@ -5,9 +5,32 @@ Global configuration settings using singleton pattern with Pydantic validation.
 
 import logging
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
-from .qontinui_properties import QontinuiProperties
+from .qontinui_properties import (
+    AnalysisConfig,
+    AutomationConfig,
+    AutoScalingConfig,
+    CaptureConfig,
+    ConsoleActionConfig,
+    CoreConfig,
+    DatasetConfig,
+    DpiConfig,
+    GuiAccessConfig,
+    HighlightConfig,
+    IllustrationConfig,
+    ImageDebugConfig,
+    LoggingConfig,
+    MockConfig,
+    MonitorConfig,
+    MouseConfig,
+    QontinuiProperties,
+    RecordingConfig,
+    ScreenshotConfig,
+    SikuliConfig,
+    StartupConfig,
+    TestingConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,47 +49,62 @@ class FrameworkSettings:
     This implementation uses:
     - Singleton pattern for global access
     - Pydantic for validation
-    - Property decorators for controlled access
+    - Themed configuration groups for organization
     - Environment variable support
 
-    Setting categories:
-    - Core: Essential framework settings (image paths, mock mode, etc.)
-    - Mouse Control: Fine-tune mouse action timing and movement
-    - Mock Mode: Configure simulated execution for testing
-    - Screenshot: Screen capture and history settings
-    - Illustration: Visual feedback and annotation settings
-    - Analysis: Color profiling and image processing
-    - Recording: Screen recording configuration
-    - Dataset: AI training data generation
-    - Testing: Test execution configuration
-    - Monitor: Monitor configuration settings
-    - DPI: DPI and scaling configuration (from Brobot)
-    - Capture: Screen capture provider configuration (from Brobot)
-    - Sikuli: SikuliX integration settings (from Brobot)
-    - Startup: Application startup configuration (from Brobot)
-    - Automation: Automation failure handling (from Brobot)
-    - AutoScaling: Automatic pattern scaling (from Brobot)
-    - Logging: Comprehensive logging configuration (from Brobot)
-    - Highlight: Visual highlighting configuration (from Brobot)
-    - Console: Console action reporting (from Brobot)
-    - ImageDebug: Image debugging configuration (from Brobot)
-    - GuiAccess: GUI access verification (from Brobot)
+    Configuration Groups:
+    - core: Essential framework settings (image paths, mock mode, etc.)
+    - mouse: Mouse action timing and movement configuration
+    - mock: Simulated execution timings for testing
+    - screenshot: Screen capture and history settings
+    - illustration: Visual feedback and annotation settings
+    - analysis: Color profiling and image processing
+    - recording: Screen recording configuration
+    - dataset: AI training data generation
+    - testing: Test execution configuration
+    - monitor: Monitor configuration settings
+    - dpi: DPI and scaling configuration
+    - capture: Screen capture provider configuration
+    - sikuli: SikuliX integration settings
+    - startup: Application startup configuration
+    - automation: Automation failure handling
+    - autoscaling: Automatic pattern scaling
+    - logging: Comprehensive logging configuration
+    - highlight: Visual highlighting configuration
+    - console: Console action reporting
+    - image_debug: Image debugging configuration
+    - gui_access: GUI access verification
 
-    Access nested settings via get_properties():
-        props = settings.get_properties()
-        dpi_disabled = props.dpi.disable
-        capture_provider = props.capture.provider
-        log_level = props.logging.global_level
+    Access settings via themed groups:
+        settings = FrameworkSettings.get_instance()
+
+        # Mouse settings
+        settings.mouse.move_delay = 0.5
+        settings.mouse.click_delay = 0.1
+
+        # Core settings
+        settings.core.mock = True
+        settings.core.headless = False
+
+        # Screenshot settings
+        settings.screenshot.save_snapshots = True
+        settings.screenshot.path = "screenshots/"
+
+        # Logging settings
+        settings.logging.global_level = "DEBUG"
+        settings.logging.actions_level = "INFO"
 
     Usage:
         # Get singleton instance
         settings = FrameworkSettings.get_instance()
 
-        # Access settings
-        delay = settings.mouse_move_delay
+        # Access themed settings
+        delay = settings.mouse.move_delay
+        mock = settings.core.mock
 
-        # Update settings
-        settings.mock = True
+        # Update settings with validation
+        settings.mouse.move_delay = 0.3
+        settings.core.mock = True
 
         # Load from file
         settings.load_from_yaml('config.yaml')
@@ -84,12 +122,38 @@ class FrameworkSettings:
             cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize settings if not already done."""
         if not self._initialized:
-            self._properties = QontinuiProperties()
+            props = QontinuiProperties()
+
+            # Initialize themed configuration groups
+            self.core = props.core
+            self.mouse = props.mouse
+            self.mock = props.mock
+            self.screenshot = props.screenshot
+            self.illustration = props.illustration
+            self.analysis = props.analysis
+            self.recording = props.recording
+            self.dataset = props.dataset
+            self.testing = props.testing
+            self.monitor = props.monitor
+            self.dpi = props.dpi
+            self.capture = props.capture
+            self.sikuli = props.sikuli
+            self.startup = props.startup
+            self.automation = props.automation
+            self.autoscaling = props.autoscaling
+            self.logging = props.logging
+            self.highlight = props.highlight
+            self.console = props.console
+            self.image_debug = props.image_debug
+            self.gui_access = props.gui_access
+
+            # Keep properties object for serialization
+            self._properties = props
             self._initialized = True
-            logger.info("FrameworkSettings initialized with defaults")
+            logger.info("FrameworkSettings initialized with themed configuration groups")
 
     @classmethod
     def get_instance(cls) -> "FrameworkSettings":
@@ -108,204 +172,6 @@ class FrameworkSettings:
         cls._instance = None
         logger.info("FrameworkSettings reset to defaults")
 
-    # Mouse Control Properties
-    @property
-    def mouse_move_delay(self) -> float:
-        """Delay for mouse movement in seconds."""
-        return cast(float, self._properties.mouse.move_delay)
-
-    @mouse_move_delay.setter
-    def mouse_move_delay(self, value: float) -> None:
-        self._properties.mouse.move_delay = value
-
-    @property
-    def pause_before_mouse_down(self) -> float:
-        """Pause before mouse down in seconds."""
-        return cast(float, self._properties.mouse.pause_before_down)
-
-    @pause_before_mouse_down.setter
-    def pause_before_mouse_down(self, value: float) -> None:
-        self._properties.mouse.pause_before_down = value
-
-    @property
-    def pause_after_mouse_down(self) -> float:
-        """Pause after mouse down in seconds."""
-        return cast(float, self._properties.mouse.pause_after_down)
-
-    @pause_after_mouse_down.setter
-    def pause_after_mouse_down(self, value: float) -> None:
-        self._properties.mouse.pause_after_down = value
-
-    @property
-    def pause_before_mouse_up(self) -> float:
-        """Pause before mouse up in seconds."""
-        return cast(float, self._properties.mouse.pause_before_up)
-
-    @pause_before_mouse_up.setter
-    def pause_before_mouse_up(self, value: float) -> None:
-        self._properties.mouse.pause_before_up = value
-
-    @property
-    def pause_after_mouse_up(self) -> float:
-        """Pause after mouse up in seconds."""
-        return cast(float, self._properties.mouse.pause_after_up)
-
-    @pause_after_mouse_up.setter
-    def pause_after_mouse_up(self, value: float) -> None:
-        self._properties.mouse.pause_after_up = value
-
-    # Core Settings
-    @property
-    def mock(self) -> bool:
-        """Enable mock mode for testing without GUI."""
-        return cast(bool, self._properties.core.mock)
-
-    @mock.setter
-    def mock(self, value: bool) -> None:
-        self._properties.core.mock = value
-        logger.info(f"Mock mode {'enabled' if value else 'disabled'}")
-
-    @property
-    def headless(self) -> bool:
-        """Run in headless mode without display."""
-        return cast(bool, self._properties.core.headless)
-
-    @headless.setter
-    def headless(self, value: bool) -> None:
-        self._properties.core.headless = value
-
-    @property
-    def image_path(self) -> str:
-        """Path to image resources."""
-        return cast(str, self._properties.core.image_path)
-
-    @image_path.setter
-    def image_path(self, value: str) -> None:
-        self._properties.core.image_path = value
-
-    # Screenshot Settings
-    @property
-    def save_snapshots(self) -> bool:
-        """Save screenshots during execution."""
-        return cast(bool, self._properties.screenshot.save_snapshots)
-
-    @save_snapshots.setter
-    def save_snapshots(self, value: bool) -> None:
-        self._properties.screenshot.save_snapshots = value
-
-    @property
-    def screenshot_path(self) -> str:
-        """Path to save screenshots."""
-        return cast(str, self._properties.screenshot.path)
-
-    @screenshot_path.setter
-    def screenshot_path(self, value: str) -> None:
-        self._properties.screenshot.path = value
-
-    @property
-    def max_history(self) -> int:
-        """Maximum screenshot history to maintain."""
-        return cast(int, self._properties.screenshot.max_history)
-
-    @max_history.setter
-    def max_history(self, value: int) -> None:
-        self._properties.screenshot.max_history = value
-
-    # Mock Timings
-    @property
-    def mock_click_duration(self) -> float:
-        """Simulated click duration in seconds."""
-        return cast(float, self._properties.mock.click_duration)
-
-    @mock_click_duration.setter
-    def mock_click_duration(self, value: float) -> None:
-        self._properties.mock.click_duration = value
-
-    @property
-    def mock_type_duration(self) -> float:
-        """Simulated typing duration in seconds."""
-        return cast(float, self._properties.mock.type_duration)
-
-    @mock_type_duration.setter
-    def mock_type_duration(self, value: float) -> None:
-        self._properties.mock.type_duration = value
-
-    @property
-    def mock_find_duration(self) -> float:
-        """Simulated find duration in seconds."""
-        return cast(float, self._properties.mock.find_duration)
-
-    @mock_find_duration.setter
-    def mock_find_duration(self, value: float) -> None:
-        self._properties.mock.find_duration = value
-
-    # Illustration Settings
-    @property
-    def illustration_enabled(self) -> bool:
-        """Enable action illustrations."""
-        return cast(bool, self._properties.illustration.enabled)
-
-    @illustration_enabled.setter
-    def illustration_enabled(self, value: bool) -> None:
-        self._properties.illustration.enabled = value
-
-    @property
-    def show_click_illustration(self) -> bool:
-        """Illustrate click actions."""
-        return cast(bool, self._properties.illustration.show_click)
-
-    @show_click_illustration.setter
-    def show_click_illustration(self, value: bool) -> None:
-        self._properties.illustration.show_click = value
-
-    # Analysis Settings
-    @property
-    def kmeans_clusters(self) -> int:
-        """Number of k-means clusters for color analysis."""
-        return cast(int, self._properties.analysis.kmeans_clusters)
-
-    @kmeans_clusters.setter
-    def kmeans_clusters(self, value: int) -> None:
-        self._properties.analysis.kmeans_clusters = value
-
-    @property
-    def color_tolerance(self) -> int:
-        """Color matching tolerance."""
-        return cast(int, self._properties.analysis.color_tolerance)
-
-    @color_tolerance.setter
-    def color_tolerance(self, value: int) -> None:
-        self._properties.analysis.color_tolerance = value
-
-    # Dataset Settings
-    @property
-    def collect_dataset(self) -> bool:
-        """Enable dataset collection."""
-        return cast(bool, self._properties.dataset.collect)
-
-    @collect_dataset.setter
-    def collect_dataset(self, value: bool) -> None:
-        self._properties.dataset.collect = value
-
-    @property
-    def dataset_path(self) -> str:
-        """Path to save datasets."""
-        return cast(str, self._properties.dataset.path)
-
-    @dataset_path.setter
-    def dataset_path(self, value: str) -> None:
-        self._properties.dataset.path = value
-
-    # Testing Settings
-    @property
-    def timeout_multiplier(self) -> float:
-        """Multiply timeouts during testing."""
-        return cast(float, self._properties.testing.timeout_multiplier)
-
-    @timeout_multiplier.setter
-    def timeout_multiplier(self, value: float) -> None:
-        self._properties.testing.timeout_multiplier = value
-
     # Configuration Methods
     def get_properties(self) -> QontinuiProperties:
         """Get the underlying QontinuiProperties object.
@@ -313,27 +179,30 @@ class FrameworkSettings:
         Returns:
             The properties object
         """
-        # Return the actual properties object with proper type
-        props: QontinuiProperties = self._properties
-        return props
+        return self._properties
 
     def update_from_dict(self, config: dict[str, Any]) -> None:
         """Update configuration from dictionary.
 
         Args:
-            config: Configuration dictionary
+            config: Configuration dictionary with nested structure
+                   matching themed configuration groups
         """
         # Update properties using Pydantic validation
         for key, value in config.items():
-            if hasattr(self._properties, key) and isinstance(value, dict):
-                # Update nested config
-                nested = getattr(self._properties, key)
+            if hasattr(self, key) and isinstance(value, dict):
+                # Update nested config group
+                config_group = getattr(self, key)
                 for nested_key, nested_value in value.items():
-                    if hasattr(nested, nested_key):
-                        setattr(nested, nested_key, nested_value)
-            elif hasattr(self, key):
-                # Update via property setter for validation
-                setattr(self, key, value)
+                    if hasattr(config_group, nested_key):
+                        setattr(config_group, nested_key, nested_value)
+
+        # Update properties object
+        for key in vars(self).keys():
+            if key.startswith("_"):
+                continue
+            if hasattr(self._properties, key):
+                setattr(self._properties, key, getattr(self, key))
 
         logger.info("Configuration updated from dictionary")
 
@@ -344,6 +213,30 @@ class FrameworkSettings:
             path: Path to YAML file
         """
         self._properties = QontinuiProperties.from_yaml(path)
+
+        # Update all configuration groups
+        self.core = self._properties.core
+        self.mouse = self._properties.mouse
+        self.mock = self._properties.mock
+        self.screenshot = self._properties.screenshot
+        self.illustration = self._properties.illustration
+        self.analysis = self._properties.analysis
+        self.recording = self._properties.recording
+        self.dataset = self._properties.dataset
+        self.testing = self._properties.testing
+        self.monitor = self._properties.monitor
+        self.dpi = self._properties.dpi
+        self.capture = self._properties.capture
+        self.sikuli = self._properties.sikuli
+        self.startup = self._properties.startup
+        self.automation = self._properties.automation
+        self.autoscaling = self._properties.autoscaling
+        self.logging = self._properties.logging
+        self.highlight = self._properties.highlight
+        self.console = self._properties.console
+        self.image_debug = self._properties.image_debug
+        self.gui_access = self._properties.gui_access
+
         logger.info(f"Configuration loaded from {path}")
 
     def load_from_env_file(self, path: Path) -> None:
@@ -353,6 +246,30 @@ class FrameworkSettings:
             path: Path to .env file
         """
         self._properties = QontinuiProperties.from_env_file(path)
+
+        # Update all configuration groups
+        self.core = self._properties.core
+        self.mouse = self._properties.mouse
+        self.mock = self._properties.mock
+        self.screenshot = self._properties.screenshot
+        self.illustration = self._properties.illustration
+        self.analysis = self._properties.analysis
+        self.recording = self._properties.recording
+        self.dataset = self._properties.dataset
+        self.testing = self._properties.testing
+        self.monitor = self._properties.monitor
+        self.dpi = self._properties.dpi
+        self.capture = self._properties.capture
+        self.sikuli = self._properties.sikuli
+        self.startup = self._properties.startup
+        self.automation = self._properties.automation
+        self.autoscaling = self._properties.autoscaling
+        self.logging = self._properties.logging
+        self.highlight = self._properties.highlight
+        self.console = self._properties.console
+        self.image_debug = self._properties.image_debug
+        self.gui_access = self._properties.gui_access
+
         logger.info(f"Configuration loaded from {path}")
 
     def save_to_yaml(self, path: Path) -> None:
@@ -361,6 +278,13 @@ class FrameworkSettings:
         Args:
             path: Path to save YAML file
         """
+        # Sync all config groups back to properties
+        for key in vars(self).keys():
+            if key.startswith("_"):
+                continue
+            if hasattr(self._properties, key):
+                setattr(self._properties, key, getattr(self, key))
+
         self._properties.to_yaml(path)
         logger.info(f"Configuration saved to {path}")
 
@@ -370,6 +294,13 @@ class FrameworkSettings:
         Args:
             path: Path to save .env file
         """
+        # Sync all config groups back to properties
+        for key in vars(self).keys():
+            if key.startswith("_"):
+                continue
+            if hasattr(self._properties, key):
+                setattr(self._properties, key, getattr(self, key))
+
         self._properties.to_env_file(path)
         logger.info(f"Configuration saved to {path}")
 
@@ -377,8 +308,15 @@ class FrameworkSettings:
         """Export configuration as dictionary.
 
         Returns:
-            Configuration dictionary
+            Configuration dictionary with all themed groups
         """
+        # Sync all config groups back to properties
+        for key in vars(self).keys():
+            if key.startswith("_"):
+                continue
+            if hasattr(self._properties, key):
+                setattr(self._properties, key, getattr(self, key))
+
         result: dict[str, Any] = self._properties.model_dump()
         return result
 
@@ -391,20 +329,20 @@ class FrameworkSettings:
         warnings = []
 
         # Check paths exist
-        if not Path(self.image_path).exists() and not self.mock:
-            warnings.append(f"Image path does not exist: {self.image_path}")
+        if not Path(self.core.image_path).exists() and not self.core.mock:
+            warnings.append(f"Image path does not exist: {self.core.image_path}")
 
-        if self.save_snapshots and not Path(self.screenshot_path).exists():
-            warnings.append(f"Screenshot path does not exist: {self.screenshot_path}")
+        if self.screenshot.save_snapshots and not Path(self.screenshot.path).exists():
+            warnings.append(f"Screenshot path does not exist: {self.screenshot.path}")
 
-        if self.collect_dataset and not Path(self.dataset_path).exists():
-            warnings.append(f"Dataset path does not exist: {self.dataset_path}")
+        if self.dataset.collect and not Path(self.dataset.path).exists():
+            warnings.append(f"Dataset path does not exist: {self.dataset.path}")
 
         # Check for conflicting settings
-        if self.headless and self.illustration_enabled:
+        if self.core.headless and self.illustration.enabled:
             warnings.append("Illustration enabled in headless mode (will be ignored)")
 
-        if self.mock and self.save_snapshots:
+        if self.core.mock and self.screenshot.save_snapshots:
             warnings.append("Screenshot saving enabled in mock mode (no real screenshots)")
 
         return warnings
@@ -423,23 +361,34 @@ def get_settings() -> FrameworkSettings:
 # Convenience functions for common operations
 def enable_mock_mode() -> None:
     """Enable mock mode globally."""
-    get_settings().mock = True
+    get_settings().core.mock = True
 
 
 def disable_mock_mode() -> None:
     """Disable mock mode globally."""
-    get_settings().mock = False
+    get_settings().core.mock = False
 
 
 def configure(**kwargs) -> None:
     """Configure framework settings with keyword arguments.
 
     Args:
-        **kwargs: Setting values to update
+        **kwargs: Nested configuration groups as dictionaries
+                 Example: configure(mouse={'move_delay': 0.3}, core={'mock': True})
     """
     settings = get_settings()
     for key, value in kwargs.items():
         if hasattr(settings, key):
-            setattr(settings, key, value)
+            if isinstance(value, dict):
+                # Update nested config group
+                config_group = getattr(settings, key)
+                for nested_key, nested_value in value.items():
+                    if hasattr(config_group, nested_key):
+                        setattr(config_group, nested_key, nested_value)
+                    else:
+                        logger.warning(f"Unknown setting: {key}.{nested_key}")
+            else:
+                # Direct attribute update (shouldn't happen with themed groups)
+                setattr(settings, key, value)
         else:
-            logger.warning(f"Unknown setting: {key}")
+            logger.warning(f"Unknown configuration group: {key}")

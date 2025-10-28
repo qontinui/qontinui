@@ -23,7 +23,7 @@ class Expression(ABC):
     expression types from JSON based on the "expressionType" discriminator field.
     """
 
-    def __init__(self, expression_type: str):
+    def __init__(self, expression_type: str) -> None:
         """Initialize expression with its type.
 
         Args:

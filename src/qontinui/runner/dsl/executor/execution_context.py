@@ -44,7 +44,7 @@ class ExecutionContext:
         _external_context: Optional external context for method calls and objects
     """
 
-    def __init__(self, external_context: dict[str, Any] | None = None):
+    def __init__(self, external_context: dict[str, Any] | None = None) -> None:
         """Initialize execution context.
 
         Args:

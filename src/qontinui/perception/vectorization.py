@@ -10,7 +10,7 @@ from PIL import Image
 class ObjectVectorizer:
     """Vectorize UI elements using vision models for semantic matching."""
 
-    def __init__(self, model_name: str = "openai/clip-vit-base-patch32"):
+    def __init__(self, model_name: str = "openai/clip-vit-base-patch32") -> None:
         """Initialize ObjectVectorizer.
 
         Args:

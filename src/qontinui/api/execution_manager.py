@@ -1,17 +1,17 @@
-"""Execution Manager - Manages concurrent workflow executions.
+"""Execution Manager - Facade for managing concurrent workflow executions.
 
-This module provides the ExecutionManager class that handles:
-- Starting and managing multiple concurrent workflow executions
-- Execution lifecycle (pause, resume, cancel, step)
-- Event streaming to WebSocket clients
-- Execution status tracking
-- Execution history
+This module provides the ExecutionManager class that delegates to:
+- ExecutionController - Lifecycle control (start, pause, resume, cancel, step)
+- ExecutionStatusTracker - Status and progress tracking
+- StateOperationsFacade - State API delegation
+- ExecutionOrchestrator - Workflow execution coordination
+- ExecutionRegistry - Active execution storage
+- ExecutionHistory - Execution history tracking
+- ExecutionEventBus - Event streaming
 """
 
 import asyncio
 import logging
-import uuid
-from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -19,8 +19,13 @@ from enum import Enum
 from typing import Any
 
 from ..config import Workflow
-from ..execution.action_executor import ActionExecutor
-from ..execution.graph_executor import GraphExecutor
+from .execution_controller import ExecutionController
+from .execution_event_bus import ExecutionEventBus
+from .execution_history import ExecutionHistory
+from .execution_orchestrator import ExecutionOrchestrator
+from .execution_registry import ExecutionRegistry
+from .execution_status_tracker import ExecutionStatusTracker
+from .state_operations_facade import StateOperationsFacade
 
 logger = logging.getLogger(__name__)
 
@@ -106,18 +111,14 @@ class ExecutionContext:
     end_time: datetime | None = None
 
     # Execution components
-    executor: GraphExecutor | None = None
-    action_executor: ActionExecutor | None = None
+    executor: Any | None = None
+    action_executor: Any | None = None
     execution_task: asyncio.Task | None = None
 
     # State tracking
     current_action: str | None = None
     action_states: dict[str, str] = field(default_factory=dict)
     variables: dict[str, Any] = field(default_factory=dict)
-
-    # Event streaming
-    event_queue: deque = field(default_factory=deque)
-    event_subscribers: set[Callable[[ExecutionEvent], None]] = field(default_factory=set)
 
     # Control
     pause_event: asyncio.Event = field(default_factory=asyncio.Event)
@@ -148,31 +149,60 @@ class ExecutionContext:
 
 
 # ============================================================================
-# Execution Manager
+# Execution Manager Facade
 # ============================================================================
 
 
 class ExecutionManager:
-    """Manages concurrent workflow executions.
+    """Facade for managing concurrent workflow executions.
 
-    The ExecutionManager handles:
-    - Starting new executions
-    - Tracking execution state
-    - Controlling execution (pause, resume, cancel, step)
-    - Streaming events to WebSocket clients
-    - Maintaining execution history
+    The ExecutionManager delegates to focused components:
+    - ExecutionController: Lifecycle control
+    - ExecutionStatusTracker: Status and progress tracking
+    - StateOperationsFacade: State operation delegation
+    - ExecutionOrchestrator: Workflow execution coordination
+    - ExecutionRegistry: Active execution storage
+    - ExecutionHistory: Execution history tracking
+    - ExecutionEventBus: Event streaming
+
+    This facade provides a unified API while maintaining clean separation
+    of concerns through delegation.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize execution manager."""
-        self.executions: dict[str, ExecutionContext] = {}
-        self.execution_history: list[dict[str, Any]] = []
-        self.max_history_size = 1000
+        # Core components
+        self.registry = ExecutionRegistry()
+        self.history = ExecutionHistory(max_history=1000)
+        self.event_bus = ExecutionEventBus(max_events_per_execution=1000)
+
+        # Execution orchestrator
+        self.orchestrator = ExecutionOrchestrator(
+            event_bus=self.event_bus,
+            history=self.history,
+        )
+
+        # Focused components
+        self.controller = ExecutionController(
+            registry=self.registry,
+            event_bus=self.event_bus,
+            orchestrator=self.orchestrator,
+            history=self.history,
+        )
+
+        self.status_tracker = ExecutionStatusTracker(
+            registry=self.registry,
+            history=self.history,
+        )
+
+        self.state_operations = StateOperationsFacade(
+            state_apis=self.controller.state_apis,
+        )
 
         logger.info("ExecutionManager initialized")
 
     # ========================================================================
-    # Execution Control
+    # Execution Control - Delegated to ExecutionController
     # ========================================================================
 
     async def start_execution(
@@ -187,46 +217,14 @@ class ExecutionManager:
         Returns:
             Execution ID
         """
-        # Generate execution ID
-        execution_id = str(uuid.uuid4())
-
-        # Create execution context
         if options is None:
             options = ExecutionOptions()
 
-        context = ExecutionContext(
-            execution_id=execution_id,
+        return await self.controller.start_execution(
             workflow=workflow,
             options=options,
-            status=ExecutionStatus.STARTING,
-            start_time=datetime.now(),
-            total_actions=len(workflow.actions),
+            context_factory=ExecutionContext,
         )
-
-        # Initialize action states
-        for action in workflow.actions:
-            context.action_states[action.id] = "idle"
-
-        # Store context
-        self.executions[execution_id] = context
-
-        # Start execution task
-        context.execution_task = asyncio.create_task(self._run_execution(context))
-
-        # Emit start event
-        await self._emit_event(
-            context,
-            ExecutionEventType.WORKFLOW_START,
-            data={
-                "workflow_id": workflow.id,
-                "workflow_name": workflow.name,
-                "total_actions": len(workflow.actions),
-            },
-        )
-
-        logger.info(f"Started execution {execution_id} for workflow '{workflow.name}'")
-
-        return execution_id
 
     async def pause_execution(self, execution_id: str) -> None:
         """Pause a running execution.
@@ -237,17 +235,7 @@ class ExecutionManager:
         Raises:
             ValueError: If execution not found or cannot be paused
         """
-        context = self.executions.get(execution_id)
-        if not context:
-            raise ValueError(f"Execution {execution_id} not found")
-
-        if context.status != ExecutionStatus.RUNNING:
-            raise ValueError(f"Cannot pause execution in state {context.status}")
-
-        context.status = ExecutionStatus.PAUSED
-        context.pause_event.clear()
-
-        logger.info(f"Paused execution {execution_id}")
+        await self.controller.pause_execution(execution_id)
 
     async def resume_execution(self, execution_id: str) -> None:
         """Resume a paused execution.
@@ -258,17 +246,7 @@ class ExecutionManager:
         Raises:
             ValueError: If execution not found or cannot be resumed
         """
-        context = self.executions.get(execution_id)
-        if not context:
-            raise ValueError(f"Execution {execution_id} not found")
-
-        if context.status != ExecutionStatus.PAUSED:
-            raise ValueError(f"Cannot resume execution in state {context.status}")
-
-        context.status = ExecutionStatus.RUNNING
-        context.pause_event.set()
-
-        logger.info(f"Resumed execution {execution_id}")
+        await self.controller.resume_execution(execution_id)
 
     async def step_execution(self, execution_id: str) -> None:
         """Execute next action in step mode.
@@ -279,17 +257,7 @@ class ExecutionManager:
         Raises:
             ValueError: If execution not found or not in step mode
         """
-        context = self.executions.get(execution_id)
-        if not context:
-            raise ValueError(f"Execution {execution_id} not found")
-
-        if not context.options.step_mode:
-            raise ValueError("Execution is not in step mode")
-
-        # Trigger step
-        context.step_event.set()
-
-        logger.info(f"Stepped execution {execution_id}")
+        await self.controller.step_execution(execution_id)
 
     async def cancel_execution(self, execution_id: str) -> None:
         """Cancel a running execution.
@@ -300,27 +268,10 @@ class ExecutionManager:
         Raises:
             ValueError: If execution not found
         """
-        context = self.executions.get(execution_id)
-        if not context:
-            raise ValueError(f"Execution {execution_id} not found")
-
-        # Set cancel event
-        context.cancel_event.set()
-        context.status = ExecutionStatus.CANCELLED
-
-        # Cancel task
-        if context.execution_task:
-            context.execution_task.cancel()
-
-        # Emit event
-        await self._emit_event(
-            context, ExecutionEventType.WORKFLOW_COMPLETE, data={"status": "cancelled"}
-        )
-
-        logger.info(f"Cancelled execution {execution_id}")
+        await self.controller.cancel_execution(execution_id)
 
     # ========================================================================
-    # Status and History
+    # Status and History - Delegated to ExecutionStatusTracker
     # ========================================================================
 
     def get_status(self, execution_id: str) -> dict[str, Any]:
@@ -335,34 +286,7 @@ class ExecutionManager:
         Raises:
             ValueError: If execution not found
         """
-        context = self.executions.get(execution_id)
-        if not context:
-            raise ValueError(f"Execution {execution_id} not found")
-
-        # Calculate progress
-        progress = 0.0
-        if context.total_actions > 0:
-            completed = context.completed_actions + context.failed_actions + context.skipped_actions
-            progress = (completed / context.total_actions) * 100
-
-        status = {
-            "execution_id": execution_id,
-            "workflow_id": context.workflow.id,
-            "status": context.status.value,
-            "start_time": context.start_time.isoformat(),
-            "end_time": context.end_time.isoformat() if context.end_time else None,
-            "current_action": context.current_action,
-            "progress": progress,
-            "total_actions": context.total_actions,
-            "completed_actions": context.completed_actions,
-            "failed_actions": context.failed_actions,
-            "skipped_actions": context.skipped_actions,
-            "action_states": context.action_states,
-            "error": context.error,
-            "variables": context.variables,
-        }
-
-        return status
+        return self.status_tracker.get_status(execution_id)
 
     def get_all_executions(self) -> list[dict[str, Any]]:
         """Get all active executions.
@@ -370,9 +294,9 @@ class ExecutionManager:
         Returns:
             List of execution status dictionaries
         """
-        return [self.get_status(exec_id) for exec_id in self.executions.keys()]
+        return self.status_tracker.get_all_executions()
 
-    def get_execution_history(
+    async def get_execution_history(
         self, workflow_id: str | None = None, limit: int | None = None
     ) -> list[dict[str, Any]]:
         """Get execution history.
@@ -384,23 +308,15 @@ class ExecutionManager:
         Returns:
             List of execution records
         """
-        history = self.execution_history
-
-        # Filter by workflow ID
-        if workflow_id:
-            history = [r for r in history if r["workflow_id"] == workflow_id]
-
-        # Apply limit
-        if limit:
-            history = history[:limit]
-
-        return history
+        return await self.status_tracker.get_execution_history(
+            workflow_id=workflow_id, limit=limit
+        )
 
     # ========================================================================
-    # Event Streaming
+    # Event Streaming - Delegated to ExecutionEventBus
     # ========================================================================
 
-    def subscribe_to_events(
+    async def subscribe_to_events(
         self, execution_id: str, callback: Callable[[ExecutionEvent], None]
     ) -> None:
         """Subscribe to execution events.
@@ -412,15 +328,14 @@ class ExecutionManager:
         Raises:
             ValueError: If execution not found
         """
-        context = self.executions.get(execution_id)
-        if not context:
+        # Verify execution exists
+        if not self.registry.has(execution_id):
             raise ValueError(f"Execution {execution_id} not found")
 
-        context.event_subscribers.add(callback)
+        # Delegate to event bus
+        await self.event_bus.subscribe(execution_id, callback)
 
-        logger.debug(f"Added event subscriber to execution {execution_id}")
-
-    def unsubscribe_from_events(
+    async def unsubscribe_from_events(
         self, execution_id: str, callback: Callable[[ExecutionEvent], None]
     ) -> None:
         """Unsubscribe from execution events.
@@ -429,245 +344,92 @@ class ExecutionManager:
             execution_id: Execution ID
             callback: Callback function to remove
         """
-        context = self.executions.get(execution_id)
-        if context:
-            context.event_subscribers.discard(callback)
-            logger.debug(f"Removed event subscriber from execution {execution_id}")
+        # Delegate to event bus
+        await self.event_bus.unsubscribe(execution_id, callback)
 
     # ========================================================================
-    # Private Methods
+    # State Operations - Delegated to StateOperationsFacade
     # ========================================================================
 
-    async def _run_execution(self, context: ExecutionContext) -> None:
-        """Run workflow execution.
+    def execute_transition(
+        self, execution_id: str, transition_id: str
+    ) -> dict[str, Any]:
+        """Execute a transition via StateExecutionAPI.
+
+        ExecutionManager NEVER touches state - all state operations delegated
+        to StateExecutionAPI.
 
         Args:
-            context: Execution context
+            execution_id: Execution identifier
+            transition_id: Transition identifier to execute
+
+        Returns:
+            Dictionary with transition execution result:
+            - success: Whether transition succeeded
+            - transition_id: Transition that was executed
+            - activated_states: List of states activated
+            - deactivated_states: List of states deactivated
+            - error: Error message if failed
+
+        Raises:
+            ValueError: If execution not found
         """
-        try:
-            # Update status
-            context.status = ExecutionStatus.RUNNING
+        return self.state_operations.execute_transition(execution_id, transition_id)
 
-            # Create action executor
-            context.action_executor = ActionExecutor(context.variables)
+    def navigate_to_states(
+        self, execution_id: str, target_state_ids: list[str]
+    ) -> dict[str, Any]:
+        """Navigate to target states via StateExecutionAPI.
 
-            # Create graph executor
-            context.executor = GraphExecutor(context.workflow, context.action_executor)
-
-            # Add execution hook
-            hook = ExecutionHook(self, context)
-            context.executor.add_hook(hook)
-
-            # Execute workflow
-            result = context.executor.execute(context.options.initial_variables)
-
-            # Update status
-            if result["success"]:
-                context.status = ExecutionStatus.COMPLETED
-            else:
-                context.status = ExecutionStatus.FAILED
-                context.error = {
-                    "message": "Workflow execution failed",
-                    "details": result.get("summary", {}),
-                }
-
-            context.end_time = datetime.now()
-
-            # Emit completion event
-            await self._emit_event(
-                context,
-                ExecutionEventType.WORKFLOW_COMPLETE,
-                data={
-                    "status": context.status.value,
-                    "summary": result.get("summary", {}),
-                },
-            )
-
-            # Add to history
-            self._add_to_history(context)
-
-        except asyncio.CancelledError:
-            logger.info(f"Execution {context.execution_id} cancelled")
-            context.status = ExecutionStatus.CANCELLED
-            context.end_time = datetime.now()
-            self._add_to_history(context)
-
-        except Exception as e:
-            logger.error(f"Execution {context.execution_id} failed: {e}", exc_info=True)
-            context.status = ExecutionStatus.FAILED
-            context.end_time = datetime.now()
-            context.error = {
-                "message": str(e),
-                "timestamp": datetime.now().isoformat(),
-            }
-
-            # Emit error event
-            await self._emit_event(
-                context,
-                ExecutionEventType.WORKFLOW_ERROR,
-                data={
-                    "error": str(e),
-                },
-            )
-
-            self._add_to_history(context)
-
-    async def _emit_event(
-        self,
-        context: ExecutionContext,
-        event_type: ExecutionEventType,
-        action_id: str | None = None,
-        action_type: str | None = None,
-        data: dict[str, Any] | None = None,
-    ) -> None:
-        """Emit an execution event.
+        ExecutionManager NEVER touches state - all state operations delegated
+        to StateExecutionAPI.
 
         Args:
-            context: Execution context
-            event_type: Event type
-            action_id: Action ID (optional)
-            action_type: Action type (optional)
-            data: Event data (optional)
+            execution_id: Execution identifier
+            target_state_ids: List of target state IDs
+
+        Returns:
+            Dictionary with navigation result:
+            - success: Whether navigation succeeded
+            - path: List of transition IDs executed
+            - active_states: Currently active states
+            - error: Error message if failed
+
+        Raises:
+            ValueError: If execution not found
         """
-        event = ExecutionEvent(
-            event_id=str(uuid.uuid4()),
-            type=event_type,
-            execution_id=context.execution_id,
-            timestamp=datetime.now(),
-            action_id=action_id,
-            action_type=action_type,
-            data=data,
-        )
+        return self.state_operations.navigate_to_states(execution_id, target_state_ids)
 
-        # Add to queue
-        context.event_queue.append(event)
+    def get_active_states(self, execution_id: str) -> list[str]:
+        """Get active states via StateExecutionAPI.
 
-        # Notify subscribers
-        for subscriber in context.event_subscribers:
-            try:
-                subscriber(event)
-            except Exception as e:
-                logger.error(f"Error in event subscriber: {e}", exc_info=True)
-
-    def _add_to_history(self, context: ExecutionContext) -> None:
-        """Add execution to history.
+        ExecutionManager NEVER touches state - all state operations delegated
+        to StateExecutionAPI.
 
         Args:
-            context: Execution context
+            execution_id: Execution identifier
+
+        Returns:
+            List of currently active state IDs
+
+        Raises:
+            ValueError: If execution not found
         """
-        duration = 0
-        if context.end_time:
-            duration = int((context.end_time - context.start_time).total_seconds() * 1000)
+        return self.state_operations.get_active_states(execution_id)
 
-        record = {
-            "execution_id": context.execution_id,
-            "workflow_id": context.workflow.id,
-            "workflow_name": context.workflow.name,
-            "start_time": context.start_time.isoformat(),
-            "end_time": context.end_time.isoformat() if context.end_time else None,
-            "status": context.status.value,
-            "duration": duration,
-            "total_actions": context.total_actions,
-            "completed_actions": context.completed_actions,
-            "failed_actions": context.failed_actions,
-            "error": context.error.get("message") if context.error else None,
-        }
+    def get_available_transitions(self, execution_id: str) -> list[dict[str, Any]]:
+        """Get available transitions via StateExecutionAPI.
 
-        self.execution_history.insert(0, record)
-
-        # Limit history size
-        if len(self.execution_history) > self.max_history_size:
-            self.execution_history = self.execution_history[: self.max_history_size]
-
-
-# ============================================================================
-# Execution Hook
-# ============================================================================
-
-
-class ExecutionHook:
-    """Execution hook for event streaming and control."""
-
-    def __init__(self, manager: ExecutionManager, context: ExecutionContext):
-        """Initialize hook.
+        ExecutionManager NEVER touches state - all state operations delegated
+        to StateExecutionAPI.
 
         Args:
-            manager: Execution manager
-            context: Execution context
+            execution_id: Execution identifier
+
+        Returns:
+            List of available transition information dictionaries
+
+        Raises:
+            ValueError: If execution not found
         """
-        self.manager = manager
-        self.context = context
-
-    async def before_action(self, action, context_vars):
-        """Called before action execution."""
-        # Check for pause
-        await self.context.pause_event.wait()
-
-        # Check for cancellation
-        if self.context.cancel_event.is_set():
-            raise asyncio.CancelledError()
-
-        # Check for step mode
-        if self.context.options.step_mode:
-            await self.context.step_event.wait()
-            self.context.step_event.clear()
-
-        # Check for breakpoint
-        if action.id in self.context.options.breakpoints:
-            await self.manager._emit_event(
-                self.context,
-                ExecutionEventType.BREAKPOINT,
-                action_id=action.id,
-                action_type=action.type,
-            )
-            self.context.status = ExecutionStatus.PAUSED
-            self.context.pause_event.clear()
-            await self.context.pause_event.wait()
-
-        # Update state
-        self.context.current_action = action.id
-        self.context.action_states[action.id] = "running"
-
-        # Emit event
-        await self.manager._emit_event(
-            self.context,
-            ExecutionEventType.ACTION_START,
-            action_id=action.id,
-            action_type=action.type,
-        )
-
-    async def after_action(self, action, context_vars, result):
-        """Called after successful action execution."""
-        # Update state
-        self.context.action_states[action.id] = "completed"
-        self.context.completed_actions += 1
-        self.context.variables = context_vars.copy()
-
-        # Emit event
-        await self.manager._emit_event(
-            self.context,
-            ExecutionEventType.ACTION_COMPLETE,
-            action_id=action.id,
-            action_type=action.type,
-            data={
-                "success": result.get("success", True),
-                "result": result,
-            },
-        )
-
-    async def on_error(self, action, context_vars, error):
-        """Called when action execution fails."""
-        # Update state
-        self.context.action_states[action.id] = "failed"
-        self.context.failed_actions += 1
-
-        # Emit event
-        await self.manager._emit_event(
-            self.context,
-            ExecutionEventType.ACTION_ERROR,
-            action_id=action.id,
-            action_type=action.type,
-            data={
-                "error": str(error),
-            },
-        )
+        return self.state_operations.get_available_transitions(execution_id)

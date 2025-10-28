@@ -43,7 +43,7 @@ class EnhancedStateMemory(StateMemory):
     5. Temporal transition tracking
     """
 
-    def __init__(self, state_service: Optional["StateService"] = None):
+    def __init__(self, state_service: Optional["StateService"] = None) -> None:
         """Initialize enhanced state memory.
 
         Args:

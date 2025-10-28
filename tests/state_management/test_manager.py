@@ -91,10 +91,12 @@ class TestQontinuiStateManager:
         manager.activate_state("login", 0.9)
         assert "login" in manager.active_states
 
-        # Check activation history
+        # Check activation history (state_name, evidence_score, timestamp)
         assert len(manager.activation_history) == 1
         assert manager.activation_history[0][0] == "login"
         assert manager.activation_history[0][1] == 0.9
+        # Third element is datetime - just check it exists
+        assert len(manager.activation_history[0]) == 3
 
     def test_deactivate_state(self, manager, sample_state):
         """Test state deactivation."""

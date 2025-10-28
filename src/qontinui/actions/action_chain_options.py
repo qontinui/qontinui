@@ -33,7 +33,7 @@ class ActionChainOptions(ActionConfig):
     of how those actions work together, following the Single Responsibility Principle.
     """
 
-    def __init__(self, builder: "ActionChainOptionsBuilder"):
+    def __init__(self, builder: "ActionChainOptionsBuilder") -> None:
         """Initialize ActionChainOptions from builder.
 
         Args:
@@ -67,7 +67,7 @@ class ActionChainOptionsBuilder(ActionConfigBuilder):
     Port of ActionChainOptions from Qontinui framework.Builder.
     """
 
-    def __init__(self, initial_action: ActionConfig):
+    def __init__(self, initial_action: ActionConfig) -> None:
         """Create a new Builder with the initial action.
 
         Args:

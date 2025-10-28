@@ -42,7 +42,7 @@ class MockTime:
         virtual_time: Current virtual time
     """
 
-    def __init__(self, instant_mode: bool = True, time_scale: float = 0.0):
+    def __init__(self, instant_mode: bool = True, time_scale: float = 0.0) -> None:
         """Initialize MockTime.
 
         Args:

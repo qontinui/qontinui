@@ -29,7 +29,7 @@ class StateIdResolver:
     developer productivity and runtime performance.
     """
 
-    def __init__(self, all_states_in_project_service: Optional["StateService"] = None):
+    def __init__(self, all_states_in_project_service: Optional["StateService"] = None) -> None:
         """Initialize StateIdResolver.
 
         Args:
@@ -128,7 +128,7 @@ class StateTransitions:
     Will be implemented when migrating the navigation package.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize StateTransitions."""
         self.state_name = ""
         self.state_id = None

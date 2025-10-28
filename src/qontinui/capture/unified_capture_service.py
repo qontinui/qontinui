@@ -77,7 +77,7 @@ class UnifiedCaptureService:
         >>> region_image = capture.capture_region(100, 100, 300, 200)
     """
 
-    def __init__(self, config: CaptureConfig | None = None):
+    def __init__(self, config: CaptureConfig | None = None) -> None:
         """Initialize UnifiedCaptureService.
 
         Args:

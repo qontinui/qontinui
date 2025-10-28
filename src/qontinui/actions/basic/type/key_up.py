@@ -7,9 +7,8 @@ import logging
 import time
 from dataclasses import dataclass
 
-import pyautogui
-
 from ....action_interface import ActionInterface
+from ....hal.factory import HALFactory
 from ....action_result import ActionResult
 from ....action_type import ActionType
 from ....object_collection import ObjectCollection
@@ -65,16 +64,19 @@ class KeyUp(ActionInterface):
 
         options = matches.action_config
 
+        # Get HAL controller
+        controller = HALFactory.get_input_controller()
+
         # Optionally release modifiers first
         if options.release_modifiers_first:
             # Release in reverse order (typical for modifiers)
             for modifier in reversed(options.modifiers):
-                pyautogui.keyUp(modifier.lower())
+                controller.key_up(modifier.lower())
                 logger.debug(f"Key up: {modifier} (modifier)")
 
         # Process keys from options
         for key in options.keys:
-            pyautogui.keyUp(key)
+            controller.key_up(key)
             logger.debug(f"Key up: {key}")
             time.sleep(options.pause_between_keys)
 
@@ -83,7 +85,7 @@ class KeyUp(ActionInterface):
             strings = object_collections[0].state_strings
             for i, state_string in enumerate(strings):
                 key = state_string.string if hasattr(state_string, "string") else str(state_string)
-                pyautogui.keyUp(key)
+                controller.key_up(key)
                 logger.debug(f"Key up: {key}")
 
                 # Pause between keys (except after last one)
@@ -93,7 +95,7 @@ class KeyUp(ActionInterface):
         # Release modifiers last if not already released
         if not options.release_modifiers_first:
             for modifier in reversed(options.modifiers):
-                pyautogui.keyUp(modifier.lower())
+                controller.key_up(modifier.lower())
                 logger.debug(f"Key up: {modifier} (modifier)")
 
         matches.success = True

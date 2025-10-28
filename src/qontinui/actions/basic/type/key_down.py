@@ -7,7 +7,7 @@ import logging
 import time
 from dataclasses import dataclass
 
-import pyautogui
+from qontinui.hal.factory import HALFactory
 
 from ....action_interface import ActionInterface
 from ....action_result import ActionResult
@@ -65,27 +65,30 @@ class KeyDown(ActionInterface):
 
         options = matches.action_config
 
+        # Get HAL input controller
+        controller = HALFactory.get_input_controller()
+
         # Apply modifiers first
-        for modifier in options.modifiers:
-            pyautogui.keyDown(modifier.lower())
+        for modifier in options.get_modifiers():
+            controller.key_down(modifier.lower())
             logger.debug(f"Key down: {modifier} (modifier)")
 
         # Process keys from options
-        for key in options.keys:
-            pyautogui.keyDown(key)
+        for key in options.get_keys():
+            controller.key_down(key)
             logger.debug(f"Key down: {key}")
-            time.sleep(options.pause_between_keys)
+            time.sleep(options.get_pause_between_keys())
 
         # Process keys from first object collection if present
         if object_collections and object_collections[0].state_strings:
             strings = object_collections[0].state_strings
             for i, state_string in enumerate(strings):
                 key = state_string.string if hasattr(state_string, "string") else str(state_string)
-                pyautogui.keyDown(key)
+                controller.key_down(key)
                 logger.debug(f"Key down: {key}")
 
                 # Pause between keys (except after last one)
                 if i < len(strings) - 1:
-                    time.sleep(options.pause_between_keys)
+                    time.sleep(options.get_pause_between_keys())
 
         matches.success = True

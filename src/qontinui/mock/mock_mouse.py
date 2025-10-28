@@ -34,7 +34,7 @@ class MockMouse:
         pos = mouse.get_position()  # Returns tracked position
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize MockMouse."""
         # Track virtual mouse position
         self._x = 0

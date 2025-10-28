@@ -53,7 +53,7 @@ class StateObjectMetadata:
     owner_state_name: str = ""
     owner_state_id: int | None = None
 
-    def __init__(self, state_object: StateObject | None = None):
+    def __init__(self, state_object: StateObject | None = None) -> None:
         """Initialize metadata from StateObject or with defaults.
 
         Args:

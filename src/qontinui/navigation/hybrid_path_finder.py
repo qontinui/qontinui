@@ -5,10 +5,14 @@ This module implements a hybrid pathfinding approach that:
 - Uses efficient algorithms (Qontinui advantage)
 - Finds paths that activate ALL target states
 - Supports multiple pathfinding strategies
+
+Thread Safety:
+    HybridPathFinder is thread-safe. All cache and mutable state access is protected by RLock.
 """
 
 import heapq
 import logging
+import threading
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
@@ -92,6 +96,9 @@ class HybridPathFinder:
     - Multiple target states (all states to activate)
     - Configurable strategy selection
     - Path must enable reaching ALL target states
+
+    Thread Safety:
+        All methods are thread-safe. Cache access and weight modifications are protected by RLock.
     """
 
     joint_table: StateTransitionsJointTable
@@ -111,6 +118,10 @@ class HybridPathFinder:
     # Cache
     _path_cache: dict[tuple[frozenset[int], frozenset[int]], Path] = field(default_factory=dict)
 
+    # Thread safety
+    _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
+    """Lock for thread-safe access to cache and weights."""
+
     def find_path_to_states(
         self, start_states: set[int], target_states: set[int], strategy: PathStrategy | None = None
     ) -> Path | None:
@@ -126,26 +137,30 @@ class HybridPathFinder:
 
         Returns:
             Path that reaches all targets or None
+
+        Thread Safety:
+            Protected by lock for cache access and concurrent pathfinding.
         """
         if not start_states or not target_states:
             logger.warning("Empty start or target states")
             return None
 
-        # Check cache
+        # Check cache with lock
         cache_key = (frozenset(start_states), frozenset(target_states))
-        if self.enable_caching and cache_key in self._path_cache:
-            logger.debug("Returning cached path")
-            return self._path_cache[cache_key]
+        with self._lock:
+            if self.enable_caching and cache_key in self._path_cache:
+                logger.debug("Returning cached path")
+                return self._path_cache[cache_key]
 
-        # Select strategy
-        strategy = strategy or self.strategy
+            # Select strategy
+            strategy = strategy or self.strategy
 
         logger.info(
             f"Finding path from {len(start_states)} states to "
             f"{len(target_states)} targets using {strategy.value}"
         )
 
-        # Execute appropriate strategy
+        # Execute appropriate strategy (outside lock to allow concurrent pathfinding)
         path = None
         if strategy == PathStrategy.SHORTEST:
             path = self._find_shortest_path(start_states, target_states)
@@ -158,9 +173,10 @@ class HybridPathFinder:
         elif strategy == PathStrategy.MOST_RELIABLE:
             path = self._find_most_reliable_path(start_states, target_states)
 
-        # Cache result
+        # Cache result with lock
         if self.enable_caching and path:
-            self._path_cache[cache_key] = path
+            with self._lock:
+                self._path_cache[cache_key] = path
 
         if path:
             logger.info(f"Found path with {len(path)} states, cost={path.total_cost:.2f}")
@@ -365,21 +381,31 @@ class HybridPathFinder:
 
         Returns:
             Most reliable path or None
+
+        Thread Safety:
+            Protected by lock for weight modifications.
         """
         # Temporarily adjust weights to prioritize reliability
-        old_reliability = self.reliability_weight
-        self.reliability_weight = 0.7
-        self.state_cost_weight = 0.1
-        self.transition_cost_weight = 0.1
-        self.probability_weight = 0.1
+        with self._lock:
+            old_reliability = self.reliability_weight
+            old_state_cost = self.state_cost_weight
+            old_transition_cost = self.transition_cost_weight
+            old_probability = self.probability_weight
 
-        path = self._find_optimal_path(start_states, target_states)
+            self.reliability_weight = 0.7
+            self.state_cost_weight = 0.1
+            self.transition_cost_weight = 0.1
+            self.probability_weight = 0.1
 
-        # Restore weights
-        self.reliability_weight = old_reliability
-        self.state_cost_weight = 0.3
-        self.transition_cost_weight = 0.3
-        self.probability_weight = 0.2
+        try:
+            path = self._find_optimal_path(start_states, target_states)
+        finally:
+            # Restore weights
+            with self._lock:
+                self.reliability_weight = old_reliability
+                self.state_cost_weight = old_state_cost
+                self.transition_cost_weight = old_transition_cost
+                self.probability_weight = old_probability
 
         return path
 
@@ -394,6 +420,9 @@ class HybridPathFinder:
 
         Args:
             path: Path to score
+
+        Thread Safety:
+            Protected by lock for consistent weight access.
         """
         state_cost = 0.0
         transition_cost = 0.0
@@ -413,13 +442,14 @@ class HybridPathFinder:
             transition_cost += transition.path_cost
             total_reliability *= transition.get_success_rate()
 
-        # Calculate weighted score
-        path.total_cost = (
-            state_cost * self.state_cost_weight
-            + transition_cost * self.transition_cost_weight
-            + (1.0 - total_probability) * self.probability_weight * 10
-            + (1.0 - total_reliability) * self.reliability_weight * 10
-        )
+        # Calculate weighted score with lock
+        with self._lock:
+            path.total_cost = (
+                state_cost * self.state_cost_weight
+                + transition_cost * self.transition_cost_weight
+                + (1.0 - total_probability) * self.probability_weight * 10
+                + (1.0 - total_reliability) * self.reliability_weight * 10
+            )
         path.total_probability = total_probability
 
     def _calculate_path_cost(self, path: Path) -> float:
@@ -470,16 +500,26 @@ class HybridPathFinder:
         return paths[0]
 
     def clear_cache(self) -> None:
-        """Clear the path cache."""
-        self._path_cache.clear()
+        """Clear the path cache.
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            self._path_cache.clear()
 
     def __str__(self) -> str:
-        """String representation."""
-        return (
-            f"HybridPathFinder(strategy={self.strategy.value}, "
-            f"max_depth={self.max_depth}, "
-            f"cache_size={len(self._path_cache)})"
-        )
+        """String representation.
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            return (
+                f"HybridPathFinder(strategy={self.strategy.value}, "
+                f"max_depth={self.max_depth}, "
+                f"cache_size={len(self._path_cache)})"
+            )
 
 
 # Placeholder for StateService

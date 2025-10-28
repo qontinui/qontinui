@@ -75,7 +75,7 @@ class EventRegistry:
     - Automatic error isolation (callback failures don't affect library)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize event registry."""
         self._callbacks: dict[EventType, list[EventCallback]] = defaultdict(list)
         self._wildcard_callbacks: list[EventCallback] = []
@@ -286,7 +286,7 @@ class EventCollector:
         >>> print(f"Captured {len(events)} match attempts")
     """
 
-    def __init__(self, event_types: list[EventType] | None = None):
+    def __init__(self, event_types: list[EventType] | None = None) -> None:
         """Initialize collector.
 
         Args:

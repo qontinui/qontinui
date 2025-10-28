@@ -35,7 +35,7 @@ class StateService:
         next_id: Auto-incrementing counter for generating new integer IDs
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the StateService with empty state storage."""
         self.states_by_id: dict[int, State] = {}
         self.states_by_name: dict[str, State] = {}

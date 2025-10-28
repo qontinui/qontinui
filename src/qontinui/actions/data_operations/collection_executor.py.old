@@ -1,0 +1,819 @@
+"""Collection operations executor for data manipulation.
+
+This module provides the CollectionExecutor class for performing operations
+on collections (lists, tuples) including:
+- SORT: Sort collections using various comparators
+- FILTER: Filter collections based on conditions
+- MAP: Transform each item in a collection
+- REDUCE: Reduce collections to single values
+
+The executor uses SafeEvaluator for custom expressions and supports nested
+property access for dictionaries and objects.
+"""
+
+import logging
+import re
+from datetime import datetime
+from typing import Any
+
+from .constants import ComparisonOperator, ComparatorType
+from .context import VariableContext
+from .evaluator import SafeEvaluator
+
+logger = logging.getLogger(__name__)
+
+
+class CollectionExecutor:
+    """Executor for collection operations (SORT, FILTER, MAP, REDUCE).
+
+    This class provides specialized methods for manipulating collections with
+    support for:
+    - Multiple comparator types (numeric, alphabetic, date, custom)
+    - Various filter condition types (expression, property, custom)
+    - Transform operations (expression, property, custom)
+    - Reduce operations (sum, average, min, max, count, custom)
+
+    The executor operates independently and requires a VariableContext and
+    SafeEvaluator to be provided at initialization.
+
+    Example:
+        >>> context = VariableContext()
+        >>> evaluator = SafeEvaluator()
+        >>> executor = CollectionExecutor(context, evaluator)
+        >>> data = [{"age": 30}, {"age": 25}, {"age": 35}]
+        >>> sorted_data = executor.sort_collection(
+        ...     data, sort_by="age", order="ASC", comparator="NUMERIC"
+        ... )
+    """
+
+    def __init__(
+        self, variable_context: VariableContext, evaluator: SafeEvaluator
+    ) -> None:
+        """Initialize the collection executor.
+
+        Args:
+            variable_context: Variable context for accessing variables in expressions
+            evaluator: Safe evaluator for custom expressions
+
+        Example:
+            >>> context = VariableContext()
+            >>> evaluator = SafeEvaluator()
+            >>> executor = CollectionExecutor(context, evaluator)
+        """
+        self.variable_context = variable_context
+        self.evaluator = evaluator
+        logger.debug("Initialized CollectionExecutor")
+
+    # ============================================================================
+    # SORT Operations
+    # ============================================================================
+
+    def sort_collection(
+        self,
+        collection: list[Any],
+        sort_by: str | list[str] | None,
+        order: str = "ASC",
+        comparator: str | None = None,
+        custom_comparator: str | None = None,
+    ) -> list[Any]:
+        """Sort a collection using specified parameters.
+
+        Supports sorting by:
+        - Property names (including nested properties)
+        - Multiple properties (applied in sequence)
+        - Numeric, alphabetic, date, or custom comparators
+
+        Args:
+            collection: Collection to sort (list or tuple)
+            sort_by: Property name(s) to sort by (None = sort items directly)
+            order: Sort order ("ASC" or "DESC"). Defaults to "ASC"
+            comparator: Comparator type (NUMERIC, ALPHABETIC, DATE, CUSTOM)
+            custom_comparator: Custom comparator expression (required if comparator=CUSTOM)
+
+        Returns:
+            New sorted list
+
+        Raises:
+            ValueError: If comparator is CUSTOM but custom_comparator is not provided
+
+        Example:
+            >>> executor = CollectionExecutor(context, evaluator)
+            >>> data = [{"price": "30"}, {"price": "100"}, {"price": "5"}]
+            >>> sorted_data = executor.sort_collection(
+            ...     data, sort_by="price", order="DESC", comparator="NUMERIC"
+            ... )
+            >>> [item["price"] for item in sorted_data]
+            ["100", "30", "5"]
+        """
+        if not collection:
+            logger.debug("Empty collection, nothing to sort")
+            return collection
+
+        logger.debug(
+            f"Sorting collection of {len(collection)} items "
+            f"(sort_by={sort_by}, order={order}, comparator={comparator})"
+        )
+
+        # Determine sort key function
+        key_func = self._build_sort_key_function(
+            sort_by, comparator, custom_comparator
+        )
+
+        # Perform sort
+        reverse = order == "DESC"
+
+        try:
+            sorted_list = sorted(collection, key=key_func, reverse=reverse)
+            logger.debug(f"Successfully sorted {len(sorted_list)} items")
+            return sorted_list
+        except (TypeError, ValueError, AttributeError) as e:
+            logger.error(f"Sort failed: {e}")
+            # Return original collection on error
+            return collection
+
+    def _build_sort_key_function(
+        self,
+        sort_by: str | list[str] | None,
+        comparator: str | None,
+        custom_comparator: str | None,
+    ) -> Any:
+        """Build the key function for sorting based on parameters.
+
+        Args:
+            sort_by: Property name(s) to sort by
+            comparator: Comparator type
+            custom_comparator: Custom comparator expression
+
+        Returns:
+            Key function for use with sorted()
+
+        Raises:
+            ValueError: If comparator is CUSTOM but custom_comparator is not provided
+        """
+        # Start with property extraction if sort_by is specified
+        if sort_by:
+            properties = [sort_by] if isinstance(sort_by, str) else sort_by
+            base_key_func = lambda item: self._extract_property(item, properties)
+        else:
+            base_key_func = lambda item: item
+
+        # Apply comparator transformation
+        if not comparator:
+            return base_key_func
+
+        comparator_enum = ComparatorType(comparator)
+
+        if comparator_enum == ComparatorType.NUMERIC:
+            return lambda item: self._numeric_key(base_key_func(item))
+
+        elif comparator_enum == ComparatorType.ALPHABETIC:
+            return lambda item: self._alphabetic_key(base_key_func(item))
+
+        elif comparator_enum == ComparatorType.DATE:
+            return lambda item: self._date_key(base_key_func(item))
+
+        elif comparator_enum == ComparatorType.CUSTOM:
+            if not custom_comparator:
+                raise ValueError("CUSTOM comparator requires 'custom_comparator'")
+            return lambda item: self._custom_key(item, custom_comparator)
+
+        return base_key_func
+
+    def _extract_property(self, item: Any, properties: list[str]) -> Any:
+        """Extract property value from item, supporting nested properties.
+
+        Args:
+            item: Item to extract from (dict or object)
+            properties: List of property names for nested access
+
+        Returns:
+            Extracted property value or None if not found
+
+        Example:
+            >>> item = {"user": {"name": "Alice"}}
+            >>> executor._extract_property(item, ["user", "name"])
+            'Alice'
+        """
+        value = item
+
+        for prop in properties:
+            if isinstance(value, dict):
+                value = value.get(prop)
+            else:
+                try:
+                    value = getattr(value, prop)
+                except AttributeError:
+                    logger.debug(f"Property '{prop}' not found on {type(value)}")
+                    return None
+
+            if value is None:
+                break
+
+        return value
+
+    def _numeric_key(self, value: Any) -> float:
+        """Convert value to numeric for comparison.
+
+        Args:
+            value: Value to convert
+
+        Returns:
+            Float value (0.0 if conversion fails)
+        """
+        try:
+            return float(value or 0)
+        except (ValueError, TypeError):
+            logger.debug(f"Could not convert '{value}' to numeric, using 0")
+            return 0.0
+
+    def _alphabetic_key(self, value: Any) -> str:
+        """Convert value to string for alphabetic comparison.
+
+        Args:
+            value: Value to convert
+
+        Returns:
+            String value (empty string if None)
+        """
+        return str(value or "")
+
+    def _date_key(self, value: Any) -> datetime:
+        """Convert value to datetime for date comparison.
+
+        Supports:
+        - datetime objects (returned as-is)
+        - ISO format date strings
+        - Invalid dates return datetime.min for sorting
+
+        Args:
+            value: Value to convert
+
+        Returns:
+            Datetime object (datetime.min if conversion fails)
+        """
+        if isinstance(value, datetime):
+            return value
+
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value)
+            except (ValueError, TypeError):
+                logger.debug(f"Could not parse '{value}' as ISO date")
+                return datetime.min
+
+        return datetime.min
+
+    def _custom_key(self, item: Any, custom_comparator: str) -> Any:
+        """Evaluate custom comparator expression for sorting key.
+
+        Args:
+            item: Item being sorted
+            custom_comparator: Expression to evaluate (has access to 'item' variable)
+
+        Returns:
+            Result of expression evaluation (0 if evaluation fails)
+        """
+        try:
+            return self.evaluator.safe_eval(
+                custom_comparator,
+                {"item": item, **self.variable_context.get_all_variables()},
+            )
+        except (ValueError, SyntaxError, TypeError, NameError) as e:
+            logger.warning(f"Custom comparator evaluation failed: {e}")
+            return 0
+
+    # ============================================================================
+    # FILTER Operations
+    # ============================================================================
+
+    def filter_collection(self, collection: list[Any], condition: Any) -> list[Any]:
+        """Filter a collection using specified condition.
+
+        Supports three condition types:
+        - expression: Python expression with 'item' variable
+        - property: Compare item property to value using operator
+        - custom: Custom function expression
+
+        Args:
+            collection: Collection to filter
+            condition: Filter condition configuration with attributes:
+                - type: Condition type (expression, property, custom)
+                - expression: Expression to evaluate (for type=expression)
+                - property: Property name (for type=property)
+                - value: Expected value (for type=property)
+                - operator: Comparison operator (for type=property)
+                - custom_function: Custom function expression (for type=custom)
+
+        Returns:
+            New list containing only items matching the condition
+
+        Example:
+            >>> from types import SimpleNamespace
+            >>> condition = SimpleNamespace(
+            ...     type="property", property="age", operator=">=", value=30
+            ... )
+            >>> data = [{"age": 25}, {"age": 35}, {"age": 40}]
+            >>> filtered = executor.filter_collection(data, condition)
+            >>> [item["age"] for item in filtered]
+            [35, 40]
+        """
+        if not collection:
+            logger.debug("Empty collection, nothing to filter")
+            return collection
+
+        logger.debug(
+            f"Filtering collection of {len(collection)} items (condition_type={condition.type})"
+        )
+
+        filtered = []
+
+        for item in collection:
+            try:
+                if self._evaluate_filter_condition(item, condition):
+                    filtered.append(item)
+            except Exception as e:
+                logger.warning(f"Filter condition evaluation failed for item: {e}")
+                # Skip items that fail evaluation
+                continue
+
+        logger.debug(f"Filtered {len(collection)} items to {len(filtered)} items")
+        return filtered
+
+    def _evaluate_filter_condition(self, item: Any, condition: Any) -> bool:
+        """Evaluate a filter condition for an item.
+
+        Args:
+            item: Item to evaluate
+            condition: Filter condition with type and parameters
+
+        Returns:
+            True if item matches condition, False otherwise
+
+        Raises:
+            ValueError: If condition type is unknown or required parameters are missing
+        """
+        condition_type = condition.type
+
+        if condition_type == "expression":
+            return self._evaluate_expression_condition(item, condition)
+
+        elif condition_type == "property":
+            return self._evaluate_property_condition(item, condition)
+
+        elif condition_type == "custom":
+            return self._evaluate_custom_condition(item, condition)
+
+        else:
+            raise ValueError(f"Unknown condition type: {condition_type}")
+
+    def _evaluate_expression_condition(self, item: Any, condition: Any) -> bool:
+        """Evaluate expression-based filter condition.
+
+        Args:
+            item: Item to evaluate
+            condition: Condition with 'expression' attribute
+
+        Returns:
+            Boolean result of expression evaluation
+
+        Raises:
+            ValueError: If expression is not provided
+        """
+        if not condition.expression:
+            raise ValueError("Expression condition requires 'expression'")
+
+        result = self.evaluator.safe_eval(
+            condition.expression,
+            {"item": item, **self.variable_context.get_all_variables()},
+        )
+        return bool(result)
+
+    def _evaluate_property_condition(self, item: Any, condition: Any) -> bool:
+        """Evaluate property-based filter condition.
+
+        Extracts property from item and compares to expected value using operator.
+
+        Args:
+            item: Item to evaluate
+            condition: Condition with 'property', 'value', and 'operator' attributes
+
+        Returns:
+            Boolean result of property comparison
+
+        Raises:
+            ValueError: If property is not provided
+        """
+        if not condition.property:
+            raise ValueError("Property condition requires 'property'")
+
+        # Extract property value
+        item_value = self._extract_item_property(item, condition.property)
+
+        # Compare using operator
+        return self._compare_values(item_value, condition.value, condition.operator)
+
+    def _evaluate_custom_condition(self, item: Any, condition: Any) -> bool:
+        """Evaluate custom function filter condition.
+
+        Args:
+            item: Item to evaluate
+            condition: Condition with 'custom_function' attribute
+
+        Returns:
+            Boolean result of custom function evaluation
+
+        Raises:
+            ValueError: If custom_function is not provided
+        """
+        if not condition.custom_function:
+            raise ValueError("Custom condition requires 'custom_function'")
+
+        result = self.evaluator.safe_eval(
+            condition.custom_function,
+            {"item": item, **self.variable_context.get_all_variables()},
+        )
+        return bool(result)
+
+    def _extract_item_property(self, item: Any, property_name: str) -> Any:
+        """Extract a property value from an item.
+
+        Supports both dictionary access and attribute access.
+
+        Args:
+            item: Item to extract from
+            property_name: Name of property to extract
+
+        Returns:
+            Property value or None if not found
+        """
+        if isinstance(item, dict):
+            return item.get(property_name)
+        else:
+            return getattr(item, property_name, None)
+
+    # ============================================================================
+    # MAP Operations
+    # ============================================================================
+
+    def map_collection(self, collection: list[Any], transform: Any) -> list[Any]:
+        """Map a collection using specified transform.
+
+        Transforms each item in the collection using one of three transform types:
+        - expression: Python expression with 'item' variable
+        - property: Extract specific property from each item
+        - custom: Custom function expression
+
+        Args:
+            collection: Collection to map
+            transform: Transform configuration with attributes:
+                - type: Transform type (expression, property, custom)
+                - expression: Expression to evaluate (for type=expression)
+                - property: Property name (for type=property)
+                - custom_function: Custom function expression (for type=custom)
+
+        Returns:
+            New list with transformed items
+
+        Example:
+            >>> from types import SimpleNamespace
+            >>> transform = SimpleNamespace(type="expression", expression="item * 2")
+            >>> data = [1, 2, 3, 4, 5]
+            >>> mapped = executor.map_collection(data, transform)
+            >>> mapped
+            [2, 4, 6, 8, 10]
+        """
+        if not collection:
+            logger.debug("Empty collection, nothing to map")
+            return collection
+
+        logger.debug(
+            f"Mapping collection of {len(collection)} items (transform_type={transform.type})"
+        )
+
+        mapped = []
+        transform_type = transform.type
+
+        for item in collection:
+            try:
+                if transform_type == "expression":
+                    result = self._map_with_expression(item, transform)
+                elif transform_type == "property":
+                    result = self._map_with_property(item, transform)
+                elif transform_type == "custom":
+                    result = self._map_with_custom(item, transform)
+                else:
+                    raise ValueError(f"Unknown transform type: {transform_type}")
+
+                mapped.append(result)
+
+            except Exception as e:
+                logger.warning(f"Map transform failed for item: {e}")
+                # Add None for failed items
+                mapped.append(None)
+
+        logger.debug(f"Successfully mapped {len(mapped)} items")
+        return mapped
+
+    def _map_with_expression(self, item: Any, transform: Any) -> Any:
+        """Transform item using expression.
+
+        Args:
+            item: Item to transform
+            transform: Transform with 'expression' attribute
+
+        Returns:
+            Result of expression evaluation
+
+        Raises:
+            ValueError: If expression is not provided
+        """
+        if not transform.expression:
+            raise ValueError("Expression transform requires 'expression'")
+
+        return self.evaluator.safe_eval(
+            transform.expression,
+            {"item": item, **self.variable_context.get_all_variables()},
+        )
+
+    def _map_with_property(self, item: Any, transform: Any) -> Any:
+        """Transform item by extracting property.
+
+        Args:
+            item: Item to extract from
+            transform: Transform with 'property' attribute
+
+        Returns:
+            Property value
+
+        Raises:
+            ValueError: If property is not provided
+        """
+        if not transform.property:
+            raise ValueError("Property transform requires 'property'")
+
+        return self._extract_item_property(item, transform.property)
+
+    def _map_with_custom(self, item: Any, transform: Any) -> Any:
+        """Transform item using custom function.
+
+        Args:
+            item: Item to transform
+            transform: Transform with 'custom_function' attribute
+
+        Returns:
+            Result of custom function evaluation
+
+        Raises:
+            ValueError: If custom_function is not provided
+        """
+        if not transform.custom_function:
+            raise ValueError("Custom transform requires 'custom_function'")
+
+        return self.evaluator.safe_eval(
+            transform.custom_function,
+            {"item": item, **self.variable_context.get_all_variables()},
+        )
+
+    # ============================================================================
+    # REDUCE Operations
+    # ============================================================================
+
+    def reduce_collection(
+        self,
+        collection: list[Any],
+        operation: str,
+        initial_value: Any = None,
+        custom_reducer: str | None = None,
+    ) -> Any:
+        """Reduce a collection to a single value.
+
+        Supports built-in operations:
+        - sum: Sum all values
+        - average: Calculate mean of values
+        - min: Find minimum value
+        - max: Find maximum value
+        - count: Count items
+        - custom: Apply custom reducer expression
+
+        Args:
+            collection: Collection to reduce
+            operation: Reduce operation (sum, average, min, max, count, custom)
+            initial_value: Initial accumulator value (used for sum and custom)
+            custom_reducer: Custom reducer expression (required if operation=custom)
+
+        Returns:
+            Reduced value (type depends on operation)
+
+        Raises:
+            ValueError: If operation is custom but custom_reducer is not provided
+
+        Example:
+            >>> data = [1, 2, 3, 4, 5]
+            >>> executor.reduce_collection(data, "sum")
+            15
+            >>> executor.reduce_collection(data, "average")
+            3.0
+            >>> executor.reduce_collection(data, "max")
+            5
+        """
+        if not collection:
+            logger.debug("Empty collection, returning initial value or default")
+            return initial_value if initial_value is not None else 0
+
+        logger.debug(
+            f"Reducing collection of {len(collection)} items (operation={operation})"
+        )
+
+        if operation == "sum":
+            result = self._reduce_sum(collection, initial_value)
+        elif operation == "average":
+            result = self._reduce_average(collection, initial_value)
+        elif operation == "min":
+            result = self._reduce_min(collection)
+        elif operation == "max":
+            result = self._reduce_max(collection)
+        elif operation == "count":
+            result = self._reduce_count(collection)
+        elif operation == "custom":
+            result = self._reduce_custom(collection, initial_value, custom_reducer)
+        else:
+            raise ValueError(f"Unknown reduce operation: {operation}")
+
+        logger.debug(f"Reduced {len(collection)} items to {result}")
+        return result
+
+    def _reduce_sum(self, collection: list[Any], initial_value: Any) -> float:
+        """Sum all values in collection.
+
+        Args:
+            collection: Collection to sum
+            initial_value: Initial value to add to sum
+
+        Returns:
+            Sum of all values
+        """
+        return sum(collection, initial_value or 0)
+
+    def _reduce_average(self, collection: list[Any], initial_value: Any) -> float:
+        """Calculate average of values in collection.
+
+        Args:
+            collection: Collection to average
+            initial_value: Initial value to add before averaging
+
+        Returns:
+            Average (mean) of all values
+        """
+        total = sum(collection, initial_value or 0)
+        return total / len(collection)
+
+    def _reduce_min(self, collection: list[Any]) -> Any:
+        """Find minimum value in collection.
+
+        Args:
+            collection: Collection to search
+
+        Returns:
+            Minimum value
+        """
+        return min(collection)
+
+    def _reduce_max(self, collection: list[Any]) -> Any:
+        """Find maximum value in collection.
+
+        Args:
+            collection: Collection to search
+
+        Returns:
+            Maximum value
+        """
+        return max(collection)
+
+    def _reduce_count(self, collection: list[Any]) -> int:
+        """Count items in collection.
+
+        Args:
+            collection: Collection to count
+
+        Returns:
+            Number of items
+        """
+        return len(collection)
+
+    def _reduce_custom(
+        self, collection: list[Any], initial_value: Any, custom_reducer: str | None
+    ) -> Any:
+        """Reduce collection using custom reducer expression.
+
+        The custom reducer expression has access to:
+        - accumulator (or acc): Current accumulated value
+        - item: Current item being processed
+
+        Args:
+            collection: Collection to reduce
+            initial_value: Initial accumulator value
+            custom_reducer: Reducer expression
+
+        Returns:
+            Final accumulated value
+
+        Raises:
+            ValueError: If custom_reducer is not provided
+
+        Example:
+            >>> # Custom reducer to concatenate strings
+            >>> data = ["a", "b", "c"]
+            >>> executor.reduce_collection(
+            ...     data, "custom", "", "accumulator + item + ','"
+            ... )
+            'a,b,c,'
+        """
+        if not custom_reducer:
+            raise ValueError("Custom reduce operation requires 'custom_reducer'")
+
+        # Initialize accumulator
+        if initial_value is not None:
+            accumulator = initial_value
+            start_idx = 0
+        else:
+            accumulator = collection[0]
+            start_idx = 1
+
+        # Apply custom reducer to each item
+        for item in collection[start_idx:]:
+            try:
+                accumulator = self.evaluator.safe_eval(
+                    custom_reducer,
+                    {
+                        "accumulator": accumulator,
+                        "acc": accumulator,  # Short alias
+                        "item": item,
+                        **self.variable_context.get_all_variables(),
+                    },
+                )
+            except Exception as e:
+                logger.warning(f"Custom reducer failed for item: {e}")
+                # Continue with current accumulator value
+
+        return accumulator
+
+    # ============================================================================
+    # Comparison Helper
+    # ============================================================================
+
+    def _compare_values(self, left: Any, right: Any, operator: str | None) -> bool:
+        """Compare two values using an operator.
+
+        Supports operators:
+        - ==, !=, >, <, >=, <=: Standard comparisons
+        - contains: Check if right is contained in left
+        - matches: Regex match (left must be string)
+
+        Args:
+            left: Left operand
+            right: Right operand
+            operator: Comparison operator (defaults to "==")
+
+        Returns:
+            Boolean result of comparison
+
+        Raises:
+            ValueError: If operator is invalid or unsupported
+
+        Example:
+            >>> executor._compare_values(5, 3, ">")
+            True
+            >>> executor._compare_values("hello", "ell", "contains")
+            True
+            >>> executor._compare_values("test123", r"test\\d+", "matches")
+            True
+        """
+        if operator is None:
+            operator = "=="
+
+        try:
+            op_enum = ComparisonOperator(operator)
+        except ValueError as err:
+            raise ValueError(f"Invalid operator: {operator}") from err
+
+        if op_enum == ComparisonOperator.EQUAL:
+            return left == right
+        elif op_enum == ComparisonOperator.NOT_EQUAL:
+            return left != right
+        elif op_enum == ComparisonOperator.GREATER:
+            return left > right
+        elif op_enum == ComparisonOperator.LESS:
+            return left < right
+        elif op_enum == ComparisonOperator.GREATER_EQUAL:
+            return left >= right
+        elif op_enum == ComparisonOperator.LESS_EQUAL:
+            return left <= right
+        elif op_enum == ComparisonOperator.CONTAINS:
+            return right in left if hasattr(left, "__contains__") else False
+        elif op_enum == ComparisonOperator.MATCHES:
+            # Regex match
+            if isinstance(left, str) and isinstance(right, str):
+                return bool(re.search(right, left))
+            return False
+        else:
+            raise ValueError(f"Unsupported operator: {op_enum}")

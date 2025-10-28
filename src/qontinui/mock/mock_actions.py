@@ -20,7 +20,7 @@ class MockActions:
     - Application code doesn't know it's using mocks
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize mock actions."""
         logger.debug("MockActions initialized")
 

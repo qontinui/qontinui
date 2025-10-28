@@ -57,7 +57,7 @@ class IfStatement(Statement):
         condition: Expression | None = None,
         then_statements: list[Statement] | None = None,
         else_statements: list[Statement] | None = None,
-    ):
+    ) -> None:
         """Initialize if statement.
 
         Args:

@@ -15,7 +15,7 @@ class HighlightOptions(ActionConfig):
     typically used for debugging or user feedback.
     """
 
-    def __init__(self, builder: "HighlightOptionsBuilder"):
+    def __init__(self, builder: "HighlightOptionsBuilder") -> None:
         """Initialize HighlightOptions from builder.
 
         Args:
@@ -55,7 +55,7 @@ class HighlightOptionsBuilder(ActionConfigBuilder):
     Port of HighlightOptions from Qontinui framework.Builder.
     """
 
-    def __init__(self, original: HighlightOptions | None = None):
+    def __init__(self, original: HighlightOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

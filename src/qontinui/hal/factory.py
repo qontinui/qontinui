@@ -33,12 +33,13 @@ from typing import Any, cast
 
 from .config import HALConfig, get_config
 from .interfaces import (
-    IInputController,
     IOCREngine,
     IPatternMatcher,
     IPlatformSpecific,
     IScreenCapture,
 )
+from .interfaces.keyboard_controller import IKeyboardController
+from .interfaces.mouse_controller import IMouseController
 
 
 class HALFactory:
@@ -129,17 +130,17 @@ class HALFactory:
         return instance
 
     @classmethod
-    def get_input_controller(cls, config: HALConfig | None = None) -> IInputController:
-        """Get input controller implementation.
+    def get_keyboard_controller(cls, config: HALConfig | None = None) -> IKeyboardController:
+        """Get keyboard controller implementation.
 
         Args:
             config: Optional configuration override
 
         Returns:
-            IInputController implementation
+            IKeyboardController implementation
         """
         config = config or get_config()
-        cache_key = f"input_controller_{config.input_backend}"
+        cache_key = f"keyboard_controller_{config.input_backend}"
 
         # Use lock to prevent concurrent imports that could cause deadlock
         with cls._lock:
@@ -147,23 +148,57 @@ class HALFactory:
                 backend = config.input_backend.lower()
 
                 if backend == "pynput":
-                    from .implementations.pynput_controller import PynputController
+                    from pynput import keyboard
 
-                    cls._instances[cache_key] = PynputController(config)
+                    from .implementations.keyboard_operations import KeyboardOperations
+
+                    cls._instances[cache_key] = KeyboardOperations(keyboard.Controller())
                 elif backend == "pyautogui":
-                    from .implementations.pyautogui_controller import PyAutoGUIController
-
-                    cls._instances[cache_key] = PyAutoGUIController(config)
+                    raise NotImplementedError("PyAutoGUI keyboard backend not yet implemented")
                 elif backend == "selenium":
-                    from .implementations.selenium_controller import SeleniumController
-
-                    cls._instances[cache_key] = SeleniumController(config)
+                    raise NotImplementedError("Selenium keyboard backend not yet implemented")
                 elif backend == "native":
-                    cls._instances[cache_key] = cls._get_native_input_controller(config)
+                    cls._instances[cache_key] = cls._get_native_keyboard_controller(config)
                 else:
-                    raise ValueError(f"Unsupported input controller backend: {backend}")
+                    raise ValueError(f"Unsupported keyboard controller backend: {backend}")
 
-            instance: IInputController = cls._instances[cache_key]
+            instance: IKeyboardController = cls._instances[cache_key]
+            return instance
+
+    @classmethod
+    def get_mouse_controller(cls, config: HALConfig | None = None) -> IMouseController:
+        """Get mouse controller implementation.
+
+        Args:
+            config: Optional configuration override
+
+        Returns:
+            IMouseController implementation
+        """
+        config = config or get_config()
+        cache_key = f"mouse_controller_{config.input_backend}"
+
+        # Use lock to prevent concurrent imports that could cause deadlock
+        with cls._lock:
+            if cache_key not in cls._instances:
+                backend = config.input_backend.lower()
+
+                if backend == "pynput":
+                    from pynput import mouse
+
+                    from .implementations.mouse_operations import MouseOperations
+
+                    cls._instances[cache_key] = MouseOperations(mouse.Controller())
+                elif backend == "pyautogui":
+                    raise NotImplementedError("PyAutoGUI mouse backend not yet implemented")
+                elif backend == "selenium":
+                    raise NotImplementedError("Selenium mouse backend not yet implemented")
+                elif backend == "native":
+                    cls._instances[cache_key] = cls._get_native_mouse_controller(config)
+                else:
+                    raise ValueError(f"Unsupported mouse controller backend: {backend}")
+
+            instance: IMouseController = cls._instances[cache_key]
             return instance
 
     @classmethod
@@ -304,32 +339,38 @@ class HALFactory:
         return OpenCVMatcher(config)
 
     @classmethod
-    def _get_native_input_controller(cls, config: HALConfig) -> IInputController:
-        """Get native input controller for current platform.
+    def _get_native_keyboard_controller(cls, config: HALConfig) -> IKeyboardController:
+        """Get native keyboard controller for current platform.
 
         Args:
             config: HAL configuration
 
         Returns:
-            Native input controller implementation
+            Native keyboard controller implementation
         """
+        # For now, use pynput as the native keyboard controller on all platforms
+        from pynput import keyboard
 
-        platform = cls._detect_platform(config)
+        from .implementations.keyboard_operations import KeyboardOperations
 
-        if platform == "windows":
-            from .implementations.platform.windows_input import WindowsInputController
+        return KeyboardOperations(keyboard.Controller())
 
-            return cast(IInputController, WindowsInputController(config))
-        elif platform == "macos":
-            from .implementations.platform.macos_input import MacOSInputController
+    @classmethod
+    def _get_native_mouse_controller(cls, config: HALConfig) -> IMouseController:
+        """Get native mouse controller for current platform.
 
-            return cast(IInputController, MacOSInputController(config))
-        elif platform == "linux":
-            from .implementations.platform.linux_input import LinuxInputController
+        Args:
+            config: HAL configuration
 
-            return cast(IInputController, LinuxInputController(config))
-        else:
-            raise ValueError(f"No native input controller for platform: {platform}")
+        Returns:
+            Native mouse controller implementation
+        """
+        # For now, use pynput as the native mouse controller on all platforms
+        from pynput import mouse
+
+        from .implementations.mouse_operations import MouseOperations
+
+        return MouseOperations(mouse.Controller())
 
     @classmethod
     def clear_cache(cls) -> None:

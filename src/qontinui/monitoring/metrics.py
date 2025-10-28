@@ -118,7 +118,7 @@ class MetricsCollector:
         - Health check integration
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize metrics collector."""
         self.settings = get_settings()
         self.start_time: float = time.time()
@@ -376,7 +376,7 @@ class HealthCheck:
         - Aggregated health status
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize health check."""
         self.checks: dict[str, HealthCheckInfo] = {}
         self.last_results: dict[str, dict[str, Any]] = {}
@@ -488,7 +488,7 @@ def check_cpu() -> bool:
 def check_disk() -> bool:
     """Check if disk space is available."""
     settings = get_settings()
-    usage = psutil.disk_usage(str(settings.dataset_path))
+    usage = psutil.disk_usage(str(settings.dataset.path))
     return cast(bool, usage.percent < 90)
 
 

@@ -95,7 +95,7 @@ class StateScreenshotRegistry:
     4. Fallback: Most recent screenshot
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize empty registry."""
         self.screenshots: list[StateScreenshot] = []
         self._hash_index: dict[str, list[StateScreenshot]] = {}

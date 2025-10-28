@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 class RegistryFrozenError(Exception):
     """Raised when attempting to modify a frozen registry."""
 
-    def __init__(self, message: str = "Cannot modify frozen registry"):
+    def __init__(self, message: str = "Cannot modify frozen registry") -> None:
         """Initialize with message.
 
         Args:

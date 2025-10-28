@@ -16,7 +16,7 @@ class DragOptions(ActionConfig):
     Find source → Find target → MouseMove to source → MouseDown → MouseMove to target → MouseUp
     """
 
-    def __init__(self, builder: "DragOptionsBuilder"):
+    def __init__(self, builder: "DragOptionsBuilder") -> None:
         """Initialize DragOptions from builder.
 
         Args:
@@ -94,7 +94,7 @@ class DragOptionsBuilder(ActionConfigBuilder):
     Port of DragOptions from Qontinui framework.Builder.
     """
 
-    def __init__(self, original: DragOptions | None = None):
+    def __init__(self, original: DragOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

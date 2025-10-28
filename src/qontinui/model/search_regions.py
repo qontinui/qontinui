@@ -36,7 +36,7 @@ class SearchRegions:
     This region is then used in future FIND operations. Initialized to None to
     distinguish between 'not set' and 'explicitly set to a region'."""
 
-    def __init__(self, other: Optional["SearchRegions | list[Region]"] = None):
+    def __init__(self, other: Optional["SearchRegions | list[Region]"] = None) -> None:
         """Initialize search regions.
 
         Args:

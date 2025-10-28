@@ -33,7 +33,7 @@ class MockFind:
     - If no history exists, falls back to generating simple mock matches
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize MockFind."""
         self.state_management = MockStateManagement()
 

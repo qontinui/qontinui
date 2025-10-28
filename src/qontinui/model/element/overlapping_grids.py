@@ -56,7 +56,7 @@ class OverlappingGrids:
         all_cells = overlap.get_all_regions()
     """
 
-    def __init__(self, grid: Grid):
+    def __init__(self, grid: Grid) -> None:
         """Initialize with a base grid.
 
         Args:

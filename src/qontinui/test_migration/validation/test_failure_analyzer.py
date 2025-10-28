@@ -40,7 +40,7 @@ class TestFailureAnalyzer(FailureAnalyzer):
     migration errors and code errors.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the failure analyzer with predefined patterns."""
         self._migration_patterns = self._initialize_migration_patterns()
         self._code_patterns = self._initialize_code_patterns()

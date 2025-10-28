@@ -189,18 +189,18 @@ def test_initialize_hal_fail_fast():
     assert False, "Should have raised error during initialization"
 ```
 
-### Example 3: ActionExecutor Integration Test
+### Example 3: DelegatingActionExecutor Integration Test
 
 ```python
 from qontinui.hal import initialize_hal
-from qontinui.json_executor import ActionExecutor
+from qontinui.action_executors import DelegatingActionExecutor
 from qontinui.config import Action, QontinuiConfig
 
 
 def test_executor_with_hal_container(sample_config):
-    """Test ActionExecutor with HAL container."""
+    """Test DelegatingActionExecutor with HAL container."""
     hal = initialize_hal()
-    executor = ActionExecutor(sample_config, hal=hal)
+    executor = DelegatingActionExecutor(sample_config, hal=hal)
 
     assert executor.hal is hal
     assert executor.hal.input_controller is not None
@@ -220,8 +220,8 @@ def test_executor_multiple_instances_same_hal(sample_config):
     """Test multiple executors sharing same HAL."""
     hal = initialize_hal()
 
-    executor1 = ActionExecutor(sample_config, hal=hal)
-    executor2 = ActionExecutor(sample_config, hal=hal)
+    executor1 = DelegatingActionExecutor(sample_config, hal=hal)
+    executor2 = DelegatingActionExecutor(sample_config, hal=hal)
 
     assert executor1.hal is executor2.hal
     assert executor1.hal.input_controller is executor2.hal.input_controller

@@ -73,7 +73,7 @@ class StateDetector:
         action: Action | None = None,
         max_concurrent: int = 15,
         screenshot_cache_ttl: float = 0.1,
-    ):
+    ) -> None:
         """Initialize StateDetector.
 
         Args:

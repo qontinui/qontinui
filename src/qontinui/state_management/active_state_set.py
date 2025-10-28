@@ -40,7 +40,7 @@ class ActiveStateSet:
     sophisticated state tracking mechanisms.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize empty active state set."""
         self.active_states: set[StateEnum] = set()
 

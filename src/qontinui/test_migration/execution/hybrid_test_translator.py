@@ -36,7 +36,7 @@ class TranslationResult:
         confidence: float,
         errors: list[str] | None = None,
         execution_time: float = 0.0,
-    ):
+    ) -> None:
         self.content = content
         self.method = method  # 'utility', 'llm', or 'hybrid'
         self.confidence = confidence
@@ -63,7 +63,7 @@ class HybridTestTranslator(TestTranslator):
         utility_confidence_threshold: float = 0.8,
         llm_confidence_threshold: float = 0.7,
         enable_llm_validation: bool = True,
-    ):
+    ) -> None:
         """
         Initialize the hybrid translator.
 

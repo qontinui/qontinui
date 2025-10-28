@@ -58,7 +58,7 @@ class BehaviorComparatorImpl(BehaviorComparator):
     Provides side-by-side execution and output comparison capabilities.
     """
 
-    def __init__(self, isolation_config: TestIsolationConfig | None = None):
+    def __init__(self, isolation_config: TestIsolationConfig | None = None) -> None:
         """
         Initialize the behavior comparator.
 
@@ -108,8 +108,11 @@ class BehaviorComparatorImpl(BehaviorComparator):
 
             return comparison.tests_match
 
-        except Exception:
-            # If execution fails, we can't determine equivalence
+        except (OSError, RuntimeError, ValueError, TypeError):
+            # OSError: File system errors, process execution failures
+            # RuntimeError: Test execution errors
+            # ValueError: Invalid test configuration or arguments
+            # TypeError: Invalid test file types or parameters
             return False
 
     def compare_behavior_detailed(self, java_test: TestFile, python_test: Path) -> ComparisonResult:
@@ -131,7 +134,11 @@ class BehaviorComparatorImpl(BehaviorComparator):
             # Perform detailed comparison
             return self._perform_detailed_comparison(java_result, python_result)
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError, TypeError) as e:
+            # OSError: File system errors, process execution failures
+            # RuntimeError: Test execution errors
+            # ValueError: Invalid test configuration or arguments
+            # TypeError: Invalid test file types or parameters
             return ComparisonResult(
                 tests_match=False,
                 confidence=0.0,
@@ -174,7 +181,11 @@ class BehaviorComparatorImpl(BehaviorComparator):
                     }
                 )
 
-            except Exception as e:
+            except (OSError, RuntimeError, ValueError, TypeError) as e:
+                # OSError: File system errors, process execution failures
+                # RuntimeError: Component execution errors
+                # ValueError: Invalid input or configuration
+                # TypeError: Type mismatch in component execution
                 results.append({"input": test_input, "error": str(e), "match": False})
 
         # Analyze overall component behavior
@@ -251,7 +262,10 @@ class BehaviorComparatorImpl(BehaviorComparator):
                 error_message="Test execution timed out",
                 output="",
             )
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
+            # OSError: File system errors, process execution failures
+            # RuntimeError: Pytest execution errors
+            # ValueError: Invalid test configuration or arguments
             return TestResult(
                 test_name=python_test.stem,
                 test_file=str(python_test),
@@ -287,7 +301,10 @@ class BehaviorComparatorImpl(BehaviorComparator):
             finally:
                 Path(temp_file).unlink(missing_ok=True)
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
+            # OSError: File system errors, process execution failures
+            # RuntimeError: Component execution errors
+            # ValueError: Invalid component configuration
             return f"Error executing Python component: {str(e)}"
 
     def _perform_detailed_comparison(

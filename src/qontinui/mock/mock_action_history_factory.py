@@ -222,7 +222,7 @@ class MockActionHistoryFactory:
 class MockActionHistoryBuilder:
     """Builder for creating customized ActionHistory instances."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder with defaults."""
         self._success_rate = 0.90
         self._match_region = Region(100, 100, 100, 50)

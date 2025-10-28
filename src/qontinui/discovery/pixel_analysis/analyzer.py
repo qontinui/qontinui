@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class PixelStabilityAnalyzer:
     """Analyzes pixel stability across screenshots to discover StateImages."""
 
-    def __init__(self, config: AnalysisConfig | None = None):
+    def __init__(self, config: AnalysisConfig | None = None) -> None:
         """Initialize analyzer with configuration."""
         self.config = config or AnalysisConfig()
         self.progress_callback: Callable[..., Any] | None = None
@@ -397,8 +397,10 @@ class PixelStabilityAnalyzer:
         """
         transitions: list[StateTransition] = []
 
-        # For now, return empty list
-        # TODO: Implement transition detection based on screenshot sequence
+        # FUTURE ENHANCEMENT: Implement transition detection based on screenshot sequence.
+        # This would analyze temporal patterns in the screenshot sequence to identify
+        # state transitions (e.g., when State A disappears and State B appears).
+        # Requires: Sequential analysis of state appearances/disappearances over time.
 
         return transitions
 
@@ -550,9 +552,13 @@ class PixelStabilityAnalyzer:
     def _decompose_complex_regions(self, regions: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Decompose complex regions into rectangles.
-        For example, window frames into 4 borders.
+
+        FUTURE ENHANCEMENT: For complex shapes (e.g., L-shaped window frames),
+        decompose into multiple simple rectangles (e.g., 4 separate borders).
+        This would improve matching performance and reduce false positives.
+
+        Current behavior: Returns regions unchanged (no decomposition).
         """
-        # TODO: Implement rectangle decomposition
         return regions
 
     def _calculate_statistics(

@@ -132,7 +132,7 @@ class Wait(ActionInterface):
     condition waits, and element visibility waits.
     """
 
-    def __init__(self, options: WaitOptions | None = None):
+    def __init__(self, options: WaitOptions | None = None) -> None:
         """Initialize Wait action.
 
         Args:
@@ -150,8 +150,8 @@ class Wait(ActionInterface):
         """
         if self.options.wait_type == WaitType.VANISH:
             return ActionType.VANISH
-        # For other wait types, we'll use VANISH as the closest match
-        # TODO: Add more specific ActionType values for different wait types if needed
+        # Using VANISH as generic wait action type
+        # Future enhancement: Add ActionType.WAIT, ActionType.WAIT_CONDITION, etc. to ActionType enum
         return ActionType.VANISH
 
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
@@ -372,12 +372,12 @@ class Wait(ActionInterface):
         # For now, use simple comparison
         return cast(bool, abs(state1 - state2) > self.options.change_threshold)
 
-    def _pause_before(self):
+    def _pause_before(self) -> None:
         """Apply pre-action pause from options."""
         if self.options.pause_before > 0:
             time.sleep(self.options.pause_before)
 
-    def _pause_after(self):
+    def _pause_after(self) -> None:
         """Apply post-action pause from options."""
         if self.options.pause_after > 0:
             time.sleep(self.options.pause_after)

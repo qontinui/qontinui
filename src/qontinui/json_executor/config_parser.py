@@ -2,15 +2,11 @@
 
 import base64
 import hashlib
-import io
 import json
-import sys
-import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, Literal
 
-from PIL import Image
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Discriminator, Field, model_validator
 
 from ..config.schema import Workflow
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
@@ -196,8 +192,7 @@ class Pattern(BaseModel):
     Attributes:
         id: Unique identifier for this pattern.
         name: Human-readable name (e.g., "button_normal", "button_hover").
-        image: Base64-encoded image data with data URI format
-            (e.g., "data:image/png;base64,iVBORw0KG...").
+        image_id: Reference to an ImageAsset ID in the config.images array.
         mask: Optional base64-encoded mask image. White pixels (255) indicate areas
             to match, black pixels (0) are ignored. Useful for matching partial elements
             or ignoring dynamic text within buttons.
@@ -210,14 +205,14 @@ class Pattern(BaseModel):
         >>> button_pattern = Pattern(
         ...     id="login_btn_pattern",
         ...     name="Login Button",
-        ...     image="data:image/png;base64,iVBORw0KGgo..."
+        ...     image_id="img_login_button"
         ... )
         >>>
         >>> # Pattern with mask to ignore button text
         >>> dynamic_button = Pattern(
         ...     id="btn_with_text",
         ...     name="Button (ignore text)",
-        ...     image="data:image/png;base64,iVBORw0KGgo...",
+        ...     image_id="img_dynamic_button",
         ...     mask="data:image/png;base64,iVBORw0KGgo..."  # Mask out text area
         ... )
 
@@ -235,8 +230,7 @@ class Pattern(BaseModel):
 
     id: str = ""
     name: str = ""
-    image: str = ""  # LEGACY: base64 encoded image data (data:image/png;base64,...)
-    image_id: str | None = Field(default=None, alias="imageId")  # NEW: reference to image in images array
+    image_id: str | None = Field(default=None, alias="imageId")  # Reference to image in images array
     mask: str | None = None  # optional mask data
     search_regions: list[SearchRegion] = Field(default_factory=list, alias="searchRegions")
     fixed: bool = False
@@ -505,12 +499,13 @@ class Transition(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def handle_processes_field(cls, data: Any) -> Any:
-        """Handle v1.0.0 (processes) to v2.0.0 (workflows) compatibility."""
-        if isinstance(data, dict):
-            if "processes" in data and "workflows" not in data:
-                data["workflows"] = data["processes"]
-        return data
+    def validate_workflows_field(cls, data: Any) -> Any:
+        """Validate that workflows field is used (not legacy processes field)."""
+        from .parsers import SchemaValidator
+
+        validator = SchemaValidator()
+        return validator.validate_workflows_field(data)
+
 
 
 class OutgoingTransition(Transition):
@@ -544,7 +539,7 @@ class OutgoingTransition(Transition):
         >>> # Simple transition from login to dashboard
         >>> login_transition = OutgoingTransition(
         ...     id="login_submit",
-        ...     type="automatic",
+        ...     type="OutgoingTransition",
         ...     from_state="login_screen",
         ...     to_state="dashboard",
         ...     workflows=["login_workflow"]
@@ -553,7 +548,7 @@ class OutgoingTransition(Transition):
         >>> # Complex transition with parallel states
         >>> open_dialog = OutgoingTransition(
         ...     id="open_settings_dialog",
-        ...     type="automatic",
+        ...     type="OutgoingTransition",
         ...     from_state="dashboard",
         ...     to_state="settings_dialog",
         ...     stays_visible=True,  # Keep dashboard visible
@@ -571,6 +566,7 @@ class OutgoingTransition(Transition):
         :class:`State`: State nodes in the state machine
     """
 
+    type: Literal["OutgoingTransition"] = "OutgoingTransition"
     from_state: str = Field(default="", alias="fromState")
     to_state: str = Field(default="", alias="toState")
     stays_visible: bool = Field(default=False, alias="staysVisible")
@@ -599,7 +595,7 @@ class IncomingTransition(Transition):
         >>> # Wait for dashboard to fully load
         >>> dashboard_verification = IncomingTransition(
         ...     id="dashboard_load_wait",
-        ...     type="automatic",
+        ...     type="IncomingTransition",
         ...     to_state="dashboard",
         ...     workflows=["wait_for_dashboard_load"]
         ... )
@@ -607,7 +603,7 @@ class IncomingTransition(Transition):
         >>> # Verify error dialog appeared
         >>> error_check = IncomingTransition(
         ...     id="verify_error_dialog",
-        ...     type="automatic",
+        ...     type="IncomingTransition",
         ...     to_state="error_dialog",
         ...     workflows=["check_error_message"]
         ... )
@@ -623,6 +619,7 @@ class IncomingTransition(Transition):
         :class:`State`: State nodes in the state machine
     """
 
+    type: Literal["IncomingTransition"] = "IncomingTransition"
     to_state: str = Field(default="", alias="toState")
 
 
@@ -735,27 +732,26 @@ class RecognitionSettings(BaseModel):
 class QontinuiConfig(BaseModel):
     """Complete Qontinui configuration.
 
-    Supports both v1.0.0 (processes) and v2.0.0 (workflows) config formats.
-    Internally uses 'workflows' terminology for consistency with v2.0.0.
+    Requires v2.0.0 configuration format with workflows (not processes).
     """
 
     version: str = "1.0.0"
     metadata: dict[str, Any] = Field(default_factory=dict)
     images: list[ImageAsset] = Field(default_factory=list)
-    workflows: list[Workflow] = Field(default_factory=list)  # v2.0.0: workflows, v1.0.0: processes
+    workflows: list[Workflow] = Field(default_factory=list)
     states: list[State] = Field(default_factory=list)
     categories: list[str] = Field(default_factory=list)
     execution_settings: ExecutionSettings = Field(default_factory=ExecutionSettings)
     recognition_settings: RecognitionSettings = Field(default_factory=RecognitionSettings)
     schedules: list[Any] = Field(default_factory=list)  # List of ScheduleConfig objects
-    transitions: list[Transition] = Field(default_factory=list)
+    transitions: list[Annotated["OutgoingTransition | IncomingTransition", Field(discriminator="type")]] = Field(
+        default_factory=list
+    )
     settings: dict[str, Any] = Field(default_factory=dict)
 
     # Runtime data
     image_directory: Path | None = None
-    workflow_map: dict[str, Workflow] = Field(
-        default_factory=dict
-    )  # v2.0.0: workflow_map, v1.0.0: process_map
+    workflow_map: dict[str, Workflow] = Field(default_factory=dict)
     state_map: dict[str, State] = Field(default_factory=dict)
     image_map: dict[str, ImageAsset] = Field(default_factory=dict)
     schedule_map: dict[str, Any] = Field(default_factory=dict)  # Schedule ID -> ScheduleConfig
@@ -764,197 +760,100 @@ class QontinuiConfig(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def handle_legacy_fields(cls, data: Any) -> Any:
-        """Handle v1.0.0 (processes) to v2.0.0 (workflows) field name compatibility."""
+    def validate_config_version(cls, data: Any) -> Any:
+        """Validate configuration format and reject legacy v1.0.0 format."""
+        from .parsers import SchemaValidator
+
         if isinstance(data, dict):
-            # Handle workflows/processes compatibility
-            if "processes" in data and "workflows" not in data:
-                data["workflows"] = data["processes"]
-
-            # Convert old Process format to new Workflow format
-            if "workflows" in data:
-                workflows = data["workflows"]
-                converted_workflows = []
-                for workflow in workflows:
-                    if isinstance(workflow, dict):
-                        # Check if it's old format (missing required Workflow fields)
-                        if "connections" not in workflow:
-                            # Old Process format - convert to new Workflow format
-
-                            # Convert old Action format to new Action format
-                            converted_actions = []
-                            for action in workflow.get("actions", []):
-                                if isinstance(action, dict):
-                                    # Check if old format (has timeout, retry_count at top level)
-                                    if (
-                                        "timeout" in action
-                                        or "retryCount" in action
-                                        or "continueOnError" in action
-                                    ):
-                                        # Move execution fields into execution object
-                                        new_action = {
-                                            "id": action.get("id", ""),
-                                            "type": action.get("type", ""),
-                                            "config": action.get("config", {}),
-                                        }
-                                        # Add execution settings if any exist
-                                        execution = {}
-                                        if "timeout" in action:
-                                            execution["timeout"] = action["timeout"]
-                                        if "retryCount" in action:
-                                            execution["retryCount"] = action["retryCount"]
-                                        if "continueOnError" in action:
-                                            execution["continueOnError"] = action["continueOnError"]
-                                        if execution:
-                                            new_action["execution"] = execution
-                                        converted_actions.append(new_action)
-                                    else:
-                                        # Already new format
-                                        converted_actions.append(action)
-                                else:
-                                    converted_actions.append(action)
-
-                            converted = {
-                                "id": workflow.get("id", ""),
-                                "name": workflow.get("name", ""),
-                                "version": workflow.get("version", "1.0.0"),
-                                "format": "graph",
-                                "actions": converted_actions,
-                                "connections": {},  # Empty connections for sequential workflow
-                            }
-                            # Add optional fields if present
-                            if "description" in workflow:
-                                converted["metadata"] = {"description": workflow["description"]}
-                            converted_workflows.append(converted)
-                        else:
-                            # New Workflow format - use as is
-                            converted_workflows.append(workflow)
-                    else:
-                        converted_workflows.append(workflow)
-                data["workflows"] = converted_workflows
-
-            # Handle settings extraction
-            if "settings" in data:
-                settings = data["settings"]
-                if "execution" in settings:
-                    data["execution_settings"] = settings["execution"]
-                if "recognition" in settings:
-                    data["recognition_settings"] = settings["recognition"]
+            validator = SchemaValidator()
+            validator.validate(data)
 
         return data
 
     def model_post_init(self, __context: Any) -> None:
         """Build lookup maps for efficient access."""
-        self.workflow_map = {w.id: w for w in self.workflows}
+        from .image_extractor import ImageExtractor
+        from .parsers import WorkflowParser
+
+        parser = WorkflowParser()
+        self.workflow_map = parser.build_workflow_map(self.workflows)
         self.state_map = {s.id: s for s in self.states}
-        self.image_map = {i.id: i for i in self.images}
         self.schedule_map = {s.id: s for s in self.schedules}
 
-        # Extract image data from StateImage patterns and create ImageAsset objects
-        # This allows actions to reference StateImages by their ID directly
-        stateimage_count = 0
-        for state in self.states:
-            for state_image in state.identifying_images:
-                if state_image.patterns:
-                    # Use the first pattern's image data
-                    # Future enhancement: handle multiple patterns per StateImage
-                    pattern = state_image.patterns[0]
-
-                    # NEW FORMAT: Pattern has imageId reference
-                    if pattern.image_id:
-                        # Pattern references an existing image in the images array
-                        # Just create a reference in image_map from StateImage.id -> existing ImageAsset
-                        if pattern.image_id in self.image_map:
-                            # Add StateImage ID as an alias to the existing image
-                            self.image_map[state_image.id] = self.image_map[pattern.image_id]
-                            stateimage_count += 1
-                            print(
-                                f"[DEBUG] StateImage {state_image.id} -> references image {pattern.image_id}",
-                                file=sys.stderr
-                            )
-                        else:
-                            print(
-                                f"[WARNING] StateImage {state_image.id} references missing image {pattern.image_id}",
-                                file=sys.stderr
-                            )
-                    # LEGACY FORMAT: Pattern has embedded base64 data
-                    elif pattern.image and pattern.image.startswith("data:"):
-                        try:
-                            # Parse data URL: data:image/png;base64,iVBORw0...
-                            header, base64_data = pattern.image.split(",", 1)
-
-                            # Extract format from header
-                            format_part = header.split(":")[1].split(";")[0]  # "image/png"
-                            image_format = format_part.split("/")[1]  # "png"
-
-                            # Decode to get image dimensions
-                            image_bytes = base64.b64decode(base64_data)
-                            pil_image = Image.open(io.BytesIO(image_bytes))
-                            width, height = pil_image.size
-
-                            # Create hash for integrity
-                            image_hash = hashlib.sha256(base64_data.encode()).hexdigest()
-
-                            # Create ImageAsset from StateImage pattern
-                            image_asset = ImageAsset(
-                                id=state_image.id,
-                                name=state_image.name,
-                                data=base64_data,
-                                format=image_format,
-                                width=width,
-                                height=height,
-                                hash=image_hash,
-                            )
-
-                            self.image_map[state_image.id] = image_asset
-                            stateimage_count += 1
-                            print(
-                                f"[DEBUG] Created ImageAsset from StateImage {state_image.id} ({width}x{height} {image_format})",
-                                file=sys.stderr
-                            )
-                        except Exception as e:
-                            print(
-                                f"[ERROR] Failed to create ImageAsset from StateImage {state_image.id}: {e}",
-                                file=sys.stderr
-                            )
-                    else:
-                        print(f"[WARNING] StateImage {state_image.id} has no image reference (no imageId or embedded data)", file=sys.stderr)
-                else:
-                    print(f"[WARNING] StateImage {state_image.id} has no patterns", file=sys.stderr)
-
-        print(
-            f"[DEBUG] image_map now contains {len(self.image_map)} entries ({stateimage_count} StateImages added)",
-            file=sys.stderr
-        )
-        print(f"[DEBUG] image_map keys: {list(self.image_map.keys())}", file=sys.stderr)
+        # Extract images using ImageExtractor
+        extractor = ImageExtractor()
+        self.image_map = extractor.extract_images(self)
 
 
 class ConfigParser:
     """Parser for Qontinui JSON configuration files.
 
+    ConfigParser is a facade that delegates to specialized parser components:
+    - SchemaValidator: Validates configuration format
+    - TransitionParser: Parses and assigns transitions to states
+    - ImageAssetManager: Saves images to temporary files
+
     Uses Pydantic validation for clean, declarative parsing.
+    Requires v2.0.0 configuration format.
+
+    Example:
+        >>> parser = ConfigParser()
+        >>> config = parser.parse_file("automation.json")
+        >>> # ... use config ...
+        >>> parser.cleanup()  # Clean up temp files
     """
 
-    def __init__(self):
-        self.temp_dir = None
+    def __init__(self) -> None:
+        """Initialize parser with specialized components."""
+        from .parsers import ImageAssetManager, SchemaValidator, TransitionParser
+
+        self.validator = SchemaValidator()
+        self.transition_parser = TransitionParser()
+        self.image_manager = ImageAssetManager()
 
     def parse_file(self, file_path: str) -> QontinuiConfig:
-        """Parse a JSON configuration file."""
+        """Parse a JSON configuration file.
+
+        Args:
+            file_path: Path to JSON configuration file.
+
+        Returns:
+            Parsed and validated QontinuiConfig object.
+        """
         with open(file_path) as f:
             data = json.load(f)
         return self.parse_config(data)
 
     def parse_json(self, json_str: str) -> QontinuiConfig:
-        """Parse JSON configuration from string."""
+        """Parse JSON configuration from string.
+
+        Args:
+            json_str: JSON configuration string.
+
+        Returns:
+            Parsed and validated QontinuiConfig object.
+        """
         data = json.loads(json_str)
         return self.parse_config(data)
 
     def parse_config(self, data: dict[str, Any]) -> QontinuiConfig:
         """Parse configuration dictionary into QontinuiConfig object.
 
-        Supports both v1.0.0 (processes) and v2.0.0 (workflows) formats.
+        Requires v2.0.0 configuration format with workflows.
         Uses Pydantic's model_validate() for clean, declarative parsing.
+
+        Args:
+            data: Configuration dictionary from JSON.
+
+        Returns:
+            Parsed and validated QontinuiConfig object.
+
+        Raises:
+            ValueError: If configuration format is invalid or uses legacy v1.0.0.
         """
+        # Validate configuration format
+        self.validator.validate(data)
+
         # Parse transitions separately to assign them to states
         transitions_data = data.get("transitions", [])
 
@@ -962,89 +861,19 @@ class ConfigParser:
         config = QontinuiConfig.model_validate(data)
 
         # Assign transitions to their respective states
-        for trans_data in transitions_data:
-            transition = self._parse_transition(trans_data)
+        self.transition_parser.parse_and_assign_transitions(config, transitions_data)
 
-            if isinstance(transition, OutgoingTransition):
-                if transition.from_state in config.state_map:
-                    config.state_map[transition.from_state].outgoing_transitions.append(transition)
-                else:
-                    print(
-                        f"[WARNING] Transition {transition.id} references unknown fromState: {transition.from_state}",
-                        file=sys.stderr
-                    )
+        # Save images to temporary files
+        self.image_manager.save_images(config)
 
-            if isinstance(transition, IncomingTransition):
-                if transition.to_state in config.state_map:
-                    config.state_map[transition.to_state].incoming_transitions.append(transition)
-                else:
-                    print(
-                        f"[WARNING] Transition {transition.id} references unknown toState: {transition.to_state}",
-                        file=sys.stderr
-                    )
-
-        self._save_images(config)
         return config
 
-    def _parse_transition(self, data: dict[str, Any]) -> Transition:
-        """Parse transition from dictionary using Pydantic validation."""
-        # Infer transition type based on presence of fromState
-        # OutgoingTransition has fromState, IncomingTransition does not
-        transition_type = data.get("type")
-        if transition_type is None:
-            transition_type = "OutgoingTransition" if "fromState" in data else "IncomingTransition"
-
-        # Use Pydantic validation
-        if transition_type == "OutgoingTransition":
-            return OutgoingTransition.model_validate(data)
-        else:
-            return IncomingTransition.model_validate(data)
-
-    def _parse_schedule(self, data: dict[str, Any]) -> Any:
-        """Parse schedule configuration from dictionary.
-
-        Args:
-            data: Schedule data dictionary from JSON
-
-        Returns:
-            ScheduleConfig object
-        """
-        from ..scheduling import ScheduleConfig
-
-        return ScheduleConfig.from_dict(data)
-
-    def _save_images(self, config: QontinuiConfig):
-        """Save base64 images to temporary files."""
-        # Create temporary directory for images
-        self.temp_dir = Path(tempfile.mkdtemp(prefix="qontinui_images_"))
-        config.image_directory = self.temp_dir
-
-        # Save all images from image_map (includes both regular images and StateImage-derived images)
-        saved_count = 0
-        for _image_id, image in config.image_map.items():
-            try:
-                if image.file_path is None:  # Only save if not already saved
-                    image.save_to_file(self.temp_dir)
-                    print(f"Saved image: {image.name} to {image.file_path}", file=sys.stderr)
-                    saved_count += 1
-            except Exception as e:
-                print(f"Failed to save image {image.name}: {e}", file=sys.stderr)
-
-        print(f"[DEBUG] Saved {saved_count} images to {self.temp_dir}", file=sys.stderr)
-
     def cleanup(self):
-        """Clean up temporary files."""
-        if self.temp_dir and self.temp_dir.exists():
-            import shutil
+        """Clean up temporary files.
 
-            shutil.rmtree(self.temp_dir)
-            print(f"Cleaned up temporary directory: {self.temp_dir}", file=sys.stderr)
+        Removes temporary directory and all saved images.
+        Should be called when automation execution completes.
+        """
+        self.image_manager.cleanup()
 
 
-# ============================================================================
-# Backward Compatibility Aliases (v1.0.0)
-# ============================================================================
-
-# Process is the v1.0.0 name for Workflow
-# Maintain backward compatibility for code using the old naming
-Process = Workflow

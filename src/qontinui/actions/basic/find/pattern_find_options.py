@@ -55,7 +55,7 @@ class PatternFindOptions(BaseFindOptions):
     relevant options are available for pattern matching, enhancing type safety and ease of use.
     """
 
-    def __init__(self, builder: "PatternFindOptionsBuilder"):
+    def __init__(self, builder: "PatternFindOptionsBuilder") -> None:
         """Initialize PatternFindOptions from builder.
 
         Args:
@@ -181,7 +181,7 @@ class PatternFindOptionsBuilder(BaseFindOptionsBuilder["PatternFindOptionsBuilde
     do_on_each: DoOnEach
     match_fusion_options: MatchFusionOptions
 
-    def __init__(self, original: PatternFindOptions | None = None):
+    def __init__(self, original: PatternFindOptions | None = None) -> None:
         """Initialize builder.
 
         Args:

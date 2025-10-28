@@ -32,7 +32,7 @@ class ActionChainExecutor:
         self,
         action_execution: Optional["ActionExecution"] = None,
         action_service: ActionService | None = None,
-    ):
+    ) -> None:
         """Initialize ActionChainExecutor.
 
         Args:

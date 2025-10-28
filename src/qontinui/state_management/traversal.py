@@ -39,7 +39,7 @@ class TraversalResult:
 class StateTraversal:
     """Handles state graph traversal and navigation."""
 
-    def __init__(self, state_graph: StateGraph):
+    def __init__(self, state_graph: StateGraph) -> None:
         """Initialize StateTraversal.
 
         Args:

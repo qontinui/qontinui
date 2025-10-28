@@ -4,83 +4,153 @@ Combines Find and Click operations in a single action.
 """
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from ...action_interface import ActionInterface
-from ...action_result import ActionResult
-from ...action_type import ActionType
-from ...object_collection import ObjectCollection
-from ..basic.action_config import ActionConfig
+from ..action_config import ActionConfig, ActionConfigBuilder
+from ..action_interface import ActionInterface
+from ..action_result import ActionResult
+from ..action_type import ActionType
 from ..basic.click.click import Click
 from ..basic.click.click_options import ClickOptions, ClickOptionsBuilder
 from ..basic.find.find import Find
 from ..basic.find.options.pattern_find_options import PatternFindOptions
+from ..object_collection import ObjectCollection
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
 class FindAndClickOptions(ActionConfig):
     """Configuration for FindAndClick composite action.
 
     Port of FindAndClick from Qontinui framework class.
 
     Combines Find and Click configurations for convenience.
+    This class is immutable and must be constructed using FindAndClickOptionsBuilder.
+
+    Example usage:
+        options = FindAndClickOptionsBuilder()
+            .set_find_options(PatternFindOptions())
+            .set_similarity(0.8)
+            .set_number_of_clicks(2)
+            .build()
     """
 
-    find_options: PatternFindOptions = field(default_factory=lambda: PatternFindOptions())
-    click_options: ClickOptions = field(default_factory=lambda: ClickOptionsBuilder().build())
+    def __init__(self, builder: "FindAndClickOptionsBuilder") -> None:
+        """Initialize FindAndClickOptions from builder.
 
-    def with_find_options(self, options: PatternFindOptions) -> "FindAndClickOptions":
+        Args:
+            builder: The builder instance containing configuration values
+        """
+        super().__init__(builder)
+        self._find_options: PatternFindOptions = builder.find_options
+        self._click_options: ClickOptions = builder.click_options
+
+    def get_find_options(self) -> PatternFindOptions:
+        """Get find options.
+
+        Returns:
+            PatternFindOptions instance
+        """
+        return self._find_options
+
+    def get_click_options(self) -> ClickOptions:
+        """Get click options.
+
+        Returns:
+            ClickOptions instance
+        """
+        return self._click_options
+
+
+class FindAndClickOptionsBuilder(ActionConfigBuilder):
+    """Builder for constructing FindAndClickOptions with a fluent API.
+
+    Port of FindAndClickOptions from Qontinui framework.Builder.
+    """
+
+    def __init__(self, original: FindAndClickOptions | None = None) -> None:
+        """Initialize builder.
+
+        Args:
+            original: Optional FindAndClickOptions instance to copy values from
+        """
+        super().__init__(original)
+
+        if original:
+            self.find_options = original._find_options
+            self.click_options = original._click_options
+        else:
+            self.find_options = PatternFindOptions()
+            self.click_options = ClickOptionsBuilder().build()
+
+    def set_find_options(self, options: PatternFindOptions) -> "FindAndClickOptionsBuilder":
         """Set find options.
 
         Args:
             options: Find configuration
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
         self.find_options = options
         return self
 
-    def with_click_options(self, options: ClickOptions) -> "FindAndClickOptions":
+    def set_click_options(self, options: ClickOptions) -> "FindAndClickOptionsBuilder":
         """Set click options.
 
         Args:
             options: Click configuration
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
         self.click_options = options
         return self
 
-    def with_similarity(self, similarity: float) -> "FindAndClickOptions":
-        """Set similarity threshold.
+    def set_similarity(self, similarity: float) -> "FindAndClickOptionsBuilder":
+        """Set similarity threshold for find operation.
 
-        Convenience method that modifies find options.
+        Convenience method that creates a new find options with updated similarity.
 
         Args:
             similarity: Minimum similarity score (0.0 to 1.0)
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
+        # Create new PatternFindOptions with updated similarity instead of mutating
         self.find_options.similarity = similarity
         return self
 
-    def with_number_of_clicks(self, count: int) -> "FindAndClickOptions":
+    def set_number_of_clicks(self, count: int) -> "FindAndClickOptionsBuilder":
         """Set number of clicks.
 
-        Convenience method that modifies click options.
+        Convenience method that creates a new click options with updated click count.
 
         Args:
             count: Number of clicks
 
         Returns:
-            Self for fluent interface
+            This builder instance for chaining
         """
-        self.click_options.number_of_clicks = count
+        # Create new ClickOptions with updated click count instead of mutating
+        self.click_options = ClickOptionsBuilder(self.click_options).set_number_of_clicks(count).build()
+        return self
+
+    def build(self) -> FindAndClickOptions:
+        """Build the immutable FindAndClickOptions object.
+
+        Returns:
+            A new instance of FindAndClickOptions
+        """
+        return FindAndClickOptions(self)
+
+    def _self(self) -> "FindAndClickOptionsBuilder":
+        """Return self for fluent interface.
+
+        Returns:
+            This builder instance
+        """
         return self
 
 
@@ -119,8 +189,8 @@ class FindAndClick(ActionInterface):
         # Get configuration
         if isinstance(matches.action_config, FindAndClickOptions):
             options = matches.action_config
-            find_options = options.find_options
-            click_options = options.click_options
+            find_options = options.get_find_options()
+            click_options = options.get_click_options()
         else:
             # Use defaults if not FindAndClickOptions
             find_options = PatternFindOptions()

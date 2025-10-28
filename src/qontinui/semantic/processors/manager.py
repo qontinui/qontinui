@@ -30,7 +30,7 @@ class ProcessorManager:
     and optimized scene analysis.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the processor manager."""
         self.processors: dict[str, SemanticProcessor] = {}
         self.strategy = ProcessingStrategy.BEST

@@ -56,7 +56,7 @@ class GraphTraverser:
         max_iterations: int = 10000,
         enable_parallel: bool = False,
         max_parallel_workers: int = 4,
-    ):
+    ) -> None:
         """
         Initialize the graph traverser.
 

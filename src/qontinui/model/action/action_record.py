@@ -197,7 +197,7 @@ class ActionRecord:
 class ActionRecordBuilder:
     """Builder for ActionRecord class."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder with defaults."""
         self.action_config = None
         self.match_list = []

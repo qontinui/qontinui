@@ -71,7 +71,7 @@ class UnknownState:
 
     _instance: Optional["UnknownState"] = None
 
-    def __init__(self, state_service: Optional["StateService"] = None):
+    def __init__(self, state_service: Optional["StateService"] = None) -> None:
         """Initialize UnknownState.
 
         Args:

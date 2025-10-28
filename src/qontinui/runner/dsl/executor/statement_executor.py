@@ -57,7 +57,7 @@ class StatementExecutor:
         context: The execution context managing variable scopes
     """
 
-    def __init__(self, context: ExecutionContext | None = None):
+    def __init__(self, context: ExecutionContext | None = None) -> None:
         """Initialize statement executor.
 
         Args:

@@ -34,7 +34,7 @@ class ExecutionPhase(Enum):
 class ExecutionContext:
     """Context for action execution."""
 
-    def __init__(self, action: ActionInterface, target: Any | None = None):
+    def __init__(self, action: ActionInterface, target: Any | None = None) -> None:
         """Initialize execution context.
 
         Args:
@@ -122,7 +122,7 @@ class ActionExecutor:
                     cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize executor."""
         if not hasattr(self, "_initialized"):
             self.config = ExecutorConfig()
@@ -193,7 +193,7 @@ class ActionExecutor:
         finally:
             self._current_context = None
 
-    def _initialize_execution(self, context: ExecutionContext):
+    def _initialize_execution(self, context: ExecutionContext) -> None:
         """Initialize execution phase.
 
         Args:
@@ -206,7 +206,7 @@ class ActionExecutor:
         if self.config.enable_logging:
             logger.debug(f"Initializing action execution: {context.action.__class__.__name__}")
 
-    def _pre_execution(self, context: ExecutionContext):
+    def _pre_execution(self, context: ExecutionContext) -> None:
         """Pre-execution phase.
 
         Args:
@@ -277,7 +277,7 @@ class ActionExecutor:
 
         return False
 
-    def _post_execution(self, context: ExecutionContext):
+    def _post_execution(self, context: ExecutionContext) -> None:
         """Post-execution phase.
 
         Args:
@@ -299,7 +299,7 @@ class ActionExecutor:
             except Exception as e:
                 logger.warning(f"Post-execution hook failed: {e}")
 
-    def _complete_execution(self, context: ExecutionContext):
+    def _complete_execution(self, context: ExecutionContext) -> None:
         """Complete execution phase.
 
         Args:
@@ -323,7 +323,7 @@ class ActionExecutor:
             status = "successful" if context.result else "failed"
             logger.info(f"Action {status} in {context.duration:.3f}s")
 
-    def _handle_failure(self, context: ExecutionContext):
+    def _handle_failure(self, context: ExecutionContext) -> None:
         """Handle execution failure.
 
         Args:
@@ -337,7 +337,7 @@ class ActionExecutor:
         if self.config.enable_history:
             self._record_execution(context)
 
-    def _record_execution(self, context: ExecutionContext):
+    def _record_execution(self, context: ExecutionContext) -> None:
         """Record execution in history.
 
         Args:
@@ -367,7 +367,7 @@ class ActionExecutor:
         while self._history.size() > self.config.max_history_size:
             self._history.remove_oldest()
 
-    def add_pre_execution_hook(self, hook: Callable[[ExecutionContext], None]):
+    def add_pre_execution_hook(self, hook: Callable[[ExecutionContext], None]) -> None:
         """Add pre-execution hook.
 
         Args:
@@ -375,7 +375,7 @@ class ActionExecutor:
         """
         self.config.pre_execution_hooks.append(hook)
 
-    def add_post_execution_hook(self, hook: Callable[[ExecutionContext], None]):
+    def add_post_execution_hook(self, hook: Callable[[ExecutionContext], None]) -> None:
         """Add post-execution hook.
 
         Args:
@@ -414,7 +414,7 @@ class ActionExecutor:
         """
         return self._current_context
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> None:
         """Reset execution metrics."""
         self._execution_count = 0
         self._success_count = 0
@@ -422,7 +422,7 @@ class ActionExecutor:
         self._total_duration = 0.0
         logger.info("Metrics reset")
 
-    def clear_history(self):
+    def clear_history(self) -> None:
         """Clear execution history."""
         self._history.clear()
         logger.info("History cleared")

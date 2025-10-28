@@ -45,7 +45,7 @@ class AnnotationProcessor:
         initial_states: InitialStates,
         state_builder: AnnotatedStateBuilder,
         registration_service: StateRegistrationService,
-    ):
+    ) -> None:
         """Initialize the annotation processor.
 
         Args:
@@ -232,8 +232,11 @@ class AnnotationProcessor:
             for _name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and predicate(obj):
                     classes.append(obj)
-        except Exception:
-            # Some modules don't like being inspected
+        except (AttributeError, ImportError, TypeError):
+            # Some modules don't like being inspected due to:
+            # - AttributeError: Missing attributes during inspection
+            # - ImportError: Circular imports or missing dependencies
+            # - TypeError: Invalid module structure or metaclass issues
             pass
 
         return classes

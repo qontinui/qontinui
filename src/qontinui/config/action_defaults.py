@@ -75,7 +75,7 @@ class WaitActionDefaults:
 class ActionDefaults:
     """Container for all action default configurations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.mouse = MouseActionDefaults()
         self.keyboard = KeyboardActionDefaults()
         self.find = FindActionDefaults()

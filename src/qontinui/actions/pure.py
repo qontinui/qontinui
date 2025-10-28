@@ -22,6 +22,65 @@ class ActionResult:
             self.timestamp = time.time()
 
 
+class UnifiedInputController:
+    """Unified controller wrapping both mouse and keyboard controllers.
+
+    This class combines mouse and keyboard HAL interfaces into a single
+    controller object for convenience in action classes.
+    """
+
+    def __init__(self) -> None:
+        """Initialize with separate mouse and keyboard controllers."""
+        self._mouse = HALFactory.get_mouse_controller()
+        self._keyboard = HALFactory.get_keyboard_controller()
+
+    # Mouse operations - delegate to mouse controller
+    def move_mouse(self, x: int, y: int) -> None:
+        """Move mouse to coordinates."""
+        self._mouse.move_to(x, y)
+
+    def move_mouse_smooth(self, x: int, y: int, duration: float) -> None:
+        """Move mouse smoothly to coordinates."""
+        self._mouse.move_to_smooth(x, y, duration)
+
+    def mouse_down(self, button: MouseButton | str) -> None:
+        """Press mouse button."""
+        self._mouse.press(button if isinstance(button, MouseButton) else MouseButton[button.upper()])
+
+    def mouse_up(self, button: MouseButton | str) -> None:
+        """Release mouse button."""
+        self._mouse.release(button if isinstance(button, MouseButton) else MouseButton[button.upper()])
+
+    def click_at(self, x: int, y: int, button: MouseButton | str, clicks: int = 1) -> None:
+        """Click at coordinates."""
+        self._mouse.click(x, y, button if isinstance(button, MouseButton) else MouseButton[button.upper()], clicks)
+
+    def scroll(self, clicks: int) -> None:
+        """Scroll mouse wheel."""
+        self._mouse.scroll(clicks)
+
+    def get_mouse_position(self) -> tuple[int, int]:
+        """Get current mouse position."""
+        return self._mouse.get_position()
+
+    # Keyboard operations - delegate to keyboard controller
+    def key_down(self, key: str) -> None:
+        """Press key down."""
+        self._keyboard.press(key)
+
+    def key_up(self, key: str) -> None:
+        """Release key."""
+        self._keyboard.release(key)
+
+    def key_press(self, key: str) -> None:
+        """Press and release key."""
+        self._keyboard.tap(key)
+
+    def type_text(self, text: str, interval: float = 0.0) -> None:
+        """Type text with optional interval between characters."""
+        self._keyboard.type(text, interval)
+
+
 class PureActions:
     """Pure, atomic actions that do one thing only.
 
@@ -34,9 +93,9 @@ class PureActions:
     Now uses HAL (Hardware Abstraction Layer) instead of pyautogui directly.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize pure actions with HAL controller."""
-        self.controller = HALFactory.get_input_controller()
+        self.controller = UnifiedInputController()
         self.screen_capture = HALFactory.get_screen_capture()
 
     # Mouse Actions (Atomic)

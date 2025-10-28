@@ -24,7 +24,7 @@ class Actions:
     - All higher-level code is agnostic to execution mode
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize Actions with appropriate implementations."""
         self.pure = PureActions()
         self.fluent = FluentActions()

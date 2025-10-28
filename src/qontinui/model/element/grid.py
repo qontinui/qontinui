@@ -98,7 +98,7 @@ class GridBuilder:
     Port of Grid from Qontinui framework.Builder.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize builder with default values."""
         self.region: Region | None = None
         self.cell_width: int = 0

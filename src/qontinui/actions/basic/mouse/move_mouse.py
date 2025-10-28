@@ -57,7 +57,7 @@ class MoveMouse(ActionInterface):
         find: Find | None = None,
         move_mouse_wrapper: Optional["MoveMouseWrapper"] = None,
         time: Optional["TimeProvider"] = None,
-    ):
+    ) -> None:
         """Initialize MoveMouse action.
 
         Args:

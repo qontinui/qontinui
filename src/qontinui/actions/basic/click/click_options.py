@@ -33,7 +33,7 @@ class ClickOptions(ActionConfig):
             .build()
     """
 
-    def __init__(self, builder: "ClickOptionsBuilder"):
+    def __init__(self, builder: "ClickOptionsBuilder") -> None:
         """Initialize ClickOptions from builder.
 
         Args:
@@ -84,7 +84,7 @@ class ClickOptionsBuilder(ActionConfigBuilder):
     Port of ClickOptions from Qontinui framework.Builder.
     """
 
-    def __init__(self, original: ClickOptions | None = None):
+    def __init__(self, original: ClickOptions | None = None) -> None:
         """Initialize builder.
 
         Args:
