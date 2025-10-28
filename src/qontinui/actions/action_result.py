@@ -1,327 +1,86 @@
 """Action result - ported from Qontinui framework.
 
-Comprehensive results container for action executions.
+Immutable results container for action executions.
 """
 
-from dataclasses import dataclass, field
+import threading
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..find.match import Match
     from .action_config import ActionConfig
-    from .object_collection import ObjectCollection
 
-from ..model.element.location import Location
 from ..model.element.region import Region
 
 
-@dataclass
+@dataclass(frozen=True)
 class ActionResult:
-    """Comprehensive results container for all action executions.
+    """Immutable result of an action execution.
 
-    Port of ActionResult from Qontinui framework class (simplified version).
+    This is a clean, immutable data class that represents the final result
+    of an action. Construction is handled by ActionResultBuilder.
 
-    ActionResult serves as the universal return type for all actions, encapsulating not just
-    pattern matching results but all information generated during action execution. This
-    unified approach simplifies the API and provides consistent access to action outcomes
-    regardless of the action type.
+    Thread Safety:
+        Immutable after creation - safe to share across threads without locks.
+        All collections are immutable tuples/frozensets.
+
+    Design Philosophy:
+        - No optional fields that could be None - use empty collections instead
+        - No mutation methods - use builder pattern to construct
+        - Explicit about what data exists vs doesn't exist
+        - Clear ownership - result is created once and never modified
     """
+
+    success: bool
+    """Whether the action achieved its intended goal."""
+
+    matches: tuple["Match", ...]
+    """All matches found during action execution. Empty tuple if none."""
+
+    times_acted_on: int
+    """Count of how many times this object was acted upon."""
+
+    text: str
+    """Accumulated text content from all matches. Empty string if none."""
+
+    defined_regions: tuple[Region, ...]
+    """Regions created or captured by DEFINE actions. Empty tuple if none."""
+
+    movements: tuple["Movement", ...]
+    """List of movements performed during action execution. Empty tuple if none."""
+
+    execution_history: tuple["ExecutionRecord", ...]
+    """Ordered history of action execution steps. Empty tuple if none."""
+
+    active_states: frozenset[str]
+    """Names of states identified as active during action execution. Empty set if none."""
 
     action_description: str = ""
     """Human-readable description of the action performed."""
 
-    success: bool = False
-    """Indicates whether the action achieved its intended goal."""
-
     output_text: str = ""
     """Formatted text output for reporting and logging."""
-
-    match_list: list["Match"] = field(default_factory=list)
-    """List of all matches found during action execution."""
-
-    initial_match_list: list["Match"] = field(default_factory=list)
-    """Initial matches before any filtering or processing."""
-
-    max_matches: int = -1
-    """Maximum number of matches to return (-1 for unlimited)."""
-
-    text: Optional["Text"] = None
-    """Accumulated text content from all matches."""
 
     selected_text: str = ""
     """Specific text selected or highlighted during the action."""
 
-    active_states: set[str] = field(default_factory=set)
-    """Names of states identified as active during action execution."""
-
     duration: timedelta | None = None
-    """Total time taken for action execution."""
+    """Total time taken for action execution. None if not measured."""
 
     start_time: datetime | None = None
-    """Timestamp when action execution began."""
+    """Timestamp when action execution began. None if not recorded."""
 
     end_time: datetime | None = None
-    """Timestamp when action execution completed."""
+    """Timestamp when action execution completed. None if not recorded."""
 
-    defined_regions: list["Region"] = field(default_factory=list)
-    """Regions created or captured by DEFINE actions."""
-
-    movements: list["Movement"] = field(default_factory=list)
-    """List of movements performed during action execution."""
-
-    execution_history: list["ActionRecord"] = field(default_factory=list)
-    """Ordered history of action execution steps."""
-
-    times_acted_on: int = 0
-    """Count of how many times this object was acted upon."""
-
-    action_config: Optional["ActionConfig"] = None
-    """Configuration used for this action execution."""
-
-    def __init__(self, action_config: Optional["ActionConfig"] = None) -> None:
-        """Initialize ActionResult with optional configuration.
-
-        Args:
-            action_config: Configuration that will control the action execution
-        """
-        self.action_config = action_config
-        self.action_description = ""
-        self.success = False
-        self.output_text = ""
-        self.match_list = []
-        self.initial_match_list = []
-        self.max_matches = -1
-        self.text = None
-        self.selected_text = ""
-        self.active_states = set()
-        self.duration = None
-        self.start_time = None
-        self.end_time = None
-        self.defined_regions = []
-        self.movements = []
-        self.execution_history = []
-        self.times_acted_on = 0
-
-    def add(self, *matches: "Match") -> None:
-        """Add one or more matches to the result set.
-
-        Also extracts and records any state information from the matches.
-
-        Args:
-            matches: Variable number of Match objects to add
-        """
-        for match in matches:
-            self.match_list.append(match)
-            # Extract state information if available
-            if hasattr(match, "get_state_object_data"):
-                state_data = match.get_state_object_data()
-                if state_data and hasattr(state_data, "get_owner_state_name"):
-                    self.active_states.add(state_data.get_owner_state_name())
-
-    def get_match_list(self) -> list["Match"]:
-        """Get the list of all matches found during action execution.
-
-        Returns:
-            List of matches
-        """
-        return self.match_list
-
-    def set_match_list(self, matches: list["Match"]) -> None:
-        """Set the match list directly.
-
-        Args:
-            matches: List of matches to set
-        """
-        self.match_list = matches if matches else []
-
-    def get_best_match(self) -> Optional["Match"]:
-        """Find the match with the highest similarity score.
-
-        Returns:
-            Optional containing the best match, or None if no matches
-        """
-        if not self.match_list:
-            return None
-        return max(self.match_list, key=lambda m: m.get_score() if hasattr(m, "get_score") else 0)
-
-    def get_best_location(self) -> Optional["Location"]:
-        """Get the target location of the best scoring match.
-
-        Returns:
-            Optional containing the location, or None if no matches
-        """
-
-        best = self.get_best_match()
-        if best and hasattr(best, "get_target"):
-            return cast(Location | None, best.get_target())
-        return None
-
-    def size(self) -> int:
-        """Get the number of matches found.
-
-        Returns:
-            Count of matches in the result
-        """
-        return len(self.match_list)
-
-    def is_empty(self) -> bool:
-        """Check if the action found any matches.
-
-        Returns:
-            True if no matches were found
-        """
-        return len(self.match_list) == 0
-
-    def set_times_acted_on(self, times: int) -> None:
-        """Update the action count for all matches.
-
-        Args:
-            times: The count to set for all matches
-        """
-        self.times_acted_on = times
-        for match in self.match_list:
-            if hasattr(match, "set_times_acted_on"):
-                match.set_times_acted_on(times)
-
-    def add_string(self, text: str) -> None:
-        """Add a text string to the accumulated text results.
-
-        Args:
-            text: Text to add to the results
-        """
-        if self.text is None:
-            from ..model.element import Text as ElementText
-
-            self.text = ElementText()  # type: ignore[assignment]
-
-        # Type guard: check text is not None before calling add
-        if self.text is not None and hasattr(self.text, "add"):
-            self.text.add(text)
-
-    def add_defined_region(self, region: "Region") -> None:
-        """Add a region to the defined regions collection.
-
-        Args:
-            region: The region to add
-        """
-        self.defined_regions.append(region)
-
-    def get_defined_region(self) -> Optional["Region"]:
-        """Get the primary region defined by this action.
-
-        Returns:
-            The first defined region or None
-        """
-        if self.defined_regions:
-            return self.defined_regions[0]
-        return None
-
-    def add_movement(self, movement: "Movement") -> None:
-        """Add a movement to the result.
-
-        Args:
-            movement: The movement to add
-        """
-        self.movements.append(movement)
-
-    def get_movement(self) -> Optional["Movement"]:
-        """Return an Optional containing the first movement from the action.
-
-        Returns:
-            An Optional containing the first Movement if one exists
-        """
-        if self.movements:
-            return self.movements[0]
-        return None
-
-    def add_execution_record(self, record: "ActionRecord") -> None:
-        """Add an action record to the execution history.
-
-        Args:
-            record: The action record to add
-        """
-        self.execution_history.append(record)
-
-    def add_match_objects(self, matches: "ActionResult") -> None:
-        """Merge match objects from another ActionResult.
-
-        Args:
-            matches: Source ActionResult containing matches to add
-        """
-        if matches:
-            for match in matches.get_match_list():
-                self.add(match)
-
-    def add_all_results(self, matches: "ActionResult") -> None:
-        """Merge all data from another ActionResult.
-
-        Args:
-            matches: Source ActionResult to merge completely
-        """
-        if matches:
-            self.add_match_objects(matches)
-            self.add_non_match_results(matches)
-
-    def add_non_match_results(self, matches: "ActionResult") -> None:
-        """Merge non-match data from another ActionResult.
-
-        Args:
-            matches: Source ActionResult containing data to merge
-        """
-        if matches:
-            if matches.text:
-                self.text = matches.text
-            if matches.selected_text:
-                self.selected_text = matches.selected_text
-            self.active_states.update(matches.active_states)
-            self.defined_regions.extend(matches.defined_regions)
-            self.movements.extend(matches.movements)
-            self.execution_history.extend(matches.execution_history)
-
-    def as_object_collection(self) -> "ObjectCollection":
-        """Convert this result into an ObjectCollection.
-
-        Returns:
-            New ObjectCollection containing these results
-        """
-        from .object_collection import ObjectCollectionBuilder
-
-        return ObjectCollectionBuilder().with_matches(self).build()
-
-    def print(self) -> None:
-        """Print all matches to standard output."""
-        for match in self.match_list:
-            print(match)
-
-    def get_success_symbol(self) -> str:
-        """Get a visual symbol representing action success or failure.
-
-        Returns:
-            Unicode symbol indicating success (✓) or failure (✗)
-        """
-        return "✓" if self.success else "✗"
-
-    def get_summary(self) -> str:
-        """Get a summary of the action result.
-
-        Returns:
-            Summary string
-        """
-        summary = []
-        if self.action_config:
-            summary.append(f"Action: {self.action_config.__class__.__name__}")
-        summary.append(f"Success: {self.success}")
-        summary.append(f"Number of matches: {self.size()}")
-        if self.active_states:
-            summary.append(f"Active states: {', '.join(self.active_states)}")
-        if self.text:
-            summary.append(f"Extracted text: {self.text}")
-        return "\n".join(summary)
+    action_config: "ActionConfig | None" = None
+    """Configuration used for this action execution. None if not provided."""
 
     @property
     def is_success(self) -> bool:
-        """Check if action was successful as a property.
+        """Check if action was successful.
 
         Returns:
             True if action succeeded
@@ -329,104 +88,281 @@ class ActionResult:
         return self.success
 
     @property
-    def matches(self) -> list["Match"]:
-        """Get the list of matches as a property.
+    def match_count(self) -> int:
+        """Get the number of matches.
 
         Returns:
-            List of matches
+            Count of matches
         """
-        return self.match_list
-
-    def add_match(self, match: "Match") -> None:
-        """Add a single match to the result.
-
-        Args:
-            match: Match to add
-        """
-        self.add(match)
-
-    def add_text_result(self, text: str) -> None:
-        """Add a text result.
-
-        Args:
-            text: Text to add
-        """
-        self.add_string(text)
-
-    def add_match_location(self, location: "Location") -> None:
-        """Add a match location.
-
-        Args:
-            location: Location to add
-        """
-        # This is a placeholder - actual implementation may create a match from location
-        # For now, we'll just add it to movements if needed
-        pass
-
-    def get_match_locations(self) -> list["Location"]:
-        """Get all match target locations.
-
-        Returns:
-            List of locations from all matches
-        """
-        locations = []
-        for match in self.match_list:
-            if hasattr(match, "get_target"):
-                target = match.get_target()
-                if target:
-                    locations.append(target)
-        return locations
-
-    def get_movements(self) -> list["Movement"]:
-        """Get all movements from the action.
-
-        Returns:
-            List of movements
-        """
-        return self.movements
-
-    def get_execution_records(self) -> list["ActionRecord"]:
-        """Get all execution records.
-
-        Returns:
-            List of action records
-        """
-        return self.execution_history
-
-    def get_action_config(self) -> Optional["ActionConfig"]:
-        """Get the action configuration.
-
-        Returns:
-            Action configuration or None
-        """
-        return self.action_config
+        return len(self.matches)
 
     def __str__(self) -> str:
-        """String representation for debugging."""
-        result = f"ActionResult: size={self.size()}"
-        for match in self.match_list:
-            result += f" {match}"
+        """String representation for debugging.
+
+        Returns:
+            Human-readable string
+        """
+        result = f"ActionResult: success={self.success}, matches={len(self.matches)}"
+        if self.action_description:
+            result += f", action={self.action_description}"
         return result
 
 
-# Forward references
-class Text:
-    """Placeholder for Text class."""
+class ActionResultBuilder:
+    """Builder for ActionResult. Thread-safe construction.
 
-    pass
+    This builder allows mutable construction of results, then creates
+    an immutable ActionResult when build() is called.
+
+    Thread Safety:
+        Protected by internal RLock for thread-safe construction.
+        Multiple threads can add data concurrently.
+
+    Example:
+        result = (ActionResultBuilder()
+                 .add_match(match1)
+                 .add_match(match2)
+                 .with_success(True)
+                 .with_description("Found 2 elements")
+                 .build())
+    """
+
+    def __init__(self, action_config: "ActionConfig | None" = None):
+        """Initialize builder with optional configuration.
+
+        Args:
+            action_config: Configuration to associate with the result
+        """
+        self._lock = threading.RLock()
+        self._action_config = action_config
+        self._success = False
+        self._matches: list["Match"] = []
+        self._times_acted_on = 0
+        self._text_parts: list[str] = []
+        self._defined_regions: list[Region] = []
+        self._movements: list["Movement"] = []
+        self._execution_history: list["ExecutionRecord"] = []
+        self._active_states: set[str] = set()
+        self._action_description = ""
+        self._output_text = ""
+        self._selected_text = ""
+        self._duration: timedelta | None = None
+        self._start_time: datetime | None = None
+        self._end_time: datetime | None = None
+
+    def with_success(self, success: bool) -> "ActionResultBuilder":
+        """Set success status.
+
+        Args:
+            success: Whether action succeeded
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._success = success
+        return self
+
+    def add_match(self, match: "Match") -> "ActionResultBuilder":
+        """Add a match to the result.
+
+        Thread-safe: Can be called from multiple threads.
+
+        Args:
+            match: Match to add
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._matches.append(match)
+            # Extract state information if available
+            if hasattr(match, "get_state_object_data"):
+                state_data = match.get_state_object_data()
+                if state_data and hasattr(state_data, "get_owner_state_name"):
+                    self._active_states.add(state_data.get_owner_state_name())
+        return self
+
+    def set_times_acted_on(self, times: int) -> "ActionResultBuilder":
+        """Set the times acted on counter.
+
+        Thread-safe: Can be called from multiple threads.
+
+        Args:
+            times: The count to set
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._times_acted_on = times
+            # Update all matches
+            for match in self._matches:
+                if hasattr(match, "set_times_acted_on"):
+                    match.set_times_acted_on(times)
+        return self
+
+    def add_text(self, text: str) -> "ActionResultBuilder":
+        """Add text to the accumulated text.
+
+        Thread-safe: Can be called from multiple threads.
+
+        Args:
+            text: Text to add
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._text_parts.append(text)
+        return self
+
+    def add_defined_region(self, region: Region) -> "ActionResultBuilder":
+        """Add a defined region.
+
+        Thread-safe: Can be called from multiple threads.
+
+        Args:
+            region: Region to add
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._defined_regions.append(region)
+        return self
+
+    def add_movement(self, movement: "Movement") -> "ActionResultBuilder":
+        """Add a movement.
+
+        Thread-safe: Can be called from multiple threads.
+
+        Args:
+            movement: Movement to add
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._movements.append(movement)
+        return self
+
+    def add_execution_record(self, record: "ExecutionRecord") -> "ActionResultBuilder":
+        """Add an execution record.
+
+        Thread-safe: Can be called from multiple threads.
+
+        Args:
+            record: Execution record to add
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._execution_history.append(record)
+        return self
+
+    def with_description(self, description: str) -> "ActionResultBuilder":
+        """Set action description.
+
+        Args:
+            description: Human-readable action description
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._action_description = description
+        return self
+
+    def with_output_text(self, text: str) -> "ActionResultBuilder":
+        """Set output text.
+
+        Args:
+            text: Formatted output text
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._output_text = text
+        return self
+
+    def with_selected_text(self, text: str) -> "ActionResultBuilder":
+        """Set selected text.
+
+        Args:
+            text: Selected/highlighted text
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._selected_text = text
+        return self
+
+    def with_timing(
+        self,
+        start: datetime | None = None,
+        end: datetime | None = None,
+        duration: timedelta | None = None,
+    ) -> "ActionResultBuilder":
+        """Set timing information.
+
+        Args:
+            start: Start timestamp
+            end: End timestamp
+            duration: Total duration
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._start_time = start
+            self._end_time = end
+            self._duration = duration
+        return self
+
+    def build(self) -> ActionResult:
+        """Build immutable ActionResult.
+
+        Thread-safe: Creates immutable result from current state.
+
+        Returns:
+            Immutable ActionResult
+        """
+        with self._lock:
+            # Infer success from matches if not explicitly set
+            success = self._success or len(self._matches) > 0
+
+            # Combine text parts
+            text = "".join(self._text_parts)
+
+            return ActionResult(
+                success=success,
+                matches=tuple(self._matches),
+                times_acted_on=self._times_acted_on,
+                text=text,
+                defined_regions=tuple(self._defined_regions),
+                movements=tuple(self._movements),
+                execution_history=tuple(self._execution_history),
+                active_states=frozenset(self._active_states),
+                action_description=self._action_description,
+                output_text=self._output_text,
+                selected_text=self._selected_text,
+                duration=self._duration,
+                start_time=self._start_time,
+                end_time=self._end_time,
+                action_config=self._action_config,
+            )
 
 
-# Region is imported from model.element.region
-# Location is imported from model.element.location
-
-
+# Forward references for type hints
 class Movement:
     """Placeholder for Movement class."""
-
     pass
 
 
-class ActionRecord:
-    """Placeholder for ActionRecord class."""
-
+class ExecutionRecord:
+    """Placeholder for ExecutionRecord class."""
     pass
