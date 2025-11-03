@@ -73,7 +73,7 @@ class SearchOptions(BaseModel):
     similarity: float | None = None
     timeout: int | None = None
     search_regions: list[Region] | None = Field(None, alias="searchRegions")
-    strategy: SearchStrategy | None = None
+    strategy: SearchStrategy | None = Field(None, alias="searchStrategy")
     use_defined_region: bool | None = Field(None, alias="useDefinedRegion")
     max_matches_to_act_on: int | None = Field(None, alias="maxMatchesToActOn")
     min_matches: int | None = Field(None, alias="minMatches")

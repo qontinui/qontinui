@@ -35,11 +35,15 @@ class BaseActionSettings(BaseModel):
 
 
 class ExecutionSettings(BaseModel):
-    """Execution control settings."""
+    """Execution control settings.
+
+    Note: Model-based GUI automation is resilient by design - workflows always
+    continue executing even if individual actions fail. There is no option to
+    stop workflow execution on action failure.
+    """
 
     timeout: int | None = None
     retry_count: int | None = Field(None, alias="retryCount")
-    continue_on_error: bool | None = Field(None, alias="continueOnError")
     repetition: RepetitionOptions | None = None
 
     model_config = {"populate_by_name": True}

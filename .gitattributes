@@ -1,40 +1,42 @@
-# Text files normalized to LF
-*.py     text eol=lf
-*.ts     text eol=lf
-*.tsx    text eol=lf
-*.js     text eol=lf
-*.jsx    text eol=lf
-*.css    text eol=lf
-*.md     text eol=lf
-*.json   text eol=lf
-*.yml    text eol=lf
-*.yaml   text eol=lf
-*.sh     text eol=lf
-*.mjs    text eol=lf
-*.cjs    text eol=lf
-*.html   text eol=lf
-*.toml   text eol=lf
+# Set default behavior to automatically normalize line endings to LF
+* text=auto eol=lf
 
-# Treat images and other binaries as binary (no EOL conversion)
-*.png    binary
-*.jpg    binary
-*.jpeg   binary
-*.gif    binary
-*.svg    text eol=lf
-*.ico    binary
-*.pdf    binary
+# Explicitly declare text files you want to always be normalized and converted to LF on checkout
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
 
-# Fonts
-*.woff   binary
-*.woff2  binary
+# Web development files
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.xml text eol=lf
 
-# Archives
-*.zip    binary
-*.tar    binary
-*.gz     binary
-*.bz2    binary
-*.7z     binary
+# Shell scripts should use LF
+*.sh text eol=lf
+*.bash text eol=lf
 
-# Keep lockfiles normalized but diffable
-package-lock.json text eol=lf
-poetry.lock       text eol=lf
+# Declare files that will always have CRLF line endings on checkout (if any)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Denote binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary

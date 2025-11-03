@@ -3,9 +3,49 @@
 Following Brobot principles with modern Python implementation.
 """
 
+# CRITICAL: Configure logging IMMEDIATELY at import time
+# When running under Rust executor, disable console logging entirely to prevent
+# JSON parse errors. The executor expects all stderr/stdout to be valid JSON.
+import logging
+import os
+import sys
+
+# Check if running under executor (disable logging to stderr/stdout)
+if os.getenv("QONTINUI_DISABLE_CONSOLE_LOGGING") == "1":
+    # Disable all console output - use NullHandler
+    logging.basicConfig(
+        level=logging.CRITICAL + 1,  # Effectively disable all logging
+        handlers=[logging.NullHandler()],
+        force=True,
+    )
+
+    # CRITICAL: Also disable structlog (used for debug messages)
+    # Use stdlib logging integration - since logging is disabled, structlog will be too
+    import structlog
+
+    structlog.configure(
+        processors=[
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        wrapper_class=structlog.stdlib.BoundLogger,
+        context_class=dict,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
+else:
+    # Normal logging to stderr for non-executor use
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[logging.StreamHandler(sys.stderr)],
+        force=True,
+    )
+
 # CRITICAL: Initialize DPI awareness BEFORE any other imports
 # This ensures physical resolution capture on Windows
 # Actions (Brobot-style)
+# Navigation API
+from . import navigation_api, registry
 from .actions import (
     Action,
     ActionChain,
@@ -29,9 +69,6 @@ from .actions import (
 # from .migrations import BrobotConverter
 # DSL Parser
 from .dsl import QontinuiDSLParser
-
-# Navigation API
-from . import navigation_api, registry
 
 # Find System (Brobot-style)
 from .find import Find, FindImage, FindResults, Match, Matches

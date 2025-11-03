@@ -327,24 +327,21 @@ class GraphExecutor:
                 # Mark as failed
                 self.execution_state.mark_failed(action_id, e)
 
-                # Check if we should continue or stop
-                continue_on_error = (
-                    action.execution.continue_on_error if action.execution else False
-                )
-
-                if not continue_on_error:
-                    # Check for error path
-                    error_next = self.router._get_connections(action_id, "error")
-                    if error_next:
-                        # Follow error path
-                        for next_action_id, _ in error_next:
-                            if next_action_id not in queued_actions:
-                                execution_queue.append((next_action_id, action_id))
-                                queued_actions.add(next_action_id)
-                    else:
-                        # No error path and continue_on_error is False - stop execution
-                        logger.error(f"Stopping execution due to error in action '{action_id}'")
-                        raise
+                # Model-based GUI automation principle: always continue, never stop on error
+                # Check for error path to follow
+                error_next = self.router._get_connections(action_id, "error")
+                if error_next:
+                    # Follow error path
+                    logger.debug(f"Action '{action_id}' failed, following error path")
+                    for next_action_id, _ in error_next:
+                        if next_action_id not in queued_actions:
+                            execution_queue.append((next_action_id, action_id))
+                            queued_actions.add(next_action_id)
+                else:
+                    # No error path - continue with normal execution
+                    logger.debug(
+                        f"Action '{action_id}' failed with no error path, continuing execution"
+                    )
 
     def _execute_action(self, action: Action) -> dict[str, Any]:
         """Execute a single action.

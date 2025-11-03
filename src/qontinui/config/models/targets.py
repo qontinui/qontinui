@@ -14,10 +14,14 @@ from .search import SearchOptions, TextSearchOptions
 
 
 class ImageTarget(BaseModel):
-    """Image target configuration."""
+    """Image target configuration supporting multiple images with search strategies.
+
+    Breaking change: Changed from single image_id to multiple image_ids.
+    Use image_ids with a single-element list for single image targeting.
+    """
 
     type: Literal["image"] = "image"
-    image_id: str = Field(alias="imageId")
+    image_ids: list[str] = Field(alias="imageIds", min_length=1)
     search_options: SearchOptions | None = Field(None, alias="searchOptions")
 
     model_config = {"populate_by_name": True}
@@ -65,6 +69,16 @@ class CurrentPositionTarget(BaseModel):
     type: Literal["currentPosition"] = "currentPosition"
 
 
+class LastFindResultTarget(BaseModel):
+    """Last find result target - uses location from most recent FIND action.
+
+    This target type allows actions to reference the result of a previous FIND
+    action without knowing the exact coordinates at configuration time.
+    """
+
+    type: Literal["lastFindResult"] = "lastFindResult"
+
+
 # Union type for all target configurations
 TargetConfig = (
     ImageTarget
@@ -73,4 +87,5 @@ TargetConfig = (
     | CoordinatesTarget
     | StateStringTarget
     | CurrentPositionTarget
+    | LastFindResultTarget
 )

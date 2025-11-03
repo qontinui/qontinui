@@ -59,11 +59,14 @@ class MouseClick(Action):
     Performs a single click at a position.
     """
 
-    def __init__(self, config: ClickOptions | None = None) -> None:
-        """Initialize with optional ClickOptions.
+    def __init__(
+        self, config: ClickOptions | None = None, pure_actions: "PureActions | None" = None
+    ) -> None:
+        """Initialize with optional ClickOptions and PureActions.
 
         Args:
             config: ClickOptions instance or None for defaults
+            pure_actions: PureActions instance or None to create default (for testing)
         """
         super().__init__()
         if config is None:
@@ -71,7 +74,7 @@ class MouseClick(Action):
 
             config = ClickOptionsBuilder().build()
         self._config = config
-        self._pure = PureActions()
+        self._pure = pure_actions if pure_actions is not None else PureActions()
 
     def execute_at(self, x: int, y: int, button: str = "left") -> ActionResult:
         """Execute click at specific coordinates.
@@ -179,11 +182,14 @@ class MouseDrag(Action):
     Drags from one position to another.
     """
 
-    def __init__(self, config: DragOptions | None = None) -> None:
-        """Initialize with optional DragOptions.
+    def __init__(
+        self, config: DragOptions | None = None, pure_actions: "PureActions | None" = None
+    ) -> None:
+        """Initialize with optional DragOptions and PureActions.
 
         Args:
             config: DragOptions instance or None for defaults
+            pure_actions: PureActions instance or None to create default (for testing)
         """
         super().__init__()
         if config is None:
@@ -191,7 +197,7 @@ class MouseDrag(Action):
 
             config = DragOptionsBuilder().build()
         self._config = config
-        self._pure = PureActions()
+        self._pure = pure_actions if pure_actions is not None else PureActions()
 
     def execute_from_to(self, start_x: int, start_y: int, end_x: int, end_y: int) -> ActionResult:
         """Execute drag from start to end position.

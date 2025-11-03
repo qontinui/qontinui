@@ -8,7 +8,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from ...find import FindImage, Matches
+from ...find import Matches
+from ...find.find_image import FindImage
 from ..element import Image, Pattern, Region
 from ..search_regions import SearchRegions
 from .action_history import ActionHistory
@@ -84,34 +85,39 @@ class StateImage:
         return pattern
 
     def find(self) -> Matches:
-        """Find this image on screen.
+        """Find this state image using FindAction.
 
         Returns:
-            Matches found
+            Matches object with all found matches
         """
+        from ...actions.find import FindAction, FindOptions
+
         pattern = self.get_pattern()
-        finder = FindImage(pattern.image)
+        action = FindAction()
 
-        # Use search regions with precedence: SearchRegions > single Region
-        # (Options and Pattern-level are handled in Find class)
-        if self._search_regions:
-            finder.search_region(self._search_regions)
-        elif self._search_region:
-            finder.search_region(self._search_region)
+        result = action.find(
+            pattern=pattern,
+            options=FindOptions(
+                similarity=self._similarity,
+                search_region=self._search_region,
+                find_all=True,
+            ),
+        )
 
-        finder.similarity(self._similarity)
-
-        results = finder.find_all(True).execute()
-        return results.matches
+        return Matches(result.matches)
 
     def exists(self) -> bool:
-        """Check if image exists on screen.
+        """Check if this state image exists using FindAction.
 
         Returns:
-            True if image is found
+            True if image found on screen
         """
-        matches = self.find()
-        return matches.has_matches()
+        from ...actions.find import FindAction
+
+        pattern = self.get_pattern()
+        action = FindAction()
+
+        return action.exists(pattern, similarity=self._similarity)
 
     def wait_for(self, timeout: float = 5.0) -> bool:
         """Wait for image to appear.

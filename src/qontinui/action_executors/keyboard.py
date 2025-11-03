@@ -14,7 +14,7 @@ from ..config.schema import (
     TypeActionConfig,
 )
 from ..exceptions import ActionExecutionError
-from .base import ActionExecutorBase, ExecutionContext
+from .base import ActionExecutorBase
 from .registry import register_executor
 
 logger = logging.getLogger(__name__)
@@ -174,9 +174,7 @@ class KeyboardActionExecutor(ActionExecutorBase):
             self._emit_action_failure(action, str(e), {"key": key})
             return False
 
-    def _execute_key_press(
-        self, action: Action, typed_config: KeyPressActionConfig | None
-    ) -> bool:
+    def _execute_key_press(self, action: Action, typed_config: KeyPressActionConfig | None) -> bool:
         """Execute KEY_PRESS action - press and release key(s).
 
         This is a pure action that presses and immediately releases key(s).
@@ -318,6 +316,24 @@ class KeyboardActionExecutor(ActionExecutorBase):
             try:
                 self.context.keyboard.type(text)
                 logger.info(f"Successfully typed: '{text}'")
+
+                # Emit TEXT_TYPED event for runner/frontend
+                import sys
+
+                print(
+                    f"[KEYBOARD_EXECUTOR] About to emit TEXT_TYPED event for text: '{text}'",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                from ..reporting.events import EventType, emit_event
+
+                emit_event(EventType.TEXT_TYPED, {"text": text, "character_count": len(text)})
+                print(
+                    "[KEYBOARD_EXECUTOR] TEXT_TYPED event emitted successfully",
+                    file=sys.stderr,
+                    flush=True,
+                )
+
                 self._emit_action_success(action, {"text": text, "length": len(text)})
                 return True
 

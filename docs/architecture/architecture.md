@@ -492,11 +492,9 @@ qontinui/
 
 **Implementations**:
 
-1. **Image Matchers** (`actions/basic/find/implementations/find_image/matchers/`)
-   - `BaseMatcher`: Abstract strategy
-   - `SingleScaleMatcher`: Single-scale template matching
-   - `MultiScaleMatcher`: Multi-scale template matching
-   - **Context**: FindImageOrchestrator selects strategy
+1. **Image Matchers** (`find/matchers/`)
+   - `TemplateMatcher`: Template matching with OpenCV
+   - Used by `RealFindImplementation` for actual image matching
 
 2. **Serializers** (`persistence/serializers.py`)
    - `Serializer`: Abstract strategy
@@ -1190,17 +1188,14 @@ finder = FindImage()
 matches = finder.find(collection, options)
 ```
 
-**New Direct Access Available**:
+**Direct Access to Find Implementation**:
 ```python
-from qontinui.actions.basic.find.implementations.find_image import (
-    FindImageOrchestrator,
-    SingleScaleMatcher,
-    MultiScaleMatcher
-)
+from qontinui.actions.find import RealFindImplementation
+from qontinui.find.matchers import TemplateMatcher
 
 # Direct component usage for advanced scenarios
-orchestrator = FindImageOrchestrator()
-matcher = MultiScaleMatcher(cv2_method)
+finder = RealFindImplementation()
+matcher = TemplateMatcher()
 ```
 
 ## Testing Strategy

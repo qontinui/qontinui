@@ -262,11 +262,13 @@ class Action:
             and not hasattr(result, "match_list")
         ):
             # This is a pure.ActionResult, convert to action_result.ActionResult
-            converted = ActionResult()
-            converted.success = result.success
+            from .result_builder import ActionResultBuilder
+
+            builder = ActionResultBuilder()
+            builder.with_success(result.success)
             if hasattr(result, "error") and result.error:
-                converted.output_text = result.error
-            return converted
+                builder.with_output_text(result.error)
+            return builder.build()
 
         # Already an action_result.ActionResult
         return cast(ActionResult, result)

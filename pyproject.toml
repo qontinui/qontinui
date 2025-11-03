@@ -21,7 +21,7 @@ classifiers = [
 packages = [{include = "qontinui", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.12,<3.14"
+python = "^3.12"
 pynput = "^1.7"
 opencv-python-headless = "^4.9"
 transformers = "^4.36"

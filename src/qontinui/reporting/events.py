@@ -111,14 +111,31 @@ class EventRegistry:
             >>>
             >>> registry.register(EventType.MATCH_ATTEMPTED, my_handler)
         """
+        import sys
+
         with self._lock:
             if event_type is None:
                 # Wildcard subscription
                 if callback not in self._wildcard_callbacks:
                     self._wildcard_callbacks.append(callback)
+                    print(
+                        f"[EventRegistry] Registered wildcard callback: {callback.__name__}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
             else:
                 if callback not in self._callbacks[event_type]:
                     self._callbacks[event_type].append(callback)
+                    print(
+                        f"[EventRegistry] Registered callback for {event_type.value}: {callback.__name__}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    print(
+                        f"[EventRegistry] Total callbacks for {event_type.value}: {len(self._callbacks[event_type])}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
 
     def unregister(
         self,
@@ -149,28 +166,56 @@ class EventRegistry:
             Callbacks are executed synchronously but errors are isolated.
             Failed callbacks don't affect other callbacks or library operation.
         """
+        import sys
+
         # Fast path: no listeners (critical for performance)
         if not self.has_listeners:
+            print(
+                f"[EventRegistry] emit({event.type.value}): NO LISTENERS",
+                file=sys.stderr,
+                flush=True,
+            )
             return
 
         # Get snapshot of callbacks to avoid holding lock during execution
         with self._lock:
             callbacks = list(self._callbacks.get(event.type, []))
             callbacks.extend(self._wildcard_callbacks)
+            print(
+                f"[EventRegistry] emit({event.type.value}): Found {len(callbacks)} callbacks",
+                file=sys.stderr,
+                flush=True,
+            )
 
         # Execute callbacks outside of lock
         for callback in callbacks:
             try:
+                print(
+                    f"[EventRegistry] Calling callback: {callback.__name__}",
+                    file=sys.stderr,
+                    flush=True,
+                )
                 callback(event)
+                print(
+                    f"[EventRegistry] Callback {callback.__name__} completed successfully",
+                    file=sys.stderr,
+                    flush=True,
+                )
             except Exception as e:
                 # Isolate callback failures - never let them break library
                 # Log exception to help debug event system issues
+                print(
+                    f"[EventRegistry] ERROR in callback {callback.__name__}: {e}",
+                    file=sys.stderr,
+                    flush=True,
+                )
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.error(
                     f"Event callback failed for {event.type.value}: {e}",
                     exc_info=True,
-                    extra={"event_type": event.type.value, "callback": callback.__name__}
+                    extra={"event_type": event.type.value, "callback": callback.__name__},
                 )
                 # Still continue to other callbacks
 
@@ -258,8 +303,17 @@ def emit_event(event_type: EventType, data: dict[str, Any] | None = None, **kwar
         ...     },
         ... )
     """
+    import sys
+
+    print(
+        f"[emit_event] Called with event_type={event_type.value}, has_listeners={_event_registry.has_listeners}",
+        file=sys.stderr,
+        flush=True,
+    )
+
     # Fast path: no listeners registered (critical for performance)
     if not _event_registry.has_listeners:
+        print("[emit_event] NO LISTENERS - skipping event emission", file=sys.stderr, flush=True)
         return
 
     event = Event(
@@ -267,7 +321,15 @@ def emit_event(event_type: EventType, data: dict[str, Any] | None = None, **kwar
         data=data or {},
         context=kwargs,
     )
+    print(
+        f"[emit_event] Calling registry.emit() for {event_type.value}", file=sys.stderr, flush=True
+    )
     _event_registry.emit(event)
+    print(
+        f"[emit_event] registry.emit() completed for {event_type.value}",
+        file=sys.stderr,
+        flush=True,
+    )
 
 
 class EventCollector:

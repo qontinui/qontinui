@@ -36,7 +36,8 @@ class Match:
         self.region = self.match_object.get_region()
         self.similarity = self.match_object.score
         self.pattern = self.match_object.search_image
-        self.state_object_data = self.match_object.state_object_data
+        # state_object_data is stored in metadata, not as direct attribute
+        self.state_object_data = getattr(self.match_object.metadata, "state_object_data", None)
 
     @property
     def center(self) -> Location:

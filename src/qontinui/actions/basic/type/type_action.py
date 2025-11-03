@@ -191,6 +191,11 @@ class TypeAction(ActionInterface):
             if not self.options.secure_mode:
                 self._last_typed_text = text
 
+                # Emit TEXT_TYPED event for runner/frontend
+                from ....reporting.events import EventType, emit_event
+
+                emit_event(EventType.TEXT_TYPED, {"text": text, "character_count": len(text)})
+
             # Verify if requested
             if self.options.verify_text:
                 success = self._verify_text(text)

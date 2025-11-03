@@ -146,11 +146,14 @@ class TypeText(Action):
     Types a string of text character by character.
     """
 
-    def __init__(self, config: TypeOptions | None = None) -> None:
-        """Initialize with optional TypeOptions.
+    def __init__(
+        self, config: TypeOptions | None = None, pure_actions: "PureActions | None" = None
+    ) -> None:
+        """Initialize with optional TypeOptions and PureActions.
 
         Args:
             config: TypeOptions instance or None for defaults
+            pure_actions: PureActions instance or None to create default (for testing)
         """
         super().__init__()
         if config is None:
@@ -158,7 +161,7 @@ class TypeText(Action):
 
             config = TypeOptionsBuilder().build()
         self._config = config
-        self._pure = PureActions()
+        self._pure = pure_actions if pure_actions is not None else PureActions()
 
     def execute_text(self, text: str) -> ActionResult:
         """Execute text typing.

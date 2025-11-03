@@ -3,12 +3,125 @@ name: Quality Checks
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.github/workflows/**'
 
 jobs:
+  validate-configs:
+    runs-on: ubuntu-latest
+    # Only run when JSON config files are changed
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.changed_files.*.filename, '.json'))
+
+    steps:
+      - name: Checkout qontinui code
+        uses: actions/checkout@v4
+        with:
+          path: qontinui
+
+      - name: Checkout qontinui-devtools
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/qontinui-devtools
+          path: qontinui-devtools
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install qontinui library
+        working-directory: qontinui
+        run: |
+          pip install -e .
+
+      - name: Install qontinui-devtools
+        working-directory: qontinui-devtools
+        run: |
+          poetry install
+
+      - name: Validate config files
+        working-directory: qontinui
+        run: |
+          echo "Finding and validating all JSON config files..."
+
+          # Find all JSON files (excluding node_modules, venv, etc.)
+          CONFIG_FILES=$(find . -type f -name "*.json" \
+            -not -path "*/node_modules/*" \
+            -not -path "*/venv/*" \
+            -not -path "*/.venv/*" \
+            -not -path "*/htmlcov/*" \
+            -not -path "*/.pytest_cache/*" \
+            -not -path "*/__pycache__/*")
+
+          if [ -z "$CONFIG_FILES" ]; then
+            echo "No JSON config files found to validate"
+            exit 0
+          fi
+
+          echo "Found JSON files to validate:"
+          echo "$CONFIG_FILES"
+          echo ""
+
+          VALIDATION_FAILED=0
+          TOTAL_FILES=0
+          PASSED_FILES=0
+          FAILED_FILES=0
+
+          # Validate each config file
+          for config_file in $CONFIG_FILES; do
+            TOTAL_FILES=$((TOTAL_FILES + 1))
+            echo "Validating: $config_file"
+
+            if cd ../qontinui-devtools && poetry run qontinui-devtools validate config "../qontinui/$config_file" --verbose --qontinui-path ../qontinui/src; then
+              echo "✓ PASSED: $config_file"
+              PASSED_FILES=$((PASSED_FILES + 1))
+            else
+              echo "✗ FAILED: $config_file"
+              FAILED_FILES=$((FAILED_FILES + 1))
+              VALIDATION_FAILED=1
+            fi
+            echo ""
+            cd ../qontinui
+          done
+
+          echo "======================================"
+          echo "Config Validation Summary"
+          echo "======================================"
+          echo "Total files validated: $TOTAL_FILES"
+          echo "Passed: $PASSED_FILES"
+          echo "Failed: $FAILED_FILES"
+          echo "======================================"
+
+          if [ $VALIDATION_FAILED -eq 1 ]; then
+            echo ""
+            echo "ERROR: Config validation failed!"
+            echo "Please fix the configuration files listed above."
+            exit 1
+          fi
+
+          echo ""
+          echo "SUCCESS: All config files are valid!"
+
   quality-gates:
     runs-on: ubuntu-latest
+    needs: validate-configs
+    if: always()  # Run even if validate-configs is skipped
 
     steps:
       - name: Checkout code
@@ -167,6 +280,7 @@ jobs:
           echo "" >> /tmp/quality-reports/summary.md
           echo "| Check | Status | Details |" >> /tmp/quality-reports/summary.md
           echo "|-------|--------|---------|" >> /tmp/quality-reports/summary.md
+          echo "| Config Validation | ${{ needs.validate-configs.result == 'success' && '✅ Pass' || needs.validate-configs.result == 'skipped' && '⏭️ Skipped' || '❌ Fail' }} | Validates JSON config files |" >> /tmp/quality-reports/summary.md
           echo "| Circular Dependencies | ${{ steps.circular-deps.outcome == 'success' && '✅ Pass' || '❌ Fail' }} | ${{ steps.circular-deps.outputs.cycles_found || 0 }} cycles found (max: 0) |" >> /tmp/quality-reports/summary.md
           echo "| God Classes | ${{ steps.god-classes.outcome == 'success' && '✅ Pass' || '❌ Fail' }} | ${{ steps.god-classes.outputs.critical_count || 0 }}/43 critical |" >> /tmp/quality-reports/summary.md
           echo "| Security | ${{ steps.security.outcome == 'success' && '✅ Pass' || '❌ Fail' }} | ${{ steps.security.outputs.critical_count || 0 }}/20 critical |" >> /tmp/quality-reports/summary.md

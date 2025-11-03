@@ -16,7 +16,12 @@ The runner should NOT create StateMemory, Navigator, or any other state manageme
 """
 
 import logging
-from typing import Optional, Any
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from qontinui.model.state.state_service import StateService
+    from qontinui.multistate_integration.pathfinding_navigator import PathfindingNavigator
+    from qontinui.state_management.state_memory import StateMemory
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +29,7 @@ logger = logging.getLogger(__name__)
 _navigator: Optional["PathfindingNavigator"] = None
 _state_memory: Optional["StateMemory"] = None
 _state_service: Optional["StateService"] = None
-_workflow_executor: Optional[Any] = None
+_workflow_executor: Any | None = None
 _initialized = False
 
 
@@ -66,11 +71,11 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
 
     try:
         # Import required modules
-        from qontinui.model.state.state_service import StateService
         from qontinui.config.state_loader import load_states_from_config
         from qontinui.config.transition_loader import load_transitions_from_config
-        from qontinui.state_management.state_memory import StateMemory
+        from qontinui.model.state.state_service import StateService
         from qontinui.multistate_integration.pathfinding_navigator import PathfindingNavigator
+        from qontinui.state_management.state_memory import StateMemory
 
         # Step 1: Create StateService
         _state_service = StateService()
@@ -112,11 +117,26 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         if initial_states:
             logger.info(f"Activated {len(initial_states)} initial state(s)")
         else:
-            logger.warning("No initial states found - navigation may require explicit state activation")
+            logger.warning(
+                "No initial states found - navigation may require explicit state activation"
+            )
+
+        # Step 5.5: Initialize PathfindingNavigator WITHOUT a workflow_executor
+        # The runner will call set_workflow_executor() later to inject the proper executor
+        # that has access to all workflows and can execute them
+        _workflow_executor = None
+        logger.debug(
+            "PathfindingNavigator will be created without workflow_executor - runner must call set_workflow_executor()"
+        )
 
         # Step 6: Initialize PathfindingNavigator
-        _navigator = PathfindingNavigator(_state_memory, workflow_executor=_workflow_executor)
-        logger.debug("PathfindingNavigator initialized")
+        _navigator = PathfindingNavigator(_state_memory, workflow_executor=None)
+        logger.info(
+            "PathfindingNavigator initialized - workflow_executor will be set by runner after configuration loads"
+        )
+        logger.debug(
+            "  (Note: workflow_executor is None until runner calls set_workflow_executor())"
+        )
 
         # Step 7: Register all states with the multistate adapter
         registered_count = 0
@@ -144,9 +164,7 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
 
         _initialized = True
 
-        logger.info(
-            f"Navigation system initialized successfully with {state_count} states"
-        )
+        logger.info(f"Navigation system initialized successfully with {state_count} states")
         return True
 
     except Exception as e:
@@ -168,9 +186,7 @@ def open_state(state_name: str) -> bool:
         True if navigation succeeded, False otherwise
     """
     if not _initialized:
-        logger.error(
-            "Navigation system not initialized - call load_configuration() first"
-        )
+        logger.error("Navigation system not initialized - call load_configuration() first")
         return False
 
     if not _navigator:
@@ -217,9 +233,7 @@ def open_states(state_identifiers: list[str | int]) -> bool:
         True if navigation succeeded and ALL target states were reached, False otherwise
     """
     if not _initialized:
-        logger.error(
-            "Navigation system not initialized - call load_configuration() first"
-        )
+        logger.error("Navigation system not initialized - call load_configuration() first")
         return False
 
     if not _navigator:
@@ -267,8 +281,10 @@ def open_states(state_identifiers: list[str | int]) -> bool:
     context = _navigator.navigate_to_states(target_state_ids, execute=True)
 
     if context:
-        logger.info(f"Navigation context: targets_reached={context.targets_reached}, "
-                   f"target_states={context.path.target_states if context.path else None}")
+        logger.info(
+            f"Navigation context: targets_reached={context.targets_reached}, "
+            f"target_states={context.path.target_states if context.path else None}"
+        )
     else:
         logger.error("Navigation returned no context - pathfinding failed")
         return False
@@ -278,7 +294,9 @@ def open_states(state_identifiers: list[str | int]) -> bool:
         return True
     else:
         logger.warning(f"Failed to navigate to all target states: {state_identifiers}")
-        logger.warning(f"Targets reached: {context.targets_reached}, Expected: {context.path.target_states}")
+        logger.warning(
+            f"Targets reached: {context.targets_reached}, Expected: {context.path.target_states}"
+        )
         return False
 
 

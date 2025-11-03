@@ -30,6 +30,45 @@ jobs:
       - name: Create analysis directory
         run: mkdir -p /tmp/weekly-analysis
 
+      # Config validation
+      - name: Validate all config files
+        run: |
+          echo "Validating JSON config files..."
+
+          # Find all JSON files (excluding node_modules, venv, etc.)
+          CONFIG_FILES=$(find . -type f -name "*.json" \
+            -not -path "*/node_modules/*" \
+            -not -path "*/venv/*" \
+            -not -path "*/.venv/*" \
+            -not -path "*/htmlcov/*" \
+            -not -path "*/.pytest_cache/*" \
+            -not -path "*/__pycache__/*")
+
+          if [ -z "$CONFIG_FILES" ]; then
+            echo "No JSON config files found to validate"
+            echo '{"total": 0, "passed": 0, "failed": 0, "files": []}' > /tmp/weekly-analysis/config_validation.json
+          else
+            echo "Found JSON files to validate:"
+            echo "$CONFIG_FILES"
+            echo ""
+
+            VALIDATION_RESULTS='{"total": 0, "passed": 0, "failed": 0, "files": []}'
+
+            # Note: Config validation is informational in weekly reports
+            # This helps track config health but doesn't fail the workflow
+            for config_file in $CONFIG_FILES; do
+              echo "Checking: $config_file"
+              # Store results for reporting but don't fail
+              if qontinui-devtools validate config "$config_file" --qontinui-path ./src 2>&1; then
+                echo "Valid: $config_file"
+              else
+                echo "Warning: $config_file may have issues"
+              fi
+            done > /tmp/weekly-analysis/config_validation_output.txt 2>&1
+
+            echo "Config validation check complete (informational only)"
+          fi
+
       # Run comprehensive analysis
       - name: Generate comprehensive HTML report
         run: |

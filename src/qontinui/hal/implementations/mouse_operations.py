@@ -1,5 +1,7 @@
 """Mouse input operations."""
 
+import time
+
 from pynput import mouse
 from pynput.mouse import Button as PynputButton
 
@@ -25,10 +27,8 @@ class MouseOperations(IMouseController):
             mouse_controller: Pynput mouse controller instance
         """
         self._mouse = mouse_controller
+        # Map button values (strings) to pynput buttons
         self._button_map = {
-            MouseButton.LEFT: PynputButton.left,
-            MouseButton.RIGHT: PynputButton.right,
-            MouseButton.MIDDLE: PynputButton.middle,
             "left": PynputButton.left,
             "right": PynputButton.right,
             "middle": PynputButton.middle,
@@ -38,14 +38,20 @@ class MouseOperations(IMouseController):
         """Convert button to Pynput button.
 
         Args:
-            button: Button to convert
+            button: Button to convert (enum or string)
 
         Returns:
             Pynput button
         """
-        if isinstance(button, str):
-            button = button.lower()
-        return self._button_map.get(button, PynputButton.left)
+        # If it's an enum, get its value (string)
+        if hasattr(button, "value"):
+            button_str = button.value.lower()
+        elif isinstance(button, str):
+            button_str = button.lower()
+        else:
+            button_str = str(button).lower()
+
+        return self._button_map.get(button_str, PynputButton.left)
 
     def mouse_move(self, x: int, y: int, duration: float = 0.0) -> bool:
         """Move mouse to absolute position.
@@ -74,7 +80,7 @@ class MouseOperations(IMouseController):
                     current_y = int(start_y + (y - start_y) * progress)
                     self._mouse.position = (current_x, current_y)
                     if i < steps:
-                        TimeWrapper.wait(delay)
+                        time.sleep(delay)
             else:
                 # Instant movement
                 self._mouse.position = (x, y)

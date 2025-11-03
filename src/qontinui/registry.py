@@ -64,23 +64,28 @@ if workflow:
 from __future__ import annotations
 
 import logging
-from typing import Any
-
-logger = logging.getLogger(__name__)
-
-# Use TYPE_CHECKING to avoid circular imports at runtime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .model.element import Image
 
+logger = logging.getLogger(__name__)
+
 # Global registries - private to this module
-_image_registry: dict[str, "Image"] = {}
+_image_registry: dict[str, Image] = {}
+_image_metadata_registry: dict[str, dict[str, str]] = (
+    {}
+)  # Stores {image_id: {file_path: str, name: str}}
 _workflow_registry: dict[str, Any] = {}
-_workflow_definitions: dict[str, dict[str, Any]] = {}  # Stores full workflow definitions for graph workflows
+_workflow_names: dict[str, str] = {}  # Stores {workflow_id: workflow_name}
+_workflow_definitions: dict[str, dict[str, Any]] = (
+    {}
+)  # Stores full workflow definitions for graph workflows
 
 
-def register_image(image_id: str, image: "Image") -> None:
+def register_image(
+    image_id: str, image: Image, file_path: str | None = None, name: str | None = None
+) -> None:
     """Register an image for use by the library.
 
     This should be called by the runner after loading images from configuration.
@@ -90,18 +95,26 @@ def register_image(image_id: str, image: "Image") -> None:
     Args:
         image_id: Unique identifier for the image (typically from config)
         image: Image object to register
+        file_path: Optional file path where the image was loaded from
+        name: Optional name for the image
 
     Example:
         >>> from qontinui.model.element import Image
         >>> from qontinui import registry
         >>> img = Image.from_file("button.png")
-        >>> registry.register_image("submit_button", img)
+        >>> registry.register_image("submit_button", img, file_path="button.png", name="Submit Button")
     """
     if image_id in _image_registry:
-        logger.warning(
-            f"Image '{image_id}' already registered - replacing with new image"
-        )
+        logger.warning(f"Image '{image_id}' already registered - replacing with new image")
     _image_registry[image_id] = image
+
+    # Store metadata if provided
+    if file_path is not None or name is not None:
+        _image_metadata_registry[image_id] = {
+            "file_path": file_path or "",
+            "name": name or image.name or image_id,
+        }
+
     logger.debug(f"Registered image: {image_id}")
 
 
@@ -128,10 +141,15 @@ def register_workflow(workflow_id: str, workflow: Any, workflow_name: str | None
             f"Workflow '{display_name}' already registered - replacing with new workflow"
         )
     _workflow_registry[workflow_id] = workflow
+
+    # Store workflow name if provided
+    if workflow_name:
+        _workflow_names[workflow_id] = workflow_name
+
     logger.debug(f"Registered workflow: {display_name}")
 
 
-def get_image(image_id: str) -> "Image | None":
+def get_image(image_id: str) -> Image | None:
     """Retrieve a registered image by ID.
 
     This should be called by the library when it needs to access an image
@@ -153,6 +171,24 @@ def get_image(image_id: str) -> "Image | None":
     if image is None:
         logger.warning(f"Image '{image_id}' not found in registry")
     return image
+
+
+def get_image_metadata(image_id: str) -> dict[str, str] | None:
+    """Retrieve metadata for a registered image by ID.
+
+    Args:
+        image_id: Unique identifier of the image
+
+    Returns:
+        Dictionary with 'file_path' and 'name' keys if found, None otherwise
+
+    Example:
+        >>> from qontinui import registry
+        >>> metadata = registry.get_image_metadata("submit_button")
+        >>> if metadata:
+        ...     print(f"Image path: {metadata['file_path']}")
+    """
+    return _image_metadata_registry.get(image_id)
 
 
 def get_workflow(workflow_id: str) -> Any | None:
@@ -179,8 +215,25 @@ def get_workflow(workflow_id: str) -> Any | None:
     return workflow
 
 
+def get_workflow_name(workflow_id: str) -> str | None:
+    """Retrieve the name of a registered workflow by ID.
+
+    Args:
+        workflow_id: Unique identifier of the workflow
+
+    Returns:
+        Workflow name if found, None otherwise
+
+    Example:
+        >>> from qontinui import registry
+        >>> name = registry.get_workflow_name("login_flow")
+        >>> print(f"Workflow name: {name}")
+    """
+    return _workflow_names.get(workflow_id)
+
+
 def clear_images() -> None:
-    """Clear all registered images.
+    """Clear all registered images and their metadata.
 
     This is primarily useful for testing to ensure clean state between tests.
     Should NOT be called during normal operation.
@@ -191,7 +244,8 @@ def clear_images() -> None:
         >>> registry.clear_images()
     """
     _image_registry.clear()
-    logger.debug("Cleared all registered images")
+    _image_metadata_registry.clear()
+    logger.debug("Cleared all registered images and metadata")
 
 
 def register_workflow_definition(workflow_id: str, workflow_def: dict[str, Any]) -> None:
@@ -215,9 +269,7 @@ def register_workflow_definition(workflow_id: str, workflow_def: dict[str, Any])
         >>> registry.register_workflow_definition("my-workflow", workflow_def)
     """
     if workflow_id in _workflow_definitions:
-        logger.warning(
-            f"Workflow definition '{workflow_id}' already registered - replacing"
-        )
+        logger.warning(f"Workflow definition '{workflow_id}' already registered - replacing")
     _workflow_definitions[workflow_id] = workflow_def
     logger.debug(f"Registered workflow definition: {workflow_id}")
 
@@ -255,6 +307,7 @@ def clear_workflows() -> None:
         >>> registry.clear_workflows()
     """
     _workflow_registry.clear()
+    _workflow_names.clear()
     _workflow_definitions.clear()
     logger.debug("Cleared all registered workflows and definitions")
 

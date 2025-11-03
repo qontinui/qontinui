@@ -28,7 +28,6 @@ See HALContainer and initialize_hal() for the new dependency injection pattern.
 
 import sys
 import threading
-import warnings
 from typing import Any, cast
 
 from .config import HALConfig, get_config
@@ -128,6 +127,63 @@ class HALFactory:
 
         instance: IPatternMatcher = cls._instances[cache_key]
         return instance
+
+    @classmethod
+    def get_input_controller(cls, config: HALConfig | None = None) -> Any:
+        """Get unified input controller (keyboard + mouse).
+
+        This method provides backward compatibility for code that expects
+        a unified input controller. Returns an object with both keyboard
+        and mouse controller methods.
+
+        Args:
+            config: Optional configuration override
+
+        Returns:
+            Object with keyboard and mouse controller methods
+
+        Note:
+            This is a compatibility shim. New code should use HALContainer
+            and access keyboard_controller and mouse_controller separately.
+        """
+        from types import SimpleNamespace
+
+        config = config or get_config()
+        keyboard = cls.get_keyboard_controller(config)
+        mouse = cls.get_mouse_controller(config)
+
+        # Create a combined controller object
+        return SimpleNamespace(
+            keyboard=keyboard,
+            mouse=mouse,
+            # Expose keyboard methods at top level for convenience
+            press=keyboard.key_press,
+            key_press=keyboard.key_press,
+            release=keyboard.key_up,
+            key_up=keyboard.key_up,
+            key_down=keyboard.key_down,
+            type=keyboard.type_text,
+            type_text=keyboard.type_text,
+            hotkey=keyboard.hotkey,
+            # Expose mouse methods at top level for convenience
+            move=mouse.mouse_move,
+            mouse_move=mouse.mouse_move,
+            move_relative=mouse.mouse_move_relative,
+            mouse_move_relative=mouse.mouse_move_relative,
+            click=mouse.mouse_click,
+            mouse_click=mouse.mouse_click,
+            mouse_down=mouse.mouse_down,
+            mouse_up=mouse.mouse_up,
+            mouse_drag=mouse.mouse_drag,
+            drag=mouse.drag,
+            click_at=mouse.click_at,
+            double_click_at=mouse.double_click_at,
+            scroll=mouse.mouse_scroll,
+            mouse_scroll=mouse.mouse_scroll,
+            get_position=mouse.get_mouse_position,
+            get_mouse_position=mouse.get_mouse_position,
+            move_mouse=mouse.move_mouse,
+        )
 
     @classmethod
     def get_keyboard_controller(cls, config: HALConfig | None = None) -> IKeyboardController:
