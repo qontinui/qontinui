@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Discriminator, Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from ..config.schema import Workflow
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
@@ -189,19 +189,39 @@ class Pattern(BaseModel):
     3. Similarity score (0.0-1.0) is calculated based on pixel correlation
     4. Match succeeds if score exceeds the StateImage's threshold
 
+    Design Decision - Optional Mask Field:
+    ----------------------------------------
+    The mask field is Optional[str] in the config schema but becomes required
+    (np.ndarray) in the runtime Pattern model (model/element/pattern.py). This is
+    an intentional design choice:
+
+    RATIONALE:
+    - Config files are user-facing; most patterns don't need masks (98% use case)
+    - Including full white masks for every pattern would add 1-2KB × pattern_count
+    - A project with 50 patterns would bloat by 50-100KB with redundant data
+    - Clear semantics: no mask = match entire image, explicit mask = selective matching
+
+    IMPLEMENTATION:
+    - VisionActionExecutor creates full masks (np.ones) at runtime when mask=None
+    - TemplateMatcher handles both masked and unmasked matching transparently
+    - Runtime Pattern model always has a mask (required field), simplifying logic
+
+    This approach keeps configs lean while ensuring uniform runtime behavior.
+    See: action_executors/vision.py::_build_pattern_from_config()
+
     Attributes:
         id: Unique identifier for this pattern.
         name: Human-readable name (e.g., "button_normal", "button_hover").
         image_id: Reference to an ImageAsset ID in the config.images array.
         mask: Optional base64-encoded mask image. White pixels (255) indicate areas
             to match, black pixels (0) are ignored. Useful for matching partial elements
-            or ignoring dynamic text within buttons.
+            or ignoring dynamic text within buttons. When None, the entire image is matched.
         search_regions: List of SearchRegion objects limiting where to search for this pattern.
         fixed: If True, pattern represents a fixed screen element that doesn't move.
             Enables optimizations for static UI elements.
 
     Example:
-        >>> # Pattern for button without mask
+        >>> # Pattern for button without mask (matches entire image)
         >>> button_pattern = Pattern(
         ...     id="login_btn_pattern",
         ...     name="Login Button",
@@ -230,8 +250,10 @@ class Pattern(BaseModel):
 
     id: str = ""
     name: str = ""
-    image_id: str | None = Field(default=None, alias="imageId")  # Reference to image in images array
-    mask: str | None = None  # optional mask data
+    image_id: str | None = Field(
+        default=None, alias="imageId"
+    )  # Reference to image in images array
+    mask: str | None = None  # Optional mask data (None = match entire image)
     search_regions: list[SearchRegion] = Field(default_factory=list, alias="searchRegions")
     fixed: bool = False
 
@@ -507,7 +529,6 @@ class Transition(BaseModel):
         return validator.validate_workflows_field(data)
 
 
-
 class OutgoingTransition(Transition):
     """Transition from one state to another with state activation control.
 
@@ -744,9 +765,9 @@ class QontinuiConfig(BaseModel):
     execution_settings: ExecutionSettings = Field(default_factory=ExecutionSettings)
     recognition_settings: RecognitionSettings = Field(default_factory=RecognitionSettings)
     schedules: list[Any] = Field(default_factory=list)  # List of ScheduleConfig objects
-    transitions: list[Annotated["OutgoingTransition | IncomingTransition", Field(discriminator="type")]] = Field(
-        default_factory=list
-    )
+    transitions: list[
+        Annotated["OutgoingTransition | IncomingTransition", Field(discriminator="type")]
+    ] = Field(default_factory=list)
     settings: dict[str, Any] = Field(default_factory=dict)
 
     # Runtime data
@@ -875,5 +896,3 @@ class ConfigParser:
         Should be called when automation execution completes.
         """
         self.image_manager.cleanup()
-
-

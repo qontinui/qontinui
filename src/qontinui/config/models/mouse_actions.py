@@ -20,6 +20,13 @@ class ClickActionConfig(BaseModel):
 
     If no target is provided, clicks at the current mouse position (pure action).
     Providing a target makes this a composite action (move + click).
+
+    Target can be:
+    - ImageTarget: Find and click on an image
+    - CoordinatesTarget: Click at specific coordinates
+    - RegionTarget: Click at center of region
+    - LastFindResultTarget: Click at location from previous FIND action
+    - CurrentPositionTarget: Click at current mouse position (same as None)
     """
 
     target: TargetConfig | None = None  # Optional - defaults to current position
@@ -34,7 +41,17 @@ class ClickActionConfig(BaseModel):
 
 
 class MouseMoveActionConfig(BaseModel):
-    """MOUSE_MOVE action configuration."""
+    """MOUSE_MOVE action configuration.
+
+    Target is required and specifies where to move the mouse.
+
+    Target can be:
+    - ImageTarget: Find and move to an image
+    - CoordinatesTarget: Move to specific coordinates
+    - RegionTarget: Move to center of region
+    - LastFindResultTarget: Move to location from previous FIND action
+    - CurrentPositionTarget: Stay at current position (no movement)
+    """
 
     target: TargetConfig
     move_instantly: bool | None = Field(None, alias="moveInstantly")
@@ -44,7 +61,10 @@ class MouseMoveActionConfig(BaseModel):
 
 
 class MouseDownActionConfig(BaseModel):
-    """MOUSE_DOWN action configuration."""
+    """MOUSE_DOWN action configuration.
+
+    Target supports LastFindResultTarget to press at location from previous FIND action.
+    """
 
     target: TargetConfig | None = None
     coordinates: Coordinates | None = None
@@ -54,7 +74,10 @@ class MouseDownActionConfig(BaseModel):
 
 
 class MouseUpActionConfig(BaseModel):
-    """MOUSE_UP action configuration."""
+    """MOUSE_UP action configuration.
+
+    Target supports LastFindResultTarget to release at location from previous FIND action.
+    """
 
     target: TargetConfig | None = None
     coordinates: Coordinates | None = None
@@ -64,7 +87,11 @@ class MouseUpActionConfig(BaseModel):
 
 
 class DragActionConfig(BaseModel):
-    """DRAG action configuration."""
+    """DRAG action configuration.
+
+    Both source and destination support LastFindResultTarget.
+    Destination can also be raw Coordinates or Region.
+    """
 
     source: TargetConfig
     destination: TargetConfig | Coordinates | Region
@@ -78,12 +105,39 @@ class DragActionConfig(BaseModel):
 
 
 class ScrollActionConfig(BaseModel):
-    """SCROLL action configuration."""
+    """SCROLL action configuration.
+
+    Target supports LastFindResultTarget to scroll at location from previous FIND action.
+    """
 
     direction: Literal["up", "down", "left", "right"]
     clicks: int | None = None
     target: TargetConfig | None = None
     smooth: bool | None = None
     delay_between_scrolls: int | None = Field(None, alias="delayBetweenScrolls")
+
+    model_config = {"populate_by_name": True}
+
+
+class HighlightActionConfig(BaseModel):
+    """HIGHLIGHT action configuration.
+
+    Visually highlights a region on the screen, useful for debugging and demonstrations.
+
+    Target is required and specifies what to highlight.
+
+    Target can be:
+    - ImageTarget: Find and highlight an image
+    - CoordinatesTarget: Highlight at specific coordinates
+    - RegionTarget: Highlight a region
+    - LastFindResultTarget: Highlight location from previous FIND action
+    - CurrentPositionTarget: Highlight at current mouse position
+    """
+
+    target: TargetConfig
+    duration: int | None = None  # Duration in milliseconds
+    color: str | None = None  # Hex color code (e.g., "#FF0000")
+    thickness: int | None = None  # Border thickness in pixels
+    style: Literal["box", "circle", "arrow"] | None = None
 
     model_config = {"populate_by_name": True}

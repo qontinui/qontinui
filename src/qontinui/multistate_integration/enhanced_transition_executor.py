@@ -99,6 +99,10 @@ class EnhancedTransitionExecutor:
         self.success_policy = success_policy
         self.success_threshold = success_threshold
 
+        logger.info(
+            f"EnhancedTransitionExecutor initialized with workflow_executor: {workflow_executor is not None} (type: {type(workflow_executor).__name__ if workflow_executor else 'None'})"
+        )
+
         # Track execution history
         self.execution_history: list[ExecutionContext] = []
 
@@ -223,8 +227,14 @@ class EnhancedTransitionExecutor:
         """
         transition = context.transition
 
+        logger.debug(f"_execute_outgoing called for transition '{transition.name}'")
+        logger.debug(f"  workflow_executor is None: {self.workflow_executor is None}")
+        logger.debug(f"  transition has workflow_ids attr: {hasattr(transition, 'workflow_ids')}")
+        if hasattr(transition, "workflow_ids"):
+            logger.debug(f"  transition.workflow_ids: {transition.workflow_ids}")
+
         # Check if transition has workflows to execute
-        if not hasattr(transition, 'workflow_ids') or not transition.workflow_ids:
+        if not hasattr(transition, "workflow_ids") or not transition.workflow_ids:
             logger.warning(
                 f"Transition '{transition.name}' has no workflows to execute. "
                 "Navigation will fail unless workflows are linked to this transition."
@@ -237,15 +247,40 @@ class EnhancedTransitionExecutor:
 
             try:
                 if self.workflow_executor:
-                    # Use the injected workflow executor
-                    result = self.workflow_executor.execute_workflow(workflow_id)
-                    if not result.get('success', False):
+                    # Get state names for target states
+                    target_state_names = []
+                    if self.state_memory.state_service:
+                        for state_id in transition.activate:
+                            state = self.state_memory.state_service.get_state(state_id)
+                            if state:
+                                target_state_names.append(state.name)
+                            else:
+                                target_state_names.append(str(state_id))
+                    else:
+                        # Fallback to IDs if no state service
+                        target_state_names = [str(s) for s in transition.activate]
+
+                    # Build transition context for runner
+                    transition_context = {
+                        "transition_id": f"outgoing-{transition.name}-{workflow_id}",
+                        "transition_name": "Outgoing Transition",  # Just the type, not the states
+                        "transition_type": "outgoing",
+                        "target_states": target_state_names,
+                        "source_state": transition.name,
+                    }
+
+                    # Use the injected workflow executor with transition context
+                    result = self.workflow_executor.execute_workflow(
+                        workflow_id, transition_context
+                    )
+                    if not result.get("success", False):
                         logger.error(f"Workflow '{workflow_id}' failed")
                         return False
                 else:
                     # No workflow executor available - cannot proceed
                     # Direct workflow execution requires ActionExecutor or similar
                     from qontinui import registry
+
                     workflow = registry.get_workflow(workflow_id)
                     if not workflow:
                         logger.error(f"Workflow '{workflow_id}' not found in registry")
@@ -347,32 +382,52 @@ class EnhancedTransitionExecutor:
             return False
 
         # Check if state has incoming transitions
-        if not hasattr(state, 'incoming_transitions') or not state.incoming_transitions:
+        if not hasattr(state, "incoming_transitions") or not state.incoming_transitions:
             logger.debug(f"State {state.name} has no incoming transitions - verification skipped")
             return True  # No incoming transitions = no verification needed = success
 
-        logger.info(f"Executing {len(state.incoming_transitions)} incoming transitions for state {state.name}")
+        logger.info(
+            f"Executing {len(state.incoming_transitions)} incoming transitions for state {state.name}"
+        )
 
         # Execute all incoming transitions for this state
         for incoming_transition in state.incoming_transitions:
-            if not hasattr(incoming_transition, 'workflow_ids') or not incoming_transition.workflow_ids:
-                logger.warning(f"IncomingTransition has no workflows - skipping")
+            if (
+                not hasattr(incoming_transition, "workflow_ids")
+                or not incoming_transition.workflow_ids
+            ):
+                logger.warning("IncomingTransition has no workflows - skipping")
                 continue
 
             # Execute each workflow in the incoming transition
             for workflow_id in incoming_transition.workflow_ids:
-                logger.debug(f"About to execute incoming workflow '{workflow_id}' for state '{state.name}'")
+                logger.debug(
+                    f"About to execute incoming workflow '{workflow_id}' for state '{state.name}'"
+                )
 
                 if not self.workflow_executor:
                     logger.error("No workflow_executor available for incoming transition")
                     return False
 
-                logger.debug(f"Calling workflow_executor.execute_workflow('{workflow_id}')...")
-                result = self.workflow_executor.execute_workflow(workflow_id)
+                # Build transition context for runner
+                transition_context = {
+                    "transition_id": f"incoming-{state.name}-{workflow_id}",
+                    "transition_name": "Incoming Transition",  # Just the type, not the state
+                    "transition_type": "incoming",
+                    "target_states": [state.name],
+                    "source_state": None,  # Incoming transitions don't have a specific source
+                }
+
+                logger.debug(
+                    f"Calling workflow_executor.execute_workflow('{workflow_id}') with transition context..."
+                )
+                result = self.workflow_executor.execute_workflow(workflow_id, transition_context)
                 logger.debug(f"Workflow '{workflow_id}' returned: {result}")
 
-                if not result.get('success', False):
-                    logger.error(f"Incoming workflow '{workflow_id}' failed for state '{state.name}'")
+                if not result.get("success", False):
+                    logger.error(
+                        f"Incoming workflow '{workflow_id}' failed for state '{state.name}'"
+                    )
                     return False
 
         logger.info(f"All incoming transitions succeeded for state {state.name}")

@@ -29,7 +29,6 @@ from .data_operations import (
 )
 from .execution import BaseActionSettings, ExecutionSettings
 from .find_actions import (
-    ExistsActionConfig,
     FindActionConfig,
     FindStateImageActionConfig,
     VanishActionConfig,
@@ -45,6 +44,7 @@ from .keyboard_actions import (
 from .mouse_actions import (
     ClickActionConfig,
     DragActionConfig,
+    HighlightActionConfig,
     MouseDownActionConfig,
     MouseMoveActionConfig,
     MouseUpActionConfig,
@@ -80,7 +80,6 @@ ACTION_CONFIG_MAP = {
     "FIND": FindActionConfig,
     "FIND_STATE_IMAGE": FindStateImageActionConfig,
     "VANISH": VanishActionConfig,
-    "EXISTS": ExistsActionConfig,
     "WAIT": WaitActionConfig,
     # Mouse actions
     "CLICK": ClickActionConfig,
@@ -89,6 +88,7 @@ ACTION_CONFIG_MAP = {
     "MOUSE_UP": MouseUpActionConfig,
     "DRAG": DragActionConfig,
     "SCROLL": ScrollActionConfig,
+    "HIGHLIGHT": HighlightActionConfig,
     # Keyboard actions
     "TYPE": TypeActionConfig,
     "KEY_PRESS": KeyPressActionConfig,

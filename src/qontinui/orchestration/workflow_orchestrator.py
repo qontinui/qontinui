@@ -5,8 +5,9 @@ Extracted from ActionExecutor to follow Single Responsibility Principle.
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 from .execution_context import ExecutionContext
 from .retry_policy import RetryPolicy
@@ -107,6 +108,9 @@ class WorkflowOrchestrator:
     ) -> WorkflowResult:
         """Execute a sequence of actions with error handling and retry.
 
+        Automatically detects and batches consecutive IF-image_exists actions
+        for parallel execution to improve performance.
+
         Args:
             actions: List of actions to execute
             context: Optional execution context (created if not provided)
@@ -115,6 +119,8 @@ class WorkflowOrchestrator:
         Returns:
             WorkflowResult with execution details
         """
+        import asyncio
+
         context = context or ExecutionContext()
         retry_policy = retry_policy or self.retry_policy or RetryPolicy.no_retry()
 
@@ -122,30 +128,66 @@ class WorkflowOrchestrator:
         self._emit_event("workflow_started", action_count=len(actions))
 
         try:
-            for index, action in enumerate(actions):
-                result = self._execute_action_with_retry(
-                    action=action, index=index, context=context, retry_policy=retry_policy
-                )
+            # Detect IF-image_exists batches for optimization
+            batches = self._detect_if_image_exists_batches(actions)
 
-                if not result.success:
-                    # Action failed - check continue_on_error
-                    if not retry_policy.continue_on_error:
+            index = 0
+            completed = 0
+
+            while index < len(actions):
+                # Check if current action is part of a batch
+                batch_info = self._find_batch_at_index(batches, index)
+
+                if batch_info and len(batch_info["actions"]) >= 2:
+                    # Execute batch of IF actions in parallel
+                    logger.info(
+                        f"Auto-batching {len(batch_info['actions'])} IF-image_exists actions "
+                        f"at indices {batch_info['start_index']}-{batch_info['end_index']}"
+                    )
+
+                    batch_success = asyncio.run(
+                        self._execute_if_batch_optimized(batch_info, context)
+                    )
+
+                    if not batch_success and not retry_policy.continue_on_error:
                         context.complete_workflow()
                         return WorkflowResult(
                             success=False,
-                            error=result.error,
                             context=context,
-                            completed_actions=index,
+                            completed_actions=completed,
                             failed_action_index=index,
                         )
+
+                    # Skip past batched actions
+                    completed += len(batch_info["actions"])
+                    index = batch_info["end_index"] + 1
+                else:
+                    # Execute single action normally
+                    action = actions[index]
+                    result = self._execute_action_with_retry(
+                        action=action, index=index, context=context, retry_policy=retry_policy
+                    )
+
+                    if not result.success:
+                        # Action failed - check continue_on_error
+                        if not retry_policy.continue_on_error:
+                            context.complete_workflow()
+                            return WorkflowResult(
+                                success=False,
+                                error=result.error,
+                                context=context,
+                                completed_actions=completed,
+                                failed_action_index=index,
+                            )
+
+                    completed += 1
+                    index += 1
 
             # All actions completed
             context.complete_workflow()
             self._emit_event("workflow_completed", statistics=context.statistics)
 
-            return WorkflowResult(
-                success=True, context=context, completed_actions=len(actions)
-            )
+            return WorkflowResult(success=True, context=context, completed_actions=completed)
 
         except Exception as e:
             logger.error(f"Workflow execution failed with unexpected error: {e}")
@@ -183,7 +225,6 @@ class WorkflowOrchestrator:
         self._emit_event("action_started", action=action_name, index=index)
 
         attempt = 0
-        last_error: Exception | None = None
 
         while True:
             try:
@@ -212,7 +253,6 @@ class WorkflowOrchestrator:
                 return ActionResult(success=False)
 
             except Exception as e:
-                last_error = e
                 logger.error(f"Action {action_name} failed with error: {e}")
 
                 # Check if we should retry based on exception
@@ -307,6 +347,139 @@ class WorkflowOrchestrator:
                 self.event_emitter.emit(event_type, **kwargs)
             except Exception as e:
                 logger.warning(f"Event emission failed: {e}")
+
+    def _detect_if_image_exists_batches(self, actions: list[Any]) -> list[dict[str, Any]]:
+        """Detect consecutive IF-image_exists actions for batching.
+
+        Args:
+            actions: List of actions to analyze
+
+        Returns:
+            List of batch information dictionaries
+        """
+        batches = []
+        current_batch = []
+
+        for i, action in enumerate(actions):
+            # Check if this is an IF action with image_exists condition
+            if self._is_if_image_exists_action(action):
+                current_batch.append(
+                    {
+                        "index": i,
+                        "action": action,
+                    }
+                )
+            else:
+                # Non-IF or non-image_exists action breaks the batch
+                if len(current_batch) >= 2:  # Only batch if 2+ actions
+                    batches.append(
+                        {
+                            "actions": current_batch,
+                            "start_index": current_batch[0]["index"],
+                            "end_index": current_batch[-1]["index"],
+                        }
+                    )
+                current_batch = []
+
+        # Handle final batch
+        if len(current_batch) >= 2:
+            batches.append(
+                {
+                    "actions": current_batch,
+                    "start_index": current_batch[0]["index"],
+                    "end_index": current_batch[-1]["index"],
+                }
+            )
+
+        return batches
+
+    def _is_if_image_exists_action(self, action: Any) -> bool:
+        """Check if action is an IF with image_exists condition.
+
+        Args:
+            action: Action to check
+
+        Returns:
+            True if this is an IF-image_exists action
+        """
+        if not hasattr(action, "type") or action.type != "IF":
+            return False
+
+        # Check if it has image_exists condition
+        if not hasattr(action, "config"):
+            return False
+
+        config = action.config
+        if not hasattr(config, "condition"):
+            return False
+
+        condition = config.condition
+        if not hasattr(condition, "type") or condition.type != "image_exists":
+            return False
+
+        return True
+
+    def _find_batch_at_index(
+        self, batches: list[dict[str, Any]], index: int
+    ) -> dict[str, Any] | None:
+        """Find batch that contains given index.
+
+        Args:
+            batches: List of batch information
+            index: Action index to find
+
+        Returns:
+            Batch info or None if index not in any batch
+        """
+        for batch in batches:
+            if batch["start_index"] <= index <= batch["end_index"]:
+                return batch
+        return None
+
+    async def _execute_if_batch_optimized(
+        self,
+        batch_info: dict[str, Any],
+        context: ExecutionContext,
+    ) -> bool:
+        """Execute batch of IF-image_exists actions in parallel.
+
+        Args:
+            batch_info: Batch information with actions
+            context: Execution context
+
+        Returns:
+            True if batch executed successfully
+        """
+        from ..actions.control_flow.condition_evaluator import ConditionEvaluator
+
+        actions_data = batch_info["actions"]
+        logger.debug(f"Executing batch of {len(actions_data)} IF-image_exists actions")
+
+        # Build list of conditions to evaluate
+        conditions = []
+        for action_data in actions_data:
+            action = action_data["action"]
+            conditions.append((action.id, action.config.condition))
+
+        # Create condition evaluator
+        evaluator = ConditionEvaluator(context)
+
+        # Execute all conditions in parallel
+        try:
+            results = await evaluator.evaluate_multiple_image_exists_async(conditions)
+
+            # Log results
+            any_found = any(results.values())
+            logger.info(
+                f"Batch execution complete: {sum(results.values())} of {len(results)} images found"
+            )
+
+            # For state verification workflows, success if ANY image found
+            return any_found
+
+        except Exception as e:
+            logger.error(f"Batch execution failed: {e}", exc_info=True)
+            return False
 
 
 class ActionResult:

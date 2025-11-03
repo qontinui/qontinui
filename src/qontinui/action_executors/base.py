@@ -5,11 +5,11 @@ action executors, replacing the monolithic ActionExecutor god class.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 from ..config.schema import Action
-from ..exceptions import ActionExecutionError
 
 
 @dataclass
@@ -31,16 +31,16 @@ class ExecutionContext:
     time: Any  # TimeWrapper
 
     # Shared state
-    last_find_location: Optional[tuple[int, int]]
+    last_find_location: tuple[int, int] | None
     variable_context: Any  # VariableContext
-    state_executor: Optional[Any]  # StateExecutor
+    state_executor: Any | None  # StateExecutor
 
     # Sub-executors for control flow and data operations
     control_flow_executor: Any  # ControlFlowExecutor
     data_operations_executor: Any  # DataOperationsExecutor
 
     # Workflow execution (for RUN_WORKFLOW action and navigation)
-    workflow_executor: Optional[Any]  # Reference to main workflow executor
+    workflow_executor: Any | None  # Reference to main workflow executor
     execute_action: Callable[[Action], bool]  # Callback to execute nested actions
 
     # Event emission functions
@@ -48,7 +48,7 @@ class ExecutionContext:
     emit_action_event: Callable[[str, str, bool, dict], None]
     emit_image_recognition_event: Callable[[dict], None]
 
-    def update_last_find_location(self, location: Optional[tuple[int, int]]) -> None:
+    def update_last_find_location(self, location: tuple[int, int] | None) -> None:
         """Update the last find location (shared state).
 
         Args:
@@ -127,7 +127,7 @@ class ActionExecutorBase(ABC):
             action_id=action.id or "unknown",
             action_type=action.type,
             success=True,
-            data={"status": "started"}
+            data={"status": "started"},
         )
 
     def _emit_action_success(self, action: Action, data: dict | None = None) -> None:
@@ -138,10 +138,7 @@ class ActionExecutorBase(ABC):
             data: Optional additional data
         """
         self.context.emit_action_event(
-            action_id=action.id or "unknown",
-            action_type=action.type,
-            success=True,
-            data=data or {}
+            action_id=action.id or "unknown", action_type=action.type, success=True, data=data or {}
         )
 
     def _emit_action_failure(self, action: Action, error: str, data: dict | None = None) -> None:
@@ -160,7 +157,7 @@ class ActionExecutorBase(ABC):
             action_id=action.id or "unknown",
             action_type=action.type,
             success=False,
-            data=failure_data
+            details=failure_data,
         )
 
     def _get_default_timing(self, category: str, key: str, default: float = 0.0) -> float:

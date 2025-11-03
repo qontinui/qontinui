@@ -11,6 +11,7 @@ from ..config.schema import (
     Action,
     ClickActionConfig,
     DragActionConfig,
+    HighlightActionConfig,
     MouseDownActionConfig,
     MouseMoveActionConfig,
     MouseUpActionConfig,
@@ -19,7 +20,7 @@ from ..config.schema import (
 )
 from ..exceptions import ActionExecutionError
 from ..hal.interfaces.input_controller import MouseButton as HALMouseButton
-from .base import ActionExecutorBase, ExecutionContext
+from .base import ActionExecutorBase
 from .registry import register_executor
 
 logger = logging.getLogger(__name__)
@@ -58,6 +59,7 @@ class MouseActionExecutor(ActionExecutorBase):
             "DOUBLE_CLICK",
             "RIGHT_CLICK",
             "DRAG",
+            "HIGHLIGHT",
         ]
 
     def execute(self, action: Action, typed_config: Any) -> bool:
@@ -73,6 +75,30 @@ class MouseActionExecutor(ActionExecutorBase):
         Raises:
             ActionExecutionError: If action execution fails critically
         """
+        # File-based debug logging at entry point - NO stderr output (breaks JSON protocol)
+        import os
+        import tempfile
+        from datetime import datetime
+
+        # Try multiple log paths
+        debug_paths = [
+            "/tmp/qontinui_mouse_executor_debug.log",
+            os.path.join(tempfile.gettempdir(), "qontinui_mouse_executor_debug.log"),
+            "/mnt/c/Users/jspin/Documents/qontinui_parent/mouse_executor_debug.log",
+        ]
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        log_msg = f"[{timestamp}] MouseActionExecutor.execute() called for {action.type} (ID: {action.id})\n"
+
+        for debug_log_path in debug_paths:
+            try:
+                with open(debug_log_path, "a", encoding="utf-8") as f:
+                    f.write(log_msg)
+                    f.write(f"[{timestamp}]   Typed config type: {type(typed_config).__name__}\n")
+                break  # Stop after first successful write
+            except Exception:
+                continue
+
         action_type = action.type
         logger.debug(f"Executing mouse action: {action_type}")
 
@@ -93,14 +119,20 @@ class MouseActionExecutor(ActionExecutorBase):
                 return self._execute_right_click(action, typed_config)
             elif action_type == "DRAG":
                 return self._execute_drag(action, typed_config)
+            elif action_type == "HIGHLIGHT":
+                return self._execute_highlight(action, typed_config)
             else:
-                raise ActionExecutionError(f"Unsupported action type: {action_type}")
+                raise ActionExecutionError(
+                    action_type=action_type, reason=f"Unsupported action type: {action_type}"
+                )
 
         except ActionExecutionError:
             raise
         except Exception as e:
             logger.error(f"Error executing {action_type}: {e}")
-            raise ActionExecutionError(f"Failed to execute {action_type}: {e}") from e
+            raise ActionExecutionError(
+                action_type=action_type, reason=f"Failed to execute {action_type}: {e}"
+            ) from e
 
     # Helper methods
 
@@ -112,7 +144,8 @@ class MouseActionExecutor(ActionExecutorBase):
         - CoordinatesTarget: Use specified coordinates
         - RegionTarget: Use center of region
         - CurrentPositionTarget: Return None (use current position)
-        - "Last Find Result": Use stored last find location
+        - LastFindResultTarget: Use location from most recent FIND action
+        - None: Use last find result if available (for backward compatibility)
 
         Args:
             target: Target configuration or None
@@ -120,18 +153,46 @@ class MouseActionExecutor(ActionExecutorBase):
         Returns:
             Tuple of (x, y) coordinates or None if not found or current position
         """
-        from ..config.schema import CoordinatesTarget, ImageTarget, RegionTarget
+        import os
+        import tempfile
+        from datetime import datetime
 
+        from ..config.schema import (
+            CoordinatesTarget,
+            ImageTarget,
+            LastFindResultTarget,
+            RegionTarget,
+        )
+
+        # Debug logging
+        debug_log_path = os.path.join(
+            tempfile.gettempdir(), "qontinui_get_target_location_debug.log"
+        )
+
+        def log_debug(msg: str):
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            log_line = f"[{timestamp}] {msg}\n"
+            logger.info(f"[GET_TARGET_LOC] {msg}")
+            try:
+                with open(debug_log_path, "a", encoding="utf-8") as f:
+                    f.write(log_line)
+            except Exception:
+                pass
+
+        log_debug(f"_get_target_location() called with target={target}")
+        log_debug(f"Target type: {type(target).__name__ if target else 'None'}")
+        log_debug(f"Current last_find_location: {self.context.last_find_location}")
+
+        # When target is None, use last find location if available
         if target is None:
-            return None
-
-        # Handle string target for backward compatibility
-        if isinstance(target, str) and target == "Last Find Result":
+            log_debug("Target is None, checking for last find result")
             if self.context.last_find_location:
-                logger.debug(f"Using Last Find Result: {self.context.last_find_location}")
+                log_debug(f"Using last find result: {self.context.last_find_location}")
+                logger.debug(f"Using last find result: {self.context.last_find_location}")
                 return self.context.last_find_location
             else:
-                logger.error("Last Find Result requested but no previous find result available")
+                log_debug("ERROR: No target specified and no previous find result available")
+                logger.warning("No target specified and no previous find result available")
                 return None
 
         # Handle typed targets
@@ -168,17 +229,35 @@ class MouseActionExecutor(ActionExecutorBase):
                     return None
 
         elif isinstance(target, CoordinatesTarget):
+            log_debug("Target is CoordinatesTarget")
             coords = target.coordinates
+            log_debug(f"Using coordinates: ({coords.x}, {coords.y})")
             logger.debug(f"Using coordinates: ({coords.x}, {coords.y})")
             return (coords.x, coords.y)
 
         elif isinstance(target, RegionTarget):
+            log_debug("Target is RegionTarget")
             region = target.region
             # Return center of region
             x = region.x + region.width // 2
             y = region.y + region.height // 2
+            log_debug(f"Using region center: ({x}, {y})")
             logger.debug(f"Using region center: ({x}, {y})")
             return (x, y)
+
+        elif isinstance(target, LastFindResultTarget):
+            log_debug("Target is LastFindResultTarget")
+            # LastFindResultTarget - use location from most recent FIND action
+            if self.context.last_find_location:
+                log_debug(f"SUCCESS: Using last find result: {self.context.last_find_location}")
+                logger.debug(f"Using last find result: {self.context.last_find_location}")
+                return self.context.last_find_location
+            else:
+                log_debug(
+                    "ERROR: LastFindResultTarget requested but last_find_location is None/empty"
+                )
+                logger.error("LastFindResultTarget requested but no previous find result available")
+                return None
 
         elif hasattr(target, "type") and target.type == "currentPosition":
             # CurrentPositionTarget - use current mouse position
@@ -209,9 +288,7 @@ class MouseActionExecutor(ActionExecutorBase):
 
     # Pure action executors
 
-    def _execute_mouse_move(
-        self, action: Action, typed_config: MouseMoveActionConfig
-    ) -> bool:
+    def _execute_mouse_move(self, action: Action, typed_config: MouseMoveActionConfig) -> bool:
         """Execute MOUSE_MOVE action (pure) - move mouse to position.
 
         Args:
@@ -221,8 +298,33 @@ class MouseActionExecutor(ActionExecutorBase):
         Returns:
             True if successful
         """
+        # File-based debug logging
+        import os
+        import tempfile
+        from datetime import datetime
+
+        debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_mouse_move_debug.log")
+
+        def log_debug(msg: str):
+            """Write to both logger and debug file."""
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            log_line = f"[{timestamp}] {msg}\n"
+            logger.info(f"[MOUSE_MOVE_DEBUG] {msg}")
+            try:
+                with open(debug_log_path, "a", encoding="utf-8") as f:
+                    f.write(log_line)
+            except Exception:
+                pass
+
+        log_debug(f"_execute_mouse_move() called for action {action.id}")
+        log_debug(f"Target config: {typed_config.target}")
+        log_debug(f"Target type: {type(typed_config.target).__name__}")
+
         location = self._get_target_location(typed_config.target)
+        log_debug(f"_get_target_location() returned: {location}")
+
         if not location:
+            log_debug("ERROR: Failed to get target location for MOUSE_MOVE")
             logger.error("Failed to get target location for MOUSE_MOVE")
             return False
 
@@ -233,20 +335,24 @@ class MouseActionExecutor(ActionExecutorBase):
         # If moveInstantly is True, override duration
         if typed_config.move_instantly:
             duration_seconds = 0.0
+            log_debug("moveInstantly=True, duration set to 0")
 
+        log_debug(f"Moving mouse to {location} (duration: {duration_ms}ms = {duration_seconds}s)")
         logger.info(f"Moving mouse to {location} (duration: {duration_ms}ms)")
         success = self.context.mouse.move(location[0], location[1], duration_seconds)
+        log_debug(f"context.mouse.move() returned: {success}")
 
         if success:
+            log_debug(f"SUCCESS: Mouse moved to {location}")
             logger.debug(f"[PURE ACTION] Mouse moved to {location}")
         else:
+            log_debug("FAILED: Mouse move failed")
             logger.error(f"Failed to move mouse to {location}")
 
+        log_debug(f"Debug log written to: {debug_log_path}")
         return success
 
-    def _execute_mouse_down(
-        self, action: Action, typed_config: MouseDownActionConfig
-    ) -> bool:
+    def _execute_mouse_down(self, action: Action, typed_config: MouseDownActionConfig) -> bool:
         """Execute MOUSE_DOWN action (pure) - press and hold mouse button.
 
         Args:
@@ -367,6 +473,21 @@ class MouseActionExecutor(ActionExecutorBase):
         Returns:
             True if successful
         """
+        # DEBUG: Write to file to confirm this method is called
+        import os
+        import tempfile
+        from datetime import datetime
+
+        debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_click_executor_debug.log")
+        try:
+            with open(debug_log_path, "a", encoding="utf-8") as f:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                f.write(f"[{timestamp}] _execute_click() called for action {action.id}\n")
+                f.write(f"[{timestamp}] Target: {typed_config.target}\n")
+                f.write(f"[{timestamp}] Mouse button: {typed_config.mouse_button}\n")
+        except Exception:
+            pass
+
         logger.info("[COMBINED ACTION: CLICK] Starting click action")
 
         # Check if target is None or currentPosition (pure action)
@@ -380,9 +501,12 @@ class MouseActionExecutor(ActionExecutorBase):
             logger.debug("No target specified - clicking at current position (pure action)")
 
         # Get button
-        button = self._convert_mouse_button(
-            typed_config.mouse_button.value if typed_config.mouse_button else None
+        button_value = typed_config.mouse_button.value if typed_config.mouse_button else None
+        logger.info(
+            f"[CLICK DEBUG] Raw mouse_button from config: {typed_config.mouse_button}, value: {button_value}"
         )
+        button = self._convert_mouse_button(button_value)
+        logger.info(f"[CLICK DEBUG] Converted button: {button}, type: {type(button)}")
 
         # Get click count
         click_count = typed_config.number_of_clicks or 1
@@ -404,9 +528,7 @@ class MouseActionExecutor(ActionExecutorBase):
         # Get current position for logging
         current_pos = self.context.mouse.position()
         logger.debug(f"Current position: ({current_pos.x}, {current_pos.y})")
-        logger.debug(
-            f"Target: {location}, Button: {button.value}, Count: {click_count}"
-        )
+        logger.debug(f"Target: {location}, Button: {button.value}, Count: {click_count}")
         logger.debug(f"Timing: hold={hold_duration}s, release={release_delay}s")
 
         # Step 1: Safety - Release all buttons first (if enabled)
@@ -417,16 +539,28 @@ class MouseActionExecutor(ActionExecutorBase):
             self.context.mouse.up(button=HALMouseButton.MIDDLE)
             self.context.time.wait(safety_delay)
 
-        # Step 2: Perform clicks at current position
-        logger.debug(f"Step 2: Perform {click_count} click(s) at current position")
+        # Step 1.5: Move to target location if specified
+        if location:
+            logger.debug(f"Step 1.5: Moving to target location: {location}")
+            self.context.mouse.move(location[0], location[1])
+            # Small delay after move to ensure GUI registers position
+            self.context.time.wait(0.05)
+
+        # Step 2: Perform clicks at target/current position
+        click_location = location if location else "current position"
+        logger.info(
+            f"[CLICK DEBUG] Step 2: Perform {click_count} click(s) at {click_location} with button {button}"
+        )
         for i in range(click_count):
-            logger.debug(f"Click {i+1}/{click_count}")
+            logger.info(f"[CLICK DEBUG] Click {i+1}/{click_count} - Pressing {button}")
 
             # Sub-action: MOUSE_DOWN
+            logger.info(f"[CLICK DEBUG] Calling mouse.down with button={button}")
             self.context.mouse.down(button=button)
             self.context.time.wait(hold_duration)
 
             # Sub-action: MOUSE_UP
+            logger.info(f"[CLICK DEBUG] Calling mouse.up with button={button}")
             self.context.mouse.up(button=button)
 
             if i < click_count - 1:
@@ -440,9 +574,7 @@ class MouseActionExecutor(ActionExecutorBase):
         logger.info(f"[COMBINED ACTION: CLICK] Completed {click_count} {button.value}-click(s)")
         return True
 
-    def _execute_double_click(
-        self, action: Action, typed_config: ClickActionConfig
-    ) -> bool:
+    def _execute_double_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
         """Execute DOUBLE_CLICK action - convenience wrapper for CLICK with count=2.
 
         Args:
@@ -468,9 +600,7 @@ class MouseActionExecutor(ActionExecutorBase):
 
         return self._execute_click(action, double_click_config)
 
-    def _execute_right_click(
-        self, action: Action, typed_config: ClickActionConfig
-    ) -> bool:
+    def _execute_right_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
         """Execute RIGHT_CLICK action - convenience wrapper for CLICK with button=right.
 
         Args:
@@ -575,3 +705,55 @@ class MouseActionExecutor(ActionExecutorBase):
 
         logger.info("[COMBINED ACTION: DRAG] Completed")
         return True
+
+    def _execute_highlight(self, action: Action, typed_config: HighlightActionConfig) -> bool:
+        """Execute HIGHLIGHT action - visually highlight a screen region.
+
+        Args:
+            action: Action model
+            typed_config: Validated HighlightActionConfig
+
+        Returns:
+            True if successful
+        """
+        from .highlight_overlay import HighlightOverlay
+
+        # Get target location
+        location = self._get_target_location(typed_config.target)
+        if not location:
+            logger.error("Failed to get target location for HIGHLIGHT")
+            return False
+
+        # Extract configuration with defaults
+        duration = typed_config.duration or 2000  # Default 2 seconds
+        color = typed_config.color or "#FF0000"  # Default red
+        thickness = typed_config.thickness or 3  # Default 3px
+        style = typed_config.style or "box"  # Default box style
+
+        logger.info(
+            f"Highlighting at ({location[0]}, {location[1]}) - "
+            f"duration={duration}ms, color={color}, thickness={thickness}px, style={style}"
+        )
+
+        try:
+            # Create and show the highlight overlay
+            overlay = HighlightOverlay(
+                x=location[0],
+                y=location[1],
+                duration_ms=duration,
+                color=color,
+                thickness=thickness,
+                style=style,
+            )
+            overlay.show()
+
+            logger.debug(
+                f"[HIGHLIGHT] Displaying {style} at {location} "
+                f"with color {color}, thickness {thickness}px for {duration}ms"
+            )
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to create highlight overlay: {e}")
+            return False

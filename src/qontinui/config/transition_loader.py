@@ -85,17 +85,13 @@ def load_transitions_from_config(config: dict[str, Any], state_service: StateSer
             logger.error(f"Unexpected error loading transition: {e}", exc_info=True)
             error_count += 1
 
-    logger.info(
-        f"Transition loading complete: {success_count} succeeded, {error_count} failed"
-    )
+    logger.info(f"Transition loading complete: {success_count} succeeded, {error_count} failed")
 
     # Return True only if all transitions loaded successfully
     return error_count == 0
 
 
-def _load_single_transition(
-    transition_def: dict[str, Any], state_service: StateService
-) -> bool:
+def _load_single_transition(transition_def: dict[str, Any], state_service: StateService) -> bool:
     """Load a single transition from its definition.
 
     Args:
@@ -119,15 +115,11 @@ def _load_single_transition(
         to_state_id = transition_def["toState"]
         to_state = state_service.get_state_by_name(to_state_id)
         if to_state is None:
-            logger.error(
-                f"Transition '{transition_id}': toState '{to_state_id}' not found"
-            )
+            logger.error(f"Transition '{transition_id}': toState '{to_state_id}' not found")
             return False
 
         # Create the transition object (no fromState for incoming)
-        transition = _create_transition_object(
-            transition_def, None, to_state.id, state_service
-        )
+        transition = _create_transition_object(transition_def, None, to_state.id, state_service)
         if transition is None:
             return False
 
@@ -149,18 +141,14 @@ def _load_single_transition(
     from_state_id = transition_def["fromState"]
     from_state = state_service.get_state_by_name(from_state_id)
     if from_state is None:
-        logger.error(
-            f"Transition '{transition_id}': fromState '{from_state_id}' not found"
-        )
+        logger.error(f"Transition '{transition_id}': fromState '{from_state_id}' not found")
         return False
 
     # Look up toState
     to_state_id = transition_def["toState"]
     to_state = state_service.get_state_by_name(to_state_id)
     if to_state is None:
-        logger.error(
-            f"Transition '{transition_id}': toState '{to_state_id}' not found"
-        )
+        logger.error(f"Transition '{transition_id}': toState '{to_state_id}' not found")
         return False
 
     # Create the transition object
@@ -180,7 +168,9 @@ def _load_single_transition(
     # Add transition to the source state
     from_state.add_transition(transition)
 
-    logger.debug(f"ADDED transition '{transition_id}' to state '{from_state.name}' - state now has {len(from_state.transitions)} transitions")
+    logger.debug(
+        f"ADDED transition '{transition_id}' to state '{from_state.name}' - state now has {len(from_state.transitions)} transitions"
+    )
 
     return True
 
@@ -200,9 +190,7 @@ def _validate_transition_definition(
     """
     # All transitions require a toState
     if "toState" not in transition_def:
-        logger.error(
-            f"Transition '{transition_id}': missing required field 'toState'"
-        )
+        logger.error(f"Transition '{transition_id}': missing required field 'toState'")
         return False
 
     # OutgoingTransitions require a fromState
@@ -355,17 +343,13 @@ def _link_workflows_to_transition(
     # Check for regular workflow references
     workflows = transition_def.get("workflows", [])
     if not isinstance(workflows, list):
-        logger.warning(
-            f"Transition '{transition_id}': 'workflows' field is not a list"
-        )
+        logger.warning(f"Transition '{transition_id}': 'workflows' field is not a list")
         workflows = []
 
     # Check for inline workflows (workflows defined inline in the transition)
     inline_workflows = transition_def.get("inlineWorkflows", [])
     if not isinstance(inline_workflows, list):
-        logger.warning(
-            f"Transition '{transition_id}': 'inlineWorkflows' field is not a list"
-        )
+        logger.warning(f"Transition '{transition_id}': 'inlineWorkflows' field is not a list")
         inline_workflows = []
 
     if len(workflows) == 0 and len(inline_workflows) == 0:
@@ -385,9 +369,7 @@ def _link_workflows_to_transition(
 
         # Store workflow ID in transition for later execution
         transition.workflow_ids.append(workflow_id)
-        logger.debug(
-            f"Transition '{transition_id}': linked to workflow '{workflow_id}'"
-        )
+        logger.debug(f"Transition '{transition_id}': linked to workflow '{workflow_id}'")
         linked_count += 1
 
     # Register and link inline workflows
@@ -412,6 +394,10 @@ def _link_workflows_to_transition(
                 )
                 continue
 
+            # Optimize helper workflows before registration
+            # Transform sequential IF actions checking multiple images into a single FIND action
+            actions = _optimize_helper_workflow(actions, inline_workflow_name)
+
             # Register the workflow in the registry with name
             # The registry signature is: register_workflow(id, actions, name)
             registry.register_workflow(inline_workflow_id, actions, inline_workflow_name)
@@ -435,7 +421,7 @@ def _link_workflows_to_transition(
         except Exception as e:
             logger.error(
                 f"Transition '{transition_id}': failed to register inline workflow at index {idx}: {e}",
-                exc_info=True
+                exc_info=True,
             )
 
     return linked_count > 0
@@ -469,8 +455,7 @@ def get_transition_statistics(state_service: StateService) -> dict[str, Any]:
         "total_transitions": total_transitions,
         "total_states": len(state_service.get_all_states()),
         "states_with_transitions": states_with_transitions,
-        "states_without_transitions": len(state_service.get_all_states())
-        - states_with_transitions,
+        "states_without_transitions": len(state_service.get_all_states()) - states_with_transitions,
         "max_transitions_per_state": max_transitions_per_state,
         "avg_transitions_per_state": (
             total_transitions / len(state_service.get_all_states())
@@ -478,6 +463,64 @@ def get_transition_statistics(state_service: StateService) -> dict[str, Any]:
             else 0
         ),
     }
+
+
+def _optimize_helper_workflow(
+    actions: list[dict[str, Any]], workflow_name: str
+) -> list[dict[str, Any]]:
+    """Optimize helper workflows by converting sequential IF checks into a single FIND action.
+
+    Helper workflows like "Find Any Image: StateName" typically have multiple IF actions
+    that check if individual images exist. This is inefficient because it searches sequentially.
+
+    This function transforms such workflows into a single FIND action with multiple images
+    and FIRST strategy, which allows parallel/asynchronous searching.
+
+    Args:
+        actions: List of actions from the inline workflow
+        workflow_name: Name of the workflow (for detection)
+
+    Returns:
+        Optimized list of actions
+    """
+    # Only optimize "Find Any Image" helper workflows
+    if not workflow_name.startswith("Find Any Image"):
+        return actions
+
+    # Extract all image IDs from IF actions
+    image_ids = []
+    for action in actions:
+        if action.get("type") == "IF":
+            config = action.get("config", {})
+            condition = config.get("condition", {})
+            if condition.get("type") == "image_exists":
+                image_id = condition.get("imageId")
+                if image_id:
+                    image_ids.append(image_id)
+
+    # If we found multiple image checks, create an optimized FIND action
+    if len(image_ids) > 1:
+        logger.info(
+            f"Optimizing helper workflow '{workflow_name}': "
+            f"replacing {len(image_ids)} sequential IF checks with single FIND action"
+        )
+
+        # Create a single FIND action with all images
+        optimized_action = {
+            "id": f"optimized-find-{actions[0].get('id', 'unknown')}",
+            "type": "FIND",
+            "config": {
+                "imageIds": image_ids,
+                "findStrategy": "FIRST",  # Search all images asynchronously, stop at first match
+                "saveToState": False,  # Don't save results
+                "optional": False,  # Verification should fail if no images found
+            },
+        }
+
+        return [optimized_action]
+
+    # If only one image or no optimization needed, return original actions
+    return actions
 
 
 def validate_transition_graph(state_service: StateService) -> list[str]:
@@ -498,9 +541,7 @@ def validate_transition_graph(state_service: StateService) -> list[str]:
             states_without_outgoing.append(state.name)
 
     if states_without_outgoing:
-        issues.append(
-            f"States with no outgoing transitions: {', '.join(states_without_outgoing)}"
-        )
+        issues.append(f"States with no outgoing transitions: {', '.join(states_without_outgoing)}")
 
     # Check for unreachable states (states with no incoming transitions)
     all_target_states = set()

@@ -4,16 +4,14 @@ This module provides the registration and lookup mechanism for specialized
 action executors. Each executor registers the action types it handles.
 """
 
-from typing import Type
-
 from ..exceptions import ActionExecutionError
 from .base import ActionExecutorBase, ExecutionContext
 
 # Global registry mapping action types to executor classes
-_executor_registry: dict[str, Type[ActionExecutorBase]] = {}
+_executor_registry: dict[str, type[ActionExecutorBase]] = {}
 
 
-def register_executor(executor_class: Type[ActionExecutorBase]) -> Type[ActionExecutorBase]:
+def register_executor(executor_class: type[ActionExecutorBase]) -> type[ActionExecutorBase]:
     """Register an executor class for its supported action types.
 
     This can be used as a decorator on executor classes:
@@ -58,7 +56,7 @@ def register_executor(executor_class: Type[ActionExecutorBase]) -> Type[ActionEx
     return executor_class
 
 
-def get_executor_class(action_type: str) -> Type[ActionExecutorBase] | None:
+def get_executor_class(action_type: str) -> type[ActionExecutorBase] | None:
     """Get the executor class for an action type.
 
     Args:
@@ -87,8 +85,7 @@ def create_executor(action_type: str, context: ExecutionContext) -> ActionExecut
 
     if executor_class is None:
         raise ActionExecutionError(
-            f"No executor registered for action type: {action_type}",
-            {"action_type": action_type}
+            action_type=action_type, reason=f"No executor registered for action type: {action_type}"
         )
 
     return executor_class(context)

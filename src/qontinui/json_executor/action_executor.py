@@ -24,7 +24,7 @@ New: Modular system with:
     - DelegatingActionExecutor: Main executor that delegates to specialized executors
     - MouseActionExecutor: Handles CLICK, DRAG, MOUSE_MOVE, etc.
     - KeyboardActionExecutor: Handles TYPE, KEY_PRESS, KEY_DOWN, etc.
-    - VisionActionExecutor: Handles FIND, EXISTS, VANISH
+    - VisionActionExecutor: Handles FIND, VANISH
     - NavigationActionExecutor: Handles GO_TO_STATE, RUN_WORKFLOW
     - UtilityActionExecutor: Handles WAIT, SCREENSHOT
     - ControlFlowActionExecutor: Handles LOOP, IF, BREAK, CONTINUE

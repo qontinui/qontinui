@@ -61,6 +61,12 @@ class ImageDebugConfig(BaseModel):
     show_match_scores: bool = Field(default=True, description="Show match scores")
     create_heatmap: bool = Field(default=False, description="Create heatmap visualization")
 
+    # Debug data emission
+    emit_match_details: bool = Field(
+        default=False,
+        description="When True, emit detailed match info including top N matches and debug data",
+    )
+
 
 class VisionProperties(BaseModel):
     """Vision and image finding configuration properties.

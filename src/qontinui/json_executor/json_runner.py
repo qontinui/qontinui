@@ -84,10 +84,35 @@ class JSONRunner:
             return False
 
         try:
-            # Cleanup old temp directory before loading new config
+            # Cleanup old temp directory asynchronously to avoid blocking
+            # Save references to old objects that need cleanup
+            old_scheduler = None
+            old_parser = None
             if self.config:
-                self.cleanup()
-                print("Cleaned up previous configuration")
+                old_scheduler = self.scheduler_executor
+                old_parser = self.parser
+                print("Scheduling cleanup of previous configuration in background")
+
+                # Define cleanup task for old resources
+                def cleanup_old_config():
+                    try:
+                        if old_scheduler:
+                            try:
+                                old_scheduler.shutdown()
+                                print("Old scheduler shutdown complete")
+                            except (RuntimeError, OSError) as e:
+                                print(f"Error shutting down old scheduler: {e}")
+
+                        if old_parser:
+                            old_parser.cleanup()
+                            print("Cleaned up old temporary files")
+                    except Exception as e:
+                        print(f"Error during background cleanup: {e}")
+
+                import threading
+
+                cleanup_thread = threading.Thread(target=cleanup_old_config, daemon=True)
+                cleanup_thread.start()
 
             print(f"Loading configuration from: {path}")
             self.config = self.parser.parse_file(path)
@@ -102,19 +127,10 @@ class JSONRunner:
             if hasattr(self.state_executor, "set_monitor_manager"):
                 self.state_executor.set_monitor_manager(self.monitor_manager)
 
-            # Pre-initialize HAL instances to avoid first-run delays
-            print("Pre-initializing HAL backends...")
-            from ..hal.factory import HALFactory
-            from ..mock.mock_mode_manager import MockModeManager
-
-            if not MockModeManager.is_mock_mode():
-                # Initialize input controller (keyboard/mouse)
-                _ = HALFactory.get_input_controller()
-                # Initialize screen capture
-                _ = HALFactory.get_screen_capture()
-                # Initialize pattern matcher
-                _ = HALFactory.get_pattern_matcher()
-                print("HAL backends initialized")
+            # Skip HAL pre-initialization to avoid blocking on Windows
+            # HAL backends will be lazily initialized on first use during execution
+            # This prevents freezing when loading configs after running automation
+            print("HAL backends will be initialized on first use")
 
             # Initialize scheduler if schedules exist
             if self.config.schedules:

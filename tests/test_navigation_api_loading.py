@@ -11,20 +11,18 @@ This test verifies that the qontinui library can:
 import json
 from pathlib import Path
 
-import pytest
-
 
 def test_load_bdo_config():
-    """Test loading the bdo_config (44).json configuration."""
+    """Test loading the latest bdo_config (47).json configuration."""
     # Import after sys.path is set up
     from qontinui import navigation_api, registry
     from qontinui.model.element.image import Image
 
     # Load the configuration file
-    config_path = Path(__file__).parent.parent.parent / "bdo_config (44).json"
+    config_path = Path(__file__).parent.parent.parent / "bdo_config (47).json"
     assert config_path.exists(), f"Config file not found at {config_path}"
 
-    with open(config_path, 'r') as f:
+    with open(config_path) as f:
         config = json.load(f)
 
     # Register images (simplified - just create dummy images)
@@ -76,7 +74,9 @@ def test_load_bdo_config():
     # Verify Processing state can be looked up
     processing_state = navigation_api._state_service.get_state_by_name("Processing")
     assert processing_state is not None, "Processing state not found"
-    assert processing_state.id in adapter.state_mappings, "Processing state not registered with adapter"
+    assert (
+        processing_state.id in adapter.state_mappings
+    ), "Processing state not registered with adapter"
 
     print(f"✓ Successfully loaded {len(states)} states")
     print(f"✓ Activated {len(active_states)} initial state(s)")
@@ -102,14 +102,15 @@ def test_transition_id_extraction():
 
 def test_transition_mapping():
     """Test that transitions are properly registered in the multistate adapter mappings."""
-    from qontinui import navigation_api, registry
-    from qontinui.model.element.image import Image
     import json
     from pathlib import Path
 
+    from qontinui import navigation_api, registry
+    from qontinui.model.element.image import Image
+
     # Load the configuration file
-    config_path = Path(__file__).parent.parent.parent / "bdo_config (44).json"
-    with open(config_path, 'r') as f:
+    config_path = Path(__file__).parent.parent.parent / "bdo_config (47).json"
+    with open(config_path) as f:
         config = json.load(f)
 
     # Register images and workflows (simplified)
@@ -140,10 +141,11 @@ def test_transition_mapping():
     expected_multi_id = f"trans_{first_transition.id}"
 
     # Verify the transition is in the mappings with the correct ID
-    assert expected_multi_id in adapter.transition_mappings, \
-        f"Transition {expected_multi_id} not found in mappings. Available: {list(adapter.transition_mappings.keys())}"
+    assert (
+        expected_multi_id in adapter.transition_mappings
+    ), f"Transition {expected_multi_id} not found in mappings. Available: {list(adapter.transition_mappings.keys())}"
 
-    print(f"✓ Transitions properly mapped with correct IDs")
+    print("✓ Transitions properly mapped with correct IDs")
     print(f"✓ Found {len(adapter.transition_mappings)} transitions in mappings")
 
 

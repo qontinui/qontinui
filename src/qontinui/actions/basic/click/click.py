@@ -79,13 +79,39 @@ class Click(ActionInterface):
         Returns:
             True if click was successful
         """
+        import os
+        import sys
+        import tempfile
+        from datetime import datetime
+
+        # Create debug log file
+        debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_click_debug.log")
+
+        def log_debug(msg: str):
+            """Write to both stderr and debug file."""
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            log_line = f"[{timestamp}] {msg}\n"
+            print(f"[CLICK_DEBUG] {msg}", file=sys.stderr, flush=True)
+            try:
+                with open(debug_log_path, "a", encoding="utf-8") as f:
+                    f.write(log_line)
+            except Exception:
+                pass
+
+        log_debug(f"execute() called with target type: {type(target).__name__}")
+
         # Initialize ActionResult with stored ClickOptions
         matches = ActionResult(self.options)
         if target is None:
+            log_debug("Target is None, returning False")
             return False
+
+        # Store log function for perform() to use
+        self._log_debug = log_debug
 
         # Convert target to ObjectCollection if needed
         if isinstance(target, ObjectCollection):
+            log_debug("Target is ObjectCollection, calling perform()")
             self.perform(matches, target)
         else:
             # Create ObjectCollection from target
@@ -93,16 +119,22 @@ class Click(ActionInterface):
 
             builder = ObjectCollectionBuilder()
             if isinstance(target, Location):
+                log_debug(f"Target is Location: {target}")
                 builder.with_locations(target)
             elif isinstance(target, ModelMatch):
+                log_debug(f"Target is ModelMatch: {target}")
                 builder.with_match_objects_as_regions(target)
             else:
                 # Assume it's already compatible
+                log_debug("Target is unknown type, assuming compatible")
                 pass
 
             obj_coll = builder.build()
+            log_debug("Built ObjectCollection, calling perform()")
             self.perform(matches, obj_coll)
 
+        log_debug(f"execute() returning success={matches.success}")
+        log_debug(f"Debug log written to: {debug_log_path}")
         return matches.success
 
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
@@ -132,17 +164,33 @@ class Click(ActionInterface):
         click_options = action_config
         clicked_count = 0
 
+        # Use stored log function if available (from execute())
+        log_func = getattr(self, "_log_debug", lambda msg: None)
+        log_func(f"perform() called with {len(object_collections)} object collections")
+
         # Process all object collections
-        for obj_collection in object_collections:
+        for obj_idx, obj_collection in enumerate(object_collections):
+            log_func(f"Processing object collection #{obj_idx+1}")
+            log_func(f"  - matches: {len(obj_collection.matches)}")
+            log_func(f"  - locations: {len(obj_collection.locations)}")
+            log_func(f"  - regions: {len(obj_collection.regions)}")
             # Click on any existing matches in the collection (ActionResult objects with match_list)
-            for action_result in obj_collection.matches:
+            for ar_idx, action_result in enumerate(obj_collection.matches):
+                log_func(
+                    f"  Processing ActionResult #{ar_idx+1} with {len(action_result.match_list)} matches"
+                )
                 # ActionResult contains a match_list with actual Match objects (from find module)
-                for find_match in action_result.match_list:
+                for fm_idx, find_match in enumerate(action_result.match_list):
                     location = find_match.target
+                    log_func(f"    Match #{fm_idx+1}: location={location}")
                     if location:  # Only click if match has a target location
+                        log_func(f"    Calling _click() at coordinates: {location}")
                         # Use the underlying match_object which is a ModelMatch
                         self._click(location, click_options, find_match.match_object)
                         clicked_count += 1
+                        log_func(f"    Click completed, clicked_count={clicked_count}")
+                    else:
+                        log_func("    Skipping match - no location")
                         # Pause between different targets
                         if self.time and clicked_count < self._get_total_targets(
                             object_collections

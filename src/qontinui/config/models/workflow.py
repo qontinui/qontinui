@@ -92,11 +92,14 @@ class WorkflowSettings(BaseModel):
     Workflow-level settings.
 
     These settings apply to the entire workflow execution.
+
+    Note: Model-based GUI automation is resilient by design - workflows always
+    continue executing even if individual actions fail. There is no option to
+    stop workflow execution on action failure.
     """
 
     timeout: int | None = None
     retry_count: int | None = Field(None, alias="retryCount")
-    continue_on_error: bool | None = Field(None, alias="continueOnError")
     parallel_execution: bool | None = Field(None, alias="parallelExecution")
     max_parallel_actions: int | None = Field(None, alias="maxParallelActions")
 
@@ -121,7 +124,7 @@ class Workflow(BaseModel):
     connections: Connections = Field(..., description="Action connections (REQUIRED)")
     visibility: WorkflowVisibility = Field(
         default=WorkflowVisibility.PUBLIC,
-        description="Workflow visibility level (public, internal, or system)"
+        description="Workflow visibility level (public, internal, or system)",
     )
     variables: Variables | None = Field(
         None, description="Workflow variables (local, process, global)"

@@ -12,7 +12,10 @@ from .....model.element.region import Region
 from .....model.match.match import Match
 from ....object_collection import ObjectCollection
 from ..options.pattern_find_options import PatternFindOptions
-from .find_image import FindImage
+
+# Note: FindImage from implementations/find_image was removed (legacy FindImageOrchestrator)
+# FindAll needs to be refactored to use RealFindImplementation or removed
+# from .find_image import FindImage
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +30,8 @@ class FindAll:
     to remove duplicates and overlapping matches.
     """
 
-    # Delegate to FindImage for actual matching
-    _image_finder: FindImage = field(default_factory=FindImage)
+    # Delegate to FindImage for actual matching (DISABLED - FindImage removed)
+    # _image_finder: FindImage = field(default_factory=FindImage)
 
     # Configuration
     min_distance_between_matches: int = 10  # Minimum pixels between matches
@@ -45,31 +48,15 @@ class FindAll:
 
         Returns:
             List of all matches found
+
+        Note:
+            This class is currently disabled as it depends on the removed FindImageOrchestrator.
+            Needs refactoring to use RealFindImplementation.
         """
-        # Force search type to ALL
-        original_search_type = options.search_type
-        options.find_all()
-
-        try:
-            if self.use_sliding_window:
-                matches = self._sliding_window_search(object_collection, options)
-            else:
-                # Use standard find with ALL search type
-                matches = self._image_finder.find(object_collection, options)
-
-            # Filter matches
-            matches = self._filter_duplicates(matches, options)
-            matches = self._filter_overlapping(matches, options)
-            matches = self._filter_by_distance(matches, options)
-
-            # Sort by position (top-left to bottom-right)
-            matches = self._sort_matches(matches)
-
-            return matches
-
-        finally:
-            # Restore original search type
-            options.search_type = original_search_type
+        raise NotImplementedError(
+            "FindAll is disabled - it depends on removed FindImageOrchestrator. "
+            "Use RealFindImplementation instead or refactor this class."
+        )
 
     def _sliding_window_search(
         self, object_collection: ObjectCollection, options: PatternFindOptions

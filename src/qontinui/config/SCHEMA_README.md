@@ -125,7 +125,6 @@ except ActionValidationError as e:
 - **FIND** - Search for a target on screen
 - **FIND_STATE_IMAGE** - Find an image associated with a state
 - **VANISH** - Wait for a target to disappear
-- **EXISTS** - Check if a target exists
 - **WAIT** - Wait for a condition or time
 
 ### Control Flow Actions

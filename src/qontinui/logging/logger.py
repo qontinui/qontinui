@@ -30,11 +30,18 @@ def setup_logging(
         level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_file: Optional path to log file
         structured: Use JSON structured output
-        console: Enable console output
+        console: Enable console output (overridden by QONTINUI_DISABLE_CONSOLE_LOGGING env var)
         add_timestamp: Add timestamps to logs
         add_caller_info: Add caller information
         colorize: Colorize console output (only for non-structured)
     """
+    import os
+
+    # CRITICAL: Check environment variable to disable console logging
+    # When running under Rust executor, this prevents JSON parse errors
+    if os.getenv("QONTINUI_DISABLE_CONSOLE_LOGGING") == "1":
+        console = False
+        log_file = None  # Also disable file logging to minimize I/O
     # Build processor chain
     processors: list[Any] = [
         structlog.stdlib.filter_by_level,
@@ -86,7 +93,8 @@ def setup_logging(
     handlers: list[logging.Handler] = []
 
     if console:
-        console_handler = logging.StreamHandler(sys.stdout)
+        # IMPORTANT: Use stderr for logs so stdout is reserved for JSON messages to Rust
+        console_handler = logging.StreamHandler(sys.stderr)
         console_handler.setFormatter(logging.Formatter("%(message)s"))
         handlers.append(console_handler)
 
@@ -96,9 +104,53 @@ def setup_logging(
         file_handler.setFormatter(logging.Formatter("%(message)s"))
         handlers.append(file_handler)
 
+    # If no handlers (console logging disabled), use NullHandler to completely suppress output
+    if not handlers:
+        handlers.append(logging.NullHandler())
+        level = "CRITICAL"  # Set to highest level to minimize overhead
+
     logging.basicConfig(
         format="%(message)s", level=getattr(logging, level.upper()), handlers=handlers, force=True
     )
+
+
+# Global state for lazy initialization
+_logging_initialized = False
+
+
+def _ensure_logging_initialized() -> None:
+    """Ensure logging is initialized (called lazily, not at import time)."""
+    global _logging_initialized
+
+    if _logging_initialized:
+        return
+
+    # CRITICAL: Check environment variable FIRST before any logging setup
+    # When running under Rust executor, completely disable all logging
+    import os
+
+    if os.getenv("QONTINUI_DISABLE_CONSOLE_LOGGING") == "1":
+        # Set to disabled state without calling setup_logging at all
+        logging.disable(logging.CRITICAL)  # Disable ALL logging output
+        _logging_initialized = True
+        return
+
+    # Initialize logging with defaults
+    try:
+        settings = get_settings()
+        if hasattr(settings, "log_path") and hasattr(settings, "debug_mode"):
+            log_file = settings.log_path / f"qontinui_{datetime.now().strftime('%Y%m%d')}.log"
+            setup_logging(
+                level="DEBUG" if settings.debug_mode else "INFO",
+                log_file=log_file,
+                structured=not settings.debug_mode,  # Use readable format in debug mode
+                colorize=settings.debug_mode,
+            )
+    except (ImportError, AttributeError, OSError, ValueError):
+        # If settings fail or log path is invalid, just use basic logging
+        setup_logging(level="INFO", structured=False)
+
+    _logging_initialized = True
 
 
 def get_logger(name: str) -> structlog.BoundLogger:
@@ -110,6 +162,8 @@ def get_logger(name: str) -> structlog.BoundLogger:
     Returns:
         Structured logger instance
     """
+    # Ensure logging is initialized before creating logger
+    _ensure_logging_initialized()
     return cast(structlog.BoundLogger, structlog.get_logger(name))
 
 
@@ -341,35 +395,3 @@ class PerformanceLogger:
 action_logger: ActionLogger | None = None
 state_logger: StateLogger | None = None
 performance_logger: PerformanceLogger | None = None
-
-_logging_initialized = False
-
-
-def _ensure_logging_initialized() -> None:
-    """Ensure logging is initialized (called lazily, not at import time)."""
-    global _logging_initialized, action_logger, state_logger, performance_logger
-
-    if _logging_initialized:
-        return
-
-    # Initialize default loggers
-    action_logger = ActionLogger()
-    state_logger = StateLogger()
-    performance_logger = PerformanceLogger()
-
-    # Initialize logging with defaults
-    try:
-        settings = get_settings()
-        if hasattr(settings, "log_path") and hasattr(settings, "debug_mode"):
-            log_file = settings.log_path / f"qontinui_{datetime.now().strftime('%Y%m%d')}.log"
-            setup_logging(
-                level="DEBUG" if settings.debug_mode else "INFO",
-                log_file=log_file,
-                structured=not settings.debug_mode,  # Use readable format in debug mode
-                colorize=settings.debug_mode,
-            )
-    except (ImportError, AttributeError, OSError, ValueError) as e:
-        # If settings fail or log path is invalid, just use basic logging
-        setup_logging(level="INFO", structured=False)
-
-    _logging_initialized = True

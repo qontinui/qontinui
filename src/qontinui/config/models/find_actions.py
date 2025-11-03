@@ -23,10 +23,14 @@ class FindActionConfig(BaseModel):
 
 
 class FindStateImageActionConfig(BaseModel):
-    """FIND_STATE_IMAGE action configuration."""
+    """FIND_STATE_IMAGE action configuration.
+
+    Breaking change: Changed from single image_id to multiple image_ids.
+    Use image_ids with a single-element list for single image targeting.
+    """
 
     state_id: str = Field(alias="stateId")
-    image_id: str = Field(alias="imageId")
+    image_ids: list[str] = Field(alias="imageIds", min_length=1)
     search_options: SearchOptions | None = Field(None, alias="searchOptions")
 
     model_config = {"populate_by_name": True}
@@ -42,16 +46,6 @@ class VanishActionConfig(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class ExistsActionConfig(BaseModel):
-    """EXISTS action configuration."""
-
-    target: TargetConfig
-    search_options: SearchOptions | None = Field(None, alias="searchOptions")
-    output_variable: str | None = Field(None, alias="outputVariable")
-
-    model_config = {"populate_by_name": True}
-
-
 class WaitCondition(BaseModel):
     """Condition for WAIT action."""
 
@@ -62,7 +56,9 @@ class WaitCondition(BaseModel):
 class WaitActionConfig(BaseModel):
     """WAIT action configuration."""
 
-    wait_for: Literal["time", "target", "state", "condition"] = Field(default="time", alias="waitFor")
+    wait_for: Literal["time", "target", "state", "condition"] = Field(
+        default="time", alias="waitFor"
+    )
     duration: int | None = None
     target: TargetConfig | None = None
     state_id: str | None = Field(None, alias="stateId")

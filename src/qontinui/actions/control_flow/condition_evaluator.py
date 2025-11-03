@@ -195,31 +195,153 @@ class ConditionEvaluator:
             raise ValueError(f"Invalid expression '{expression}': {e}") from e
 
     def _evaluate_image_exists_condition(self, condition: ConditionConfig) -> bool:
-        """Evaluate an image_exists condition.
-
-        This is a placeholder implementation. In a full system, this would
-        integrate with the image finding subsystem to search for the specified
-        image on screen.
+        """Evaluate image-exists condition using FindAction.
 
         Args:
             condition: Condition configuration with image_id
 
         Returns:
-            True if image exists on screen, False otherwise
+            True if image found, False otherwise
 
         Raises:
-            ValueError: If image_id is not specified
+            ValueError: If image_id is not specified or image not found in registry
         """
+        from ...actions.find import FindAction
+
         if not condition.image_id:
             raise ValueError("Image condition requires 'image_id'")
 
         logger.debug("Image exists check: image_id=%s", condition.image_id)
 
-        # Placeholder: Image finding integration pending
-        # Integration point: Use Find action with StateImage for image_id
-        # Example: find_action.perform(ActionResult(FindOptions()), ObjectCollection([StateImage(image_id)]))
-        logger.warning("Image finding not implemented, returning False")
-        return False
+        # Import here to avoid circular dependencies
+        from qontinui import registry
+
+        # Get image and metadata from registry
+        image = registry.get_image(condition.image_id)
+        if image is None:
+            error_msg = f"Image '{condition.image_id}' not found in registry"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        metadata = registry.get_image_metadata(condition.image_id)
+        if metadata is None:
+            error_msg = f"Image metadata for '{condition.image_id}' not found in registry"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        # Get file path from metadata
+        file_path = metadata.get("file_path")
+        if not file_path:
+            error_msg = f"Image file_path for '{condition.image_id}' not found in metadata"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        # Create Pattern from file using factory method
+        from ...model.element import Pattern
+
+        pattern = Pattern.from_file(
+            img_path=file_path,
+            name=metadata.get("name", condition.image_id),
+        )
+        # Set similarity threshold for IF conditions
+        pattern = pattern.with_similarity(0.8)
+
+        # Use FindAction (single entry point)
+        action = FindAction()
+        exists = action.exists(pattern)
+
+        logger.debug(
+            "Image exists check result: image_id=%s, exists=%s",
+            condition.image_id,
+            exists,
+        )
+
+        return exists
+
+    async def evaluate_multiple_image_exists_async(
+        self,
+        conditions: list[tuple[str, ConditionConfig]],
+    ) -> dict[str, bool]:
+        """Evaluate multiple image-exists conditions asynchronously.
+
+        This method searches for multiple images in parallel for improved performance.
+        Useful when checking if ANY of multiple state images are visible.
+
+        Args:
+            conditions: List of (action_id, condition_config) tuples to evaluate
+
+        Returns:
+            Dictionary mapping action_id to condition result (True/False)
+
+        Raises:
+            ValueError: If any image_id is missing or image not found in registry
+        """
+
+        from ...actions.find import FindAction
+        from ...model.element import Pattern
+
+        logger.debug(f"Async image exists check: {len(conditions)} conditions")
+
+        # Import here to avoid circular dependencies
+        from qontinui import registry
+
+        # Build list of patterns to search for
+        patterns = []
+        action_ids = []
+        image_ids = []
+
+        for action_id, condition in conditions:
+            if not condition.image_id:
+                raise ValueError(f"Image condition requires 'image_id' (action_id={action_id})")
+
+            image_ids.append(condition.image_id)
+            action_ids.append(action_id)
+
+            # Get image and metadata from registry
+            image = registry.get_image(condition.image_id)
+            if image is None:
+                error_msg = f"Image '{condition.image_id}' not found in registry"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+            metadata = registry.get_image_metadata(condition.image_id)
+            if metadata is None:
+                error_msg = f"Image metadata for '{condition.image_id}' not found in registry"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+            # Get file path from metadata
+            file_path = metadata.get("file_path")
+            if not file_path:
+                error_msg = f"Image file_path for '{condition.image_id}' not found in metadata"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+            # Create Pattern from file
+            pattern = Pattern.from_file(
+                img_path=file_path,
+                name=metadata.get("name", condition.image_id),
+            )
+            # Set similarity threshold for IF conditions
+            pattern = pattern.with_similarity(0.8)
+            patterns.append(pattern)
+
+        # Use FindAction async method to search all patterns concurrently
+        action = FindAction()
+        results_dict = await action.exists_async(patterns, similarity=0.8)
+
+        # Map results back to action IDs
+        results = {}
+        for _i, (action_id, image_id, pattern) in enumerate(
+            zip(action_ids, image_ids, patterns, strict=False)
+        ):
+            exists = results_dict.get(pattern.name, False)
+            results[action_id] = exists
+            logger.debug(
+                f"Image exists check result: action_id={action_id}, image_id={image_id}, exists={exists}"
+            )
+
+        return results
 
     def _evaluate_text_exists_condition(self, condition: ConditionConfig) -> bool:
         """Evaluate a text_exists condition.
@@ -292,8 +414,7 @@ class ConditionEvaluator:
 
         except TypeError as e:
             logger.error(
-                "Type error comparing values: %s %s %s - %s",
-                actual, operator, expected, str(e)
+                "Type error comparing values: %s %s %s - %s", actual, operator, expected, str(e)
             )
             raise ValueError(
                 f"Cannot compare {type(actual).__name__} and {type(expected).__name__} "

@@ -158,7 +158,22 @@ class StateExecutor:
         return True
 
     def _verify_state(self, state_id: str) -> bool:
-        """Verify if a state is currently active by checking its identifying images."""
+        """Verify if a state is currently active using async parallel FindAction.
+
+        Uses async image finding to check all required images in parallel
+        for improved performance.
+
+        Args:
+            state_id: State identifier
+
+        Returns:
+            True if all required state images are found
+        """
+        import asyncio
+
+        from ..actions.find import FindAction
+        from ..model.element import Pattern
+
         state = self.config.state_map.get(state_id)
         if not state:
             return False
@@ -167,18 +182,41 @@ class StateExecutor:
             # State has no identifying images, consider it active
             return True
 
-        # Check all required images
+        # Collect all required patterns
+        patterns = []
         for state_image in state.identifying_images:
             if state_image.required:
                 image = self.config.image_map.get(state_image.id)
                 if image and image.file_path:
-                    location = self.action_executor._find_image_on_screen(
-                        image.file_path, state_image.threshold
+                    # Create Pattern from file using factory method
+                    pattern = Pattern.from_file(
+                        img_path=str(image.file_path),
+                        name=image.name or state_image.id,
                     )
-                    if not location:
-                        return False
+                    # Set similarity threshold
+                    threshold = state_image.threshold or 0.8
+                    pattern = pattern.with_similarity(threshold)
+                    patterns.append((pattern, threshold))
 
-        return True
+        if not patterns:
+            return True
+
+        # Check all patterns in parallel using async finding
+        action = FindAction()
+
+        async def verify_async():
+            # Extract patterns and use common threshold (or max threshold)
+            pattern_list = [p[0] for p in patterns]
+            threshold = max(p[1] for p in patterns)
+
+            # Check all patterns concurrently
+            results = await action.exists_async(pattern_list, similarity=threshold)
+
+            # All required patterns must be found
+            return all(results.values())
+
+        # Execute async verification
+        return asyncio.run(verify_async())
 
     def _find_active_state(self) -> bool:
         """Find which state is currently active."""
@@ -248,7 +286,9 @@ class StateExecutor:
                 logger.error(f"Workflow {workflow_id} not found in workflow_map")
                 logger.error(f"Available workflows: {list(self.config.workflow_map.keys())}")
                 logger.error("This workflow was not loaded during configuration parsing.")
-                logger.error("If this is an inline workflow, it may have invalid format - please re-export your configuration.")
+                logger.error(
+                    "If this is an inline workflow, it may have invalid format - please re-export your configuration."
+                )
                 return False
 
         # Handle state changes for OutgoingTransition
@@ -277,7 +317,9 @@ class StateExecutor:
                     # Execute IncomingTransitions - if any fail, don't activate this state
                     for incoming_trans in incoming_transitions:
                         if not self._execute_transition(incoming_trans):
-                            logger.warning(f"IncomingTransition failed for state {state_id}, not activating")
+                            logger.warning(
+                                f"IncomingTransition failed for state {state_id}, not activating"
+                            )
                             activation_allowed = False
                             break
 
@@ -326,9 +368,7 @@ class StateExecutor:
             )
             if not action_result:
                 if action.continue_on_error:
-                    logger.debug(
-                        f"Action {i+1} failed but continue_on_error=True, continuing..."
-                    )
+                    logger.debug(f"Action {i+1} failed but continue_on_error=True, continuing...")
                     continue
                 logger.error(f"Workflow '{workflow.name}' FAILED at action {i+1}")
                 return False

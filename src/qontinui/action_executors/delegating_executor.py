@@ -6,7 +6,7 @@ command pattern executors via the registry pattern.
 
 import logging
 from types import SimpleNamespace
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -49,9 +49,9 @@ class DelegatingActionExecutor:
     def __init__(
         self,
         config: Any,  # QontinuiConfig
-        state_executor: Optional[Any] = None,
+        state_executor: Any | None = None,
         use_graph_execution: bool = False,
-        workflow_executor: Optional[Any] = None,
+        workflow_executor: Any | None = None,
     ) -> None:
         """Initialize DelegatingActionExecutor.
 
@@ -67,7 +67,7 @@ class DelegatingActionExecutor:
         self.workflow_executor = workflow_executor
 
         # Track last find result for "Last Find Result" targeting
-        self.last_find_location: Optional[tuple[int, int]] = None
+        self.last_find_location: tuple[int, int] | None = None
 
         # Get action defaults configuration
         self.defaults = self._create_defaults()
@@ -150,7 +150,7 @@ class DelegatingActionExecutor:
                 click_hold_duration=50,  # ms
                 click_release_delay=100,  # ms
                 click_safety_release=True,
-                safety_release_delay=50,  # ms
+                safety_release_delay=0.05,  # seconds (50ms) - used directly without ms conversion
                 drag_default_duration=1.0,  # seconds
                 drag_start_delay=0.1,  # seconds
                 drag_end_delay=0.1,  # seconds
@@ -187,6 +187,12 @@ class DelegatingActionExecutor:
             ... )
             >>> success = executor.execute_action(action)
         """
+        import time
+
+        action_start_time = time.time()
+        logger.debug(
+            f"[TIMING] Action {action.type} (ID: {action.id}) started at {action_start_time:.3f}"
+        )
         logger.info(f"Executing action: {action.type} (ID: {action.id})")
 
         # Validate action configuration using Pydantic schemas
@@ -216,20 +222,41 @@ class DelegatingActionExecutor:
         if action.base:
             pause_before = action.base.pause_before_begin or 0
             pause_after = action.base.pause_after_end or 0
+            import sys
+
+            print(
+                f"[PAUSE_DEBUG] Action {action.type} has base: pause_before={pause_before}ms, pause_after={pause_after}ms",
+                file=sys.stderr,
+                flush=True,
+            )
+            logger.info(
+                f"[PAUSE] Action {action.type} (ID: {action.id}) base settings: pause_before={pause_before}ms, pause_after={pause_after}ms"
+            )
+            logger.debug(
+                f"[PAUSE] Action {action.type} base settings: pause_before={pause_before}ms, pause_after={pause_after}ms"
+            )
+        else:
+            import sys
+
+            print(
+                f"[PAUSE_DEBUG] Action {action.type} has NO base settings",
+                file=sys.stderr,
+                flush=True,
+            )
+            logger.debug(f"[PAUSE] Action {action.type} has no base settings")
 
         # Pause before action if specified
         if pause_before > 0:
             logger.debug(f"Waiting {pause_before}ms before action")
             self.time_wrapper.wait(pause_before / 1000.0)
 
-        # Get retry count and continue_on_error from execution settings
+        # Get retry count from execution settings
+        # Note: Model-based GUI automation always continues on error - no stop-on-failure option
         retry_count = 0
-        continue_on_error = False
         if action.execution:
             retry_count = action.execution.retry_count or 0
-            continue_on_error = action.execution.continue_on_error or False
 
-        logger.debug(f"Retry config: retry_count={retry_count}, continue_on_error={continue_on_error}")
+        logger.debug(f"Retry config: retry_count={retry_count}")
 
         # Retry logic: initial attempt + retry_count additional attempts on failure
         total_attempts = 1 + retry_count
@@ -252,20 +279,46 @@ class DelegatingActionExecutor:
                     # Emit success event
                     event_data = {**action_details, "attempts": attempt + 1}
                     logger.debug(f"Emitting success event with data: {event_data}")
-                    self._emit_action_event(
-                        action.type, action.id, True, event_data
-                    )
+                    self._emit_action_event(action.type, action.id, True, event_data)
 
                     # Pause after action if specified
                     if pause_after > 0:
+                        import sys
+
+                        print(
+                            f"[PAUSE_DEBUG] About to pause for {pause_after}ms after {action.type}",
+                            file=sys.stderr,
+                            flush=True,
+                        )
+                        logger.info(
+                            f"[PAUSE] Applying pause_after_end: {pause_after}ms ({pause_after/1000.0}s) for action {action.type}"
+                        )
                         logger.debug(f"Waiting {pause_after}ms after action")
                         self.time_wrapper.wait(pause_after / 1000.0)
+                        print(
+                            f"[PAUSE_DEBUG] Completed pause for {action.type}",
+                            file=sys.stderr,
+                            flush=True,
+                        )
+                        logger.info(f"[PAUSE] Completed pause_after_end for action {action.type}")
+
+                    # Log action completion time
+                    action_end_time = time.time()
+                    action_duration = action_end_time - action_start_time
+                    logger.debug(
+                        f"[TIMING] Action {action.type} (ID: {action.id}) completed at {action_end_time:.3f}"
+                    )
+                    logger.debug(
+                        f"[TIMING] Action {action.type} (ID: {action.id}) took {action_duration:.3f} seconds ({action_duration*1000:.1f}ms)"
+                    )
 
                     return True
 
                 # Action failed, retry if attempts remain
                 if attempt < total_attempts - 1:
-                    logger.info(f"Action failed, retrying... (attempt {attempt + 2}/{total_attempts})")
+                    logger.info(
+                        f"Action failed, retrying... (attempt {attempt + 2}/{total_attempts})"
+                    )
                     self.time_wrapper.wait(1)
 
             except Exception as e:
@@ -364,7 +417,13 @@ class DelegatingActionExecutor:
         self._emit_event("image_recognition", data)
 
     def _emit_action_event(
-        self, action_type: str, action_id: str, success: bool, details: dict | None = None
+        self,
+        action_type: str = None,
+        action_id: str = None,
+        success: bool = None,
+        details: dict | None = None,
+        data: dict | None = None,
+        **kwargs,
     ) -> None:
         """Emit action execution event.
 
@@ -372,12 +431,17 @@ class DelegatingActionExecutor:
             action_type: Type of action (e.g., "CLICK")
             action_id: Unique identifier for the action
             success: Whether the action succeeded
-            details: Optional additional event details
+            details: Optional additional event details (legacy parameter)
+            data: Optional additional event details (new parameter from base class)
+            **kwargs: Additional keyword arguments for compatibility
         """
-        data = {"action_type": action_type, "action_id": action_id, "success": success}
+        # Support both 'details' and 'data' parameter names for compatibility
+        event_data = {"action_type": action_type, "action_id": action_id, "success": success}
         if details:
-            data.update(details)
-        self._emit_event("action_execution", data)
+            event_data.update(details)
+        if data:
+            event_data.update(data)
+        self._emit_event("action_execution", event_data)
 
     # Workflow execution methods (delegated from old executor)
 
@@ -417,9 +481,7 @@ class DelegatingActionExecutor:
             logger.info(f"Using SEQUENTIAL EXECUTION for workflow '{workflow.name}'")
             return self._execute_workflow_sequential(workflow)
 
-    def _execute_workflow_graph(
-        self, workflow: Any, initial_context: dict | None = None
-    ) -> dict:
+    def _execute_workflow_graph(self, workflow: Any, initial_context: dict | None = None) -> dict:
         """Execute workflow using graph-based execution.
 
         Args:
@@ -468,34 +530,14 @@ class DelegatingActionExecutor:
                 else:
                     results["actions_failed"] += 1
                     results["success"] = False
-
-                    # Check if we should stop on failure
-                    continue_on_error = (
-                        action.execution.continue_on_error
-                        if action.execution
-                        else False
-                    )
-                    if not continue_on_error:
-                        logger.error(
-                            f"Stopping sequential execution due to failure in action '{action.id}'"
-                        )
-                        break
+                    # Model-based GUI automation principle: always continue, never stop on failure
+                    logger.debug(f"Action '{action.id}' failed, continuing execution")
             except Exception as e:
                 results["actions_failed"] += 1
                 results["success"] = False
                 results["errors"].append({"action_id": action.id, "error": str(e)})
-
-                # Check if we should stop on error
-                continue_on_error = (
-                    action.execution.continue_on_error
-                    if action.execution
-                    else False
-                )
-                if not continue_on_error:
-                    logger.error(
-                        f"Stopping sequential execution due to error in action '{action.id}'"
-                    )
-                    break
+                # Model-based GUI automation principle: always continue, never stop on error
+                logger.debug(f"Action '{action.id}' raised exception, continuing execution: {e}")
 
         logger.info(
             f"Sequential execution completed for '{workflow.name}': "

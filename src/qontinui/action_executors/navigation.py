@@ -9,7 +9,7 @@ from typing import Any
 
 from ..config.schema import Action, GoToStateActionConfig, RunWorkflowActionConfig
 from ..exceptions import ActionExecutionError, StateNotFoundException
-from .base import ActionExecutorBase, ExecutionContext
+from .base import ActionExecutorBase
 from .registry import register_executor
 
 logger = logging.getLogger(__name__)
@@ -79,12 +79,10 @@ class NavigationActionExecutor(ActionExecutorBase):
             raise ActionExecutionError(
                 action_type=action.type,
                 reason=f"Navigation executor does not handle {action.type}",
-                action_id=action.id
+                action_id=action.id,
             )
 
-    def _execute_go_to_state(
-        self, action: Action, typed_config: GoToStateActionConfig
-    ) -> bool:
+    def _execute_go_to_state(self, action: Action, typed_config: GoToStateActionConfig) -> bool:
         """Execute GO_TO_STATE action - navigate to target states.
 
         Navigates to one or more target states using the qontinui library's
@@ -116,7 +114,7 @@ class NavigationActionExecutor(ActionExecutorBase):
             raise ActionExecutionError(
                 action_type="GO_TO_STATE",
                 reason="stateIds is required and must not be empty",
-                action_id=action.id
+                action_id=action.id,
             )
 
         if not self.context.state_executor:
@@ -124,7 +122,7 @@ class NavigationActionExecutor(ActionExecutorBase):
             raise ActionExecutionError(
                 action_type="GO_TO_STATE",
                 reason="No state executor available for navigation",
-                action_id=action.id
+                action_id=action.id,
             )
 
         # Validate all target states exist
@@ -144,11 +142,7 @@ class NavigationActionExecutor(ActionExecutorBase):
 
             self._emit_action_success(
                 action,
-                {
-                    "state_ids": state_ids,
-                    "state_names": target_names,
-                    "already_at_target": True
-                }
+                {"state_ids": state_ids, "state_names": target_names, "already_at_target": True},
             )
             return True
 
@@ -156,10 +150,12 @@ class NavigationActionExecutor(ActionExecutorBase):
         logger.debug("Initiating navigation via navigation_api")
         from .. import navigation_api
 
-        # Set workflow executor so transitions can execute workflows
-        # Note: This assumes the main ActionExecutor has set up navigation_api
-        # with set_workflow_executor before creating the NavigationActionExecutor
-        navigation_api.set_workflow_executor(self.context.workflow_executor)
+        # REMOVED: Don't override workflow_executor - it's already set by the runner
+        # The runner calls navigation_api.set_workflow_executor() immediately after
+        # load_configuration() with the proper executor that can execute workflows.
+        # Overriding it here with self.context.workflow_executor (which may be None)
+        # breaks navigation transitions.
+        # Old code: navigation_api.set_workflow_executor(self.context.workflow_executor)
 
         # Convert state IDs to state names for the navigation API
         target_names = [st.name for st in target_states]
@@ -176,15 +172,15 @@ class NavigationActionExecutor(ActionExecutorBase):
                     {
                         "state_ids": state_ids,
                         "state_names": target_names,
-                        "navigation_successful": True
-                    }
+                        "navigation_successful": True,
+                    },
                 )
             else:
                 logger.warning(f"Failed to navigate to: {', '.join(target_names)}")
                 self._emit_action_failure(
                     action,
                     "Navigation failed to reach target states",
-                    {"state_ids": state_ids, "state_names": target_names}
+                    {"state_ids": state_ids, "state_names": target_names},
                 )
 
             return success
@@ -194,17 +190,13 @@ class NavigationActionExecutor(ActionExecutorBase):
             self._emit_action_failure(
                 action,
                 f"Navigation exception: {e}",
-                {"state_ids": state_ids, "state_names": target_names}
+                {"state_ids": state_ids, "state_names": target_names},
             )
             raise ActionExecutionError(
-                action_type="GO_TO_STATE",
-                reason=f"Navigation failed: {e}",
-                action_id=action.id
+                action_type="GO_TO_STATE", reason=f"Navigation failed: {e}", action_id=action.id
             ) from e
 
-    def _execute_run_workflow(
-        self, action: Action, typed_config: RunWorkflowActionConfig
-    ) -> bool:
+    def _execute_run_workflow(self, action: Action, typed_config: RunWorkflowActionConfig) -> bool:
         """Execute RUN_WORKFLOW action - run nested workflow with optional repetition.
 
         This method executes a nested workflow by looking it up in the config's
@@ -230,9 +222,7 @@ class NavigationActionExecutor(ActionExecutorBase):
         workflow_id = action.config.get("workflowId")
         if not workflow_id:
             raise ActionExecutionError(
-                action_type="RUN_WORKFLOW",
-                reason="workflowId is required",
-                action_id=action.id
+                action_type="RUN_WORKFLOW", reason="workflowId is required", action_id=action.id
             )
 
         # Look up workflow in config
@@ -241,7 +231,7 @@ class NavigationActionExecutor(ActionExecutorBase):
             raise ActionExecutionError(
                 action_type="RUN_WORKFLOW",
                 reason=f"Workflow '{workflow_id}' not found in config",
-                action_id=action.id
+                action_id=action.id,
             )
 
         logger.info(f"Found workflow: '{workflow.name}' (id: {workflow_id})")
@@ -273,9 +263,7 @@ class NavigationActionExecutor(ActionExecutorBase):
                 success = self._execute_workflow_once(workflow, workflow_id, run_num, total_runs)
 
                 if success:
-                    logger.info(
-                        f"Workflow succeeded on run {run_num}/{total_runs}, stopping early"
-                    )
+                    logger.info(f"Workflow succeeded on run {run_num}/{total_runs}, stopping early")
                     return True
 
                 # Delay before next attempt (if not the last run)
@@ -329,7 +317,7 @@ class NavigationActionExecutor(ActionExecutorBase):
             {
                 "workflow_id": workflow_id,
                 "workflow_name": workflow.name,
-                "process_type": workflow.type,
+                "workflow_format": workflow.format,  # Always "graph" now
                 "action_count": len(workflow.actions),
                 "run_number": run_num,
                 "total_runs": total_runs,
@@ -340,24 +328,28 @@ class NavigationActionExecutor(ActionExecutorBase):
         executed_count = 0
 
         try:
-            # Execute the nested workflow actions
-            if workflow.type == "sequence":
-                # Sequential execution - stop on first failure
+            # Execute the nested workflow using workflow_executor
+            # All workflows are now graph-based, so we delegate to the executor
+            if workflow.format == "graph":
+                # Graph execution - delegate to workflow_executor
                 for nested_action in workflow.actions:
                     # Use the execute_action callback from context to execute nested actions
-                    if not self.context.execute_action(nested_action):
+                    # Model-based GUI automation principle: always continue, never stop on failure
+                    action_success = self.context.execute_action(nested_action)
+                    if not action_success:
                         logger.warning(
                             f"Nested action failed in workflow '{workflow.name}': "
-                            f"{nested_action.type} (id: {nested_action.id})"
+                            f"{nested_action.type} (id: {nested_action.id}), continuing execution"
                         )
                         success = False
-                        break
                     executed_count += 1
 
             elif workflow.type == "parallel":
                 # For now, execute sequentially (parallel execution would need threading)
                 # In future, this could use concurrent.futures or similar
-                logger.debug("Executing 'parallel' workflow sequentially (threading not implemented)")
+                logger.debug(
+                    "Executing 'parallel' workflow sequentially (threading not implemented)"
+                )
                 for nested_action in workflow.actions:
                     self.context.execute_action(nested_action)
                     executed_count += 1
@@ -365,9 +357,10 @@ class NavigationActionExecutor(ActionExecutorBase):
             else:
                 logger.warning(f"Unknown workflow type: {workflow.type}, executing sequentially")
                 for nested_action in workflow.actions:
-                    if not self.context.execute_action(nested_action):
+                    # Model-based GUI automation principle: always continue, never stop on failure
+                    action_success = self.context.execute_action(nested_action)
+                    if not action_success:
                         success = False
-                        break
                     executed_count += 1
 
         except Exception as e:

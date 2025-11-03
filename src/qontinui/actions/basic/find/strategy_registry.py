@@ -7,7 +7,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from .implementations.find_image import ImageFinder
 from .options.base_find_options import FindStrategy
 
 logger = logging.getLogger(__name__)
@@ -37,8 +36,8 @@ class StrategyRegistry:
 
     def _register_default_implementations(self):
         """Register default strategy implementations."""
-        # Template matching
-        self.register(FindStrategy.TEMPLATE, ImageFinder())
+        # Template matching (removed - use RealFindImplementation instead)
+        # self.register(FindStrategy.TEMPLATE, ImageFinder())
 
         # Text finding (when implemented)
         # self.register(FindStrategy.TEXT, TextFinder())

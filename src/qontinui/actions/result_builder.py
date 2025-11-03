@@ -9,10 +9,9 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from ..find.match import Match
+    from ..model.element.region import Region
     from .action_config import ActionConfig
     from .action_result import ActionResult
-    from ..model.element.location import Location
-    from ..model.element.region import Region
 
 
 class ActionResultBuilder:
@@ -39,18 +38,18 @@ class ActionResultBuilder:
         self._success = False
         self._description = ""
         self._output_text = ""
-        self._matches: list["Match"] = []
-        self._initial_matches: list["Match"] = []
+        self._matches: list[Match] = []
+        self._initial_matches: list[Match] = []
         self._max_matches = -1
-        self._text: Optional["Text"] = None
+        self._text: Text | None = None
         self._selected_text = ""
         self._active_states: set[str] = set()
         self._duration: timedelta | None = None
         self._start_time: datetime | None = None
         self._end_time: datetime | None = None
-        self._defined_regions: list["Region"] = []
-        self._movements: list["Movement"] = []
-        self._execution_history: list["ActionRecord"] = []
+        self._defined_regions: list[Region] = []
+        self._movements: list[Movement] = []
+        self._execution_history: list[ActionRecord] = []
         self._times_acted_on = 0
 
     def with_success(self, success: bool) -> "ActionResultBuilder":
@@ -180,9 +179,9 @@ class ActionResultBuilder:
 
     def with_timing(
         self,
-        start: Optional[datetime] = None,
-        end: Optional[datetime] = None,
-        duration: Optional[timedelta] = None,
+        start: datetime | None = None,
+        end: datetime | None = None,
+        duration: timedelta | None = None,
     ) -> "ActionResultBuilder":
         """Set timing information.
 
@@ -247,9 +246,7 @@ class ActionResultBuilder:
         self._movements.append(movement)
         return self
 
-    def with_execution_history(
-        self, history: list["ActionRecord"]
-    ) -> "ActionResultBuilder":
+    def with_execution_history(self, history: list["ActionRecord"]) -> "ActionResultBuilder":
         """Set execution history.
 
         Args:
@@ -293,23 +290,20 @@ class ActionResultBuilder:
         """
         from .action_result import ActionResult
 
-        result = ActionResult(self._config)
-        result.success = self._success
-        result.action_description = self._description
-        result.output_text = self._output_text
-        result.match_list = self._matches
-        result.initial_match_list = self._initial_matches
-        result.max_matches = self._max_matches
-        result.text = self._text
-        result.selected_text = self._selected_text
-        result.active_states = self._active_states
-        result.duration = self._duration
-        result.start_time = self._start_time
-        result.end_time = self._end_time
-        result.defined_regions = self._defined_regions
-        result.movements = self._movements
-        result.execution_history = self._execution_history
-        result.times_acted_on = self._times_acted_on
+        # Convert builder fields to ActionResult constructor arguments
+        # ActionResult is a frozen dataclass, so we must pass all arguments at construction
+        text_str = str(self._text) if self._text is not None else ""
+
+        result = ActionResult(
+            success=self._success,
+            matches=tuple(self._matches),
+            times_acted_on=self._times_acted_on,
+            text=text_str,
+            defined_regions=tuple(self._defined_regions),
+            movements=tuple(self._movements),
+            execution_history=tuple(self._execution_history),
+            active_states=frozenset(self._active_states),
+        )
         return result
 
 

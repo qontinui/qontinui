@@ -6,74 +6,14 @@ configuration, organized by domain for maintainability.
 """
 
 # Base types and enums
+# Core action model
+from .action import ACTION_CONFIG_MAP, Action, get_typed_config
 from .base_types import (
     LogLevel,
     MouseButton,
     SearchStrategy,
     VerificationMode,
     WorkflowVisibility,
-)
-
-# Geometry primitives
-from .geometry import Coordinates, Region
-
-# Logging configuration
-from .logging import LoggingOptions
-
-# Execution control
-from .execution import BaseActionSettings, ExecutionSettings, RepetitionOptions
-
-# Search and pattern matching
-from .search import (
-    MatchAdjustment,
-    PatternOptions,
-    PollingConfig,
-    SearchOptions,
-    TextSearchOptions,
-)
-
-# Target configurations
-from .targets import (
-    CoordinatesTarget,
-    CurrentPositionTarget,
-    ImageTarget,
-    RegionTarget,
-    StateStringTarget,
-    TargetConfig,
-    TextTarget,
-)
-
-# Verification
-from .verification import VerificationConfig
-
-# Mouse action configs
-from .mouse_actions import (
-    ClickActionConfig,
-    DragActionConfig,
-    MouseDownActionConfig,
-    MouseMoveActionConfig,
-    MouseUpActionConfig,
-    ScrollActionConfig,
-)
-
-# Keyboard action configs
-from .keyboard_actions import (
-    HotkeyActionConfig,
-    KeyDownActionConfig,
-    KeyPressActionConfig,
-    KeyUpActionConfig,
-    TextSource,
-    TypeActionConfig,
-)
-
-# Find action configs
-from .find_actions import (
-    ExistsActionConfig,
-    FindActionConfig,
-    FindStateImageActionConfig,
-    VanishActionConfig,
-    WaitActionConfig,
-    WaitCondition,
 )
 
 # Control flow configs
@@ -105,6 +45,54 @@ from .data_operations import (
     ValueSource,
 )
 
+# Execution control
+from .execution import BaseActionSettings, ExecutionSettings, RepetitionOptions
+
+# Find action configs
+from .find_actions import (
+    FindActionConfig,
+    FindStateImageActionConfig,
+    VanishActionConfig,
+    WaitActionConfig,
+    WaitCondition,
+)
+
+# Geometry primitives
+from .geometry import Coordinates, Region
+
+# Keyboard action configs
+from .keyboard_actions import (
+    HotkeyActionConfig,
+    KeyDownActionConfig,
+    KeyPressActionConfig,
+    KeyUpActionConfig,
+    TextSource,
+    TypeActionConfig,
+)
+
+# Logging configuration
+from .logging import LoggingOptions
+
+# Mouse action configs
+from .mouse_actions import (
+    ClickActionConfig,
+    DragActionConfig,
+    HighlightActionConfig,
+    MouseDownActionConfig,
+    MouseMoveActionConfig,
+    MouseUpActionConfig,
+    ScrollActionConfig,
+)
+
+# Search and pattern matching
+from .search import (
+    MatchAdjustment,
+    PatternOptions,
+    PollingConfig,
+    SearchOptions,
+    TextSearchOptions,
+)
+
 # State and workflow action configs
 from .state_actions import (
     GoToStateActionConfig,
@@ -114,8 +102,20 @@ from .state_actions import (
     WorkflowRepetition,
 )
 
-# Core action model
-from .action import ACTION_CONFIG_MAP, Action, get_typed_config
+# Target configurations
+from .targets import (
+    CoordinatesTarget,
+    CurrentPositionTarget,
+    ImageTarget,
+    LastFindResultTarget,
+    RegionTarget,
+    StateStringTarget,
+    TargetConfig,
+    TextTarget,
+)
+
+# Verification
+from .verification import VerificationConfig
 
 # Workflow models
 from .workflow import (
@@ -153,6 +153,7 @@ __all__ = [
     "CoordinatesTarget",
     "CurrentPositionTarget",
     "ImageTarget",
+    "LastFindResultTarget",
     "RegionTarget",
     "StateStringTarget",
     "TargetConfig",
@@ -162,6 +163,7 @@ __all__ = [
     # Mouse actions
     "ClickActionConfig",
     "DragActionConfig",
+    "HighlightActionConfig",
     "MouseDownActionConfig",
     "MouseMoveActionConfig",
     "MouseUpActionConfig",
@@ -174,7 +176,6 @@ __all__ = [
     "TextSource",
     "TypeActionConfig",
     # Find actions
-    "ExistsActionConfig",
     "FindActionConfig",
     "FindStateImageActionConfig",
     "VanishActionConfig",

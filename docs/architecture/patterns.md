@@ -140,42 +140,41 @@ reduced = executor.execute("REDUCE", items, reduce_options)
 
 ---
 
-### Implementation 3: FindImage
+### Implementation 3: RealFindImplementation
 
-**Location**: `/mnt/c/Users/jspin/Documents/qontinui_parent/qontinui/src/qontinui/actions/basic/find/implementations/find_image/__init__.py`
+**Location**: `/mnt/c/Users/jspin/Documents/qontinui_parent/qontinui/src/qontinui/actions/find/real_find_implementation.py`
 
-**Purpose**: Simplifies template matching operations
+**Purpose**: Performs actual template matching for find operations
 
 **Structure**:
 ```python
-class FindImage:
-    """Facade hiding complex template matching orchestration."""
+class RealFindImplementation:
+    """Performs actual template matching for find operations.
+
+    Single Responsibility: Execute real image finding with template matching.
+    """
 
     def __init__(self):
-        self._orchestrator = FindImageOrchestrator()
+        self.screenshot_provider = PureActionsScreenshotProvider()
+        self.template_matcher = TemplateMatcher()
+        self.visual_debug = VisualDebugGenerator()
 
-    def find(self, collection, options):
-        """Simple interface for image finding."""
-        return self._orchestrator.find(collection, options)
-
-    def find_async(self, patterns, options):
-        """Simple interface for async finding."""
-        return self._orchestrator.find_async(patterns, options)
+    def execute(self, pattern: Pattern, options: FindOptions) -> FindResult:
+        """Execute real find operation."""
+        # Performs actual template matching with OpenCV
 ```
 
 **Usage Example**:
 ```python
-from qontinui.actions.basic.find.implementations import FindImage
+from qontinui.actions.find import RealFindImplementation
 
-finder = FindImage()
+finder = RealFindImplementation()
 
-# Simple API hides complex orchestration
-matches = finder.find(pattern_collection, options)
+# Execute real template matching
+result = finder.execute(pattern, options)
 
 # Async variant for parallel search
-matches = await finder.find_async(patterns, options)
-
-# Facade hides: matchers, capture, async execution
+results = await finder.execute_async(patterns, options)
 ```
 
 **Benefits**:
