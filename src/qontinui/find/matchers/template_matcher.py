@@ -413,10 +413,14 @@ class TemplateMatcher(ImageMatcher):
                 x = int(pt[0]) + offset_x
                 y = int(pt[1]) + offset_y
 
+                # Calculate center of the match region for target location
+                center_x = x + template_width // 2
+                center_y = y + template_height // 2
+
                 match_obj = MatchObject(
                     target=Location(
-                        x=x,
-                        y=y,
+                        x=center_x,
+                        y=center_y,
                         region=Region(x, y, template_width, template_height),
                     ),
                     score=float(score),
@@ -458,10 +462,14 @@ class TemplateMatcher(ImageMatcher):
                 x = int(max_loc[0]) + offset_x
                 y = int(max_loc[1]) + offset_y
 
+                # Calculate center of the match region for target location
+                center_x = x + template_width // 2
+                center_y = y + template_height // 2
+
                 match_obj = MatchObject(
                     target=Location(
-                        x=x,
-                        y=y,
+                        x=center_x,
+                        y=center_y,
                         region=Region(x, y, template_width, template_height),
                     ),
                     score=float(max_val),
@@ -469,7 +477,7 @@ class TemplateMatcher(ImageMatcher):
                 )
                 matches_list.append(Match(match_obj))
                 print(
-                    f"[MATCH_DEBUG] Created match: x={x}, y={y}, score={float(max_val)}",
+                    f"[MATCH_DEBUG] Created match: region_top_left=({x}, {y}), center=({center_x}, {center_y}), score={float(max_val)}",
                     file=sys.stderr,
                     flush=True,
                 )

@@ -24,7 +24,7 @@ def mock_context():
     context.time = Mock()
     context.config = Mock()
     context.defaults = Mock()
-    context.last_find_location = None
+    context.last_action_result = None
     context.variable_context = Mock()
     context.state_executor = None
     context.control_flow_executor = Mock()
