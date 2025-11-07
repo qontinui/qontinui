@@ -36,8 +36,8 @@ class DelegatingActionExecutor:
         config: Parsed automation configuration containing states, workflows, images.
         state_executor: Reference to StateExecutor for GO_TO_STATE navigation.
         defaults: Default action configuration from system settings.
-        last_find_location: Coordinates (x, y) of most recent FIND result.
         context: Shared execution context passed to all specialized executors.
+            Contains last_action_result with complete ActionResult objects.
 
     Example:
         >>> config = ConfigParser().parse_file("automation.json")
@@ -65,9 +65,6 @@ class DelegatingActionExecutor:
         self.state_executor = state_executor
         self.use_graph_execution = use_graph_execution
         self.workflow_executor = workflow_executor
-
-        # Track last find result for "Last Find Result" targeting
-        self.last_find_location: tuple[int, int] | None = None
 
         # Get action defaults configuration
         self.defaults = self._create_defaults()
@@ -118,8 +115,8 @@ class DelegatingActionExecutor:
             keyboard=self.keyboard_wrapper,
             screen=self.screen_wrapper,
             time=self.time_wrapper,
-            # Shared state
-            last_find_location=self.last_find_location,
+            # Shared state - stores complete ActionResult objects
+            last_action_result=None,
             variable_context=self.variable_context,
             state_executor=self.state_executor,
             # Sub-executors for control flow and data operations
@@ -269,6 +266,25 @@ class DelegatingActionExecutor:
                 result = self._delegate_to_executor(action, typed_config)
                 logger.debug(f"Executor returned: {result}")
 
+                # DEBUG: Log delegator result
+                import os
+                import tempfile
+                from datetime import datetime
+
+                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_action_success_trace.log")
+                try:
+                    with open(debug_log, "a", encoding="utf-8") as f:
+                        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                        f.write(
+                            f"[{ts}] DELEGATING EXECUTOR: action={action.type} id={action.id}\n"
+                        )
+                        f.write(
+                            f"[{ts}]   _delegate_to_executor returned: {result} (type={type(result)})\n"
+                        )
+                        f.write(f"[{ts}]   will return: {True if result else False}\n")
+                except Exception:
+                    pass
+
                 if result:
                     # Add execution details if available
                     if isinstance(result, dict):
@@ -358,9 +374,8 @@ class DelegatingActionExecutor:
 
         This is the core delegation method that:
         1. Looks up the executor for the action type via registry
-        2. Syncs shared state to context
-        3. Calls executor.execute()
-        4. Syncs shared state back from context
+        2. Calls executor.execute()
+        3. Executor can store ActionResult via context.update_last_action_result()
 
         Args:
             action: Action to execute
@@ -372,9 +387,6 @@ class DelegatingActionExecutor:
         Raises:
             ActionExecutionError: If no executor is registered for the action type
         """
-        # Sync shared state to context before delegation
-        self.context.last_find_location = self.last_find_location
-
         # Get executor for action type via registry
         logger.debug(f"Looking up executor for action type: {action.type}")
         executor = create_executor(action.type, self.context)
@@ -382,9 +394,6 @@ class DelegatingActionExecutor:
         # Delegate execution to specialized executor
         logger.debug(f"Delegating to {executor.__class__.__name__}")
         result = executor.execute(action, typed_config)
-
-        # Sync shared state back from context
-        self.last_find_location = self.context.last_find_location
 
         return result
 

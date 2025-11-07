@@ -79,6 +79,91 @@ class LastFindResultTarget(BaseModel):
     type: Literal["lastFindResult"] = "lastFindResult"
 
 
+class ResultIndexTarget(BaseModel):
+    """Target specific match from last action result by index.
+
+    This target type enables actions to reference a specific match from the
+    ActionResult of a previous FIND action. The index determines which match
+    to use from the matches list.
+
+    Attributes:
+        type: Literal type discriminator for this target type.
+        index: Zero-based index into the matches list (0 = best/first match,
+               1 = second best, etc.). Defaults to 0 if not specified.
+
+    Example:
+        To click on the second best match from a FIND action:
+        {
+            "type": "resultIndex",
+            "index": 1
+        }
+    """
+
+    type: Literal["resultIndex"] = "resultIndex"
+    index: int = Field(default=0, alias="index")
+
+    model_config = {"populate_by_name": True}
+
+
+class AllResultsTarget(BaseModel):
+    """Target all matches from last action result.
+
+    This target type enables actions to operate on all matches from the
+    ActionResult of a previous FIND action. Useful for actions that can
+    handle multiple targets simultaneously, such as HIGHLIGHT which can
+    draw boxes around all found matches.
+
+    Attributes:
+        type: Literal type discriminator for this target type.
+
+    Example:
+        To highlight all matches from a FIND action:
+        {
+            "type": "allResults"
+        }
+
+    Note:
+        Not all action types support multiple targets. Actions that don't
+        support multiple targets (like CLICK) will typically use the first
+        match when receiving AllResultsTarget.
+    """
+
+    type: Literal["allResults"] = "allResults"
+
+
+class ResultByImageTarget(BaseModel):
+    """Target match from specific image ID in multi-image FIND result.
+
+    This target type enables actions to reference the match that came from
+    a specific image in a multi-image FIND action. When using the EACH search
+    strategy with multiple images, each match is tagged with its source image.
+    This target type allows selecting the match from a particular image.
+
+    Attributes:
+        type: Literal type discriminator for this target type.
+        image_id: The image ID whose match should be targeted. This should
+                  correspond to one of the image_ids used in the ImageTarget
+                  of the previous FIND action.
+
+    Example:
+        To click on the match from the "corn" image in a multi-image FIND:
+        {
+            "type": "resultByImage",
+            "imageId": "stateimage-corn"
+        }
+
+    Note:
+        Requires that the previous FIND action used the EACH search strategy
+        and that matches were tagged with source image IDs. If no match exists
+        for the specified image_id, the action will fail.
+    """
+
+    type: Literal["resultByImage"] = "resultByImage"
+    image_id: str = Field(alias="imageId")
+
+    model_config = {"populate_by_name": True}
+
+
 # Union type for all target configurations
 TargetConfig = (
     ImageTarget
@@ -88,4 +173,7 @@ TargetConfig = (
     | StateStringTarget
     | CurrentPositionTarget
     | LastFindResultTarget
+    | ResultIndexTarget
+    | AllResultsTarget
+    | ResultByImageTarget
 )

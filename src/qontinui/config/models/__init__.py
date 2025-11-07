@@ -104,11 +104,14 @@ from .state_actions import (
 
 # Target configurations
 from .targets import (
+    AllResultsTarget,
     CoordinatesTarget,
     CurrentPositionTarget,
     ImageTarget,
     LastFindResultTarget,
     RegionTarget,
+    ResultByImageTarget,
+    ResultIndexTarget,
     StateStringTarget,
     TargetConfig,
     TextTarget,
@@ -150,11 +153,14 @@ __all__ = [
     "SearchOptions",
     "TextSearchOptions",
     # Targets
+    "AllResultsTarget",
     "CoordinatesTarget",
     "CurrentPositionTarget",
     "ImageTarget",
     "LastFindResultTarget",
     "RegionTarget",
+    "ResultByImageTarget",
+    "ResultIndexTarget",
     "StateStringTarget",
     "TargetConfig",
     "TextTarget",

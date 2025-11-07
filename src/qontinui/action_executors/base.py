@@ -7,9 +7,12 @@ action executors, replacing the monolithic ActionExecutor god class.
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..config.schema import Action
+
+if TYPE_CHECKING:
+    from ..actions.action_result import ActionResult
 
 
 @dataclass
@@ -18,6 +21,10 @@ class ExecutionContext:
 
     This context provides access to all dependencies needed by action executors,
     including HAL components, configuration, state management, and event emission.
+
+    The context stores complete ActionResult objects from executions, enabling
+    subsequent actions to access all matches and execution details, not just
+    a single location.
     """
 
     # Configuration access
@@ -30,8 +37,8 @@ class ExecutionContext:
     screen: Any  # Screen wrapper
     time: Any  # TimeWrapper
 
-    # Shared state
-    last_find_location: tuple[int, int] | None
+    # Shared state - stores complete action results
+    last_action_result: "ActionResult | None"
     variable_context: Any  # VariableContext
     state_executor: Any | None  # StateExecutor
 
@@ -48,13 +55,31 @@ class ExecutionContext:
     emit_action_event: Callable[[str, str, bool, dict], None]
     emit_image_recognition_event: Callable[[dict], None]
 
-    def update_last_find_location(self, location: tuple[int, int] | None) -> None:
-        """Update the last find location (shared state).
+    def update_last_action_result(self, result: "ActionResult") -> None:
+        """Store complete action result for subsequent actions to reference.
+
+        This method stores the full ActionResult object, preserving all matches
+        and execution details. Subsequent actions can access any match from the
+        result, not just the first/best one.
 
         Args:
-            location: New location or None to clear
+            result: Complete ActionResult with all matches and execution data
+
+        Example:
+            # FIND action stores result with multiple matches
+            result = ActionResultBuilder()
+                .add_match(match1)
+                .add_match(match2)
+                .with_success(True)
+                .build()
+            context.update_last_action_result(result)
+
+            # Later, CLICK action can access any match:
+            # - result.matches[0] for best match
+            # - result.matches[1] for second match
+            # - result.matches for all matches
         """
-        self.last_find_location = location
+        self.last_action_result = result
 
 
 class ActionExecutorBase(ABC):

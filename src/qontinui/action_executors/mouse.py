@@ -144,8 +144,10 @@ class MouseActionExecutor(ActionExecutorBase):
         - CoordinatesTarget: Use specified coordinates
         - RegionTarget: Use center of region
         - CurrentPositionTarget: Return None (use current position)
-        - LastFindResultTarget: Use location from most recent FIND action
-        - None: Use last find result if available (for backward compatibility)
+        - LastFindResultTarget: Use first match from last action result
+        - ResultIndexTarget: Use specific match from last action result by index
+        - ResultByImageTarget: Use match from specific image in last action result
+        - None: Return None (no target specified)
 
         Args:
             target: Target configuration or None
@@ -153,52 +155,72 @@ class MouseActionExecutor(ActionExecutorBase):
         Returns:
             Tuple of (x, y) coordinates or None if not found or current position
         """
+        # File-based debug logging at entry
         import os
         import tempfile
         from datetime import datetime
 
-        from ..config.schema import (
+        from ..config.models.targets import (
+            AllResultsTarget,
             CoordinatesTarget,
             ImageTarget,
             LastFindResultTarget,
             RegionTarget,
+            ResultByImageTarget,
+            ResultIndexTarget,
         )
 
-        # Debug logging
         debug_log_path = os.path.join(
             tempfile.gettempdir(), "qontinui_get_target_location_debug.log"
         )
 
         def log_debug(msg: str):
+            """Write to debug file."""
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             log_line = f"[{timestamp}] {msg}\n"
-            logger.info(f"[GET_TARGET_LOC] {msg}")
             try:
                 with open(debug_log_path, "a", encoding="utf-8") as f:
                     f.write(log_line)
             except Exception:
                 pass
 
-        log_debug(f"_get_target_location() called with target={target}")
-        log_debug(f"Target type: {type(target).__name__ if target else 'None'}")
-        log_debug(f"Current last_find_location: {self.context.last_find_location}")
+        log_debug("_get_target_location() called")
+        log_debug(f"  target: {target}")
+        log_debug(f"  target type: {type(target).__name__ if target else 'None'}")
+        log_debug(f"  target is None: {target is None}")
 
-        # When target is None, use last find location if available
+        if target:
+            log_debug(f"  hasattr(target, 'type'): {hasattr(target, 'type')}")
+            if hasattr(target, "type"):
+                log_debug(f"  target.type: {target.type}")
+            log_debug(
+                f"  isinstance(target, LastFindResultTarget): {isinstance(target, LastFindResultTarget)}"
+            )
+            log_debug(f"  isinstance(target, ImageTarget): {isinstance(target, ImageTarget)}")
+            log_debug(
+                f"  isinstance(target, CoordinatesTarget): {isinstance(target, CoordinatesTarget)}"
+            )
+            log_debug(f"  isinstance(target, RegionTarget): {isinstance(target, RegionTarget)}")
+
+        logger.debug(f"_get_target_location() called with target={target}")
+        logger.debug(f"Target type: {type(target).__name__ if target else 'None'}")
+
+        # When target is None, no target specified
         if target is None:
-            log_debug("Target is None, checking for last find result")
-            if self.context.last_find_location:
-                log_debug(f"Using last find result: {self.context.last_find_location}")
-                logger.debug(f"Using last find result: {self.context.last_find_location}")
-                return self.context.last_find_location
-            else:
-                log_debug("ERROR: No target specified and no previous find result available")
-                logger.warning("No target specified and no previous find result available")
-                return None
+            logger.debug("Target is None - no target specified")
+            return None
 
         # Handle typed targets
         if isinstance(target, ImageTarget):
             # Use find wrapper to locate image
-            image_id = target.image_id
+            # Note: ImageTarget now supports multiple image_ids, but for mouse actions
+            # we use the first image_id for backward compatibility
+            image_ids = target.image_ids
+            if not image_ids:
+                logger.error("ImageTarget has no image_ids")
+                return None
+
+            image_id = image_ids[0]  # Use first image for single target
             similarity = 0.8  # Default similarity
 
             if target.search_options and target.search_options.similarity is not None:
@@ -206,58 +228,172 @@ class MouseActionExecutor(ActionExecutorBase):
 
             logger.debug(f"Finding image {image_id} with similarity {similarity}")
 
-            if image_id:
-                image = self.context.config.image_map.get(image_id)
-                if image and image.file_path:
-                    # Use find wrapper to locate image
-                    from ..wrappers.find_wrapper import Find
+            image = self.context.config.image_map.get(image_id)
+            if image and image.file_path:
+                # Use find wrapper to locate image
+                from ..wrappers.find_wrapper import Find
 
-                    location = Find.image(image.file_path, similarity=similarity)
-                    if location:
-                        logger.debug(f"Found image at {location}")
-                        # Store as last find location
-                        self.context.update_last_find_location(location)
-                        return location
-                    else:
-                        logger.warning(f"Image {image_id} not found on screen")
-                        return None
+                location = Find.image(image.file_path, similarity=similarity)
+                if location:
+                    logger.debug(f"Found image at {location}")
+                    return location
                 else:
-                    if not image:
-                        logger.error(f"Image ID not found in image_map: {image_id}")
-                    else:
-                        logger.error(f"Image file_path is None for image: {image_id}")
+                    logger.warning(f"Image {image_id} not found on screen")
                     return None
+            else:
+                if not image:
+                    logger.error(f"Image ID not found in image_map: {image_id}")
+                else:
+                    logger.error(f"Image file_path is None for image: {image_id}")
+                return None
 
         elif isinstance(target, CoordinatesTarget):
-            log_debug("Target is CoordinatesTarget")
             coords = target.coordinates
-            log_debug(f"Using coordinates: ({coords.x}, {coords.y})")
             logger.debug(f"Using coordinates: ({coords.x}, {coords.y})")
             return (coords.x, coords.y)
 
         elif isinstance(target, RegionTarget):
-            log_debug("Target is RegionTarget")
             region = target.region
             # Return center of region
             x = region.x + region.width // 2
             y = region.y + region.height // 2
-            log_debug(f"Using region center: ({x}, {y})")
             logger.debug(f"Using region center: ({x}, {y})")
             return (x, y)
 
         elif isinstance(target, LastFindResultTarget):
+            # File-based debug logging for LastFindResultTarget
+            import os
+            import tempfile
+            from datetime import datetime
+
+            debug_log_path = os.path.join(
+                tempfile.gettempdir(), "qontinui_last_find_result_debug.log"
+            )
+
+            def log_debug(msg: str):
+                """Write to debug file."""
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                log_line = f"[{timestamp}] {msg}\n"
+                logger.info(f"[LAST_FIND_RESULT_DEBUG] {msg}")
+                try:
+                    with open(debug_log_path, "a", encoding="utf-8") as f:
+                        f.write(log_line)
+                except Exception:
+                    pass
+
             log_debug("Target is LastFindResultTarget")
-            # LastFindResultTarget - use location from most recent FIND action
-            if self.context.last_find_location:
-                log_debug(f"SUCCESS: Using last find result: {self.context.last_find_location}")
-                logger.debug(f"Using last find result: {self.context.last_find_location}")
-                return self.context.last_find_location
+            log_debug(f"self.context type: {type(self.context)}")
+            log_debug(
+                f"self.context has 'last_action_result': {hasattr(self.context, 'last_action_result')}"
+            )
+
+            if hasattr(self.context, "last_action_result"):
+                log_debug(f"self.context.last_action_result: {self.context.last_action_result}")
+                log_debug(
+                    f"self.context.last_action_result type: {type(self.context.last_action_result)}"
+                )
+                log_debug(
+                    f"self.context.last_action_result is None: {self.context.last_action_result is None}"
+                )
+
+                if self.context.last_action_result:
+                    log_debug(
+                        f"self.context.last_action_result.matches: {self.context.last_action_result.matches}"
+                    )
+                    log_debug(
+                        f"matches count: {len(self.context.last_action_result.matches) if self.context.last_action_result.matches else 0}"
+                    )
+            else:
+                log_debug("ERROR: context does not have 'last_action_result' attribute")
+
+            logger.debug("Target is LastFindResultTarget")
+            # Use first match from last action result
+            if self.context.last_action_result and self.context.last_action_result.matches:
+                match = self.context.last_action_result.matches[0]
+                location = (match.x, match.y)
+                log_debug(f"Using last action result match[0]: {location}")
+                logger.debug(f"Using last action result match[0]: {location}")
+                return location
             else:
                 log_debug(
-                    "ERROR: LastFindResultTarget requested but last_find_location is None/empty"
+                    "ERROR: LastFindResultTarget requested but no matches in last_action_result"
                 )
-                logger.error("LastFindResultTarget requested but no previous find result available")
+                logger.error("LastFindResultTarget requested but no matches in last_action_result")
                 return None
+
+        elif isinstance(target, ResultIndexTarget):
+            logger.debug(f"Target is ResultIndexTarget with index={target.index}")
+            # Access specific match by index
+            if not self.context.last_action_result:
+                logger.error("ResultIndexTarget requested but no last_action_result available")
+                return None
+
+            matches = self.context.last_action_result.matches
+            if not matches:
+                logger.error("ResultIndexTarget requested but no matches in last_action_result")
+                return None
+
+            if target.index < 0 or target.index >= len(matches):
+                logger.error(
+                    f"ResultIndexTarget index {target.index} out of bounds "
+                    f"(available: 0-{len(matches)-1})"
+                )
+                return None
+
+            match = matches[target.index]
+            location = (match.x, match.y)
+            logger.debug(f"Using match[{target.index}]: {location}")
+            return location
+
+        elif isinstance(target, AllResultsTarget):
+            logger.debug("Target is AllResultsTarget")
+            # AllResultsTarget is not supported for single-location actions
+            # Return first match location as fallback
+            if self.context.last_action_result and self.context.last_action_result.matches:
+                match = self.context.last_action_result.matches[0]
+                location = (match.x, match.y)
+                logger.warning(
+                    "AllResultsTarget not supported for single-location actions, "
+                    f"using first match: {location}"
+                )
+                return location
+            else:
+                logger.error("AllResultsTarget requested but no matches in last_action_result")
+                return None
+
+        elif isinstance(target, ResultByImageTarget):
+            logger.debug(f"Target is ResultByImageTarget with image_id={target.image_id}")
+            # Find match from specific source image
+            if not self.context.last_action_result:
+                logger.error("ResultByImageTarget requested but no last_action_result available")
+                return None
+
+            matches = self.context.last_action_result.matches
+            if not matches:
+                logger.error("ResultByImageTarget requested but no matches in last_action_result")
+                return None
+
+            # Search for match with matching source_image_id in metadata
+            for match in matches:
+                # Check if match has metadata with source_image_id
+                if hasattr(match, "match_object") and hasattr(match.match_object, "metadata"):
+                    metadata = match.match_object.metadata
+                    # Check both as attribute and dict key for flexibility
+                    source_id = getattr(metadata, "source_image_id", None)
+                    if source_id is None and hasattr(metadata, "__dict__"):
+                        source_id = metadata.__dict__.get("source_image_id")
+
+                    if source_id == target.image_id:
+                        location = (match.x, match.y)
+                        logger.debug(
+                            f"Found match from source image '{target.image_id}': {location}"
+                        )
+                        return location
+
+            logger.error(
+                f"ResultByImageTarget: no match found with source_image_id='{target.image_id}'"
+            )
+            return None
 
         elif hasattr(target, "type") and target.type == "currentPosition":
             # CurrentPositionTarget - use current mouse position
@@ -320,8 +456,16 @@ class MouseActionExecutor(ActionExecutorBase):
         log_debug(f"Target config: {typed_config.target}")
         log_debug(f"Target type: {type(typed_config.target).__name__}")
 
-        location = self._get_target_location(typed_config.target)
-        log_debug(f"_get_target_location() returned: {location}")
+        try:
+            log_debug("About to call _get_target_location()")
+            location = self._get_target_location(typed_config.target)
+            log_debug(f"_get_target_location() returned: {location}")
+        except Exception as e:
+            log_debug(f"EXCEPTION in _get_target_location(): {type(e).__name__}: {e}")
+            import traceback
+
+            log_debug(f"Traceback: {traceback.format_exc()}")
+            raise
 
         if not location:
             log_debug("ERROR: Failed to get target location for MOUSE_MOVE")
