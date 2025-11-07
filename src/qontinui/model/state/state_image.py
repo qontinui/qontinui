@@ -38,6 +38,18 @@ class StateImage:
     # Search configuration
     _search_region: Region | None = None
     _search_regions: SearchRegions | None = None  # SearchRegions associated with this StateImage
+
+    # Similarity threshold for this state image
+    #
+    # Similarity Priority Cascade (highest to lowest):
+    # 1. FindOptions.similarity (action-level, explicit) - HIGHEST
+    # 2. Pattern.similarity (image-level override)
+    # 3. StateImage._similarity (THIS LEVEL - from JSON config)
+    # 4. QontinuiSettings.similarity_threshold (project config = 0.85)
+    # 5. Library default (action_defaults = 0.7) - LOWEST
+    #
+    # This value is applied to Patterns created from this StateImage (via get_pattern())
+    # only if the Pattern doesn't already have its own similarity set
     _similarity: float = 0.7
 
     # Metadata
@@ -67,57 +79,93 @@ class StateImage:
                 self.name = self.image.name
 
     def get_pattern(self) -> Pattern:
-        """Get pattern for finding.
+        """Get pattern for finding with proper similarity cascade.
+
+        Similarity Priority:
+        1. Pattern.similarity (if already set) - respects pattern-level override
+        2. StateImage._similarity (this level) - applies if pattern has no similarity
+        3. Lower priorities handled by FindOptions
 
         Returns:
-            Pattern object
+            Pattern object with appropriate configuration
         """
         if isinstance(self.image, Pattern):
             pattern = self.image
         else:
             pattern = Pattern.from_image(self.image)
 
-        # Apply StateImage configuration
-        pattern = pattern.with_similarity(self._similarity)
+        # Apply StateImage similarity only if Pattern doesn't have its own
+        # This respects the similarity priority hierarchy
+        if pattern.similarity is None:
+            pattern = pattern.with_similarity(self._similarity)
+
+        # Always apply search region from StateImage
         if self._search_region:
             pattern = pattern.with_search_region(self._search_region)
 
         return pattern
 
     def find(self) -> Matches:
-        """Find this state image using FindAction.
+        """Find this state image using FindAction with proper cascade.
 
         Returns:
             Matches object with all found matches
         """
-        from ...actions.find import FindAction, FindOptions
+        from ...actions.find import FindAction
+        from ...actions.find.find_options_builder import CascadeContext, build_find_options
 
         pattern = self.get_pattern()
         action = FindAction()
 
-        result = action.find(
-            pattern=pattern,
-            options=FindOptions(
-                similarity=self._similarity,
-                search_region=self._search_region,
-                find_all=True,
-            ),
-        )
+        # Build options with full cascade
+        try:
+            from ...config.settings import QontinuiSettings
 
+            project_config = QontinuiSettings()
+        except Exception:
+            project_config = None
+
+        ctx = CascadeContext(
+            search_options=None,  # StateImage doesn't have SearchOptions
+            pattern=pattern,
+            state_image=self,
+            project_config=project_config,
+        )
+        options = build_find_options(ctx, explicit_find_all=True)
+
+        result = action.find(pattern=pattern, options=options)
         return Matches(result.matches)
 
     def exists(self) -> bool:
-        """Check if this state image exists using FindAction.
+        """Check if this state image exists using FindAction with proper cascade.
 
         Returns:
             True if image found on screen
         """
         from ...actions.find import FindAction
+        from ...actions.find.find_options_builder import CascadeContext, build_find_options
 
         pattern = self.get_pattern()
         action = FindAction()
 
-        return action.exists(pattern, similarity=self._similarity)
+        # Build options with full cascade
+        try:
+            from ...config.settings import QontinuiSettings
+
+            project_config = QontinuiSettings()
+        except Exception:
+            project_config = None
+
+        ctx = CascadeContext(
+            search_options=None,  # StateImage doesn't have SearchOptions
+            pattern=pattern,
+            state_image=self,
+            project_config=project_config,
+        )
+        options = build_find_options(ctx)
+
+        result = action.find(pattern=pattern, options=options)
+        return result.found
 
     def wait_for(self, timeout: float = 5.0) -> bool:
         """Wait for image to appear.

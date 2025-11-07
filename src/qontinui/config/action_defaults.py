@@ -14,15 +14,15 @@ class MouseActionDefaults:
 
     # Click timing
     click_hold_duration: float = 0.05  # Seconds to hold button down during click
-    click_release_delay: float = 0.1   # Delay after releasing button
+    click_release_delay: float = 0.1  # Delay after releasing button
     click_safety_release: bool = True  # Release all buttons before clicking
 
     # Double-click timing
     double_click_interval: float = 0.1  # Delay between two clicks
 
     # Drag timing
-    drag_start_delay: float = 0.1      # Delay after pressing button before moving
-    drag_end_delay: float = 0.1        # Delay before releasing button after moving
+    drag_start_delay: float = 0.1  # Delay after pressing button before moving
+    drag_end_delay: float = 0.1  # Delay before releasing button after moving
     drag_default_duration: float = 1.0  # Default drag duration in seconds
 
     # Move timing
@@ -37,28 +37,40 @@ class KeyboardActionDefaults:
     """Default values for keyboard actions."""
 
     # Key press timing
-    key_hold_duration: float = 0.05    # Seconds to hold key down
-    key_release_delay: float = 0.05    # Delay after releasing key
+    key_hold_duration: float = 0.05  # Seconds to hold key down
+    key_release_delay: float = 0.05  # Delay after releasing key
 
     # Typing
-    typing_interval: float = 0.05      # Delay between characters when typing
+    typing_interval: float = 0.05  # Delay between characters when typing
 
     # Hotkey timing
-    hotkey_hold_duration: float = 0.05 # How long to hold hotkey combination
-    hotkey_press_interval: float = 0.01 # Delay between pressing each key in combination
+    hotkey_hold_duration: float = 0.05  # How long to hold hotkey combination
+    hotkey_press_interval: float = 0.01  # Delay between pressing each key in combination
 
 
 @dataclass
 class FindActionDefaults:
-    """Default values for find/match actions."""
+    """Default values for find/match actions.
+
+    Similarity Threshold Cascade (priority order, highest to lowest):
+    1. FindOptions.similarity (action-level, explicit override) - HIGHEST
+    2. Pattern.similarity (image-level override)
+    3. StateImage.threshold (state image-level from JSON config)
+    4. QontinuiSettings.similarity_threshold (project config) = 0.85
+    5. default_similarity_threshold (library default) = 0.7 - LOWEST
+
+    When FindOptions is created without explicit similarity, it checks:
+    - Project config (QontinuiSettings) first
+    - Falls back to this library default if unavailable
+    """
 
     # Image matching
-    default_similarity_threshold: float = 0.7  # Default match threshold
-    default_timeout: float = 10.0              # Default search timeout in seconds
-    default_retry_count: int = 3               # Default number of retries
+    default_similarity_threshold: float = 0.7  # Library default (lowest priority)
+    default_timeout: float = 10.0  # Default search timeout in seconds
+    default_retry_count: int = 3  # Default number of retries
 
     # Search behavior
-    search_interval: float = 0.5               # Delay between search attempts
+    search_interval: float = 0.5  # Delay between search attempts
 
 
 @dataclass
@@ -66,9 +78,9 @@ class WaitActionDefaults:
     """Default values for wait/pause actions."""
 
     # Standard waits
-    default_wait_duration: float = 1.0         # Default wait time in seconds
-    pause_before_action: float = 0.0           # Default pause before any action
-    pause_after_action: float = 0.0            # Default pause after any action
+    default_wait_duration: float = 1.0  # Default wait time in seconds
+    pause_before_action: float = 0.0  # Default pause before any action
+    pause_after_action: float = 0.0  # Default pause after any action
 
 
 @dataclass
@@ -225,7 +237,7 @@ def load_defaults_from_file(file_path: str) -> ActionDefaults:
     if not path.exists():
         raise FileNotFoundError(f"Configuration file not found: {file_path}")
 
-    with open(path, "r") as f:
+    with open(path) as f:
         config_dict = json.load(f)
 
     defaults = ActionDefaults.from_dict(config_dict)

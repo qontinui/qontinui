@@ -80,7 +80,13 @@ class TargetResolver:
             return None
 
     def _resolve_image_target(self, target: ImageTarget) -> ActionResult | None:
-        """Resolve ImageTarget using registry (same as IF actions).
+        """Resolve ImageTarget using registry with full options cascade.
+
+        Uses the builder pattern to properly cascade all options from:
+        1. SearchOptions (JSON config)
+        2. Pattern-level overrides
+        3. Project config
+        4. Library defaults
 
         Args:
             target: ImageTarget with image_ids and search options
@@ -95,6 +101,8 @@ class TargetResolver:
         from qontinui import registry
 
         from ..actions.find import FindAction
+        from ..actions.find.find_options_builder import CascadeContext, build_find_options
+        from ..config.settings import QontinuiSettings
         from ..model.element import Pattern
 
         def log_debug(msg: str):
@@ -107,17 +115,18 @@ class TargetResolver:
             except Exception:
                 pass
 
-        log_debug("_resolve_image_target() called - USING REGISTRY")
+        log_debug("_resolve_image_target() called - USING REGISTRY WITH CASCADE")
 
         image_ids = target.image_ids
         log_debug(f"  image_ids: {image_ids}")
         log_debug(f"  target.search_options: {target.search_options}")
 
-        # Get similarity from search_options (not from target itself)
-        similarity = 0.8  # Default threshold
-        if target.search_options and target.search_options.similarity is not None:
-            similarity = target.search_options.similarity
-        log_debug(f"  Resolved similarity: {similarity}")
+        # Get project config for cascade
+        try:
+            project_config = QontinuiSettings()
+        except Exception:
+            project_config = None
+            log_debug("  Could not load project config, using defaults")
 
         # Extract search strategy from search_options if provided
         strategy = "FIRST"  # Default strategy
@@ -130,9 +139,7 @@ class TargetResolver:
             )
         log_debug(f"  Resolved strategy: {strategy}")
 
-        logger.debug(
-            f"Resolving ImageTarget: {len(image_ids)} image(s), threshold={similarity}, strategy={strategy}"
-        )
+        logger.debug(f"Resolving ImageTarget: {len(image_ids)} image(s), strategy={strategy}")
 
         # Use registry to load patterns (same as IF actions)
         patterns = []
@@ -156,10 +163,11 @@ class TargetResolver:
                 continue
 
             log_debug(f"    Creating pattern from: {file_path}")
+            # Create pattern WITHOUT setting similarity - let cascade handle it
             pattern = Pattern.from_file(
                 img_path=file_path,
                 name=metadata.get("name", image_id),
-            ).with_similarity(similarity)
+            )
             patterns.append(pattern)
             log_debug("    Pattern created successfully")
 
@@ -167,11 +175,10 @@ class TargetResolver:
             log_debug("  No patterns loaded from registry")
             return None
 
-        log_debug(f"  Loaded {len(patterns)} patterns, using FindAction")
+        log_debug(f"  Loaded {len(patterns)} patterns, using FindAction with cascade")
 
-        # Use FindAction (single entry point) to find the first pattern
-        # For multiple images with BEST strategy, we'd need to find all and pick best
-        # For now, just find the first one (FIRST strategy)
+        # Build FindOptions using cascade for ALL patterns
+        # Each pattern gets the same cascaded options
         action = FindAction()
 
         if strategy == "BEST" and len(patterns) > 1:
@@ -179,10 +186,22 @@ class TargetResolver:
             # Find all patterns and pick the one with highest score
             best_result = None
             best_score = 0.0
-
             best_pattern = None
+
             for pattern in patterns:
-                find_result = action.find(pattern)
+                # Build options with cascade for this pattern
+                ctx = CascadeContext(
+                    search_options=target.search_options,
+                    pattern=pattern,
+                    state_image=None,  # Not available in this context
+                    project_config=project_config,
+                )
+                options = build_find_options(ctx)
+                log_debug(
+                    f"    Finding pattern {pattern.name} with similarity={options.similarity}"
+                )
+
+                find_result = action.find(pattern, options)
                 if find_result.found and find_result.matches:
                     score = find_result.matches[0].score
                     log_debug(f"    Pattern {pattern.name}: score={score}")
@@ -212,7 +231,20 @@ class TargetResolver:
             log_debug("  Using FIRST strategy or single pattern")
             # Just find the first pattern
             pattern = patterns[0]
-            find_result = action.find(pattern)
+
+            # Build options with cascade for this pattern
+            ctx = CascadeContext(
+                search_options=target.search_options,
+                pattern=pattern,
+                state_image=None,  # Not available in this context
+                project_config=project_config,
+            )
+            options = build_find_options(ctx)
+            log_debug(
+                f"  Using cascaded options: similarity={options.similarity}, timeout={options.timeout}"
+            )
+
+            find_result = action.find(pattern, options)
 
             if find_result.found and find_result.matches:
                 log_debug(f"  Pattern found! {len(find_result.matches)} matches")

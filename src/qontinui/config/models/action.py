@@ -29,6 +29,7 @@ from .data_operations import (
 )
 from .execution import BaseActionSettings, ExecutionSettings
 from .find_actions import (
+    ExistsActionConfig,
     FindActionConfig,
     FindStateImageActionConfig,
     VanishActionConfig,
@@ -79,6 +80,7 @@ ACTION_CONFIG_MAP = {
     # Find actions
     "FIND": FindActionConfig,
     "FIND_STATE_IMAGE": FindStateImageActionConfig,
+    "EXISTS": ExistsActionConfig,
     "VANISH": VanishActionConfig,
     "WAIT": WaitActionConfig,
     # Mouse actions

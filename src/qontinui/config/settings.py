@@ -22,7 +22,11 @@ class QontinuiSettings(BaseSettings):
 
     # Perception settings
     similarity_threshold: float = Field(
-        0.85, ge=0.0, le=1.0, description="Default similarity threshold for matching"
+        0.85,
+        ge=0.0,
+        le=1.0,
+        description="Project-level similarity threshold for image matching. "
+        "Priority: 4th in cascade (above library default 0.7, below Pattern/StateImage/FindOptions)",
     )
     segmentation_model: str = Field("SAM2", description="Model to use for segmentation")
     embedding_model: str = Field("CLIP", description="Model to use for embeddings")
