@@ -50,6 +50,7 @@ from .execution import BaseActionSettings, ExecutionSettings, RepetitionOptions
 
 # Find action configs
 from .find_actions import (
+    ExistsActionConfig,
     FindActionConfig,
     FindStateImageActionConfig,
     VanishActionConfig,
@@ -182,6 +183,7 @@ __all__ = [
     "TextSource",
     "TypeActionConfig",
     # Find actions
+    "ExistsActionConfig",
     "FindActionConfig",
     "FindStateImageActionConfig",
     "VanishActionConfig",

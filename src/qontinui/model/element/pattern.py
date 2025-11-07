@@ -56,9 +56,18 @@ class Pattern:
     updated_at: datetime = field(default_factory=datetime.now)
 
     # Matching parameters
-    # Pattern-level similarity threshold (overrides application-level default)
-    # This is the second level of precedence (below FindOptions, above application default)
-    similarity: float | None = None  # If None, uses application default
+    # Pattern-level similarity threshold
+    #
+    # Similarity Priority Cascade (highest to lowest):
+    # 1. FindOptions.similarity (action-level, explicit) - HIGHEST
+    # 2. Pattern.similarity (THIS LEVEL - image-level override)
+    # 3. StateImage.threshold (state image-level from JSON config)
+    # 4. QontinuiSettings.similarity_threshold (project config = 0.85)
+    # 5. Library default (action_defaults = 0.7) - LOWEST
+    #
+    # If None: defers to lower priority levels (StateImage, project config, library default)
+    # If set: overrides StateImage/project/library defaults, but can be overridden by FindOptions
+    similarity: float | None = None
     use_color: bool = True
     scale_invariant: bool = False
     rotation_invariant: bool = False

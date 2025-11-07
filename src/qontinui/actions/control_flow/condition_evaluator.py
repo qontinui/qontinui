@@ -243,12 +243,18 @@ class ConditionEvaluator:
             img_path=file_path,
             name=metadata.get("name", condition.image_id),
         )
-        # Set similarity threshold for IF conditions
-        pattern = pattern.with_similarity(0.8)
+
+        # Similarity cascade for IF conditions:
+        # 1. Pattern.similarity is None (not set here)
+        # 2. FindOptions will use project config (QontinuiSettings.similarity_threshold)
+        #    or fall back to library default (action_defaults)
+        #
+        # Note: StateImage threshold only applies when using StateImage objects
+        # from JSON config, not when using image_id directly in IF conditions
 
         # Use FindAction (single entry point)
         action = FindAction()
-        exists = action.exists(pattern)
+        exists = action.exists(pattern)  # Uses cascading similarity defaults
 
         logger.debug(
             "Image exists check result: image_id=%s, exists=%s",
@@ -322,13 +328,13 @@ class ConditionEvaluator:
                 img_path=file_path,
                 name=metadata.get("name", condition.image_id),
             )
-            # Set similarity threshold for IF conditions
-            pattern = pattern.with_similarity(0.8)
+            # Note: Similarity threshold handled by FindAction.exists_async()
+            # which uses global defaults from action_defaults.py
             patterns.append(pattern)
 
         # Use FindAction async method to search all patterns concurrently
         action = FindAction()
-        results_dict = await action.exists_async(patterns, similarity=0.8)
+        results_dict = await action.exists_async(patterns)  # Uses global default similarity
 
         # Map results back to action IDs
         results = {}

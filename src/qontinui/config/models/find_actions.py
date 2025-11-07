@@ -53,6 +53,20 @@ class WaitCondition(BaseModel):
     expression: str
 
 
+class ExistsActionConfig(BaseModel):
+    """EXISTS action configuration.
+
+    Checks if a target exists on screen without waiting.
+    Returns boolean result that can be stored in a variable.
+    """
+
+    target: TargetConfig
+    search_options: SearchOptions | None = Field(None, alias="searchOptions")
+    output_variable: str | None = Field(None, alias="outputVariable")
+
+    model_config = {"populate_by_name": True}
+
+
 class WaitActionConfig(BaseModel):
     """WAIT action configuration."""
 
