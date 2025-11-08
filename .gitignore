@@ -366,27 +366,12 @@ temp_dev/
 mypy_errors_by_category/
 
 *.backup
-# Sphinx build output
-docs/_build/
-
 # Development utility scripts
 analyze_mypy_report.py
 generate_summary.py
 validate_run_process.py
 
 # Development documentation (excluded during active development)
-# These will be added when library reaches stable release
-*IMPLEMENTATION_SUMMARY.md
-*IMPLEMENTATION_COMPLETE.md
-*_COMPLETE.md
-docs/implementation/
-docs/refactoring/
-docs/development/
-
-# Temporary analysis reports and session documentation
-docs/reports/
-
-# Temporary/scratch documentation
-*_SCRATCH.md
-*_TEMP.md
-*_WIP.md
+# All docs moved to qontinui-dev-notes private repo
+# Public documentation will be added via Docusaurus when ready
+docs/
