@@ -9,7 +9,6 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from ...find import Matches
-from ...find.find_image import FindImage
 from ..element import Image, Pattern, Region
 from ..search_regions import SearchRegions
 from .action_history import ActionHistory
@@ -168,7 +167,7 @@ class StateImage:
         return result.found
 
     def wait_for(self, timeout: float = 5.0) -> bool:
-        """Wait for image to appear.
+        """Wait for image to appear with proper cascade.
 
         Args:
             timeout: Maximum wait time (default: 5.0 seconds)
@@ -176,20 +175,30 @@ class StateImage:
         Returns:
             True if image appeared
         """
+        from ...actions.find import FindAction
+        from ...actions.find.find_options_builder import CascadeContext, build_find_options
+
         pattern = self.get_pattern()
-        finder = FindImage(pattern.image)
+        action = FindAction()
 
-        # Use search regions with precedence: SearchRegions > single Region
-        # (Options and Pattern-level are handled in Find class)
-        if self._search_regions:
-            finder.search_region(self._search_regions)
-        elif self._search_region:
-            finder.search_region(self._search_region)
+        # Build options with full cascade
+        try:
+            from ...config.settings import QontinuiSettings
 
-        finder.similarity(self._similarity)
-        match = finder.wait_until_exists(timeout)
+            project_config = QontinuiSettings()
+        except Exception:
+            project_config = None
 
-        return match is not None
+        ctx = CascadeContext(
+            search_options=None,
+            pattern=pattern,
+            state_image=self,
+            project_config=project_config,
+        )
+        options = build_find_options(ctx, explicit_timeout=timeout)
+
+        result = action.find(pattern=pattern, options=options)
+        return result.found
 
     def set_fixed(self, fixed: bool = True) -> StateImage:
         """Set whether image is fixed in position (fluent).
