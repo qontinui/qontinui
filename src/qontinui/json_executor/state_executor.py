@@ -188,32 +188,47 @@ class StateExecutor:
             if state_image.required:
                 image = self.config.image_map.get(state_image.id)
                 if image and image.file_path:
-                    # Create Pattern from file using factory method
+                    # Create Pattern from file with similarity from state_image
                     pattern = Pattern.from_file(
                         img_path=str(image.file_path),
                         name=image.name or state_image.id,
                     )
-                    # Set similarity threshold
-                    threshold = state_image.threshold or 0.8
-                    pattern = pattern.with_similarity(threshold)
-                    patterns.append((pattern, threshold))
+                    # Set similarity threshold - will be used by cascade
+                    if state_image.threshold:
+                        pattern = pattern.with_similarity(state_image.threshold)
+                    patterns.append(pattern)
 
         if not patterns:
             return True
 
-        # Check all patterns in parallel using async finding
+        # Check all patterns in parallel using async finding with cascade
         action = FindAction()
 
         async def verify_async():
-            # Extract patterns and use common threshold (or max threshold)
-            pattern_list = [p[0] for p in patterns]
-            threshold = max(p[1] for p in patterns)
+            from ..actions.find.find_options_builder import CascadeContext, build_find_options
+
+            # Build options with proper cascade
+            # Patterns already have similarity set via with_similarity(), cascade will use that
+            try:
+                from ..config.settings import QontinuiSettings
+
+                project_config = QontinuiSettings()
+            except Exception:
+                project_config = None
+
+            ctx = CascadeContext(
+                search_options=None,
+                pattern=None,  # Not pattern-specific
+                state_image=None,
+                project_config=project_config,
+            )
+            options = build_find_options(ctx)
 
             # Check all patterns concurrently
-            results = await action.exists_async(pattern_list, similarity=threshold)
+            find_results = await action.find_async(patterns, options)
 
             # All required patterns must be found
-            return all(results.values())
+            return all(result.found for result in find_results)
 
         # Execute async verification
         return asyncio.run(verify_async())

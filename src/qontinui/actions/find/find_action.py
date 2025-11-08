@@ -21,21 +21,37 @@ class FindAction:
     This action class is agnostic to whether execution is mocked or real.
     It delegates to FindWrapper which handles the mock/real decision.
 
+    All find operations use the cascade pattern for options:
+    1. Explicit overrides (via build_find_options)
+    2. SearchOptions (from JSON config)
+    3. Pattern-level overrides
+    4. StateImage config
+    5. Project config (QontinuiSettings)
+    6. Library defaults (action_defaults)
+
     Usage:
-        # From FIND action
-        action = FindAction()
-        result = action.find(pattern, FindOptions(similarity=0.85))
+        # Simple usage with cascade
+        from qontinui.actions.find import FindAction
+        from qontinui.model.element import Pattern
 
-        # From IF condition
+        pattern = Pattern.from_file("button.png")
         action = FindAction()
-        result = action.find(pattern)
-        if result.found:
-            execute_then_branch()
+        result = action.find(pattern)  # Uses cascade: project config → library default
 
-        # From state verification
-        action = FindAction()
-        result = action.find(state_image_pattern)
-        return result.found
+        # JSON action with full cascade
+        from qontinui.actions.find.find_options_builder import CascadeContext, build_find_options
+
+        ctx = CascadeContext(
+            search_options=action_config.search_options,
+            pattern=pattern,
+            project_config=QontinuiSettings(),
+        )
+        options = build_find_options(ctx)
+        result = action.find(pattern, options)
+
+        # Async finding
+        patterns = [Pattern.from_file(f"icon{i}.png") for i in range(5)]
+        results = await action.find_async(patterns, options)
     """
 
     def __init__(self):
@@ -61,44 +77,6 @@ class FindAction:
         options = options or FindOptions()
         return self._wrapper.find(pattern, options)
 
-    def exists(self, pattern: Pattern, similarity: float | None = None) -> bool:
-        """Check if image exists (convenience for IF conditions).
-
-        Args:
-            pattern: Pattern to find
-            similarity: Optional similarity threshold. If None, uses global default.
-
-        Returns:
-            True if pattern found, False otherwise
-        """
-        options = FindOptions(similarity=similarity) if similarity is not None else FindOptions()
-        result = self.find(pattern, options)
-        return result.found
-
-    def wait_until_exists(
-        self,
-        pattern: Pattern,
-        timeout: float = 10.0,
-        similarity: float | None = None,
-    ) -> FindResult:
-        """Wait for image to appear (convenience for WAIT actions).
-
-        Args:
-            pattern: Pattern to find
-            timeout: Maximum time to wait in seconds
-            similarity: Optional similarity threshold. If None, uses global default.
-
-        Returns:
-            FindResult with best match if found, or empty result if timeout
-        """
-        options = (
-            FindOptions(timeout=timeout, similarity=similarity)
-            if similarity is not None
-            else FindOptions(timeout=timeout)
-        )
-        result = self.find(pattern, options)
-        return result
-
     async def find_async(
         self,
         patterns: list[Pattern],
@@ -117,27 +95,3 @@ class FindAction:
         """
         options = options or FindOptions()
         return await self._wrapper.find_async(patterns, options, max_concurrent)
-
-    async def exists_async(
-        self,
-        patterns: list[Pattern],
-        similarity: float | None = None,
-        max_concurrent: int = 15,
-    ) -> dict[str, bool]:
-        """Check if multiple images exist asynchronously.
-
-        Args:
-            patterns: List of patterns to check
-            similarity: Optional similarity threshold. If None, uses global default.
-            max_concurrent: Maximum concurrent pattern searches
-
-        Returns:
-            Dictionary mapping pattern names to existence (True/False)
-        """
-        options = FindOptions(similarity=similarity) if similarity is not None else FindOptions()
-        results = await self.find_async(patterns, options, max_concurrent)
-
-        # Convert results to dict of pattern name -> exists
-        return {
-            pattern.name: result.found for pattern, result in zip(patterns, results, strict=False)
-        }

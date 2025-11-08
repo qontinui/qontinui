@@ -237,6 +237,7 @@ class ConditionEvaluator:
             raise ValueError(error_msg)
 
         # Create Pattern from file using factory method
+        from ...actions.find.find_options_builder import CascadeContext, build_find_options
         from ...model.element import Pattern
 
         pattern = Pattern.from_file(
@@ -244,25 +245,33 @@ class ConditionEvaluator:
             name=metadata.get("name", condition.image_id),
         )
 
-        # Similarity cascade for IF conditions:
-        # 1. Pattern.similarity is None (not set here)
-        # 2. FindOptions will use project config (QontinuiSettings.similarity_threshold)
-        #    or fall back to library default (action_defaults)
-        #
-        # Note: StateImage threshold only applies when using StateImage objects
-        # from JSON config, not when using image_id directly in IF conditions
+        # Build options with proper cascade
+        try:
+            from ...config.settings import QontinuiSettings
+
+            project_config = QontinuiSettings()
+        except Exception:
+            project_config = None
+
+        ctx = CascadeContext(
+            search_options=None,  # IF conditions don't have SearchOptions
+            pattern=pattern,
+            state_image=None,  # Not using StateImage in IF conditions
+            project_config=project_config,
+        )
+        options = build_find_options(ctx)
 
         # Use FindAction (single entry point)
         action = FindAction()
-        exists = action.exists(pattern)  # Uses cascading similarity defaults
+        result = action.find(pattern, options)
 
         logger.debug(
             "Image exists check result: image_id=%s, exists=%s",
             condition.image_id,
-            exists,
+            result.found,
         )
 
-        return exists
+        return result.found
 
     async def evaluate_multiple_image_exists_async(
         self,
@@ -328,23 +337,39 @@ class ConditionEvaluator:
                 img_path=file_path,
                 name=metadata.get("name", condition.image_id),
             )
-            # Note: Similarity threshold handled by FindAction.exists_async()
-            # which uses global defaults from action_defaults.py
             patterns.append(pattern)
+
+        # Build options with proper cascade
+        from ...actions.find.find_options_builder import CascadeContext, build_find_options
+
+        try:
+            from ...config.settings import QontinuiSettings
+
+            project_config = QontinuiSettings()
+        except Exception:
+            project_config = None
+
+        # Use same options for all patterns (IF conditions use project config → library default)
+        ctx = CascadeContext(
+            search_options=None,
+            pattern=None,  # Not pattern-specific
+            state_image=None,
+            project_config=project_config,
+        )
+        options = build_find_options(ctx)
 
         # Use FindAction async method to search all patterns concurrently
         action = FindAction()
-        results_dict = await action.exists_async(patterns)  # Uses global default similarity
+        find_results = await action.find_async(patterns, options)
 
         # Map results back to action IDs
         results = {}
-        for _i, (action_id, image_id, pattern) in enumerate(
-            zip(action_ids, image_ids, patterns, strict=False)
+        for action_id, image_id, find_result in zip(
+            action_ids, image_ids, find_results, strict=False
         ):
-            exists = results_dict.get(pattern.name, False)
-            results[action_id] = exists
+            results[action_id] = find_result.found
             logger.debug(
-                f"Image exists check result: action_id={action_id}, image_id={image_id}, exists={exists}"
+                f"Image exists check result: action_id={action_id}, image_id={image_id}, exists={find_result.found}"
             )
 
         return results
