@@ -29,6 +29,11 @@ class MSSScreenCapture(IScreenCapture):
             config: HAL configuration
         """
         self.config = config or HALConfig()
+
+        # CRITICAL: Set DPI awareness BEFORE any screen operations
+        # This must happen before creating mss instance or detecting monitors
+        self._set_dpi_awareness_once()
+
         self._sct = None  # Will be lazily initialized per thread
         self._monitors = self._detect_monitors()
 
@@ -88,10 +93,48 @@ class MSSScreenCapture(IScreenCapture):
                 "monitor_detected",
                 index=monitor.index,
                 bounds=monitor.bounds,
+                scale=monitor.scale,
                 is_primary=monitor.is_primary,
+                raw_mss_data=mon,
             )
 
         return monitors
+
+    @staticmethod
+    def _set_dpi_awareness_once():
+        """Set DPI awareness once per process (Windows only).
+
+        Requires Windows 10 1703+ for Per-Monitor DPI Awareness V2.
+        This prevents DPI virtualization and ensures correct multi-monitor support.
+        """
+        import sys
+        if sys.platform != "win32":
+            return
+
+        # Skip if already set (static flag)
+        if hasattr(MSSScreenCapture, '_dpi_awareness_set'):
+            return
+
+        try:
+            import ctypes
+
+            # Set Per-Monitor DPI Awareness V2 (Windows 10 1703+)
+            shcore = ctypes.windll.shcore
+            # PROCESS_PER_MONITOR_DPI_AWARE_V2 = 2
+            result = shcore.SetProcessDpiAwareness(2)
+
+            # S_OK = 0, E_ACCESSDENIED = -2147024891 (already set by another component)
+            if result == 0 or result == -2147024891:
+                MSSScreenCapture._dpi_awareness_set = True
+                logger.debug("dpi_awareness_set", mode="per_monitor_v2", result=result)
+            else:
+                logger.warning("dpi_awareness_unexpected_result", result=result)
+                MSSScreenCapture._dpi_awareness_set = True  # Mark as attempted
+
+        except Exception as e:
+            # Don't let DPI awareness failures crash the process
+            logger.warning("dpi_awareness_failed", error=str(e), error_type=type(e).__name__)
+            MSSScreenCapture._dpi_awareness_set = True  # Mark as attempted to avoid retry
 
     def _get_dpi_scale(self) -> float:
         """Get DPI scaling factor for current system.
@@ -106,10 +149,16 @@ class MSSScreenCapture(IScreenCapture):
             if sys.platform == "win32":
                 import ctypes
 
-                user32 = ctypes.windll.user32
-                user32.SetProcessDPIAware()
-                dpi = user32.GetDpiForSystem()
-                return dpi / 96.0
+                # Set DPI awareness if not already set
+                self._set_dpi_awareness_once()
+
+                # Get system DPI (this is just for logging, MSS handles actual coordinates)
+                try:
+                    user32 = ctypes.windll.user32
+                    dpi = user32.GetDpiForSystem()
+                    return dpi / 96.0
+                except (OSError, AttributeError):
+                    return 1.0
             elif sys.platform == "darwin":
                 # macOS typically uses 2x for Retina displays
                 # This would need proper detection via PyObjC

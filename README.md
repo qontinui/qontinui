@@ -7,15 +7,25 @@
 
 A Python library for model-based GUI automation with intelligent state management and visual recognition.
 
+## Research Foundation
+
+Based on [**Model-based GUI Automation**](https://link.springer.com/article/10.1007/s10270-025-01319-9) published in Springer's Software and Systems Modeling journal (October 2025).
+
+The research provides:
+- Mathematical proof of complexity reduction (exponential → polynomial)
+- First testable approach to GUI automation (unit tests, integration tests)
+- Formal framework for robust visual APIs for RL agents
+- Enables reliable dataset generation for AI training
+
 ## Overview
 
 Qontinui enables building robust GUI automation through:
-- **Model-based state management** using [MultiState](https://github.com/jspinak/multistate)
+- **Model-based state management** using [MultiState](https://github.com/qontinui/multistate) | [Docs](https://qontinui.github.io/multistate/)
 - **Visual recognition** with OpenCV template matching
 - **JSON configuration** for defining automation workflows
 - **Cross-platform support** (Windows, macOS, Linux)
 
-Qontinui is a Python port of [Brobot](https://github.com/jspinak/brobot), a Java library for GUI automation.
+Qontinui is a Python port of [Brobot](https://github.com/jspinak/brobot), a Java library for GUI automation (2018-2024).
 
 ## Installation
 
@@ -101,7 +111,7 @@ success = runner.run(monitor_index=0)
 
 ### Desktop Application
 
-Use [Qontinui Runner](https://github.com/yourusername/qontinui-runner) for a GUI interface to create and run automations.
+Use [Qontinui Runner](https://github.com/qontinui/qontinui-runner) for a GUI interface to create and run automations.
 
 ## Architecture
 
@@ -155,9 +165,10 @@ Qontinui is a faithful port of Brobot. When contributing, please preserve Brobot
 
 ## Documentation
 
-- **GitHub**: [github.com/yourusername/qontinui](https://github.com/yourusername/qontinui)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/qontinui/issues)
-- **MultiState Docs**: [jspinak.github.io/multistate](https://jspinak.github.io/multistate/)
+- **GitHub**: [github.com/qontinui/qontinui](https://github.com/qontinui/qontinui)
+- **Issues**: [GitHub Issues](https://github.com/qontinui/qontinui/issues)
+- **MultiState Docs**: [qontinui.github.io/multistate](https://qontinui.github.io/multistate/)
+- **Research Paper**: [Springer SoSyM](https://link.springer.com/article/10.1007/s10270-025-01319-9)
 
 ## License
 
@@ -172,6 +183,8 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ## Related Projects
 
-- **[qontinui-runner](https://github.com/yourusername/qontinui-runner)** - Desktop application
-- **[qontinui-web](https://github.com/yourusername/qontinui-web)** - Web-based configuration editor
-- **[multistate](https://github.com/jspinak/multistate)** - State management library
+- **[qontinui-runner](https://github.com/qontinui/qontinui-runner)** - Desktop application (Rust/TypeScript)
+- **[qontinui-api](https://github.com/qontinui/qontinui-api)** - REST API bridge (enables custom frontends)
+- **[qontinui-web](https://qontinui.com)** - Web-based visual builder (launching Feb 2026)
+- **[multistate](https://github.com/qontinui/multistate)** - State management library | [Docs](https://qontinui.github.io/multistate/)
+- **[Brobot](https://github.com/jspinak/brobot)** - Original Java implementation (2018-2024)
