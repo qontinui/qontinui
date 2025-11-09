@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "qontinui"
-version = "0.1.0"
+version = "0.1.1"
 description = "Model-based GUI automation with AI-enhanced perception"
 authors = ["Joshua Spinak <jspinak@alum.mit.edu>"]
 license = "MIT"
