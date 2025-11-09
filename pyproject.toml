@@ -2,7 +2,7 @@
 name = "qontinui"
 version = "0.1.0"
 description = "Model-based GUI automation with AI-enhanced perception"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["Joshua Spinak <jspinak@alum.mit.edu>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/qontinui/qontinui"
