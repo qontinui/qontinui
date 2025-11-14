@@ -4,6 +4,7 @@ This module handles all keyboard-related actions: KEY_DOWN, KEY_UP, KEY_PRESS, a
 """
 
 import logging
+import time
 from typing import Any
 
 from ..config.schema import (
@@ -327,7 +328,17 @@ class KeyboardActionExecutor(ActionExecutorBase):
                 )
                 from ..reporting.events import EventType, emit_event
 
-                emit_event(EventType.TEXT_TYPED, {"text": text, "character_count": len(text)})
+                emit_event(
+                    EventType.TEXT_TYPED,
+                    {
+                        "text": text,
+                        "character_count": len(text),
+                        "timestamp": time.time(),
+                        "length": len(text),
+                        "action_id": action.id if action.id else "unknown",
+                        "success": True,
+                    },
+                )
                 print(
                     "[KEYBOARD_EXECUTOR] TEXT_TYPED event emitted successfully",
                     file=sys.stderr,

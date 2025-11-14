@@ -5,6 +5,7 @@ command pattern executors via the registry pattern.
 """
 
 import logging
+import time
 from types import SimpleNamespace
 from typing import Any
 
@@ -445,7 +446,12 @@ class DelegatingActionExecutor:
             **kwargs: Additional keyword arguments for compatibility
         """
         # Support both 'details' and 'data' parameter names for compatibility
-        event_data = {"action_type": action_type, "action_id": action_id, "success": success}
+        event_data = {
+            "action_type": action_type,
+            "action_id": action_id,
+            "success": success,
+            "timestamp": time.time(),
+        }
         if details:
             event_data.update(details)
         if data:

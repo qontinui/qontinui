@@ -312,6 +312,10 @@ class RealFindImplementation:
         # Add visual debug image if available
         if visual_debug_image:
             event_data["visual_debug_image"] = visual_debug_image
+            event_data["debug_visual_base64"] = visual_debug_image  # Alias for spec compliance
+
+        # Add timestamp
+        event_data["timestamp"] = time.time()
 
         # Emit MATCH_ATTEMPTED event (EventTranslator listens for this)
         logger.debug(f"[FIND_DEBUG] Emitting MATCH_ATTEMPTED event for pattern {pattern.id}")
