@@ -8,12 +8,10 @@ It handles:
 - Handling multi-output actions (IF, SWITCH, LOOP, TRY_CATCH)
 - Detecting and preventing infinite loops
 - Managing execution state and context
-- Supporting parallel execution
 """
 
 import logging
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from ..config.schema import Action, Workflow
@@ -46,7 +44,8 @@ class GraphTraverser:
     Executes graph-based workflows by traversing action connections.
 
     This is the main execution engine for graph format workflows. It handles
-    complex control flow including branching, loops, and parallel execution.
+    complex control flow including branching and loops. All actions are executed
+    sequentially, which is appropriate for GUI automation (single mouse/keyboard).
     """
 
     def __init__(
@@ -54,8 +53,6 @@ class GraphTraverser:
         workflow: Workflow,
         action_executor: Callable[[Action, dict[str, Any]], dict[str, Any]] | None = None,
         max_iterations: int = 10000,
-        enable_parallel: bool = False,
-        max_parallel_workers: int = 4,
     ) -> None:
         """
         Initialize the graph traverser.
@@ -64,15 +61,11 @@ class GraphTraverser:
             workflow: The workflow to execute
             action_executor: Function to execute individual actions
             max_iterations: Maximum iterations before stopping
-            enable_parallel: Whether to enable parallel execution
-            max_parallel_workers: Maximum parallel workers
         """
         self.workflow = workflow
         self.resolver = ConnectionResolver(workflow)
         self.action_executor = action_executor or self._default_executor
         self.max_iterations = max_iterations
-        self.enable_parallel = enable_parallel
-        self.max_parallel_workers = max_parallel_workers
 
         # Execution state
         self.state: ExecutionState | None = None
@@ -420,46 +413,6 @@ class GraphTraverser:
             "output_type": record.output_type,
             "output_index": record.output_index,
         }
-
-    # ============================================================================
-    # Parallel Execution Support
-    # ============================================================================
-
-    def execute_parallel(
-        self, actions: list[Action], context: dict[str, Any]
-    ) -> list[dict[str, Any]]:
-        """
-        Execute multiple actions in parallel.
-
-        Args:
-            actions: List of actions to execute
-            context: Shared execution context
-
-        Returns:
-            List of execution results
-        """
-        if not self.enable_parallel or len(actions) <= 1:
-            # Sequential execution
-            return [self.action_executor(action, context) for action in actions]
-
-        # Parallel execution
-        results = []
-        with ThreadPoolExecutor(max_workers=self.max_parallel_workers) as executor:
-            futures = {
-                executor.submit(self.action_executor, action, context.copy()): action
-                for action in actions
-            }
-
-            for future in as_completed(futures):
-                action = futures[future]
-                try:
-                    result = future.result()
-                    results.append(result)
-                except Exception as e:
-                    logger.error(f"Parallel execution failed for {action.id}: {e}")
-                    results.append({"success": False, "error": str(e)})
-
-        return results
 
     # ============================================================================
     # Pause/Resume Support

@@ -45,6 +45,13 @@ from .data_operations import (
     ValueSource,
 )
 
+# Code execution configs
+from .code_actions import (
+    CodeBlockActionConfig,
+    CustomFunctionActionConfig,
+    ErrorHandling,
+)
+
 # Execution control
 from .execution import BaseActionSettings, ExecutionSettings, RepetitionOptions
 
@@ -212,6 +219,10 @@ __all__ = [
     "StringOperationActionConfig",
     "StringOperationParameters",
     "ValueSource",
+    # Code execution
+    "CodeBlockActionConfig",
+    "CustomFunctionActionConfig",
+    "ErrorHandling",
     # State actions
     "GoToStateActionConfig",
     "RunWorkflowActionConfig",

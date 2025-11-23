@@ -1,8 +1,7 @@
 """Graph-based workflow execution engine.
 
 This module provides the main GraphExecutor class that orchestrates execution
-of graph-format workflows using the GraphTraverser, ConnectionRouter, and
-MergeHandler components.
+of graph-format workflows using the GraphTraverser and ConnectionRouter components.
 """
 
 import logging
@@ -13,7 +12,6 @@ from typing import Any
 from ..config import Action, Workflow
 from .connection_router import ConnectionRouter
 from .graph_traverser import GraphTraverser, TraversalState
-from .merge_handler import MergeHandler
 
 logger = logging.getLogger(__name__)
 
@@ -107,18 +105,20 @@ class GraphExecutor:
     The GraphExecutor orchestrates the execution of workflows by:
     1. Validating workflow structure using GraphTraverser
     2. Finding entry points and initializing execution state
-    3. Traversing the graph and executing actions
+    3. Traversing the graph and executing actions sequentially
     4. Routing between actions using ConnectionRouter
-    5. Handling merge points using MergeHandler
-    6. Delegating individual action execution to ActionExecutor
-    7. Managing execution hooks for monitoring and debugging
+    5. Delegating individual action execution to ActionExecutor
+    6. Managing execution hooks for monitoring and debugging
+
+    Note: All actions are executed sequentially, which is appropriate for GUI
+    automation where only one action can interact with the UI at a time (single
+    mouse, keyboard, and screen).
 
     Attributes:
         workflow: The workflow to execute
         action_executor: ActionExecutor instance for running individual actions
         traverser: GraphTraverser for graph navigation
         router: ConnectionRouter for determining next actions
-        merger: MergeHandler for handling merge points
         hooks: List of execution hooks
         execution_state: Current execution state
     """
@@ -136,7 +136,6 @@ class GraphExecutor:
         # Initialize graph components
         self.traverser = GraphTraverser(workflow)
         self.router = ConnectionRouter(workflow.connections, self.traverser.action_map)
-        self.merger = MergeHandler(workflow.connections, self.traverser.action_map)
 
         # Execution hooks
         self.hooks: list[Any] = []
@@ -282,24 +281,6 @@ class GraphExecutor:
             if self.execution_state.is_completed(action_id):
                 logger.debug(f"Skipping '{action_id}' - already executed")
                 continue
-
-            # Check if this is a merge point
-            if self.merger.is_merge_point(action_id):
-                # Register arrival at merge point
-                if from_action_id:
-                    from_result = self.execution_state.action_results.get(from_action_id, {})
-                    is_ready = self.merger.register_arrival(action_id, from_action_id, from_result)
-
-                    if not is_ready:
-                        logger.debug(
-                            f"Merge point '{action_id}' not ready - "
-                            f"waiting for {len(self.merger.get_blocking_paths(action_id))} more paths"
-                        )
-                        continue
-
-                    # Merge point is ready - merge contexts
-                    merged_context = self.merger.get_merged_context(action_id)
-                    self.execution_state.context.update(merged_context)
 
             # Get action
             action = self.traverser.action_map.get(action_id)
@@ -464,7 +445,6 @@ class GraphExecutor:
 
         Performs comprehensive validation including:
         - Workflow structure
-        - Merge points
         - Routing configuration
 
         Returns:
@@ -475,11 +455,6 @@ class GraphExecutor:
         # Validate workflow structure
         is_valid, errors = self.traverser.validate_workflow()
         all_errors.extend(errors)
-
-        # Validate merge points
-        is_valid_merge, merge_errors = self.merger.validate_merge_points()
-        if not is_valid_merge:
-            all_errors.extend(merge_errors)
 
         # Validate routing for critical actions
         for action in self.workflow.actions:
@@ -506,12 +481,8 @@ class GraphExecutor:
             "total_actions": len(self.workflow.actions),
             "entry_points": len(self.traverser.find_entry_points()),
             "exit_points": len(self.traverser.find_exit_points()),
-            "merge_points": len(self.merger.get_all_merge_points()),
             "orphaned_actions": len(self.traverser.find_orphaned_actions()),
         }
-
-        # Add merge statistics
-        stats["merges"] = self.merger.get_merge_statistics()
 
         # Add action type distribution
         action_types = {}

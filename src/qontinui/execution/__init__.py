@@ -5,17 +5,17 @@ This module provides graph-based workflow execution with support for:
 - Connection routing based on action results
 - Output resolution for different action types
 - Execution tracking and debugging
-- Merge nodes (multiple incoming connections)
-- Parallel execution
-- Multiple merge strategies
-- Thread-safe context management
+- Sequential execution (appropriate for GUI automation)
 - Graph traversal and execution
 - Connection resolution
 - Execution state tracking
+- Enhanced three-tier variable context
+- Variable utilities for persistence and manipulation
 """
 
 from .connection_resolver import ConnectionResolver
 from .connection_router import ConnectionRouter
+from .enhanced_variable_context import EnhancedVariableContext
 from .execution_controller import ExecutionController
 from .execution_state import ExecutionState
 from .execution_tracker import ExecutionTracker
@@ -31,23 +31,23 @@ from .graph_traversal import (
     InfiniteLoopError,
     OrphanedActionsError,
 )
-from .merge_context import MergeContext, VariableConflictResolution
-from .merge_handler import MergeHandler, MergePoint, MergeStrategy
-from .merge_strategies import (
-    CustomStrategy,
-    MajorityStrategy,
-    TimeoutStrategy,
-    WaitAllStrategy,
-    WaitAnyStrategy,
-    WaitFirstStrategy,
-    create_strategy,
-    get_available_strategies,
-)
-from .merge_strategies import (
-    MergeStrategy as MergeStrategyBase,
-)
 from .output_resolver import OutputResolver, OutputTypeValidator
 from .routing_context import PathSegment, RouteRecord, RoutingContext
+from .variable_utils import (
+    create_variable_snapshot,
+    filter_variables_by_prefix,
+    get_nested_variable,
+    interpolate_variables,
+    is_json_serializable,
+    load_variables_from_json,
+    merge_variable_scopes,
+    resolve_variable_reference,
+    restore_variable_snapshot,
+    sanitize_for_persistence,
+    save_variables_to_json,
+    set_nested_variable,
+    validate_variable_name,
+)
 
 __all__ = [
     # Connection routing
@@ -58,23 +58,6 @@ __all__ = [
     "RoutingContext",
     "RouteRecord",
     "PathSegment",
-    # Context management
-    "MergeContext",
-    "VariableConflictResolution",
-    # Strategies
-    "MergeStrategyBase",
-    "WaitAllStrategy",
-    "WaitAnyStrategy",
-    "WaitFirstStrategy",
-    "TimeoutStrategy",
-    "MajorityStrategy",
-    "CustomStrategy",
-    "create_strategy",
-    "get_available_strategies",
-    # Handler
-    "MergeHandler",
-    "MergePoint",
-    "MergeStrategy",
     # Connection resolution
     "ConnectionResolver",
     # Execution state
@@ -90,4 +73,20 @@ __all__ = [
     "CycleDetectedError",
     "InfiniteLoopError",
     "OrphanedActionsError",
+    # Enhanced variable context
+    "EnhancedVariableContext",
+    # Variable utilities
+    "load_variables_from_json",
+    "save_variables_to_json",
+    "merge_variable_scopes",
+    "is_json_serializable",
+    "validate_variable_name",
+    "interpolate_variables",
+    "resolve_variable_reference",
+    "get_nested_variable",
+    "set_nested_variable",
+    "filter_variables_by_prefix",
+    "sanitize_for_persistence",
+    "create_variable_snapshot",
+    "restore_variable_snapshot",
 ]

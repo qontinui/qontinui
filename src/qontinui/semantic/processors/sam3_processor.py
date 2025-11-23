@@ -1,4 +1,4 @@
-"""SAM2 processor for semantic segmentation."""
+"""SAM3 processor for semantic segmentation."""
 
 from __future__ import annotations
 
@@ -8,12 +8,13 @@ from typing import Any
 import numpy as np
 
 try:
-    # Try importing SAM2
-    from segment_anything import SamAutomaticMaskGenerator, SamPredictor, sam_model_registry
+    # Try importing SAM3
+    from sam3.build_sam import build_sam3_image_model
+    from sam3 import Sam3Processor as Sam3ProcessorCore
 
-    HAS_SAM2 = True
+    HAS_SAM3 = True
 except ImportError:
-    HAS_SAM2 = False
+    HAS_SAM3 = False
 
 from ..core import PixelLocation, SemanticObject, SemanticScene
 from ..core.semantic_object import ObjectType
@@ -21,62 +22,52 @@ from ..description import BasicDescriptionGenerator, DescriptionGenerator
 from .base import SemanticProcessor
 
 
-class SAM2Processor(SemanticProcessor):
-    """Semantic processor using SAM2 for pixel-level segmentation.
+class SAM3Processor(SemanticProcessor):
+    """Semantic processor using SAM3 for pixel-level segmentation.
 
-    SAM2 (Segment Anything Model 2) provides pixel-perfect segmentation masks
-    for objects in images. This processor generates semantic descriptions for
-    the segmented regions and can optionally apply OCR to extract text.
+    SAM3 (Segment Anything Model 3) provides pixel-perfect segmentation masks
+    for objects in images with support for text-based concept prompting.
+    This processor generates semantic descriptions for the segmented regions
+    and can optionally apply OCR to extract text.
     """
 
     def __init__(
         self,
-        model_type: str = "vit_h",
         checkpoint_path: str | None = None,
         description_generator: DescriptionGenerator | None = None,
     ) -> None:
-        """Initialize SAM2 processor.
+        """Initialize SAM3 processor.
 
         Args:
-            model_type: SAM model type ('vit_h', 'vit_l', or 'vit_b')
             checkpoint_path: Path to model checkpoint (if None, uses default)
             description_generator: Generator for creating semantic descriptions
         """
         super().__init__()
 
-        self.model_type = model_type
         self.checkpoint_path = checkpoint_path
-        self.sam = None
-        self.mask_generator = None
-        self.predictor = None
+        self.sam3_model = None
+        self.processor = None
 
         # Use provided generator or fall back to basic
         self.description_generator = description_generator or BasicDescriptionGenerator()
 
-        if HAS_SAM2:
+        if HAS_SAM3:
             self._initialize_model()
 
     def _initialize_model(self):
-        """Initialize SAM2 model."""
-        if not HAS_SAM2:
+        """Initialize SAM3 model."""
+        if not HAS_SAM3:
             return
 
-        # Load SAM model
-        self.sam = sam_model_registry[self.model_type](checkpoint=self.checkpoint_path)
+        # Determine device
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # Create mask generator for automatic segmentation
-        self.mask_generator = SamAutomaticMaskGenerator(
-            model=self.sam,
-            points_per_side=32,
-            pred_iou_thresh=0.86,
-            stability_score_thresh=0.92,
-            crop_n_layers=1,
-            crop_n_points_downscale_factor=2,
-            min_mask_region_area=100,  # Minimum mask area
-        )
+        # Load SAM3 model
+        self.sam3_model = build_sam3_image_model(self.checkpoint_path, device=device)
 
-        # Create predictor for prompt-based segmentation
-        self.predictor = SamPredictor(self.sam)
+        # Create processor for handling images and prompts
+        self.processor = Sam3ProcessorCore(self.sam3_model)
 
     def set_description_generator(self, generator: DescriptionGenerator) -> None:
         """Set the description generator for segments.
@@ -86,11 +77,12 @@ class SAM2Processor(SemanticProcessor):
         """
         self.description_generator = generator
 
-    def process(self, screenshot: np.ndarray[Any, Any]) -> SemanticScene:
+    def process(self, screenshot: np.ndarray[Any, Any], text_prompt: str | None = None) -> SemanticScene:
         """Process screenshot for semantic segmentation.
 
         Args:
             screenshot: Screenshot as numpy array
+            text_prompt: Optional text description for concept-based segmentation
 
         Returns:
             SemanticScene with segmented objects
@@ -98,24 +90,95 @@ class SAM2Processor(SemanticProcessor):
         start_time = time.time()
         scene = SemanticScene(source_image=screenshot)
 
-        if not HAS_SAM2 or self.mask_generator is None:
+        if not HAS_SAM3 or self.processor is None:
             return scene
 
-        # Generate masks automatically
-        masks = self.mask_generator.generate(screenshot)
+        # Convert numpy array to PIL Image
+        from PIL import Image
+        if screenshot.dtype == np.uint8:
+            pil_image = Image.fromarray(screenshot)
+        else:
+            # Normalize to 0-255 if needed
+            normalized = ((screenshot - screenshot.min()) * (255.0 / (screenshot.max() - screenshot.min()))).astype(np.uint8)
+            pil_image = Image.fromarray(normalized)
 
-        # Convert masks to semantic objects
-        for i, mask_data in enumerate(masks):
-            if self._check_timeout(start_time):
-                break
+        # Set image in processor
+        self.processor.set_image(pil_image)
 
-            semantic_obj = self._mask_to_semantic_object(mask_data, screenshot, index=i)
+        if text_prompt:
+            # Use text-based concept segmentation
+            self.processor.set_text_prompt(text_prompt)
+            results = self.processor.segment()
 
-            if semantic_obj and semantic_obj.confidence >= self._config.min_confidence:
-                scene.add_object(semantic_obj)
+            if results and "masks" in results:
+                for i, mask in enumerate(results["masks"]):
+                    if self._check_timeout(start_time):
+                        break
 
-            if len(scene.objects) >= self._config.max_objects:
-                break
+                    bbox = results.get("boxes", [])[i] if "boxes" in results else None
+                    confidence = results.get("scores", [])[i] if "scores" in results else 1.0
+
+                    mask_data = {
+                        "segmentation": mask,
+                        "bbox": bbox if bbox is not None else self._mask_to_bbox_list(mask),
+                        "predicted_iou": confidence,
+                    }
+
+                    semantic_obj = self._mask_to_semantic_object(mask_data, screenshot, index=i)
+
+                    if semantic_obj and semantic_obj.confidence >= self._config.min_confidence:
+                        scene.add_object(semantic_obj)
+
+                    if len(scene.objects) >= self._config.max_objects:
+                        break
+        else:
+            # Automatic segmentation using grid of points
+            h, w = screenshot.shape[:2]
+            grid_size = 32
+            step_x = w // grid_size
+            step_y = h // grid_size
+
+            seen_masks = []
+
+            for i in range(grid_size):
+                for j in range(grid_size):
+                    if self._check_timeout(start_time):
+                        break
+
+                    x = step_x * i + step_x // 2
+                    y = step_y * j + step_y // 2
+
+                    # Use point prompt for segmentation
+                    results = self.processor.segment_from_point(x, y)
+
+                    if results and "masks" in results and len(results["masks"]) > 0:
+                        mask = results["masks"][0]
+
+                        # Skip if we've seen a similar mask
+                        if self._is_duplicate_mask(mask, seen_masks):
+                            continue
+
+                        seen_masks.append(mask)
+
+                        bbox = self._mask_to_bbox_list(mask)
+                        confidence = results.get("scores", [1.0])[0]
+
+                        mask_data = {
+                            "segmentation": mask,
+                            "bbox": bbox,
+                            "predicted_iou": confidence,
+                        }
+
+                        semantic_obj = self._mask_to_semantic_object(mask_data, screenshot, index=len(scene.objects))
+
+                        if semantic_obj and semantic_obj.confidence >= self._config.min_confidence:
+                            scene.add_object(semantic_obj)
+
+                        if len(scene.objects) >= self._config.max_objects:
+                            break
+
+                if len(scene.objects) >= self._config.max_objects:
+                    break
 
         self._record_processing_time(start_time)
         return scene
@@ -323,7 +386,7 @@ class SAM2Processor(SemanticProcessor):
         self._record_processing_time(start_time)
         return scene
 
-    def _mask_to_bbox(self, mask: np.ndarray[Any, Any]) -> list[int]:
+    def _mask_to_bbox_list(self, mask: np.ndarray[Any, Any]) -> list[int]:
         """Convert mask to bounding box.
 
         Args:
@@ -334,15 +397,47 @@ class SAM2Processor(SemanticProcessor):
         """
         rows = np.any(mask, axis=1)
         cols = np.any(mask, axis=0)
-        rmin, rmax = np.where(rows)[0][[0, -1]]
-        cmin, cmax = np.where(cols)[0][[0, -1]]
-        return [cmin, rmin, cmax - cmin, rmax - rmin]
+
+        row_indices = np.where(rows)[0]
+        col_indices = np.where(cols)[0]
+
+        if len(row_indices) == 0 or len(col_indices) == 0:
+            return [0, 0, 0, 0]
+
+        rmin, rmax = row_indices[[0, -1]]
+        cmin, cmax = col_indices[[0, -1]]
+        return [int(cmin), int(rmin), int(cmax - cmin), int(rmax - rmin)]
+
+    def _is_duplicate_mask(self, mask: np.ndarray[Any, Any], seen_masks: list[np.ndarray[Any, Any]], threshold: float = 0.8) -> bool:
+        """Check if a mask is a duplicate of any seen masks.
+
+        Args:
+            mask: Current mask to check
+            seen_masks: List of previously seen masks
+            threshold: IoU threshold for considering masks as duplicates
+
+        Returns:
+            True if mask is a duplicate
+        """
+        for seen_mask in seen_masks:
+            if mask.shape != seen_mask.shape:
+                continue
+
+            intersection = np.logical_and(mask, seen_mask).sum()
+            union = np.logical_or(mask, seen_mask).sum()
+
+            if union > 0:
+                iou = intersection / union
+                if iou > threshold:
+                    return True
+
+        return False
 
     def get_supported_object_types(self) -> set[str]:
         """Get supported object types.
 
         Returns:
-            Set of all object types (SAM2 can segment anything)
+            Set of all object types (SAM3 can segment anything)
         """
         return {obj_type.value for obj_type in ObjectType}
 
@@ -350,6 +445,6 @@ class SAM2Processor(SemanticProcessor):
         """Check if incremental processing is supported.
 
         Returns:
-            True - SAM2 can process specific regions incrementally
+            True - SAM3 can process specific regions incrementally
         """
         return True

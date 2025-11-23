@@ -49,6 +49,7 @@ from .registry import (
 )
 
 # Import executor modules to trigger @register_executor decorator
+from . import code_executor  # noqa: F401
 from . import control_flow  # noqa: F401
 from . import data_operations  # noqa: F401
 from . import keyboard  # noqa: F401
