@@ -27,7 +27,8 @@ opencv-python-headless = "^4.9"
 transformers = "^4.36"
 torch = "^2.2"
 torchvision = ">=0.17"
-segment-anything = {version = "^1.0", optional = true}
+# SAM3: Install manually with: pip install git+https://github.com/facebookresearch/sam3.git
+# (Poetry cannot handle git dependencies without proper packaging)
 accelerate = "^0.25"
 timm = "^0.9"
 supervision = "^0.26"
@@ -73,9 +74,8 @@ sphinx-autodoc-typehints = ">=1.20,<3.0"
 myst-parser = "^4.0.1"
 types-pyyaml = "^6.0.12.20250915"
 
-[tool.poetry.extras]
-sam = ["segment-anything"]
-all = ["segment-anything"]
+# Note: SAM3 must be installed manually (see README for instructions)
+# Poetry extras removed since SAM3 cannot be installed via poetry
 
 [tool.poetry.scripts]
 brobot-converter = "qontinui.migrations.brobot_converter:main"

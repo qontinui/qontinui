@@ -56,6 +56,10 @@ from .state_actions import (
     RunWorkflowActionConfig,
     ScreenshotActionConfig,
 )
+from .code_actions import (
+    CodeBlockActionConfig,
+    CustomFunctionActionConfig,
+)
 
 
 class Action(BaseModel):
@@ -117,6 +121,9 @@ ACTION_CONFIG_MAP = {
     "GO_TO_STATE": GoToStateActionConfig,
     "RUN_WORKFLOW": RunWorkflowActionConfig,
     "SCREENSHOT": ScreenshotActionConfig,
+    # Code execution actions
+    "CODE_BLOCK": CodeBlockActionConfig,
+    "CUSTOM_FUNCTION": CustomFunctionActionConfig,
 }
 
 
