@@ -334,7 +334,7 @@ class SAM3Processor(SemanticProcessor):
         Returns:
             SemanticScene with prompted segments
         """
-        if not HAS_SAM2 or self.predictor is None:
+        if not HAS_SAM3 or self.processor is None:
             return SemanticScene(source_image=screenshot)
 
         start_time = time.time()
