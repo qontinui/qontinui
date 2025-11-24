@@ -63,6 +63,16 @@ from .actions import (
     WaitOptions,
 )
 
+# Discovery System
+from . import discovery
+from .discovery import (
+    DifferentialConsistencyDetector,
+    ElementIdentifier,
+    OCRNameGenerator,
+    StateBuilder,
+    TransitionInfo,
+)
+
 # Migration Tools
 # NOTE: BrobotConverter requires AI dependencies (faiss-cpu, torch, transformers)
 # Uncomment when these packages are installed in your environment
@@ -143,6 +153,13 @@ __all__ = [
     "Transition",
     "StateGraph",
     "StateTraversal",
+    # Discovery System
+    "discovery",
+    "DifferentialConsistencyDetector",
+    "StateBuilder",
+    "ElementIdentifier",
+    "OCRNameGenerator",
+    "TransitionInfo",
     # Perception
     # NOTE: Perception exports require AI dependencies (faiss-cpu, torch, transformers)
     # "ScreenSegmenter",
