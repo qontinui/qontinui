@@ -7,7 +7,6 @@ from screenshots using various detection strategies.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Set
 
 import numpy as np
 
@@ -39,18 +38,15 @@ class StateSignature:
     """
 
     state_id: str
-    required_elements: Set[str]
-    optional_elements: Optional[Set[str]] = None
-    negative_elements: Optional[Set[str]] = None
-    layout_constraints: Optional[dict] = None
-    visual_features: Optional[dict] = None
+    required_elements: set[str]
+    optional_elements: set[str] | None = None
+    negative_elements: set[str] | None = None
+    layout_constraints: dict | None = None
+    visual_features: dict | None = None
 
     def __repr__(self) -> str:
         """String representation of signature."""
-        return (
-            f"StateSignature(id={self.state_id}, "
-            f"required={len(self.required_elements)})"
-        )
+        return f"StateSignature(id={self.state_id}, " f"required={len(self.required_elements)})"
 
 
 @dataclass
@@ -66,12 +62,12 @@ class StateDetectionResult:
         metadata: Additional detection metadata
     """
 
-    state_id: Optional[str]
+    state_id: str | None
     confidence: float
-    matching_elements: List[str]
-    missing_elements: Optional[List[str]] = None
+    matching_elements: list[str]
+    missing_elements: list[str] | None = None
     method: DetectionMethod = DetectionMethod.SIGNATURE
-    metadata: Optional[dict] = None
+    metadata: dict | None = None
 
     def __repr__(self) -> str:
         """String representation of detection result."""
@@ -152,7 +148,7 @@ class SignatureBasedDetector(StateDetector):
         self.signatures[state_id] = signature
 
     def calculate_match_score(
-        self, detected_elements: Set[str], signature: StateSignature
+        self, detected_elements: set[str], signature: StateSignature
     ) -> float:
         """Calculate how well detected elements match a signature.
 
@@ -164,9 +160,7 @@ class SignatureBasedDetector(StateDetector):
             Match score between 0.0 and 1.0
         """
         # Check required elements
-        required_found = len(
-            signature.required_elements.intersection(detected_elements)
-        )
+        required_found = len(signature.required_elements.intersection(detected_elements))
         required_total = len(signature.required_elements)
 
         if required_total == 0:
@@ -199,9 +193,7 @@ class SignatureBasedDetector(StateDetector):
             negative_score = 1.0
 
         # Combine scores
-        final_score = (
-            required_score * 0.6 + optional_score * 0.2 + negative_score * 0.2
-        )
+        final_score = required_score * 0.6 + optional_score * 0.2 + negative_score * 0.2
 
         return final_score
 
@@ -215,13 +207,13 @@ class TransitionDetector:
 
     def __init__(self):
         """Initialize transition detector."""
-        self.previous_state: Optional[str] = None
-        self.state_detector: Optional[StateDetector] = None
+        self.previous_state: str | None = None
+        self.state_detector: StateDetector | None = None
         self.stability_threshold = 3  # Frames to confirm stable state
 
     def detect_transition(
-        self, current_frame: np.ndarray, previous_frame: Optional[np.ndarray] = None
-    ) -> Optional[tuple[str, str]]:
+        self, current_frame: np.ndarray, previous_frame: np.ndarray | None = None
+    ) -> tuple[str, str] | None:
         """Detect if a state transition occurred.
 
         Args:
@@ -235,7 +227,7 @@ class TransitionDetector:
         # TODO: Implement transition detection logic
         return None
 
-    def is_stable_state(self, frames: List[np.ndarray]) -> bool:
+    def is_stable_state(self, frames: list[np.ndarray]) -> bool:
         """Check if the state is stable across multiple frames.
 
         Args:
@@ -266,9 +258,9 @@ class MultiFrameValidator:
             required_frames: Number of consecutive frames required for confirmation
         """
         self.required_frames = required_frames
-        self.frame_buffer: List[StateDetectionResult] = []
+        self.frame_buffer: list[StateDetectionResult] = []
 
-    def validate(self, detection: StateDetectionResult) -> Optional[str]:
+    def validate(self, detection: StateDetectionResult) -> str | None:
         """Validate state detection with multi-frame confirmation.
 
         Args:

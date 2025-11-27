@@ -22,9 +22,9 @@ class MatchCollectionBuilder:
 
     def __init__(self) -> None:
         """Initialize builder with empty lists."""
-        self.matches: list["ActionResult"] = []
-        self.state_regions_from_matches: list["StateRegion"] = []
-        self.state_images_from_matches: list["StateImage"] = []
+        self.matches: list[ActionResult] = []
+        self.state_regions_from_matches: list[StateRegion] = []
+        self.state_images_from_matches: list[StateImage] = []
 
     def with_matches(self, *matches: "ActionResult") -> "MatchCollectionBuilder":
         """Add matches to collection.

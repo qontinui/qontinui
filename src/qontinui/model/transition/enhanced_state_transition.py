@@ -202,7 +202,9 @@ class TaskSequenceStateTransition(StateTransition):
     """
 
     task_sequence: Optional["TaskSequence"] = None
-    workflow_ids: list[str] = field(default_factory=list)  # Workflows to execute for this transition
+    workflow_ids: list[str] = field(
+        default_factory=list
+    )  # Workflows to execute for this transition
 
     def execute(self, context: TransitionContext) -> TransitionResult:
         """Execute the task sequence.

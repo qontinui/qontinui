@@ -40,9 +40,7 @@ class BaseDetector(ABC):
         self.name = name
 
     @abstractmethod
-    def detect(
-        self, image: np.ndarray[Any, Any], **params: Any
-    ) -> list[dict[str, Any]]:
+    def detect(self, image: np.ndarray[Any, Any], **params: Any) -> list[dict[str, Any]]:
         """Detect elements or regions in a single image.
 
         This is the main detection method that must be implemented by all
@@ -121,15 +119,10 @@ class BaseDetector(ABC):
             return []
 
         # Convert to (x1, y1, x2, y2) format for easier IoU calculation
-        boxes_xyxy = [
-            (x, y, x + w, y + h) for x, y, w, h in boxes
-        ]
+        boxes_xyxy = [(x, y, x + w, y + h) for x, y, w, h in boxes]
 
         # Sort by area (largest first) to prioritize larger boxes
-        boxes_with_area = [
-            (box, (box[2] - box[0]) * (box[3] - box[1]))
-            for box in boxes_xyxy
-        ]
+        boxes_with_area = [(box, (box[2] - box[0]) * (box[3] - box[1])) for box in boxes_xyxy]
         boxes_with_area.sort(key=lambda x: x[1], reverse=True)
         sorted_boxes = [box for box, _ in boxes_with_area]
 
@@ -145,7 +138,7 @@ class BaseDetector(ABC):
             x2_min, y2_min, x2_max, y2_max = box1
 
             # Find all boxes that overlap significantly
-            for j, box2 in enumerate(sorted_boxes[i + 1:], start=i + 1):
+            for j, box2 in enumerate(sorted_boxes[i + 1 :], start=i + 1):
                 if used[j]:
                     continue
 
@@ -159,12 +152,7 @@ class BaseDetector(ABC):
                     used[j] = True
 
             # Add merged box (convert back to xywh format)
-            merged.append((
-                x2_min,
-                y2_min,
-                x2_max - x2_min,
-                y2_max - y2_min
-            ))
+            merged.append((x2_min, y2_min, x2_max - x2_min, y2_max - y2_min))
             used[i] = True
 
         return merged
@@ -196,9 +184,7 @@ class BaseDetector(ABC):
             return []
 
         # Sort by area (largest first)
-        boxes_with_area = [
-            (box, box[2] * box[3]) for box in boxes
-        ]
+        boxes_with_area = [(box, box[2] * box[3]) for box in boxes]
         boxes_with_area.sort(key=lambda x: x[1], reverse=True)
         sorted_boxes = [box for box, _ in boxes_with_area]
 
@@ -236,7 +222,7 @@ class BaseDetector(ABC):
     def filter_by_size(
         boxes: list[tuple[int, int, int, int]],
         min_size: tuple[int, int] | None = None,
-        max_size: tuple[int, int] | None = None
+        max_size: tuple[int, int] | None = None,
     ) -> list[tuple[int, int, int, int]]:
         """Filter bounding boxes by size constraints.
 
@@ -278,10 +264,7 @@ class BaseDetector(ABC):
         return filtered
 
     @staticmethod
-    def _calculate_iou(
-        box1: tuple[int, int, int, int],
-        box2: tuple[int, int, int, int]
-    ) -> float:
+    def _calculate_iou(box1: tuple[int, int, int, int], box2: tuple[int, int, int, int]) -> float:
         """Calculate Intersection over Union (IoU) for two boxes.
 
         Args:
@@ -333,7 +316,7 @@ class BaseDetector(ABC):
     def resize_image(
         image: np.ndarray[Any, Any],
         target_size: tuple[int, int],
-        interpolation: int = cv2.INTER_LINEAR
+        interpolation: int = cv2.INTER_LINEAR,
     ) -> np.ndarray[Any, Any]:
         """Resize image to target size.
 

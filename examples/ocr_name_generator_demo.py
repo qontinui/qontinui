@@ -17,8 +17,8 @@ import cv2
 import numpy as np
 
 from qontinui.discovery.state_construction import (
-    OCRNameGenerator,
     NameValidator,
+    OCRNameGenerator,
     generate_element_name,
     generate_state_name_from_screenshot,
 )

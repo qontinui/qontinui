@@ -6,12 +6,17 @@ morphological operations and edge detection.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
 
-from qontinui.discovery.region_analysis.base import BaseRegionAnalyzer, BoundingBox, DetectedRegion, RegionType
+from qontinui.discovery.region_analysis.base import (
+    BaseRegionAnalyzer,
+    BoundingBox,
+    DetectedRegion,
+    RegionType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +38,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
     def name(self) -> str:
         return "slot_border_detector"
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "canny_low": 30,
             "canny_high": 100,
@@ -46,7 +51,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
             "min_grid_cols": 2,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> List[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
         """Detect inventory grids by finding slot borders"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -74,9 +79,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
 
         return grid_regions
 
-    def _detect_borders(
-        self, gray: np.ndarray, params: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+    def _detect_borders(self, gray: np.ndarray, params: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Detect rectangular borders in the image
 
@@ -92,9 +95,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel_close)
 
         # Find contours
-        contours, hierarchy = cv2.findContours(
-            edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         borders = []
 
@@ -157,8 +158,8 @@ class SlotBorderDetector(BaseRegionAnalyzer):
         return borders
 
     def _group_by_size(
-        self, borders: List[Dict[str, Any]], params: Dict[str, Any]
-    ) -> List[List[Dict[str, Any]]]:
+        self, borders: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[list[dict[str, Any]]]:
         """Group borders by similar size"""
         if not borders:
             return []
@@ -188,10 +189,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
                 width_diff = abs(other["width"] - ref_width) / ref_width
                 height_diff = abs(other["height"] - ref_height) / ref_height
 
-                if (
-                    width_diff < params["size_tolerance"]
-                    and height_diff < params["size_tolerance"]
-                ):
+                if width_diff < params["size_tolerance"] and height_diff < params["size_tolerance"]:
                     group.append(other)
                     used.add(j)
 
@@ -201,8 +199,8 @@ class SlotBorderDetector(BaseRegionAnalyzer):
         return groups
 
     def _extract_grid_pattern(
-        self, borders: List[Dict[str, Any]], params: Dict[str, Any]
-    ) -> List[DetectedRegion]:
+        self, borders: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[DetectedRegion]:
         """Extract grid pattern from grouped borders"""
         if len(borders) < params["min_grid_rows"] * params["min_grid_cols"]:
             return []
@@ -216,12 +214,8 @@ class SlotBorderDetector(BaseRegionAnalyzer):
         avg_height = int(np.mean([b["height"] for b in borders]))
 
         # Find grid spacing
-        x_spacings = [
-            x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)
-        ]
-        y_spacings = [
-            y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)
-        ]
+        x_spacings = [x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)]
+        y_spacings = [y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)]
 
         if not x_spacings or not y_spacings:
             return []
@@ -256,8 +250,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
 
             if (
                 abs(border["x"] - expected_x) < spacing_x * params["spacing_tolerance"]
-                and abs(border["y"] - expected_y)
-                < spacing_y * params["spacing_tolerance"]
+                and abs(border["y"] - expected_y) < spacing_y * params["spacing_tolerance"]
             ):
                 grid_map[(grid_x, grid_y)] = border
 

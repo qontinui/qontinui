@@ -3,11 +3,7 @@
 Based on Brobot's mock pattern - simulates screen capture instantly.
 """
 
-import hashlib
 import logging
-from datetime import datetime
-from io import BytesIO
-from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -77,7 +73,10 @@ class MockScreen(IScreenCapture):
         return region
 
     def save_screenshot(
-        self, file_path: str, monitor_index: int = 0, region: tuple[int, int, int, int] | None = None
+        self,
+        file_path: str,
+        monitor_index: int = 0,
+        region: tuple[int, int, int, int] | None = None,
     ) -> bool:
         """Mock save screenshot to file (instant).
 
@@ -136,7 +135,7 @@ class MockScreen(IScreenCapture):
             height=self._height,
             scale=1.0,
             is_primary=True,
-            name="Mock Monitor"
+            name="Mock Monitor",
         )
         return [monitor]
 
@@ -154,7 +153,7 @@ class MockScreen(IScreenCapture):
             height=self._height,
             scale=1.0,
             is_primary=True,
-            name="Mock Monitor"
+            name="Mock Monitor",
         )
 
     def get_pixel_color(self, x: int, y: int, monitor: int | None = None) -> tuple[int, int, int]:

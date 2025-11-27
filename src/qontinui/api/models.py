@@ -6,10 +6,9 @@ All models use Pydantic for validation and serialization.
 NO backward compatibility - clean, modern Python with full type hints.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
-
 
 # ============================================================================
 # Transition Execution Models
@@ -43,7 +42,7 @@ class TransitionExecutionResponse(BaseModel):
     transition_id: str
     activated_states: list[str] = Field(default_factory=list)
     deactivated_states: list[str] = Field(default_factory=list)
-    error: Optional[str] = None
+    error: str | None = None
 
 
 # ============================================================================
@@ -60,9 +59,7 @@ class StateNavigationRequest(BaseModel):
     """
 
     execution_id: str = "default"
-    target_state_ids: list[str] = Field(
-        ..., description="List of target state IDs", min_length=1
-    )
+    target_state_ids: list[str] = Field(..., description="List of target state IDs", min_length=1)
 
 
 class StateNavigationResponse(BaseModel):
@@ -78,7 +75,7 @@ class StateNavigationResponse(BaseModel):
     success: bool
     path: list[str] = Field(default_factory=list)
     active_states: list[str] = Field(default_factory=list)
-    error: Optional[str] = None
+    error: str | None = None
 
 
 # ============================================================================
@@ -125,5 +122,5 @@ class ErrorDetail(BaseModel):
     """
 
     message: str
-    code: Optional[str] = None
-    details: Optional[dict[str, Any]] = None
+    code: str | None = None
+    details: dict[str, Any] | None = None

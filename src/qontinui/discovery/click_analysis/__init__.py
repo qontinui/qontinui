@@ -29,16 +29,16 @@ Classes:
     InferredBoundingBox: Result dataclass with bbox, mask, and metadata
 """
 
-from .models import (
-    InferredBoundingBox,
-    InferenceConfig,
-    InferenceResult,
-    ElementType,
-    DetectionStrategy,
-)
-from .inferrer import ClickBoundingBoxInferrer, infer_bbox_from_click
 from .boundary_finder import ElementBoundaryFinder
 from .context_analyzer import ClickContextAnalyzer
+from .inferrer import ClickBoundingBoxInferrer, infer_bbox_from_click
+from .models import (
+    DetectionStrategy,
+    ElementType,
+    InferenceConfig,
+    InferenceResult,
+    InferredBoundingBox,
+)
 
 __all__ = [
     # Main classes

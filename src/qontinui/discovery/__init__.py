@@ -31,6 +31,19 @@ Example:
 
 # Base classes
 from .base_detector import BaseDetector
+
+# Click analysis - import key classes for convenience
+from .click_analysis import (
+    ClickBoundingBoxInferrer,
+    ClickContextAnalyzer,
+    DetectionStrategy,
+    ElementBoundaryFinder,
+    ElementType,
+    InferenceConfig,
+    InferenceResult,
+    InferredBoundingBox,
+    infer_bbox_from_click,
+)
 from .models import AnalysisResult, DiscoveredState, StateImage
 from .multi_screenshot_detector import MultiScreenshotDetector
 
@@ -38,13 +51,6 @@ from .multi_screenshot_detector import MultiScreenshotDetector
 from .pixel_analysis.analyzers import PixelStabilityAnalyzer
 from .pixel_analysis.extractor import StableRegionExtractor
 from .pixel_stability_matrix_analyzer import PixelStabilityMatrixAnalyzer
-
-# State detection - import key classes for convenience
-from .state_detection import (
-    DifferentialConsistencyDetector,
-    StateDetector,
-    TransitionDetector,
-)
 
 # State construction - import key classes for convenience
 from .state_construction import (
@@ -54,17 +60,11 @@ from .state_construction import (
     TransitionInfo,
 )
 
-# Click analysis - import key classes for convenience
-from .click_analysis import (
-    ClickBoundingBoxInferrer,
-    ElementBoundaryFinder,
-    ClickContextAnalyzer,
-    InferredBoundingBox,
-    InferenceConfig,
-    InferenceResult,
-    ElementType,
-    DetectionStrategy,
-    infer_bbox_from_click,
+# State detection - import key classes for convenience
+from .state_detection import (
+    DifferentialConsistencyDetector,
+    StateDetector,
+    TransitionDetector,
 )
 
 # Submodules available for import

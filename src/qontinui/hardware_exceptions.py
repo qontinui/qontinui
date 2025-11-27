@@ -4,8 +4,9 @@ This module contains exceptions for hardware operations including
 screen capture, mouse, keyboard, and HAL layer errors.
 """
 
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any
 
 from .base_exceptions import QontinuiException
 

@@ -12,12 +12,12 @@ from ..actions import FindOptions
 from ..model.element import Image, Pattern, Region
 from ..model.search_regions import SearchRegions
 from ..reporting.events import EventType, emit_event
+from .filters import NMSFilter, RegionFilter, SimilarityFilter
 from .find_executor import FindExecutor
 from .find_results import FindResults
-from .filters import NMSFilter, RegionFilter, SimilarityFilter
 from .match import Match
-from .matches import Matches
 from .matchers import TemplateMatcher
+from .matches import Matches
 from .screenshot import CachedScreenshotProvider, PureActionsScreenshotProvider
 
 # Type alias for search regions
@@ -233,15 +233,11 @@ class Find:
         # Configure screenshot provider with caching
         base_provider = PureActionsScreenshotProvider()
         screenshot_provider = CachedScreenshotProvider(
-            provider=base_provider,
-            ttl_seconds=0.1  # Cache for 100ms
+            provider=base_provider, ttl_seconds=0.1  # Cache for 100ms
         )
 
         # Configure template matcher
-        matcher = TemplateMatcher(
-            method="TM_CCOEFF_NORMED",
-            nms_overlap_threshold=0.3
-        )
+        matcher = TemplateMatcher(method="TM_CCOEFF_NORMED", nms_overlap_threshold=0.3)
 
         # Configure filters
         filters = []
@@ -259,9 +255,7 @@ class Find:
 
         # Create executor
         executor = FindExecutor(
-            screenshot_provider=screenshot_provider,
-            matcher=matcher,
-            filters=filters
+            screenshot_provider=screenshot_provider, matcher=matcher, filters=filters
         )
 
         # Execute find operation
@@ -269,7 +263,7 @@ class Find:
             pattern=self._target,
             search_region=self._search_region,
             similarity=self._options._min_similarity,
-            find_all=self._options._find_all
+            find_all=self._options._find_all,
         )
 
         # Convert to Matches collection
@@ -400,19 +394,43 @@ class Find:
                 "image_id": image_id,
                 "image_name": self._target.name if hasattr(self._target, "name") else None,
                 "template_dimensions": {
-                    "width": self._target.pixel_data.shape[1] if self._target.pixel_data is not None else 0,
-                    "height": self._target.pixel_data.shape[0] if self._target.pixel_data is not None else 0,
+                    "width": (
+                        self._target.pixel_data.shape[1]
+                        if self._target.pixel_data is not None
+                        else 0
+                    ),
+                    "height": (
+                        self._target.pixel_data.shape[0]
+                        if self._target.pixel_data is not None
+                        else 0
+                    ),
                 },
-                "best_match_location": {
-                    "x": best_match.x if best_match else 0,
-                    "y": best_match.y if best_match else 0,
-                    "region": {
-                        "x": best_match.region.x if best_match and best_match.region else 0,
-                        "y": best_match.region.y if best_match and best_match.region else 0,
-                        "width": best_match.region.width if best_match and best_match.region else 0,
-                        "height": best_match.region.height if best_match and best_match.region else 0,
-                    } if best_match and best_match.region else None,
-                } if best_match else None,
+                "best_match_location": (
+                    {
+                        "x": best_match.x if best_match else 0,
+                        "y": best_match.y if best_match else 0,
+                        "region": (
+                            {
+                                "x": best_match.region.x if best_match and best_match.region else 0,
+                                "y": best_match.region.y if best_match and best_match.region else 0,
+                                "width": (
+                                    best_match.region.width
+                                    if best_match and best_match.region
+                                    else 0
+                                ),
+                                "height": (
+                                    best_match.region.height
+                                    if best_match and best_match.region
+                                    else 0
+                                ),
+                            }
+                            if best_match and best_match.region
+                            else None
+                        ),
+                    }
+                    if best_match
+                    else None
+                ),
                 "best_match_confidence": float(best_confidence),
                 "similarity_threshold": float(self._options._min_similarity),
                 "threshold_passed": bool(threshold_passed),

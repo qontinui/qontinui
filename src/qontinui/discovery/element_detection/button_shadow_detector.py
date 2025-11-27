@@ -10,7 +10,7 @@ Detects buttons by finding shadows and depth effects:
 
 import logging
 from io import BytesIO
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -56,7 +56,7 @@ class ButtonShadowDetector(BaseAnalyzer):
     def required_screenshots(self) -> int:
         return 1
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             # Shadow detection parameters
             "shadow_blur_size": 5,
@@ -80,9 +80,7 @@ class ButtonShadowDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Perform shadow-based button detection"""
-        logger.info(
-            f"Running button shadow detection on {len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running button shadow detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -92,17 +90,11 @@ class ButtonShadowDetector(BaseAnalyzer):
 
         # Analyze each screenshot
         all_elements = []
-        for screenshot_idx, (img_gray, img_color) in enumerate(
-            zip(images_gray, images_color)
-        ):
-            elements = await self._analyze_screenshot(
-                img_gray, img_color, screenshot_idx, params
-            )
+        for screenshot_idx, (img_gray, img_color) in enumerate(zip(images_gray, images_color, strict=False)):
+            elements = await self._analyze_screenshot(img_gray, img_color, screenshot_idx, params)
             all_elements.extend(elements)
 
-        logger.info(
-            f"Detected {len(all_elements)} button candidates using shadow analysis"
-        )
+        logger.info(f"Detected {len(all_elements)} button candidates using shadow analysis")
 
         return AnalysisResult(
             analyzer_type=self.analysis_type,
@@ -117,7 +109,7 @@ class ButtonShadowDetector(BaseAnalyzer):
             },
         )
 
-    def _load_images_grayscale(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_grayscale(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots as grayscale"""
         images = []
         for data in screenshot_data:
@@ -125,14 +117,12 @@ class ButtonShadowDetector(BaseAnalyzer):
             images.append(np.array(img, dtype=np.uint8))
         return images
 
-    def _load_images_color(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_color(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots in color (BGR for OpenCV)"""
         images = []
         for data in screenshot_data:
             img = Image.open(BytesIO(data)).convert("RGB")
-            images.append(
-                cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR)
-            )
+            images.append(cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR))
         return images
 
     async def _analyze_screenshot(
@@ -140,8 +130,8 @@ class ButtonShadowDetector(BaseAnalyzer):
         img_gray: np.ndarray,
         img_color: np.ndarray,
         screenshot_idx: int,
-        params: Dict[str, Any],
-    ) -> List[DetectedElement]:
+        params: dict[str, Any],
+    ) -> list[DetectedElement]:
         """Analyze a single screenshot for shadow-based buttons"""
         elements = []
 
@@ -188,8 +178,8 @@ class ButtonShadowDetector(BaseAnalyzer):
         return elements
 
     def _detect_drop_shadows(
-        self, img_gray: np.ndarray, params: Dict[str, Any]
-    ) -> List[Tuple[BoundingBox, Dict[str, Any]]]:
+        self, img_gray: np.ndarray, params: dict[str, Any]
+    ) -> list[tuple[BoundingBox, dict[str, Any]]]:
         """
         Detect drop shadows beneath UI elements
 
@@ -214,9 +204,7 @@ class ButtonShadowDetector(BaseAnalyzer):
         shadow_mask = cv2.morphologyEx(shadow_mask, cv2.MORPH_CLOSE, kernel)
 
         # Find contours in shadow mask
-        contours, _ = cv2.findContours(
-            shadow_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(shadow_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             # Get shadow bounding box
@@ -254,23 +242,14 @@ class ButtonShadowDetector(BaseAnalyzer):
                 button_brightness = np.mean(button_region)
                 shadow_brightness = np.mean(shadow_region)
 
-                if (
-                    button_brightness
-                    > shadow_brightness + params["shadow_threshold"] * 0.5
-                ):
+                if button_brightness > shadow_brightness + params["shadow_threshold"] * 0.5:
                     # Check size constraints
-                    if not (
-                        params["min_button_width"] <= sw <= params["max_button_width"]
-                    ):
+                    if not (params["min_button_width"] <= sw <= params["max_button_width"]):
                         continue
-                    if not (
-                        params["min_button_height"] <= sh <= params["max_button_height"]
-                    ):
+                    if not (params["min_button_height"] <= sh <= params["max_button_height"]):
                         continue
 
-                    bbox = BoundingBox(
-                        x=int(bx), y=int(by), width=int(sw), height=int(sh)
-                    )
+                    bbox = BoundingBox(x=int(bx), y=int(by), width=int(sw), height=int(sh))
                     shadow_info = {
                         "type": "drop_shadow",
                         "shadow_offset_x": offset_x,
@@ -283,8 +262,8 @@ class ButtonShadowDetector(BaseAnalyzer):
         return candidates
 
     def _detect_raised_buttons(
-        self, img_gray: np.ndarray, params: Dict[str, Any]
-    ) -> List[Tuple[BoundingBox, Dict[str, Any]]]:
+        self, img_gray: np.ndarray, params: dict[str, Any]
+    ) -> list[tuple[BoundingBox, dict[str, Any]]]:
         """
         Detect raised/embossed buttons through gradient analysis
 
@@ -308,9 +287,7 @@ class ButtonShadowDetector(BaseAnalyzer):
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 3))
         gradient_mask = cv2.morphologyEx(gradient_mask, cv2.MORPH_CLOSE, kernel)
 
-        contours, _ = cv2.findContours(
-            gradient_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(gradient_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -350,8 +327,8 @@ class ButtonShadowDetector(BaseAnalyzer):
         return candidates
 
     def _detect_border_effects(
-        self, img_gray: np.ndarray, params: Dict[str, Any]
-    ) -> List[Tuple[BoundingBox, Dict[str, Any]]]:
+        self, img_gray: np.ndarray, params: dict[str, Any]
+    ) -> list[tuple[BoundingBox, dict[str, Any]]]:
         """
         Detect buttons with contrasting borders (3D border effects)
 
@@ -369,9 +346,7 @@ class ButtonShadowDetector(BaseAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -402,8 +377,8 @@ class ButtonShadowDetector(BaseAnalyzer):
         y: int,
         w: int,
         h: int,
-        params: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        params: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Analyze border contrast to detect 3D effects
 
@@ -459,8 +434,8 @@ class ButtonShadowDetector(BaseAnalyzer):
         }
 
     def _merge_overlapping_candidates(
-        self, candidates: List[Tuple[BoundingBox, Dict[str, Any]]]
-    ) -> List[Tuple[BoundingBox, Dict[str, Any]]]:
+        self, candidates: list[tuple[BoundingBox, dict[str, Any]]]
+    ) -> list[tuple[BoundingBox, dict[str, Any]]]:
         """
         Merge overlapping candidate detections
 
@@ -479,9 +454,7 @@ class ButtonShadowDetector(BaseAnalyzer):
             for i, (existing_bbox, existing_info) in enumerate(merged):
                 if bbox.iou(existing_bbox) > 0.5:
                     # Merge - keep the one with more evidence
-                    existing_types = existing_info.get(
-                        "detection_types", [existing_info["type"]]
-                    )
+                    existing_types = existing_info.get("detection_types", [existing_info["type"]])
                     new_types = existing_types + [info["type"]]
 
                     # Use average bounding box
@@ -517,9 +490,7 @@ class ButtonShadowDetector(BaseAnalyzer):
 
         return merged
 
-    def _calculate_confidence(
-        self, shadow_info: Dict[str, Any], params: Dict[str, Any]
-    ) -> float:
+    def _calculate_confidence(self, shadow_info: dict[str, Any], params: dict[str, Any]) -> float:
         """
         Calculate confidence score for shadow-based button detection
 

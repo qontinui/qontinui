@@ -12,20 +12,18 @@ Key test areas:
 - Edge cases and error handling
 """
 
+
 import numpy as np
 import pytest
-import cv2
-from typing import List, Tuple
 
 from qontinui.src.qontinui.discovery.state_detection.differential_consistency_detector import (
     DifferentialConsistencyDetector,
     StateRegion,
 )
 from tests.fixtures.screenshot_fixtures import (
-    create_menu_transition_pair,
-    generate_synthetic_screenshot,
     ElementSpec,
     SyntheticScreenshotGenerator,
+    create_menu_transition_pair,
 )
 
 
@@ -86,9 +84,7 @@ class TestDifferentialConsistencyDetectorBasic:
         pairs = [(before, after)] * 10
 
         regions = detector.detect_state_regions(
-            pairs,
-            consistency_threshold=0.5,
-            min_region_area=100
+            pairs, consistency_threshold=0.5, min_region_area=100
         )
 
         assert isinstance(regions, list)
@@ -170,7 +166,7 @@ class TestConsistencyCalculations:
         # Create consistent changes: same diff value across all examples
         diff_images = np.ones((20, 100, 100), dtype=np.float32) * 128
 
-        consistency = detector._compute_consistency(diff_images, method='minmax')
+        consistency = detector._compute_consistency(diff_images, method="minmax")
 
         assert consistency.shape == (100, 100)
         assert consistency.dtype == np.float32
@@ -188,7 +184,7 @@ class TestConsistencyCalculations:
         """
         diff_images = np.random.uniform(0, 255, (20, 100, 100)).astype(np.float32)
 
-        consistency = detector._compute_consistency(diff_images, method='zscore')
+        consistency = detector._compute_consistency(diff_images, method="zscore")
 
         assert consistency.shape == (100, 100)
         assert np.all(consistency >= 0.0)
@@ -209,7 +205,7 @@ class TestConsistencyCalculations:
         for i in range(20):
             diff_images[i, :, 50:] = np.random.uniform(0, 255, (100, 50))
 
-        consistency = detector._compute_consistency(diff_images, method='minmax')
+        consistency = detector._compute_consistency(diff_images, method="minmax")
 
         left_score = np.mean(consistency[:, :50])
         right_score = np.mean(consistency[:, 50:])
@@ -238,10 +234,7 @@ class TestRegionExtraction:
         consistency_map[50:150, 50:150] = 1.0  # High consistency square
 
         regions = detector._extract_regions(
-            consistency_map,
-            threshold=0.7,
-            min_area=500,
-            kernel_size=3
+            consistency_map, threshold=0.7, min_area=500, kernel_size=3
         )
 
         assert len(regions) > 0
@@ -260,11 +253,7 @@ class TestRegionExtraction:
         consistency_map = np.zeros((200, 200), dtype=np.float32)
         consistency_map[:, :] = 0.3  # Low consistency everywhere
 
-        regions = detector._extract_regions(
-            consistency_map,
-            threshold=0.7,
-            min_area=100
-        )
+        regions = detector._extract_regions(consistency_map, threshold=0.7, min_area=100)
 
         assert len(regions) == 0
 
@@ -281,9 +270,7 @@ class TestRegionExtraction:
         consistency_map[50:150, 50:150] = 1.0  # 10000 pixels
 
         regions = detector._extract_regions(
-            consistency_map,
-            threshold=0.5,
-            min_area=500  # Filter out the small region
+            consistency_map, threshold=0.5, min_area=500  # Filter out the small region
         )
 
         # Should only get the large region
@@ -311,7 +298,7 @@ class TestRegionExtraction:
             consistency_map,
             threshold=0.5,
             min_area=500,
-            kernel_size=7  # Larger kernel to fill hole
+            kernel_size=7,  # Larger kernel to fill hole
         )
 
         assert len(regions) >= 1
@@ -356,9 +343,7 @@ class TestMinimumExampleRequirements:
         pairs = [(before, after)] * 10
 
         regions = detector.detect_state_regions(
-            pairs,
-            consistency_threshold=0.5,
-            min_region_area=100
+            pairs, consistency_threshold=0.5, min_region_area=100
         )
 
         assert isinstance(regions, list)
@@ -376,9 +361,7 @@ class TestMinimumExampleRequirements:
         pairs = [(before, after)] * 100
 
         regions = detector.detect_state_regions(
-            pairs,
-            consistency_threshold=0.5,
-            min_region_area=100
+            pairs, consistency_threshold=0.5, min_region_area=100
         )
 
         assert isinstance(regions, list)
@@ -411,32 +394,33 @@ class TestDynamicBackgrounds:
             # Before: dynamic background
             before_bg_color = (200 + i * 3, 200 + i * 2, 200 + i * 4)
             before = generator.generate(
-                width=400, height=300,
-                background_color=before_bg_color,
-                elements=[]
+                width=400, height=300, background_color=before_bg_color, elements=[]
             )
 
             # After: same dynamic background + static menu
             after_bg_color = (200 + i * 3, 200 + i * 2, 200 + i * 4)
             menu_elements = [
-                ElementSpec("rectangle", x=150, y=50, width=100, height=150,
-                           color=(240, 240, 240), border_color=(100, 100, 100)),
+                ElementSpec(
+                    "rectangle",
+                    x=150,
+                    y=50,
+                    width=100,
+                    height=150,
+                    color=(240, 240, 240),
+                    border_color=(100, 100, 100),
+                ),
                 ElementSpec("button", x=160, y=70, width=80, height=30, text="Option 1"),
                 ElementSpec("button", x=160, y=110, width=80, height=30, text="Option 2"),
                 ElementSpec("button", x=160, y=150, width=80, height=30, text="Option 3"),
             ]
             after = generator.generate(
-                width=400, height=300,
-                background_color=after_bg_color,
-                elements=menu_elements
+                width=400, height=300, background_color=after_bg_color, elements=menu_elements
             )
 
             pairs.append((before, after))
 
         regions = detector.detect_state_regions(
-            pairs,
-            consistency_threshold=0.4,
-            min_region_area=200
+            pairs, consistency_threshold=0.4, min_region_area=200
         )
 
         # Should detect the menu region
@@ -464,23 +448,29 @@ class TestDynamicBackgrounds:
         for i in range(20):
             # Before: random elements
             before_elements = [
-                ElementSpec("rectangle", x=50 + i * 5, y=50, width=50, height=50,
-                           color=(100 + i * 7, 150, 200))
+                ElementSpec(
+                    "rectangle",
+                    x=50 + i * 5,
+                    y=50,
+                    width=50,
+                    height=50,
+                    color=(100 + i * 7, 150, 200),
+                )
             ]
-            before = generator.generate(
-                width=300, height=200,
-                elements=before_elements
-            )
+            before = generator.generate(width=300, height=200, elements=before_elements)
 
             # After: same but in different position/color
             after_elements = [
-                ElementSpec("rectangle", x=50 + i * 7, y=60, width=50, height=50,
-                           color=(100 + i * 5, 150, 200))
+                ElementSpec(
+                    "rectangle",
+                    x=50 + i * 7,
+                    y=60,
+                    width=50,
+                    height=50,
+                    color=(100 + i * 5, 150, 200),
+                )
             ]
-            after = generator.generate(
-                width=300, height=200,
-                elements=after_elements
-            )
+            after = generator.generate(width=300, height=200, elements=after_elements)
 
             pairs.append((before, after))
 
@@ -502,32 +492,33 @@ class TestDynamicBackgrounds:
         for i in range(12):
             # Before: background with moving element
             before_elements = [
-                ElementSpec("rectangle", x=20 + i * 10, y=100, width=30, height=30,
-                           color=(255, 0, 0))  # Moving red square
+                ElementSpec(
+                    "rectangle", x=20 + i * 10, y=100, width=30, height=30, color=(255, 0, 0)
+                )  # Moving red square
             ]
-            before = generator.generate(
-                width=400, height=300,
-                elements=before_elements
-            )
+            before = generator.generate(width=400, height=300, elements=before_elements)
 
             # After: same moving element + static dialog
             after_elements = [
-                ElementSpec("rectangle", x=20 + i * 10, y=100, width=30, height=30,
-                           color=(255, 0, 0)),  # Moving red square
-                ElementSpec("rectangle", x=120, y=80, width=160, height=140,
-                           color=(240, 240, 240), border_color=(100, 100, 100)),  # Static dialog
+                ElementSpec(
+                    "rectangle", x=20 + i * 10, y=100, width=30, height=30, color=(255, 0, 0)
+                ),  # Moving red square
+                ElementSpec(
+                    "rectangle",
+                    x=120,
+                    y=80,
+                    width=160,
+                    height=140,
+                    color=(240, 240, 240),
+                    border_color=(100, 100, 100),
+                ),  # Static dialog
             ]
-            after = generator.generate(
-                width=400, height=300,
-                elements=after_elements
-            )
+            after = generator.generate(width=400, height=300, elements=after_elements)
 
             pairs.append((before, after))
 
         regions = detector.detect_state_regions(
-            pairs,
-            consistency_threshold=0.5,
-            min_region_area=500
+            pairs, consistency_threshold=0.5, min_region_area=500
         )
 
         # Should detect the static dialog despite moving element
@@ -620,17 +611,15 @@ class TestVisualization:
         screenshot = np.random.randint(0, 255, (200, 300, 3), dtype=np.uint8)
 
         regions = [
-            StateRegion(bbox=(50, 50, 80, 100), consistency_score=0.85,
-                       example_diff=np.zeros((100, 80), dtype=np.uint8),
-                       pixel_count=8000)
+            StateRegion(
+                bbox=(50, 50, 80, 100),
+                consistency_score=0.85,
+                example_diff=np.zeros((100, 80), dtype=np.uint8),
+                pixel_count=8000,
+            )
         ]
 
-        vis = detector.visualize_consistency(
-            consistency_map,
-            regions,
-            screenshot,
-            show_scores=True
-        )
+        vis = detector.visualize_consistency(consistency_map, regions, screenshot, show_scores=True)
 
         assert vis.shape == (200, 300, 3)
         assert vis.dtype == np.uint8
@@ -646,10 +635,7 @@ class TestVisualization:
         regions = []
 
         vis = detector.visualize_consistency(
-            consistency_map,
-            regions,
-            screenshot,
-            show_scores=False
+            consistency_map, regions, screenshot, show_scores=False
         )
 
         assert vis.shape == (200, 300, 3)
@@ -665,11 +651,7 @@ class TestVisualization:
         screenshot = np.random.randint(0, 255, (200, 300), dtype=np.uint8)
         regions = []
 
-        vis = detector.visualize_consistency(
-            consistency_map,
-            regions,
-            screenshot
-        )
+        vis = detector.visualize_consistency(consistency_map, regions, screenshot)
 
         assert vis.shape == (200, 300, 3)
 
@@ -695,11 +677,7 @@ class TestDetectMultiMethod:
             img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
             screenshots.append(img)
 
-        result = detector.detect_multi(
-            screenshots,
-            consistency_threshold=0.5,
-            min_region_area=100
-        )
+        result = detector.detect_multi(screenshots, consistency_threshold=0.5, min_region_area=100)
 
         assert isinstance(result, dict)
         # Should have entries for indices 1-11 (after screenshots)
@@ -768,9 +746,7 @@ class TestEdgeCases:
         pairs = [(black, black.copy())] * 10
 
         regions = detector.detect_state_regions(
-            pairs,
-            consistency_threshold=0.5,
-            min_region_area=100
+            pairs, consistency_threshold=0.5, min_region_area=100
         )
 
         assert isinstance(regions, list)
@@ -784,10 +760,12 @@ class TestEdgeCases:
             - ValueError raised when pairs have different dimensions
         """
         pairs = []
-        pairs.extend([(np.zeros((100, 100, 3), dtype=np.uint8),
-                       np.zeros((100, 100, 3), dtype=np.uint8))] * 5)
-        pairs.extend([(np.zeros((120, 120, 3), dtype=np.uint8),
-                       np.zeros((120, 120, 3), dtype=np.uint8))] * 5)
+        pairs.extend(
+            [(np.zeros((100, 100, 3), dtype=np.uint8), np.zeros((100, 100, 3), dtype=np.uint8))] * 5
+        )
+        pairs.extend(
+            [(np.zeros((120, 120, 3), dtype=np.uint8), np.zeros((120, 120, 3), dtype=np.uint8))] * 5
+        )
 
         with pytest.raises(ValueError) as exc_info:
             detector.detect_state_regions(pairs)
@@ -805,9 +783,7 @@ class TestEdgeCases:
         pairs = [(before, after)] * 10
 
         regions = detector.detect_state_regions(
-            pairs,
-            consistency_threshold=0.99,  # Very high
-            min_region_area=100
+            pairs, consistency_threshold=0.99, min_region_area=100  # Very high
         )
 
         # Likely no regions meet this threshold
@@ -824,9 +800,7 @@ class TestEdgeCases:
         pairs = [(before, after)] * 10
 
         regions = detector.detect_state_regions(
-            pairs,
-            consistency_threshold=0.5,
-            min_region_area=50000  # Very large
+            pairs, consistency_threshold=0.5, min_region_area=50000  # Very large
         )
 
         # Should only return regions >= 50000 pixels
@@ -846,10 +820,7 @@ class TestStateRegionDataclass:
         """
         diff = np.zeros((50, 50), dtype=np.uint8)
         region = StateRegion(
-            bbox=(10, 20, 30, 40),
-            consistency_score=0.87,
-            example_diff=diff,
-            pixel_count=1200
+            bbox=(10, 20, 30, 40), consistency_score=0.87, example_diff=diff, pixel_count=1200
         )
 
         assert region.bbox == (10, 20, 30, 40)
@@ -866,10 +837,7 @@ class TestStateRegionDataclass:
         """
         diff = np.zeros((50, 50), dtype=np.uint8)
         region = StateRegion(
-            bbox=(10, 20, 30, 40),
-            consistency_score=0.87,
-            example_diff=diff,
-            pixel_count=1200
+            bbox=(10, 20, 30, 40), consistency_score=0.87, example_diff=diff, pixel_count=1200
         )
 
         repr_str = repr(region)

@@ -7,8 +7,8 @@ import logging
 from dataclasses import dataclass, field
 
 from ....action_interface import ActionInterface
-from ....hal.factory import HALFactory
 from ....action_result import ActionResult
+from ....hal.factory import HALFactory
 from ....model.element.location import Location
 from ....model.element.region import Region
 from ....model.match.match import Match

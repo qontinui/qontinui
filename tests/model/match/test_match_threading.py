@@ -8,8 +8,6 @@ import threading
 import time
 from pathlib import Path
 
-import pytest
-
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))

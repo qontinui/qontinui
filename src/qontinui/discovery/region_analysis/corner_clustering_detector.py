@@ -6,14 +6,18 @@ grid patterns from corner points.
 """
 
 import logging
-from collections import Counter
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
 from sklearn.cluster import DBSCAN
 
-from qontinui.discovery.region_analysis.base import BaseRegionAnalyzer, BoundingBox, DetectedRegion, RegionType
+from qontinui.discovery.region_analysis.base import (
+    BaseRegionAnalyzer,
+    BoundingBox,
+    DetectedRegion,
+    RegionType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +38,7 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
     def name(self) -> str:
         return "corner_clustering_detector"
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "corner_method": "shi_tomasi",  # or "harris"
             "max_corners": 1000,
@@ -47,7 +51,7 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
             "min_grid_cols": 2,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> List[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
         """Detect inventory grids using corner clustering"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -79,7 +83,7 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
 
         return regions
 
-    def _detect_corners(self, gray: np.ndarray, params: Dict[str, Any]) -> np.ndarray:
+    def _detect_corners(self, gray: np.ndarray, params: dict[str, Any]) -> np.ndarray:
         """Detect corners in the image"""
         if params["corner_method"] == "shi_tomasi":
             corners = cv2.goodFeaturesToTrack(
@@ -97,9 +101,7 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
             # Threshold for corner detection
             threshold = params["quality_level"] * dst.max()
             corners_y, corners_x = np.where(dst > threshold)
-            corners = np.array(
-                [[[x, y]] for x, y in zip(corners_x, corners_y)], dtype=np.float32
-            )
+            corners = np.array([[[x, y]] for x, y in zip(corners_x, corners_y, strict=False)], dtype=np.float32)
 
         if corners is None:
             return np.array([])
@@ -108,8 +110,8 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
         return corners.reshape(-1, 2)
 
     def _find_grid_spacing_from_corners(
-        self, corners: np.ndarray, params: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, corners: np.ndarray, params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """
         Analyze corner positions to find uniform grid spacing
 
@@ -158,8 +160,8 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
         ]
 
     def _find_dominant_spacing(
-        self, distances: List[float], params: Dict[str, Any]
-    ) -> Optional[int]:
+        self, distances: list[float], params: dict[str, Any]
+    ) -> int | None:
         """Find the dominant spacing from a list of distances"""
         if not distances:
             return None
@@ -190,10 +192,10 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
     def _extract_grid_from_spacing(
         self,
         corners: np.ndarray,
-        spacing_info: Dict[str, Any],
-        img_shape: Tuple[int, int, ...],
-        params: Dict[str, Any],
-    ) -> List[DetectedRegion]:
+        spacing_info: dict[str, Any],
+        img_shape: tuple[int, int, ...],
+        params: dict[str, Any],
+    ) -> list[DetectedRegion]:
         """Extract grid structure from corners and spacing"""
         spacing_x = spacing_info["spacing_x"]
         spacing_y = spacing_info["spacing_y"]
@@ -225,9 +227,7 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
         grid_coords = np.array(list(grid_points.keys()))
 
         # DBSCAN to find contiguous grids
-        clustering = DBSCAN(
-            eps=1.5, min_samples=params["min_grid_rows"] * params["min_grid_cols"]
-        )
+        clustering = DBSCAN(eps=1.5, min_samples=params["min_grid_rows"] * params["min_grid_cols"])
         labels = clustering.fit_predict(grid_coords)
 
         # Extract each grid cluster
@@ -239,9 +239,7 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
             cluster_coords = grid_coords[labels == label]
 
             if len(cluster_coords) >= params["min_grid_rows"] * params["min_grid_cols"]:
-                region = self._create_grid_region(
-                    cluster_coords, spacing_x, spacing_y, params
-                )
+                region = self._create_grid_region(cluster_coords, spacing_x, spacing_y, params)
                 if region:
                     regions.append(region)
 
@@ -252,8 +250,8 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
         grid_coords: np.ndarray,
         spacing_x: int,
         spacing_y: int,
-        params: Dict[str, Any],
-    ) -> Optional[DetectedRegion]:
+        params: dict[str, Any],
+    ) -> DetectedRegion | None:
         """Create a DetectedRegion from grid coordinates"""
         if len(grid_coords) < params["min_grid_rows"] * params["min_grid_cols"]:
             return None

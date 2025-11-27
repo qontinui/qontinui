@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 from .....model.action.action_record import ActionRecord
 
 if TYPE_CHECKING:
-    from ..chain_action import ChainAction
     from ..action_chain import ActionChainOptions
+    from ..chain_action import ChainAction
 
 
 class BaseChainMode(ABC):
@@ -43,9 +43,7 @@ class BaseChainMode(ABC):
         """
         pass
 
-    def _record_action(
-        self, chain_action: "ChainAction", success: bool, duration: float
-    ) -> None:
+    def _record_action(self, chain_action: "ChainAction", success: bool, duration: float) -> None:
         """Record action execution in history.
 
         Args:

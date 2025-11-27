@@ -5,8 +5,8 @@ Setup and annotation fix suggestion strategies for JUnit to pytest migration.
 import re
 from pathlib import Path
 
-from ..fix_models import FixComplexity, FixSuggestion, FixType
 from ...core.models import TestFile
+from ..fix_models import FixComplexity, FixSuggestion, FixType
 
 
 class SetupSuggestionStrategy:

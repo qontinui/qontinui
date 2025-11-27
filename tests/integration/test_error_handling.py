@@ -5,7 +5,6 @@ and recovery from errors works correctly.
 """
 
 import threading
-from typing import List
 from unittest.mock import Mock
 
 import pytest
@@ -26,7 +25,7 @@ class TestActionResultErrorHandling:
     def test_thread_safe_error_recovery(self):
         """Test that errors in one thread don't corrupt ActionResult."""
         result = ActionResult()
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         class MockMatch:
@@ -127,14 +126,15 @@ class TestStateRegistryErrorHandling:
     def test_concurrent_error_isolation(self):
         """Test that errors in one thread don't affect others."""
         registry = StateRegistry()
-        errors: List[Exception] = []
-        successes: List[int] = []
+        errors: list[Exception] = []
+        successes: list[int] = []
         lock = threading.Lock()
 
         def valid_worker(thread_id: int):
             """Worker that registers valid states."""
             try:
                 for i in range(10):
+
                     @state(name=f"valid_{thread_id}_{i}")
                     class ValidState:
                         pass
@@ -154,6 +154,7 @@ class TestStateRegistryErrorHandling:
                 for i in range(10):
                     # Try invalid operation
                     try:
+
                         class InvalidState:
                             pass
 
@@ -334,6 +335,7 @@ class TestErrorRecovery:
 
         # Try invalid registration
         try:
+
             class InvalidState:
                 pass
 
@@ -353,8 +355,8 @@ class TestErrorRecovery:
     def test_concurrent_recovery(self):
         """Test recovery in concurrent scenarios."""
         result = ActionResult()
-        errors: List[Exception] = []
-        successes: List[int] = []
+        errors: list[Exception] = []
+        successes: list[int] = []
         lock = threading.Lock()
 
         class MockMatch:

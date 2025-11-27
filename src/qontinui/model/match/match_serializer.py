@@ -8,8 +8,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from .match import Match
     from qontinui.model.state.state_image import StateImage
+
+    from .match import Match
 
 
 class MatchSerializer:

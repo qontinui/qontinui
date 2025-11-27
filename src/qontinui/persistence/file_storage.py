@@ -11,7 +11,7 @@ from typing import Any
 
 from ..config import get_settings
 from ..logging import get_logger
-from .serializers import JsonSerializer, PickleSerializer, Serializer
+from .serializers import JsonSerializer, Serializer
 
 logger = get_logger(__name__)
 
@@ -237,9 +237,7 @@ class FileStorage:
             return self.base_path / subfolder
         return self.base_path
 
-    def _build_filename(
-        self, key: str, extension: str, version: bool
-    ) -> str:
+    def _build_filename(self, key: str, extension: str, version: bool) -> str:
         """Build filename with optional versioning.
 
         Args:

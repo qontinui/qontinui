@@ -200,9 +200,7 @@ class CodeExecutor(ActionExecutorBase):
         # For now, use current working directory
         return Path.cwd()
 
-    def _execute_custom_function(
-        self, action: Action, config: CustomFunctionActionConfig
-    ) -> bool:
+    def _execute_custom_function(self, action: Action, config: CustomFunctionActionConfig) -> bool:
         """Execute pre-registered custom function.
 
         Args:
@@ -528,6 +526,4 @@ class CodeExecutor(ActionExecutorBase):
                 self.context.variable_context.delete(key, scope="workflow")
                 logger.debug(f"Deleted workflow variable '{key}' (removed in code)")
 
-        logger.debug(
-            f"Synced {len(modified_workflow_vars)} workflow variables from code execution"
-        )
+        logger.debug(f"Synced {len(modified_workflow_vars)} workflow variables from code execution")

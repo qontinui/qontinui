@@ -152,9 +152,7 @@ async def execute_workflow(
 
 
 @router.get("/execution/{execution_id}/status", response_model=ExecutionStatusResponse)
-async def get_execution_status(
-    execution_id: str, manager: ExecutionManager = Depends(get_manager)
-):
+async def get_execution_status(execution_id: str, manager: ExecutionManager = Depends(get_manager)):
     """Get execution status.
 
     Args:
@@ -204,9 +202,7 @@ async def pause_execution(execution_id: str, manager: ExecutionManager = Depends
 
 
 @router.post("/execution/{execution_id}/resume")
-async def resume_execution(
-    execution_id: str, manager: ExecutionManager = Depends(get_manager)
-):
+async def resume_execution(execution_id: str, manager: ExecutionManager = Depends(get_manager)):
     """Resume execution.
 
     Args:
@@ -256,9 +252,7 @@ async def step_execution(execution_id: str, manager: ExecutionManager = Depends(
 
 
 @router.post("/execution/{execution_id}/cancel")
-async def cancel_execution(
-    execution_id: str, manager: ExecutionManager = Depends(get_manager)
-):
+async def cancel_execution(execution_id: str, manager: ExecutionManager = Depends(get_manager)):
     """Cancel execution.
 
     Args:

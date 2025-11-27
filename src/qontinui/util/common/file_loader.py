@@ -7,7 +7,6 @@ traversal and unauthorized file access for local automation workflows.
 
 import re
 from pathlib import Path
-from typing import Optional
 
 
 class FilePathValidator:
@@ -22,15 +21,15 @@ class FilePathValidator:
 
     # Dangerous path patterns
     DANGEROUS_PATTERNS = [
-        r'\.\.',  # Parent directory reference
-        r'^/',    # Absolute path (Unix)
-        r'^[A-Za-z]:',  # Absolute path (Windows)
-        r'~',     # Home directory
-        r'\$',    # Environment variables
+        r"\.\.",  # Parent directory reference
+        r"^/",  # Absolute path (Unix)
+        r"^[A-Za-z]:",  # Absolute path (Windows)
+        r"~",  # Home directory
+        r"\$",  # Environment variables
     ]
 
     @classmethod
-    def validate_path(cls, file_path: str, project_root: Optional[Path] = None) -> Path:
+    def validate_path(cls, file_path: str, project_root: Path | None = None) -> Path:
         """Validate and normalize file path.
 
         Args:
@@ -47,12 +46,10 @@ class FilePathValidator:
         # Check for dangerous patterns
         for pattern in cls.DANGEROUS_PATTERNS:
             if re.search(pattern, file_path):
-                raise ValueError(
-                    f"Invalid file path: contains forbidden pattern '{pattern}'"
-                )
+                raise ValueError(f"Invalid file path: contains forbidden pattern '{pattern}'")
 
         # Ensure .py extension
-        if not file_path.endswith('.py'):
+        if not file_path.endswith(".py"):
             raise ValueError("File path must have .py extension")
 
         # Determine base path
@@ -69,9 +66,7 @@ class FilePathValidator:
             try:
                 full_path.relative_to(base_path)
             except ValueError:
-                raise ValueError(
-                    "File path must be within project directory"
-                )
+                raise ValueError("File path must be within project directory")
 
         # Check if file exists
         if not full_path.exists():
@@ -87,7 +82,7 @@ class FilePathValidator:
 class PythonFileLoader:
     """Loads and caches Python files for execution."""
 
-    def __init__(self, project_root: Optional[Path] = None):
+    def __init__(self, project_root: Path | None = None):
         """Initialize file loader.
 
         Args:
@@ -117,14 +112,11 @@ class PythonFileLoader:
             return self._cache[file_path]
 
         # Validate path
-        absolute_path = self.validator.validate_path(
-            file_path,
-            project_root=self.project_root
-        )
+        absolute_path = self.validator.validate_path(file_path, project_root=self.project_root)
 
         # Load file content
         try:
-            with open(absolute_path, 'r', encoding='utf-8') as f:
+            with open(absolute_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Cache content
@@ -135,16 +127,12 @@ class PythonFileLoader:
 
         except UnicodeDecodeError as e:
             raise UnicodeDecodeError(
-                e.encoding,
-                e.object,
-                e.start,
-                e.end,
-                f"File encoding error: {str(e)}"
+                e.encoding, e.object, e.start, e.end, f"File encoding error: {str(e)}"
             )
         except PermissionError:
             raise PermissionError(f"Permission denied: {file_path}")
 
-    def clear_cache(self, file_path: Optional[str] = None):
+    def clear_cache(self, file_path: str | None = None):
         """Clear file cache.
 
         Args:

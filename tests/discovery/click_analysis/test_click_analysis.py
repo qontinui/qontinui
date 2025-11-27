@@ -4,22 +4,21 @@ Tests the ClickBoundingBoxInferrer, ElementBoundaryFinder, and ClickContextAnaly
 classes that provide sophisticated bounding box inference from click locations.
 """
 
+
 import numpy as np
 import pytest
-from typing import Tuple
 
 from qontinui.discovery.click_analysis import (
     ClickBoundingBoxInferrer,
-    ElementBoundaryFinder,
     ClickContextAnalyzer,
-    InferredBoundingBox,
+    DetectionStrategy,
+    ElementBoundaryFinder,
+    ElementType,
     InferenceConfig,
     InferenceResult,
-    ElementType,
-    DetectionStrategy,
+    InferredBoundingBox,
     infer_bbox_from_click,
 )
-
 
 # Test fixtures for creating synthetic screenshots
 
@@ -31,12 +30,12 @@ def create_simple_button_screenshot(
     button_y: int = 280,
     button_w: int = 100,
     button_h: int = 40,
-    button_color: Tuple[int, int, int] = (50, 120, 200),
-    bg_color: Tuple[int, int, int] = (240, 240, 240),
+    button_color: tuple[int, int, int] = (50, 120, 200),
+    bg_color: tuple[int, int, int] = (240, 240, 240),
 ) -> np.ndarray:
     """Create a screenshot with a simple rectangular button."""
     screenshot = np.full((height, width, 3), bg_color, dtype=np.uint8)
-    screenshot[button_y:button_y + button_h, button_x:button_x + button_w] = button_color
+    screenshot[button_y : button_y + button_h, button_x : button_x + button_w] = button_color
     return screenshot
 
 
@@ -46,12 +45,12 @@ def create_icon_screenshot(
     icon_x: int = 100,
     icon_y: int = 100,
     icon_size: int = 32,
-    icon_color: Tuple[int, int, int] = (100, 100, 100),
-    bg_color: Tuple[int, int, int] = (255, 255, 255),
+    icon_color: tuple[int, int, int] = (100, 100, 100),
+    bg_color: tuple[int, int, int] = (255, 255, 255),
 ) -> np.ndarray:
     """Create a screenshot with a simple square icon."""
     screenshot = np.full((height, width, 3), bg_color, dtype=np.uint8)
-    screenshot[icon_y:icon_y + icon_size, icon_x:icon_x + icon_size] = icon_color
+    screenshot[icon_y : icon_y + icon_size, icon_x : icon_x + icon_size] = icon_color
     return screenshot
 
 
@@ -150,7 +149,10 @@ class TestInferredBoundingBox:
     def test_as_bbox_list(self):
         """Test conversion to COCO format list."""
         bbox = InferredBoundingBox(
-            x=100, y=200, width=80, height=40,
+            x=100,
+            y=200,
+            width=80,
+            height=40,
             confidence=0.9,
             strategy_used=DetectionStrategy.EDGE_BASED,
         )
@@ -161,7 +163,10 @@ class TestInferredBoundingBox:
     def test_contains_point(self):
         """Test point containment check."""
         bbox = InferredBoundingBox(
-            x=100, y=100, width=50, height=50,
+            x=100,
+            y=100,
+            width=50,
+            height=50,
             confidence=0.8,
             strategy_used=DetectionStrategy.CONTOUR_BASED,
         )
@@ -176,7 +181,10 @@ class TestInferredBoundingBox:
     def test_to_dict(self):
         """Test serialization to dictionary."""
         bbox = InferredBoundingBox(
-            x=100, y=200, width=80, height=40,
+            x=100,
+            y=200,
+            width=80,
+            height=40,
             confidence=0.85,
             strategy_used=DetectionStrategy.COLOR_SEGMENTATION,
             element_type=ElementType.BUTTON,
@@ -290,7 +298,10 @@ class TestClickContextAnalyzer:
         """Test classification of button element."""
         screenshot = create_simple_button_screenshot()
         bbox = InferredBoundingBox(
-            x=350, y=280, width=100, height=40,
+            x=350,
+            y=280,
+            width=100,
+            height=40,
             confidence=0.8,
             strategy_used=DetectionStrategy.CONTOUR_BASED,
         )
@@ -305,7 +316,10 @@ class TestClickContextAnalyzer:
         """Test classification of icon element."""
         screenshot = create_icon_screenshot()
         bbox = InferredBoundingBox(
-            x=100, y=100, width=32, height=32,
+            x=100,
+            y=100,
+            width=32,
+            height=32,
             confidence=0.8,
             strategy_used=DetectionStrategy.CONTOUR_BASED,
         )
@@ -320,7 +334,10 @@ class TestClickContextAnalyzer:
         """Test getting element type with confidence score."""
         screenshot = create_simple_button_screenshot()
         bbox = InferredBoundingBox(
-            x=350, y=280, width=100, height=40,
+            x=350,
+            y=280,
+            width=100,
+            height=40,
             confidence=0.8,
             strategy_used=DetectionStrategy.CONTOUR_BASED,
         )
@@ -565,10 +582,7 @@ class TestPerformance:
         screenshot = create_simple_button_screenshot()
         click_location = (400, 300)
 
-        results = [
-            inferrer.infer_bounding_box(screenshot, click_location)
-            for _ in range(5)
-        ]
+        results = [inferrer.infer_bounding_box(screenshot, click_location) for _ in range(5)]
 
         # All results should have same primary bbox
         bboxes = [r.primary_bbox.as_bbox_list() for r in results]

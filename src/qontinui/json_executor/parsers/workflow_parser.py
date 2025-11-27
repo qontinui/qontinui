@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..config_parser import QontinuiConfig, Workflow
+    from ..config_parser import Workflow
 
 
 class WorkflowParser:

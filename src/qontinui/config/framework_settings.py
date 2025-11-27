@@ -8,28 +8,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .qontinui_properties import (
-    AnalysisConfig,
-    AutomationConfig,
-    AutoScalingConfig,
-    CaptureConfig,
-    ConsoleActionConfig,
-    CoreConfig,
-    DatasetConfig,
-    DpiConfig,
-    GuiAccessConfig,
-    HighlightConfig,
-    IllustrationConfig,
-    ImageDebugConfig,
-    LoggingConfig,
-    MockConfig,
-    MonitorConfig,
-    MouseConfig,
     QontinuiProperties,
-    RecordingConfig,
-    ScreenshotConfig,
-    SikuliConfig,
-    StartupConfig,
-    TestingConfig,
 )
 
 logger = logging.getLogger(__name__)

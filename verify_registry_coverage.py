@@ -72,16 +72,17 @@ def main():
     # Import action_executors to trigger all @register_executor decorators
     print("Importing action_executors package to trigger registrations...")
     try:
-        from qontinui import action_executors
         from qontinui.action_executors import (
-            get_registered_action_types,
             get_executor_class,
+            get_registered_action_types,
         )
+
         print("✓ Import successful")
         print()
     except Exception as e:
         print(f"✗ Failed to import action_executors: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 
@@ -114,15 +115,32 @@ def main():
 
         # Categorize missing types
         categories = {
-            "Mouse": ["MOUSE_MOVE", "MOUSE_DOWN", "MOUSE_UP", "MOUSE_SCROLL", "SCROLL",
-                      "CLICK", "DOUBLE_CLICK", "RIGHT_CLICK", "DRAG"],
+            "Mouse": [
+                "MOUSE_MOVE",
+                "MOUSE_DOWN",
+                "MOUSE_UP",
+                "MOUSE_SCROLL",
+                "SCROLL",
+                "CLICK",
+                "DOUBLE_CLICK",
+                "RIGHT_CLICK",
+                "DRAG",
+            ],
             "Keyboard": ["KEY_DOWN", "KEY_UP", "KEY_PRESS", "TYPE"],
             "Vision": ["FIND", "EXISTS", "VANISH"],
             "Navigation": ["GO_TO_STATE", "RUN_WORKFLOW"],
             "Utility": ["WAIT", "SCREENSHOT"],
             "Control Flow": ["LOOP", "IF", "BREAK", "CONTINUE"],
-            "Data Operations": ["SET_VARIABLE", "GET_VARIABLE", "MAP", "REDUCE",
-                                "SORT", "FILTER", "STRING_OPERATION", "MATH_OPERATION"],
+            "Data Operations": [
+                "SET_VARIABLE",
+                "GET_VARIABLE",
+                "MAP",
+                "REDUCE",
+                "SORT",
+                "FILTER",
+                "STRING_OPERATION",
+                "MATH_OPERATION",
+            ],
         }
 
         for category, category_types in categories.items():
@@ -141,7 +159,9 @@ def main():
         print("=" * 80)
         for action_type in sorted(extra_types):
             executor_class = get_executor_class(action_type)
-            print(f"  + {action_type} -> {executor_class.__name__ if executor_class else 'Unknown'}")
+            print(
+                f"  + {action_type} -> {executor_class.__name__ if executor_class else 'Unknown'}"
+            )
 
     # Report which executor handles each registered action type
     print()

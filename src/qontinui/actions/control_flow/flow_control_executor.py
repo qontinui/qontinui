@@ -6,7 +6,6 @@ flow control operations within loops.
 """
 
 import logging
-from typing import Any
 
 from qontinui.config import Action, BreakActionConfig, ContinueActionConfig, get_typed_config
 from qontinui.orchestration.execution_context import ExecutionContext
@@ -108,16 +107,10 @@ class FlowControlExecutor:
             should_break = self.condition_evaluator.evaluate_condition(config.condition)
 
             if not should_break:
-                logger.debug(
-                    "BREAK condition not met for action %s, continuing loop",
-                    action.id
-                )
+                logger.debug("BREAK condition not met for action %s, continuing loop", action.id)
                 return
 
-            logger.info(
-                "BREAK condition met for action %s, breaking loop",
-                action.id
-            )
+            logger.info("BREAK condition met for action %s, breaking loop", action.id)
         else:
             logger.info("Executing unconditional BREAK for action %s", action.id)
 
@@ -178,14 +171,12 @@ class FlowControlExecutor:
 
             if not should_continue:
                 logger.debug(
-                    "CONTINUE condition not met for action %s, proceeding normally",
-                    action.id
+                    "CONTINUE condition not met for action %s, proceeding normally", action.id
                 )
                 return
 
             logger.info(
-                "CONTINUE condition met for action %s, skipping to next iteration",
-                action.id
+                "CONTINUE condition met for action %s, skipping to next iteration", action.id
             )
         else:
             logger.info("Executing unconditional CONTINUE for action %s", action.id)

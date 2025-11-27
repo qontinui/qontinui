@@ -8,9 +8,9 @@ import time
 from dataclasses import dataclass
 
 from ....action_interface import ActionInterface
-from ....hal.factory import HALFactory
 from ....action_result import ActionResult
 from ....action_type import ActionType
+from ....hal.factory import HALFactory
 from ....object_collection import ObjectCollection
 from .mouse_press_options import MouseButton
 from .mouse_up_options import MouseUpOptions

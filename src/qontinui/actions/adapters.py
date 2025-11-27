@@ -6,7 +6,7 @@ This module uses the Facade pattern with composition, delegating to specialized
 adapters for mouse, keyboard, and screen operations following Single Responsibility Principle.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Any
 
 from .adapter_impl.adapter_result import AdapterResult

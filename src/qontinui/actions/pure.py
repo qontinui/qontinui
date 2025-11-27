@@ -45,15 +45,21 @@ class UnifiedInputController:
 
     def mouse_down(self, button: MouseButton | str) -> None:
         """Press mouse button."""
-        self._mouse.press(button if isinstance(button, MouseButton) else MouseButton[button.upper()])
+        self._mouse.press(
+            button if isinstance(button, MouseButton) else MouseButton[button.upper()]
+        )
 
     def mouse_up(self, button: MouseButton | str) -> None:
         """Release mouse button."""
-        self._mouse.release(button if isinstance(button, MouseButton) else MouseButton[button.upper()])
+        self._mouse.release(
+            button if isinstance(button, MouseButton) else MouseButton[button.upper()]
+        )
 
     def click_at(self, x: int, y: int, button: MouseButton | str, clicks: int = 1) -> None:
         """Click at coordinates."""
-        self._mouse.click(x, y, button if isinstance(button, MouseButton) else MouseButton[button.upper()], clicks)
+        self._mouse.click(
+            x, y, button if isinstance(button, MouseButton) else MouseButton[button.upper()], clicks
+        )
 
     def scroll(self, clicks: int) -> None:
         """Scroll mouse wheel."""

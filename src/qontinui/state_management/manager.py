@@ -9,7 +9,6 @@ import numpy as np
 from transitions import Machine
 from transitions.extensions import HierarchicalMachine
 
-from ..exceptions import StateException, StateTransitionException
 from .models import Element, State, StateGraph, Transition
 
 logger = logging.getLogger(__name__)
@@ -137,8 +136,7 @@ class QontinuiStateManager:
         # Update evidence accumulator - use max to allow direct activation
         current_evidence = self.state_evidence.get(state_name, 0.0)
         self.state_evidence[state_name] = max(
-            current_evidence * self.evidence_decay,
-            evidence_score
+            current_evidence * self.evidence_decay, evidence_score
         )
 
         # Check if state should be activated

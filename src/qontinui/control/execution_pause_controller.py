@@ -72,6 +72,7 @@ class ExecutionPauseController:
         # Use provided controller or get global singleton
         if execution_controller is None:
             from .execution_controller_singleton import get_global_execution_controller
+
             execution_controller = get_global_execution_controller()
 
         self.execution_controller = execution_controller

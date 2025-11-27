@@ -19,9 +19,7 @@ class PatternFactory:
     """
 
     @staticmethod
-    def from_image(
-        image: Any, name: str | None = None, pattern_id: str | None = None
-    ) -> "Pattern":
+    def from_image(image: Any, name: str | None = None, pattern_id: str | None = None) -> "Pattern":
         """Create Pattern from Image with full mask.
 
         Args:
@@ -111,9 +109,7 @@ class PatternFactory:
 
         # Extract pixel data from match
         pixel_data = (
-            match.image.get_mat_bgr()
-            if match.image
-            else np.zeros((10, 10, 3), dtype=np.uint8)
+            match.image.get_mat_bgr() if match.image else np.zeros((10, 10, 3), dtype=np.uint8)
         )
 
         # Create full mask
@@ -153,11 +149,7 @@ class PatternFactory:
 
         # Extract pixel data and mask
         pixel_data = state_image.pixel_data
-        mask = (
-            state_image.mask
-            if state_image.mask is not None
-            else np.ones(pixel_data.shape[:2])
-        )
+        mask = state_image.mask if state_image.mask is not None else np.ones(pixel_data.shape[:2])
 
         return Pattern(
             id=pattern_id,
@@ -169,16 +161,12 @@ class PatternFactory:
             width=state_image.x2 - state_image.x,
             height=state_image.y2 - state_image.y,
             mask_density=(
-                state_image.mask_density
-                if hasattr(state_image, "mask_density")
-                else 1.0
+                state_image.mask_density if hasattr(state_image, "mask_density") else 1.0
             ),
             mask_type="imported",
             tags=state_image.tags if hasattr(state_image, "tags") else [],
             created_at=(
-                state_image.created_at
-                if hasattr(state_image, "created_at")
-                else datetime.now()
+                state_image.created_at if hasattr(state_image, "created_at") else datetime.now()
             ),
         )
 

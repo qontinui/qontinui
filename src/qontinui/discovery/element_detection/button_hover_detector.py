@@ -13,7 +13,7 @@ appearance on hover, which is a strong indicator of clickability.
 
 import logging
 from io import BytesIO
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -59,7 +59,7 @@ class ButtonHoverDetector(BaseAnalyzer):
     def required_screenshots(self) -> int:
         return 2  # Needs at least 2 screenshots to compare
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             # Difference detection parameters
             "min_color_change": 15,  # Minimum color difference to detect change
@@ -84,9 +84,7 @@ class ButtonHoverDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Perform hover state button detection"""
-        logger.info(
-            f"Running button hover detection on {len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running button hover detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -146,9 +144,7 @@ class ButtonHoverDetector(BaseAnalyzer):
         # Merge overlapping detections from different comparisons
         merged_elements = self._merge_overlapping_elements(all_elements)
 
-        logger.info(
-            f"Detected {len(merged_elements)} button candidates using hover state analysis"
-        )
+        logger.info(f"Detected {len(merged_elements)} button candidates using hover state analysis")
 
         return AnalysisResult(
             analyzer_type=self.analysis_type,
@@ -168,7 +164,7 @@ class ButtonHoverDetector(BaseAnalyzer):
             },
         )
 
-    def _load_images_grayscale(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_grayscale(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots as grayscale"""
         images = []
         for data in screenshot_data:
@@ -176,14 +172,12 @@ class ButtonHoverDetector(BaseAnalyzer):
             images.append(np.array(img, dtype=np.uint8))
         return images
 
-    def _load_images_color(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_color(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots in color (BGR for OpenCV)"""
         images = []
         for data in screenshot_data:
             img = Image.open(BytesIO(data)).convert("RGB")
-            images.append(
-                cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR)
-            )
+            images.append(cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR))
         return images
 
     async def _compare_screenshots(
@@ -194,8 +188,8 @@ class ButtonHoverDetector(BaseAnalyzer):
         img2_color: np.ndarray,
         idx1: int,
         idx2: int,
-        params: Dict[str, Any],
-    ) -> List[DetectedElement]:
+        params: dict[str, Any],
+    ) -> list[DetectedElement]:
         """
         Compare two screenshots to detect hover state changes
 
@@ -234,21 +228,15 @@ class ButtonHoverDetector(BaseAnalyzer):
         )
 
         # Close small gaps
-        combined_mask = cv2.morphologyEx(
-            combined_mask, cv2.MORPH_CLOSE, kernel, iterations=2
-        )
+        combined_mask = cv2.morphologyEx(combined_mask, cv2.MORPH_CLOSE, kernel, iterations=2)
 
         # Remove small noise
         combined_mask = cv2.morphologyEx(combined_mask, cv2.MORPH_OPEN, kernel)
 
         # Step 4: Find contours of changed regions
-        contours, _ = cv2.findContours(
-            combined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(combined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        logger.debug(
-            f"Found {len(contours)} changed regions between screenshots {idx1} and {idx2}"
-        )
+        logger.debug(f"Found {len(contours)} changed regions between screenshots {idx1} and {idx2}")
 
         for contour in contours:
             # Get bounding rectangle
@@ -265,9 +253,7 @@ class ButtonHoverDetector(BaseAnalyzer):
 
             # Step 6: Filter by aspect ratio
             aspect_ratio = w / h if h > 0 else 0
-            if not (
-                params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]
-            ):
+            if not (params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]):
                 continue
 
             # Step 7: Analyze the change in this region
@@ -284,9 +270,7 @@ class ButtonHoverDetector(BaseAnalyzer):
                 continue
 
             # Step 8: Calculate confidence
-            confidence = self._calculate_confidence(
-                w, h, aspect_ratio, change_info, params
-            )
+            confidence = self._calculate_confidence(w, h, aspect_ratio, change_info, params)
 
             if confidence < params["min_confidence"]:
                 continue
@@ -294,16 +278,12 @@ class ButtonHoverDetector(BaseAnalyzer):
             # Create detected element
             # Use the screenshot index where the button is most prominent
             screenshot_idx = (
-                idx1
-                if change_info["avg_brightness_1"] > change_info["avg_brightness_2"]
-                else idx2
+                idx1 if change_info["avg_brightness_1"] > change_info["avg_brightness_2"] else idx2
             )
 
             elements.append(
                 DetectedElement(
-                    bounding_box=BoundingBox(
-                        x=int(x), y=int(y), width=int(w), height=int(h)
-                    ),
+                    bounding_box=BoundingBox(x=int(x), y=int(y), width=int(w), height=int(h)),
                     confidence=confidence,
                     label="Button (hover detected)",
                     element_type="button",
@@ -323,8 +303,8 @@ class ButtonHoverDetector(BaseAnalyzer):
         region1: np.ndarray,
         region2: np.ndarray,
         change_mask: np.ndarray,
-        params: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        params: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Analyze how a region changed between two screenshots
 
@@ -377,8 +357,8 @@ class ButtonHoverDetector(BaseAnalyzer):
         width: int,
         height: int,
         aspect_ratio: float,
-        change_info: Dict[str, Any],
-        params: Dict[str, Any],
+        change_info: dict[str, Any],
+        params: dict[str, Any],
     ) -> float:
         """
         Calculate confidence score for hover-based button detection
@@ -414,9 +394,7 @@ class ButtonHoverDetector(BaseAnalyzer):
 
         return min(1.0, max(0.0, confidence))
 
-    def _merge_overlapping_elements(
-        self, elements: List[DetectedElement]
-    ) -> List[DetectedElement]:
+    def _merge_overlapping_elements(self, elements: list[DetectedElement]) -> list[DetectedElement]:
         """
         Merge overlapping button detections from different screenshot comparisons
 
@@ -447,12 +425,8 @@ class ButtonHoverDetector(BaseAnalyzer):
                     avg_bbox = BoundingBox(
                         x=(element.bounding_box.x + existing.bounding_box.x) // 2,
                         y=(element.bounding_box.y + existing.bounding_box.y) // 2,
-                        width=(element.bounding_box.width + existing.bounding_box.width)
-                        // 2,
-                        height=(
-                            element.bounding_box.height + existing.bounding_box.height
-                        )
-                        // 2,
+                        width=(element.bounding_box.width + existing.bounding_box.width) // 2,
+                        height=(element.bounding_box.height + existing.bounding_box.height) // 2,
                     )
 
                     # Create merged element with combined metadata
@@ -470,8 +444,7 @@ class ButtonHoverDetector(BaseAnalyzer):
                         metadata={
                             **best_element.metadata,
                             "compared_screenshots": sorted(compared_screenshots),
-                            "num_detections": existing.metadata.get("num_detections", 1)
-                            + 1,
+                            "num_detections": existing.metadata.get("num_detections", 1) + 1,
                         },
                     )
 

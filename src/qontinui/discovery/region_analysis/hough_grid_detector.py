@@ -6,13 +6,17 @@ grid structures.
 """
 
 import logging
-from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
 
-from qontinui.discovery.region_analysis.base import BaseRegionAnalyzer, BoundingBox, DetectedRegion, RegionType
+from qontinui.discovery.region_analysis.base import (
+    BaseRegionAnalyzer,
+    BoundingBox,
+    DetectedRegion,
+    RegionType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +38,7 @@ class HoughGridDetector(BaseRegionAnalyzer):
     def name(self) -> str:
         return "hough_grid_detector"
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "canny_low": 50,
             "canny_high": 150,
@@ -49,7 +53,7 @@ class HoughGridDetector(BaseRegionAnalyzer):
             "min_grid_cols": 2,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> List[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
         """Detect inventory grids using Hough line detection"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -78,10 +82,7 @@ class HoughGridDetector(BaseRegionAnalyzer):
         # Separate horizontal and vertical lines
         h_lines, v_lines = self._separate_lines(lines, params)
 
-        if (
-            len(h_lines) < params["min_grid_rows"] + 1
-            or len(v_lines) < params["min_grid_cols"] + 1
-        ):
+        if len(h_lines) < params["min_grid_rows"] + 1 or len(v_lines) < params["min_grid_cols"] + 1:
             return []
 
         # Find uniform spacing in lines
@@ -100,8 +101,8 @@ class HoughGridDetector(BaseRegionAnalyzer):
         return regions
 
     def _separate_lines(
-        self, lines: np.ndarray, params: Dict[str, Any]
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        self, lines: np.ndarray, params: dict[str, Any]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """
         Separate lines into horizontal and vertical
 
@@ -157,10 +158,10 @@ class HoughGridDetector(BaseRegionAnalyzer):
 
     def _find_grid_configurations(
         self,
-        h_lines: List[Dict[str, Any]],
-        v_lines: List[Dict[str, Any]],
-        params: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        h_lines: list[dict[str, Any]],
+        v_lines: list[dict[str, Any]],
+        params: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """
         Find grid configurations from lines with uniform spacing
 
@@ -213,8 +214,8 @@ class HoughGridDetector(BaseRegionAnalyzer):
         return configs
 
     def _find_evenly_spaced_lines(
-        self, lines: List[Dict[str, Any]], position_key: str, params: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, lines: list[dict[str, Any]], position_key: str, params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """
         Find groups of evenly-spaced lines
 
@@ -251,9 +252,7 @@ class HoughGridDetector(BaseRegionAnalyzer):
                         spacings.append(actual_spacing)
 
             if len(group) >= 3:  # At least 3 lines (2 cells)
-                groups.append(
-                    {"lines": group, "spacing": np.mean(spacings) if spacings else 0}
-                )
+                groups.append({"lines": group, "spacing": np.mean(spacings) if spacings else 0})
 
         # Return best group (most lines)
         if groups:
@@ -263,8 +262,8 @@ class HoughGridDetector(BaseRegionAnalyzer):
         return []
 
     def _extract_grid_from_lines(
-        self, config: Dict[str, Any], img_shape: Tuple[int, int], params: Dict[str, Any]
-    ) -> Optional[DetectedRegion]:
+        self, config: dict[str, Any], img_shape: tuple[int, int], params: dict[str, Any]
+    ) -> DetectedRegion | None:
         """Extract grid region from line configuration"""
         h_lines = config["h_lines"]
         v_lines = config["v_lines"]

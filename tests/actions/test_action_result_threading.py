@@ -1,7 +1,6 @@
 """Threading tests for ActionResultBuilder to verify thread-safety of concurrent operations."""
 
 import threading
-from typing import List
 
 import pytest
 
@@ -20,7 +19,7 @@ class TestActionResultBuilderThreading:
         builder = ActionResultBuilder()
         num_threads = 10
         increments_per_thread = 100
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         # Simulate read-modify-write with builder
         lock = threading.Lock()
@@ -58,7 +57,7 @@ class TestActionResultBuilderThreading:
         builder = ActionResultBuilder()
         num_threads = 10
         matches_per_thread = 100
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         # Simple mock match object
         class MockMatch:
@@ -100,7 +99,7 @@ class TestActionResultBuilderThreading:
         builder = ActionResultBuilder()
         num_threads = 10
         regions_per_thread = 100
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         # Simple mock region object
         class MockRegion:
@@ -138,7 +137,7 @@ class TestActionResultBuilderThreading:
         builder = ActionResultBuilder()
         num_threads = 10
         movements_per_thread = 100
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         # Simple mock movement object
         class MockMovement:
@@ -176,7 +175,7 @@ class TestActionResultBuilderThreading:
         builder = ActionResultBuilder()
         num_threads = 10
         records_per_thread = 100
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         # Simple mock execution record object
         class MockExecutionRecord:
@@ -214,7 +213,7 @@ class TestActionResultBuilderThreading:
         builder = ActionResultBuilder()
         num_threads = 10
         operations_per_thread = 50
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         class MockMatch:
             def __init__(self, value: int):
@@ -302,8 +301,8 @@ class TestActionResultBuilderThreading:
         """
         builder = ActionResultBuilder()
         stop_flag = threading.Event()
-        threads: List[threading.Thread] = []
-        results: List = []
+        threads: list[threading.Thread] = []
+        results: list = []
         results_lock = threading.Lock()
 
         class MockMatch:

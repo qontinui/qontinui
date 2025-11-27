@@ -40,11 +40,7 @@ class CachedScreenshotProvider(ScreenshotProvider):
     - Region mismatch (full screen vs. specific region)
     """
 
-    def __init__(
-        self,
-        provider: ScreenshotProvider,
-        ttl_seconds: float = 0.1
-    ) -> None:
+    def __init__(self, provider: ScreenshotProvider, ttl_seconds: float = 0.1) -> None:
         """Initialize cached provider.
 
         Args:
@@ -87,19 +83,11 @@ class CachedScreenshotProvider(ScreenshotProvider):
         image = self.provider.capture(region)
 
         # Update cache
-        self._cache = CacheEntry(
-            image=image,
-            timestamp=current_time,
-            region=region
-        )
+        self._cache = CacheEntry(image=image, timestamp=current_time, region=region)
 
         return image
 
-    def _is_cache_valid(
-        self,
-        current_time: float,
-        region: Region | None
-    ) -> bool:
+    def _is_cache_valid(self, current_time: float, region: Region | None) -> bool:
         """Check if cached screenshot is still valid.
 
         Args:

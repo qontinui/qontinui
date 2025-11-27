@@ -6,7 +6,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-from .models import DetectionStrategy, InferenceConfig, InferredBoundingBox, ElementType
+from .models import DetectionStrategy, InferenceConfig, InferredBoundingBox
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +69,7 @@ class ElementBoundaryFinder:
                 continue
 
             try:
-                strategy_candidates = self._apply_strategy(
-                    screenshot, click_location, strategy
-                )
+                strategy_candidates = self._apply_strategy(screenshot, click_location, strategy)
                 candidates.extend(strategy_candidates)
             except Exception as e:
                 logger.warning(f"Strategy {strategy.value} failed: {e}")
@@ -138,9 +136,7 @@ class ElementBoundaryFinder:
             edges = cv2.dilate(edges, kernel, iterations=1)
 
             # Find contours
-            contours, hierarchy = cv2.findContours(
-                edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-            )
+            contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
             for i, contour in enumerate(contours):
                 # Check if click point is inside contour
@@ -167,8 +163,12 @@ class ElementBoundaryFinder:
 
                 center_dist = self._distance_to_center(
                     InferredBoundingBox(
-                        x=x, y=y, width=w, height=h,
-                        confidence=0, strategy_used=DetectionStrategy.CONTOUR_BASED
+                        x=x,
+                        y=y,
+                        width=w,
+                        height=h,
+                        confidence=0,
+                        strategy_used=DetectionStrategy.CONTOUR_BASED,
                     ),
                     click_location,
                 )
@@ -259,7 +259,7 @@ class ElementBoundaryFinder:
             return []
 
         # Calculate confidence based on edge strength
-        edge_roi = edges[top_edge:bottom_edge + 1, left_edge:right_edge + 1]
+        edge_roi = edges[top_edge : bottom_edge + 1, left_edge : right_edge + 1]
         edge_density = np.sum(edge_roi > 0) / edge_roi.size if edge_roi.size > 0 else 0
 
         confidence = 0.4 + edge_density * 0.4
@@ -473,7 +473,7 @@ class ElementBoundaryFinder:
         # Calculate gradients
         grad_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
         grad_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
-        gradient_magnitude = np.sqrt(grad_x ** 2 + grad_y ** 2)
+        gradient_magnitude = np.sqrt(grad_x**2 + grad_y**2)
 
         # Threshold gradient
         grad_thresh = np.percentile(gradient_magnitude, 80)

@@ -9,7 +9,7 @@ Accuracy: 80-90% for standard close buttons
 """
 
 from io import BytesIO
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -38,14 +38,14 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         return "window_close_button_detector"
 
     @property
-    def supported_region_types(self) -> List[RegionType]:
+    def supported_region_types(self) -> list[RegionType]:
         return [RegionType.CLOSE_BUTTON]
 
     @property
     def version(self) -> str:
         return "1.0.0"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize Window Close Button detector.
 
@@ -64,7 +64,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         self.search_right_bias = params["search_right_bias"]
         self.template_match_threshold = params["template_match_threshold"]
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_button_size": 16,
             "max_button_size": 48,
@@ -98,9 +98,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -115,7 +113,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
 
     def _detect_close_buttons(
         self, gray: np.ndarray, screenshot_index: int
-    ) -> List[DetectedRegion]:
+    ) -> list[DetectedRegion]:
         """Detect close buttons in an image."""
         detected_buttons = []
 
@@ -129,9 +127,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         # Method 1: Template matching with X patterns
         for size in range(self.min_button_size, self.max_button_size + 1, 4):
             template = self._create_x_template(size)
-            buttons = self._template_match(
-                search_region, template, size, search_left, 0
-            )
+            buttons = self._template_match(search_region, template, size, search_left, 0)
             detected_buttons.extend(buttons)
 
         # Method 2: Look for small square regions with diagonal lines
@@ -177,12 +173,9 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         size: int,
         offset_x: int,
         offset_y: int,
-    ) -> List[Tuple]:
+    ) -> list[tuple]:
         """Perform template matching."""
-        if (
-            search_region.shape[0] < template.shape[0]
-            or search_region.shape[1] < template.shape[1]
-        ):
+        if search_region.shape[0] < template.shape[0] or search_region.shape[1] < template.shape[1]:
             return []
 
         result = cv2.matchTemplate(search_region, template, cv2.TM_CCOEFF_NORMED)
@@ -191,7 +184,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         locations = np.where(result >= self.template_match_threshold)
 
         buttons = []
-        for pt in zip(*locations[::-1]):
+        for pt in zip(*locations[::-1], strict=False):
             x = pt[0] + offset_x
             y = pt[1] + offset_y
             confidence = float(result[pt[1], pt[0]])
@@ -202,7 +195,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
 
     def _detect_geometric_x(
         self, search_region: np.ndarray, offset_x: int, offset_y: int
-    ) -> List[Tuple]:
+    ) -> list[tuple]:
         """Detect X patterns using geometric analysis."""
         buttons = []
 
@@ -252,9 +245,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
                         if abs(w - h) < w * 0.3:
                             x = min_x + offset_x
                             y = min_y + offset_y
-                            confidence = (
-                                0.6  # Moderate confidence for geometric detection
-                            )
+                            confidence = 0.6  # Moderate confidence for geometric detection
 
                             buttons.append((x, y, w, h, confidence, "geometric_x"))
 
@@ -292,7 +283,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
             x1, y1, x2, y2, x3, y3
         ) != ccw(x1, y1, x2, y2, x4, y4)
 
-    def _remove_duplicates(self, buttons: List[Tuple]) -> List[Tuple]:
+    def _remove_duplicates(self, buttons: list[tuple]) -> list[tuple]:
         """Remove duplicate detections (nearby buttons)."""
         if not buttons:
             return buttons

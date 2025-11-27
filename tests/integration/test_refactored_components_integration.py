@@ -6,8 +6,7 @@ with real input sequences and no interference between components.
 
 import threading
 import time
-from typing import List
-from unittest.mock import MagicMock, Mock, call
+from unittest.mock import Mock
 
 import pytest
 from pynput import keyboard, mouse
@@ -80,7 +79,7 @@ class TestKeyboardMouseIntegration:
         kbd_ops = KeyboardOperations(mock_keyboard)
         mouse_ops = MouseOperations(mock_mouse)
 
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def keyboard_worker():
@@ -369,7 +368,7 @@ class TestConcurrentComponentUsage:
         mock_keyboard = Mock(spec=keyboard.Controller)
         kbd_ops = KeyboardOperations(mock_keyboard)
 
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def type_worker(worker_id: int):
@@ -399,7 +398,7 @@ class TestConcurrentComponentUsage:
 
         mouse_ops = MouseOperations(mock_mouse)
 
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def click_worker(worker_id: int):

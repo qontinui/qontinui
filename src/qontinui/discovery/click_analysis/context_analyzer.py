@@ -148,7 +148,7 @@ class ClickContextAnalyzer:
             area = cv2.contourArea(largest)
             perimeter = cv2.arcLength(largest, True)
             if perimeter > 0:
-                circularity = 4 * np.pi * area / (perimeter ** 2)
+                circularity = 4 * np.pi * area / (perimeter**2)
                 features["circularity"] = float(circularity)
             else:
                 features["circularity"] = 0.0

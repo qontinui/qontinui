@@ -19,7 +19,7 @@ Example:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 
 class EventData(Protocol):
@@ -102,10 +102,10 @@ class MatchAttemptedData:
     find_all_mode: bool = False
     """Whether finding all matches or just the best match."""
 
-    image_name: Optional[str] = None
+    image_name: str | None = None
     """Human-readable name of the image/pattern (if available)."""
 
-    search_region: Optional[dict[str, int]] = None
+    search_region: dict[str, int] | None = None
     """Region of the screenshot being searched (x, y, width, height) if specified."""
 
     version: str = "2.0"
@@ -184,13 +184,13 @@ class ActionStartedData:
     timestamp: float
     """Start timestamp in seconds since epoch."""
 
-    target: Optional[dict[str, Any]] = None
+    target: dict[str, Any] | None = None
     """Target element/pattern for the action (if applicable)."""
 
     parameters: dict[str, Any] = field(default_factory=dict)
     """Action-specific parameters and configuration."""
 
-    context_id: Optional[str] = None
+    context_id: str | None = None
     """Optional context identifier for grouping related actions."""
 
     version: str = "2.0"
@@ -269,7 +269,7 @@ class ActionCompletedData:
     result: dict[str, Any] = field(default_factory=dict)
     """Action-specific result data."""
 
-    context_id: Optional[str] = None
+    context_id: str | None = None
     """Optional context identifier for grouping related actions."""
 
     version: str = "2.0"
@@ -352,13 +352,13 @@ class ActionFailedData:
     timestamp: float
     """Failure timestamp in seconds since epoch."""
 
-    stack_trace: Optional[str] = None
+    stack_trace: str | None = None
     """Optional stack trace for debugging."""
 
     error_context: dict[str, Any] = field(default_factory=dict)
     """Additional context about the error."""
 
-    context_id: Optional[str] = None
+    context_id: str | None = None
     """Optional context identifier for grouping related actions."""
 
     version: str = "2.0"
@@ -408,12 +408,7 @@ class ActionFailedData:
 
 
 # Type aliases for convenience
-EventDataType = (
-    MatchAttemptedData
-    | ActionStartedData
-    | ActionCompletedData
-    | ActionFailedData
-)
+EventDataType = MatchAttemptedData | ActionStartedData | ActionCompletedData | ActionFailedData
 
 __all__ = [
     "EventData",

@@ -10,7 +10,7 @@ Accuracy: 75-85% for clear text with good contrast
 """
 
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -39,14 +39,14 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
         return "connected_components_text_detector"
 
     @property
-    def supported_region_types(self) -> List[RegionType]:
+    def supported_region_types(self) -> list[RegionType]:
         return [RegionType.TEXT_AREA]
 
     @property
     def version(self) -> str:
         return "1.0.0"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize Connected Components text detector.
 
@@ -68,7 +68,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
         self.dilation_iterations = params["dilation_iterations"]
         self.use_adaptive_threshold = params["use_adaptive_threshold"]
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_area": 50,
             "max_area": 10000,
@@ -105,9 +105,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -123,9 +121,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
             },
         )
 
-    def _detect_text_regions(
-        self, gray: np.ndarray, screenshot_index: int
-    ) -> List[DetectedRegion]:
+    def _detect_text_regions(self, gray: np.ndarray, screenshot_index: int) -> list[DetectedRegion]:
         """Detect text regions in a grayscale image."""
         # Threshold the image
         if self.use_adaptive_threshold:
@@ -135,9 +131,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
             )
         else:
             # Simple Otsu threshold
-            _, binary = cv2.threshold(
-                gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
-            )
+            _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
         # Morphological operations to connect text characters
         kernel = cv2.getStructuringElement(
@@ -168,10 +162,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
 
             # Filter by aspect ratio
             aspect_ratio = w / h if h > 0 else 0
-            if (
-                aspect_ratio < self.min_aspect_ratio
-                or aspect_ratio > self.max_aspect_ratio
-            ):
+            if aspect_ratio < self.min_aspect_ratio or aspect_ratio > self.max_aspect_ratio:
                 continue
 
             # Calculate solidity (compactness)
@@ -198,9 +189,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
 
             # Calculate confidence based on properties
             # Higher solidity and moderate aspect ratio = higher confidence
-            aspect_score = 1.0 - min(
-                abs(aspect_ratio - 3.0) / 7.0, 1.0
-            )  # Prefer ~3:1 ratio
+            aspect_score = 1.0 - min(abs(aspect_ratio - 3.0) / 7.0, 1.0)  # Prefer ~3:1 ratio
             solidity_score = solidity
             confidence = (aspect_score * 0.4 + solidity_score * 0.6) * 0.75
 
