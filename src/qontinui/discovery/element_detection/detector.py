@@ -7,7 +7,6 @@ OCR, ML-based detection).
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -25,10 +24,10 @@ class DetectedElement:
     """
 
     element_type: str
-    bounds: Tuple[int, int, int, int]  # x, y, width, height
+    bounds: tuple[int, int, int, int]  # x, y, width, height
     confidence: float
-    features: Optional[dict] = None
-    image: Optional[np.ndarray] = None
+    features: dict | None = None
+    image: np.ndarray | None = None
 
     def __repr__(self) -> str:
         """String representation of detected element."""
@@ -49,7 +48,7 @@ class ElementDetector(ABC):
     """
 
     @abstractmethod
-    def detect(self, screenshot: np.ndarray) -> List[DetectedElement]:
+    def detect(self, screenshot: np.ndarray) -> list[DetectedElement]:
         """Detect elements in a screenshot.
 
         Args:
@@ -77,7 +76,7 @@ class CompositeElementDetector(ElementDetector):
     handling overlapping detections and selecting the best results.
     """
 
-    def __init__(self, detectors: Optional[List[ElementDetector]] = None):
+    def __init__(self, detectors: list[ElementDetector] | None = None):
         """Initialize composite detector.
 
         Args:
@@ -87,7 +86,7 @@ class CompositeElementDetector(ElementDetector):
         self.confidence_threshold = 0.7
         self.iou_threshold = 0.5  # For non-maximum suppression
 
-    def detect(self, screenshot: np.ndarray) -> List[DetectedElement]:
+    def detect(self, screenshot: np.ndarray) -> list[DetectedElement]:
         """Detect elements using all configured detectors.
 
         Args:
@@ -96,7 +95,7 @@ class CompositeElementDetector(ElementDetector):
         Returns:
             Combined list of detected elements with duplicates removed
         """
-        all_elements: List[DetectedElement] = []
+        all_elements: list[DetectedElement] = []
 
         # Run all detectors
         for detector in self.detectors:
@@ -131,9 +130,7 @@ class CompositeElementDetector(ElementDetector):
         """
         self.detectors.append(detector)
 
-    def _non_maximum_suppression(
-        self, elements: List[DetectedElement]
-    ) -> List[DetectedElement]:
+    def _non_maximum_suppression(self, elements: list[DetectedElement]) -> list[DetectedElement]:
         """Apply non-maximum suppression to remove overlapping detections.
 
         Args:
@@ -164,7 +161,7 @@ class CompositeElementDetector(ElementDetector):
         return keep
 
     def _calculate_iou(
-        self, box1: Tuple[int, int, int, int], box2: Tuple[int, int, int, int]
+        self, box1: tuple[int, int, int, int], box2: tuple[int, int, int, int]
     ) -> float:
         """Calculate Intersection over Union of two bounding boxes.
 
@@ -204,7 +201,7 @@ class TemplateDetector(ElementDetector):
     TODO: Implement template matching detection
     """
 
-    def detect(self, screenshot: np.ndarray) -> List[DetectedElement]:
+    def detect(self, screenshot: np.ndarray) -> list[DetectedElement]:
         """Detect elements using template matching."""
         raise NotImplementedError("Template detection not yet implemented")
 
@@ -219,7 +216,7 @@ class FeatureDetector(ElementDetector):
     TODO: Implement feature-based detection (SIFT, ORB, etc.)
     """
 
-    def detect(self, screenshot: np.ndarray) -> List[DetectedElement]:
+    def detect(self, screenshot: np.ndarray) -> list[DetectedElement]:
         """Detect elements using feature detection."""
         raise NotImplementedError("Feature detection not yet implemented")
 
@@ -234,7 +231,7 @@ class OCRDetector(ElementDetector):
     TODO: Implement OCR integration
     """
 
-    def detect(self, screenshot: np.ndarray) -> List[DetectedElement]:
+    def detect(self, screenshot: np.ndarray) -> list[DetectedElement]:
         """Detect text elements using OCR."""
         raise NotImplementedError("OCR detection not yet implemented")
 

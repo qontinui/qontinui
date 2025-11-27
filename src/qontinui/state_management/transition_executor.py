@@ -25,8 +25,9 @@ Example:
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Any
 
 from qontinui.exceptions import StateException
 
@@ -49,10 +50,10 @@ class TransitionExecutionResult:
     """
 
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
     context: dict[str, Any] = field(default_factory=dict)
-    transition_id: Optional[str] = None
-    transition_name: Optional[str] = None
+    transition_id: str | None = None
+    transition_name: str | None = None
     activated_states: set[int] = field(default_factory=set)
     deactivated_states: set[int] = field(default_factory=set)
     active_states_after: set[int] = field(default_factory=set)
@@ -92,7 +93,7 @@ class TransitionExecutor:
         self.event_emitter = event_emitter
 
     def execute_transition(
-        self, transition_id: str, emit_event_callback: Optional[Callable[[str, dict], None]] = None
+        self, transition_id: str, emit_event_callback: Callable[[str, dict], None] | None = None
     ) -> TransitionExecutionResult:
         """Execute a transition by ID.
 
@@ -147,7 +148,9 @@ class TransitionExecutor:
             )
 
         except Exception as e:
-            logger.error(f"Unexpected error executing transition '{transition_id}': {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error executing transition '{transition_id}': {e}", exc_info=True
+            )
             error_msg = f"Unexpected error: {e}"
             self.event_emitter.emit_transition_failed(transition_id, error_msg, emit_event_callback)
             return TransitionExecutionResult(
@@ -206,7 +209,7 @@ class TransitionExecutor:
         )
 
     def _handle_transition_not_found(
-        self, transition_id: str, emit_event_callback: Optional[Callable[[str, dict], None]]
+        self, transition_id: str, emit_event_callback: Callable[[str, dict], None] | None
     ) -> TransitionExecutionResult:
         """Handle case where transition is not found.
 

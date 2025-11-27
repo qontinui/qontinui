@@ -34,13 +34,9 @@ class TestPickleNormalOperation:
 
         # Complex nested structure
         data = {
-            "nested": {
-                "deep": {
-                    "value": [1, 2, {"inner": "data"}]
-                }
-            },
+            "nested": {"deep": {"value": [1, 2, {"inner": "data"}]}},
             "tuple": (1, 2, 3),
-            "set": {4, 5, 6}
+            "set": {4, 5, 6},
         }
 
         file_path = tmp_path / "complex.pkl"
@@ -233,6 +229,7 @@ class TestPathValidation:
 
         # Use relative path
         import os
+
         original_dir = os.getcwd()
         try:
             os.chdir(tmp_path)

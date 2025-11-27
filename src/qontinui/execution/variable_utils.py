@@ -45,8 +45,7 @@ def load_variables_from_json(file_path: Path | str) -> dict[str, Any]:
 
         if not isinstance(variables, dict):
             raise ValueError(
-                f"Invalid format in {file_path}: expected dict, "
-                f"got {type(variables).__name__}"
+                f"Invalid format in {file_path}: expected dict, " f"got {type(variables).__name__}"
             )
 
         logger.info(f"Loaded {len(variables)} variables from {file_path}")
@@ -211,6 +210,7 @@ def interpolate_variables(
         >>> interpolate_variables("Missing ${missing}", vars)
         'Missing ${missing}'
     """
+
     def replace_var(match: re.Match) -> str:
         var_name = match.group(1)
         if var_name in variables:
@@ -414,16 +414,13 @@ def sanitize_for_persistence(
         if not is_json_serializable(value):
             if skip_non_serializable:
                 logger.warning(
-                    f"Skipping non-serializable variable '{key}': "
-                    f"{type(value).__name__}"
+                    f"Skipping non-serializable variable '{key}': " f"{type(value).__name__}"
                 )
                 continue
             else:
                 # Convert to string representation
                 value = str(value)
-                logger.warning(
-                    f"Converted non-serializable variable '{key}' to string"
-                )
+                logger.warning(f"Converted non-serializable variable '{key}' to string")
 
         # Truncate large strings
         if max_value_size and isinstance(value, str) and len(value) > max_value_size:

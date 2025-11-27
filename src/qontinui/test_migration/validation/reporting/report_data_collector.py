@@ -12,7 +12,7 @@ else:
     try:
         from ...core.models import TestFile
     except ImportError:
-        from core.models import TestFile
+        pass
 
 
 class ReportDataCollector:

@@ -36,9 +36,7 @@ class SortExecutor:
         ["100", "30", "5"]
     """
 
-    def __init__(
-        self, variable_context: VariableContext, evaluator: SafeEvaluator
-    ) -> None:
+    def __init__(self, variable_context: VariableContext, evaluator: SafeEvaluator) -> None:
         """Initialize the sort executor.
 
         Args:
@@ -96,9 +94,7 @@ class SortExecutor:
         )
 
         # Determine sort key function
-        key_func = self._build_sort_key_function(
-            sort_by, comparator, custom_comparator
-        )
+        key_func = self._build_sort_key_function(sort_by, comparator, custom_comparator)
 
         # Perform sort
         reverse = order == "DESC"

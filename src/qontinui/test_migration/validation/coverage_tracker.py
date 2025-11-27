@@ -6,7 +6,6 @@ tracking test mapping between Java and Python tests, and generating
 migration status reports and summaries.
 """
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 

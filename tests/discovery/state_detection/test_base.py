@@ -18,12 +18,13 @@ Example usage:
     ...         pass
 """
 
+from abc import ABC, abstractmethod
+from typing import Any
+
 import numpy as np
 import pytest
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Set
-from tests.fixtures.screenshot_fixtures import SyntheticScreenshotGenerator, ElementSpec
-from tests.fixtures.detector_fixtures import MockState, MockRegion, MockDetectionResult
+
+from tests.fixtures.screenshot_fixtures import ElementSpec, SyntheticScreenshotGenerator
 
 
 class BaseStateDetectorTest(ABC):
@@ -71,7 +72,7 @@ class BaseStateDetectorTest(ABC):
             detector: State detector instance from fixture
         """
         assert detector is not None
-        assert hasattr(detector, 'detect_states') or hasattr(detector, 'detect')
+        assert hasattr(detector, "detect_states") or hasattr(detector, "detect")
 
     def test_empty_screenshot(self, detector):
         """
@@ -83,7 +84,7 @@ class BaseStateDetectorTest(ABC):
         generator = SyntheticScreenshotGenerator()
         empty_screen = generator.generate(width=800, height=600, elements=[])
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states = detector.detect_states(empty_screen)
         else:
             states = detector.detect(empty_screen)
@@ -109,10 +110,10 @@ class BaseStateDetectorTest(ABC):
                 ElementSpec("text", x=300, y=225, text="Password:"),
                 ElementSpec("input", x=300, y=255, width=200, height=35),
                 ElementSpec("button", x=350, y=310, width=100, height=40, text="Login"),
-            ]
+            ],
         )
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states = detector.detect_states(screenshot)
         else:
             states = detector.detect(screenshot)
@@ -131,7 +132,7 @@ class BaseStateDetectorTest(ABC):
         generator = SyntheticScreenshotGenerator()
         screenshot, elements = generator.generate_with_known_elements()
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states = detector.detect_states(screenshot)
         else:
             states = detector.detect(screenshot)
@@ -139,8 +140,8 @@ class BaseStateDetectorTest(ABC):
         if len(states) > 0:
             state = states[0]
             # Check required properties
-            assert hasattr(state, 'state_id') or hasattr(state, 'id')
-            assert hasattr(state, 'name') or hasattr(state, 'state_name')
+            assert hasattr(state, "state_id") or hasattr(state, "id")
+            assert hasattr(state, "name") or hasattr(state, "state_name")
 
     def test_state_confidence(self, detector):
         """
@@ -152,14 +153,14 @@ class BaseStateDetectorTest(ABC):
         generator = SyntheticScreenshotGenerator()
         screenshot, _ = generator.generate_with_known_elements()
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states = detector.detect_states(screenshot)
         else:
             states = detector.detect(screenshot)
 
         if len(states) > 0:
             for state in states:
-                if hasattr(state, 'confidence'):
+                if hasattr(state, "confidence"):
                     assert 0.0 <= state.confidence <= 1.0
 
 
@@ -200,25 +201,32 @@ class BaseStateTypeTest:
             ]
         elif self.state_type == "menu":
             elements = [
-                ElementSpec("button", x=100, y=100 + i * 60, width=200, height=40, text=f"Option {i+1}")
+                ElementSpec(
+                    "button", x=100, y=100 + i * 60, width=200, height=40, text=f"Option {i+1}"
+                )
                 for i in range(5)
             ]
         elif self.state_type == "dialog":
             elements = [
-                ElementSpec("rectangle", x=200, y=150, width=400, height=300,
-                           color=(240, 240, 240), border_color=(100, 100, 100)),
+                ElementSpec(
+                    "rectangle",
+                    x=200,
+                    y=150,
+                    width=400,
+                    height=300,
+                    color=(240, 240, 240),
+                    border_color=(100, 100, 100),
+                ),
                 ElementSpec("text", x=220, y=180, text="Dialog Title"),
                 ElementSpec("button", x=450, y=410, width=80, height=35, text="OK"),
                 ElementSpec("button", x=540, y=410, width=80, height=35, text="Cancel"),
             ]
         else:
-            elements = [
-                ElementSpec("button", x=100, y=100, width=120, height=40, text="Action")
-            ]
+            elements = [ElementSpec("button", x=100, y=100, width=120, height=40, text="Action")]
 
         screenshot = generator.generate(width=800, height=600, elements=elements)
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states = detector.detect_states(screenshot)
         else:
             states = detector.detect(screenshot)
@@ -231,16 +239,16 @@ class BaseStateTypeTest:
         generator = SyntheticScreenshotGenerator()
         screenshot, _ = generator.generate_with_known_elements()
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states = detector.detect_states(screenshot)
         else:
             states = detector.detect(screenshot)
 
         # If states are detected, verify they have type information
         for state in states:
-            if hasattr(state, 'state_type'):
+            if hasattr(state, "state_type"):
                 assert isinstance(state.state_type, str)
-            elif hasattr(state, 'name'):
+            elif hasattr(state, "name"):
                 assert isinstance(state.name, str)
 
 
@@ -279,7 +287,7 @@ class StateTransitionTest:
             elements=[
                 ElementSpec("input", x=300, y=200, width=200, height=35),
                 ElementSpec("button", x=350, y=280, width=100, height=40, text="Login"),
-            ]
+            ],
         )
 
         # Second state (main menu)
@@ -287,12 +295,14 @@ class StateTransitionTest:
             width=800,
             height=600,
             elements=[
-                ElementSpec("button", x=100, y=100 + i * 60, width=200, height=40, text=f"Option {i}")
+                ElementSpec(
+                    "button", x=100, y=100 + i * 60, width=200, height=40, text=f"Option {i}"
+                )
                 for i in range(4)
-            ]
+            ],
         )
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states1 = detector.detect_states(screenshot1)
             states2 = detector.detect_states(screenshot2)
         else:
@@ -316,7 +326,7 @@ class StateTransitionTest:
         screenshot1 = generator.generate(width=800, height=600, elements=elements, noise_level=0.01)
         screenshot2 = generator.generate(width=800, height=600, elements=elements, noise_level=0.01)
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states1 = detector.detect_states(screenshot1)
             states2 = detector.detect_states(screenshot2)
         else:
@@ -339,10 +349,10 @@ class StateTransitionTest:
                 ElementSpec("button", x=100, y=100, width=120, height=40, text="Next"),
                 ElementSpec("button", x=250, y=100, width=120, height=40, text="Back"),
                 ElementSpec("button", x=400, y=100, width=120, height=40, text="Exit"),
-            ]
+            ],
         )
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states = detector.detect_states(screenshot)
         else:
             states = detector.detect(screenshot)
@@ -380,7 +390,7 @@ class StateValidationTest:
         generator = SyntheticScreenshotGenerator()
         screenshot, _ = generator.generate_with_known_elements()
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states = detector.detect_states(screenshot)
         else:
             states = detector.detect(screenshot)
@@ -388,10 +398,10 @@ class StateValidationTest:
         # Check uniqueness of identifiers
         identifiers = set()
         for state in states:
-            if hasattr(state, 'state_id'):
+            if hasattr(state, "state_id"):
                 assert state.state_id not in identifiers
                 identifiers.add(state.state_id)
-            elif hasattr(state, 'id'):
+            elif hasattr(state, "id"):
                 assert state.id not in identifiers
                 identifiers.add(state.id)
 
@@ -400,7 +410,7 @@ class StateValidationTest:
         generator = SyntheticScreenshotGenerator()
         screenshot, _ = generator.generate_with_known_elements()
 
-        if hasattr(detector, 'detect_states'):
+        if hasattr(detector, "detect_states"):
             states = detector.detect_states(screenshot)
         else:
             states = detector.detect(screenshot)
@@ -409,9 +419,9 @@ class StateValidationTest:
         for state in states:
             # Check for elements, regions, or other state data
             has_data = (
-                (hasattr(state, 'elements') and len(state.elements) > 0) or
-                (hasattr(state, 'regions') and len(state.regions) > 0) or
-                hasattr(state, 'metadata')
+                (hasattr(state, "elements") and len(state.elements) > 0)
+                or (hasattr(state, "regions") and len(state.regions) > 0)
+                or hasattr(state, "metadata")
             )
             # This is optional - some detectors may not include element details
             # assert has_data or True  # Soft check
@@ -440,10 +450,7 @@ class StatePerformanceTest:
         pass
 
     def measure_detection_time(
-        self,
-        detector,
-        screenshot: Optional[np.ndarray] = None,
-        num_runs: int = 10
+        self, detector, screenshot: np.ndarray | None = None, num_runs: int = 10
     ) -> float:
         """
         Measure average state detection time.
@@ -465,7 +472,7 @@ class StatePerformanceTest:
         times = []
         for _ in range(num_runs):
             start = time.time()
-            if hasattr(detector, 'detect_states'):
+            if hasattr(detector, "detect_states"):
                 detector.detect_states(screenshot)
             else:
                 detector.detect(screenshot)
@@ -486,6 +493,7 @@ class StatePerformanceTest:
 
 
 # Utility functions for state testing
+
 
 def calculate_state_similarity(state1: Any, state2: Any) -> float:
     """
@@ -508,19 +516,19 @@ def calculate_state_similarity(state1: Any, state2: Any) -> float:
     total_checks = 0
 
     # Compare names
-    if hasattr(state1, 'name') and hasattr(state2, 'name'):
+    if hasattr(state1, "name") and hasattr(state2, "name"):
         total_checks += 1
         if state1.name == state2.name:
             score += 1.0
 
     # Compare state types
-    if hasattr(state1, 'state_type') and hasattr(state2, 'state_type'):
+    if hasattr(state1, "state_type") and hasattr(state2, "state_type"):
         total_checks += 1
         if state1.state_type == state2.state_type:
             score += 1.0
 
     # Compare element counts
-    if hasattr(state1, 'elements') and hasattr(state2, 'elements'):
+    if hasattr(state1, "elements") and hasattr(state2, "elements"):
         total_checks += 1
         count1 = len(state1.elements) if state1.elements else 0
         count2 = len(state2.elements) if state2.elements else 0
@@ -531,7 +539,7 @@ def calculate_state_similarity(state1: Any, state2: Any) -> float:
             score += min_count / max_count
 
     # Compare region counts
-    if hasattr(state1, 'regions') and hasattr(state2, 'regions'):
+    if hasattr(state1, "regions") and hasattr(state2, "regions"):
         total_checks += 1
         count1 = len(state1.regions) if state1.regions else 0
         count2 = len(state2.regions) if state2.regions else 0
@@ -554,18 +562,18 @@ def assert_state_valid(state: Any):
         AssertionError: If state is invalid
     """
     # Check for required attributes
-    has_id = hasattr(state, 'state_id') or hasattr(state, 'id')
+    has_id = hasattr(state, "state_id") or hasattr(state, "id")
     assert has_id, "State must have an identifier"
 
-    has_name = hasattr(state, 'name') or hasattr(state, 'state_name')
+    has_name = hasattr(state, "name") or hasattr(state, "state_name")
     assert has_name, "State must have a name"
 
     # Check confidence if present
-    if hasattr(state, 'confidence'):
+    if hasattr(state, "confidence"):
         assert 0.0 <= state.confidence <= 1.0, f"Invalid confidence: {state.confidence}"
 
 
-def find_state_by_name(states: List[Any], name: str) -> Optional[Any]:
+def find_state_by_name(states: list[Any], name: str) -> Any | None:
     """
     Find a state by name.
 
@@ -586,15 +594,15 @@ def find_state_by_name(states: List[Any], name: str) -> Optional[Any]:
         >>> assert login_state.state_id == "login"
     """
     for state in states:
-        if hasattr(state, 'name') and state.name == name:
+        if hasattr(state, "name") and state.name == name:
             return state
-        elif hasattr(state, 'state_name') and state.state_name == name:
+        elif hasattr(state, "state_name") and state.state_name == name:
             return state
 
     return None
 
 
-def group_states_by_type(states: List[Any]) -> Dict[str, List[Any]]:
+def group_states_by_type(states: list[Any]) -> dict[str, list[Any]]:
     """
     Group states by their type.
 
@@ -614,15 +622,15 @@ def group_states_by_type(states: List[Any]) -> Dict[str, List[Any]]:
         >>> assert "menu" in grouped
         >>> assert len(grouped["menu"]) == 2
     """
-    grouped: Dict[str, List[Any]] = {}
+    grouped: dict[str, list[Any]] = {}
 
     for state in states:
         state_type = "unknown"
 
-        if hasattr(state, 'state_type'):
+        if hasattr(state, "state_type"):
             state_type = state.state_type
-        elif hasattr(state, 'metadata') and isinstance(state.metadata, dict):
-            state_type = state.metadata.get('type', 'unknown')
+        elif hasattr(state, "metadata") and isinstance(state.metadata, dict):
+            state_type = state.metadata.get("type", "unknown")
 
         if state_type not in grouped:
             grouped[state_type] = []
@@ -633,9 +641,7 @@ def group_states_by_type(states: List[Any]) -> Dict[str, List[Any]]:
 
 
 def validate_state_transition(
-    from_state: Any,
-    to_state: Any,
-    valid_transitions: Optional[Dict[str, List[str]]] = None
+    from_state: Any, to_state: Any, valid_transitions: dict[str, list[str]] | None = None
 ) -> bool:
     """
     Validate if a state transition is valid.
@@ -661,8 +667,8 @@ def validate_state_transition(
         # If no transition rules provided, all transitions are valid
         return True
 
-    from_name = getattr(from_state, 'name', getattr(from_state, 'state_name', None))
-    to_name = getattr(to_state, 'name', getattr(to_state, 'state_name', None))
+    from_name = getattr(from_state, "name", getattr(from_state, "state_name", None))
+    to_name = getattr(to_state, "name", getattr(to_state, "state_name", None))
 
     if from_name is None or to_name is None:
         return False

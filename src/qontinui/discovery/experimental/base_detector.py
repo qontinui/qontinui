@@ -10,7 +10,7 @@ performance or stability guarantees as the main qontinui detection pipeline.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
 from .types import BBox
 
@@ -34,7 +34,7 @@ class BaseDetector(ABC):
         self.params = {}
 
     @abstractmethod
-    def detect(self, image_path: str, **params) -> List[BBox]:
+    def detect(self, image_path: str, **params) -> list[BBox]:
         """
         Detect GUI elements in an image
 
@@ -51,7 +51,7 @@ class BaseDetector(ABC):
         """Update detector parameters"""
         self.params.update(params)
 
-    def get_param_grid(self) -> List[Dict[str, Any]]:
+    def get_param_grid(self) -> list[dict[str, Any]]:
         """
         Return parameter grid for hyperparameter search
 
@@ -61,9 +61,7 @@ class BaseDetector(ABC):
         return [{}]  # Default: no parameters
 
     @staticmethod
-    def merge_overlapping_boxes(
-        boxes: List[BBox], iou_threshold: float = 0.5
-    ) -> List[BBox]:
+    def merge_overlapping_boxes(boxes: list[BBox], iou_threshold: float = 0.5) -> list[BBox]:
         """Merge highly overlapping boxes"""
         if not boxes:
             return []
@@ -113,12 +111,12 @@ class BaseDetector(ABC):
 
     @staticmethod
     def filter_boxes_by_size(
-        boxes: List[BBox],
+        boxes: list[BBox],
         min_area: int = 100,
         max_area: int = None,
         min_width: int = 5,
         min_height: int = 5,
-    ) -> List[BBox]:
+    ) -> list[BBox]:
         """Filter boxes by size constraints"""
         filtered = []
         for box in boxes:
@@ -138,7 +136,7 @@ class BaseDetector(ABC):
         return filtered
 
     @staticmethod
-    def remove_contained_boxes(boxes: List[BBox], threshold: float = 0.9) -> List[BBox]:
+    def remove_contained_boxes(boxes: list[BBox], threshold: float = 0.9) -> list[BBox]:
         """Remove boxes that are almost entirely contained in other boxes"""
         if not boxes:
             return []
@@ -187,9 +185,7 @@ class MultiScreenshotDetector(ABC):
         self.params = {}
 
     @abstractmethod
-    def detect_multi(
-        self, dataset: "MultiScreenshotDataset", **params
-    ) -> Dict[int, List[BBox]]:
+    def detect_multi(self, dataset: "MultiScreenshotDataset", **params) -> dict[int, list[BBox]]:
         """
         Detect GUI elements across multiple screenshots
 
@@ -206,7 +202,7 @@ class MultiScreenshotDetector(ABC):
         """Update detector parameters"""
         self.params.update(params)
 
-    def get_param_grid(self) -> List[Dict[str, Any]]:
+    def get_param_grid(self) -> list[dict[str, Any]]:
         """
         Return parameter grid for hyperparameter search
 

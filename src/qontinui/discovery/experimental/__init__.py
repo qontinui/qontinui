@@ -35,23 +35,23 @@ Example:
 
 from typing import List
 
-# Import type definitions
-from .types import BBox, MultiScreenshotDataset, ScreenshotInfo
-
 # Import base classes
 from .base_detector import BaseDetector, MultiScreenshotDetector
+from .color_detector import ColorClusterDetector
+from .consistency_detector import ConsistencyDetector
+from .contour_detector import ContourDetector
+from .edge_detector import EdgeBasedDetector
+from .hybrid_detector import HybridDetector
+from .mser_detector import MSERDetector
 
 # Import experimental detectors
 from .sam3_detector import SAM3Detector
-from .hybrid_detector import HybridDetector
-from .consistency_detector import ConsistencyDetector
-from .edge_detector import EdgeBasedDetector
-from .contour_detector import ContourDetector
-from .mser_detector import MSERDetector
-from .color_detector import ColorClusterDetector
 from .template_detector import TemplateDetector
 
-__all__: List[str] = [
+# Import type definitions
+from .types import BBox, MultiScreenshotDataset, ScreenshotInfo
+
+__all__: list[str] = [
     # Type definitions
     "BBox",
     "MultiScreenshotDataset",

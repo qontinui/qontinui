@@ -12,7 +12,7 @@ from ..exceptions import (
     ActionExecutionError,
     ScreenCaptureException,
 )
-from .base import ActionExecutorBase, ExecutionContext
+from .base import ActionExecutorBase
 from .registry import register_executor
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class UtilityActionExecutor(ActionExecutorBase):
             raise ActionExecutionError(
                 action_type=action.type,
                 reason=f"Utility executor does not handle {action.type}",
-                action_id=action.id
+                action_id=action.id,
             )
 
     def _execute_wait(self, action: Action, typed_config: WaitActionConfig) -> bool:
@@ -106,14 +106,14 @@ class UtilityActionExecutor(ActionExecutorBase):
                 raise ActionExecutionError(
                     action_type="WAIT",
                     reason="Duration is required for wait_for='time'",
-                    action_id=action.id
+                    action_id=action.id,
                 )
 
             if duration_ms < 0:
                 raise ActionExecutionError(
                     action_type="WAIT",
                     reason=f"Duration must be non-negative, got {duration_ms}",
-                    action_id=action.id
+                    action_id=action.id,
                 )
 
             # Convert milliseconds to seconds
@@ -123,8 +123,7 @@ class UtilityActionExecutor(ActionExecutorBase):
             self.context.time.wait(duration_seconds)
 
             self._emit_action_success(
-                action,
-                {"duration_ms": duration_ms, "duration_seconds": duration_seconds}
+                action, {"duration_ms": duration_ms, "duration_seconds": duration_seconds}
             )
 
             return True
@@ -133,7 +132,7 @@ class UtilityActionExecutor(ActionExecutorBase):
             raise ActionExecutionError(
                 action_type="WAIT",
                 reason=f"wait_for='{typed_config.wait_for}' not yet implemented",
-                action_id=action.id
+                action_id=action.id,
             )
 
     def _execute_screenshot(self, action: Action, typed_config: ScreenshotActionConfig) -> bool:
@@ -166,6 +165,7 @@ class UtilityActionExecutor(ActionExecutorBase):
                 # If directory specified, prepend it
                 if typed_config.save_to_file.directory:
                     import os
+
                     filename = os.path.join(typed_config.save_to_file.directory, filename)
 
             # Check if region is specified
@@ -178,8 +178,7 @@ class UtilityActionExecutor(ActionExecutorBase):
 
                 # Capture specific region
                 self.context.screen.save(
-                    filename,
-                    region=(region.x, region.y, region.width, region.height)
+                    filename, region=(region.x, region.y, region.width, region.height)
                 )
 
                 self._emit_action_success(
@@ -190,9 +189,9 @@ class UtilityActionExecutor(ActionExecutorBase):
                             "x": region.x,
                             "y": region.y,
                             "width": region.width,
-                            "height": region.height
-                        }
-                    }
+                            "height": region.height,
+                        },
+                    },
                 )
             else:
                 logger.debug("Capturing full screen")
@@ -200,10 +199,7 @@ class UtilityActionExecutor(ActionExecutorBase):
                 # Capture full screen
                 self.context.screen.save(filename)
 
-                self._emit_action_success(
-                    action,
-                    {"filename": filename, "fullscreen": True}
-                )
+                self._emit_action_success(action, {"filename": filename, "fullscreen": True})
 
             logger.info(f"Screenshot saved to {filename}")
             return True
@@ -217,5 +213,5 @@ class UtilityActionExecutor(ActionExecutorBase):
             raise ActionExecutionError(
                 action_type="SCREENSHOT",
                 reason=f"Failed to save screenshot: {e}",
-                action_id=action.id
+                action_id=action.id,
             ) from e

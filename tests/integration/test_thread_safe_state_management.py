@@ -6,11 +6,10 @@ and mixed read/write operations with 100 threads.
 
 import threading
 import time
-from typing import List, Set
 
 import pytest
 
-from qontinui.annotations.enhanced_state import StateMetadata, state
+from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import StateRegistry
 
 
@@ -22,15 +21,16 @@ class TestStateRegistryStressTests:
         registry = StateRegistry()
         num_threads = 100
         states_per_thread = 10
-        errors: List[Exception] = []
-        all_state_ids: List[int] = []
+        errors: list[Exception] = []
+        all_state_ids: list[int] = []
         lock = threading.Lock()
 
         def register_states(thread_id: int):
             """Register multiple states."""
             try:
-                thread_ids: List[int] = []
+                thread_ids: list[int] = []
                 for i in range(states_per_thread):
+
                     @state(name=f"stress_state_{thread_id}_{i}")
                     class StressState:
                         pass
@@ -74,6 +74,7 @@ class TestStateRegistryStressTests:
         # Pre-register states
         states_to_register = []
         for i in range(100):
+
             @state(name=f"lookup_state_{i}", group=f"group_{i % 10}")
             class LookupState:
                 pass
@@ -86,7 +87,7 @@ class TestStateRegistryStressTests:
         # Now perform concurrent lookups
         num_threads = 100
         lookups_per_thread = 100
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def perform_lookups(thread_id: int):
@@ -129,12 +130,13 @@ class TestStateRegistryStressTests:
         """Stress test: Mixed read and write operations."""
         registry = StateRegistry()
         stop_flag = threading.Event()
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         stats = {"registrations": 0, "lookups": 0}
         lock = threading.Lock()
 
         # Pre-register some states
         for i in range(20):
+
             @state(name=f"initial_state_{i}")
             class InitialState:
                 pass
@@ -146,6 +148,7 @@ class TestStateRegistryStressTests:
             counter = 0
             while not stop_flag.is_set():
                 try:
+
                     @state(name=f"dynamic_state_{worker_id}_{counter}")
                     class DynamicState:
                         pass
@@ -223,7 +226,7 @@ class TestConcurrentGroupOperations:
         num_threads = 50
         states_per_thread = 10
         num_groups = 5
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def register_grouped_states(thread_id: int):
@@ -243,7 +246,9 @@ class TestConcurrentGroupOperations:
                     errors.append(e)
 
         # Execute registrations
-        threads = [threading.Thread(target=register_grouped_states, args=(i,)) for i in range(num_threads)]
+        threads = [
+            threading.Thread(target=register_grouped_states, args=(i,)) for i in range(num_threads)
+        ]
         for t in threads:
             t.start()
         for t in threads:
@@ -268,6 +273,7 @@ class TestConcurrentGroupOperations:
 
         # Pre-register states in groups
         for i in range(100):
+
             @state(name=f"query_state_{i}", group=f"group_{i % 10}")
             class QueryState:
                 pass
@@ -275,8 +281,8 @@ class TestConcurrentGroupOperations:
             registry.register_state(QueryState)
 
         # Concurrent queries
-        errors: List[Exception] = []
-        query_counts: List[int] = []
+        errors: list[Exception] = []
+        query_counts: list[int] = []
         lock = threading.Lock()
 
         def query_groups():
@@ -316,13 +322,14 @@ class TestConcurrentProfileOperations:
         registry = StateRegistry()
         num_threads = 40
         profiles = ["profile_a", "profile_b", "profile_c", "profile_d"]
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def register_initial_states(thread_id: int):
             """Register initial states."""
             try:
                 for i, profile in enumerate(profiles):
+
                     @state(
                         name=f"initial_{thread_id}_{i}",
                         initial=True,
@@ -339,7 +346,9 @@ class TestConcurrentProfileOperations:
                     errors.append(e)
 
         # Execute registrations
-        threads = [threading.Thread(target=register_initial_states, args=(i,)) for i in range(num_threads)]
+        threads = [
+            threading.Thread(target=register_initial_states, args=(i,)) for i in range(num_threads)
+        ]
         for t in threads:
             t.start()
         for t in threads:
@@ -360,6 +369,7 @@ class TestConcurrentProfileOperations:
 
         # Pre-register initial states
         for i in range(50):
+
             @state(name=f"profile_state_{i}", initial=True, profiles=["test_profile"], priority=i)
             class ProfileState:
                 pass
@@ -367,8 +377,8 @@ class TestConcurrentProfileOperations:
             registry.register_state(ProfileState)
 
         # Concurrent queries
-        errors: List[Exception] = []
-        results: List[int] = []
+        errors: list[Exception] = []
+        results: list[int] = []
         lock = threading.Lock()
 
         def query_initial_states():
@@ -401,13 +411,14 @@ class TestStateRegistryDataIntegrity:
         """Verify state IDs remain unique under heavy concurrent load."""
         registry = StateRegistry()
         num_threads = 100
-        all_ids: Set[int] = set()
-        errors: List[Exception] = []
+        all_ids: set[int] = set()
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def register_and_collect_id(thread_id: int):
             """Register state and collect ID."""
             try:
+
                 @state(name=f"unique_id_state_{thread_id}")
                 class UniqueState:
                     pass
@@ -424,7 +435,9 @@ class TestStateRegistryDataIntegrity:
                     errors.append(e)
 
         # Execute
-        threads = [threading.Thread(target=register_and_collect_id, args=(i,)) for i in range(num_threads)]
+        threads = [
+            threading.Thread(target=register_and_collect_id, args=(i,)) for i in range(num_threads)
+        ]
         for t in threads:
             t.start()
         for t in threads:
@@ -440,13 +453,14 @@ class TestStateRegistryDataIntegrity:
         registry = StateRegistry()
         num_threads = 50
         states_per_thread = 20
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def register_states(thread_id: int):
             """Register states."""
             try:
                 for i in range(states_per_thread):
+
                     @state(name=f"count_state_{thread_id}_{i}")
                     class CountState:
                         pass
@@ -475,7 +489,7 @@ class TestStateRegistryDataIntegrity:
         """Verify no data corruption occurs under heavy load."""
         registry = StateRegistry()
         num_threads = 50
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def complex_operations(thread_id: int):
@@ -508,7 +522,9 @@ class TestStateRegistryDataIntegrity:
                     errors.append(e)
 
         # Execute
-        threads = [threading.Thread(target=complex_operations, args=(i,)) for i in range(num_threads)]
+        threads = [
+            threading.Thread(target=complex_operations, args=(i,)) for i in range(num_threads)
+        ]
         for t in threads:
             t.start()
         for t in threads:

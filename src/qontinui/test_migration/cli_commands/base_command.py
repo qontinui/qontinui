@@ -60,7 +60,5 @@ class BaseCommand(ABC):
             CommandResult with error if path doesn't exist, None otherwise
         """
         if not path.exists():
-            return CommandResult(
-                exit_code=1, message=f"Error: {path_name} does not exist: {path}"
-            )
+            return CommandResult(exit_code=1, message=f"Error: {path_name} does not exist: {path}")
         return None

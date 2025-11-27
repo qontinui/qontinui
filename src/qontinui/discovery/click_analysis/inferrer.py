@@ -6,6 +6,8 @@ from typing import Any
 
 import numpy as np
 
+from .boundary_finder import ElementBoundaryFinder
+from .context_analyzer import ClickContextAnalyzer
 from .models import (
     DetectionStrategy,
     ElementType,
@@ -13,8 +15,6 @@ from .models import (
     InferenceResult,
     InferredBoundingBox,
 )
-from .boundary_finder import ElementBoundaryFinder
-from .context_analyzer import ClickContextAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -77,9 +77,7 @@ class ClickBoundingBoxInferrer:
             # Return fallback centered at nearest valid point
             valid_x = max(0, min(click_x, width - 1))
             valid_y = max(0, min(click_y, height - 1))
-            return self._create_fallback_result(
-                (valid_x, valid_y), width, height, start_time, []
-            )
+            return self._create_fallback_result((valid_x, valid_y), width, height, start_time, [])
 
         strategies_attempted: list[DetectionStrategy] = []
 
@@ -115,8 +113,10 @@ class ClickBoundingBoxInferrer:
             # Classify element types
             for candidate in candidates:
                 if self.config.enable_element_classification:
-                    element_type, type_confidence = self.context_analyzer.get_element_type_confidence(
-                        screenshot, candidate, click_location
+                    element_type, type_confidence = (
+                        self.context_analyzer.get_element_type_confidence(
+                            screenshot, candidate, click_location
+                        )
                     )
                     candidate.element_type = element_type
                     # Blend type confidence into overall confidence

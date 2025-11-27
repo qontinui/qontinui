@@ -66,9 +66,7 @@ class PatternOptimizer:
         if method == "stability":
             return self._optimize_by_stability(pixel_data, positive_samples)
         elif method == "discriminative":
-            return self._optimize_discriminative(
-                pixel_data, positive_samples, negative_samples
-            )
+            return self._optimize_discriminative(pixel_data, positive_samples, negative_samples)
         else:
             raise ValueError(f"Unknown optimization method: {method}")
 
@@ -91,9 +89,7 @@ class PatternOptimizer:
         """
         if not positive_samples:
             mask_shape = pixel_data.shape[:2]
-            return np.ones(mask_shape, dtype=np.float32), {
-                "error": "No positive samples provided"
-            }
+            return np.ones(mask_shape, dtype=np.float32), {"error": "No positive samples provided"}
 
         # Stack all samples including original
         all_samples = np.stack([pixel_data] + positive_samples, axis=0)
@@ -116,9 +112,9 @@ class PatternOptimizer:
             stability = np.ones_like(pixel_std)
 
         # Threshold to create binary mask
-        optimized_mask = np.where(
-            stability >= self.STABILITY_THRESHOLD, 1.0, 0.0
-        ).astype(np.float32)
+        optimized_mask = np.where(stability >= self.STABILITY_THRESHOLD, 1.0, 0.0).astype(
+            np.float32
+        )
 
         # Calculate metrics
         metrics = {
@@ -169,9 +165,7 @@ class PatternOptimizer:
 
                 # Get pixel values from positive samples
                 pos_values = [img[y, x] for img in positive_samples]
-                neg_values = [
-                    img[y, x] for img in negative_samples if img.shape[:2] == (h, w)
-                ]
+                neg_values = [img[y, x] for img in negative_samples if img.shape[:2] == (h, w)]
 
                 if not neg_values:
                     discrimination[y, x] = stability_mask[y, x]
@@ -245,9 +239,7 @@ class PatternOptimizer:
                 }
             )
 
-    def add_variation(
-        self, pattern: Any, image: np.ndarray[Any, Any]
-    ) -> None:
+    def add_variation(self, pattern: Any, image: np.ndarray[Any, Any]) -> None:
         """Add image variation to pattern for optimization.
 
         Args:

@@ -122,7 +122,9 @@ Examples:
 
         # Add each command's arguments
         for command_name, command_handler in self.commands.items():
-            subparser = subparsers.add_parser(command_name, help=f"{command_name.capitalize()} command")
+            subparser = subparsers.add_parser(
+                command_name, help=f"{command_name.capitalize()} command"
+            )
             command_handler.add_arguments(subparser)
 
         return parser

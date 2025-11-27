@@ -18,12 +18,13 @@ Example usage:
     ...         pass
 """
 
+from abc import ABC, abstractmethod
+from typing import Any
+
 import numpy as np
 import pytest
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
-from tests.fixtures.screenshot_fixtures import SyntheticScreenshotGenerator, ElementSpec
-from tests.fixtures.detector_fixtures import MockDetectionResult
+
+from tests.fixtures.screenshot_fixtures import ElementSpec, SyntheticScreenshotGenerator
 
 
 class BaseDetectorTest(ABC):
@@ -68,7 +69,7 @@ class BaseDetectorTest(ABC):
             detector: Detector instance from fixture
         """
         assert detector is not None
-        assert hasattr(detector, 'detect') or hasattr(detector, 'detect_elements')
+        assert hasattr(detector, "detect") or hasattr(detector, "detect_elements")
 
     def test_empty_screenshot(self, detector):
         """
@@ -80,14 +81,14 @@ class BaseDetectorTest(ABC):
         generator = SyntheticScreenshotGenerator()
         empty_screen = generator.generate(width=800, height=600, elements=[])
 
-        if hasattr(detector, 'detect'):
+        if hasattr(detector, "detect"):
             results = detector.detect(empty_screen)
         else:
             results = detector.detect_elements(empty_screen)
 
         # Should return empty list or list with no high-confidence detections
         assert isinstance(results, list)
-        high_confidence = [r for r in results if getattr(r, 'confidence', 1.0) > 0.8]
+        high_confidence = [r for r in results if getattr(r, "confidence", 1.0) > 0.8]
         assert len(high_confidence) == 0
 
     def test_single_element_detection(self, detector):
@@ -101,12 +102,10 @@ class BaseDetectorTest(ABC):
         screenshot = generator.generate(
             width=800,
             height=600,
-            elements=[
-                ElementSpec("button", x=100, y=100, width=120, height=40, text="Submit")
-            ]
+            elements=[ElementSpec("button", x=100, y=100, width=120, height=40, text="Submit")],
         )
 
-        if hasattr(detector, 'detect'):
+        if hasattr(detector, "detect"):
             results = detector.detect(screenshot)
         else:
             results = detector.detect_elements(screenshot)
@@ -124,14 +123,10 @@ class BaseDetectorTest(ABC):
         """
         generator = SyntheticScreenshotGenerator()
         screenshot, elements = generator.generate_with_known_elements(
-            width=1024,
-            height=768,
-            num_buttons=3,
-            num_inputs=2,
-            num_icons=2
+            width=1024, height=768, num_buttons=3, num_inputs=2, num_icons=2
         )
 
-        if hasattr(detector, 'detect'):
+        if hasattr(detector, "detect"):
             results = detector.detect(screenshot)
         else:
             results = detector.detect_elements(screenshot)
@@ -149,14 +144,10 @@ class BaseDetectorTest(ABC):
         """
         generator = SyntheticScreenshotGenerator()
         screenshot = generator.generate(
-            width=800,
-            height=600,
-            elements=[
-                ElementSpec("button", x=100, y=100, text="Test")
-            ]
+            width=800, height=600, elements=[ElementSpec("button", x=100, y=100, text="Test")]
         )
 
-        if hasattr(detector, 'detect'):
+        if hasattr(detector, "detect"):
             results = detector.detect(screenshot)
         else:
             results = detector.detect_elements(screenshot)
@@ -164,9 +155,11 @@ class BaseDetectorTest(ABC):
         if len(results) > 0:
             result = results[0]
             # Check that result has required attributes
-            assert hasattr(result, 'bbox') or (
-                hasattr(result, 'x') and hasattr(result, 'y') and
-                hasattr(result, 'width') and hasattr(result, 'height')
+            assert hasattr(result, "bbox") or (
+                hasattr(result, "x")
+                and hasattr(result, "y")
+                and hasattr(result, "width")
+                and hasattr(result, "height")
             )
 
 
@@ -207,12 +200,12 @@ class BaseElementTypeTest:
                     y=100,
                     width=120,
                     height=40,
-                    text=f"Test {self.element_type}"
+                    text=f"Test {self.element_type}",
                 )
-            ]
+            ],
         )
 
-        if hasattr(detector, 'detect'):
+        if hasattr(detector, "detect"):
             results = detector.detect(screenshot)
         else:
             results = detector.detect_elements(screenshot)
@@ -230,7 +223,7 @@ class BaseElementTypeTest:
 
         screenshot = generator.generate(width=800, height=600, elements=elements)
 
-        if hasattr(detector, 'detect'):
+        if hasattr(detector, "detect"):
             results = detector.detect(screenshot)
         else:
             results = detector.detect_elements(screenshot)
@@ -249,7 +242,7 @@ class BaseElementTypeTest:
 
         screenshot = generator.generate(width=800, height=600, elements=elements)
 
-        if hasattr(detector, 'detect'):
+        if hasattr(detector, "detect"):
             results = detector.detect(screenshot)
         else:
             results = detector.detect_elements(screenshot)
@@ -281,10 +274,7 @@ class DetectionPerformanceTest:
         pass
 
     def measure_detection_time(
-        self,
-        detector,
-        screenshot: Optional[np.ndarray] = None,
-        num_runs: int = 10
+        self, detector, screenshot: np.ndarray | None = None, num_runs: int = 10
     ) -> float:
         """
         Measure average detection time.
@@ -306,7 +296,7 @@ class DetectionPerformanceTest:
         times = []
         for _ in range(num_runs):
             start = time.time()
-            if hasattr(detector, 'detect'):
+            if hasattr(detector, "detect"):
                 detector.detect(screenshot)
             else:
                 detector.detect_elements(screenshot)
@@ -336,15 +326,13 @@ class DetectionPerformanceTest:
         screenshot = generator.generate(
             width=800,
             height=600,
-            elements=[
-                ElementSpec("button", x=100, y=100, width=120, height=40)
-            ]
+            elements=[ElementSpec("button", x=100, y=100, width=120, height=40)],
         )
 
         # Run detection multiple times
         results_list = []
         for _ in range(3):
-            if hasattr(detector, 'detect'):
+            if hasattr(detector, "detect"):
                 results = detector.detect(screenshot)
             else:
                 results = detector.detect_elements(screenshot)
@@ -357,7 +345,8 @@ class DetectionPerformanceTest:
 
 # Utility functions for testing
 
-def assert_bbox_valid(bbox: Tuple[int, int, int, int], max_width: int, max_height: int):
+
+def assert_bbox_valid(bbox: tuple[int, int, int, int], max_width: int, max_height: int):
     """
     Assert that a bounding box is valid.
 
@@ -391,7 +380,7 @@ def assert_detection_confidence_valid(confidence: float):
     assert 0.0 <= confidence <= 1.0, f"Invalid confidence: {confidence}"
 
 
-def calculate_iou(bbox1: Tuple[int, int, int, int], bbox2: Tuple[int, int, int, int]) -> float:
+def calculate_iou(bbox1: tuple[int, int, int, int], bbox2: tuple[int, int, int, int]) -> float:
     """
     Calculate Intersection over Union (IoU) between two bounding boxes.
 
@@ -432,10 +421,8 @@ def calculate_iou(bbox1: Tuple[int, int, int, int], bbox2: Tuple[int, int, int, 
 
 
 def find_matching_detection(
-    ground_truth_bbox: Tuple[int, int, int, int],
-    detections: List[Any],
-    iou_threshold: float = 0.5
-) -> Optional[Any]:
+    ground_truth_bbox: tuple[int, int, int, int], detections: list[Any], iou_threshold: float = 0.5
+) -> Any | None:
     """
     Find detection that matches ground truth bbox.
 
@@ -459,7 +446,7 @@ def find_matching_detection(
     best_match = None
 
     for detection in detections:
-        if hasattr(detection, 'bbox'):
+        if hasattr(detection, "bbox"):
             det_bbox = detection.bbox
         else:
             det_bbox = (detection.x, detection.y, detection.width, detection.height)

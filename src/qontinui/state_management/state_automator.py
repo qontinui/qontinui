@@ -45,7 +45,9 @@ class StateAutomator:
         automator.execute_transition("submit_prompt")
     """
 
-    def __init__(self, actions: Actions | None = None, state_store: StateStore | None = None) -> None:
+    def __init__(
+        self, actions: Actions | None = None, state_store: StateStore | None = None
+    ) -> None:
         """Initialize StateAutomator.
 
         Args:

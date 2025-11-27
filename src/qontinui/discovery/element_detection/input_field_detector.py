@@ -12,7 +12,7 @@ Characteristics:
 
 import logging
 from io import BytesIO
-from typing import Any, Dict, List
+from typing import Any
 
 import cv2
 import numpy as np
@@ -58,7 +58,7 @@ class InputFieldDetector(BaseAnalyzer):
     def required_screenshots(self) -> int:
         return 1
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_aspect_ratio": 3.0,  # Width / height ratio
             "max_aspect_ratio": 15.0,
@@ -75,8 +75,7 @@ class InputFieldDetector(BaseAnalyzer):
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect input fields in screenshots"""
         logger.info(
-            f"Running input field detection on "
-            f"{len(input_data.screenshots)} screenshots"
+            f"Running input field detection on " f"{len(input_data.screenshots)} screenshots"
         )
 
         params = {**self.get_default_parameters(), **input_data.parameters}
@@ -87,12 +86,8 @@ class InputFieldDetector(BaseAnalyzer):
 
         # Analyze each screenshot
         all_elements = []
-        for screenshot_idx, (img_color, img_gray) in enumerate(
-            zip(images_color, images_gray)
-        ):
-            elements = await self._analyze_screenshot(
-                img_color, img_gray, screenshot_idx, params
-            )
+        for screenshot_idx, (img_color, img_gray) in enumerate(zip(images_color, images_gray, strict=False)):
+            elements = await self._analyze_screenshot(img_color, img_gray, screenshot_idx, params)
             all_elements.extend(elements)
 
         logger.info(f"Detected {len(all_elements)} input fields")
@@ -109,7 +104,7 @@ class InputFieldDetector(BaseAnalyzer):
             },
         )
 
-    def _load_images_color(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_color(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots in color"""
         images = []
         for data in screenshot_data:
@@ -117,7 +112,7 @@ class InputFieldDetector(BaseAnalyzer):
             images.append(np.array(img, dtype=np.uint8))
         return images
 
-    def _load_images_grayscale(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_grayscale(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots as grayscale"""
         images = []
         for data in screenshot_data:
@@ -130,8 +125,8 @@ class InputFieldDetector(BaseAnalyzer):
         img_color: np.ndarray,
         img_gray: np.ndarray,
         screenshot_idx: int,
-        params: Dict[str, Any],
-    ) -> List[DetectedElement]:
+        params: dict[str, Any],
+    ) -> list[DetectedElement]:
         """Analyze a single screenshot for input fields"""
         elements = []
 
@@ -143,9 +138,7 @@ class InputFieldDetector(BaseAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -160,9 +153,7 @@ class InputFieldDetector(BaseAnalyzer):
             aspect_ratio = w / h if h > 0 else 0
 
             # Check aspect ratio - input fields are horizontally elongated
-            if not (
-                params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]
-            ):
+            if not (params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]):
                 continue
 
             # Extract region for analysis
@@ -179,9 +170,7 @@ class InputFieldDetector(BaseAnalyzer):
             has_light_bg = mean_brightness >= params["light_bg_threshold"]
 
             # Calculate confidence based on multiple factors
-            confidence = self._calculate_confidence(
-                aspect_ratio, w, h, has_light_bg, params
-            )
+            confidence = self._calculate_confidence(aspect_ratio, w, h, has_light_bg, params)
 
             # Only add if confidence is reasonable
             if confidence < 0.4:
@@ -189,9 +178,7 @@ class InputFieldDetector(BaseAnalyzer):
 
             elements.append(
                 DetectedElement(
-                    bounding_box=BoundingBox(
-                        x=int(x), y=int(y), width=int(w), height=int(h)
-                    ),
+                    bounding_box=BoundingBox(x=int(x), y=int(y), width=int(w), height=int(h)),
                     confidence=confidence,
                     label="Input Field",
                     element_type="input",
@@ -213,7 +200,7 @@ class InputFieldDetector(BaseAnalyzer):
         width: int,
         height: int,
         has_light_bg: bool,
-        params: Dict[str, Any],
+        params: dict[str, Any],
     ) -> float:
         """Calculate confidence score based on multiple factors"""
         confidence = 0.5  # Base confidence

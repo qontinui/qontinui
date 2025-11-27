@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..task import ActionTask
     from ..executor import TaskExecutor
+    from ..task import ActionTask
 
 
 class BaseExecutionStrategy(ABC):

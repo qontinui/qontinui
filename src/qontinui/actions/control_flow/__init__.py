@@ -28,8 +28,8 @@ from typing import Any
 
 from qontinui.config import Action, get_typed_config
 
-from .conditional_executor import ConditionalExecutor
 from .condition_evaluator import ConditionEvaluator
+from .conditional_executor import ConditionalExecutor
 from .exceptions import BreakLoop, ContinueLoop
 from .flow_control_executor import FlowControlExecutor
 from .loop_executor import LoopExecutor

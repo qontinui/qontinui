@@ -6,7 +6,7 @@ Handles Regions and Locations.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...model.element import Location, Region
+    from ...model.element import Region
     from ...model.state import StateLocation, StateRegion
 
 
@@ -23,8 +23,8 @@ class RegionCollectionBuilder:
 
     def __init__(self) -> None:
         """Initialize builder with empty lists."""
-        self.state_locations: list["StateLocation"] = []
-        self.state_regions: list["StateRegion"] = []
+        self.state_locations: list[StateLocation] = []
+        self.state_regions: list[StateRegion] = []
 
     def with_locations(self, *locations) -> "RegionCollectionBuilder":
         """Add locations to collection.

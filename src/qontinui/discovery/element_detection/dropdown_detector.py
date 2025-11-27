@@ -11,7 +11,7 @@ Characteristics:
 
 import logging
 from io import BytesIO
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -56,7 +56,7 @@ class DropdownDetector(BaseAnalyzer):
     def required_screenshots(self) -> int:
         return 1
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_width": 80,
             "max_width": 400,
@@ -70,10 +70,7 @@ class DropdownDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect dropdown elements in screenshots"""
-        logger.info(
-            f"Running dropdown detection on "
-            f"{len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running dropdown detection on " f"{len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -86,9 +83,7 @@ class DropdownDetector(BaseAnalyzer):
 
         # Analyze each screenshot
         all_elements = []
-        for screenshot_idx, (img_color, img_gray) in enumerate(
-            zip(images_color, images_gray)
-        ):
+        for screenshot_idx, (img_color, img_gray) in enumerate(zip(images_color, images_gray, strict=False)):
             elements = await self._analyze_screenshot(
                 img_color, img_gray, screenshot_idx, arrow_templates, params
             )
@@ -108,7 +103,7 @@ class DropdownDetector(BaseAnalyzer):
             },
         )
 
-    def _load_images_color(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_color(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots in color"""
         images = []
         for data in screenshot_data:
@@ -116,7 +111,7 @@ class DropdownDetector(BaseAnalyzer):
             images.append(np.array(img, dtype=np.uint8))
         return images
 
-    def _load_images_grayscale(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_grayscale(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots as grayscale"""
         images = []
         for data in screenshot_data:
@@ -124,7 +119,7 @@ class DropdownDetector(BaseAnalyzer):
             images.append(np.array(img, dtype=np.uint8))
         return images
 
-    def _create_arrow_templates(self) -> List[np.ndarray]:
+    def _create_arrow_templates(self) -> list[np.ndarray]:
         """Create templates for dropdown arrows"""
         templates = []
 
@@ -148,9 +143,9 @@ class DropdownDetector(BaseAnalyzer):
         img_color: np.ndarray,
         img_gray: np.ndarray,
         screenshot_idx: int,
-        arrow_templates: List[np.ndarray],
-        params: Dict[str, Any],
-    ) -> List[DetectedElement]:
+        arrow_templates: list[np.ndarray],
+        params: dict[str, Any],
+    ) -> list[DetectedElement]:
         """Analyze a single screenshot for dropdowns"""
         elements = []
         detected_locations = set()  # To avoid duplicates
@@ -229,7 +224,7 @@ class DropdownDetector(BaseAnalyzer):
 
     def _template_match_arrows(
         self, img_gray: np.ndarray, template: np.ndarray, threshold: float
-    ) -> List[Tuple[int, int, int, int, float]]:
+    ) -> list[tuple[int, int, int, int, float]]:
         """Template match for dropdown arrows"""
         matches = []
 
@@ -239,7 +234,7 @@ class DropdownDetector(BaseAnalyzer):
         # Find locations above threshold
         locations = np.where(result >= threshold)
 
-        for pt in zip(*locations[::-1]):
+        for pt in zip(*locations[::-1], strict=False):
             x, y = pt
             w, h = template.shape[::-1]
             confidence = float(result[y, x])
@@ -251,8 +246,8 @@ class DropdownDetector(BaseAnalyzer):
         return matches
 
     def _non_max_suppression(
-        self, matches: List[Tuple[int, int, int, int, float]], iou_threshold: float
-    ) -> List[Tuple[int, int, int, int, float]]:
+        self, matches: list[tuple[int, int, int, int, float]], iou_threshold: float
+    ) -> list[tuple[int, int, int, int, float]]:
         """Remove overlapping detections"""
         if not matches:
             return []
@@ -266,16 +261,14 @@ class DropdownDetector(BaseAnalyzer):
             keep.append(current)
 
             # Remove overlapping matches
-            matches = [
-                m for m in matches if not self._boxes_overlap(current, m, iou_threshold)
-            ]
+            matches = [m for m in matches if not self._boxes_overlap(current, m, iou_threshold)]
 
         return keep
 
     def _boxes_overlap(
         self,
-        box1: Tuple[int, int, int, int, float],
-        box2: Tuple[int, int, int, int, float],
+        box1: tuple[int, int, int, int, float],
+        box2: tuple[int, int, int, int, float],
         threshold: float,
     ) -> bool:
         """Check if two boxes overlap significantly"""
@@ -300,20 +293,16 @@ class DropdownDetector(BaseAnalyzer):
         return iou >= threshold
 
     def _detect_by_shape(
-        self, img_gray: np.ndarray, params: Dict[str, Any]
-    ) -> List[Tuple[BoundingBox, float]]:
+        self, img_gray: np.ndarray, params: dict[str, Any]
+    ) -> list[tuple[BoundingBox, float]]:
         """Detect dropdowns by their rectangular shape"""
         dropdowns = []
 
         # Apply edge detection
-        edges = cv2.Canny(
-            img_gray, params["edge_threshold_low"], params["edge_threshold_high"]
-        )
+        edges = cv2.Canny(img_gray, params["edge_threshold_low"], params["edge_threshold_high"])
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)

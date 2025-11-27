@@ -9,10 +9,7 @@ a voting/consensus mechanism to improve detection accuracy. It's experimental
 and performance may vary significantly depending on the UI being analyzed.
 """
 
-from typing import Any, Dict, List
-
-import cv2
-import numpy as np
+from typing import Any
 
 from .base_detector import BaseDetector
 from .contour_detector import ContourDetector
@@ -37,7 +34,7 @@ class HybridDetector(BaseDetector):
         self.contour_detector = ContourDetector()
         self.mser_detector = MSERDetector()
 
-    def detect(self, image_path: str, **params) -> List[BBox]:
+    def detect(self, image_path: str, **params) -> list[BBox]:
         """
         Detect elements using multiple methods and combine results
 
@@ -90,16 +87,12 @@ class HybridDetector(BaseDetector):
                 final_boxes.append(merged)
 
         # Final merge of very similar boxes
-        final_boxes = self.merge_overlapping_boxes(
-            final_boxes, iou_threshold=merge_threshold
-        )
+        final_boxes = self.merge_overlapping_boxes(final_boxes, iou_threshold=merge_threshold)
         final_boxes = self.remove_contained_boxes(final_boxes)
 
         return final_boxes
 
-    def _group_overlapping_boxes(
-        self, boxes: List[BBox], iou_threshold: float
-    ) -> List[List[BBox]]:
+    def _group_overlapping_boxes(self, boxes: list[BBox], iou_threshold: float) -> list[list[BBox]]:
         """Group boxes that overlap significantly"""
         if not boxes:
             return []
@@ -145,7 +138,7 @@ class HybridDetector(BaseDetector):
 
         return intersection / union if union > 0 else 0.0
 
-    def _merge_box_group(self, group: List[BBox]) -> BBox:
+    def _merge_box_group(self, group: list[BBox]) -> BBox:
         """Merge a group of boxes by taking bounding box"""
         min_x = min(b.x1 for b in group)
         min_y = min(b.y1 for b in group)
@@ -153,7 +146,7 @@ class HybridDetector(BaseDetector):
         max_y = max(b.y2 for b in group)
         return BBox(min_x, min_y, max_x, max_y)
 
-    def get_param_grid(self) -> List[Dict[str, Any]]:
+    def get_param_grid(self) -> list[dict[str, Any]]:
         """Parameter grid for hyperparameter search"""
         return [
             # All methods, different consensus levels

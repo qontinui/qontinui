@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from ..find.match import Match
-    from .action_result import ActionResult
     from ..model.element.location import Location
+    from .action_result import ActionResult
 
 
 class ResultExtractor:

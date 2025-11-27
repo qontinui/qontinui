@@ -63,9 +63,7 @@ class SimilarityFilter(MatchFilter):
                 raise ValueError(f"Match has invalid similarity score: {match.similarity}")
 
             if not 0.0 <= match.similarity <= 1.0:
-                raise ValueError(
-                    f"Match similarity must be in [0.0, 1.0], got {match.similarity}"
-                )
+                raise ValueError(f"Match similarity must be in [0.0, 1.0], got {match.similarity}")
 
             # Keep matches that meet or exceed threshold
             if match.similarity >= self.min_similarity:

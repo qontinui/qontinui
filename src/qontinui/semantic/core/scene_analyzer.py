@@ -7,7 +7,7 @@ from typing import Any, cast
 import numpy as np
 
 from .scene_object_store import SceneObjectStore
-from .semantic_object import ObjectType, SemanticObject
+from .semantic_object import SemanticObject
 
 
 class SceneAnalyzer:

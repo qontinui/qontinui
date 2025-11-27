@@ -10,7 +10,7 @@ Accuracy: 70-80% for text with good contrast
 """
 
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -39,14 +39,14 @@ class GradientTextDetector(BaseRegionAnalyzer):
         return "gradient_text_detector"
 
     @property
-    def supported_region_types(self) -> List[RegionType]:
+    def supported_region_types(self) -> list[RegionType]:
         return [RegionType.TEXT_AREA]
 
     @property
     def version(self) -> str:
         return "1.0.0"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize Gradient text detector.
 
@@ -77,7 +77,7 @@ class GradientTextDetector(BaseRegionAnalyzer):
         self.min_aspect_ratio = params["min_aspect_ratio"]
         self.max_aspect_ratio = params["max_aspect_ratio"]
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "gradient_threshold": 30.0,
             "min_gradient_density": 0.15,
@@ -114,9 +114,7 @@ class GradientTextDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -131,9 +129,7 @@ class GradientTextDetector(BaseRegionAnalyzer):
             },
         )
 
-    def _detect_text_regions(
-        self, gray: np.ndarray, screenshot_index: int
-    ) -> List[DetectedRegion]:
+    def _detect_text_regions(self, gray: np.ndarray, screenshot_index: int) -> list[DetectedRegion]:
         """Detect text regions in a grayscale image."""
         # Apply Gaussian blur
         blurred = cv2.GaussianBlur(gray, (3, 3), 0)
@@ -146,9 +142,7 @@ class GradientTextDetector(BaseRegionAnalyzer):
         gradient_mag = np.sqrt(grad_x**2 + grad_y**2)
 
         # Normalize to 0-255
-        gradient_mag = cv2.normalize(
-            gradient_mag, None, 0, 255, cv2.NORM_MINMAX
-        ).astype(np.uint8)
+        gradient_mag = cv2.normalize(gradient_mag, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
         # Threshold gradient magnitude
         _, gradient_binary = cv2.threshold(
@@ -161,14 +155,10 @@ class GradientTextDetector(BaseRegionAnalyzer):
         )
 
         # Close to connect nearby gradients
-        closed = cv2.morphologyEx(
-            gradient_binary, cv2.MORPH_CLOSE, kernel, iterations=2
-        )
+        closed = cv2.morphologyEx(gradient_binary, cv2.MORPH_CLOSE, kernel, iterations=2)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         detected_regions = []
 
@@ -183,17 +173,12 @@ class GradientTextDetector(BaseRegionAnalyzer):
 
             # Filter by aspect ratio
             aspect_ratio = w / h if h > 0 else 0
-            if (
-                aspect_ratio < self.min_aspect_ratio
-                or aspect_ratio > self.max_aspect_ratio
-            ):
+            if aspect_ratio < self.min_aspect_ratio or aspect_ratio > self.max_aspect_ratio:
                 continue
 
             # Calculate gradient density in this region
             roi_gradient = gradient_binary[y : y + h, x : x + w]
-            gradient_density = (
-                np.count_nonzero(roi_gradient) / (w * h) if (w * h) > 0 else 0
-            )
+            gradient_density = np.count_nonzero(roi_gradient) / (w * h) if (w * h) > 0 else 0
 
             # Filter by gradient density (text should have moderate density)
             if (
@@ -204,9 +189,7 @@ class GradientTextDetector(BaseRegionAnalyzer):
 
             # Calculate gradient variance (text should have relatively uniform gradients)
             roi_gradient_mag = gradient_mag[y : y + h, x : x + w]
-            gradient_std = np.std(
-                roi_gradient_mag[roi_gradient_mag > self.gradient_threshold]
-            )
+            gradient_std = np.std(roi_gradient_mag[roi_gradient_mag > self.gradient_threshold])
 
             # Calculate gradient orientation consistency
             roi_grad_x = grad_x[y : y + h, x : x + w]
@@ -215,9 +198,7 @@ class GradientTextDetector(BaseRegionAnalyzer):
 
             # Text often has consistent vertical or horizontal gradients
             # Calculate histogram of gradient orientations
-            angle_hist, _ = np.histogram(
-                gradient_angles.flatten(), bins=8, range=(-np.pi, np.pi)
-            )
+            angle_hist, _ = np.histogram(gradient_angles.flatten(), bins=8, range=(-np.pi, np.pi))
             angle_consistency = np.max(angle_hist) / (np.sum(angle_hist) + 1e-5)
 
             # Calculate confidence
@@ -231,9 +212,7 @@ class GradientTextDetector(BaseRegionAnalyzer):
             # Some orientation consistency is good
             consistency_score = min(angle_consistency * 2, 1.0)
 
-            confidence = (
-                density_score * 0.4 + aspect_score * 0.3 + consistency_score * 0.3
-            ) * 0.7
+            confidence = (density_score * 0.4 + aspect_score * 0.3 + consistency_score * 0.3) * 0.7
 
             detected_region = DetectedRegion(
                 bounding_box=BoundingBox(x, y, w, h),

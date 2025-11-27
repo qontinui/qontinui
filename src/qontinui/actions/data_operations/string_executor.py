@@ -74,7 +74,7 @@ class StringExecutor:
         self,
         operation: str,
         input_value: str | dict[str, Any],
-        parameters: dict[str, Any] | None = None
+        parameters: dict[str, Any] | None = None,
     ) -> str | list[str]:
         """Execute a string operation with the given parameters.
 
@@ -127,11 +127,7 @@ class StringExecutor:
         else:
             raise ValueError(f"Unknown string operation: {operation}")
 
-    def concat(
-        self,
-        input_str: str,
-        parameters: dict[str, Any] | None = None
-    ) -> str:
+    def concat(self, input_str: str, parameters: dict[str, Any] | None = None) -> str:
         """Concatenate input string with additional strings.
 
         Args:
@@ -159,11 +155,7 @@ class StringExecutor:
         logger.debug(f"CONCAT: Combined {len(additional_strings) + 1} strings")
         return result
 
-    def substring(
-        self,
-        input_str: str,
-        parameters: dict[str, Any] | None = None
-    ) -> str:
+    def substring(self, input_str: str, parameters: dict[str, Any] | None = None) -> str:
         """Extract substring from input string.
 
         Args:
@@ -194,11 +186,7 @@ class StringExecutor:
         logger.debug(f"SUBSTRING: Extracted from position {start} to {end or 'end'}")
         return result
 
-    def replace(
-        self,
-        input_str: str,
-        parameters: dict[str, Any] | None = None
-    ) -> str:
+    def replace(self, input_str: str, parameters: dict[str, Any] | None = None) -> str:
         """Replace occurrences of search string with replacement.
 
         Args:
@@ -227,11 +215,7 @@ class StringExecutor:
         logger.debug(f"REPLACE: Replaced '{search}' with '{replacement}'")
         return result
 
-    def split(
-        self,
-        input_str: str,
-        parameters: dict[str, Any] | None = None
-    ) -> list[str]:
+    def split(self, input_str: str, parameters: dict[str, Any] | None = None) -> list[str]:
         """Split string into a list of substrings.
 
         Args:
@@ -308,11 +292,7 @@ class StringExecutor:
         logger.debug("LOWERCASE: Converted to lowercase")
         return result
 
-    def match(
-        self,
-        input_str: str,
-        parameters: dict[str, Any] | None = None
-    ) -> str:
+    def match(self, input_str: str, parameters: dict[str, Any] | None = None) -> str:
         """Match string against regular expression pattern.
 
         Returns a JSON string containing match information including captured
@@ -347,11 +327,13 @@ class StringExecutor:
             raise ValueError(f"Invalid regex pattern: {e}") from e
 
         if match_obj:
-            result = json.dumps({
-                "matched": True,
-                "groups": list(match_obj.groups()),
-                "group_dict": match_obj.groupdict()
-            })
+            result = json.dumps(
+                {
+                    "matched": True,
+                    "groups": list(match_obj.groups()),
+                    "group_dict": match_obj.groupdict(),
+                }
+            )
             logger.debug(f"MATCH: Pattern matched with {len(match_obj.groups())} groups")
         else:
             result = json.dumps({"matched": False})

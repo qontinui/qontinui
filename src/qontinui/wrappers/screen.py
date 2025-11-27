@@ -41,15 +41,15 @@ class Screen:
     """
 
     _mock_screen = MockScreen()
-    _screen_capture: 'IScreenCapture | None' = None
+    _screen_capture: "IScreenCapture | None" = None
     _screen_capture_lock = threading.Lock()
-    _pattern_matcher: 'IPatternMatcher | None' = None
+    _pattern_matcher: "IPatternMatcher | None" = None
     _pattern_matcher_lock = threading.Lock()
-    _ocr_engine: 'IOCREngine | None' = None
+    _ocr_engine: "IOCREngine | None" = None
     _ocr_engine_lock = threading.Lock()
 
     @classmethod
-    def _get_screen_capture(cls) -> 'IScreenCapture':
+    def _get_screen_capture(cls) -> "IScreenCapture":
         """Lazy initialization of screen capture.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -58,11 +58,12 @@ class Screen:
             with cls._screen_capture_lock:
                 if cls._screen_capture is None:
                     from ..hal.factory import HALFactory
+
                     cls._screen_capture = HALFactory.get_screen_capture()
         return cls._screen_capture
 
     @classmethod
-    def _get_pattern_matcher(cls) -> 'IPatternMatcher':
+    def _get_pattern_matcher(cls) -> "IPatternMatcher":
         """Lazy initialization of pattern matcher.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -71,11 +72,12 @@ class Screen:
             with cls._pattern_matcher_lock:
                 if cls._pattern_matcher is None:
                     from ..hal.factory import HALFactory
+
                     cls._pattern_matcher = HALFactory.get_pattern_matcher()
         return cls._pattern_matcher
 
     @classmethod
-    def _get_ocr_engine(cls) -> 'IOCREngine':
+    def _get_ocr_engine(cls) -> "IOCREngine":
         """Lazy initialization of OCR engine.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -84,6 +86,7 @@ class Screen:
             with cls._ocr_engine_lock:
                 if cls._ocr_engine is None:
                     from ..hal.factory import HALFactory
+
                     cls._ocr_engine = HALFactory.get_ocr_engine()
         return cls._ocr_engine
 

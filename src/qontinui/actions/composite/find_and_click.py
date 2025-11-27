@@ -134,7 +134,9 @@ class FindAndClickOptionsBuilder(ActionConfigBuilder):
             This builder instance for chaining
         """
         # Create new ClickOptions with updated click count instead of mutating
-        self.click_options = ClickOptionsBuilder(self.click_options).set_number_of_clicks(count).build()
+        self.click_options = (
+            ClickOptionsBuilder(self.click_options).set_number_of_clicks(count).build()
+        )
         return self
 
     def build(self) -> FindAndClickOptions:

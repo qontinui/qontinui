@@ -8,12 +8,10 @@ import gc
 import threading
 import time
 import tracemalloc
-from typing import List
 
 import pytest
 
 from qontinui.actions.action_result import ActionResult
-from qontinui.actions.result_builder import ActionResultBuilder
 from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import StateRegistry
 
@@ -71,7 +69,7 @@ class TestActionResultPerformance:
 
         # Concurrent
         result_concurrent = ActionResult()
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def add_matches(thread_id: int):
@@ -146,6 +144,7 @@ class TestStateRegistryPerformance:
         start_time = time.time()
 
         for i in range(num_states):
+
             @state(name=f"baseline_state_{i}")
             class BaselineState:
                 pass
@@ -168,6 +167,7 @@ class TestStateRegistryPerformance:
         start_baseline = time.time()
 
         for i in range(num_threads * states_per_thread):
+
             @state(name=f"baseline_concurrent_{i}")
             class BaselineConcurrentState:
                 pass
@@ -178,12 +178,13 @@ class TestStateRegistryPerformance:
 
         # Concurrent
         registry_concurrent = StateRegistry()
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def register_states(thread_id: int):
             try:
                 for i in range(states_per_thread):
+
                     @state(name=f"concurrent_{thread_id}_{i}")
                     class ConcurrentState:
                         pass
@@ -223,6 +224,7 @@ class TestStateRegistryPerformance:
 
         # Pre-register states
         for i in range(1000):
+
             @state(name=f"lookup_perf_{i}")
             class LookupState:
                 pass
@@ -290,6 +292,7 @@ class TestMemoryUsage:
 
         # Register many states
         for i in range(1000):
+
             @state(name=f"mem_state_{i}")
             class MemState:
                 pass

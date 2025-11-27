@@ -31,7 +31,7 @@ class SearchRegions:
     regions: list[Region] = field(default_factory=list)
     """The list of regions to search within."""
 
-    fixed_region: Optional[Region] = None
+    fixed_region: Region | None = None
     """The fixed region is defined when an image with a fixed location is found.
     This region is then used in future FIND operations. Initialized to None to
     distinguish between 'not set' and 'explicitly set to a region'."""

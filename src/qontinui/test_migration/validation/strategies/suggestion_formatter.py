@@ -4,8 +4,8 @@ Suggestion formatting and application utilities.
 
 from pathlib import Path
 
-from ..fix_models import FixComplexity, FixSuggestion, FixType
 from ...core.models import FailureAnalysis, TestFile
+from ..fix_models import FixComplexity, FixSuggestion, FixType
 
 
 class SuggestionFormatter:

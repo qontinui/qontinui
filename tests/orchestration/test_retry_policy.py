@@ -5,8 +5,6 @@ import time
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
@@ -210,9 +208,7 @@ class TestRetryPolicyFactoryMethods:
 
     def test_with_exponential_backoff_factory(self):
         """Test with_exponential_backoff factory method."""
-        policy = RetryPolicy.with_exponential_backoff(
-            max_retries=5, base_delay=1.0, max_delay=20.0
-        )
+        policy = RetryPolicy.with_exponential_backoff(max_retries=5, base_delay=1.0, max_delay=20.0)
 
         assert policy.max_retries == 5
         assert policy.base_delay == 1.0

@@ -134,9 +134,7 @@ class MathExecutor:
                     # Variable reference
                     var_name = operand.get("variableName")
                     if not var_name:
-                        raise ValueError(
-                            f"Operand {i}: Variable reference missing 'variableName'"
-                        )
+                        raise ValueError(f"Operand {i}: Variable reference missing 'variableName'")
 
                     value = self.variable_context.get(var_name)
                     if value is None:
@@ -147,9 +145,7 @@ class MathExecutor:
                     # Try to convert to float
                     resolved.append(float(operand))
             except (ValueError, TypeError) as e:
-                raise ValueError(
-                    f"Operand {i}: Cannot convert to number: {operand}"
-                ) from e
+                raise ValueError(f"Operand {i}: Cannot convert to number: {operand}") from e
 
         return resolved
 

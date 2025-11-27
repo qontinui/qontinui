@@ -6,14 +6,19 @@ extracting grid spacing from frequency domain peaks.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
-from scipy.fft import fft2, fftshift, ifft2, ifftshift
+from scipy.fft import fft2, fftshift
 from scipy.ndimage import maximum_filter
 
-from qontinui.discovery.region_analysis.base import BaseRegionAnalyzer, BoundingBox, DetectedRegion, RegionType
+from qontinui.discovery.region_analysis.base import (
+    BaseRegionAnalyzer,
+    BoundingBox,
+    DetectedRegion,
+    RegionType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +39,7 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
     def name(self) -> str:
         return "frequency_analysis_detector"
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_cell_size": 24,
             "max_cell_size": 150,
@@ -45,7 +50,7 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
             "use_edges": True,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> List[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
         """Detect inventory grids using frequency analysis"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -74,8 +79,8 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
         return regions
 
     def _frequency_analysis(
-        self, image: np.ndarray, params: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self, image: np.ndarray, params: dict[str, Any]
+    ) -> dict[str, Any] | None:
         """
         Perform 2D FFT to detect periodic patterns
 
@@ -172,9 +177,9 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
         self,
         edge_img: np.ndarray,
         gray_img: np.ndarray,
-        grid_params: Dict[str, Any],
-        params: Dict[str, Any],
-    ) -> List[DetectedRegion]:
+        grid_params: dict[str, Any],
+        params: dict[str, Any],
+    ) -> list[DetectedRegion]:
         """Locate actual grid regions using detected spacing"""
         spacing_x = grid_params["spacing_x"]
         spacing_y = grid_params["spacing_y"]
@@ -185,20 +190,15 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
 
         # Use edge-based template
         template = np.zeros((template_size_y, template_size_x), dtype=np.uint8)
-        cv2.rectangle(
-            template, (2, 2), (template_size_x - 3, template_size_y - 3), 255, 2
-        )
+        cv2.rectangle(template, (2, 2), (template_size_x - 3, template_size_y - 3), 255, 2)
 
         # Template matching
-        if (
-            edge_img.shape[0] >= template_size_y
-            and edge_img.shape[1] >= template_size_x
-        ):
+        if edge_img.shape[0] >= template_size_y and edge_img.shape[1] >= template_size_x:
             result = cv2.matchTemplate(edge_img, template, cv2.TM_CCOEFF_NORMED)
             threshold = 0.3
 
             locations = np.where(result >= threshold)
-            matches = list(zip(locations[1], locations[0]))  # (x, y)
+            matches = list(zip(locations[1], locations[0], strict=False))  # (x, y)
 
             if len(matches) < params["min_grid_rows"] * params["min_grid_cols"]:
                 return []
@@ -214,12 +214,12 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
 
     def _extract_grid_from_matches(
         self,
-        matches: List[Tuple[int, int]],
+        matches: list[tuple[int, int]],
         spacing_x: int,
         spacing_y: int,
-        img_shape: Tuple[int, int],
-        params: Dict[str, Any],
-    ) -> List[DetectedRegion]:
+        img_shape: tuple[int, int],
+        params: dict[str, Any],
+    ) -> list[DetectedRegion]:
         """Extract grid structure from template matches"""
         if len(matches) < params["min_grid_rows"] * params["min_grid_cols"]:
             return []
@@ -238,10 +238,7 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
             expected_x = x_min + grid_x * spacing_x
             expected_y = y_min + grid_y * spacing_y
 
-            if (
-                abs(x - expected_x) < spacing_x * 0.3
-                and abs(y - expected_y) < spacing_y * 0.3
-            ):
+            if abs(x - expected_x) < spacing_x * 0.3 and abs(y - expected_y) < spacing_y * 0.3:
                 if (grid_x, grid_y) not in grid_positions:
                     grid_positions[(grid_x, grid_y)] = (x, y)
 

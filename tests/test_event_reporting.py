@@ -11,13 +11,19 @@ import numpy as np
 import pytest
 
 from qontinui import Find, Image
-from qontinui.reporting import Event, EventCollector, EventType, get_event_registry, register_callback
+from qontinui.reporting import (
+    Event,
+    EventCollector,
+    EventType,
+    get_event_registry,
+    register_callback,
+)
 
 # Decorator for skipping tests that require a working X display
 # This uses a lambda to defer evaluation until test time (after fixtures run)
 skip_without_display = pytest.mark.skipif(
-    lambda: os.environ.get('DISPLAY', '') == ':99',
-    reason="Requires X display (run with Xvfb or in GUI environment)"
+    lambda: os.environ.get("DISPLAY", "") == ":99",
+    reason="Requires X display (run with Xvfb or in GUI environment)",
 )
 
 
@@ -74,7 +80,7 @@ class TestEventReporting:
         assert registry.has_listeners, "Event registry should have listeners"
 
         # Execute find operation with high threshold (should fail to match)
-        print(f"[TEST] Starting Find operation...")
+        print("[TEST] Starting Find operation...")
         results = Find(test_image).similarity(0.90).screenshot(screenshot).execute()
         print(f"[TEST] Find completed, matches: {len(results.matches) if results.matches else 0}")
 
@@ -106,49 +112,47 @@ class TestEventReporting:
 
         # ASSERTION 3: Template dimensions should be correct
         template_dims = event_data["template_dimensions"]
-        assert template_dims["width"] == 50, (
-            f"Template width should be 50, got {template_dims['width']}"
-        )
-        assert template_dims["height"] == 50, (
-            f"Template height should be 50, got {template_dims['height']}"
-        )
+        assert (
+            template_dims["width"] == 50
+        ), f"Template width should be 50, got {template_dims['width']}"
+        assert (
+            template_dims["height"] == 50
+        ), f"Template height should be 50, got {template_dims['height']}"
 
         # ASSERTION 4: Screenshot dimensions should be correct
         # Note: screenshot_data was created as np.zeros((1920, 1080, 3))
         # In numpy, shape is (height, width, channels), so height=1920, width=1080
         screenshot_dims = event_data["screenshot_dimensions"]
-        assert screenshot_dims["width"] == 1080, (
-            f"Screenshot width should be 1080, got {screenshot_dims['width']}"
-        )
-        assert screenshot_dims["height"] == 1920, (
-            f"Screenshot height should be 1920, got {screenshot_dims['height']}"
-        )
+        assert (
+            screenshot_dims["width"] == 1080
+        ), f"Screenshot width should be 1080, got {screenshot_dims['width']}"
+        assert (
+            screenshot_dims["height"] == 1920
+        ), f"Screenshot height should be 1920, got {screenshot_dims['height']}"
 
         # ASSERTION 5: Confidence should be reported (not 0.0 or None)
         # Note: Since the images don't match, confidence will be low but not 0
         confidence = event_data["best_match_confidence"]
         assert confidence is not None, "Confidence should not be None"
-        assert isinstance(confidence, (int, float)), (
-            f"Confidence should be numeric, got {type(confidence)}"
-        )
+        assert isinstance(
+            confidence, (int, float)
+        ), f"Confidence should be numeric, got {type(confidence)}"
         # Confidence should be between -1 and 1 for correlation coefficient
-        assert -1.0 <= confidence <= 1.0, (
-            f"Confidence should be between -1 and 1, got {confidence}"
-        )
+        assert -1.0 <= confidence <= 1.0, f"Confidence should be between -1 and 1, got {confidence}"
 
         # ASSERTION 6: Threshold should be correct
         threshold = event_data["similarity_threshold"]
         assert threshold == 0.90, f"Threshold should be 0.90, got {threshold}"
 
         # ASSERTION 7: threshold_passed should be False (since image not in screenshot)
-        assert event_data["threshold_passed"] is False, (
-            "threshold_passed should be False when match confidence is below threshold"
-        )
+        assert (
+            event_data["threshold_passed"] is False
+        ), "threshold_passed should be False when match confidence is below threshold"
 
         # ASSERTION 8: Image ID should be correct
-        assert event_data["image_id"] == "test-red-square", (
-            f"Image ID should be 'test-red-square', got {event_data['image_id']}"
-        )
+        assert (
+            event_data["image_id"] == "test-red-square"
+        ), f"Image ID should be 'test-red-square', got {event_data['image_id']}"
 
         print("[TEST] All assertions passed!")
 
@@ -177,20 +181,20 @@ class TestEventReporting:
         results = Find(test_image).similarity(0.70).screenshot(screenshot).execute()
 
         # Event should be emitted
-        assert len(events_received) > 0, "MATCH_ATTEMPTED event should be emitted for successful matches"
+        assert (
+            len(events_received) > 0
+        ), "MATCH_ATTEMPTED event should be emitted for successful matches"
 
         event_data = events_received[0].data
 
         # Confidence should be very high (close to 1.0 for exact match)
         confidence = event_data["best_match_confidence"]
-        assert confidence > 0.95, (
-            f"Confidence for exact match should be > 0.95, got {confidence}"
-        )
+        assert confidence > 0.95, f"Confidence for exact match should be > 0.95, got {confidence}"
 
         # threshold_passed should be True
-        assert event_data["threshold_passed"] is True, (
-            "threshold_passed should be True when match exceeds threshold"
-        )
+        assert (
+            event_data["threshold_passed"] is True
+        ), "threshold_passed should be True when match exceeds threshold"
 
     @skip_without_display
     def test_event_collector_captures_match_attempts(self):

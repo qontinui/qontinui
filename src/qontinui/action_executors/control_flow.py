@@ -16,8 +16,8 @@ from typing import Any
 from ..actions.control_flow import (
     BreakLoop,
     ContinueLoop,
-    ControlFlowExecutor as LegacyControlFlowExecutor,
 )
+from ..actions.control_flow import ControlFlowExecutor as LegacyControlFlowExecutor
 from ..config import (
     Action,
     BreakActionConfig,

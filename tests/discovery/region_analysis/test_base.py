@@ -18,12 +18,13 @@ Example usage:
     ...         pass
 """
 
+from abc import ABC, abstractmethod
+from typing import Any
+
 import numpy as np
 import pytest
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Set
-from tests.fixtures.screenshot_fixtures import SyntheticScreenshotGenerator, ElementSpec
-from tests.fixtures.detector_fixtures import MockRegion
+
+from tests.fixtures.screenshot_fixtures import ElementSpec, SyntheticScreenshotGenerator
 
 
 class BaseRegionAnalyzerTest(ABC):
@@ -70,7 +71,7 @@ class BaseRegionAnalyzerTest(ABC):
             analyzer: Region analyzer instance from fixture
         """
         assert analyzer is not None
-        assert hasattr(analyzer, 'analyze') or hasattr(analyzer, 'detect_regions')
+        assert hasattr(analyzer, "analyze") or hasattr(analyzer, "detect_regions")
 
     def test_empty_screenshot(self, analyzer):
         """
@@ -82,7 +83,7 @@ class BaseRegionAnalyzerTest(ABC):
         generator = SyntheticScreenshotGenerator()
         empty_screen = generator.generate(width=800, height=600, elements=[])
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(empty_screen)
         else:
             regions = analyzer.detect_regions(empty_screen)
@@ -103,12 +104,19 @@ class BaseRegionAnalyzerTest(ABC):
             height=600,
             elements=[
                 # Create a dialog-like region
-                ElementSpec("rectangle", x=200, y=150, width=400, height=300,
-                           color=(240, 240, 240), border_color=(100, 100, 100))
-            ]
+                ElementSpec(
+                    "rectangle",
+                    x=200,
+                    y=150,
+                    width=400,
+                    height=300,
+                    color=(240, 240, 240),
+                    border_color=(100, 100, 100),
+                )
+            ],
         )
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(screenshot)
         else:
             regions = analyzer.detect_regions(screenshot)
@@ -130,18 +138,39 @@ class BaseRegionAnalyzerTest(ABC):
             height=768,
             elements=[
                 # Toolbar region
-                ElementSpec("rectangle", x=0, y=0, width=1024, height=60,
-                           color=(220, 220, 220), border_color=(150, 150, 150)),
+                ElementSpec(
+                    "rectangle",
+                    x=0,
+                    y=0,
+                    width=1024,
+                    height=60,
+                    color=(220, 220, 220),
+                    border_color=(150, 150, 150),
+                ),
                 # Content region
-                ElementSpec("rectangle", x=100, y=100, width=600, height=500,
-                           color=(255, 255, 255), border_color=(200, 200, 200)),
+                ElementSpec(
+                    "rectangle",
+                    x=100,
+                    y=100,
+                    width=600,
+                    height=500,
+                    color=(255, 255, 255),
+                    border_color=(200, 200, 200),
+                ),
                 # Sidebar region
-                ElementSpec("rectangle", x=750, y=100, width=250, height=500,
-                           color=(240, 240, 240), border_color=(180, 180, 180)),
-            ]
+                ElementSpec(
+                    "rectangle",
+                    x=750,
+                    y=100,
+                    width=250,
+                    height=500,
+                    color=(240, 240, 240),
+                    border_color=(180, 180, 180),
+                ),
+            ],
         )
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(screenshot)
         else:
             regions = analyzer.detect_regions(screenshot)
@@ -162,12 +191,11 @@ class BaseRegionAnalyzerTest(ABC):
             width=800,
             height=600,
             elements=[
-                ElementSpec("rectangle", x=100, y=100, width=200, height=200,
-                           color=(240, 240, 240))
-            ]
+                ElementSpec("rectangle", x=100, y=100, width=200, height=200, color=(240, 240, 240))
+            ],
         )
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(screenshot)
         else:
             regions = analyzer.detect_regions(screenshot)
@@ -175,10 +203,10 @@ class BaseRegionAnalyzerTest(ABC):
         if len(regions) > 0:
             region = regions[0]
             # Check required properties
-            assert hasattr(region, 'x') or hasattr(region, 'bbox')
-            assert hasattr(region, 'y') or hasattr(region, 'bbox')
-            assert hasattr(region, 'width') or hasattr(region, 'bbox')
-            assert hasattr(region, 'height') or hasattr(region, 'bbox')
+            assert hasattr(region, "x") or hasattr(region, "bbox")
+            assert hasattr(region, "y") or hasattr(region, "bbox")
+            assert hasattr(region, "width") or hasattr(region, "bbox")
+            assert hasattr(region, "height") or hasattr(region, "bbox")
 
     def test_region_hierarchy(self, analyzer):
         """
@@ -193,15 +221,29 @@ class BaseRegionAnalyzerTest(ABC):
             height=600,
             elements=[
                 # Parent region (dialog)
-                ElementSpec("rectangle", x=150, y=100, width=500, height=400,
-                           color=(240, 240, 240), border_color=(100, 100, 100)),
+                ElementSpec(
+                    "rectangle",
+                    x=150,
+                    y=100,
+                    width=500,
+                    height=400,
+                    color=(240, 240, 240),
+                    border_color=(100, 100, 100),
+                ),
                 # Child region (content area)
-                ElementSpec("rectangle", x=170, y=130, width=460, height=340,
-                           color=(255, 255, 255), border_color=(150, 150, 150)),
-            ]
+                ElementSpec(
+                    "rectangle",
+                    x=170,
+                    y=130,
+                    width=460,
+                    height=340,
+                    color=(255, 255, 255),
+                    border_color=(150, 150, 150),
+                ),
+            ],
         )
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(screenshot)
         else:
             regions = analyzer.detect_regions(screenshot)
@@ -242,28 +284,56 @@ class BaseRegionTypeTest:
         # Create region based on type
         if self.region_type == "dialog":
             elements = [
-                ElementSpec("rectangle", x=200, y=150, width=400, height=300,
-                           color=(240, 240, 240), border_color=(100, 100, 100))
+                ElementSpec(
+                    "rectangle",
+                    x=200,
+                    y=150,
+                    width=400,
+                    height=300,
+                    color=(240, 240, 240),
+                    border_color=(100, 100, 100),
+                )
             ]
         elif self.region_type == "toolbar":
             elements = [
-                ElementSpec("rectangle", x=0, y=0, width=800, height=50,
-                           color=(220, 220, 220), border_color=(150, 150, 150))
+                ElementSpec(
+                    "rectangle",
+                    x=0,
+                    y=0,
+                    width=800,
+                    height=50,
+                    color=(220, 220, 220),
+                    border_color=(150, 150, 150),
+                )
             ]
         elif self.region_type == "sidebar":
             elements = [
-                ElementSpec("rectangle", x=0, y=0, width=200, height=600,
-                           color=(240, 240, 240), border_color=(180, 180, 180))
+                ElementSpec(
+                    "rectangle",
+                    x=0,
+                    y=0,
+                    width=200,
+                    height=600,
+                    color=(240, 240, 240),
+                    border_color=(180, 180, 180),
+                )
             ]
         else:
             elements = [
-                ElementSpec("rectangle", x=100, y=100, width=300, height=300,
-                           color=(255, 255, 255), border_color=(200, 200, 200))
+                ElementSpec(
+                    "rectangle",
+                    x=100,
+                    y=100,
+                    width=300,
+                    height=300,
+                    color=(255, 255, 255),
+                    border_color=(200, 200, 200),
+                )
             ]
 
         screenshot = generator.generate(width=800, height=600, elements=elements)
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(screenshot)
         else:
             regions = analyzer.detect_regions(screenshot)
@@ -278,18 +348,17 @@ class BaseRegionTypeTest:
             width=800,
             height=600,
             elements=[
-                ElementSpec("rectangle", x=100, y=100, width=200, height=200,
-                           color=(240, 240, 240))
-            ]
+                ElementSpec("rectangle", x=100, y=100, width=200, height=200, color=(240, 240, 240))
+            ],
         )
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(screenshot)
         else:
             regions = analyzer.detect_regions(screenshot)
 
         for region in regions:
-            if hasattr(region, 'width') and hasattr(region, 'height'):
+            if hasattr(region, "width") and hasattr(region, "height"):
                 # Regions should have positive dimensions
                 assert region.width > 0
                 assert region.height > 0
@@ -329,14 +398,28 @@ class RegionRelationshipTest:
             width=800,
             height=600,
             elements=[
-                ElementSpec("rectangle", x=100, y=100, width=300, height=300,
-                           color=(240, 240, 240), border_color=(100, 100, 100)),
-                ElementSpec("rectangle", x=200, y=200, width=300, height=300,
-                           color=(220, 220, 220), border_color=(120, 120, 120)),
-            ]
+                ElementSpec(
+                    "rectangle",
+                    x=100,
+                    y=100,
+                    width=300,
+                    height=300,
+                    color=(240, 240, 240),
+                    border_color=(100, 100, 100),
+                ),
+                ElementSpec(
+                    "rectangle",
+                    x=200,
+                    y=200,
+                    width=300,
+                    height=300,
+                    color=(220, 220, 220),
+                    border_color=(120, 120, 120),
+                ),
+            ],
         )
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(screenshot)
         else:
             regions = analyzer.detect_regions(screenshot)
@@ -352,15 +435,29 @@ class RegionRelationshipTest:
             height=600,
             elements=[
                 # Left region
-                ElementSpec("rectangle", x=50, y=100, width=300, height=400,
-                           color=(240, 240, 240), border_color=(100, 100, 100)),
+                ElementSpec(
+                    "rectangle",
+                    x=50,
+                    y=100,
+                    width=300,
+                    height=400,
+                    color=(240, 240, 240),
+                    border_color=(100, 100, 100),
+                ),
                 # Right region (adjacent)
-                ElementSpec("rectangle", x=350, y=100, width=400, height=400,
-                           color=(220, 220, 220), border_color=(120, 120, 120)),
-            ]
+                ElementSpec(
+                    "rectangle",
+                    x=350,
+                    y=100,
+                    width=400,
+                    height=400,
+                    color=(220, 220, 220),
+                    border_color=(120, 120, 120),
+                ),
+            ],
         )
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(screenshot)
         else:
             regions = analyzer.detect_regions(screenshot)
@@ -376,15 +473,29 @@ class RegionRelationshipTest:
             height=600,
             elements=[
                 # Parent region
-                ElementSpec("rectangle", x=100, y=100, width=600, height=400,
-                           color=(240, 240, 240), border_color=(100, 100, 100)),
+                ElementSpec(
+                    "rectangle",
+                    x=100,
+                    y=100,
+                    width=600,
+                    height=400,
+                    color=(240, 240, 240),
+                    border_color=(100, 100, 100),
+                ),
                 # Child region (inside parent)
-                ElementSpec("rectangle", x=150, y=150, width=500, height=300,
-                           color=(255, 255, 255), border_color=(150, 150, 150)),
-            ]
+                ElementSpec(
+                    "rectangle",
+                    x=150,
+                    y=150,
+                    width=500,
+                    height=300,
+                    color=(255, 255, 255),
+                    border_color=(150, 150, 150),
+                ),
+            ],
         )
 
-        if hasattr(analyzer, 'analyze'):
+        if hasattr(analyzer, "analyze"):
             regions = analyzer.analyze(screenshot)
         else:
             regions = analyzer.detect_regions(screenshot)
@@ -417,10 +528,7 @@ class RegionPerformanceTest:
         pass
 
     def measure_analysis_time(
-        self,
-        analyzer,
-        screenshot: Optional[np.ndarray] = None,
-        num_runs: int = 10
+        self, analyzer, screenshot: np.ndarray | None = None, num_runs: int = 10
     ) -> float:
         """
         Measure average region analysis time.
@@ -440,15 +548,13 @@ class RegionPerformanceTest:
             screenshot = generator.generate(
                 width=1024,
                 height=768,
-                elements=[
-                    ElementSpec("rectangle", x=100, y=100, width=400, height=300)
-                ]
+                elements=[ElementSpec("rectangle", x=100, y=100, width=400, height=300)],
             )
 
         times = []
         for _ in range(num_runs):
             start = time.time()
-            if hasattr(analyzer, 'analyze'):
+            if hasattr(analyzer, "analyze"):
                 analyzer.analyze(screenshot)
             else:
                 analyzer.detect_regions(screenshot)
@@ -470,9 +576,9 @@ class RegionPerformanceTest:
 
 # Utility functions for region testing
 
+
 def calculate_region_overlap(
-    region1: Tuple[int, int, int, int],
-    region2: Tuple[int, int, int, int]
+    region1: tuple[int, int, int, int], region2: tuple[int, int, int, int]
 ) -> float:
     """
     Calculate overlap ratio between two regions.
@@ -510,9 +616,7 @@ def calculate_region_overlap(
 
 
 def is_region_contained(
-    inner: Tuple[int, int, int, int],
-    outer: Tuple[int, int, int, int],
-    tolerance: int = 5
+    inner: tuple[int, int, int, int], outer: tuple[int, int, int, int], tolerance: int = 5
 ) -> bool:
     """
     Check if one region is contained within another.
@@ -533,16 +637,16 @@ def is_region_contained(
     x1, y1, w1, h1 = inner
     x2, y2, w2, h2 = outer
 
-    return (x1 >= x2 - tolerance and
-            y1 >= y2 - tolerance and
-            x1 + w1 <= x2 + w2 + tolerance and
-            y1 + h1 <= y2 + h2 + tolerance)
+    return (
+        x1 >= x2 - tolerance
+        and y1 >= y2 - tolerance
+        and x1 + w1 <= x2 + w2 + tolerance
+        and y1 + h1 <= y2 + h2 + tolerance
+    )
 
 
 def are_regions_adjacent(
-    region1: Tuple[int, int, int, int],
-    region2: Tuple[int, int, int, int],
-    tolerance: int = 10
+    region1: tuple[int, int, int, int], region2: tuple[int, int, int, int], tolerance: int = 10
 ) -> bool:
     """
     Check if two regions are adjacent (touching or very close).
@@ -578,11 +682,7 @@ def are_regions_adjacent(
     return False
 
 
-def assert_region_valid(
-    region: Tuple[int, int, int, int],
-    max_width: int,
-    max_height: int
-):
+def assert_region_valid(region: tuple[int, int, int, int], max_width: int, max_height: int):
     """
     Assert that a region is valid.
 
@@ -603,10 +703,7 @@ def assert_region_valid(
     assert y + h <= max_height, f"Region extends beyond height: {y + h} > {max_height}"
 
 
-def find_regions_by_type(
-    regions: List[Any],
-    region_type: str
-) -> List[Any]:
+def find_regions_by_type(regions: list[Any], region_type: str) -> list[Any]:
     """
     Filter regions by type.
 
@@ -627,9 +724,9 @@ def find_regions_by_type(
     """
     result = []
     for region in regions:
-        if hasattr(region, 'region_type') and region.region_type == region_type:
+        if hasattr(region, "region_type") and region.region_type == region_type:
             result.append(region)
-        elif hasattr(region, 'type') and region.type == region_type:
+        elif hasattr(region, "type") and region.type == region_type:
             result.append(region)
 
     return result

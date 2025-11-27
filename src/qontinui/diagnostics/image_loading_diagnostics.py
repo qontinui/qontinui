@@ -143,8 +143,8 @@ class ImageLoadingDiagnostics:
         # Categorize performance issues
         perf = results.get("performance", {})
         if not isinstance(perf, dict) or "message" not in perf:
-            categorized_issues["performance_issues"] = ErrorCategorizer.categorize_performance_issues(
-                perf
+            categorized_issues["performance_issues"] = (
+                ErrorCategorizer.categorize_performance_issues(perf)
             )
         else:
             categorized_issues["performance_issues"] = []

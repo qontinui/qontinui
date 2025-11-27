@@ -23,9 +23,7 @@ class ExampleButtonDetector(BaseDetector):
         """Initialize the button detector."""
         super().__init__("example_button_detector")
 
-    def detect(
-        self, image: np.ndarray[Any, Any], **params: Any
-    ) -> list[dict[str, Any]]:
+    def detect(self, image: np.ndarray[Any, Any], **params: Any) -> list[dict[str, Any]]:
         """Detect button-like regions in the image.
 
         Args:
@@ -50,9 +48,7 @@ class ExampleButtonDetector(BaseDetector):
         edges = cv2.Canny(gray, threshold, threshold * 2)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         detections = []
 
@@ -64,15 +60,16 @@ class ExampleButtonDetector(BaseDetector):
             aspect_ratio = w / h if h > 0 else 0
             if 1.5 < aspect_ratio < 8.0:  # Buttons are typically wider than tall
                 # Check size constraints
-                if (min_size[0] <= w <= max_size[0] and
-                    min_size[1] <= h <= max_size[1]):
+                if min_size[0] <= w <= max_size[0] and min_size[1] <= h <= max_size[1]:
 
-                    detections.append({
-                        "bbox": (x, y, w, h),
-                        "confidence": 0.8,  # Placeholder confidence
-                        "type": "button",
-                        "aspect_ratio": aspect_ratio
-                    })
+                    detections.append(
+                        {
+                            "bbox": (x, y, w, h),
+                            "confidence": 0.8,  # Placeholder confidence
+                            "type": "button",
+                            "aspect_ratio": aspect_ratio,
+                        }
+                    )
 
         # Apply post-processing utilities
         boxes = [d["bbox"] for d in detections]
@@ -80,14 +77,7 @@ class ExampleButtonDetector(BaseDetector):
         filtered_boxes = self.remove_contained_boxes(merged_boxes)
 
         # Rebuild detections with filtered boxes
-        return [
-            {
-                "bbox": box,
-                "confidence": 0.8,
-                "type": "button"
-            }
-            for box in filtered_boxes
-        ]
+        return [{"bbox": box, "confidence": 0.8, "type": "button"} for box in filtered_boxes]
 
     def get_param_grid(self) -> list[dict[str, Any]]:
         """Return parameter configurations for hyperparameter tuning."""
@@ -110,9 +100,7 @@ class ExampleConsistencyDetector(MultiScreenshotDetector):
         super().__init__("example_consistency_detector")
 
     def detect_multi(
-        self,
-        screenshots: list[np.ndarray[Any, Any]],
-        **params: Any
+        self, screenshots: list[np.ndarray[Any, Any]], **params: Any
     ) -> dict[int, list[dict[str, Any]]]:
         """Detect consistent regions across multiple screenshots.
 
@@ -136,16 +124,14 @@ class ExampleConsistencyDetector(MultiScreenshotDetector):
 
         # Find persistent regions across all screenshots
         persistent_regions = self.find_persistent_regions(
-            screenshots,
-            min_frequency=min_frequency,
-            similarity_threshold=consistency_threshold
+            screenshots, min_frequency=min_frequency, similarity_threshold=consistency_threshold
         )
 
         # Filter by size
         filtered_regions = [
-            region for region in persistent_regions
-            if (region["bbox"][2] >= min_size[0] and
-                region["bbox"][3] >= min_size[1])
+            region
+            for region in persistent_regions
+            if (region["bbox"][2] >= min_size[0] and region["bbox"][3] >= min_size[1])
         ]
 
         # Build result dictionary: map each screenshot to its detections
@@ -161,13 +147,15 @@ class ExampleConsistencyDetector(MultiScreenshotDetector):
                 if idx not in result:
                     result[idx] = []
 
-                result[idx].append({
-                    "bbox": bbox,
-                    "confidence": frequency,
-                    "frequency": frequency,
-                    "type": "persistent_region",
-                    "screenshot_count": len(screenshot_indices)
-                })
+                result[idx].append(
+                    {
+                        "bbox": bbox,
+                        "confidence": frequency,
+                        "frequency": frequency,
+                        "type": "persistent_region",
+                        "screenshot_count": len(screenshot_indices),
+                    }
+                )
 
         return result
 
@@ -209,11 +197,7 @@ def example_multi_screenshot_detection() -> None:
 
     # Create detector and run detection
     detector = ExampleConsistencyDetector()
-    results = detector.detect_multi(
-        screenshots,
-        consistency_threshold=0.95,
-        min_frequency=0.7
-    )
+    results = detector.detect_multi(screenshots, consistency_threshold=0.95, min_frequency=0.7)
 
     print(f"\nMulti-screenshot detection with {detector.name}:")
     print(f"  Analyzed {len(screenshots)} screenshots")

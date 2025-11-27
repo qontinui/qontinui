@@ -45,9 +45,7 @@ class MultiScreenshotDetector(ABC):
 
     @abstractmethod
     def detect_multi(
-        self,
-        screenshots: list[np.ndarray[Any, Any]],
-        **params: Any
+        self, screenshots: list[np.ndarray[Any, Any]], **params: Any
     ) -> dict[int, list[dict[str, Any]]]:
         """Detect patterns across multiple screenshots.
 
@@ -105,8 +103,7 @@ class MultiScreenshotDetector(ABC):
 
     @staticmethod
     def compute_consistency_map(
-        screenshots: list[np.ndarray[Any, Any]],
-        threshold: float = 0.95
+        screenshots: list[np.ndarray[Any, Any]], threshold: float = 0.95
     ) -> np.ndarray[Any, Any]:
         """Compute pixel-wise consistency map across screenshots.
 
@@ -135,9 +132,7 @@ class MultiScreenshotDetector(ABC):
             return np.ones(screenshots[0].shape[:2], dtype=np.float32)
 
         # Convert all to grayscale for comparison
-        gray_screenshots = [
-            MultiScreenshotDetector._to_grayscale(img) for img in screenshots
-        ]
+        gray_screenshots = [MultiScreenshotDetector._to_grayscale(img) for img in screenshots]
 
         # Initialize consistency map
         height, width = gray_screenshots[0].shape
@@ -155,14 +150,13 @@ class MultiScreenshotDetector(ABC):
             consistency_map += consistent.astype(np.float32)
 
         # Normalize by number of comparisons
-        consistency_map /= (len(screenshots) - 1)
+        consistency_map /= len(screenshots) - 1
 
         return consistency_map
 
     @staticmethod
     def compute_stability_matrix(
-        screenshots: list[np.ndarray[Any, Any]],
-        variance_threshold: float = 10.0
+        screenshots: list[np.ndarray[Any, Any]], variance_threshold: float = 10.0
     ) -> np.ndarray[Any, Any]:
         """Compute pixel stability matrix using variance analysis.
 
@@ -186,9 +180,7 @@ class MultiScreenshotDetector(ABC):
             raise ValueError("Empty screenshot list provided")
 
         # Convert all to grayscale
-        gray_screenshots = [
-            MultiScreenshotDetector._to_grayscale(img) for img in screenshots
-        ]
+        gray_screenshots = [MultiScreenshotDetector._to_grayscale(img) for img in screenshots]
 
         # Stack into 3D array: (num_screenshots, height, width)
         screenshot_stack = np.stack(gray_screenshots, axis=0).astype(np.float32)
@@ -205,7 +197,7 @@ class MultiScreenshotDetector(ABC):
     def find_persistent_regions(
         screenshots: list[np.ndarray[Any, Any]],
         min_frequency: float = 0.7,
-        similarity_threshold: float = 0.95
+        similarity_threshold: float = 0.95,
     ) -> list[dict[str, Any]]:
         """Find regions that appear persistently across screenshots.
 
@@ -266,33 +258,33 @@ class MultiScreenshotDetector(ABC):
             region_frequency = consistency[component_mask > 0].mean()
 
             # Get representative image from first screenshot
-            representative = screenshots[0][y_min:y_max+1, x_min:x_max+1].copy()
+            representative = screenshots[0][y_min : y_max + 1, x_min : x_max + 1].copy()
 
             # Find which screenshots contain this region
             screenshot_indices = []
             for idx, screenshot in enumerate(screenshots):
-                roi = screenshot[y_min:y_max+1, x_min:x_max+1]
+                roi = screenshot[y_min : y_max + 1, x_min : x_max + 1]
                 if roi.shape == representative.shape:
                     diff = cv2.absdiff(roi, representative)
                     mean_diff = np.mean(diff)
                     if mean_diff < (255 * (1 - similarity_threshold)):
                         screenshot_indices.append(idx)
 
-            persistent_regions.append({
-                "bbox": (x_min, y_min, x_max - x_min + 1, y_max - y_min + 1),
-                "frequency": float(region_frequency),
-                "screenshot_indices": screenshot_indices,
-                "representative_image": representative,
-                "pixel_count": int(np.sum(component_mask))
-            })
+            persistent_regions.append(
+                {
+                    "bbox": (x_min, y_min, x_max - x_min + 1, y_max - y_min + 1),
+                    "frequency": float(region_frequency),
+                    "screenshot_indices": screenshot_indices,
+                    "representative_image": representative,
+                    "pixel_count": int(np.sum(component_mask)),
+                }
+            )
 
         return persistent_regions
 
     @staticmethod
     def compute_transition_diff(
-        before: np.ndarray[Any, Any],
-        after: np.ndarray[Any, Any],
-        threshold: float = 30.0
+        before: np.ndarray[Any, Any], after: np.ndarray[Any, Any], threshold: float = 30.0
     ) -> np.ndarray[Any, Any]:
         """Compute difference mask between two screenshots.
 
@@ -322,16 +314,13 @@ class MultiScreenshotDetector(ABC):
         diff = cv2.absdiff(before_gray, after_gray)
 
         # Threshold to get binary mask
-        _, binary_mask = cv2.threshold(
-            diff, threshold, 255, cv2.THRESH_BINARY
-        )
+        _, binary_mask = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)
 
         return binary_mask
 
     @staticmethod
     def group_by_similarity(
-        screenshots: list[np.ndarray[Any, Any]],
-        similarity_threshold: float = 0.95
+        screenshots: list[np.ndarray[Any, Any]], similarity_threshold: float = 0.95
     ) -> dict[int, list[int]]:
         """Group screenshots by visual similarity.
 
@@ -357,9 +346,7 @@ class MultiScreenshotDetector(ABC):
             return {}
 
         # Convert all to grayscale for comparison
-        gray_screenshots = [
-            MultiScreenshotDetector._to_grayscale(img) for img in screenshots
-        ]
+        gray_screenshots = [MultiScreenshotDetector._to_grayscale(img) for img in screenshots]
 
         groups: dict[int, list[int]] = {}
         assigned = [False] * len(screenshots)
@@ -376,7 +363,7 @@ class MultiScreenshotDetector(ABC):
             next_group_id += 1
 
             # Find similar screenshots
-            for j, img2 in enumerate(gray_screenshots[i+1:], start=i+1):
+            for j, img2 in enumerate(gray_screenshots[i + 1 :], start=i + 1):
                 if assigned[j]:
                     continue
 
@@ -406,9 +393,7 @@ class MultiScreenshotDetector(ABC):
         return image
 
     @staticmethod
-    def validate_screenshots(
-        screenshots: list[np.ndarray[Any, Any]]
-    ) -> None:
+    def validate_screenshots(screenshots: list[np.ndarray[Any, Any]]) -> None:
         """Validate that all screenshots have the same dimensions.
 
         Args:

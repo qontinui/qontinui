@@ -14,9 +14,9 @@ Example usage:
     ...     assert len(elements) > 0
 """
 
-from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
-from unittest.mock import MagicMock, Mock
+from typing import Any
+
 import numpy as np
 import pytest
 
@@ -27,9 +27,9 @@ class MockDetectionResult:
 
     element_type: str
     confidence: float
-    bbox: Tuple[int, int, int, int]  # (x, y, width, height)
-    mask: Optional[np.ndarray] = None
-    attributes: Dict[str, Any] = field(default_factory=dict)
+    bbox: tuple[int, int, int, int]  # (x, y, width, height)
+    mask: np.ndarray | None = None
+    attributes: dict[str, Any] = field(default_factory=dict)
 
     @property
     def x(self) -> int:
@@ -48,7 +48,7 @@ class MockDetectionResult:
         return self.bbox[3]
 
     @property
-    def center(self) -> Tuple[int, int]:
+    def center(self) -> tuple[int, int]:
         return (self.x + self.width // 2, self.y + self.height // 2)
 
 
@@ -61,22 +61,21 @@ class MockRegion:
     width: int
     height: int
     region_type: str = "unknown"
-    elements: List[MockDetectionResult] = field(default_factory=list)
+    elements: list[MockDetectionResult] = field(default_factory=list)
     confidence: float = 1.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def area(self) -> int:
         return self.width * self.height
 
     @property
-    def center(self) -> Tuple[int, int]:
+    def center(self) -> tuple[int, int]:
         return (self.x + self.width // 2, self.y + self.height // 2)
 
     def contains_point(self, x: int, y: int) -> bool:
         """Check if point is within region."""
-        return (self.x <= x < self.x + self.width and
-                self.y <= y < self.y + self.height)
+        return self.x <= x < self.x + self.width and self.y <= y < self.y + self.height
 
 
 @dataclass
@@ -85,10 +84,10 @@ class MockState:
 
     state_id: str
     name: str
-    regions: List[MockRegion] = field(default_factory=list)
-    elements: List[MockDetectionResult] = field(default_factory=list)
+    regions: list[MockRegion] = field(default_factory=list)
+    elements: list[MockDetectionResult] = field(default_factory=list)
     confidence: float = 1.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def get_element_count(self) -> int:
         """Get total element count."""
@@ -115,7 +114,7 @@ class MockElementDetector:
 
     def __init__(
         self,
-        detection_results: Optional[List[MockDetectionResult]] = None,
+        detection_results: list[MockDetectionResult] | None = None,
         detection_delay: float = 0.0,
         should_fail: bool = False,
     ):
@@ -133,7 +132,7 @@ class MockElementDetector:
         self.call_count = 0
         self.last_screenshot = None
 
-    def detect(self, screenshot: np.ndarray) -> List[MockDetectionResult]:
+    def detect(self, screenshot: np.ndarray) -> list[MockDetectionResult]:
         """
         Mock detection method.
 
@@ -153,6 +152,7 @@ class MockElementDetector:
             raise RuntimeError("Mock detector configured to fail")
 
         import time
+
         if self.detection_delay > 0:
             time.sleep(self.detection_delay)
 
@@ -179,7 +179,7 @@ class MockRegionAnalyzer:
 
     def __init__(
         self,
-        regions: Optional[List[MockRegion]] = None,
+        regions: list[MockRegion] | None = None,
         should_fail: bool = False,
     ):
         """
@@ -193,7 +193,7 @@ class MockRegionAnalyzer:
         self.should_fail = should_fail
         self.call_count = 0
 
-    def analyze(self, screenshot: np.ndarray) -> List[MockRegion]:
+    def analyze(self, screenshot: np.ndarray) -> list[MockRegion]:
         """
         Mock region analysis method.
 
@@ -233,7 +233,7 @@ class MockStateDetector:
 
     def __init__(
         self,
-        states: Optional[List[MockState]] = None,
+        states: list[MockState] | None = None,
         should_fail: bool = False,
     ):
         """
@@ -247,7 +247,7 @@ class MockStateDetector:
         self.should_fail = should_fail
         self.call_count = 0
 
-    def detect_states(self, screenshot: np.ndarray) -> List[MockState]:
+    def detect_states(self, screenshot: np.ndarray) -> list[MockState]:
         """
         Mock state detection method.
 
@@ -274,6 +274,7 @@ class MockStateDetector:
 
 # Pytest Fixtures
 
+
 @pytest.fixture
 def mock_detection_result() -> MockDetectionResult:
     """
@@ -288,12 +289,12 @@ def mock_detection_result() -> MockDetectionResult:
         element_type="button",
         confidence=0.95,
         bbox=(100, 100, 80, 40),
-        attributes={"text": "Submit", "enabled": True}
+        attributes={"text": "Submit", "enabled": True},
     )
 
 
 @pytest.fixture
-def mock_detection_results() -> List[MockDetectionResult]:
+def mock_detection_results() -> list[MockDetectionResult]:
     """
     Fixture providing multiple mock detection results.
 
@@ -349,7 +350,7 @@ def mock_region() -> MockRegion:
 
 
 @pytest.fixture
-def mock_regions() -> List[MockRegion]:
+def mock_regions() -> list[MockRegion]:
     """
     Fixture providing multiple mock regions.
 
@@ -408,7 +409,7 @@ def mock_state() -> MockState:
 
 
 @pytest.fixture
-def mock_states() -> List[MockState]:
+def mock_states() -> list[MockState]:
     """
     Fixture providing multiple mock states.
 
@@ -450,7 +451,7 @@ def mock_state_detector() -> MockStateDetector:
 
 
 @pytest.fixture
-def detection_config() -> Dict[str, Any]:
+def detection_config() -> dict[str, Any]:
     """
     Fixture providing sample detection configuration.
 
@@ -469,7 +470,7 @@ def detection_config() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def region_analysis_config() -> Dict[str, Any]:
+def region_analysis_config() -> dict[str, Any]:
     """
     Fixture providing sample region analysis configuration.
 
@@ -486,7 +487,7 @@ def region_analysis_config() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def state_detection_config() -> Dict[str, Any]:
+def state_detection_config() -> dict[str, Any]:
     """
     Fixture providing sample state detection configuration.
 

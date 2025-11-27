@@ -72,9 +72,7 @@ class DataOperationsExecutor:
         coercer = TypeCoercer()
 
         # Initialize specialized executors
-        self._variable_executor = VariableExecutor(
-            self.variable_context, evaluator, coercer
-        )
+        self._variable_executor = VariableExecutor(self.variable_context, evaluator, coercer)
         self._collection_executor = CollectionExecutor(self.variable_context, evaluator)
         self._string_executor = StringExecutor(self.variable_context)
         self._math_executor = MathExecutor(self.variable_context, evaluator)

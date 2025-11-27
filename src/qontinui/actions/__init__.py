@@ -9,9 +9,6 @@ from .action_interface import ActionInterface
 from .action_options import FindOptions, KeyModifier
 from .action_result import ActionResult
 from .action_type import ActionType
-from .result_builder import ActionResultBuilder
-from .result_extractors import ResultExtractor
-from .result_mergers import ResultMerger
 
 # Import unified Actions class
 from .actions import Actions
@@ -55,6 +52,9 @@ from .object_collection import ObjectCollection, ObjectCollectionBuilder
 # Import pure and fluent actions
 from .pure import PureActions
 from .repetition_options import RepetitionOptions, RepetitionOptionsBuilder
+from .result_builder import ActionResultBuilder
+from .result_extractors import ResultExtractor
+from .result_mergers import ResultMerger
 from .verification_options import Event, VerificationOptions, VerificationOptionsBuilder
 
 __all__ = [

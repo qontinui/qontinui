@@ -13,9 +13,9 @@ if TYPE_CHECKING:
     from ..hal.interfaces.input_controller import IInputController
 
 from ..hal.interfaces.input_controller import Key
-from ..mock.mock_mode_manager import MockModeManager
 from ..mock.mock_input import MockInput
-from ..reporting import emit_event, EventType
+from ..mock.mock_mode_manager import MockModeManager
+from ..reporting import EventType, emit_event
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class Keyboard:
     """
 
     _mock_input = MockInput()
-    _controller: 'IInputController | None' = None
+    _controller: "IInputController | None" = None
     _controller_lock = threading.Lock()
 
     def __init__(self, hal: "HALContainer | None" = None) -> None:
@@ -56,7 +56,7 @@ class Keyboard:
         self._instance_controller = hal.input_controller if hal else None
 
     @classmethod
-    def _get_controller(cls) -> 'IInputController':
+    def _get_controller(cls) -> "IInputController":
         """Lazy initialization of input controller.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -65,10 +65,11 @@ class Keyboard:
             with cls._controller_lock:
                 if cls._controller is None:
                     from ..hal.factory import HALFactory
+
                     cls._controller = HALFactory.get_input_controller()
         return cls._controller
 
-    def _get_active_controller(self) -> 'IInputController':
+    def _get_active_controller(self) -> "IInputController":
         """Get the active controller (instance or class-level)."""
         if self._instance_controller:
             return self._instance_controller

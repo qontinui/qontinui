@@ -6,7 +6,6 @@ Handles StateImages and Patterns.
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from ...model.element import Pattern
     from ...model.state import State, StateImage
 
 
@@ -21,7 +20,7 @@ class ImageCollectionBuilder:
 
     def __init__(self) -> None:
         """Initialize builder with empty list."""
-        self.state_images: list["StateImage"] = []
+        self.state_images: list[StateImage] = []
 
     def with_images(self, *state_images) -> "ImageCollectionBuilder":
         """Add state images to collection.

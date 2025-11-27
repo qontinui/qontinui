@@ -9,7 +9,7 @@ with strong edges. It's a traditional computer vision approach that may work
 well for high-contrast UIs.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 import cv2
 import numpy as np
@@ -33,7 +33,7 @@ class EdgeBasedDetector(BaseDetector):
     def __init__(self):
         super().__init__("Edge-Based Detector")
 
-    def detect(self, image_path: str, **params) -> List[BBox]:
+    def detect(self, image_path: str, **params) -> list[BBox]:
         """
         Detect elements using Canny edge detection
 
@@ -69,9 +69,7 @@ class EdgeBasedDetector(BaseDetector):
             edges = cv2.dilate(edges, kernel, iterations=iterations)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Convert contours to bounding boxes
         boxes = []
@@ -88,7 +86,7 @@ class EdgeBasedDetector(BaseDetector):
 
         return boxes
 
-    def get_param_grid(self) -> List[Dict[str, Any]]:
+    def get_param_grid(self) -> list[dict[str, Any]]:
         """Parameter grid for hyperparameter search"""
         return [
             # Conservative - high thresholds

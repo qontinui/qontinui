@@ -6,7 +6,6 @@ Do not use in production code.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 
 @dataclass
@@ -30,11 +29,11 @@ class BBox:
         return (self.x2 - self.x1) * (self.y2 - self.y1)
 
     @property
-    def center(self) -> Tuple[int, int]:
+    def center(self) -> tuple[int, int]:
         """Calculate the center point of the bounding box."""
         return ((self.x1 + self.x2) // 2, (self.y1 + self.y2) // 2)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert bounding box to dictionary representation."""
         return {
             "bbox": [self.x1, self.y1, self.x2, self.y2],
@@ -54,7 +53,7 @@ class ScreenshotInfo:
 
     screenshot_id: int
     path: str
-    metadata: Dict = None
+    metadata: dict = None
 
     def __post_init__(self):
         if self.metadata is None:
@@ -69,7 +68,7 @@ class MultiScreenshotDataset:
     to find consistent elements.
     """
 
-    screenshots: List[ScreenshotInfo]
+    screenshots: list[ScreenshotInfo]
     name: str = ""
 
     def __len__(self) -> int:

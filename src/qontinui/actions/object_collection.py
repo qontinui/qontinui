@@ -4,12 +4,11 @@ Container for GUI elements serving as action targets.
 """
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..model.element import Location, Pattern, Region, Scene
-    from ..model.match import Match
-    from ..model.state import State, StateImage, StateLocation, StateRegion, StateString
+    from ..model.element import Scene
+    from ..model.state import StateImage, StateLocation, StateRegion, StateString
     from .action_result import ActionResult
 
 

@@ -8,7 +8,6 @@ import os
 import pickle
 import tempfile
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -170,6 +169,7 @@ class TestPickleSafety:
 
     def test_pickle_type_restrictions(self):
         """Test that pickle is restricted to safe types."""
+
         # Create a class that could be dangerous
         class DangerousClass:
             def __reduce__(self):
@@ -330,8 +330,7 @@ class TestSecurityDocumentation:
         # Should document restrictions or safety
         doc_lower = doc.lower()
         assert any(
-            keyword in doc_lower
-            for keyword in ["safe", "restrict", "allow", "block", "whitelist"]
+            keyword in doc_lower for keyword in ["safe", "restrict", "allow", "block", "whitelist"]
         ), "safe_eval should document security constraints"
 
 

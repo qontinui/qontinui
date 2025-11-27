@@ -9,8 +9,8 @@ import numpy as np
 
 try:
     # Try importing SAM3
-    from sam3.build_sam import build_sam3_image_model
     from sam3 import Sam3Processor as Sam3ProcessorCore
+    from sam3.build_sam import build_sam3_image_model
 
     HAS_SAM3 = True
 except ImportError:
@@ -61,6 +61,7 @@ class SAM3Processor(SemanticProcessor):
 
         # Determine device
         import torch
+
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # Load SAM3 model
@@ -77,7 +78,9 @@ class SAM3Processor(SemanticProcessor):
         """
         self.description_generator = generator
 
-    def process(self, screenshot: np.ndarray[Any, Any], text_prompt: str | None = None) -> SemanticScene:
+    def process(
+        self, screenshot: np.ndarray[Any, Any], text_prompt: str | None = None
+    ) -> SemanticScene:
         """Process screenshot for semantic segmentation.
 
         Args:
@@ -95,11 +98,14 @@ class SAM3Processor(SemanticProcessor):
 
         # Convert numpy array to PIL Image
         from PIL import Image
+
         if screenshot.dtype == np.uint8:
             pil_image = Image.fromarray(screenshot)
         else:
             # Normalize to 0-255 if needed
-            normalized = ((screenshot - screenshot.min()) * (255.0 / (screenshot.max() - screenshot.min()))).astype(np.uint8)
+            normalized = (
+                (screenshot - screenshot.min()) * (255.0 / (screenshot.max() - screenshot.min()))
+            ).astype(np.uint8)
             pil_image = Image.fromarray(normalized)
 
         # Set image in processor
@@ -169,7 +175,9 @@ class SAM3Processor(SemanticProcessor):
                             "predicted_iou": confidence,
                         }
 
-                        semantic_obj = self._mask_to_semantic_object(mask_data, screenshot, index=len(scene.objects))
+                        semantic_obj = self._mask_to_semantic_object(
+                            mask_data, screenshot, index=len(scene.objects)
+                        )
 
                         if semantic_obj and semantic_obj.confidence >= self._config.min_confidence:
                             scene.add_object(semantic_obj)
@@ -309,7 +317,7 @@ class SAM3Processor(SemanticProcessor):
 
         except ImportError:
             return None
-        except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as e:
+        except (OSError, RuntimeError, ValueError, TypeError, AttributeError):
             # Handle OCR and image processing errors:
             # - OSError: File/system errors during OCR processing
             # - RuntimeError: Tesseract processing failures
@@ -408,7 +416,12 @@ class SAM3Processor(SemanticProcessor):
         cmin, cmax = col_indices[[0, -1]]
         return [int(cmin), int(rmin), int(cmax - cmin), int(rmax - rmin)]
 
-    def _is_duplicate_mask(self, mask: np.ndarray[Any, Any], seen_masks: list[np.ndarray[Any, Any]], threshold: float = 0.8) -> bool:
+    def _is_duplicate_mask(
+        self,
+        mask: np.ndarray[Any, Any],
+        seen_masks: list[np.ndarray[Any, Any]],
+        threshold: float = 0.8,
+    ) -> bool:
         """Check if a mask is a duplicate of any seen masks.
 
         Args:

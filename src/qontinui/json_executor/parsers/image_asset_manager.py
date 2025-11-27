@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..config_parser import ImageAsset, QontinuiConfig
+    from ..config_parser import QontinuiConfig
 
 logger = logging.getLogger(__name__)
 

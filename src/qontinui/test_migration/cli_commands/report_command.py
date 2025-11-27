@@ -3,8 +3,8 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from reporting.dashboard import MigrationReportingDashboard
 from cli_commands.base_command import BaseCommand, CommandResult
+from reporting.dashboard import MigrationReportingDashboard
 
 
 class ReportCommand(BaseCommand):

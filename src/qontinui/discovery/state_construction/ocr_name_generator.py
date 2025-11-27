@@ -10,13 +10,13 @@ intelligent naming strategies for automatically detected GUI elements.
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
 
 if TYPE_CHECKING:
-    from PIL import Image as PILImage
+    pass
 
 try:
     import pytesseract
@@ -65,7 +65,7 @@ class OCRNameGenerator:
             ValueError: If no OCR engine is available.
         """
         self.engine = self._select_engine(engine)
-        self.reader: Optional[easyocr.Reader] = None
+        self.reader: easyocr.Reader | None = None
 
         if self.engine == "easyocr" and HAS_EASYOCR:
             # Lazy initialization of EasyOCR reader
@@ -108,9 +108,7 @@ class OCRNameGenerator:
         # Fallback with auto-selection
         return self._select_engine("auto")
 
-    def generate_name_from_image(
-        self, image: np.ndarray, context: str = "generic"
-    ) -> str:
+    def generate_name_from_image(self, image: np.ndarray, context: str = "generic") -> str:
         """Generate a name from an image using OCR.
 
         Extracts text from the image and converts it to a valid identifier.
@@ -152,7 +150,7 @@ class OCRNameGenerator:
     def generate_state_name(
         self,
         screenshot: np.ndarray,
-        detected_text_regions: Optional[list[dict]] = None,
+        detected_text_regions: list[dict] | None = None,
     ) -> str:
         """Generate a name for a state from its screenshot.
 
@@ -236,7 +234,7 @@ class OCRNameGenerator:
                 return self._extract_text_easyocr(image)
             elif self.engine == "tesseract":
                 return self._extract_text_tesseract(image)
-        except Exception as e:
+        except Exception:
             # Silently fail on OCR errors (common with empty regions)
             # Could log this in production
             pass

@@ -163,9 +163,7 @@ class FindExecutor:
 
         return filtered_matches
 
-    def _capture_screenshot(
-        self, search_region: Region | SearchRegions | None
-    ) -> Any:
+    def _capture_screenshot(self, search_region: Region | SearchRegions | None) -> Any:
         """Capture screenshot using the configured provider.
 
         Args:

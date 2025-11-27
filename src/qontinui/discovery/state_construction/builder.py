@@ -5,7 +5,6 @@ detected elements and regions.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Set
 
 import numpy as np
 
@@ -41,7 +40,7 @@ class Transition:
     """
 
     target_state_id: str
-    trigger_element_id: Optional[str] = None
+    trigger_element_id: str | None = None
     confidence: float = 0.0
     action_type: str = "click"
 
@@ -62,10 +61,10 @@ class ConstructedState:
 
     state_id: str
     name: str
-    defining_elements: List[Element] = field(default_factory=list)
-    optional_elements: List[Element] = field(default_factory=list)
-    transitions: List[Transition] = field(default_factory=list)
-    screenshot: Optional[np.ndarray] = None
+    defining_elements: list[Element] = field(default_factory=list)
+    optional_elements: list[Element] = field(default_factory=list)
+    transitions: list[Transition] = field(default_factory=list)
+    screenshot: np.ndarray | None = None
     metadata: dict = field(default_factory=dict)
 
     def __repr__(self) -> str:
@@ -95,8 +94,8 @@ class StateBuilder:
         state_id: str,
         name: str,
         screenshot: np.ndarray,
-        detected_elements: List[Element],
-        regions: Optional[List] = None,
+        detected_elements: list[Element],
+        regions: list | None = None,
     ) -> ConstructedState:
         """Construct a state from detection data.
 
@@ -160,9 +159,7 @@ class StateBuilder:
 
         return False
 
-    def add_transition(
-        self, state: ConstructedState, transition: Transition
-    ) -> None:
+    def add_transition(self, state: ConstructedState, transition: Transition) -> None:
         """Add a transition to a state.
 
         Args:
@@ -182,7 +179,7 @@ class StateBuilder:
 
     def merge_similar_states(
         self, state1: ConstructedState, state2: ConstructedState, similarity: float
-    ) -> Optional[ConstructedState]:
+    ) -> ConstructedState | None:
         """Merge two similar states into one.
 
         Args:
@@ -238,7 +235,7 @@ class StateBuilder:
 class StateValidator:
     """Validates constructed states for completeness and correctness."""
 
-    def validate(self, state: ConstructedState) -> tuple[bool, List[str]]:
+    def validate(self, state: ConstructedState) -> tuple[bool, list[str]]:
         """Validate a constructed state.
 
         Args:
@@ -282,8 +279,8 @@ class FeatureIdentifier:
     """
 
     def identify_defining_features(
-        self, elements: List[Element], screenshot: Optional[np.ndarray] = None
-    ) -> Set[str]:
+        self, elements: list[Element], screenshot: np.ndarray | None = None
+    ) -> set[str]:
         """Identify which element features are defining.
 
         Args:
@@ -301,14 +298,12 @@ class FeatureIdentifier:
                 defining.add(element.element_id)
 
             # Check visual distinctiveness
-            if screenshot is not None and self._is_visually_distinctive(
-                element, screenshot
-            ):
+            if screenshot is not None and self._is_visually_distinctive(element, screenshot):
                 defining.add(element.element_id)
 
         return defining
 
-    def _is_unique(self, element: Element, all_elements: List[Element]) -> bool:
+    def _is_unique(self, element: Element, all_elements: list[Element]) -> bool:
         """Check if an element is unique among all elements.
 
         Args:
@@ -327,9 +322,7 @@ class FeatureIdentifier:
 
         return similar_count == 0
 
-    def _is_visually_distinctive(
-        self, element: Element, screenshot: np.ndarray
-    ) -> bool:
+    def _is_visually_distinctive(self, element: Element, screenshot: np.ndarray) -> bool:
         """Check if an element is visually distinctive.
 
         Args:

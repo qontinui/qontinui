@@ -5,7 +5,6 @@ Captures screenshots using the HAL abstraction through PureActions.
 
 from PIL import Image
 
-from ...actions.pure import PureActions
 from ...hal.interfaces import IScreenCapture
 from ...model.element import Region
 from .screenshot_provider import ScreenshotProvider
@@ -27,6 +26,7 @@ class PureActionsScreenshotProvider(ScreenshotProvider):
         """
         if screen_capture is None:
             from ...hal.factory import HALFactory
+
             screen_capture = HALFactory.get_screen_capture()
         self.screen = screen_capture
 
@@ -45,12 +45,7 @@ class PureActionsScreenshotProvider(ScreenshotProvider):
         try:
             if region is not None:
                 # Capture specific region
-                image = self.screen.capture_region(
-                    region.x,
-                    region.y,
-                    region.width,
-                    region.height
-                )
+                image = self.screen.capture_region(region.x, region.y, region.width, region.height)
             else:
                 # Capture entire screen
                 image = self.screen.capture_screen()

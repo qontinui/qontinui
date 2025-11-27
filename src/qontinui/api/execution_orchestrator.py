@@ -86,9 +86,7 @@ class OrchestrationHook:
         self.context = context
         self.event_bus = event_bus
 
-    async def before_action(
-        self, action: Any, context_vars: dict[str, Any]
-    ) -> None:
+    async def before_action(self, action: Any, context_vars: dict[str, Any]) -> None:
         """Called before action execution.
 
         Handles:
@@ -165,9 +163,7 @@ class OrchestrationHook:
             },
         )
 
-    async def on_error(
-        self, action: Any, context_vars: dict[str, Any], error: Exception
-    ) -> None:
+    async def on_error(self, action: Any, context_vars: dict[str, Any], error: Exception) -> None:
         """Called when action execution fails.
 
         Args:

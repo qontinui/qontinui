@@ -14,8 +14,7 @@ This integration test suite covers:
 
 from __future__ import annotations
 
-from typing import Any, List, Optional
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import cv2
 import numpy as np
@@ -27,13 +26,15 @@ from qontinui.discovery.state_construction.state_builder import (
 )
 from qontinui.discovery.state_detection.differential_consistency_detector import (
     DifferentialConsistencyDetector,
+)
+from qontinui.discovery.state_detection.differential_consistency_detector import (
     StateRegion as DetectedStateRegion,
 )
 from qontinui.model.state.state import State
 
 
 @pytest.fixture
-def synthetic_screenshots() -> List[np.ndarray]:
+def synthetic_screenshots() -> list[np.ndarray]:
     """Generate synthetic screenshots for testing.
 
     Creates a set of consistent screenshots representing the same state
@@ -94,7 +95,7 @@ def synthetic_screenshots() -> List[np.ndarray]:
 
 
 @pytest.fixture
-def synthetic_transition_pairs() -> List[tuple[np.ndarray, np.ndarray]]:
+def synthetic_transition_pairs() -> list[tuple[np.ndarray, np.ndarray]]:
     """Generate synthetic transition pairs for differential consistency detection.
 
     Creates before/after pairs showing transitions to a menu state.
@@ -160,7 +161,7 @@ def synthetic_transition_pairs() -> List[tuple[np.ndarray, np.ndarray]]:
 @pytest.fixture
 def transition_info_with_clicks(
     synthetic_transition_pairs,
-) -> tuple[List[TransitionInfo], List[TransitionInfo]]:
+) -> tuple[list[TransitionInfo], list[TransitionInfo]]:
     """Generate TransitionInfo objects with click coordinates.
 
     Returns:
@@ -338,7 +339,9 @@ class TestStateBuilderIntegration:
         # Should detect regions (panels, buttons)
         assert isinstance(state.state_regions, list)
 
-    def test_state_locations_from_transitions(self, synthetic_screenshots, transition_info_with_clicks):
+    def test_state_locations_from_transitions(
+        self, synthetic_screenshots, transition_info_with_clicks
+    ):
         """Test that StateLocations are detected from transition click points."""
         builder = StateBuilder()
         _, transitions_from = transition_info_with_clicks
@@ -392,7 +395,9 @@ class TestCompleteStatePipeline:
         # Verify state has description
         assert len(state.description) > 0
 
-    def test_pipeline_with_boundary_detection(self, transition_info_with_clicks, synthetic_screenshots):
+    def test_pipeline_with_boundary_detection(
+        self, transition_info_with_clicks, synthetic_screenshots
+    ):
         """Test pipeline includes boundary detection for modal states."""
         builder = StateBuilder()
         transitions_to, transitions_from = transition_info_with_clicks
@@ -635,7 +640,6 @@ class TestStateObjectProperties:
 
     def test_state_add_methods_work(self, synthetic_screenshots):
         """Test that add_* methods work correctly."""
-        from qontinui.model.element.image import Image
         from qontinui.model.element.location import Location
         from qontinui.model.element.pattern import Pattern
         from qontinui.model.element.region import Region

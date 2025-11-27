@@ -11,7 +11,7 @@ Characteristics:
 
 import logging
 from io import BytesIO
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -57,7 +57,7 @@ class IconButtonDetector(BaseAnalyzer):
     def required_screenshots(self) -> int:
         return 1
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_size": 16,
             "max_size": 64,
@@ -70,8 +70,7 @@ class IconButtonDetector(BaseAnalyzer):
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect icon buttons in screenshots"""
         logger.info(
-            f"Running icon button detection on "
-            f"{len(input_data.screenshots)} screenshots"
+            f"Running icon button detection on " f"{len(input_data.screenshots)} screenshots"
         )
 
         params = {**self.get_default_parameters(), **input_data.parameters}
@@ -85,9 +84,7 @@ class IconButtonDetector(BaseAnalyzer):
 
         # Analyze each screenshot
         all_elements = []
-        for screenshot_idx, (img_color, img_gray) in enumerate(
-            zip(images_color, images_gray)
-        ):
+        for screenshot_idx, (img_color, img_gray) in enumerate(zip(images_color, images_gray, strict=False)):
             elements = await self._analyze_screenshot(
                 img_color, img_gray, screenshot_idx, icon_templates, params
             )
@@ -107,7 +104,7 @@ class IconButtonDetector(BaseAnalyzer):
             },
         )
 
-    def _load_images_color(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_color(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots in color"""
         images = []
         for data in screenshot_data:
@@ -115,7 +112,7 @@ class IconButtonDetector(BaseAnalyzer):
             images.append(np.array(img, dtype=np.uint8))
         return images
 
-    def _load_images_grayscale(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_grayscale(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots as grayscale"""
         images = []
         for data in screenshot_data:
@@ -123,7 +120,7 @@ class IconButtonDetector(BaseAnalyzer):
             images.append(np.array(img, dtype=np.uint8))
         return images
 
-    def _create_icon_templates(self) -> Dict[str, List[np.ndarray]]:
+    def _create_icon_templates(self) -> dict[str, list[np.ndarray]]:
         """Create templates for common icon types"""
         templates = {}
 
@@ -144,7 +141,7 @@ class IconButtonDetector(BaseAnalyzer):
 
         return templates
 
-    def _create_hamburger_templates(self) -> List[np.ndarray]:
+    def _create_hamburger_templates(self) -> list[np.ndarray]:
         """Create hamburger menu icon templates"""
         templates = []
 
@@ -166,7 +163,7 @@ class IconButtonDetector(BaseAnalyzer):
 
         return templates
 
-    def _create_settings_templates(self) -> List[np.ndarray]:
+    def _create_settings_templates(self) -> list[np.ndarray]:
         """Create settings/gear icon templates"""
         templates = []
 
@@ -189,7 +186,7 @@ class IconButtonDetector(BaseAnalyzer):
 
         return templates
 
-    def _create_search_templates(self) -> List[np.ndarray]:
+    def _create_search_templates(self) -> list[np.ndarray]:
         """Create search/magnifying glass icon templates"""
         templates = []
 
@@ -210,7 +207,7 @@ class IconButtonDetector(BaseAnalyzer):
 
         return templates
 
-    def _create_close_templates(self) -> List[np.ndarray]:
+    def _create_close_templates(self) -> list[np.ndarray]:
         """Create close/X icon templates"""
         templates = []
 
@@ -226,7 +223,7 @@ class IconButtonDetector(BaseAnalyzer):
 
         return templates
 
-    def _create_more_templates(self) -> List[np.ndarray]:
+    def _create_more_templates(self) -> list[np.ndarray]:
         """Create more/three dots icon templates"""
         templates = []
 
@@ -253,9 +250,9 @@ class IconButtonDetector(BaseAnalyzer):
         img_color: np.ndarray,
         img_gray: np.ndarray,
         screenshot_idx: int,
-        icon_templates: Dict[str, List[np.ndarray]],
-        params: Dict[str, Any],
-    ) -> List[DetectedElement]:
+        icon_templates: dict[str, list[np.ndarray]],
+        params: dict[str, Any],
+    ) -> list[DetectedElement]:
         """Analyze a single screenshot for icon buttons"""
         elements = []
         detected_locations = set()
@@ -331,7 +328,7 @@ class IconButtonDetector(BaseAnalyzer):
 
     def _template_match_icons(
         self, img_gray: np.ndarray, template: np.ndarray, threshold: float
-    ) -> List[Tuple[int, int, int, int, float]]:
+    ) -> list[tuple[int, int, int, int, float]]:
         """Template match for icons"""
         matches = []
 
@@ -341,7 +338,7 @@ class IconButtonDetector(BaseAnalyzer):
         # Find locations above threshold
         locations = np.where(result >= threshold)
 
-        for pt in zip(*locations[::-1]):
+        for pt in zip(*locations[::-1], strict=False):
             x, y = pt
             h, w = template.shape
             confidence = float(result[y, x])
@@ -353,8 +350,8 @@ class IconButtonDetector(BaseAnalyzer):
         return matches
 
     def _non_max_suppression(
-        self, matches: List[Tuple[int, int, int, int, float]], iou_threshold: float
-    ) -> List[Tuple[int, int, int, int, float]]:
+        self, matches: list[tuple[int, int, int, int, float]], iou_threshold: float
+    ) -> list[tuple[int, int, int, int, float]]:
         """Remove overlapping detections"""
         if not matches:
             return []
@@ -365,16 +362,14 @@ class IconButtonDetector(BaseAnalyzer):
         while matches:
             current = matches.pop(0)
             keep.append(current)
-            matches = [
-                m for m in matches if not self._boxes_overlap(current, m, iou_threshold)
-            ]
+            matches = [m for m in matches if not self._boxes_overlap(current, m, iou_threshold)]
 
         return keep
 
     def _boxes_overlap(
         self,
-        box1: Tuple[int, int, int, int, float],
-        box2: Tuple[int, int, int, int, float],
+        box1: tuple[int, int, int, int, float],
+        box2: tuple[int, int, int, int, float],
         threshold: float,
     ) -> bool:
         """Check if two boxes overlap"""
@@ -398,8 +393,8 @@ class IconButtonDetector(BaseAnalyzer):
         return iou >= threshold
 
     def _detect_by_shape(
-        self, img_gray: np.ndarray, params: Dict[str, Any]
-    ) -> List[Tuple[BoundingBox, float]]:
+        self, img_gray: np.ndarray, params: dict[str, Any]
+    ) -> list[tuple[BoundingBox, float]]:
         """Detect icon buttons by shape (small, square regions)"""
         icons = []
 
@@ -407,9 +402,7 @@ class IconButtonDetector(BaseAnalyzer):
         edges = cv2.Canny(img_gray, 50, 150)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)

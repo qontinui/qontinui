@@ -5,7 +5,6 @@ Responsible for storing states and providing efficient lookup by different ident
 
 import logging
 import threading
-from typing import Any
 
 from .state import State
 from .state_enum import StateEnum

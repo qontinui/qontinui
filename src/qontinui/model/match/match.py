@@ -24,7 +24,6 @@ from ..element.region import Region
 
 if TYPE_CHECKING:
     from qontinui.model.element.scene import Scene
-    from qontinui.model.state.state_image import StateImage
     from qontinui.model.state.state_object_metadata import StateObjectMetadata
 
 

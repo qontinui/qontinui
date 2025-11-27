@@ -27,7 +27,7 @@ class ExecutionRegistry:
 
     def __init__(self) -> None:
         """Initialize execution registry."""
-        self._executions: dict[str, "ExecutionContext"] = {}
+        self._executions: dict[str, ExecutionContext] = {}
         self._lock = threading.RLock()
 
         logger.debug("ExecutionRegistry initialized")

@@ -77,9 +77,7 @@ class RegionExtractor:
         )
 
     @staticmethod
-    def filter_by_area(
-        matches: list[Match], min_area: int = 1, max_area: int = -1
-    ) -> list[Match]:
+    def filter_by_area(matches: list[Match], min_area: int = 1, max_area: int = -1) -> list[Match]:
         """Filter matches by area constraints.
 
         Args:

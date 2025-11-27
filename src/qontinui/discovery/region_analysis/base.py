@@ -8,7 +8,7 @@ Region analysis focuses on detecting larger functional areas of the UI
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 
@@ -101,11 +101,11 @@ class DetectedRegion:
     bounding_box: BoundingBox
     confidence: float  # 0.0 to 1.0
     region_type: RegionType
-    label: Optional[str] = None  # Optional descriptive label
+    label: str | None = None  # Optional descriptive label
     screenshot_index: int = 0  # Which screenshot in the set
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             "bounding_box": {
@@ -128,11 +128,11 @@ class RegionAnalysisResult:
 
     analyzer_type: RegionAnalysisType
     analyzer_name: str
-    regions: List[DetectedRegion]
+    regions: list[DetectedRegion]
     confidence: float  # Overall confidence in this analysis
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             "analyzer_type": self.analyzer_type.value,
@@ -148,9 +148,9 @@ class RegionAnalysisInput:
     """Input data for region analysis"""
 
     annotation_set_id: UUID
-    screenshots: List[Dict[str, Any]]  # List of screenshot metadata
-    screenshot_data: List[bytes]  # Actual image data
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    screenshots: list[dict[str, Any]]  # List of screenshot metadata
+    screenshot_data: list[bytes]  # Actual image data
+    parameters: dict[str, Any] = field(default_factory=dict)
 
 
 class BaseRegionAnalyzer(ABC):
@@ -167,7 +167,7 @@ class BaseRegionAnalyzer(ABC):
     - Region detection often uses different techniques (clustering, segmentation)
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize the region analyzer
 
@@ -231,7 +231,7 @@ class BaseRegionAnalyzer(ABC):
         return False
 
     @property
-    def supported_region_types(self) -> List[RegionType]:
+    def supported_region_types(self) -> list[RegionType]:
         """
         List of region types this analyzer can detect
 
@@ -240,7 +240,7 @@ class BaseRegionAnalyzer(ABC):
         """
         return [RegionType.CUSTOM]
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         """
         Get default parameters for this analyzer
 

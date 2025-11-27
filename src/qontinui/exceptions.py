@@ -4,58 +4,58 @@ This module re-exports all exceptions from domain-specific modules
 for backward compatibility and convenience.
 """
 
-from .base_exceptions import QontinuiException
 from .action_exceptions import (
     ActionException,
-    ActionFailedException,
-    ActionTimeoutException,
-    ActionNotRegisteredException,
-    InvalidActionParametersException,
     ActionExecutionError,
+    ActionFailedException,
+    ActionNotRegisteredException,
+    ActionTimeoutException,
+    InvalidActionParametersException,
     action_error_context,
 )
-from .state_exceptions import (
-    StateException,
-    StateNotFoundException,
-    StateTransitionException,
-    StateAlreadyExistsException,
-    InvalidStateException,
-)
-from .vision_exceptions import (
-    PerceptionException,
-    ElementNotFoundException,
-    ImageNotFoundException,
-    TextNotFoundException,
-    AmbiguousMatchException,
-    InvalidImageException,
-    PatternMatchError,
-    OCRError,
-    ImageProcessingError,
-)
+from .base_exceptions import QontinuiException
 from .config_exceptions import (
+    ConfigurationError,
     ConfigurationException,
     InvalidConfigurationException,
     MissingConfigurationException,
-    ConfigurationError,
 )
 from .hardware_exceptions import (
-    HardwareException,
-    ScreenCaptureException,
-    MouseOperationException,
-    KeyboardOperationException,
     HALError,
-    ScreenCaptureError,
+    HardwareException,
     InputControlError,
+    KeyboardOperationException,
+    MouseOperationException,
+    ScreenCaptureError,
+    ScreenCaptureException,
     hal_error_context,
 )
+from .state_exceptions import (
+    InvalidStateException,
+    StateAlreadyExistsException,
+    StateException,
+    StateNotFoundException,
+    StateTransitionException,
+)
 from .storage_ai_exceptions import (
+    AIException,
+    InferenceException,
+    ModelLoadException,
     StorageException,
     StorageReadException,
     StorageWriteException,
-    AIException,
-    ModelLoadException,
-    InferenceException,
     VectorDatabaseException,
+)
+from .vision_exceptions import (
+    AmbiguousMatchException,
+    ElementNotFoundException,
+    ImageNotFoundException,
+    ImageProcessingError,
+    InvalidImageException,
+    OCRError,
+    PatternMatchError,
+    PerceptionException,
+    TextNotFoundException,
 )
 
 __all__ = [

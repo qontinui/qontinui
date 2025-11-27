@@ -19,11 +19,12 @@ Example usage:
     ...     assert screenshot.shape == (600, 800, 3)
 """
 
-from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
-import cv2
-import pytest
 from dataclasses import dataclass
+from typing import Any
+
+import cv2
+import numpy as np
+import pytest
 
 
 @dataclass
@@ -35,12 +36,12 @@ class ElementSpec:
     y: int
     width: int = 100
     height: int = 40
-    text: Optional[str] = None
-    color: Tuple[int, int, int] = (200, 200, 200)
-    text_color: Tuple[int, int, int] = (0, 0, 0)
-    border_color: Optional[Tuple[int, int, int]] = (100, 100, 100)
+    text: str | None = None
+    color: tuple[int, int, int] = (200, 200, 200)
+    text_color: tuple[int, int, int] = (0, 0, 0)
+    border_color: tuple[int, int, int] | None = (100, 100, 100)
     border_width: int = 2
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class SyntheticScreenshotGenerator:
@@ -73,8 +74,8 @@ class SyntheticScreenshotGenerator:
         self,
         width: int = 800,
         height: int = 600,
-        background_color: Tuple[int, int, int] = (255, 255, 255),
-        elements: Optional[List[ElementSpec]] = None,
+        background_color: tuple[int, int, int] = (255, 255, 255),
+        elements: list[ElementSpec] | None = None,
         noise_level: float = 0.0,
     ) -> np.ndarray:
         """
@@ -152,17 +153,33 @@ class SyntheticScreenshotGenerator:
 
         # Text
         if element.text:
-            text_size = cv2.getTextSize(element.text, self.font, self.font_scale, self.font_thickness)[0]
+            text_size = cv2.getTextSize(
+                element.text, self.font, self.font_scale, self.font_thickness
+            )[0]
             text_x = x1 + (element.width - text_size[0]) // 2
             text_y = y1 + (element.height + text_size[1]) // 2
-            cv2.putText(image, element.text, (text_x, text_y), self.font,
-                       self.font_scale, element.text_color, self.font_thickness)
+            cv2.putText(
+                image,
+                element.text,
+                (text_x, text_y),
+                self.font,
+                self.font_scale,
+                element.text_color,
+                self.font_thickness,
+            )
 
     def _draw_text(self, image: np.ndarray, element: ElementSpec) -> None:
         """Draw a text label element."""
         if element.text:
-            cv2.putText(image, element.text, (element.x, element.y + element.height // 2),
-                       self.font, self.font_scale, element.text_color, self.font_thickness)
+            cv2.putText(
+                image,
+                element.text,
+                (element.x, element.y + element.height // 2),
+                self.font,
+                self.font_scale,
+                element.text_color,
+                self.font_thickness,
+            )
 
     def _draw_icon(self, image: np.ndarray, element: ElementSpec) -> None:
         """Draw a simple icon (circle with inner shape)."""
@@ -173,7 +190,9 @@ class SyntheticScreenshotGenerator:
         # Draw circle
         cv2.circle(image, (center_x, center_y), radius, element.color, -1)
         if element.border_color:
-            cv2.circle(image, (center_x, center_y), radius, element.border_color, element.border_width)
+            cv2.circle(
+                image, (center_x, center_y), radius, element.border_color, element.border_width
+            )
 
         # Draw inner symbol (simplified)
         inner_radius = radius // 2
@@ -192,8 +211,15 @@ class SyntheticScreenshotGenerator:
 
         # Text if provided
         if element.text:
-            cv2.putText(image, element.text, (x1 + 5, y1 + element.height // 2 + 5),
-                       self.font, self.font_scale * 0.8, element.text_color, 1)
+            cv2.putText(
+                image,
+                element.text,
+                (x1 + 5, y1 + element.height // 2 + 5),
+                self.font,
+                self.font_scale * 0.8,
+                element.text_color,
+                1,
+            )
 
     def _draw_checkbox(self, image: np.ndarray, element: ElementSpec) -> None:
         """Draw a checkbox element."""
@@ -225,7 +251,7 @@ class SyntheticScreenshotGenerator:
         num_buttons: int = 3,
         num_inputs: int = 2,
         num_icons: int = 2,
-    ) -> Tuple[np.ndarray, List[ElementSpec]]:
+    ) -> tuple[np.ndarray, list[ElementSpec]]:
         """
         Generate a screenshot with randomly positioned known elements.
 
@@ -251,44 +277,51 @@ class SyntheticScreenshotGenerator:
 
         # Generate buttons
         for i in range(num_buttons):
-            elements.append(ElementSpec(
-                element_type="button",
-                x=50 + i * 150,
-                y=50 + (i % 2) * 100,
-                width=120,
-                height=40,
-                text=f"Button {i+1}",
-                color=(200, 200, 200),
-                border_color=(100, 100, 100),
-            ))
+            elements.append(
+                ElementSpec(
+                    element_type="button",
+                    x=50 + i * 150,
+                    y=50 + (i % 2) * 100,
+                    width=120,
+                    height=40,
+                    text=f"Button {i+1}",
+                    color=(200, 200, 200),
+                    border_color=(100, 100, 100),
+                )
+            )
 
         # Generate input fields
         for i in range(num_inputs):
-            elements.append(ElementSpec(
-                element_type="input",
-                x=50,
-                y=200 + i * 60,
-                width=200,
-                height=35,
-                text=f"Input {i+1}",
-            ))
+            elements.append(
+                ElementSpec(
+                    element_type="input",
+                    x=50,
+                    y=200 + i * 60,
+                    width=200,
+                    height=35,
+                    text=f"Input {i+1}",
+                )
+            )
 
         # Generate icons
         for i in range(num_icons):
-            elements.append(ElementSpec(
-                element_type="icon",
-                x=300 + i * 80,
-                y=250,
-                width=50,
-                height=50,
-                color=(100, 150, 200),
-            ))
+            elements.append(
+                ElementSpec(
+                    element_type="icon",
+                    x=300 + i * 80,
+                    y=250,
+                    width=50,
+                    height=50,
+                    color=(100, 150, 200),
+                )
+            )
 
         image = self.generate(width=width, height=height, elements=elements)
         return image, elements
 
 
 # Pytest fixtures
+
 
 @pytest.fixture
 def screenshot_generator() -> SyntheticScreenshotGenerator:
@@ -316,8 +349,10 @@ def synthetic_screenshot(screenshot_generator):
         ...     )
         ...     # Test your detection code with img
     """
+
     def _generate(**kwargs):
         return screenshot_generator.generate(**kwargs)
+
     return _generate
 
 
@@ -352,12 +387,13 @@ def empty_screenshot(screenshot_generator):
 
 # Helper functions for creating specific test scenarios
 
+
 def generate_synthetic_screenshot(
     width: int = 800,
     height: int = 600,
-    background_color: Tuple[int, int, int] = (255, 255, 255),
-    elements: Optional[List[ElementSpec]] = None,
-    noise_level: float = 0.0
+    background_color: tuple[int, int, int] = (255, 255, 255),
+    elements: list[ElementSpec] | None = None,
+    noise_level: float = 0.0,
 ) -> np.ndarray:
     """
     Generate a synthetic screenshot with specified parameters.
@@ -389,7 +425,7 @@ def generate_synthetic_screenshot(
         height=height,
         background_color=background_color,
         elements=elements or [],
-        noise_level=noise_level
+        noise_level=noise_level,
     )
 
 
@@ -399,8 +435,8 @@ def create_test_element(
     y: int,
     width: int = 100,
     height: int = 40,
-    text: Optional[str] = None,
-    **kwargs
+    text: str | None = None,
+    **kwargs,
 ) -> ElementSpec:
     """
     Create a test element specification.
@@ -425,17 +461,11 @@ def create_test_element(
         >>> assert button.text == "Submit"
     """
     return ElementSpec(
-        element_type=element_type,
-        x=x,
-        y=y,
-        width=width,
-        height=height,
-        text=text,
-        **kwargs
+        element_type=element_type, x=x, y=y, width=width, height=height, text=text, **kwargs
     )
 
 
-def create_menu_transition_pair() -> Tuple[np.ndarray, np.ndarray]:
+def create_menu_transition_pair() -> tuple[np.ndarray, np.ndarray]:
     """
     Create a pair of screenshots showing a menu transition.
 
@@ -459,10 +489,7 @@ def create_menu_transition_pair() -> Tuple[np.ndarray, np.ndarray]:
     ]
 
     before_screenshot = generator.generate(
-        width=800,
-        height=600,
-        background_color=(240, 240, 240),
-        elements=before_elements
+        width=800, height=600, background_color=(240, 240, 240), elements=before_elements
     )
 
     # After: Menu opened with options
@@ -470,8 +497,15 @@ def create_menu_transition_pair() -> Tuple[np.ndarray, np.ndarray]:
         ElementSpec("button", x=50, y=10, width=80, height=30, text="Menu"),
         ElementSpec("text", x=200, y=200, width=200, height=40, text="Main Content"),
         # Menu dropdown
-        ElementSpec("rectangle", x=50, y=45, width=150, height=200,
-                   color=(255, 255, 255), border_color=(100, 100, 100)),
+        ElementSpec(
+            "rectangle",
+            x=50,
+            y=45,
+            width=150,
+            height=200,
+            color=(255, 255, 255),
+            border_color=(100, 100, 100),
+        ),
         ElementSpec("button", x=55, y=50, width=140, height=35, text="New"),
         ElementSpec("button", x=55, y=90, width=140, height=35, text="Open"),
         ElementSpec("button", x=55, y=130, width=140, height=35, text="Save"),
@@ -479,10 +513,7 @@ def create_menu_transition_pair() -> Tuple[np.ndarray, np.ndarray]:
     ]
 
     after_screenshot = generator.generate(
-        width=800,
-        height=600,
-        background_color=(240, 240, 240),
-        elements=after_elements
+        width=800, height=600, background_color=(240, 240, 240), elements=after_elements
     )
 
     return before_screenshot, after_screenshot
@@ -490,10 +521,10 @@ def create_menu_transition_pair() -> Tuple[np.ndarray, np.ndarray]:
 
 def create_button_screenshot(
     num_buttons: int = 3,
-    button_text: Optional[List[str]] = None,
+    button_text: list[str] | None = None,
     width: int = 800,
-    height: int = 600
-) -> Tuple[np.ndarray, List[ElementSpec]]:
+    height: int = 600,
+) -> tuple[np.ndarray, list[ElementSpec]]:
     """
     Create a screenshot with multiple buttons.
 
@@ -533,15 +564,12 @@ def create_button_screenshot(
             height=50,
             text=button_text[i],
             color=(220, 220, 220),
-            border_color=(100, 100, 100)
+            border_color=(100, 100, 100),
         )
         buttons.append(button)
 
     screenshot = generator.generate(
-        width=width,
-        height=height,
-        background_color=(240, 240, 240),
-        elements=buttons
+        width=width, height=height, background_color=(240, 240, 240), elements=buttons
     )
 
     return screenshot, buttons
@@ -552,8 +580,8 @@ def create_dialog_screenshot(
     show_ok: bool = True,
     show_cancel: bool = True,
     width: int = 800,
-    height: int = 600
-) -> Tuple[np.ndarray, List[ElementSpec]]:
+    height: int = 600,
+) -> tuple[np.ndarray, list[ElementSpec]]:
     """
     Create a screenshot with a dialog box.
 
@@ -594,7 +622,7 @@ def create_dialog_screenshot(
             height=dialog_height,
             color=(240, 240, 240),
             border_color=(100, 100, 100),
-            border_width=2
+            border_width=2,
         ),
         # Title bar
         ElementSpec(
@@ -604,7 +632,7 @@ def create_dialog_screenshot(
             width=dialog_width,
             height=40,
             color=(200, 200, 200),
-            border_color=(100, 100, 100)
+            border_color=(100, 100, 100),
         ),
         # Title text
         ElementSpec(
@@ -614,7 +642,7 @@ def create_dialog_screenshot(
             width=dialog_width - 20,
             height=30,
             text=dialog_title,
-            text_color=(0, 0, 0)
+            text_color=(0, 0, 0),
         ),
         # Content area
         ElementSpec(
@@ -624,7 +652,7 @@ def create_dialog_screenshot(
             width=dialog_width - 40,
             height=100,
             text="Dialog content goes here",
-            text_color=(50, 50, 50)
+            text_color=(50, 50, 50),
         ),
     ]
 
@@ -642,7 +670,7 @@ def create_dialog_screenshot(
                 height=35,
                 text="Cancel",
                 color=(220, 220, 220),
-                border_color=(100, 100, 100)
+                border_color=(100, 100, 100),
             )
         )
 
@@ -657,24 +685,20 @@ def create_dialog_screenshot(
                 height=35,
                 text="OK",
                 color=(100, 180, 100),
-                border_color=(80, 120, 80)
+                border_color=(80, 120, 80),
             )
         )
 
     screenshot = generator.generate(
-        width=width,
-        height=height,
-        background_color=(200, 200, 200),
-        elements=elements
+        width=width, height=height, background_color=(200, 200, 200), elements=elements
     )
 
     return screenshot, elements
 
 
 def create_login_form_screenshot(
-    width: int = 800,
-    height: int = 600
-) -> Tuple[np.ndarray, List[ElementSpec]]:
+    width: int = 800, height: int = 600
+) -> tuple[np.ndarray, list[ElementSpec]]:
     """
     Create a screenshot with a login form.
 
@@ -707,48 +731,22 @@ def create_login_form_screenshot(
             height=300,
             color=(255, 255, 255),
             border_color=(150, 150, 150),
-            border_width=1
+            border_width=1,
         ),
         # Title
-        ElementSpec(
-            "text",
-            x=form_x + 100,
-            y=form_y + 30,
-            text="Login",
-            text_color=(50, 50, 50)
-        ),
+        ElementSpec("text", x=form_x + 100, y=form_y + 30, text="Login", text_color=(50, 50, 50)),
         # Username label
         ElementSpec(
-            "text",
-            x=form_x + 30,
-            y=form_y + 80,
-            text="Username:",
-            text_color=(70, 70, 70)
+            "text", x=form_x + 30, y=form_y + 80, text="Username:", text_color=(70, 70, 70)
         ),
         # Username input
-        ElementSpec(
-            "input",
-            x=form_x + 30,
-            y=form_y + 110,
-            width=240,
-            height=35
-        ),
+        ElementSpec("input", x=form_x + 30, y=form_y + 110, width=240, height=35),
         # Password label
         ElementSpec(
-            "text",
-            x=form_x + 30,
-            y=form_y + 160,
-            text="Password:",
-            text_color=(70, 70, 70)
+            "text", x=form_x + 30, y=form_y + 160, text="Password:", text_color=(70, 70, 70)
         ),
         # Password input
-        ElementSpec(
-            "input",
-            x=form_x + 30,
-            y=form_y + 190,
-            width=240,
-            height=35
-        ),
+        ElementSpec("input", x=form_x + 30, y=form_y + 190, width=240, height=35),
         # Login button
         ElementSpec(
             "button",
@@ -758,15 +756,12 @@ def create_login_form_screenshot(
             height=40,
             text="Login",
             color=(100, 180, 100),
-            border_color=(80, 140, 80)
+            border_color=(80, 140, 80),
         ),
     ]
 
     screenshot = generator.generate(
-        width=width,
-        height=height,
-        background_color=(230, 230, 230),
-        elements=elements
+        width=width, height=height, background_color=(230, 230, 230), elements=elements
     )
 
     return screenshot, elements
@@ -777,8 +772,8 @@ def create_multi_region_screenshot(
     include_sidebar: bool = True,
     include_content: bool = True,
     width: int = 1024,
-    height: int = 768
-) -> Tuple[np.ndarray, Dict[str, List[ElementSpec]]]:
+    height: int = 768,
+) -> tuple[np.ndarray, dict[str, list[ElementSpec]]]:
     """
     Create a screenshot with multiple distinct regions.
 
@@ -806,7 +801,7 @@ def create_multi_region_screenshot(
     """
     generator = SyntheticScreenshotGenerator()
 
-    regions_dict: Dict[str, List[ElementSpec]] = {}
+    regions_dict: dict[str, list[ElementSpec]] = {}
     all_elements = []
 
     # Toolbar region
@@ -819,34 +814,16 @@ def create_multi_region_screenshot(
                 width=width,
                 height=60,
                 color=(220, 220, 220),
-                border_color=(150, 150, 150)
+                border_color=(150, 150, 150),
             ),
             ElementSpec(
-                "button",
-                x=10,
-                y=10,
-                width=80,
-                height=40,
-                text="File",
-                color=(200, 200, 200)
+                "button", x=10, y=10, width=80, height=40, text="File", color=(200, 200, 200)
             ),
             ElementSpec(
-                "button",
-                x=100,
-                y=10,
-                width=80,
-                height=40,
-                text="Edit",
-                color=(200, 200, 200)
+                "button", x=100, y=10, width=80, height=40, text="Edit", color=(200, 200, 200)
             ),
             ElementSpec(
-                "button",
-                x=190,
-                y=10,
-                width=80,
-                height=40,
-                text="View",
-                color=(200, 200, 200)
+                "button", x=190, y=10, width=80, height=40, text="View", color=(200, 200, 200)
             ),
         ]
         regions_dict["toolbar"] = toolbar_elements
@@ -864,15 +841,9 @@ def create_multi_region_screenshot(
                 width=sidebar_width,
                 height=height - sidebar_y,
                 color=(240, 240, 240),
-                border_color=(180, 180, 180)
+                border_color=(180, 180, 180),
             ),
-            ElementSpec(
-                "text",
-                x=10,
-                y=sidebar_y + 20,
-                text="Navigation",
-                text_color=(70, 70, 70)
-            ),
+            ElementSpec("text", x=10, y=sidebar_y + 20, text="Navigation", text_color=(70, 70, 70)),
         ]
         # Add navigation items
         for i in range(5):
@@ -884,7 +855,7 @@ def create_multi_region_screenshot(
                     width=180,
                     height=40,
                     text=f"Item {i+1}",
-                    color=(230, 230, 230)
+                    color=(230, 230, 230),
                 )
             )
         regions_dict["sidebar"] = sidebar_elements
@@ -902,24 +873,21 @@ def create_multi_region_screenshot(
                 width=width - content_x,
                 height=height - content_y,
                 color=(255, 255, 255),
-                border_color=(200, 200, 200)
+                border_color=(200, 200, 200),
             ),
             ElementSpec(
                 "text",
                 x=content_x + 20,
                 y=content_y + 30,
                 text="Main Content Area",
-                text_color=(50, 50, 50)
+                text_color=(50, 50, 50),
             ),
         ]
         regions_dict["content"] = content_elements
         all_elements.extend(content_elements)
 
     screenshot = generator.generate(
-        width=width,
-        height=height,
-        background_color=(200, 200, 200),
-        elements=all_elements
+        width=width, height=height, background_color=(200, 200, 200), elements=all_elements
     )
 
     return screenshot, regions_dict

@@ -16,6 +16,13 @@ from .base_types import (
     WorkflowVisibility,
 )
 
+# Code execution configs
+from .code_actions import (
+    CodeBlockActionConfig,
+    CustomFunctionActionConfig,
+    ErrorHandling,
+)
+
 # Control flow configs
 from .control_flow import (
     BreakActionConfig,
@@ -43,13 +50,6 @@ from .data_operations import (
     StringOperationActionConfig,
     StringOperationParameters,
     ValueSource,
-)
-
-# Code execution configs
-from .code_actions import (
-    CodeBlockActionConfig,
-    CustomFunctionActionConfig,
-    ErrorHandling,
 )
 
 # Execution control
