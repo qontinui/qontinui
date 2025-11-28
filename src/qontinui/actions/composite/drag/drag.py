@@ -6,7 +6,7 @@ Implements drag-and-drop functionality using action chaining.
 from ...action_chain_options import ActionChainOptions, ActionChainOptionsBuilder, ChainingStrategy
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...action_type import ActionType
 from ...basic.find.pattern_find_options import PatternFindOptions, PatternFindOptionsBuilder
 from ...basic.mouse.mouse_down_options import MouseDownOptions, MouseDownOptionsBuilder
@@ -238,15 +238,15 @@ class Drag(ActionInterface):
             target: Target result to populate
         """
         target.success = source.is_success
-        target.match_list = source.match_list
+        target.matches = source.matches
         target.duration = source.duration
         target.text = source.text
         target.active_states = source.active_states
 
         # Copy movements
-        for movement in source.get_movements():
+        for movement in source.movements:
             target.add_movement(movement)
 
         # Copy execution history
-        for record in source.get_execution_records():
+        for record in source.execution_history:
             target.add_execution_record(record)

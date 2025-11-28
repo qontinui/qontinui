@@ -110,7 +110,7 @@ class CodeExecutor(ActionExecutorBase):
             action_result = (
                 ActionResultBuilder()
                 .with_success(True)
-                .with_text(f"Code executed in {result['execution_time_ms']:.2f}ms")
+                .add_text(f"Code executed in {result['execution_time_ms']:.2f}ms")
                 .build()
             )
             self.context.update_last_action_result(action_result)
@@ -346,9 +346,10 @@ class CodeExecutor(ActionExecutorBase):
         # Restricted builtins (remove dangerous functions)
         # Note: __import__ is allowed to enable module imports (including project files)
         # Import validation should be done via allowed_imports config field
+        builtins_dict = __builtins__ if isinstance(__builtins__, dict) else __builtins__.__dict__
         restricted_builtins = {
             k: v
-            for k, v in __builtins__.items()
+            for k, v in builtins_dict.items()
             if k
             not in {
                 "eval",
@@ -368,7 +369,7 @@ class CodeExecutor(ActionExecutorBase):
             "__builtins__": restricted_builtins,
             **context,  # Include context variables
         }
-        exec_locals = {}
+        exec_locals: dict[str, Any] = {}
 
         # Add project root to sys.path for import resolution
         project_root = None
@@ -468,6 +469,11 @@ class CodeExecutor(ActionExecutorBase):
             bool: True if error was handled and execution should continue
         """
         error_handling = config.error_handling
+
+        if error_handling is None:
+            # No error handling configured, fail the action
+            self._emit_action_failure(action, error)
+            return False
 
         if error_handling.on_error == "skip":
             # Skip and continue

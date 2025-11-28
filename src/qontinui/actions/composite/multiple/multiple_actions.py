@@ -11,7 +11,7 @@ from typing import Any
 from ....model.action.action_record import ActionRecord
 from ...action_config import ActionConfig, ActionConfigBuilder
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from .executor import TaskExecutor

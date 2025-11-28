@@ -149,10 +149,10 @@ class ActionExecutorBase(ABC):
             action: Action being executed
         """
         self.context.emit_action_event(
-            action_id=action.id or "unknown",
-            action_type=action.type,
-            success=True,
-            data={"status": "started"},
+            action.id or "unknown",
+            action.type,
+            True,
+            {"status": "started"},
         )
 
     def _emit_action_success(self, action: Action, data: dict | None = None) -> None:
@@ -163,7 +163,7 @@ class ActionExecutorBase(ABC):
             data: Optional additional data
         """
         self.context.emit_action_event(
-            action_id=action.id or "unknown", action_type=action.type, success=True, data=data or {}
+            action.id or "unknown", action.type, True, data or {}
         )
 
     def _emit_action_failure(self, action: Action, error: str, data: dict | None = None) -> None:
@@ -179,10 +179,10 @@ class ActionExecutorBase(ABC):
             failure_data.update(data)
 
         self.context.emit_action_event(
-            action_id=action.id or "unknown",
-            action_type=action.type,
-            success=False,
-            details=failure_data,
+            action.id or "unknown",
+            action.type,
+            False,
+            failure_data,
         )
 
     def _get_default_timing(self, category: str, key: str, default: float = 0.0) -> float:

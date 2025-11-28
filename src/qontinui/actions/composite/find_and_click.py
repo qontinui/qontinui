@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from ..action_config import ActionConfig, ActionConfigBuilder
 from ..action_interface import ActionInterface
-from ..action_result import ActionResult
+from ..action_result import ActionResult, ActionResultBuilder
 from ..action_type import ActionType
 from ..basic.click.click import Click
 from ..basic.click.click_options import ClickOptions, ClickOptionsBuilder
@@ -203,10 +203,10 @@ class FindAndClick(ActionInterface):
         self.find.perform(find_result, *object_collections)
 
         # Copy find results to main matches
-        matches.match_list = find_result.match_list
+        matches.matches = find_result.matches
         matches.match_locations = find_result.match_locations
 
-        if not find_result.match_list:
+        if not find_result.matches:
             matches.success = False
             logger.debug("FindAndClick: No matches found")
             return
@@ -215,7 +215,7 @@ class FindAndClick(ActionInterface):
         click_result = ActionResult(action_config=click_options)
         # Pass the matches as an ObjectCollection for clicking
         click_collection = ObjectCollection()
-        for match in find_result.match_list:
+        for match in find_result.matches:
             click_collection.add_match(match)
 
         self.click.perform(click_result, click_collection)
@@ -224,6 +224,6 @@ class FindAndClick(ActionInterface):
         matches.success = click_result.success
 
         logger.debug(
-            f"FindAndClick: Found {len(find_result.match_list)} matches, "
+            f"FindAndClick: Found {len(find_result.matches)} matches, "
             f"clicked {'successfully' if matches.success else 'unsuccessfully'}"
         )

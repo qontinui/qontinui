@@ -89,7 +89,7 @@ class DataOperationsExecutorAdapter(ActionExecutorBase):
 
         try:
             # Execute via the wrapped executor
-            context = {}
+            context: dict[str, Any] = {}
 
             if action_type == "SET_VARIABLE":
                 result = self._wrapped_executor.execute_set_variable(action, context)

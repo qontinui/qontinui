@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from ..find.match import Match
     from ..model.element.location import Location
-    from .action_result import ActionResult
+    from .action_result import ActionResult, ActionResultBuilder
 
 
 class ResultExtractor:
@@ -29,10 +29,10 @@ class ResultExtractor:
         Returns:
             Best scoring match, or None if no matches
         """
-        if not result.match_list:
+        if not result.matches:
             return None
         return max(
-            result.match_list,
+            result.matches,
             key=lambda m: m.get_score() if hasattr(m, "get_score") else 0,
         )
 
@@ -66,7 +66,7 @@ class ResultExtractor:
             List of locations from all matches
         """
         locations = []
-        for match in result.match_list:
+        for match in result.matches:
             if hasattr(match, "get_target"):
                 target = match.get_target()
                 if target:
@@ -83,7 +83,7 @@ class ResultExtractor:
         Returns:
             Count of matches in the result
         """
-        return len(result.match_list)
+        return len(result.matches)
 
     @staticmethod
     def is_empty(result: "ActionResult") -> bool:
@@ -95,7 +95,7 @@ class ResultExtractor:
         Returns:
             True if no matches were found
         """
-        return len(result.match_list) == 0
+        return len(result.matches) == 0
 
     @staticmethod
     def get_success_symbol(result: "ActionResult") -> str:
@@ -137,5 +137,5 @@ class ResultExtractor:
         Args:
             result: ActionResult containing matches to print
         """
-        for match in result.match_list:
+        for match in result.matches:
             print(match)
