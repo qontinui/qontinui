@@ -20,7 +20,6 @@ Example:
 """
 
 import logging
-from typing import Any
 
 from qontinui.config import Action
 

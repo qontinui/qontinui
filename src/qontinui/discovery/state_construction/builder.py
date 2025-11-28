@@ -194,9 +194,9 @@ class StateBuilder:
             return None
 
         # Merge defining elements
-        all_defining_ids = set(e.element_id for e in state1.defining_elements) | set(
+        all_defining_ids = {e.element_id for e in state1.defining_elements} | {
             e.element_id for e in state2.defining_elements
-        )
+        }
 
         merged_defining = []
         for elem in state1.defining_elements + state2.defining_elements:
@@ -205,9 +205,9 @@ class StateBuilder:
                 all_defining_ids.remove(elem.element_id)
 
         # Merge optional elements
-        all_optional_ids = set(e.element_id for e in state1.optional_elements) | set(
+        all_optional_ids = {e.element_id for e in state1.optional_elements} | {
             e.element_id for e in state2.optional_elements
-        )
+        }
 
         merged_optional = []
         for elem in state1.optional_elements + state2.optional_elements:

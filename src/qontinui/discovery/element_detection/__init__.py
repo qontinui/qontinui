@@ -28,8 +28,6 @@ Example:
     ...     print(f"Found {element.label} at {element.bounding_box}")
 """
 
-from typing import List
-
 # Base classes and data models
 from .analysis_base import (
     AnalysisInput,

@@ -127,7 +127,7 @@ class MathExecutor:
 
         for i, operand in enumerate(operands):
             try:
-                if isinstance(operand, (int, float)):
+                if isinstance(operand, int | float):
                     # Direct numeric value
                     resolved.append(float(operand))
                 elif isinstance(operand, dict):

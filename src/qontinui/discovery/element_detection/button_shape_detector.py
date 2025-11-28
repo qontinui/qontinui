@@ -91,7 +91,9 @@ class ButtonShapeDetector(BaseAnalyzer):
 
         # Analyze each screenshot
         all_elements = []
-        for screenshot_idx, (img_gray, img_color) in enumerate(zip(images_gray, images_color, strict=False)):
+        for screenshot_idx, (img_gray, img_color) in enumerate(
+            zip(images_gray, images_color, strict=False)
+        ):
             elements = await self._analyze_screenshot(img_gray, img_color, screenshot_idx, params)
             all_elements.extend(elements)
 

@@ -415,16 +415,14 @@ class StateValidationTest:
         else:
             states = detector.detect(screenshot)
 
-        # States should have some associated data
+        # States should have some associated data (optional - some detectors may not include element details)
         for state in states:
             # Check for elements, regions, or other state data
-            has_data = (
+            _ = (
                 (hasattr(state, "elements") and len(state.elements) > 0)
                 or (hasattr(state, "regions") and len(state.regions) > 0)
                 or hasattr(state, "metadata")
             )
-            # This is optional - some detectors may not include element details
-            # assert has_data or True  # Soft check
 
 
 class StatePerformanceTest:

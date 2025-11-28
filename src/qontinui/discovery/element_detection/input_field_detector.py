@@ -86,7 +86,9 @@ class InputFieldDetector(BaseAnalyzer):
 
         # Analyze each screenshot
         all_elements = []
-        for screenshot_idx, (img_color, img_gray) in enumerate(zip(images_color, images_gray, strict=False)):
+        for screenshot_idx, (img_color, img_gray) in enumerate(
+            zip(images_color, images_gray, strict=False)
+        ):
             elements = await self._analyze_screenshot(img_color, img_gray, screenshot_idx, params)
             all_elements.extend(elements)
 

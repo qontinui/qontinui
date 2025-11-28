@@ -6,7 +6,6 @@ This module uses the Facade pattern with composition, delegating to specialized
 adapters for mouse, keyboard, and screen operations following Single Responsibility Principle.
 """
 
-from abc import ABC
 from typing import Any
 
 from .adapter_impl.adapter_result import AdapterResult
@@ -15,8 +14,8 @@ from .adapter_impl.mouse_adapter import MouseAdapter
 from .adapter_impl.screen_adapter import ScreenAdapter
 
 
-class ActionAdapter(ABC):
-    """Abstract base class for pure action adapters.
+class ActionAdapter:
+    """Base class for pure action adapters.
 
     Following Brobot principles:
     - Each method is atomic and does exactly one thing

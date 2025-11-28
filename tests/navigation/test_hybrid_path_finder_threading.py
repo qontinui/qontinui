@@ -108,7 +108,7 @@ class TestHybridPathFinderThreading:
 
         def worker(thread_id: int):
             try:
-                for i in range(iterations):
+                for _i in range(iterations):
                     # Simulate weight modifications (similar to _find_most_reliable_path)
                     with finder._lock:
                         old_reliability = finder.reliability_weight
@@ -275,7 +275,7 @@ class TestHybridPathFinderThreading:
 
         def worker(thread_id: int):
             try:
-                for i in range(iterations):
+                for _i in range(iterations):
                     # Read current strategy
                     with finder._lock:
                         current = finder.strategy
@@ -354,8 +354,8 @@ class TestHybridPathFinderThreading:
                     with finder._lock:
                         state_cost = finder.state_cost_weight
                         transition_cost = finder.transition_cost_weight
-                        probability = finder.probability_weight
-                        reliability = finder.reliability_weight
+                        _ = finder.probability_weight  # Read to verify thread safety
+                        _ = finder.reliability_weight  # Read to verify thread safety
 
                     # Verify they're reasonable
                     if not (0 <= state_cost <= 1 and 0 <= transition_cost <= 1):

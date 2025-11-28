@@ -141,7 +141,7 @@ class TestErrorHandling:
         serializer = PickleSerializer()
         file_path = tmp_path / "nonexistent.pkl"
 
-        with pytest.raises(Exception):  # StorageReadException or FileNotFoundError
+        with pytest.raises((FileNotFoundError, OSError)):
             serializer.deserialize(file_path)
 
     def test_serialize_to_invalid_path(self):
@@ -149,7 +149,7 @@ class TestErrorHandling:
         serializer = PickleSerializer()
         invalid_path = Path("/invalid/path/that/does/not/exist/file.pkl")
 
-        with pytest.raises(Exception):  # StorageWriteException or OSError
+        with pytest.raises((FileNotFoundError, OSError, PermissionError)):
             serializer.serialize({"data": "value"}, invalid_path)
 
 

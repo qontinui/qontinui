@@ -101,7 +101,9 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
             # Threshold for corner detection
             threshold = params["quality_level"] * dst.max()
             corners_y, corners_x = np.where(dst > threshold)
-            corners = np.array([[[x, y]] for x, y in zip(corners_x, corners_y, strict=False)], dtype=np.float32)
+            corners = np.array(
+                [[[x, y]] for x, y in zip(corners_x, corners_y, strict=False)], dtype=np.float32
+            )
 
         if corners is None:
             return np.array([])
@@ -159,9 +161,7 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
             }
         ]
 
-    def _find_dominant_spacing(
-        self, distances: list[float], params: dict[str, Any]
-    ) -> int | None:
+    def _find_dominant_spacing(self, distances: list[float], params: dict[str, Any]) -> int | None:
         """Find the dominant spacing from a list of distances"""
         if not distances:
             return None

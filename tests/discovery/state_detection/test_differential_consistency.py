@@ -12,7 +12,6 @@ Key test areas:
 - Edge cases and error handling
 """
 
-
 import numpy as np
 import pytest
 
@@ -673,7 +672,7 @@ class TestDetectMultiMethod:
         """
         # Create 12 screenshots with gradual changes
         screenshots = []
-        for i in range(12):
+        for _i in range(12):
             img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
             screenshots.append(img)
 

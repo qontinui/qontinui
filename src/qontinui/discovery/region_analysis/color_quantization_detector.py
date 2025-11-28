@@ -218,8 +218,8 @@ class ColorQuantizationDetector(BaseRegionAnalyzer):
         avg_height = int(np.mean([r["height"] for r in rectangles]))
 
         # Get unique positions
-        x_positions = sorted(set(r["x"] for r in rectangles))
-        y_positions = sorted(set(r["y"] for r in rectangles))
+        x_positions = sorted({r["x"] for r in rectangles})
+        y_positions = sorted({r["y"] for r in rectangles})
 
         # Check if we have enough positions for a grid
         if len(x_positions) < params["min_grid_cols"] or len(y_positions) < params["min_grid_rows"]:

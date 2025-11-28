@@ -33,8 +33,6 @@ Example:
     >>> results = detector.detect("screenshot.png", canny_low=50, canny_high=150)
 """
 
-from typing import List
-
 # Import base classes
 from .base_detector import BaseDetector, MultiScreenshotDetector
 from .color_detector import ColorClusterDetector

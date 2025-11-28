@@ -104,7 +104,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
 
         hierarchy = hierarchy[0]
 
-        for i, contour in enumerate(contours):
+        for _i, contour in enumerate(contours):
             x, y, w, h = cv2.boundingRect(contour)
 
             # Size filter
@@ -206,8 +206,8 @@ class SlotBorderDetector(BaseRegionAnalyzer):
             return []
 
         # Get unique x and y positions
-        x_positions = sorted(set(b["x"] for b in borders))
-        y_positions = sorted(set(b["y"] for b in borders))
+        x_positions = sorted({b["x"] for b in borders})
+        y_positions = sorted({b["y"] for b in borders})
 
         # Calculate average cell size
         avg_width = int(np.mean([b["width"] for b in borders]))

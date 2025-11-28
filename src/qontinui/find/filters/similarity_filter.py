@@ -59,7 +59,7 @@ class SimilarityFilter(MatchFilter):
         filtered_matches: list[Match] = []
         for match in matches:
             # Validate similarity score
-            if not isinstance(match.similarity, (int, float)):
+            if not isinstance(match.similarity, int | float):
                 raise ValueError(f"Match has invalid similarity score: {match.similarity}")
 
             if not 0.0 <= match.similarity <= 1.0:

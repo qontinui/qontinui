@@ -4,7 +4,6 @@ Tests the ClickBoundingBoxInferrer, ElementBoundaryFinder, and ClickContextAnaly
 classes that provide sophisticated bounding box inference from click locations.
 """
 
-
 import numpy as np
 import pytest
 

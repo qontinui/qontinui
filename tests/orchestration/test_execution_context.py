@@ -372,7 +372,7 @@ class TestExecutionContext:
     def test_action_states_property_returns_copy(self):
         """Test that action_states property returns a copy."""
         context = ExecutionContext()
-        state = context.start_action(0, "test")
+        context.start_action(0, "test")
 
         states = context.action_states
         states.clear()

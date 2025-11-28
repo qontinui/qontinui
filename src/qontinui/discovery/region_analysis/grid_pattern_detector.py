@@ -181,7 +181,7 @@ class GridPatternDetector(BaseRegionAnalyzer):
 
         # Extract horizontal and vertical spacing
         spacing_x = spacing_y = None
-        for dx, dy, strength in distances:
+        for dx, dy, _strength in distances:
             if spacing_x is None and dx > params["min_cell_size"]:
                 spacing_x = dx
             if spacing_y is None and dy > params["min_cell_size"]:

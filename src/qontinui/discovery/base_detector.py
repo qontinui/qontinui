@@ -190,7 +190,7 @@ class BaseDetector(ABC):
 
         keep = []
 
-        for i, box1 in enumerate(sorted_boxes):
+        for _i, box1 in enumerate(sorted_boxes):
             x1, y1, w1, h1 = box1
             is_contained = False
 

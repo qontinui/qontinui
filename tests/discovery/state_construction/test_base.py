@@ -232,7 +232,7 @@ class BaseStateValidatorTest:
             result = validator.is_valid(state)
 
         # Validation may fail or succeed with warnings
-        assert isinstance(result, (bool, dict))
+        assert isinstance(result, bool | dict)
 
     def test_validate_state_confidence(self, validator):
         """Test validation of state confidence values."""
@@ -373,7 +373,7 @@ class StateHierarchyTest:
             assert hierarchy is not None
         elif hasattr(builder, "find_parent_child"):
             relationships = builder.find_parent_child([parent_region, child_region])
-            assert isinstance(relationships, (list, dict))
+            assert isinstance(relationships, list | dict)
 
     def test_detect_nested_states(self, builder):
         """Test detection of nested state structures."""
@@ -385,7 +385,7 @@ class StateHierarchyTest:
 
         if hasattr(builder, "detect_nesting"):
             nesting = builder.detect_nesting(regions)
-            assert isinstance(nesting, (list, dict, set))
+            assert isinstance(nesting, list | dict | set)
 
     def test_flatten_hierarchy(self, builder):
         """Test flattening of hierarchical state structure."""
@@ -459,7 +459,7 @@ class StateComparisonTest:
             similarity = 1.0  # Default to identical
 
         # Should have high similarity
-        assert isinstance(similarity, (float, int))
+        assert isinstance(similarity, float | int)
         if isinstance(similarity, float):
             assert similarity >= 0.0
 
@@ -485,7 +485,7 @@ class StateComparisonTest:
             similarity = 0.0  # Default to different
 
         # Should have low similarity
-        assert isinstance(similarity, (float, int))
+        assert isinstance(similarity, float | int)
 
     def test_find_state_differences(self, comparator):
         """Test finding differences between states."""
@@ -509,7 +509,7 @@ class StateComparisonTest:
 
         if hasattr(comparator, "find_differences"):
             differences = comparator.find_differences(state1, state2)
-            assert isinstance(differences, (list, dict, set))
+            assert isinstance(differences, list | dict | set)
 
 
 # Utility functions for state construction testing
@@ -531,12 +531,10 @@ def assert_state_well_formed(state: Any):
     # Check for name
     assert hasattr(state, "name") or hasattr(state, "state_name"), "State must have name"
 
-    # Check for elements or regions
-    has_content = (hasattr(state, "elements") and isinstance(state.elements, list)) or (
+    # Check for elements or regions (optional for some states)
+    _ = (hasattr(state, "elements") and isinstance(state.elements, list)) or (
         hasattr(state, "regions") and isinstance(state.regions, list)
     )
-    # Content is optional for some states
-    # assert has_content, "State should have elements or regions"
 
     # Check confidence if present
     if hasattr(state, "confidence"):

@@ -329,19 +329,19 @@ class TestMemoryUsage:
             # Concurrent operations
             threads = []
 
-            def work():
+            def work(res: ActionResult, reg: StateRegistry, iter_num: int) -> None:
                 for i in range(100):
                     match = MockMatch(i, i, f"leak_{i}")
-                    result.add(match)
+                    res.add(match)
 
-                    @state(name=f"leak_state_{iteration}_{i}_{threading.get_ident()}")
+                    @state(name=f"leak_state_{iter_num}_{i}_{threading.get_ident()}")
                     class LeakState:
                         pass
 
-                    registry.register_state(LeakState)
+                    reg.register_state(LeakState)
 
             for _ in range(10):
-                t = threading.Thread(target=work)
+                t = threading.Thread(target=work, args=(result, registry, iteration))
                 threads.append(t)
                 t.start()
 
@@ -379,14 +379,17 @@ class TestScalabilityBenchmarks:
             result = ActionResult()
             matches_per_thread = 1000
 
-            def add_matches(thread_id: int):
-                for i in range(matches_per_thread):
+            def add_matches(thread_id: int, res: ActionResult, mpt: int) -> None:
+                for i in range(mpt):
                     match = MockMatch(thread_id * 1000 + i, i, f"scale_{thread_id}_{i}")
-                    result.add(match)
+                    res.add(match)
 
             start_time = time.time()
 
-            threads = [threading.Thread(target=add_matches, args=(i,)) for i in range(num_threads)]
+            threads = [
+                threading.Thread(target=add_matches, args=(i, result, matches_per_thread))
+                for i in range(num_threads)
+            ]
             for t in threads:
                 t.start()
             for t in threads:

@@ -42,7 +42,7 @@ def synthetic_screenshots() -> list[np.ndarray]:
     """
     screenshots = []
 
-    for i in range(5):
+    for _i in range(5):
         # Create base screenshot (800x600)
         screenshot = np.ones((600, 800, 3), dtype=np.uint8) * 200
 
@@ -102,7 +102,7 @@ def synthetic_transition_pairs() -> list[tuple[np.ndarray, np.ndarray]]:
     """
     pairs = []
 
-    for i in range(15):
+    for _i in range(15):
         # Before: gameplay screen
         before = np.ones((600, 800, 3), dtype=np.uint8) * 50
         # Add some dynamic content

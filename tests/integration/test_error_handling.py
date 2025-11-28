@@ -151,7 +151,7 @@ class TestStateRegistryErrorHandling:
         def invalid_worker():
             """Worker that tries to register invalid states."""
             try:
-                for i in range(10):
+                for _i in range(10):
                     # Try invalid operation
                     try:
 

@@ -386,7 +386,6 @@ class ElementIdentifier:
         """
         title_bars = []
         height, width = screenshot.shape[:2]
-        gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
 
         # Scan top portion of screen
         scan_height = min(height // 3, 200)
@@ -440,7 +439,7 @@ class ElementIdentifier:
         relationships = []
 
         for i, elem1 in enumerate(elements):
-            for j, elem2 in enumerate(elements[i + 1 :], start=i + 1):
+            for _j, elem2 in enumerate(elements[i + 1 :], start=i + 1):
                 # Check for various relationship types
                 rel = self._analyze_element_pair(elem1, elem2)
                 if rel:
@@ -875,7 +874,6 @@ class ElementIdentifier:
             return False
 
         # Check for uniform color (typical for title bars)
-        mean_color = np.mean(region, axis=(0, 1))
         std_color = np.std(region, axis=(0, 1))
         color_uniformity = np.mean(std_color)
 

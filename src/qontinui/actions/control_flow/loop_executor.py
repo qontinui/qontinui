@@ -370,7 +370,7 @@ class LoopExecutor:
                 raise KeyError(f"Collection variable '{var_name}' not found")
 
             items = self.context.get_variable(var_name)
-            if not isinstance(items, (list, tuple)):
+            if not isinstance(items, list | tuple):
                 raise ValueError(
                     f"Collection variable '{var_name}' is not iterable "
                     f"(got {type(items).__name__})"

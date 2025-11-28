@@ -5,6 +5,7 @@ This module provides execution for inline Python code blocks and custom function
 within automation workflows, with sandboxing and context access.
 """
 
+import logging
 import signal
 import sys
 import time
@@ -17,6 +18,8 @@ from ..config.models.code_actions import CodeBlockActionConfig, CustomFunctionAc
 from ..util.common.file_loader import PythonFileLoader
 from .base import ActionExecutorBase
 from .registry import register_executor
+
+logger = logging.getLogger(__name__)
 
 
 @register_executor

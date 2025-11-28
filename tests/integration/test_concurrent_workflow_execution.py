@@ -229,9 +229,9 @@ class TestConcurrentActionWorkflows:
                     pass
 
                 registry = StateRegistry()
-                start_id = registry.register_state(StartState)
-                middle_id = registry.register_state(MiddleState)
-                end_id = registry.register_state(EndState)
+                registry.register_state(StartState)
+                registry.register_state(MiddleState)
+                registry.register_state(EndState)
 
                 # 3. Add matches to result
                 for i in range(3):
@@ -481,7 +481,7 @@ class TestConcurrentResultOperations:
         assert len(errors) == 0, f"Errors: {errors}"
         assert len(results) == 25
 
-        for i, result in enumerate(results):
+        for _i, result in enumerate(results):
             assert result.success
             assert len(result.match_list) == 10
 

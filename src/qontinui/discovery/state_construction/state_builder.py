@@ -319,7 +319,7 @@ class StateBuilder:
 
         # Convert to StateImages
         state_images = []
-        for idx, region_info in enumerate(consistent_regions):
+        for _idx, region_info in enumerate(consistent_regions):
             bbox = region_info["bbox"]
             x, y, w, h = bbox
 
