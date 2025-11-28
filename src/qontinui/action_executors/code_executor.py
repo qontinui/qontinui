@@ -196,12 +196,46 @@ class CodeExecutor(ActionExecutorBase):
     def _get_project_root(self) -> Path:
         """Get project root directory for file loading.
 
+        Searches for project root by looking for common project markers:
+        1. Check if context has project_root set
+        2. Search up from current directory for pyproject.toml, setup.py, .git, etc.
+        3. Fall back to current working directory
+
         Returns:
             Path: Project root directory
         """
-        # TODO: Get from workflow config when available
-        # For now, use current working directory
-        return Path.cwd()
+        # Check context for project_root
+        if hasattr(self.context, "project_root") and self.context.project_root:
+            return Path(self.context.project_root)
+
+        # Search for project root markers
+        return self._detect_project_root()
+
+    def _detect_project_root(self) -> Path:
+        """Detect project root by searching for common markers.
+
+        Returns:
+            Path: Detected project root or current working directory
+        """
+        markers = [
+            "pyproject.toml",
+            "setup.py",
+            "setup.cfg",
+            ".git",
+            "package.json",
+            "Cargo.toml",
+        ]
+
+        current = Path.cwd()
+
+        # Search up the directory tree
+        for parent in [current] + list(current.parents):
+            for marker in markers:
+                if (parent / marker).exists():
+                    return parent
+
+        # Fall back to current directory
+        return current
 
     def _execute_custom_function(self, action: Action, config: CustomFunctionActionConfig) -> bool:
         """Execute pre-registered custom function.
@@ -213,12 +247,178 @@ class CodeExecutor(ActionExecutorBase):
         Returns:
             bool: True if function executed successfully
         """
-        # TODO: Phase 2 - Implement custom function registry
-        self._emit_action_failure(
-            action,
-            "Custom functions not yet implemented (Phase 2 feature)",
+        from .function_registry import execute_function, get_function
+
+        # Check if function exists
+        func = get_function(config.function_id)
+        if func is None:
+            self._emit_action_failure(
+                action,
+                f"Custom function not found: {config.function_id}",
+            )
+            return False
+
+        # Build function context
+        function_context = self._build_function_context()
+
+        # Resolve input variables
+        inputs = self._resolve_function_inputs(config.inputs or {})
+
+        # Execute function
+        timeout = config.timeout or func.timeout
+        try:
+            result = execute_function(
+                function_id=config.function_id,
+                context=function_context,
+                inputs=inputs,
+                timeout=timeout,
+            )
+
+            # Store outputs in variable context
+            self._store_function_outputs(config.outputs or {}, result)
+
+            # Update action result
+            action_result = (
+                ActionResultBuilder()
+                .with_success(True)
+                .add_text(f"Custom function '{config.function_name}' executed successfully")
+                .build()
+            )
+            self.context.update_last_action_result(action_result)
+
+            self._emit_action_success(
+                action,
+                {
+                    "function_id": config.function_id,
+                    "output_keys": list(result.keys()),
+                },
+            )
+            return True
+
+        except TimeoutError as e:
+            self._emit_action_failure(action, f"Function timeout: {str(e)}")
+            return False
+
+        except Exception as e:
+            # Handle error based on error handling config
+            error_msg = f"Function execution failed: {type(e).__name__}: {str(e)}"
+            if config.error_handling:
+                return self._handle_function_error(action, config, error_msg)
+            else:
+                self._emit_action_failure(action, error_msg)
+                return False
+
+    def _build_function_context(self):
+        """Build FunctionContext for custom function execution.
+
+        Returns:
+            FunctionContext with current workflow state
+        """
+        from .function_registry import FunctionContext
+
+        # Get variables
+        variables = {}
+        workflow_state = {}
+        if self.context.variable_context:
+            if hasattr(self.context.variable_context, "get_all"):
+                variables = self.context.variable_context.get_all()
+                workflow_state = self.context.variable_context.get_all("workflow")
+            else:
+                variables = dict(self.context.variable_context.variables)
+
+        # Get active states
+        active_states = set()
+        if self.context.state_executor:
+            active_states = set(self.context.state_executor.active_states)
+
+        # Get previous result
+        previous_result = None
+        if self.context.last_action_result:
+            previous_result = self._serialize_action_result(self.context.last_action_result)
+
+        return FunctionContext(
+            variables=variables,
+            workflow_state=workflow_state,
+            active_states=active_states,
+            previous_result=previous_result,
         )
-        return False
+
+    def _resolve_function_inputs(self, inputs: dict[str, Any]) -> dict[str, Any]:
+        """Resolve variable references in function inputs.
+
+        Args:
+            inputs: Input dictionary with possible variable references
+
+        Returns:
+            Resolved input dictionary
+        """
+        resolved = {}
+        for key, value in inputs.items():
+            if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+                var_name = value[2:-1]
+                if self.context.variable_context:
+                    resolved[key] = self.context.variable_context.get(var_name)
+                else:
+                    resolved[key] = None
+            else:
+                resolved[key] = value
+        return resolved
+
+    def _store_function_outputs(
+        self, output_mapping: dict[str, str], result: dict[str, Any]
+    ) -> None:
+        """Store function outputs in variable context.
+
+        Args:
+            output_mapping: Maps result keys to variable names
+            result: Function result dictionary
+        """
+        if not self.context.variable_context:
+            return
+
+        for result_key, var_name in output_mapping.items():
+            if result_key in result:
+                self.context.variable_context.set(var_name, result[result_key])
+
+    def _handle_function_error(
+        self, action: Action, config: CustomFunctionActionConfig, error: str
+    ) -> bool:
+        """Handle function execution error based on config.
+
+        Args:
+            action: Action that failed
+            config: Function configuration
+            error: Error message
+
+        Returns:
+            bool: True if error was handled and execution should continue
+        """
+        error_handling = config.error_handling
+
+        if error_handling is None:
+            self._emit_action_failure(action, error)
+            return False
+
+        if error_handling.on_error == "skip":
+            self._emit_action_success(action, {"skipped": True, "error": error})
+            return True
+
+        elif error_handling.on_error == "fallback":
+            # Store fallback value in outputs
+            if config.outputs and error_handling.fallback_value is not None:
+                fallback = error_handling.fallback_value
+                if isinstance(fallback, dict):
+                    self._store_function_outputs(config.outputs, fallback)
+            self._emit_action_success(action, {"used_fallback": True, "error": error})
+            return True
+
+        elif error_handling.on_error == "retry":
+            self._emit_action_failure(action, f"Retry not yet implemented: {error}")
+            return False
+
+        else:  # "fail" or default
+            self._emit_action_failure(action, error)
+            return error_handling.continue_on_error or False
 
     def _build_execution_context(self, config: CodeBlockActionConfig) -> dict[str, Any]:
         """Build execution context for code.
