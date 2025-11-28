@@ -150,27 +150,45 @@ class StateBuilder:
     def diff_detector(self):
         """Lazy-load DifferentialConsistencyDetector."""
         if self._diff_detector is None:
-            # TODO: Implement DifferentialConsistencyDetector
-            # For now, return None
-            self._diff_detector = None
+            try:
+                from qontinui.discovery.state_detection.differential_consistency_detector import (
+                    DifferentialConsistencyDetector,
+                )
+
+                self._diff_detector = DifferentialConsistencyDetector()
+            except ImportError:
+                # Fallback: return None if not available
+                self._diff_detector = None
         return self._diff_detector
 
     @property
     def name_generator(self):
         """Lazy-load OCRNameGenerator."""
         if self._name_generator is None:
-            # TODO: Implement OCRNameGenerator
-            # For now, use fallback
-            self._name_generator = FallbackNameGenerator()
+            try:
+                from qontinui.discovery.state_construction.ocr_name_generator import (
+                    OCRNameGenerator,
+                )
+
+                self._name_generator = OCRNameGenerator()
+            except ImportError:
+                # Fallback: use simple implementation if OCR not available
+                self._name_generator = FallbackNameGenerator()
         return self._name_generator
 
     @property
     def element_identifier(self):
         """Lazy-load ElementIdentifier."""
         if self._element_identifier is None:
-            # TODO: Implement ElementIdentifier
-            # For now, use fallback
-            self._element_identifier = FallbackElementIdentifier()
+            try:
+                from qontinui.discovery.state_construction.element_identifier import (
+                    ElementIdentifier,
+                )
+
+                self._element_identifier = ElementIdentifier()
+            except ImportError:
+                # Fallback: use simple implementation
+                self._element_identifier = FallbackElementIdentifier()
         return self._element_identifier
 
     def build_state_from_screenshots(

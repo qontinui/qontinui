@@ -23,6 +23,7 @@ packages = [{include = "qontinui", from = "src"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 pynput = "^1.7"
+pyautogui = "^0.9.54"
 opencv-python-headless = "^4.9"
 transformers = "^4.36"
 torch = "^2.2"

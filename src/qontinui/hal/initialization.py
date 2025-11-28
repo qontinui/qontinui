@@ -274,12 +274,16 @@ def _create_keyboard_controller(config: HALConfig) -> IKeyboardController:
         return KeyboardOperations(keyboard.Controller())
 
     elif backend == "pyautogui":
-        # TODO: Implement PyAutoGUI keyboard operations
-        raise NotImplementedError("PyAutoGUI keyboard backend not yet implemented")
+        from .implementations.pyautogui_keyboard import PyAutoGUIKeyboardOperations
+
+        return PyAutoGUIKeyboardOperations()
 
     elif backend == "selenium":
-        # TODO: Implement Selenium keyboard operations
-        raise NotImplementedError("Selenium keyboard backend not yet implemented")
+        # Selenium keyboard operations require WebDriver instance
+        # This should be configured via SeleniumHAL, not standalone
+        raise NotImplementedError(
+            "Selenium keyboard backend requires WebDriver. Use SeleniumHAL instead."
+        )
 
     elif backend == "native":
         return _create_native_keyboard_controller(config)
@@ -311,12 +315,16 @@ def _create_mouse_controller(config: HALConfig) -> IMouseController:
         return MouseOperations(mouse.Controller())
 
     elif backend == "pyautogui":
-        # TODO: Implement PyAutoGUI mouse operations
-        raise NotImplementedError("PyAutoGUI mouse backend not yet implemented")
+        from .implementations.pyautogui_mouse import PyAutoGUIMouseOperations
+
+        return PyAutoGUIMouseOperations()
 
     elif backend == "selenium":
-        # TODO: Implement Selenium mouse operations
-        raise NotImplementedError("Selenium mouse backend not yet implemented")
+        # Selenium mouse operations require WebDriver instance
+        # This should be configured via SeleniumHAL, not standalone
+        raise NotImplementedError(
+            "Selenium mouse backend requires WebDriver. Use SeleniumHAL instead."
+        )
 
     elif backend == "native":
         return _create_native_mouse_controller(config)
