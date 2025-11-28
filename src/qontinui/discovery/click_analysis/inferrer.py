@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 

@@ -6,7 +6,7 @@ based on various condition types.
 
 import logging
 import re
-from typing import Any
+from typing import Any, cast
 
 from ..constants import ComparisonOperator
 from ..context import VariableContext
@@ -250,17 +250,17 @@ class FilterExecutor:
             raise ValueError(f"Invalid operator: {operator}") from err
 
         if op_enum == ComparisonOperator.EQUAL:
-            return left == right
+            return cast(bool, left == right)
         elif op_enum == ComparisonOperator.NOT_EQUAL:
-            return left != right
+            return cast(bool, left != right)
         elif op_enum == ComparisonOperator.GREATER:
-            return left > right
+            return cast(bool, left > right)
         elif op_enum == ComparisonOperator.LESS:
-            return left < right
+            return cast(bool, left < right)
         elif op_enum == ComparisonOperator.GREATER_EQUAL:
-            return left >= right
+            return cast(bool, left >= right)
         elif op_enum == ComparisonOperator.LESS_EQUAL:
-            return left <= right
+            return cast(bool, left <= right)
         elif op_enum == ComparisonOperator.CONTAINS:
             return right in left if hasattr(left, "__contains__") else False
         elif op_enum == ComparisonOperator.MATCHES:

@@ -11,7 +11,7 @@ import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from .schedule_config import CheckMode, ExecutionRecord, ScheduleConfig, StateCheckResult
 
@@ -344,7 +344,7 @@ class StateAwareScheduler:
             List of active state names
         """
         if self.state_memory:
-            return self.state_memory.get_active_state_names()
+            return cast(list[str], self.state_memory.get_active_state_names())
         return []
 
     def get_execution_records(self, schedule_id: str | None = None) -> list[ExecutionRecord]:

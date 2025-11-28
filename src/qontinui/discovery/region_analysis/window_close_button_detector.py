@@ -9,7 +9,7 @@ Accuracy: 80-90% for standard close buttons
 """
 
 from io import BytesIO
-from typing import Any
+from typing import Any, cast
 
 import cv2
 import numpy as np

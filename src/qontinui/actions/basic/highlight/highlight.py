@@ -43,7 +43,7 @@ class Highlight(ActionInterface):
             object_collections: Collections defining what to highlight
         """
         if not isinstance(action_result.action_config, HighlightOptions):
-            action_result.success = False
+            object.__setattr__(action_result, "success", False)
             return
 
         highlight_options = action_result.action_config
@@ -51,8 +51,8 @@ class Highlight(ActionInterface):
         # Find regions to highlight
         regions = self._find_regions_to_highlight(action_result, object_collections)
         if not regions:
-            action_result.success = False
-            action_result.output_text = "No regions found to highlight"
+            object.__setattr__(action_result, "success", False)
+            object.__setattr__(action_result, "output_text", "No regions found to highlight")
             return
 
         # Perform highlighting
@@ -65,9 +65,9 @@ class Highlight(ActionInterface):
             highlight_options.get_flash_times(),
         )
 
-        action_result.success = success
+        object.__setattr__(action_result, "success", success)
         if success:
-            action_result.output_text = f"Highlighted {len(regions)} region(s)"
+            object.__setattr__(action_result, "output_text", f"Highlighted {len(regions)} region(s)")
 
     def _find_regions_to_highlight(
         self, action_result: ActionResult, object_collections: tuple[Any, ...]

@@ -9,8 +9,10 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import cast
 
 from cli_commands import (
+    BaseCommand,
     ConfigCommand,
     MigrateCommand,
     ReportCommand,
@@ -32,7 +34,7 @@ class TestMigrationCLI:
     def __init__(self) -> None:
         """Initialize the CLI with command handlers."""
         self.parser = self._create_parser()
-        self.commands = {
+        self.commands: dict[str, BaseCommand] = {
             "migrate": MigrateCommand(),
             "validate": ValidateCommand(),
             "report": ReportCommand(),
@@ -63,7 +65,7 @@ class TestMigrationCLI:
                 if result.message:
                     print(result.message)
 
-                return result.exit_code
+                return cast(int, result.exit_code)
             else:
                 self.parser.print_help()
                 return 1

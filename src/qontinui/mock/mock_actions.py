@@ -6,7 +6,7 @@ All mock behavior is contained here, keeping application code clean.
 import logging
 from typing import Any, cast
 
-from ..actions.action_result import ActionResult
+from ..actions.action_result import ActionResult, ActionResultBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +37,12 @@ class MockActions:
         target_name = self._get_target_name(target)
         logger.info(f"[Mock] Click {button} on {target_name}")
 
-        result = ActionResult()
-        result.success = True
-        result.action_description = f"Clicked {target_name}"
+        result = (
+            ActionResultBuilder()
+            .with_success(True)
+            .with_action_description(f"Clicked {target_name}")
+            .build()
+        )
         return result
 
     def type(self, text: str, target: Any | None = None) -> ActionResult:
@@ -58,10 +61,13 @@ class MockActions:
         else:
             logger.info(f"[Mock] Type '{text}'")
 
-        result = ActionResult()
-        result.success = True
-        result.action_description = f"Typed: {text}"
-        result.selected_text = text
+        result = (
+            ActionResultBuilder()
+            .with_success(True)
+            .with_action_description(f"Typed: {text}")
+            .with_selected_text(text)
+            .build()
+        )
         return result
 
     def key(self, key_name: str) -> ActionResult:
@@ -75,9 +81,12 @@ class MockActions:
         """
         logger.info(f"[Mock] Press key: {key_name}")
 
-        result = ActionResult()
-        result.success = True
-        result.action_description = f"Pressed {key_name}"
+        result = (
+            ActionResultBuilder()
+            .with_success(True)
+            .with_action_description(f"Pressed {key_name}")
+            .build()
+        )
         return result
 
     def drag(self, from_target: Any, to_target: Any, duration: float = 1.0) -> ActionResult:
@@ -95,9 +104,12 @@ class MockActions:
         to_name = self._get_target_name(to_target)
         logger.info(f"[Mock] Drag from {from_name} to {to_name} over {duration}s")
 
-        result = ActionResult()
-        result.success = True
-        result.action_description = f"Dragged from {from_name} to {to_name}"
+        result = (
+            ActionResultBuilder()
+            .with_success(True)
+            .with_action_description(f"Dragged from {from_name} to {to_name}")
+            .build()
+        )
         return result
 
     def _get_target_name(self, target: Any) -> str:

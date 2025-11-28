@@ -370,7 +370,7 @@ class MultipleActions(ActionInterface):
         success = self.execute()
 
         # Update matches with results
-        matches.success = success
+        object.__setattr__(matches, "success", success)
 
         # Add execution history to matches
         for record in self._executor.get_execution_history():

@@ -11,7 +11,7 @@ current action context, making each test run different.
 import logging
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional, cast
 
 import httpx
 
@@ -238,7 +238,7 @@ class HistoricalDataClient:
             )
 
             if response.status_code == 200:
-                return response.content
+                return cast(bytes, response.content)
 
             logger.warning(f"Frame API returned {response.status_code}: {response.text}")
             return None
@@ -269,7 +269,7 @@ class HistoricalDataClient:
             )
 
             if response.status_code == 200:
-                return response.json()
+                return cast(list[dict[Any, Any]], response.json())
 
             logger.warning(f"Playback API returned {response.status_code}: {response.text}")
             return []

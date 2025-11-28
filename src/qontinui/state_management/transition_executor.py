@@ -27,7 +27,7 @@ Example:
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from qontinui.exceptions import StateException
 
@@ -177,7 +177,7 @@ class TransitionExecutor:
         Returns:
             True if execution succeeded, False otherwise
         """
-        return self.transition_executor.execute_transition(transition)
+        return cast(bool, self.transition_executor.execute_transition(transition))
 
     def _build_result(
         self, transition_id: str, transition: Any, context: dict[str, Any], success: bool

@@ -231,7 +231,7 @@ class FindWrapper(BaseWrapper):
             pattern_image = pattern.image if hasattr(pattern, "image") else None
             if not pattern_image:
                 logger.warning(f"Pattern {pattern.name} has no image data")
-                result.success = False
+                object.__setattr__(result, "success", False)
                 return result
 
             # Get effective similarity threshold
@@ -283,24 +283,24 @@ class FindWrapper(BaseWrapper):
                     name=pattern.name,
                 )
 
-                result.success = True
+                object.__setattr__(result, "success", True)
                 result.add_match(match)  # type: ignore[arg-type]
                 logger.debug(
                     f"Found pattern {pattern.name} at ({hal_match.x}, {hal_match.y}) with score {hal_match.confidence:.3f}"
                 )
             else:
-                result.success = False
+                object.__setattr__(result, "success", False)
                 logger.debug(f"Pattern {pattern.name} not found")
 
         except Exception as e:
             logger.error(f"Error finding pattern {pattern.name}: {e}", exc_info=True)
-            result.success = False
+            object.__setattr__(result, "success", False)
 
         # Set duration
         from datetime import timedelta
 
         elapsed_seconds = time.time() - start_time
-        result.duration = timedelta(seconds=elapsed_seconds)
+        object.__setattr__(result, "duration", timedelta(seconds=elapsed_seconds))
 
         # Record action if recording is enabled
         duration_ms = elapsed_seconds * 1000
