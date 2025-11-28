@@ -130,9 +130,14 @@ class SortExecutor:
         # Start with property extraction if sort_by is specified
         if sort_by:
             properties = [sort_by] if isinstance(sort_by, str) else sort_by
-            base_key_func = lambda item: self._extract_property(item, properties)
+
+            def base_key_func(item: Any) -> Any:
+                return self._extract_property(item, properties)
+
         else:
-            base_key_func = lambda item: item
+
+            def base_key_func(item: Any) -> Any:
+                return item
 
         # Apply comparator transformation
         if not comparator:

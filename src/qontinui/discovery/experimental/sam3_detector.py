@@ -17,6 +17,7 @@ Dependencies:
 Note: SAM3 requires access to model checkpoints which may require registration.
 """
 
+import os
 from typing import Any
 
 import cv2
@@ -140,7 +141,7 @@ class SAM3Detector(BaseDetector):
                 results = self.processor.segment()
 
                 if results and "masks" in results:
-                    for idx, mask in enumerate(results["masks"]):
+                    for idx, _mask in enumerate(results["masks"]):
                         bbox = results.get("boxes", [])[idx] if "boxes" in results else None
                         confidence = results.get("scores", [])[idx] if "scores" in results else 1.0
 

@@ -96,7 +96,7 @@ class TestSerialization:
 
         # Not serializable
         assert not is_json_serializable(lambda x: x)
-        assert not is_json_serializable(set([1, 2, 3]))
+        assert not is_json_serializable({1, 2, 3})
 
 
 class TestVariableNameValidation:
@@ -261,7 +261,7 @@ class TestSanitization:
         variables = {
             "valid": "text",
             "func": lambda x: x,
-            "set": set([1, 2, 3]),
+            "set": {1, 2, 3},
         }
 
         sanitized = sanitize_for_persistence(variables, skip_non_serializable=True)

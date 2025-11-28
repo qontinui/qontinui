@@ -276,7 +276,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
             text = text.strip()
             if len(text) > 0 and len(text) < 200:  # Reasonable title length
                 return text
-        except:
+        except Exception:
             pass
 
         return None

@@ -4,11 +4,16 @@ This module contains all factory methods for Pattern creation,
 separated from the Pattern class to follow the Single Responsibility Principle.
 """
 
+from __future__ import annotations
+
 import hashlib
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from .pattern import Pattern
 
 
 class PatternFactory:
@@ -19,7 +24,7 @@ class PatternFactory:
     """
 
     @staticmethod
-    def from_image(image: Any, name: str | None = None, pattern_id: str | None = None) -> "Pattern":
+    def from_image(image: Any, name: str | None = None, pattern_id: str | None = None) -> Pattern:
         """Create Pattern from Image with full mask.
 
         Args:
@@ -65,7 +70,7 @@ class PatternFactory:
         )
 
     @staticmethod
-    def from_file(img_path: str, name: str | None = None) -> "Pattern":
+    def from_file(img_path: str, name: str | None = None) -> Pattern:
         """Create Pattern from image file.
 
         Args:
@@ -89,7 +94,7 @@ class PatternFactory:
         return PatternFactory.from_image(image, name=name)
 
     @staticmethod
-    def from_match(match: Any, pattern_id: str | None = None) -> "Pattern":
+    def from_match(match: Any, pattern_id: str | None = None) -> Pattern:
         """Create Pattern from a Match object.
 
         Args:
@@ -129,7 +134,7 @@ class PatternFactory:
         )
 
     @staticmethod
-    def from_state_image(state_image: Any, pattern_id: str | None = None) -> "Pattern":
+    def from_state_image(state_image: Any, pattern_id: str | None = None) -> Pattern:
         """Create a Pattern from a StateImage.
 
         Args:

@@ -171,8 +171,8 @@ class HoughGridDetector(BaseRegionAnalyzer):
         configs = []
 
         # Sort lines by position
-        h_lines_sorted = sorted(h_lines, key=lambda l: l["y"])
-        v_lines_sorted = sorted(v_lines, key=lambda l: l["x"])
+        h_lines_sorted = sorted(h_lines, key=lambda line: line["y"])
+        v_lines_sorted = sorted(v_lines, key=lambda line: line["x"])
 
         # Find groups of evenly-spaced horizontal lines
         h_groups = self._find_evenly_spaced_lines(h_lines_sorted, "y", params)

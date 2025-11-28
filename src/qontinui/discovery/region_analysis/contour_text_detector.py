@@ -213,7 +213,7 @@ class ContourTextDetector(BaseRegionAnalyzer):
         # Convert to DetectedRegion objects
         detected_regions = []
 
-        for i, region_data in enumerate(text_regions):
+        for region_data in text_regions:
             x, y, w, h = region_data["bbox"]
             confidence = region_data["confidence"]
             char_count = len(region_data["chars"])
@@ -233,7 +233,7 @@ class ContourTextDetector(BaseRegionAnalyzer):
                         np.mean([c["rectangularity"] for c in region_data["chars"]])
                     ),
                     "detection_method": "contour_heuristics",
-                    "total_text_regions": len(all_regions),
+                    "total_text_regions": len(text_regions),
                 },
             )
             detected_regions.append(detected_region)

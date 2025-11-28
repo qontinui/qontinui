@@ -190,7 +190,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
                 best_models.append(best_model)
 
                 # Remove inliers from remaining candidates
-                inlier_set = set(id(p) for p in best_inliers)
+                inlier_set = {id(p) for p in best_inliers}
                 remaining_candidates = [c for c in remaining_candidates if id(c) not in inlier_set]
             else:
                 break

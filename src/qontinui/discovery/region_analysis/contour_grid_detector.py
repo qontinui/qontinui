@@ -257,8 +257,8 @@ class ContourGridDetector(BaseRegionAnalyzer):
         positions = [(r["x"], r["y"]) for r in rectangles]
 
         # Sort positions to find grid structure
-        x_coords = sorted(set(x for x, y in positions))
-        y_coords = sorted(set(y for x, y in positions))
+        x_coords = sorted({x for x, y in positions})
+        y_coords = sorted({y for x, y in positions})
 
         # Calculate spacing
         if len(x_coords) < params["min_grid_cols"] or len(y_coords) < params["min_grid_rows"]:

@@ -227,7 +227,7 @@ class GradientTextDetector(BaseRegionAnalyzer):
                     "gradient_std": float(gradient_std),
                     "angle_consistency": float(angle_consistency),
                     "detection_method": "gradient",
-                    "total_text_regions": len(all_regions),
+                    "total_text_regions": len(contours),
                 },
             )
             detected_regions.append(detected_region)

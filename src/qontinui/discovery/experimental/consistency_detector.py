@@ -9,7 +9,6 @@ remain consistent across them. Useful for finding static navigation elements,
 headers, footers, and persistent UI components.
 """
 
-
 import cv2
 import numpy as np
 
@@ -166,7 +165,7 @@ class ConsistencyDetector(MultiScreenshotDetector):
                         aligned.append((screenshot_id, img_aligned))
                     else:
                         aligned.append((screenshot_id, img))
-                except:
+                except Exception:
                     # If phase correlation fails, use unaligned image
                     aligned.append((screenshot_id, img))
 

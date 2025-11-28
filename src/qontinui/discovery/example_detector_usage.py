@@ -189,7 +189,7 @@ def example_multi_screenshot_detection() -> None:
     """Example of using a multi-screenshot detector."""
     # Create sample screenshots with a persistent region
     screenshots = []
-    for i in range(5):
+    for _i in range(5):
         img = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
         # Add a persistent white rectangle in all screenshots
         cv2.rectangle(img, (50, 50), (150, 100), (255, 255, 255), -1)

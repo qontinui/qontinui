@@ -60,7 +60,7 @@ class MultiStateExecutor:
 
             # Create MultiState representation with state verification callback
             multistate_id = f"state_{state.name.replace(' ', '_').lower()}"
-            multistate = self.adapter.manager.add_state(
+            self.adapter.manager.add_state(
                 id=multistate_id,
                 name=state.name,
                 blocking=blocking,
@@ -149,7 +149,7 @@ class MultiStateExecutor:
 
         # Register transition with MultiState
         if from_states or activate_states:  # Only register if we have valid states
-            multi_trans = self.adapter.manager.add_transition(
+            self.adapter.manager.add_transition(
                 id=f"trans_{transition.id}",
                 name=transition.name or f"Transition {transition.id}",
                 from_states=from_states,

@@ -183,7 +183,7 @@ class TestStateNameGeneration:
             - Generates consistent name
         """
         screenshots = []
-        for i in range(5):
+        for _i in range(5):
             img, _ = create_dialog_screenshot(dialog_title="Main Menu")
             screenshots.append(img)
 
@@ -220,7 +220,7 @@ class TestStateImagesIdentification:
         ]
 
         screenshots = []
-        for i in range(3):
+        for _i in range(3):
             img = generator.generate(width=600, height=400, elements=elements)
             screenshots.append(img)
 
@@ -289,7 +289,7 @@ class TestStateImagesIdentification:
         ]
 
         screenshots = []
-        for i in range(3):
+        for _i in range(3):
             img = generator.generate(width=500, height=400, elements=elements)
             screenshots.append(img)
 
@@ -310,7 +310,7 @@ class TestStateImagesIdentification:
         ]
 
         screenshots = []
-        for i in range(3):
+        for _i in range(3):
             img = generator.generate(width=300, height=300, elements=elements)
             screenshots.append(img)
 

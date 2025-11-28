@@ -135,7 +135,7 @@ class TestEventReporting:
         confidence = event_data["best_match_confidence"]
         assert confidence is not None, "Confidence should not be None"
         assert isinstance(
-            confidence, (int, float)
+            confidence, int | float
         ), f"Confidence should be numeric, got {type(confidence)}"
         # Confidence should be between -1 and 1 for correlation coefficient
         assert -1.0 <= confidence <= 1.0, f"Confidence should be between -1 and 1, got {confidence}"
@@ -178,7 +178,7 @@ class TestEventReporting:
         register_callback(EventType.MATCH_ATTEMPTED, collect_event)
 
         # Execute find operation with low threshold (should succeed)
-        results = Find(test_image).similarity(0.70).screenshot(screenshot).execute()
+        Find(test_image).similarity(0.70).screenshot(screenshot).execute()
 
         # Event should be emitted
         assert (

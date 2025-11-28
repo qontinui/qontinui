@@ -291,7 +291,7 @@ class TestIntegration:
         existing_names = set()
 
         # Generate multiple names
-        for i in range(5):
+        for _i in range(5):
             image = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
             name = generator.generate_name_from_image(image, context="element")
 

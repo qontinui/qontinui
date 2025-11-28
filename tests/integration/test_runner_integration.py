@@ -151,7 +151,7 @@ class TestScreenshotLoading:
         screenshots = self._load_screenshots_from_dir(temp_screenshot_dir)
 
         # Verify order by checking text content
-        for i, screenshot in enumerate(screenshots):
+        for _i, screenshot in enumerate(screenshots):
             # Extract text region and verify it contains expected index
             # (In real implementation, would use OCR or metadata)
             assert screenshot is not None
@@ -653,7 +653,7 @@ class TestDataFlowIntegration:
         ]
 
     def _build_state(
-        self, screenshots: list[np.ndarray], transitions: Optional[list[dict[str, Any]]]
+        self, screenshots: list[np.ndarray], transitions: list[dict[str, Any]] | None
     ) -> State:
         """Build state from data."""
         if not screenshots:

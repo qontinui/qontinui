@@ -65,8 +65,8 @@ class FilePathValidator:
         if project_root:
             try:
                 full_path.relative_to(base_path)
-            except ValueError:
-                raise ValueError("File path must be within project directory")
+            except ValueError as e:
+                raise ValueError("File path must be within project directory") from e
 
         # Check if file exists
         if not full_path.exists():
@@ -128,9 +128,9 @@ class PythonFileLoader:
         except UnicodeDecodeError as e:
             raise UnicodeDecodeError(
                 e.encoding, e.object, e.start, e.end, f"File encoding error: {str(e)}"
-            )
-        except PermissionError:
-            raise PermissionError(f"Permission denied: {file_path}")
+            ) from e
+        except PermissionError as e:
+            raise PermissionError(f"Permission denied: {file_path}") from e
 
     def clear_cache(self, file_path: str | None = None):
         """Clear file cache.

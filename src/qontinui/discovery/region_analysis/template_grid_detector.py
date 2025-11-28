@@ -194,7 +194,7 @@ class TemplateGridDetector(BaseRegionAnalyzer):
 
         kept_matches = []
 
-        for x, y, score in match_scores:
+        for x, y, _score in match_scores:
             # Check if this match overlaps with any kept match
             overlaps = False
             for kx, ky in kept_matches:

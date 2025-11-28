@@ -138,7 +138,7 @@ class ElementBoundaryFinder:
             # Find contours
             contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-            for i, contour in enumerate(contours):
+            for _i, contour in enumerate(contours):
                 # Check if click point is inside contour
                 if cv2.pointPolygonTest(contour, (click_x, click_y), False) < 0:
                     continue
@@ -388,9 +388,6 @@ class ElementBoundaryFinder:
 
         # Create mask for flood fill (needs to be 2 pixels larger)
         mask = np.zeros((height + 2, width + 2), np.uint8)
-
-        # Get reference color
-        ref_color = img[click_y, click_x]
 
         # Flood fill with tolerance
         tolerance = self.config.color_tolerance

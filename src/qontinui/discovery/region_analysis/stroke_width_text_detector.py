@@ -190,7 +190,7 @@ class StrokeWidthTextDetector(BaseRegionAnalyzer):
             curr_x, curr_y = float(x), float(y)
             max_steps = self.max_stroke_width
 
-            for step in range(max_steps):
+            for _step in range(max_steps):
                 curr_x += step_x
                 curr_y += step_y
 
@@ -287,7 +287,7 @@ class StrokeWidthTextDetector(BaseRegionAnalyzer):
 
         return letter_candidates
 
-    def _chain_letters_to_words(self, letters: list[dict[str, Any]]) -> list[Tuple]:
+    def _chain_letters_to_words(self, letters: list[dict[str, Any]]) -> list[tuple]:
         """Chain letter candidates into word regions."""
         if len(letters) < self.min_letters_in_chain:
             return []
@@ -344,20 +344,22 @@ class StrokeWidthTextDetector(BaseRegionAnalyzer):
             used.update(chain_ids)
 
             # Calculate bounding box
-            min_x = min(l["bbox"][0] for l in chain)
-            min_y = min(l["bbox"][1] for l in chain)
-            max_x = max(l["bbox"][2] for l in chain)
-            max_y = max(l["bbox"][3] for l in chain)
+            min_x = min(letter["bbox"][0] for letter in chain)
+            min_y = min(letter["bbox"][1] for letter in chain)
+            max_x = max(letter["bbox"][2] for letter in chain)
+            max_y = max(letter["bbox"][3] for letter in chain)
 
             # Calculate confidence based on chain length and consistency
-            avg_variance = np.mean([l["variance_ratio"] for l in chain])
+            avg_variance = np.mean([letter["variance_ratio"] for letter in chain])
             length_score = min(len(chain) / 10, 1.0)
             consistency_score = 1.0 - min(avg_variance, 1.0)
             confidence = (length_score * 0.5 + consistency_score * 0.5) * 0.85
 
             metadata = {
                 "letter_count": len(chain),
-                "avg_stroke_width": float(np.mean([l["mean_stroke_width"] for l in chain])),
+                "avg_stroke_width": float(
+                    np.mean([letter["mean_stroke_width"] for letter in chain])
+                ),
                 "avg_variance_ratio": float(avg_variance),
                 "detection_method": "swt",
             }
