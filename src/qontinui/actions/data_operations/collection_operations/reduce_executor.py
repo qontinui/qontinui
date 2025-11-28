@@ -5,7 +5,7 @@ to single values using various accumulation strategies.
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from ..context import VariableContext
 from ..evaluator import SafeEvaluator
@@ -117,7 +117,7 @@ class ReduceExecutor:
         Returns:
             Sum of all values
         """
-        return sum(collection, initial_value or 0)
+        return cast(float, sum(collection, initial_value or 0))
 
     def _reduce_average(self, collection: list[Any], initial_value: Any) -> float:
         """Calculate average of values in collection.
@@ -130,7 +130,7 @@ class ReduceExecutor:
             Average (mean) of all values
         """
         total = sum(collection, initial_value or 0)
-        return total / len(collection)
+        return cast(float, total / len(collection))
 
     def _reduce_min(self, collection: list[Any]) -> Any:
         """Find minimum value in collection.

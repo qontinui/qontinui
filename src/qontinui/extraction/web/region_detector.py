@@ -7,7 +7,7 @@ represent potential states in the GUI.
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from playwright.async_api import ElementHandle, Page
 
@@ -287,9 +287,9 @@ class RegionDetector:
                 return path.slice(-3).join(' > ');
             }"""
             )
-            return selector
+            return cast(str, selector)
         except Exception:
-            return properties.get("tagName", "div")
+            return cast(str, properties.get("tagName", "div"))
 
     def _filter_overlapping(self, regions: list[DetectedRegion]) -> list[DetectedRegion]:
         """Remove smaller regions that are fully contained in larger ones."""

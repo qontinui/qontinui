@@ -203,11 +203,11 @@ class FindAndClick(ActionInterface):
         self.find.perform(find_result, *object_collections)
 
         # Copy find results to main matches
-        matches.matches = find_result.matches
+        object.__setattr__(matches, "matches", find_result.matches)
         matches.match_locations = find_result.match_locations
 
         if not find_result.matches:
-            matches.success = False
+            object.__setattr__(matches, "success", False)
             logger.debug("FindAndClick: No matches found")
             return
 
@@ -221,7 +221,7 @@ class FindAndClick(ActionInterface):
         self.click.perform(click_result, click_collection)
 
         # Update success status
-        matches.success = click_result.success
+        object.__setattr__(matches, "success", click_result.success)
 
         logger.debug(
             f"FindAndClick: Found {len(find_result.matches)} matches, "

@@ -228,7 +228,7 @@ class Click(ActionInterface):
                     self.time.wait(click_options.get_pause_between_individual_actions())
 
         # Set success based on whether we clicked anything
-        matches.success = clicked_count > 0
+        object.__setattr__(matches, "success", clicked_count > 0)
 
     def _get_total_targets(self, object_collections: tuple[ObjectCollection, ...]) -> int:
         """Count total number of clickable targets across all collections.
@@ -349,5 +349,5 @@ class ActionResultFactory:
             New ActionResult instance
         """
         result = ActionResult(action_config)
-        result.action_description = description
+        object.__setattr__(result, "action_description", description)
         return result

@@ -6,7 +6,7 @@ operations on operands with variable resolution support.
 
 import logging
 import math
-from typing import Any
+from typing import Any, cast
 
 from .context import VariableContext
 from .evaluator import SafeEvaluator
@@ -299,7 +299,7 @@ class MathExecutor:
         if len(operands) != 2:
             raise ValueError("POWER requires exactly 2 operands")
 
-        return operands[0] ** operands[1]
+        return cast(float, operands[0] ** operands[1])
 
     def _sqrt(self, operands: list[float]) -> float:
         """Calculate square root of operand.

@@ -6,7 +6,7 @@ Orchestrates schedule execution with the JSONRunner and StateAwareScheduler.
 import logging
 import threading
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from croniter import croniter
 
@@ -116,7 +116,7 @@ class SchedulerExecutor:
                 # Update last executed time
                 schedule.last_executed = datetime.now()
 
-                return result
+                return cast(bool, result)
             except Exception as e:
                 logger.error(f"Error executing schedule '{schedule.name}': {e}")
                 return False
@@ -144,7 +144,7 @@ class SchedulerExecutor:
                 )
                 result = self.runner.run(schedule.process_id)
                 schedule.last_executed = datetime.now()
-                return result
+                return cast(bool, result)
             except Exception as e:
                 logger.error(f"Error in interval schedule '{schedule.name}': {e}")
                 return False
@@ -186,7 +186,7 @@ class SchedulerExecutor:
                 )
                 result = self.runner.run(schedule.process_id)
                 schedule.last_executed = datetime.now()
-                return result
+                return cast(bool, result)
             except Exception as e:
                 logger.error(f"Error in time-based schedule '{schedule.name}': {e}")
                 return False

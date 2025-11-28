@@ -20,7 +20,7 @@ import logging
 import time
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from .base import BaseWrapper
 
@@ -111,7 +111,7 @@ class TimeWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug("TimeWrapper.now (MOCK)")
-            return self.mock_time.now()
+            return cast(datetime, self.mock_time.now())
         else:
             logger.debug("TimeWrapper.now (REAL)")
             return datetime.now()
@@ -141,7 +141,7 @@ class TimeWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"TimeWrapper.wait_until (MOCK): timeout={timeout}s")
-            return self.mock_time.wait_until(condition, timeout, poll_interval)
+            return cast(bool, self.mock_time.wait_until(condition, timeout, poll_interval))
         else:
             logger.debug(f"TimeWrapper.wait_until (REAL): timeout={timeout}s")
             return self._wait_until_real(condition, timeout, poll_interval)
@@ -187,7 +187,7 @@ class TimeWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug("TimeWrapper.measure (MOCK)")
-            return self.mock_time.measure(func)
+            return cast(tuple[Any, float], self.mock_time.measure(func))
         else:
             logger.debug("TimeWrapper.measure (REAL)")
             start = time.time()
@@ -207,7 +207,7 @@ class TimeWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug("TimeWrapper.timestamp (MOCK)")
-            return self.mock_time.timestamp()
+            return cast(float, self.mock_time.timestamp())
         else:
             logger.debug("TimeWrapper.timestamp (REAL)")
             return time.time()

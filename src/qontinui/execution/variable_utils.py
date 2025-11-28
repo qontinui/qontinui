@@ -11,7 +11,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +217,7 @@ def interpolate_variables(
             return str(variables[var_name])
         else:
             # Keep original if variable not found
-            return match.group(0)
+            return cast(str, match.group(0))
 
     return re.sub(pattern, replace_var, text)
 

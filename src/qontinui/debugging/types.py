@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 
 class ExecutionState(Enum):
@@ -86,7 +86,7 @@ class Breakpoint:
             return False
 
         elif self.type == BreakpointType.ERROR:
-            return context.get("has_error", False)
+            return cast(bool, context.get("has_error", False))
 
         elif self.type == BreakpointType.MATCH_COUNT:
             if self.condition:
@@ -98,7 +98,7 @@ class Breakpoint:
             return False
 
         elif self.type == BreakpointType.STATE_CHANGE:
-            return context.get("state_changed", False)
+            return cast(bool, context.get("state_changed", False))
 
         return False
 

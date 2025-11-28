@@ -150,7 +150,7 @@ class TypeAction(ActionInterface):
         success = self.execute(text_to_type)
 
         # Update matches with results
-        matches.success = success
+        object.__setattr__(matches, "success", success)
         if success:
             matches.add_text_result(text_to_type)
 

@@ -9,11 +9,13 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import cast
 
 # Add current directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
 from cli_commands import (  # noqa: E402
+    BaseCommand,
     ConfigCommand,
     DiscoverCommand,
     MigrateCommand,
@@ -30,7 +32,7 @@ class StandaloneTestMigrationCLI:
 
     def __init__(self) -> None:
         """Initialize the CLI with command handlers."""
-        self.commands = {
+        self.commands: dict[str, BaseCommand] = {
             "discover": DiscoverCommand(),
             "migrate": MigrateCommand(),
             "validate": ValidateCommand(),
@@ -65,7 +67,7 @@ class StandaloneTestMigrationCLI:
                     else:
                         logging.error(result.message)
 
-                return result.exit_code
+                return cast(int, result.exit_code)
             else:
                 self.parser.print_help()
                 return 1

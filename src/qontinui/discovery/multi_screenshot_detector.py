@@ -6,7 +6,7 @@ persistent UI elements across multiple frames.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, cast
 
 import cv2
 import numpy as np

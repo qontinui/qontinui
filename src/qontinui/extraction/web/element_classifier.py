@@ -6,7 +6,7 @@ attributes, and visual characteristics.
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from playwright.async_api import ElementHandle, Page
 
@@ -460,13 +460,13 @@ class ElementClassifier:
                 return path.join(' > ');
             }"""
             )
-            return selector
+            return cast(str, selector)
         except Exception:
             # Fallback to basic selector
             tag = properties.get("tagName", "div")
             if properties.get("id"):
-                return f"#{properties['id']}"
-            return tag
+                return cast(str, f"#{properties['id']}")
+            return cast(str, tag)
 
     async def extract_all_elements(
         self,

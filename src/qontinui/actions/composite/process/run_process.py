@@ -7,7 +7,7 @@ import time
 from typing import TYPE_CHECKING
 
 from ....actions.action_interface import ActionInterface
-from ....actions.action_result import ActionResult
+from ....actions.action_result import ActionResult, ActionResultBuilder
 from ....actions.action_type import ActionType
 from .run_process_options import RunProcessOptions
 
@@ -76,15 +76,15 @@ class RunProcess(ActionInterface):
         # process_id can refer to either workflow or process (backward compatibility)
         workflow_id = run_process_options.get_process_id()
         if not workflow_id:
-            action_result.success = False
-            action_result.output_text = "RUN_PROCESS: No workflow/process ID specified"
+            object.__setattr__(action_result, "success", False)
+            object.__setattr__(action_result, "output_text", "RUN_PROCESS: No workflow/process ID specified")
             return
 
         # Get the workflow (backward compatible with process)
         workflow = self._get_workflow(workflow_id)
         if not workflow:
-            action_result.success = False
-            action_result.output_text = f"RUN_PROCESS: Workflow/process '{workflow_id}' not found"
+            object.__setattr__(action_result, "success", False)
+            object.__setattr__(action_result, "output_text", f"RUN_PROCESS: Workflow/process '{workflow_id}' not found")
             return
 
         # Check if repetition is enabled
@@ -92,7 +92,7 @@ class RunProcess(ActionInterface):
         if not repetition.get_enabled():
             # No repetition - execute once
             success = self._execute_workflow_once(workflow, action_result)
-            action_result.success = success
+            object.__setattr__(action_result, "success", success)
             return
 
         # Execute with repetition
@@ -153,7 +153,7 @@ class RunProcess(ActionInterface):
             # Then call: self.action_executor.execute_action(action)
             # For now, we assume success
 
-        action_result.output_text = output_text
+        object.__setattr__(action_result, "output_text", output_text)
         return success
 
     def _execute_until_success(
@@ -190,8 +190,8 @@ class RunProcess(ActionInterface):
                 output_text += f"\n✓ Workflow succeeded on attempt {run_num + 1}\n"
                 output_text += f"Total attempts: {run_num + 1}\n"
 
-                action_result.success = True
-                action_result.output_text = output_text
+                object.__setattr__(action_result, "success", True)
+                object.__setattr__(action_result, "output_text", output_text)
                 return
 
             # Delay before next attempt (but not after last)
@@ -201,8 +201,8 @@ class RunProcess(ActionInterface):
 
         # Reached max repeats without success
         output_text += f"\n✗ Workflow failed after {total_runs} attempts\n"
-        action_result.success = False
-        action_result.output_text = output_text
+        object.__setattr__(action_result, "success", False)
+        object.__setattr__(action_result, "output_text", output_text)
 
     def _execute_fixed_count(
         self,
@@ -253,5 +253,5 @@ class RunProcess(ActionInterface):
         else:
             output_text += "✗ Overall: FAILURE (all runs failed)\n"
 
-        action_result.success = at_least_one_success
-        action_result.output_text = output_text
+        object.__setattr__(action_result, "success", at_least_one_success)
+        object.__setattr__(action_result, "output_text", output_text)

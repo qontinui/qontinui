@@ -172,7 +172,7 @@ class Wait(ActionInterface):
         success = self.execute(target=target)
 
         # Update matches with results
-        matches.success = success
+        object.__setattr__(matches, "success", success)
 
     def execute(
         self, target: Any | None = None, condition: Callable[[], bool] | None = None

@@ -14,7 +14,7 @@ import random
 from datetime import timedelta
 from typing import cast
 
-from ..actions.action_result import ActionResult
+from ..actions.action_result import ActionResult, ActionResultBuilder
 from ..mock.mock_mode_manager import MockModeManager
 from ..mock.mock_state_management import MockStateManagement
 from ..model.action import ActionRecord
@@ -119,22 +119,25 @@ class MockFind:
         Returns:
             ActionResult with matches from snapshot
         """
-        result = ActionResult()
+        builder = ActionResultBuilder()
 
         if snapshot.was_found():
-            result.success = True
+            builder.with_success(True)
+            # Set match list directly after building
+            result = builder.build()
             result.set_match_list(snapshot.match_list)  # type: ignore[arg-type]
 
             if snapshot.text:
-                result.text = snapshot.text  # type: ignore[assignment]
+                result.add_text_result(snapshot.text)
 
             logger.debug(f"Created successful result with {len(snapshot.match_list)} matches")
         else:
-            result.success = False
+            builder.with_success(False)
+            result = builder.build()
             logger.debug("Created failed result (snapshot had no matches)")
 
         duration_val = snapshot.duration if snapshot.duration > 0 else 0.1
-        result.duration = timedelta(seconds=duration_val)
+        result.set_duration(timedelta(seconds=duration_val))
         return result
 
     def _get_result_from_api(
@@ -168,8 +171,6 @@ class MockFind:
             if not historical:
                 return None
 
-            result = ActionResult()
-
             if historical.success and historical.match_x is not None:
                 # Create match from historical data
                 match = Match(
@@ -184,7 +185,7 @@ class MockFind:
                     score=historical.best_match_score or 0.9,
                     ocr_text="",
                 )
-                result.success = True
+                result = ActionResultBuilder().with_success(True).build()
                 result.add_match(match)  # type: ignore[arg-type]
 
                 # Store the historical result ID for frame retrieval
@@ -194,7 +195,7 @@ class MockFind:
                     f"Created result from API: match at ({historical.match_x}, {historical.match_y})"
                 )
             else:
-                result.success = False
+                result = ActionResultBuilder().with_success(False).build()
                 logger.debug("Created failed result from API historical data")
 
             return result
@@ -222,13 +223,11 @@ class MockFind:
         Returns:
             Generated mock ActionResult
         """
-        result = ActionResult()
-
         # Check if pattern's owner state is active
         if hasattr(pattern, "owner_state_name") and pattern.owner_state_name:
             if pattern.owner_state_name not in active_states and pattern.owner_state_name != "NULL":
                 # Pattern's state is not active
-                result.success = False
+                result = ActionResultBuilder().with_success(False).build()
                 logger.debug(f"Pattern's state '{pattern.owner_state_name}' not active")
                 return result
 
@@ -242,11 +241,11 @@ class MockFind:
         if random.random() < probability:
             # Generate a mock match
             match = self._create_mock_match(pattern, search_region)
-            result.success = True
+            result = ActionResultBuilder().with_success(True).build()
             result.add_match(match)  # type: ignore[arg-type]
             logger.debug(f"Generated mock match at {match.get_region()}")
         else:
-            result.success = False
+            result = ActionResultBuilder().with_success(False).build()
             logger.debug(f"Mock find failed (probability was {probability})")
 
         return result
