@@ -11,7 +11,7 @@ from typing import Any
 
 from .action_config import ActionConfig
 from .action_interface import ActionInterface
-from .action_result import ActionResult
+from .action_result import ActionResult, ActionResultBuilder
 from .object_collection import ObjectCollection
 
 logger = logging.getLogger(__name__)

@@ -72,8 +72,8 @@ class MockFindImplementation:
             active_states=set(), action_type="FIND"  # TODO: integrate with state management
         )
 
-        if snapshot and snapshot.match_list:
-            return snapshot.match_list
+        if snapshot and snapshot.matches:
+            return snapshot.matches
 
         return []
 

@@ -14,7 +14,7 @@ from .string_collection_builder import StringCollectionBuilder
 if TYPE_CHECKING:
     from ...model.match import Match
     from ...model.state import State, StateImage, StateLocation, StateRegion, StateString
-    from ..action_result import ActionResult
+    from ..action_result import ActionResult, ActionResultBuilder
     from ..object_collection import ObjectCollection
 
 

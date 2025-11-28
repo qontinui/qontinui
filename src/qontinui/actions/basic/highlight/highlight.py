@@ -8,7 +8,7 @@ from typing import Any
 
 from ....model.element.region import Region
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...object_collection import ObjectCollection
 from ..find.find import Find
 from .highlight_options import HighlightOptions
@@ -91,9 +91,9 @@ class Highlight(ActionInterface):
             find_result = ActionResult(action_result.action_config)
             self.find.perform(find_result, *object_collections)
 
-            if find_result.is_success and find_result.match_list:
+            if find_result.is_success and find_result.matches:
                 # Extract regions from all matches
-                for match in find_result.match_list:
+                for match in find_result.matches:
                     region = match.get_region()
                     if region is not None:
                         regions.append(region)

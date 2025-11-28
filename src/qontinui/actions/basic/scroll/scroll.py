@@ -8,7 +8,7 @@ from typing import Any, cast
 
 from ....model.element.location import Location
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...object_collection import ObjectCollection
 from ..find.find import Find
 from .scroll_options import ScrollDirection, ScrollOptions
@@ -91,9 +91,9 @@ class Scroll(ActionInterface):
             find_result = ActionResult(action_result.action_config)
             self.find.perform(find_result, *object_collections)
 
-            if find_result.is_success and find_result.match_list:
+            if find_result.is_success and find_result.matches:
                 # Use the first match's location
-                first_match = find_result.match_list[0]
+                first_match = find_result.matches[0]
                 return cast(Location | None, first_match.get_target())
 
         return None

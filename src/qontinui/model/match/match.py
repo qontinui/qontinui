@@ -54,6 +54,9 @@ class MatchMetadata:
     histogram: np.ndarray[Any, Any] | None = field(default=None, repr=False)
     """Histogram data for this match."""
 
+    source_image_id: str | None = None
+    """ID of the source image that was used to find this match."""
+
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
     """Lock for thread-safe access."""
 
@@ -193,6 +196,190 @@ class Match:
             Protected by metadata's internal lock.
         """
         self.metadata.increment_times_acted_on()
+
+    @property
+    def center(self) -> Location:
+        """Get center location of match.
+
+        Returns:
+            Center location
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        from .match_geometry import MatchGeometry
+
+        return MatchGeometry.get_center(self)
+
+    @property
+    def x(self) -> int:
+        """Get x coordinate of match.
+
+        Returns:
+            X coordinate or 0
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        from .match_geometry import MatchGeometry
+
+        return MatchGeometry.get_x(self)
+
+    @property
+    def y(self) -> int:
+        """Get y coordinate of match.
+
+        Returns:
+            Y coordinate or 0
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        from .match_geometry import MatchGeometry
+
+        return MatchGeometry.get_y(self)
+
+    @property
+    def w(self) -> int:
+        """Get width of match.
+
+        Returns:
+            Width or 0
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        from .match_geometry import MatchGeometry
+
+        return MatchGeometry.get_width(self)
+
+    @property
+    def h(self) -> int:
+        """Get height of match.
+
+        Returns:
+            Height or 0
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        from .match_geometry import MatchGeometry
+
+        return MatchGeometry.get_height(self)
+
+    @property
+    def region(self) -> Region | None:
+        """Get region of match (property alias for get_region).
+
+        Returns:
+            Region or None
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        return self.get_region()
+
+    @property
+    def similarity(self) -> float:
+        """Get similarity score (property alias for score).
+
+        Returns:
+            Similarity score (0.0-1.0)
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            return self.score
+
+    @property
+    def text(self) -> str:
+        """Get OCR text (property alias for ocr_text).
+
+        Returns:
+            OCR text string
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            return self.ocr_text
+
+    @text.setter
+    def text(self, value: str) -> None:
+        """Set OCR text (property alias for ocr_text).
+
+        Args:
+            value: New OCR text value
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            self.ocr_text = value
+
+    @property
+    def timestamp(self) -> datetime:
+        """Get timestamp when match was found.
+
+        Returns:
+            Timestamp from metadata
+
+        Thread Safety:
+            Protected by metadata's internal lock.
+        """
+        return self.metadata.timestamp
+
+    @timestamp.setter
+    def timestamp(self, value: datetime) -> None:
+        """Set timestamp when match was found.
+
+        Args:
+            value: New timestamp value
+
+        Thread Safety:
+            Protected by metadata's internal lock.
+        """
+        self.metadata.timestamp = value
+
+    @property
+    def search_area(self) -> Region | None:
+        """Get search area region.
+
+        For compatibility, returns the region where search was performed.
+        In the current implementation, this is the same as the match region.
+
+        Returns:
+            Region or None
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        # For now, return the match region as the search area
+        # This can be refined if we track the actual search area separately
+        return self.get_region()
+
+    def set_image_with_scene(self) -> None:
+        """Set image from scene if available.
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        from .match_image_ops import MatchImageOps
+
+        MatchImageOps.set_image_from_scene(self)
+
+    def to_state_image(self) -> Image | None:
+        """Convert match to state image.
+
+        Returns:
+            Image from the match or None
+
+        Thread Safety:
+            Protected by lock for concurrent access.
+        """
+        with self._lock:
+            return self.image
 
     def __str__(self) -> str:
         """String representation.

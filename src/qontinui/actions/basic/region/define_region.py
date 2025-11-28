@@ -66,12 +66,12 @@ class DefineWithMatch:
         if object_collections:
             self.find.perform(matches, *object_collections)
 
-        if not matches.match_list:
+        if not matches.matches:
             logger.warning("No matches found for region definition")
             return
 
         # Use first match as reference
-        first_match = matches.match_list[0]
+        first_match = matches.matches[0]
         if not first_match.region:
             logger.warning("Match has no region for definition")
             return
@@ -140,15 +140,15 @@ class DefineInsideAnchors:
         if object_collections:
             self.find.perform(matches, *object_collections)
 
-        if not matches.match_list:
+        if not matches.matches:
             logger.warning("No anchors found for region definition")
             return
 
         # Find bounding box
-        min_x = min(m.region.x for m in matches.match_list if m.region)
-        min_y = min(m.region.y for m in matches.match_list if m.region)
-        max_x = max(m.region.x + m.region.width for m in matches.match_list if m.region)
-        max_y = max(m.region.y + m.region.height for m in matches.match_list if m.region)
+        min_x = min(m.region.x for m in matches.matches if m.region)
+        min_y = min(m.region.y for m in matches.matches if m.region)
+        max_x = max(m.region.x + m.region.width for m in matches.matches if m.region)
+        max_y = max(m.region.y + m.region.height for m in matches.matches if m.region)
 
         region = Region(min_x, min_y, max_x - min_x, max_y - min_y)
 
@@ -183,16 +183,16 @@ class DefineOutsideAnchors:
         if object_collections:
             self.find.perform(matches, *object_collections)
 
-        if not matches.match_list:
+        if not matches.matches:
             logger.warning("No anchors found for region definition")
             return
 
         # Find bounding box with padding
         padding = 50  # Default padding
-        min_x = min(m.region.x for m in matches.match_list if m.region) - padding
-        min_y = min(m.region.y for m in matches.match_list if m.region) - padding
-        max_x = max(m.region.x + m.region.width for m in matches.match_list if m.region) + padding
-        max_y = max(m.region.y + m.region.height for m in matches.match_list if m.region) + padding
+        min_x = min(m.region.x for m in matches.matches if m.region) - padding
+        min_y = min(m.region.y for m in matches.matches if m.region) - padding
+        max_x = max(m.region.x + m.region.width for m in matches.matches if m.region) + padding
+        max_y = max(m.region.y + m.region.height for m in matches.matches if m.region) + padding
 
         # Clamp to screen bounds
         min_x = max(0, min_x)
@@ -235,12 +235,12 @@ class DefineIncludingMatches:
         if object_collections:
             self.find.perform(matches, *object_collections)
 
-        if not matches.match_list:
+        if not matches.matches:
             logger.warning("No matches found for region definition")
             return
 
         # Find bounding box of all matches
-        regions = [m.region for m in matches.match_list if m.region]
+        regions = [m.region for m in matches.matches if m.region]
         if not regions:
             logger.warning("No regions in matches")
             return

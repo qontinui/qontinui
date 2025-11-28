@@ -8,7 +8,7 @@ from datetime import timedelta
 from typing import Any
 
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...object_collection import ObjectCollection
 from ..find.find import Find
 from .vanish_options import VanishOptions
@@ -125,4 +125,4 @@ class Vanish(ActionInterface):
         self.find.perform(find_result, *object_collections)
 
         # Elements are gone if Find fails or finds no matches
-        return not find_result.is_success or len(find_result.match_list) == 0
+        return not find_result.is_success or len(find_result.matches) == 0

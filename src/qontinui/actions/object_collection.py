@@ -80,6 +80,9 @@ class ObjectCollection:
 
         Knowing how many times an object Match was acted on is valuable
         for understanding the actual automation as well as for performing mocks.
+
+        Note: ActionResult instances in matches are immutable and cannot be modified.
+        Their times_acted_on value is set during construction via ActionResultBuilder.
         """
         for sio in self.state_images:
             sio.set_times_acted_on(0)
@@ -89,8 +92,7 @@ class ObjectCollection:
             sr.set_times_acted_on(0)
         for ss in self.state_strings:
             ss.set_times_acted_on(0)
-        for m in self.matches:
-            m.set_times_acted_on(0)
+        # Skip matches as ActionResult is immutable
 
     def get_first_object_name(self) -> str:
         """Get name of first object in collection.

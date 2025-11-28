@@ -8,7 +8,7 @@ from typing import Any, Optional
 from ....model.element.location import Location
 from ....model.match import Match as ModelMatch
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from .click_options import ClickOptions, ClickOptionsBuilder
@@ -177,10 +177,10 @@ class Click(ActionInterface):
             # Click on any existing matches in the collection (ActionResult objects with match_list)
             for ar_idx, action_result in enumerate(obj_collection.matches):
                 log_func(
-                    f"  Processing ActionResult #{ar_idx+1} with {len(action_result.match_list)} matches"
+                    f"  Processing ActionResult #{ar_idx+1} with {len(action_result.matches)} matches"
                 )
                 # ActionResult contains a match_list with actual Match objects (from find module)
-                for fm_idx, find_match in enumerate(action_result.match_list):
+                for fm_idx, find_match in enumerate(action_result.matches):
                     location = find_match.target
                     log_func(f"    Match #{fm_idx+1}: location={location}")
                     if location:  # Only click if match has a target location
@@ -207,7 +207,7 @@ class Click(ActionInterface):
                 # Wrap in find Match for compatibility with match_list
                 find_match = FindMatch(match_object=model_match)
                 self._click(state_location.location, click_options, model_match)
-                matches.match_list.append(find_match)
+                matches.matches.append(find_match)
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
@@ -222,7 +222,7 @@ class Click(ActionInterface):
                 # Wrap in find Match for compatibility with match_list
                 find_match = FindMatch(match_object=model_match)
                 self._click(location, click_options, model_match)
-                matches.match_list.append(find_match)
+                matches.matches.append(find_match)
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())

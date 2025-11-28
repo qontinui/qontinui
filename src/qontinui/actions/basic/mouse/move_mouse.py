@@ -7,7 +7,7 @@ from typing import Optional
 
 from ....model.element.location import Location
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from ..find.find import Find
@@ -86,7 +86,7 @@ class MoveMouse(ActionInterface):
         """
         # Get the configuration - MouseMoveOptions or any ActionConfig is acceptable
         # since MoveMouse mainly uses Find and basic timing
-        config = matches.get_action_config()
+        config = matches.action_config
 
         for obj_coll in object_collections:
             # Check if we have locations directly - no need to find anything

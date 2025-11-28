@@ -428,9 +428,9 @@ class DelegatingActionExecutor:
 
     def _emit_action_event(
         self,
-        action_type: str = None,
-        action_id: str = None,
-        success: bool = None,
+        action_type: str | None = None,
+        action_id: str | None = None,
+        success: bool | None = None,
         details: dict | None = None,
         data: dict | None = None,
         **kwargs,
@@ -535,7 +535,7 @@ class DelegatingActionExecutor:
         """
         logger.info(f"Executing workflow '{workflow.name}' sequentially")
 
-        results = {"success": True, "actions_executed": 0, "actions_failed": 0, "errors": []}
+        results: dict[str, Any] = {"success": True, "actions_executed": 0, "actions_failed": 0, "errors": []}
 
         for action in workflow.actions:
             try:
