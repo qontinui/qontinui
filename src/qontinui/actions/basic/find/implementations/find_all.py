@@ -101,7 +101,7 @@ class FindAll:
                         window_options.add_search_region(window)
                         window_options.similarity = options.similarity
 
-                        matches = self._image_finder.find(object_collection, window_options)
+                        matches = self._image_finder.find(object_collection, window_options)  # type: ignore[attr-defined]
                         all_matches.extend(matches)
 
         return all_matches

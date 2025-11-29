@@ -155,13 +155,13 @@ class ConsistencyDetector(MultiScreenshotDetector):
                     img_float = np.float32(img_gray)
 
                     # Compute phase correlation
-                    shift, _ = cv2.phaseCorrelate(ref_float, img_float)
+                    shift, _ = cv2.phaseCorrelate(ref_float, img_float)  # type: ignore[call-overload]
 
                     # Apply shift if significant
                     shift_x, shift_y = int(shift[0]), int(shift[1])
                     if abs(shift_x) > 1 or abs(shift_y) > 1:
-                        M = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
-                        img_aligned = cv2.warpAffine(img, M, (ref_width, ref_height))
+                        M = np.float32([[1, 0, shift_x], [0, 1, shift_y]])  # type: ignore[arg-type]
+                        img_aligned = cv2.warpAffine(img, M, (ref_width, ref_height))  # type: ignore[call-overload]
                         aligned.append((screenshot_id, img_aligned))
                     else:
                         aligned.append((screenshot_id, img))

@@ -125,7 +125,7 @@ class MSERTextDetector(BaseRegionAnalyzer):
     def _detect_text_regions(self, gray: np.ndarray, screenshot_index: int) -> list[DetectedRegion]:
         """Detect text regions in a grayscale image."""
         # Create MSER detector
-        mser = cv2.MSER_create(
+        mser = cv2.MSER_create(  # type: ignore[attr-defined]
             _delta=self.delta,
             _min_area=self.min_area,
             _max_area=self.max_area,

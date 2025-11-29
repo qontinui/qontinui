@@ -220,7 +220,7 @@ class ObjectCollection:
 
 
 # Import ObjectCollectionBuilder from builders package
-from .builders import ObjectCollectionBuilder
+from .builders import ObjectCollectionBuilder  # noqa: E402
 
 # Add Builder class attribute to support Brobot's nested class pattern
 # This allows: ObjectCollection.Builder() instead of ObjectCollectionBuilder()

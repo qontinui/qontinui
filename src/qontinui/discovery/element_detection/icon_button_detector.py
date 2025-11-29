@@ -175,14 +175,14 @@ class IconButtonDetector(BaseAnalyzer):
             radius = size // 3
 
             # Draw a simplified gear (circle with teeth)
-            cv2.circle(template, (center, center), radius, 255, 2)
+            cv2.circle(template, (center, center), radius, 255, 2)  # type: ignore[call-overload]
 
             # Add 6 teeth around the circle
             for angle in range(0, 360, 60):
                 rad = np.radians(angle)
                 x = int(center + radius * 1.3 * np.cos(rad))
                 y = int(center + radius * 1.3 * np.sin(rad))
-                cv2.line(template, (center, center), (x, y), 255, 2)
+                cv2.line(template, (center, center), (x, y), 255, 2)  # type: ignore[call-overload]
 
             templates.append(template)
 
@@ -198,12 +198,12 @@ class IconButtonDetector(BaseAnalyzer):
             radius = size // 4
 
             # Draw circle (lens)
-            cv2.circle(template, (center, center), radius, 255, 2)
+            cv2.circle(template, (center, center), radius, 255, 2)  # type: ignore[call-overload]
 
             # Draw handle
             handle_start = (int(center + radius * 0.7), int(center + radius * 0.7))
             handle_end = (size - 4, size - 4)
-            cv2.line(template, handle_start, handle_end, 255, 2)
+            cv2.line(template, handle_start, handle_end, 255, 2)  # type: ignore[call-overload]
 
             templates.append(template)
 
@@ -218,8 +218,8 @@ class IconButtonDetector(BaseAnalyzer):
             margin = size // 4
 
             # Draw X
-            cv2.line(template, (margin, margin), (size - margin, size - margin), 255, 2)
-            cv2.line(template, (size - margin, margin), (margin, size - margin), 255, 2)
+            cv2.line(template, (margin, margin), (size - margin, size - margin), 255, 2)  # type: ignore[call-overload]
+            cv2.line(template, (size - margin, margin), (margin, size - margin), 255, 2)  # type: ignore[call-overload]
 
             templates.append(template)
 
@@ -239,9 +239,9 @@ class IconButtonDetector(BaseAnalyzer):
             y2 = size // 2
             y3 = 3 * size // 4
 
-            cv2.circle(template, (center_x, y1), dot_radius, 255, -1)
-            cv2.circle(template, (center_x, y2), dot_radius, 255, -1)
-            cv2.circle(template, (center_x, y3), dot_radius, 255, -1)
+            cv2.circle(template, (center_x, y1), dot_radius, 255, -1)  # type: ignore[call-overload]
+            cv2.circle(template, (center_x, y2), dot_radius, 255, -1)  # type: ignore[call-overload]
+            cv2.circle(template, (center_x, y3), dot_radius, 255, -1)  # type: ignore[call-overload]
 
             templates.append(template)
 

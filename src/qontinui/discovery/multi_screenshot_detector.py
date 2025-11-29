@@ -191,7 +191,7 @@ class MultiScreenshotDetector(ABC):
         # Create binary stability matrix
         stability = (variance <= variance_threshold).astype(np.uint8)
 
-        return stability
+        return stability  # type: ignore[no-any-return]
 
     @staticmethod
     def find_persistent_regions(

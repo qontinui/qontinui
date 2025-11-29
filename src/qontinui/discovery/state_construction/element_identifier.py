@@ -637,7 +637,7 @@ class ElementIdentifier:
         edge_density = properties.get("edge_density", 0)
 
         # Should have clear edges (border) but not too complex
-        return 0.1 <= edge_density <= 0.5
+        return 0.1 <= edge_density <= 0.5  # type: ignore[no-any-return]
 
     def _is_likely_logo(self, state_image: StateImage, properties: dict[str, Any]) -> bool:
         """Check if element is likely a logo.
@@ -850,8 +850,8 @@ class ElementIdentifier:
         # Panels typically have visible borders
         if border_density > 0.3:
             properties["is_panel"] = True
-            properties["confidence"] = min(0.9, border_density)
-            properties["border_density"] = float(border_density)
+            properties["confidence"] = min(0.9, border_density)  # type: ignore[assignment]
+            properties["border_density"] = float(border_density)  # type: ignore[assignment]
 
         return properties
 
@@ -963,7 +963,7 @@ class ElementIdentifier:
         # Sort by confidence (descending)
         sorted_regions = sorted(regions, key=lambda r: r.confidence, reverse=True)
 
-        keep = []
+        keep: list[Any] = []
         for region in sorted_regions:
             # Check overlap with kept regions
             overlaps = False
@@ -1019,7 +1019,7 @@ class ElementIdentifier:
         min_w, min_h = self.min_region_size
         max_w, max_h = self.max_region_size
 
-        return min_w <= w <= max_w and min_h <= h <= max_h
+        return min_w <= w <= max_w and min_h <= h <= max_h  # type: ignore[no-any-return]
 
     def _analyze_element_pair(
         self, elem1: IdentifiedElement, elem2: IdentifiedElement

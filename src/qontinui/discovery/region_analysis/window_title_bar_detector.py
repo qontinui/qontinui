@@ -137,7 +137,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
         self, gray: np.ndarray, color: np.ndarray, screenshot_index: int
     ) -> list[DetectedRegion]:
         """Detect title bars in an image."""
-        detected_regions = []
+        detected_regions: list[DetectedRegion] = []
 
         # Method 1: Find horizontal bars with consistent color/intensity
         title_bar_candidates = self._find_horizontal_bars(gray)
@@ -162,7 +162,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
             )
 
             # Create title bar region
-            metadata = {
+            metadata: dict[str, Any] = {
                 "detection_method": "title_bar",
             }
             if title_text:
@@ -253,7 +253,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
 
         # Check if there's variation (content) in the region below
         std_dev = np.std(below_region)
-        return std_dev > 10  # Some threshold for content detection
+        return std_dev > 10  # type: ignore[no-any-return]  # Some threshold for content detection
 
     def _extract_title_text(self, roi: np.ndarray) -> str | None:
         """Extract title text from the title bar region."""
@@ -275,7 +275,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
             # Clean up text
             text = text.strip()
             if len(text) > 0 and len(text) < 200:  # Reasonable title length
-                return text
+                return text  # type: ignore[no-any-return]
         except Exception:
             pass
 
@@ -346,8 +346,8 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
 
         # Draw X
         thickness = max(1, width // 10)
-        cv2.line(pattern, (0, 0), (width - 1, height - 1), 255, thickness)
-        cv2.line(pattern, (width - 1, 0), (0, height - 1), 255, thickness)
+        cv2.line(pattern, (0, 0), (width - 1, height - 1), 255, thickness)  # type: ignore[call-overload]
+        cv2.line(pattern, (width - 1, 0), (0, height - 1), 255, thickness)  # type: ignore[call-overload]
 
         return pattern
 

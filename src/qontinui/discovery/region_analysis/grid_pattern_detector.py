@@ -237,7 +237,7 @@ class GridPatternDetector(BaseRegionAnalyzer):
                     points,
                     spacing_x,
                     spacing_y,
-                    gray_img.shape,
+                    gray_img.shape,  # type: ignore[arg-type]
                     params,
                     screenshot_index,
                 )
@@ -260,12 +260,12 @@ class GridPatternDetector(BaseRegionAnalyzer):
         if not points:
             return None
 
-        points = np.array(points)
+        points = np.array(points)  # type: ignore[assignment]
 
         # Cluster points into grid positions
         # Round to nearest grid position
         grid_positions = set()
-        x_min, y_min = points.min(axis=0)
+        x_min, y_min = points.min(axis=0)  # type: ignore[attr-defined]
 
         for x, y in points:
             grid_x = round((x - x_min) / spacing_x)

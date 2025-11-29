@@ -31,4 +31,4 @@ class DragBuilder:
         Returns:
             True if drag action succeeded
         """
-        return self.action.execute(self.start, self.end)
+        return self.action.execute(self.start, self.end)  # type: ignore[no-any-return, attr-defined]

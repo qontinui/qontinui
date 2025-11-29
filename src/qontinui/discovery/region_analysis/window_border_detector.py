@@ -117,7 +117,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
 
     def _detect_windows(self, gray: np.ndarray, screenshot_index: int) -> list[DetectedRegion]:
         """Detect windows in an image."""
-        detected_regions = []
+        detected_regions: list[DetectedRegion] = []
         img_area = gray.shape[0] * gray.shape[1]
 
         # Apply edge detection
@@ -215,7 +215,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
         # Borders are typically darker or lighter than content
         intensity_diff = abs(edge_mean - interior_mean)
 
-        return intensity_diff > 10  # Threshold for border detection
+        return intensity_diff > 10  # type: ignore[no-any-return]  # Threshold for border detection
 
     def _calculate_window_confidence(
         self,
@@ -259,7 +259,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
         row_std = np.std(row_means)
 
         # Title bars typically have uniform rows
-        return row_std < 15
+        return row_std < 15  # type: ignore[no-any-return]
 
     def _remove_overlapping_windows(self, windows: list[DetectedRegion]) -> list[DetectedRegion]:
         """Remove overlapping windows, keeping larger ones."""
@@ -273,7 +273,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
             reverse=True,
         )
 
-        keep = []
+        keep: list[Any] = []
         for window in sorted_windows:
             # Check if it overlaps significantly with any kept window
             overlaps = False

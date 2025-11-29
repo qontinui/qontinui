@@ -247,15 +247,15 @@ class Find:
 
         # NMS filter (for find_all mode)
         if self._options._find_all:
-            filters.append(NMSFilter(iou_threshold=0.3))
+            filters.append(NMSFilter(iou_threshold=0.3))  # type: ignore[arg-type]
 
         # Region filter (if using SearchRegions with multiple regions)
         if isinstance(self._search_region, SearchRegions) and self._search_region.regions:
-            filters.append(RegionFilter(self._search_region))
+            filters.append(RegionFilter(self._search_region))  # type: ignore[arg-type]
 
         # Create executor
         executor = FindExecutor(
-            screenshot_provider=screenshot_provider, matcher=matcher, filters=filters
+            screenshot_provider=screenshot_provider, matcher=matcher, filters=filters  # type: ignore[arg-type]
         )
 
         # Execute find operation

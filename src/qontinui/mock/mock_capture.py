@@ -190,7 +190,7 @@ class MockCapture:
         if self.screenshot_dir:
             cached = self._load_from_cache("fullscreen.png")
             if cached and 0 <= x < cached.width and 0 <= y < cached.height:
-                return cached.getpixel((x, y))[:3]  # type: ignore[return-value]
+                return cached.getpixel((x, y))[:3]  # type: ignore[return-value,index]
 
         # Return mock color (light gray)
         return (200, 200, 200)

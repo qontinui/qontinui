@@ -82,7 +82,7 @@ class CoverageComparator:
             if mapping.migration_status == MigrationStatus.COMPLETED:
                 migration_history.append(mapping)
 
-        return migration_history
+        return migration_history  # type: ignore[return-value]
 
     def update_coverage(self, test_name: str, coverage_data: Any) -> None:
         """

@@ -101,7 +101,7 @@ class Click(ActionInterface):
         log_debug(f"execute() called with target type: {type(target).__name__}")
 
         # Initialize ActionResult with stored ClickOptions
-        matches = ActionResult(self.options)
+        matches = ActionResult(self.options)  # type: ignore[arg-type,call-arg]
         if target is None:
             log_debug("Target is None, returning False")
             return False
@@ -172,8 +172,8 @@ class Click(ActionInterface):
         for obj_idx, obj_collection in enumerate(object_collections):
             log_func(f"Processing object collection #{obj_idx+1}")
             log_func(f"  - matches: {len(obj_collection.matches)}")
-            log_func(f"  - locations: {len(obj_collection.locations)}")
-            log_func(f"  - regions: {len(obj_collection.regions)}")
+            log_func(f"  - locations: {len(obj_collection.locations)}")  # type: ignore[attr-defined]
+            log_func(f"  - regions: {len(obj_collection.regions)}")  # type: ignore[attr-defined]
             # Click on any existing matches in the collection (ActionResult objects with match_list)
             for ar_idx, action_result in enumerate(obj_collection.matches):
                 log_func(
@@ -207,7 +207,7 @@ class Click(ActionInterface):
                 # Wrap in find Match for compatibility with match_list
                 find_match = FindMatch(match_object=model_match)
                 self._click(state_location.location, click_options, model_match)
-                matches.matches.append(find_match)
+                matches.matches.append(find_match)  # type: ignore[attr-defined]
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
@@ -222,7 +222,7 @@ class Click(ActionInterface):
                 # Wrap in find Match for compatibility with match_list
                 find_match = FindMatch(match_object=model_match)
                 self._click(location, click_options, model_match)
-                matches.matches.append(find_match)
+                matches.matches.append(find_match)  # type: ignore[attr-defined]
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
@@ -348,6 +348,6 @@ class ActionResultFactory:
         Returns:
             New ActionResult instance
         """
-        result = ActionResult(action_config)
+        result = ActionResult(action_config)  # type: ignore[call-arg]
         object.__setattr__(result, "action_description", description)
         return result

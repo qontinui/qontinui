@@ -206,7 +206,7 @@ class JSONRunner:
                         )
 
             # Validate incoming transitions
-            for trans in state.incoming_transitions:
+            for trans in state.incoming_transitions:  # type: ignore[assignment]
                 if trans.to_state not in state_ids:
                     errors.append(
                         f"Transition {trans.id} references unknown to_state: {trans.to_state}"

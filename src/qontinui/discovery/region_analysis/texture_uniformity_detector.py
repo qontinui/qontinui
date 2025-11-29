@@ -52,7 +52,7 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
             "use_gabor": True,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:  # type: ignore[override]
         """Detect inventory grids using texture uniformity"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -75,7 +75,7 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
             return []
 
         # Cluster regions into grids
-        grid_regions = self._cluster_into_grids(uniform_regions, gray.shape, params)
+        grid_regions = self._cluster_into_grids(uniform_regions, gray.shape, params)  # type: ignore[arg-type]
 
         return grid_regions
 

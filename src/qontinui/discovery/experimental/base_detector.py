@@ -31,7 +31,7 @@ class BaseDetector(ABC):
 
     def __init__(self, name: str):
         self.name = name
-        self.params = {}
+        self.params: dict[str, Any] = {}
 
     @abstractmethod
     def detect(self, image_path: str, **params) -> list[BBox]:
@@ -113,7 +113,7 @@ class BaseDetector(ABC):
     def filter_boxes_by_size(
         boxes: list[BBox],
         min_area: int = 100,
-        max_area: int = None,
+        max_area: int | None = None,
         min_width: int = 5,
         min_height: int = 5,
     ) -> list[BBox]:
@@ -182,7 +182,7 @@ class MultiScreenshotDetector(ABC):
 
     def __init__(self, name: str):
         self.name = name
-        self.params = {}
+        self.params: dict[str, Any] = {}
 
     @abstractmethod
     def detect_multi(self, dataset: "MultiScreenshotDataset", **params) -> dict[int, list[BBox]]:

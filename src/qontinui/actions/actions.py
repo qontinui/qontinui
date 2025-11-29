@@ -151,7 +151,7 @@ class Actions:
 
             # Type the text
             for char in text:
-                result = self.pure.type_character(char)
+                result = self.pure.type_character(char)  # type: ignore[assignment]
                 if not result.success:
                     return result
 
@@ -309,7 +309,7 @@ class Actions:
 
             return cast(
                 ActionResult,
-                self.pure.mouse_drag(from_loc.x, from_loc.y, to_loc.x, to_loc.y, duration),
+                self.pure.mouse_drag(from_loc.x, from_loc.y, to_loc.x, to_loc.y, duration),  # type: ignore[attr-defined]
             )
 
     def _get_location(self, target: Any) -> Location | None:

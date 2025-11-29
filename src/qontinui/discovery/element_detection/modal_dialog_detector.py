@@ -245,7 +245,7 @@ class ModalDialogDetector(BaseAnalyzer):
         total_pixels = title_region.size
 
         # If there's significant edge activity at top, likely a title bar
-        return (top_edge_density / total_pixels) > 0.02
+        return bool((top_edge_density / total_pixels) > 0.02)
 
     def _detect_bottom_buttons(self, dialog_region: np.ndarray) -> bool:
         """Detect if dialog has buttons at bottom"""
@@ -319,7 +319,7 @@ class ModalDialogDetector(BaseAnalyzer):
         )
 
         # Background should be 10-30% darker if there's an overlay
-        return dialog_brightness > background_brightness * 1.1
+        return dialog_brightness > background_brightness * 1.1  # type: ignore[no-any-return]
 
     def _calculate_confidence(
         self,

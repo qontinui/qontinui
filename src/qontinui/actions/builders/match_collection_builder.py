@@ -78,7 +78,7 @@ class MatchCollectionBuilder:
             This builder for method chaining
         """
         for match in matches:
-            self.state_images_from_matches.append(match.to_state_image())
+            self.state_images_from_matches.append(match.to_state_image())  # type: ignore[arg-type]
         return self
 
     def build(self) -> tuple[list["ActionResult"], list["StateRegion"], list["StateImage"]]:

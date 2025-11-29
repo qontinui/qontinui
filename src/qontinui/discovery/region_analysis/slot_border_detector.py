@@ -51,7 +51,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
             "min_grid_cols": 2,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:  # type: ignore[override]
         """Detect inventory grids by finding slot borders"""
         params = {**self.get_default_parameters(), **kwargs}
 

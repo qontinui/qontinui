@@ -227,7 +227,7 @@ class OCRTextDetector(BaseRegionAnalyzer):
         horizontal_gap = min(abs(box1_x2 - box2.x), abs(box2_x2 - box1.x))
 
         # Merge if close vertically or horizontally aligned and close
-        return vertical_gap <= self.merge_distance or horizontal_gap <= self.merge_distance
+        return vertical_gap <= self.merge_distance or horizontal_gap <= self.merge_distance  # type: ignore[no-any-return]
 
     def _merge_group(self, group: list[DetectedRegion]) -> DetectedRegion:
         """Merge a group of regions into one."""

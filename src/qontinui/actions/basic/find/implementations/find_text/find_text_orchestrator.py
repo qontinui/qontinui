@@ -184,22 +184,22 @@ class FindTextOrchestrator:
                 return engine
 
         elif options.ocr_engine == OCREngine.EASYOCR:
-            engine = EasyOCREngine()
+            engine = EasyOCREngine()  # type: ignore[assignment]
             if engine.is_available():
                 return engine
             # Fallback to Tesseract
             logger.debug("EasyOCR not available, falling back to Tesseract")
-            fallback = TesseractEngine()
+            fallback = TesseractEngine()  # type: ignore[assignment]
             if fallback.is_available():
                 return fallback
 
         elif options.ocr_engine == OCREngine.PADDLEOCR:
-            engine = PaddleOCREngine(use_gpu=False)
+            engine = PaddleOCREngine(use_gpu=False)  # type: ignore[assignment]
             if engine.is_available():
                 return engine
             # Fallback to Tesseract
             logger.debug("PaddleOCR not available, falling back to Tesseract")
-            fallback = TesseractEngine()
+            fallback = TesseractEngine()  # type: ignore[assignment]
             if fallback.is_available():
                 return fallback
 

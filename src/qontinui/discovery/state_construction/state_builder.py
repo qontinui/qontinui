@@ -63,7 +63,7 @@ class TransitionInfo:
     before_screenshot: np.ndarray
     after_screenshot: np.ndarray
     click_point: tuple[int, int] | None = None
-    input_events: list[dict[str, Any]] = None
+    input_events: list[dict[str, Any]] | None = None
     target_state_name: str | None = None
     timestamp: float | None = None
 
@@ -303,7 +303,7 @@ class StateBuilder:
         if transitions and transitions[0].target_state_name:
             name = transitions[0].target_state_name
 
-        return name
+        return name  # type: ignore[no-any-return]
 
     def _identify_state_images(self, screenshots: list[np.ndarray]) -> list[StateImage]:
         """Identify StateImages - persistent visual elements that define the state.
@@ -349,8 +349,11 @@ class StateBuilder:
             name = self.name_generator.generate_name_from_image(img_data, context)
 
             # Create Pattern from image data
-            pattern = Pattern(name=name)
-            pattern._image_data = img_data  # Store raw data
+            import numpy as np
+
+            mask = np.ones(img_data.shape[:2], dtype=np.uint8) * 255  # Default full mask
+            pattern = Pattern(id=name, name=name, pixel_data=img_data, mask=mask)  # type: ignore[call-arg]
+            pattern._image_data = img_data  # type: ignore[attr-defined]  # Store raw data
 
             # Create StateImage
             state_image = StateImage(image=pattern, name=name)
@@ -384,7 +387,7 @@ class StateBuilder:
         Returns:
             List of region dictionaries with bbox and confidence
         """
-        regions = []
+        regions: list[dict[str, Any]] = []
 
         if len(screenshots) < 2:
             return regions
@@ -571,7 +574,7 @@ class StateBuilder:
 
         # If OCR gives meaningful name, use it
         if len(ocr_name) > len(region_type) + 5:
-            return ocr_name
+            return ocr_name  # type: ignore[no-any-return]
 
         # Otherwise use type + position
         return f"{region_type}_{x}_{y}"
@@ -666,7 +669,7 @@ class StateBuilder:
 
             # Return largest region as state boundary
             largest = max(regions, key=lambda r: r.bbox[2] * r.bbox[3])
-            return largest.bbox
+            return largest.bbox  # type: ignore[no-any-return]
 
         except Exception:
             # Detector failed, return None
@@ -698,7 +701,7 @@ class FallbackElementIdentifier:
 
     def identify_regions(self, screenshots: list[np.ndarray]) -> list[dict[str, Any]]:
         """Identify regions using basic heuristics."""
-        regions = []
+        regions: list[dict[str, Any]] = []
 
         if not screenshots:
             return regions

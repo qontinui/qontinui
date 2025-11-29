@@ -75,11 +75,11 @@ class SeleniumScreenAdapter(ScreenAdapter):
             from PIL import Image
 
             screenshot = self.driver.get_screenshot_as_png()
-            image = Image.open(io.BytesIO(screenshot))
+            image = Image.open(io.BytesIO(screenshot))  # type: ignore[assignment]
 
             if region:
                 x, y, width, height = region
-                image = image.crop((x, y, x + width, y + height))
+                image = image.crop((x, y, x + width, y + height))  # type: ignore[assignment]
 
             return AdapterResult(success=True, data=image)
         except Exception as e:

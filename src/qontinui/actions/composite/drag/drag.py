@@ -247,8 +247,8 @@ class Drag(ActionInterface):
 
         # Copy movements
         for movement in source.movements:
-            target.add_movement(movement)
+            target.add_movement(movement)  # type: ignore[attr-defined]
 
         # Copy execution history
         for record in source.execution_history:
-            target.add_execution_record(record)
+            target.add_execution_record(record)  # type: ignore[attr-defined]

@@ -188,7 +188,7 @@ class BaseDetector(ABC):
         boxes_with_area.sort(key=lambda x: x[1], reverse=True)
         sorted_boxes = [box for box, _ in boxes_with_area]
 
-        keep = []
+        keep: list[Any] = []
 
         for _i, box1 in enumerate(sorted_boxes):
             x1, y1, w1, h1 = box1

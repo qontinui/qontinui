@@ -30,7 +30,7 @@ def get_manager_from_websocket(websocket: WebSocket) -> ExecutionManager:
     Returns:
         ExecutionManager instance from app state
     """
-    return websocket.app.state.execution_manager
+    return websocket.app.state.execution_manager  # type: ignore[no-any-return]
 
 
 @router.websocket("/execution/{execution_id}/stream")
@@ -65,7 +65,7 @@ async def stream_execution_events(websocket: WebSocket, execution_id: str):
             logger.error(f"Failed to send event: {e}")
 
     # Subscribe to events
-    await manager.subscribe_to_events(execution_id, send_event)
+    await manager.subscribe_to_events(execution_id, send_event)  # type: ignore[arg-type]
 
     try:
         # Keep connection alive and handle ping/pong
@@ -81,4 +81,4 @@ async def stream_execution_events(websocket: WebSocket, execution_id: str):
 
     finally:
         # Unsubscribe from events
-        await manager.unsubscribe_from_events(execution_id, send_event)
+        await manager.unsubscribe_from_events(execution_id, send_event)  # type: ignore[arg-type]

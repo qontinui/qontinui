@@ -330,9 +330,9 @@ class WorkflowOrchestrator:
             Action name
         """
         if hasattr(action, "name"):
-            return str(action.name)
+            return str(action.name)  # type: ignore[no-any-return]
         if hasattr(action, "__class__"):
-            return action.__class__.__name__
+            return action.__class__.__name__  # type: ignore[no-any-return]
         return "UnknownAction"
 
     def _emit_event(self, event_type: str, **kwargs: Any) -> None:

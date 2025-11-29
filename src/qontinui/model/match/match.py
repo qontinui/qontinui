@@ -457,7 +457,7 @@ class MatchBuilder:
             Self for chaining
         """
         # Copy core fields
-        self.sim_score = match.score
+        self.sim_score = match.score  # type: ignore[assignment]
         region = match.get_region()
         if region is not None:
             self.set_region(region)
@@ -637,7 +637,7 @@ class MatchBuilder:
         Returns:
             Self for chaining
         """
-        self.sim_score = sim_score
+        self.sim_score = sim_score  # type: ignore[assignment]
         return self
 
     def build(self) -> Match:

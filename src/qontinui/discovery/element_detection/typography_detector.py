@@ -236,7 +236,7 @@ class TypographyDetector(BaseAnalyzer):
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
         # MSER detector for text
-        mser = cv2.MSER_create(
+        mser = cv2.MSER_create(  # type: ignore[attr-defined]
             _min_area=int(params["min_text_area"]),
             _max_area=int(params["max_text_area"]),
             _delta=5,
@@ -371,7 +371,7 @@ class TypographyDetector(BaseAnalyzer):
 
         compactness = text_pixels / total_pixels
 
-        return compactness
+        return float(compactness)
 
     def _is_text_centered(self, gray: np.ndarray) -> bool:
         """

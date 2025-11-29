@@ -154,7 +154,7 @@ class EmptyMatchBuilder:
         Returns:
             Self for chaining
         """
-        self.search_image = image
+        self.search_image = image  # type: ignore[assignment]
         return self
 
     def set_scene(self, scene: Scene) -> "EmptyMatchBuilder":
@@ -166,7 +166,7 @@ class EmptyMatchBuilder:
         Returns:
             Self for chaining
         """
-        self.scene = scene
+        self.scene = scene  # type: ignore[assignment]
         return self
 
     def build(self) -> EmptyMatch:

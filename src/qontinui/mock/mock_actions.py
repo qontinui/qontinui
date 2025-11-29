@@ -40,10 +40,10 @@ class MockActions:
         result = (
             ActionResultBuilder()
             .with_success(True)
-            .with_action_description(f"Clicked {target_name}")
+            .with_action_description(f"Clicked {target_name}")  # type: ignore[attr-defined]
             .build()
         )
-        return result
+        return result  # type: ignore[no-any-return]
 
     def type(self, text: str, target: Any | None = None) -> ActionResult:
         """Mock type action.
@@ -64,11 +64,11 @@ class MockActions:
         result = (
             ActionResultBuilder()
             .with_success(True)
-            .with_action_description(f"Typed: {text}")
+            .with_action_description(f"Typed: {text}")  # type: ignore[attr-defined]
             .with_selected_text(text)
             .build()
         )
-        return result
+        return result  # type: ignore[no-any-return]
 
     def key(self, key_name: str) -> ActionResult:
         """Mock key press.
@@ -84,10 +84,10 @@ class MockActions:
         result = (
             ActionResultBuilder()
             .with_success(True)
-            .with_action_description(f"Pressed {key_name}")
+            .with_action_description(f"Pressed {key_name}")  # type: ignore[attr-defined]
             .build()
         )
-        return result
+        return result  # type: ignore[no-any-return]
 
     def drag(self, from_target: Any, to_target: Any, duration: float = 1.0) -> ActionResult:
         """Mock drag action.
@@ -107,10 +107,10 @@ class MockActions:
         result = (
             ActionResultBuilder()
             .with_success(True)
-            .with_action_description(f"Dragged from {from_name} to {to_name}")
+            .with_action_description(f"Dragged from {from_name} to {to_name}")  # type: ignore[attr-defined]
             .build()
         )
-        return result
+        return result  # type: ignore[no-any-return]
 
     def _get_target_name(self, target: Any) -> str:
         """Get a readable name for a target.

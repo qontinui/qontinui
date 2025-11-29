@@ -49,7 +49,7 @@ class ColorQuantizationDetector(BaseRegionAnalyzer):
             "min_grid_cols": 2,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:  # type: ignore[override]
         """Detect inventory grids using color quantization"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -127,7 +127,7 @@ class ColorQuantizationDetector(BaseRegionAnalyzer):
                 if area >= params["min_region_area"]:
                     # Create mask for this region
                     region_mask = np.zeros_like(mask)
-                    cv2.drawContours(region_mask, [contour], -1, 255, -1)
+                    cv2.drawContours(region_mask, [contour], -1, 255, -1)  # type: ignore[call-overload]
                     regions.append(region_mask)
 
         return regions

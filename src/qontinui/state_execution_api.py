@@ -133,7 +133,7 @@ class StateExecutionAPI:
         logger.debug("Created EnhancedStateMemory")
 
         # Create action executor for workflow execution
-        self.action_executor = DelegatingActionExecutor(config=self.config, hal=self.hal)
+        self.action_executor = DelegatingActionExecutor(config=self.config, hal=self.hal)  # type: ignore[call-arg]
         logger.debug("Created DelegatingActionExecutor")
 
         # Create transition executor with workflow executor
@@ -213,7 +213,7 @@ class StateExecutionAPI:
         # Register states with multistate adapter
         for state in self.config.states:
             try:
-                self.state_memory.multistate_adapter.register_qontinui_state(state)
+                self.state_memory.multistate_adapter.register_qontinui_state(state)  # type: ignore[arg-type]
                 logger.debug(f"Registered state: {state.id}")
             except Exception as e:
                 logger.warning(f"Failed to register state {state.id}: {e}")

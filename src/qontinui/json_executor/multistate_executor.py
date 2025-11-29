@@ -13,7 +13,7 @@ from ..model.transition.enhanced_state_transition import (
     TaskSequenceStateTransition,
 )
 from ..multistate_integration.multistate_adapter import MultiStateAdapter
-from .action_executor import ActionExecutor
+from .action_executor import ActionExecutor  # type: ignore[attr-defined]
 from .config_parser import QontinuiConfig
 
 logger = logging.getLogger(__name__)
@@ -253,12 +253,12 @@ class MultiStateExecutor:
             return False
 
         # Brobot StateImage objects have Image objects, not image IDs
-        if not state.state_images:
+        if not state.state_images:  # type: ignore[attr-defined]
             # State has no identifying images, consider it active
             return True
 
         # Check all state images (Brobot uses state_images list)
-        for state_image in state.state_images:
+        for state_image in state.state_images:  # type: ignore[attr-defined]
             # StateImage has an Image object with a file path
             if state_image.image and hasattr(state_image.image, "path"):
                 similarity = state_image.get_similarity()

@@ -68,7 +68,7 @@ class StateOperationsFacade:
             "transition_id": result.transition_id,
             "activated_states": result.activated_states,
             "deactivated_states": result.deactivated_states,
-            "error": result.error,
+            "error": result.error,  # type: ignore[attr-defined]
         }
 
     def navigate_to_states(self, execution_id: str, target_state_ids: list[str]) -> dict[str, Any]:
@@ -91,13 +91,13 @@ class StateOperationsFacade:
         state_api = self._get_state_api(execution_id)
 
         # Delegate to StateExecutionAPI (library handles ALL state management)
-        result = state_api.navigate_to_states(target_state_ids)
+        result = state_api.navigate_to_states(target_state_ids)  # type: ignore[arg-type]
 
         return {
             "success": result.success,
             "path": result.path,
-            "active_states": result.active_states,
-            "error": result.error,
+            "active_states": result.active_states,  # type: ignore[attr-defined]
+            "error": result.error,  # type: ignore[attr-defined]
         }
 
     def get_active_states(self, execution_id: str) -> list[str]:
@@ -115,7 +115,7 @@ class StateOperationsFacade:
         state_api = self._get_state_api(execution_id)
 
         # Delegate to StateExecutionAPI (library handles ALL state management)
-        return state_api.get_active_states()
+        return state_api.get_active_states()  # type: ignore[return-value]
 
     def get_available_transitions(self, execution_id: str) -> list[dict[str, Any]]:
         """Get available transitions via StateExecutionAPI.

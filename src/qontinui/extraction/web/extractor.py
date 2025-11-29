@@ -448,7 +448,7 @@ class WebExtractor:
             )
 
             # Detect regions at this scroll position
-            regions = await self.region_detector.detect_regions(
+            await self.region_detector.detect_regions(
                 self.page,
                 min_size=self.config.min_state_size,
             )
@@ -581,7 +581,7 @@ class WebExtractor:
 
                 # Record state before action
                 before_selectors = {e.id: e.selector for e in self.result.elements}
-                before_snapshot = await self.visibility_tracker.record_snapshot(
+                await self.visibility_tracker.record_snapshot(
                     self.page, before_selectors, trigger_action="before"
                 )
 

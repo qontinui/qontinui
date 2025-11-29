@@ -124,7 +124,7 @@ class MenuBarDetector(BaseAnalyzer):
         params: dict[str, Any],
     ) -> list[DetectedElement]:
         """Analyze a single screenshot for menu bars"""
-        elements = []
+        elements: list[DetectedElement] = []
 
         height, width = img_gray.shape
 
@@ -264,7 +264,7 @@ class MenuBarDetector(BaseAnalyzer):
         std_gap = np.std(gaps)
 
         # Check if variation is within tolerance
-        return (std_gap / mean_gap) <= tolerance if mean_gap > 0 else False
+        return bool((std_gap / mean_gap) <= tolerance) if mean_gap > 0 else False
 
     def _calculate_confidence(
         self,

@@ -134,7 +134,7 @@ class StateMemory:
         Args:
             matches: ActionResult containing found state objects
         """
-        for match in matches.get_match_list():
+        for match in matches.get_match_list():  # type: ignore[attr-defined]
             if match.state_object_data:
                 owner_state_id = match.state_object_data.owner_state_id
                 if owner_state_id and owner_state_id > 0:

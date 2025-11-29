@@ -8,7 +8,7 @@ import threading
 from datetime import datetime
 from typing import Any, cast
 
-from croniter import croniter
+from croniter import croniter  # type: ignore[import-untyped]
 
 from .schedule_config import ExecutionRecord, ScheduleConfig, TriggerType
 from .state_aware_scheduler import StateAwareScheduler

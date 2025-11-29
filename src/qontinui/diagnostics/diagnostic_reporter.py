@@ -125,19 +125,19 @@ class DiagnosticReporter:
         libs = env.get("image_libraries", {})
         if not libs.get("PIL/Pillow"):
             summary["environment_ok"] = False
-            summary["issues"].append("PIL/Pillow not available")
+            summary["issues"].append("PIL/Pillow not available")  # type: ignore[attr-defined]
 
         # Check paths
         paths = results.get("paths", {})
         if not paths.get("image_path_valid"):
             summary["paths_ok"] = False
-            summary["issues"].append("Image path not valid")
+            summary["issues"].append("Image path not valid")  # type: ignore[attr-defined]
 
         # Check performance
         perf = results.get("performance", {})
         if perf.get("failed_loads", 0) > 0:
             summary["performance_ok"] = False
-            summary["issues"].append(f"{perf['failed_loads']} load failures")
+            summary["issues"].append(f"{perf['failed_loads']} load failures")  # type: ignore[attr-defined]
 
         summary["overall_ok"] = (
             summary["environment_ok"] and summary["paths_ok"] and summary["performance_ok"]

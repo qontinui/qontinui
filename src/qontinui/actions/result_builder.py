@@ -300,8 +300,8 @@ class ActionResultBuilder:
             times_acted_on=self._times_acted_on,
             text=text_str,
             defined_regions=tuple(self._defined_regions),
-            movements=tuple(self._movements),
-            execution_history=tuple(self._execution_history),
+            movements=tuple(self._movements),  # type: ignore[arg-type]
+            execution_history=tuple(self._execution_history),  # type: ignore[arg-type]
             active_states=frozenset(self._active_states),
         )
         return result

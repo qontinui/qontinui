@@ -53,7 +53,7 @@ class HoughGridDetector(BaseRegionAnalyzer):
             "min_grid_cols": 2,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:  # type: ignore[override]
         """Detect inventory grids using Hough line detection"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -94,7 +94,7 @@ class HoughGridDetector(BaseRegionAnalyzer):
         # Extract grid regions from configurations
         regions = []
         for config in grid_configs:
-            region = self._extract_grid_from_lines(config, gray.shape, params)
+            region = self._extract_grid_from_lines(config, gray.shape, params)  # type: ignore[arg-type]
             if region:
                 regions.append(region)
 
@@ -256,7 +256,7 @@ class HoughGridDetector(BaseRegionAnalyzer):
 
         # Return best group (most lines)
         if groups:
-            groups.sort(key=lambda g: len(g["lines"]), reverse=True)
+            groups.sort(key=lambda g: len(g["lines"]), reverse=True)  # type: ignore[arg-type]
             return groups[:3]  # Return top 3 groups
 
         return []

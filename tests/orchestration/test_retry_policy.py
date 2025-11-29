@@ -10,7 +10,7 @@ src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
 # Import directly from module to avoid cv2 dependency
-from qontinui.orchestration.retry_policy import BackoffStrategy, RetryPolicy
+from qontinui.orchestration.retry_policy import BackoffStrategy, RetryPolicy  # noqa: E402
 
 
 class TestRetryPolicy:

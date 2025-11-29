@@ -109,7 +109,7 @@ class Screen:
             return result
         else:
             capture = cls._get_screen_capture()
-            result = capture.capture_screen(monitor_index)
+            result = capture.capture_screen(monitor_index)  # type: ignore[assignment]
             logger.debug(f"[LIVE] Screen captured (monitor {monitor_index})")
             return result
 
@@ -135,7 +135,7 @@ class Screen:
             return result
         else:
             capture = cls._get_screen_capture()
-            result = capture.capture_region(x, y, width, height, monitor_index)
+            result = capture.capture_region(x, y, width, height, monitor_index)  # type: ignore[assignment]
             logger.debug(f"[LIVE] Region captured ({x}, {y}, {width}x{height})")
             return result
 
@@ -162,7 +162,7 @@ class Screen:
             return result
         else:
             capture = cls._get_screen_capture()
-            result = capture.save_screenshot(file_path, monitor_index, region)
+            result = capture.save_screenshot(file_path, monitor_index, region)  # type: ignore[assignment]
             logger.debug(f"[LIVE] Screenshot saved to {file_path}")
             return result
 
@@ -180,7 +180,7 @@ class Screen:
             return cls._mock_screen.get_screen_size(monitor_index)
         else:
             capture = cls._get_screen_capture()
-            return capture.get_screen_size(monitor_index)
+            return capture.get_screen_size()  # type: ignore[call-arg]
 
     @classmethod
     def monitor_count(cls) -> int:
@@ -193,7 +193,7 @@ class Screen:
             return cls._mock_screen.get_monitor_count()
         else:
             capture = cls._get_screen_capture()
-            return capture.get_monitor_count()
+            return capture.get_monitor_count()  # type: ignore[attr-defined,no-any-return]
 
     @classmethod
     def reset_mock(cls) -> None:

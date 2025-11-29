@@ -300,7 +300,7 @@ class FluentActions:
         Returns:
             Self for chaining
         """
-        self.chain.add(self.pure.pause, milliseconds)
+        self.chain.add(self.pure.pause, milliseconds)  # type: ignore[attr-defined]
         return self
 
     def screenshot(self, region: tuple[int, int, int, int] | None = None) -> "FluentActions":
@@ -312,7 +312,7 @@ class FluentActions:
         Returns:
             Self for chaining
         """
-        self.chain.add(self.pure.capture_screen, region)
+        self.chain.add(self.pure.capture_screen, region)  # type: ignore[attr-defined]
         return self
 
     def execute(self) -> list[ActionResult]:

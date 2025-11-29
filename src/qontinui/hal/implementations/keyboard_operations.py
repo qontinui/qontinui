@@ -121,7 +121,7 @@ class KeyboardOperations(IKeyboardController):
                 self._keyboard.press(pynput_key)
                 self._keyboard.release(pynput_key)
                 if i < presses - 1 and interval > 0:
-                    TimeWrapper.wait(interval)
+                    TimeWrapper().wait(seconds=interval)
 
             logger.debug(f"Key '{key}' pressed {presses} time(s)")
             return True
@@ -193,7 +193,7 @@ class KeyboardOperations(IKeyboardController):
             if interval > 0:
                 for char in text:
                     self._keyboard.type(char)
-                    TimeWrapper.wait(interval)
+                    TimeWrapper().wait(seconds=interval)
             else:
                 self._keyboard.type(text)
 
@@ -225,7 +225,7 @@ class KeyboardOperations(IKeyboardController):
                 self._keyboard.press(key)
 
             # Small delay
-            TimeWrapper.wait(0.05)
+            TimeWrapper().wait(seconds=0.05)
 
             # Release all keys in reverse order
             for key in reversed(pynput_keys):

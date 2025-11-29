@@ -195,7 +195,7 @@ class ButtonHoverDetector(BaseAnalyzer):
 
         Returns list of detected buttons that changed between screenshots
         """
-        elements = []
+        elements: list[DetectedElement] = []
 
         # Ensure images are the same size
         if img1_gray.shape != img2_gray.shape:
@@ -392,7 +392,7 @@ class ButtonHoverDetector(BaseAnalyzer):
         ratio_score = max(0, 1.0 - (ratio_diff / 3.0))
         confidence += ratio_score * 0.1
 
-        return min(1.0, max(0.0, confidence))
+        return min(1.0, max(0.0, confidence))  # type: ignore[no-any-return]
 
     def _merge_overlapping_elements(self, elements: list[DetectedElement]) -> list[DetectedElement]:
         """
@@ -403,7 +403,7 @@ class ButtonHoverDetector(BaseAnalyzer):
         if not elements:
             return []
 
-        merged = []
+        merged: list[DetectedElement] = []
 
         for element in elements:
             # Check if this overlaps with any existing merged element

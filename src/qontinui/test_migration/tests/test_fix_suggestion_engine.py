@@ -12,7 +12,7 @@ from qontinui.test_migration.core.models import (
     TestMethod,
     TestType,
 )
-from qontinui.test_migration.validation.fix_suggestion_engine import (
+from qontinui.test_migration.validation.fix_suggestion_engine import (  # type: ignore[attr-defined]
     FixComplexity,
     FixSuggestion,
     FixSuggestionEngine,

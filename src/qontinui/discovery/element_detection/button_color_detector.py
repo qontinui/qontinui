@@ -248,11 +248,11 @@ class ButtonColorDetector(BaseAnalyzer):
             criteria,
             params["kmeans_attempts"],
             cv2.KMEANS_PP_CENTERS,
-        )
+        )  # type: ignore[call-overload]
 
         # Convert back to image
         centers = np.uint8(centers)
-        clustered = centers[labels.flatten()]
+        clustered = centers[labels.flatten()]  # type: ignore[index]
         clustered_img = clustered.reshape((h, w, 3))
 
         # Reshape labels
@@ -423,4 +423,4 @@ class ButtonColorDetector(BaseAnalyzer):
         size_score = (max(0, width_score) + max(0, height_score)) / 2.0
         confidence += size_score * 0.05
 
-        return min(1.0, max(0.0, confidence))
+        return min(1.0, max(0.0, confidence))  # type: ignore[no-any-return]
