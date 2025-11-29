@@ -180,7 +180,9 @@ class ActionChainExecutor:
         """
         # Execute the action with original collections
         # The action should confirm the previous results
-        return self._execute_action(next_action, ActionResultBuilder().build(), original_collections)
+        return self._execute_action(
+            next_action, ActionResultBuilder().build(), original_collections
+        )
 
     def _execute_action(
         self,

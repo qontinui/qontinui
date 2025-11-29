@@ -1,7 +1,7 @@
 """Detect transitions between discovered states."""
 
 import logging
-from typing import Any, cast
+from typing import Any
 
 import numpy as np
 

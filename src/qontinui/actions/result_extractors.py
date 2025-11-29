@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from ..find.match import Match
     from ..model.element.location import Location
-    from .action_result import ActionResult, ActionResultBuilder
+    from .action_result import ActionResult
 
 
 class ResultExtractor:

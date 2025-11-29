@@ -6,7 +6,7 @@ Core pattern matching action that locates GUI elements on the screen.
 from typing import Any, Optional
 
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult, ActionResultBuilder
+from ...action_result import ActionResult
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from .base_find_options import BaseFindOptions

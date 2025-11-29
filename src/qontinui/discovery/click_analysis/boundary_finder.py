@@ -1,7 +1,7 @@
 """Element boundary detection using multiple strategies."""
 
 import logging
-from typing import Any, cast
+from typing import Any
 
 import cv2
 import numpy as np

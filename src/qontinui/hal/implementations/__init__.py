@@ -9,12 +9,12 @@ from .keyboard_operations import KeyboardOperations
 from .mouse_operations import MouseOperations
 from .mss_capture import MSSScreenCapture
 
+# Pattern matcher implementations
+from .opencv_matcher import OpenCVMatcher
+
 # PyAutoGUI implementations
 from .pyautogui_keyboard import PyAutoGUIKeyboardOperations
 from .pyautogui_mouse import PyAutoGUIMouseOperations
-
-# Pattern matcher implementations
-from .opencv_matcher import OpenCVMatcher
 
 __all__ = [
     "MSSScreenCapture",

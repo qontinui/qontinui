@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from ..action_config import ActionConfig, ActionConfigBuilder
 from ..action_interface import ActionInterface
-from ..action_result import ActionResult, ActionResultBuilder
+from ..action_result import ActionResult
 from ..action_type import ActionType
 from ..basic.click.click import Click
 from ..basic.click.click_options import ClickOptions, ClickOptionsBuilder

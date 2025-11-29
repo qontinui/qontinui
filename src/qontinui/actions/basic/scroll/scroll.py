@@ -8,7 +8,7 @@ from typing import Any, cast
 
 from ....model.element.location import Location
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult, ActionResultBuilder
+from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
 from ..find.find import Find
 from .scroll_options import ScrollDirection, ScrollOptions
