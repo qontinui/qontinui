@@ -6,7 +6,7 @@ Implements drag-and-drop functionality using action chaining.
 from ...action_chain_options import ActionChainOptions, ActionChainOptionsBuilder, ChainingStrategy
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult, ActionResultBuilder
+from ...action_result import ActionResult
 from ...action_type import ActionType
 from ...basic.find.pattern_find_options import PatternFindOptions, PatternFindOptionsBuilder
 from ...basic.mouse.mouse_down_options import MouseDownOptions, MouseDownOptionsBuilder

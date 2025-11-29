@@ -8,7 +8,7 @@ from datetime import timedelta
 from typing import Any
 
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult, ActionResultBuilder
+from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
 from ..find.find import Find
 from .vanish_options import VanishOptions
@@ -96,7 +96,9 @@ class Vanish(ActionInterface):
             # Check if elements are still present
             if self._elements_are_gone(action_result, object_collections):
                 # Elements have vanished
-                object.__setattr__(action_result, "duration", timedelta(seconds=time.time() - start_time))
+                object.__setattr__(
+                    action_result, "duration", timedelta(seconds=time.time() - start_time)
+                )
                 return True
 
             # Wait before next check

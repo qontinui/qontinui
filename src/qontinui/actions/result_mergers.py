@@ -7,7 +7,7 @@ instances into a single result.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .action_result import ActionResult, ActionResultBuilder
+    from .action_result import ActionResult
 
 
 class ResultMerger:

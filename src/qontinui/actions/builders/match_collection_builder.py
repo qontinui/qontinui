@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ...model.match import Match
     from ...model.state import StateImage, StateRegion
-    from ..action_result import ActionResult, ActionResultBuilder
+    from ..action_result import ActionResult
 
 
 class MatchCollectionBuilder:

@@ -7,7 +7,7 @@ import time
 from typing import TYPE_CHECKING
 
 from ....actions.action_interface import ActionInterface
-from ....actions.action_result import ActionResult, ActionResultBuilder
+from ....actions.action_result import ActionResult
 from ....actions.action_type import ActionType
 from .run_process_options import RunProcessOptions
 
@@ -77,14 +77,20 @@ class RunProcess(ActionInterface):
         workflow_id = run_process_options.get_process_id()
         if not workflow_id:
             object.__setattr__(action_result, "success", False)
-            object.__setattr__(action_result, "output_text", "RUN_PROCESS: No workflow/process ID specified")
+            object.__setattr__(
+                action_result, "output_text", "RUN_PROCESS: No workflow/process ID specified"
+            )
             return
 
         # Get the workflow (backward compatible with process)
         workflow = self._get_workflow(workflow_id)
         if not workflow:
             object.__setattr__(action_result, "success", False)
-            object.__setattr__(action_result, "output_text", f"RUN_PROCESS: Workflow/process '{workflow_id}' not found")
+            object.__setattr__(
+                action_result,
+                "output_text",
+                f"RUN_PROCESS: Workflow/process '{workflow_id}' not found",
+            )
             return
 
         # Check if repetition is enabled

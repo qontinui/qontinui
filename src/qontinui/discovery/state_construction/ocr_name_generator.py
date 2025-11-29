@@ -10,7 +10,7 @@ intelligent naming strategies for automatically detected GUI elements.
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np

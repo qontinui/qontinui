@@ -5,7 +5,7 @@ This module provides the main Action model that wraps all action types,
 along with utilities for type-safe configuration access.
 """
 
-from typing import Any, cast
+from typing import Any
 
 from pydantic import BaseModel
 

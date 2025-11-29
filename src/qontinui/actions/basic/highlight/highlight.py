@@ -8,7 +8,7 @@ from typing import Any
 
 from ....model.element.region import Region
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult, ActionResultBuilder
+from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
 from ..find.find import Find
 from .highlight_options import HighlightOptions
@@ -67,7 +67,9 @@ class Highlight(ActionInterface):
 
         object.__setattr__(action_result, "success", success)
         if success:
-            object.__setattr__(action_result, "output_text", f"Highlighted {len(regions)} region(s)")
+            object.__setattr__(
+                action_result, "output_text", f"Highlighted {len(regions)} region(s)"
+            )
 
     def _find_regions_to_highlight(
         self, action_result: ActionResult, object_collections: tuple[Any, ...]

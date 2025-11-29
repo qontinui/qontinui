@@ -7,7 +7,7 @@ element types, and understands spatial relationships within UI layouts.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, cast
+from typing import Any
 
 import cv2
 import numpy as np

@@ -6,7 +6,7 @@ Core interface for all actions.
 from abc import abstractmethod
 from typing import Protocol
 
-from .action_result import ActionResult, ActionResultBuilder
+from .action_result import ActionResult
 from .action_type import ActionType
 from .object_collection import ObjectCollection
 

@@ -7,7 +7,7 @@ from typing import Optional
 
 from ....model.state.state_string import StateString
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult, ActionResultBuilder
+from ...action_result import ActionResult
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from .type_options import TypeOptions

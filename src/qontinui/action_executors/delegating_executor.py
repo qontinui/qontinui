@@ -535,7 +535,12 @@ class DelegatingActionExecutor:
         """
         logger.info(f"Executing workflow '{workflow.name}' sequentially")
 
-        results: dict[str, Any] = {"success": True, "actions_executed": 0, "actions_failed": 0, "errors": []}
+        results: dict[str, Any] = {
+            "success": True,
+            "actions_executed": 0,
+            "actions_failed": 0,
+            "errors": [],
+        }
 
         for action in workflow.actions:
             try:
