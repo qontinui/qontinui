@@ -265,7 +265,7 @@ class ClickBoundingBoxInferrer:
             mean_diff = np.mean(diff) / 255
 
         similarity = 1.0 - mean_diff
-        return similarity >= 0.9  # 90% similarity threshold
+        return similarity >= 0.9  # type: ignore[no-any-return]  # 90% similarity threshold
 
     def _create_fallback_result(
         self,

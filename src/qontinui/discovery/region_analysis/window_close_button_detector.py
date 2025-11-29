@@ -161,8 +161,8 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         thickness = max(1, size // 8)
 
         # Draw X
-        cv2.line(template, (0, 0), (size - 1, size - 1), 255, thickness)
-        cv2.line(template, (size - 1, 0), (0, size - 1), 255, thickness)
+        cv2.line(template, (0, 0), (size - 1, size - 1), 255, thickness)  # type: ignore[call-overload]
+        cv2.line(template, (size - 1, 0), (0, size - 1), 255, thickness)  # type: ignore[call-overload]
 
         return template
 
@@ -277,11 +277,13 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         """Check if two line segments intersect."""
 
         def ccw(ax, ay, bx, by, cx, cy):
-            return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax)
+            return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax)  # type: ignore[no-any-return]
 
-        return ccw(x1, y1, x3, y3, x4, y4) != ccw(x2, y2, x3, y3, x4, y4) and ccw(
+        return ccw(x1, y1, x3, y3, x4, y4) != ccw(x2, y2, x3, y3, x4, y4) and ccw(  # type: ignore[no-any-return]
             x1, y1, x2, y2, x3, y3
-        ) != ccw(x1, y1, x2, y2, x4, y4)
+        ) != ccw(
+            x1, y1, x2, y2, x4, y4
+        )
 
     def _remove_duplicates(self, buttons: list[tuple]) -> list[tuple]:
         """Remove duplicate detections (nearby buttons)."""
@@ -291,7 +293,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         # Sort by confidence (descending)
         sorted_buttons = sorted(buttons, key=lambda b: b[4], reverse=True)
 
-        keep = []
+        keep: list[Any] = []
         for button in sorted_buttons:
             x, y, w, h, conf, method = button
 

@@ -14,7 +14,7 @@ from typing import Any
 try:
     from PIL import Image
 except ImportError:
-    Image = None
+    Image = None  # type: ignore[assignment]
 
 from qontinui.mock.snapshot import ActionHistory, ActionRecord
 from qontinui.model.match import Match
@@ -80,7 +80,7 @@ class SnapshotRecorder:
 
         # Create run directory
         if isinstance(config.base_dir, str):
-            self.run_dir = Path(config.base_dir) / self.run_id
+            self.run_dir: Path = Path(config.base_dir) / self.run_id
         else:
             self.run_dir = config.base_dir / self.run_id
 
@@ -143,7 +143,7 @@ class SnapshotRecorder:
             action_type="find",
             action_success=len(matches) > 0,
             match_list=matches,  # Uses actual Match objects
-            duration_ms=duration_ms,
+            duration=duration_ms / 1000.0,  # Convert ms to seconds
             timestamp=datetime.now(),
             active_states=active_states,
             metadata={
@@ -253,13 +253,13 @@ class SnapshotRecorder:
         history_file = pattern_dir / "history.json"
         try:
             with open(history_file, "w") as f:
-                json.dump(history.to_dict(), f, indent=2)
+                json.dump(history.to_dict(), f, indent=2)  # type: ignore[attr-defined]
             logger.debug(f"Saved pattern history: {pattern_id}")
         except Exception as e:
             logger.error(f"Failed to save pattern history {pattern_id}: {e}")
 
         # Save individual match files
-        for i, record in enumerate(history.records):
+        for i, record in enumerate(history.records):  # type: ignore[attr-defined]
             for j, match in enumerate(record.match_list):
                 match_file = pattern_dir / f"match-{i:03d}-{j:02d}.json"
                 try:
@@ -369,7 +369,7 @@ class SnapshotRecorder:
         Returns:
             Path to snapshot directory
         """
-        return self.run_dir
+        return self.run_dir  # type: ignore[no-any-return]
 
     def get_statistics(self) -> dict[str, Any]:
         """Get current recording statistics.

@@ -53,7 +53,7 @@ class ScreenshotInfo:
 
     screenshot_id: int
     path: str
-    metadata: dict = None
+    metadata: dict | None = None
 
     def __post_init__(self):
         if self.metadata is None:

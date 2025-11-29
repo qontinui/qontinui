@@ -236,9 +236,9 @@ class RealFindImplementation:
         except Exception:
             pass
         # Get template size from pattern
-        template_size = (0, 0)
+        template_size: tuple[int, int] = (0, 0)
         if hasattr(pattern, "pixel_data") and pattern.pixel_data is not None:
-            template_size = pattern.pixel_data.shape[:2][::-1]  # (width, height)
+            template_size = pattern.pixel_data.shape[:2][::-1]  # type: ignore[assignment]
 
         # Get pattern name with fallback - use pattern.id as it's the filename
         # pattern.name might be empty, but pattern.id contains the actual filename
@@ -444,6 +444,6 @@ class RealFindImplementation:
                     )
                 )
             else:
-                final_results.append(result)
+                final_results.append(result)  # type: ignore[arg-type]
 
         return final_results

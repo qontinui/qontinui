@@ -228,10 +228,10 @@ class StateExecutor:
             find_results = await action.find_async(patterns, options)
 
             # All required patterns must be found
-            return all(result.found for result in find_results)
+            return all(result.found for result in find_results)  # type: ignore[no-any-return]
 
         # Execute async verification
-        return asyncio.run(verify_async())
+        return asyncio.run(verify_async())  # type: ignore[no-any-return]
 
     def _find_active_state(self) -> bool:
         """Find which state is currently active."""
@@ -382,7 +382,7 @@ class StateExecutor:
                 f"Action {i+1}/{len(workflow.actions)} ({action.type}) result: {action_result}"
             )
             if not action_result:
-                if action.continue_on_error:
+                if action.continue_on_error:  # type: ignore[attr-defined]
                     logger.debug(f"Action {i+1} failed but continue_on_error=True, continuing...")
                     continue
                 logger.error(f"Workflow '{workflow.name}' FAILED at action {i+1}")

@@ -232,7 +232,7 @@ class ButtonFusionDetector(BaseAnalyzer):
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
         # Use MSER (Maximally Stable Extremal Regions) to find text regions
-        mser = cv2.MSER_create(_min_area=50, _max_area=5000, _delta=5)
+        mser = cv2.MSER_create(_min_area=50, _max_area=5000, _delta=5)  # type: ignore[attr-defined]
 
         regions_mser, _ = mser.detectRegions(gray)
 
@@ -343,8 +343,8 @@ class ButtonFusionDetector(BaseAnalyzer):
         for bbox, conf in text_regions:
             merged = False
             for candidate in all_candidates:
-                if self._boxes_overlap(candidate["bbox"], bbox, threshold=0.3):
-                    candidate["votes"]["text"] = conf * params["text_weight"]
+                if self._boxes_overlap(candidate["bbox"], bbox, threshold=0.3):  # type: ignore[arg-type]
+                    candidate["votes"]["text"] = conf * params["text_weight"]  # type: ignore[index]
                     merged = True
                     break
 
@@ -360,8 +360,8 @@ class ButtonFusionDetector(BaseAnalyzer):
         for bbox, conf in color_regions:
             merged = False
             for candidate in all_candidates:
-                if self._boxes_overlap(candidate["bbox"], bbox, threshold=0.3):
-                    candidate["votes"]["color"] = conf * params["color_weight"]
+                if self._boxes_overlap(candidate["bbox"], bbox, threshold=0.3):  # type: ignore[arg-type]
+                    candidate["votes"]["color"] = conf * params["color_weight"]  # type: ignore[index]
                     merged = True
                     break
 
@@ -376,8 +376,8 @@ class ButtonFusionDetector(BaseAnalyzer):
         # Calculate final scores
         for candidate in all_candidates:
             votes = candidate["votes"]
-            total_score = sum(votes.values())
-            num_strategies = len(votes)
+            total_score = sum(votes.values())  # type: ignore[attr-defined]
+            num_strategies = len(votes)  # type: ignore[arg-type]
 
             # Require minimum agreement
             if total_score < params["min_agreement_score"]:
@@ -392,7 +392,7 @@ class ButtonFusionDetector(BaseAnalyzer):
 
             elements.append(
                 DetectedElement(
-                    bounding_box=candidate["bbox"],
+                    bounding_box=candidate["bbox"],  # type: ignore[arg-type]
                     confidence=final_confidence,
                     label=("Button (Fused)" if is_high_confidence else "Button Candidate"),
                     element_type="button",

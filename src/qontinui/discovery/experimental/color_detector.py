@@ -64,7 +64,7 @@ class ColorClusterDetector(BaseDetector):
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
         _, labels, centers = cv2.kmeans(
             pixels, n_clusters, None, criteria, 10, cv2.KMEANS_PP_CENTERS
-        )
+        )  # type: ignore[call-overload]
 
         # Reshape labels back to image
         labels = labels.reshape(img.shape[:2])

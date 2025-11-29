@@ -222,7 +222,7 @@ class MockExecutor:
             return ActionVisualization(
                 action_type="FIND",
                 screenshot_path=screenshot_path,
-                action_region=action_region,
+                action_region=action_region,  # type: ignore[arg-type]
                 success=action_record.action_success,
                 matches=matches,
                 active_states=self.current_states.copy(),

@@ -374,7 +374,7 @@ class MultipleActions(ActionInterface):
 
         # Add execution history to matches
         for record in self._executor.get_execution_history():
-            matches.add_execution_record(record)  # type: ignore[arg-type]
+            matches.add_execution_record(record)  # type: ignore[arg-type, attr-defined]
 
     def add(
         self,

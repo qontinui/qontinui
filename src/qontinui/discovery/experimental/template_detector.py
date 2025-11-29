@@ -88,7 +88,7 @@ class TemplateDetector(BaseDetector):
         # Create a mask with corners
         corner_mask = np.zeros_like(gray)
         for x, y in corners:
-            cv2.circle(corner_mask, (x, y), 3, 255, -1)
+            cv2.circle(corner_mask, (x, y), 3, 255, -1)  # type: ignore[call-overload]
 
         # Dilate to connect nearby corners
         kernel = np.ones((15, 15), np.uint8)

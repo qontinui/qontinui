@@ -91,7 +91,7 @@ class StateTransitionsJointTable:
 
             import time
 
-            self._last_update_time = time.time()
+            self._last_update_time = time.time()  # type: ignore[assignment]
 
             logger.debug(f"Added {len(transitions)} transitions for state: {state_name}")
             logger.debug(f"Total transitions in joint table: {self._total_transitions}")
@@ -306,7 +306,7 @@ class StateTransitionsJointTable:
             total_target_states = len(self._reverse_map)
 
             # Calculate average transitions per state
-            avg_transitions = 0
+            avg_transitions: int | float = 0
             if total_source_states > 0:
                 avg_transitions = self._total_transitions / total_source_states
 

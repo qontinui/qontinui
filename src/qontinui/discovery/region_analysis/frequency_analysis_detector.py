@@ -50,7 +50,7 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
             "use_edges": True,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:  # type: ignore[override]
         """Detect inventory grids using frequency analysis"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -205,7 +205,7 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
 
             # Cluster matches into grid
             grid_regions = self._extract_grid_from_matches(
-                matches, spacing_x, spacing_y, gray_img.shape, params
+                matches, spacing_x, spacing_y, gray_img.shape, params  # type: ignore[arg-type]
             )
 
             return grid_regions

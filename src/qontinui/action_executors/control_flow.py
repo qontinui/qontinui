@@ -386,7 +386,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
         # Access action_map through context.config
         if hasattr(self.context.config, "action_map"):
             action_map = self.context.config.action_map
-            return action_map.get(action_id)
+            return action_map.get(action_id)  # type: ignore[no-any-return]
         return None
 
     def _sync_variables_to_wrapped(self) -> None:

@@ -185,7 +185,7 @@ class ElementBoundaryFinder:
                 if self.config.enable_mask_generation:
                     mask = np.zeros((h, w), dtype=np.float32)
                     shifted_contour = contour - [x, y]
-                    cv2.drawContours(mask, [shifted_contour], -1, 1.0, -1)
+                    cv2.drawContours(mask, [shifted_contour], -1, 1.0, -1)  # type: ignore[call-overload]
 
                 # Extract pixel data
                 pixel_data = screenshot[y : y + h, x : x + w].copy()
@@ -272,7 +272,7 @@ class ElementBoundaryFinder:
                 y=bbox_y,
                 width=bbox_w,
                 height=bbox_h,
-                confidence=min(0.85, confidence),
+                confidence=min(0.85, confidence),  # type: ignore[arg-type]
                 strategy_used=DetectionStrategy.EDGE_BASED,
                 pixel_data=pixel_data,
                 metadata={"edge_density": float(edge_density)},
@@ -348,7 +348,7 @@ class ElementBoundaryFinder:
             if self.config.enable_mask_generation:
                 mask = np.zeros((h, w), dtype=np.float32)
                 shifted_contour = contour - [x, y]
-                cv2.drawContours(mask, [shifted_contour], -1, 1.0, -1)
+                cv2.drawContours(mask, [shifted_contour], -1, 1.0, -1)  # type: ignore[call-overload]
 
             pixel_data = screenshot[bbox_y : bbox_y + h, bbox_x : bbox_x + w].copy()
 
@@ -441,7 +441,7 @@ class ElementBoundaryFinder:
                 y=y,
                 width=w,
                 height=h,
-                confidence=min(0.85, confidence),
+                confidence=min(0.85, confidence),  # type: ignore[arg-type]
                 strategy_used=DetectionStrategy.FLOOD_FILL,
                 mask=mask_float,
                 pixel_data=pixel_data,
@@ -577,7 +577,7 @@ class ElementBoundaryFinder:
         center_x = x + w // 2
         center_y = y + h // 2
         dist = np.sqrt((center_x - click_x) ** 2 + (center_y - click_y) ** 2)
-        return dist <= self.config.search_radius
+        return dist <= self.config.search_radius  # type: ignore[no-any-return]
 
     def _distance_to_center(
         self,
@@ -598,7 +598,7 @@ class ElementBoundaryFinder:
         if not candidates:
             return []
 
-        keep = []
+        keep: list[Any] = []
 
         for candidate in candidates:
             is_duplicate = False

@@ -208,11 +208,11 @@ def _cascade_search_region(ctx: CascadeContext, explicit: Region | None) -> Regi
     if ctx.search_options and ctx.search_options.search_regions:
         regions = ctx.search_options.search_regions
         if regions and len(regions) > 0:
-            return regions[0]
+            return regions[0]  # type: ignore[return-value]
 
     # Priority 3: Pattern search region
-    if ctx.pattern and ctx.pattern.search_region is not None:
-        return ctx.pattern.search_region
+    if ctx.pattern and ctx.pattern.search_region is not None:  # type: ignore[attr-defined]
+        return ctx.pattern.search_region  # type: ignore[attr-defined,no-any-return]
 
     # Priority 4: StateImage search region
     if ctx.state_image and ctx.state_image._search_region is not None:

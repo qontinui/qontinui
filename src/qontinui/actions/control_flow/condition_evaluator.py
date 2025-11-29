@@ -423,17 +423,17 @@ class ConditionEvaluator:
         """
         try:
             if operator == "==":
-                return actual == expected
+                return actual == expected  # type: ignore[no-any-return]
             elif operator == "!=":
-                return actual != expected
+                return actual != expected  # type: ignore[no-any-return]
             elif operator == ">":
-                return actual > expected
+                return actual > expected  # type: ignore[no-any-return]
             elif operator == "<":
-                return actual < expected
+                return actual < expected  # type: ignore[no-any-return]
             elif operator == ">=":
-                return actual >= expected
+                return actual >= expected  # type: ignore[no-any-return]
             elif operator == "<=":
-                return actual <= expected
+                return actual <= expected  # type: ignore[no-any-return]
             elif operator == "contains":
                 return expected in actual
             elif operator == "matches":

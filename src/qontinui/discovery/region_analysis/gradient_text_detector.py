@@ -142,7 +142,7 @@ class GradientTextDetector(BaseRegionAnalyzer):
         gradient_mag = np.sqrt(grad_x**2 + grad_y**2)
 
         # Normalize to 0-255
-        gradient_mag = cv2.normalize(gradient_mag, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        gradient_mag = cv2.normalize(gradient_mag, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)  # type: ignore[call-overload]
 
         # Threshold gradient magnitude
         _, gradient_binary = cv2.threshold(

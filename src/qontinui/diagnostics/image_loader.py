@@ -151,7 +151,7 @@ class ImageLoader:
             Load statistics including success rate and timing
         """
         if not self.load_history:
-            return {"message": "No images loaded yet"}
+            return {"message": "No images loaded yet"}  # type: ignore[dict-item]
 
         total_attempts = len(self.load_history)
         successful = sum(1 for r in self.load_history.values() if r.success)

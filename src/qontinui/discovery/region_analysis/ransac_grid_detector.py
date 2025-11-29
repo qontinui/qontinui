@@ -49,7 +49,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
             "min_grid_cols": 2,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:  # type: ignore[override]
         """Detect inventory grids using RANSAC"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -72,7 +72,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
             return []
 
         # Convert models to detected regions
-        regions = []
+        regions: list[Any] = []
         for model in grid_models:
             region = self._model_to_region(model, params)
             if region:
@@ -94,7 +94,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         # Find contours
         contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        candidates = []
+        candidates: list[Any] = []
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -144,13 +144,13 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         Returns:
             List of grid model dictionaries
         """
-        best_models = []
+        best_models: list[Any] = []
         remaining_candidates = candidates.copy()
 
         # Try to find multiple grids
         while len(remaining_candidates) >= params["min_inliers"]:
             best_model = None
-            best_inliers = []
+            best_inliers: list[Any] = []
             best_score = 0
 
             # RANSAC iterations
@@ -213,7 +213,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         centers = np.array([(p["cx"], p["cy"]) for p in points])
 
         # Find potential spacing by looking at distances
-        distances = []
+        distances: list[Any] = []
         for i in range(len(centers)):
             for j in range(i + 1, len(centers)):
                 dist = np.linalg.norm(centers[i] - centers[j])
@@ -235,7 +235,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
 
         # Calculate grid dimensions
         # Project points onto grid
-        grid_positions = []
+        grid_positions: list[Any] = []
         for cx, cy in centers:
             dx, dy = cx - origin[0], cy - origin[1]
             grid_x = round(dx / spacing)
@@ -279,7 +279,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         params: dict[str, Any],
     ) -> list[dict[str, Any]]:
         """Count candidates that fit the grid model"""
-        inliers = []
+        inliers: list[Any] = []
         origin = model["origin"]
         spacing = model["spacing"]
         threshold = spacing * params["ransac_threshold"]
@@ -329,7 +329,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         height = rows * spacing_y + cell_height
 
         # Generate cell metadata
-        cells = []
+        cells: list[Any] = []
         for row in range(rows):
             for col in range(cols):
                 cells.append(

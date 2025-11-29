@@ -158,7 +158,7 @@ class ActionChain(ActionInterface):
 
         # Add execution history to matches
         for record in self._mode.execution_history:
-            matches.add_execution_record(record)  # type: ignore[arg-type]
+            matches.add_execution_record(record)  # type: ignore[arg-type, attr-defined]
 
     def add(self, action: ActionInterface, target: Any | None = None, **kwargs) -> "ActionChain":
         """Add action to chain.

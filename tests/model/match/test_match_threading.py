@@ -12,8 +12,8 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from qontinui.model.element.region import Region
-from qontinui.model.match.match import Match, MatchMetadata
+from qontinui.model.element.region import Region  # noqa: E402
+from qontinui.model.match.match import Match, MatchMetadata  # noqa: E402
 
 
 class TestMatchMetadataThreading:

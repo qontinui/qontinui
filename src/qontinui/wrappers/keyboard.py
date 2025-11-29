@@ -53,7 +53,7 @@ class Keyboard:
                 instance methods will fall back to class methods.
         """
         self._hal = hal
-        self._instance_controller = hal.input_controller if hal else None
+        self._instance_controller = hal.input_controller if hal else None  # type: ignore[attr-defined]
 
     @classmethod
     def _get_controller(cls) -> "IInputController":
@@ -72,8 +72,8 @@ class Keyboard:
     def _get_active_controller(self) -> "IInputController":
         """Get the active controller (instance or class-level)."""
         if self._instance_controller:
-            return self._instance_controller
-        return self._get_controller()
+            return self._instance_controller  # type: ignore[no-any-return]
+        return self._get_controller()  # type: ignore[no-any-return]
 
     @classmethod
     def type(cls, text: str, interval: float = 0.0) -> bool:

@@ -36,7 +36,7 @@ class KeyPress(Action):
         Returns:
             ActionResult
         """
-        return self.execute(lambda: self._pure.key_press(key), target=key)
+        return self.execute(lambda: self._pure.key_press(key), target=key)  # type: ignore[return-value]
 
 
 class KeyDown(Action):
@@ -89,7 +89,7 @@ class KeyDown(Action):
 
             return result
 
-        return self.execute(key_down_action, target=key)
+        return self.execute(key_down_action, target=key)  # type: ignore[return-value]
 
 
 class KeyUp(Action):
@@ -136,7 +136,7 @@ class KeyUp(Action):
 
             return result
 
-        return self.execute(key_up_action, target=key)
+        return self.execute(key_up_action, target=key)  # type: ignore[return-value]
 
 
 class TypeText(Action):
@@ -215,4 +215,4 @@ class TypeText(Action):
 
             return ActionResult(success=True, data={"text": text, "length": len(text)})
 
-        return self.execute(type_action, target=text)
+        return self.execute(type_action, target=text)  # type: ignore[return-value]

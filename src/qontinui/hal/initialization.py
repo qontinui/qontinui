@@ -152,12 +152,12 @@ def _create_screen_capture(config: HALConfig) -> IScreenCapture:
     elif backend == "pyautogui":
         from .implementations.pyautogui_capture import PyAutoGUIScreenCapture
 
-        return PyAutoGUIScreenCapture(config)
+        return PyAutoGUIScreenCapture(config)  # type: ignore[no-any-return]
 
     elif backend == "pillow":
         from .implementations.pillow_capture import PillowScreenCapture
 
-        return PillowScreenCapture(config)
+        return PillowScreenCapture(config)  # type: ignore[no-any-return]
 
     elif backend == "native":
         return _create_native_screen_capture(config)
@@ -217,17 +217,17 @@ def _create_pattern_matcher(config: HALConfig) -> IPatternMatcher:
     if backend == "opencv":
         from .implementations.opencv_matcher import OpenCVMatcher
 
-        return OpenCVMatcher(config)
+        return OpenCVMatcher(config)  # type: ignore[no-any-return]
 
     elif backend == "pyautogui":
         from .implementations.pyautogui_matcher import PyAutoGUIMatcher
 
-        return PyAutoGUIMatcher(config)
+        return PyAutoGUIMatcher(config)  # type: ignore[no-any-return]
 
     elif backend == "tensorflow":
         from .implementations.tensorflow_matcher import TensorFlowMatcher
 
-        return TensorFlowMatcher(config)
+        return TensorFlowMatcher(config)  # type: ignore[no-any-return]
 
     elif backend == "native":
         return _create_native_pattern_matcher(config)
@@ -391,22 +391,22 @@ def _create_ocr_engine(config: HALConfig) -> IOCREngine:
     if backend == "easyocr":
         from .implementations.easyocr_engine import EasyOCREngine
 
-        return EasyOCREngine(config)
+        return EasyOCREngine(config)  # type: ignore[no-any-return]
 
     elif backend == "tesseract":
         from .implementations.tesseract_engine import TesseractEngine
 
-        return TesseractEngine(config)
+        return TesseractEngine(config)  # type: ignore[no-any-return]
 
     elif backend == "cloud":
         from .implementations.cloud_ocr_engine import CloudOCREngine
 
-        return CloudOCREngine(config)
+        return CloudOCREngine(config)  # type: ignore[no-any-return]
 
     elif backend == "none":
         from .implementations.null_ocr_engine import NullOCREngine
 
-        return NullOCREngine(config)
+        return NullOCREngine(config)  # type: ignore[no-any-return]
 
     else:
         raise ValueError(f"Unsupported OCR engine backend: {backend}")
@@ -429,12 +429,12 @@ def _create_platform_specific(config: HALConfig) -> IPlatformSpecific:
     if platform == "windows":
         from .implementations.platform.windows import WindowsPlatform
 
-        return WindowsPlatform(config)
+        return WindowsPlatform(config)  # type: ignore[no-any-return]
 
     elif platform == "macos":
         from .implementations.platform.macos import MacOSPlatform
 
-        return MacOSPlatform(config)
+        return MacOSPlatform(config)  # type: ignore[no-any-return]
 
     elif platform == "linux":
         from .implementations.platform.linux import LinuxPlatform

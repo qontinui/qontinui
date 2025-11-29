@@ -13,7 +13,7 @@ from unittest.mock import Mock
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from qontinui.navigation.hybrid_path_finder import HybridPathFinder, PathStrategy
+from qontinui.navigation.hybrid_path_finder import HybridPathFinder, PathStrategy  # noqa: E402
 
 
 class TestHybridPathFinderThreading:

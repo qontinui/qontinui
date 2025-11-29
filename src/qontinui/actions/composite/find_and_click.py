@@ -175,7 +175,7 @@ class FindAndClick(ActionInterface):
         Returns:
             FIND_AND_CLICK action type
         """
-        return ActionType.FIND_AND_CLICK
+        return ActionType.FIND_AND_CLICK  # type: ignore[no-any-return, attr-defined]
 
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Find element and click on it.
@@ -199,12 +199,12 @@ class FindAndClick(ActionInterface):
             click_options = ClickOptionsBuilder().build()
 
         # Step 1: Find the target
-        find_result = ActionResult(action_config=find_options)
+        find_result = ActionResult(action_config=find_options)  # type: ignore[call-arg]
         self.find.perform(find_result, *object_collections)
 
         # Copy find results to main matches
         object.__setattr__(matches, "matches", find_result.matches)
-        matches.match_locations = find_result.match_locations
+        matches.match_locations = find_result.match_locations  # type: ignore[attr-defined]
 
         if not find_result.matches:
             object.__setattr__(matches, "success", False)
@@ -212,11 +212,11 @@ class FindAndClick(ActionInterface):
             return
 
         # Step 2: Click on found element(s)
-        click_result = ActionResult(action_config=click_options)
+        click_result = ActionResult(action_config=click_options)  # type: ignore[call-arg]
         # Pass the matches as an ObjectCollection for clicking
         click_collection = ObjectCollection()
         for match in find_result.matches:
-            click_collection.add_match(match)
+            click_collection.add_match(match)  # type: ignore[attr-defined]
 
         self.click.perform(click_result, click_collection)
 

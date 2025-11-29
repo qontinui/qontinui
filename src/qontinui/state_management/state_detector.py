@@ -373,7 +373,7 @@ class StateDetector:
             if isinstance(result, Exception):
                 logger.error(f"Error during state search: {result}")
                 continue
-            state_name, found = result
+            state_name, found = result  # type: ignore[misc]
             if found:
                 found_states.add(state_name)
 
@@ -451,9 +451,10 @@ class StateDetector:
 
                 # Remove states that are no longer active
                 for state_id in current_active_state_ids:
-                    name = self.all_states_in_project_service.get_state_name(state_id)
-                    if name and name not in found_states:
-                        self.state_memory.remove_active_state(state_id)
+                    if self.all_states_in_project_service is not None:
+                        name = self.all_states_in_project_service.get_state_name(state_id)
+                        if name and name not in found_states:
+                            self.state_memory.remove_active_state(state_id)
 
         # If we still have active states, we're done
         if self.state_memory and self.state_memory.active_states:

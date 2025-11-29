@@ -23,7 +23,7 @@ class DeletionManager:
         """
         self.state_manager = state_manager
         self.db = db_connection
-        self.deletion_history = []
+        self.deletion_history: list[Any] = []
 
     def analyze_deletion_impact(self, state_image_id: str) -> DeletionImpact:
         """
@@ -44,7 +44,7 @@ class DeletionManager:
         affected_state_ids = [s.id for s in affected_states]
 
         # Check for orphans
-        orphaned_state_ids = []
+        orphaned_state_ids: list[Any] = []
         will_create_orphans = False
 
         for state in affected_states:
@@ -154,8 +154,8 @@ class DeletionManager:
         """
         options = options or DeleteOptions()
 
-        deleted = []
-        skipped = []
+        deleted: list[Any] = []
+        skipped: list[Any] = []
         all_affected_states = set()
         all_orphaned_states = set()
         warnings: list[str] = []
@@ -289,7 +289,7 @@ class DeletionManager:
         will_create_orphans: bool,
     ) -> list[str]:
         """Generate deletion recommendations."""
-        recommendations = []
+        recommendations: list[Any] = []
 
         if is_critical:
             recommendations.append("This StateImage is critical to the state structure")

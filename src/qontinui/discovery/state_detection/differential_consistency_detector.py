@@ -233,7 +233,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
 
             # Check consistency across all pairs
             if reference_shape is None:
-                reference_shape = before.shape[:2]
+                reference_shape = before.shape[:2]  # type: ignore[assignment]
             elif before.shape[:2] != reference_shape:
                 raise ValueError(
                     f"Inconsistent dimensions in pair {idx}: "
@@ -290,7 +290,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
 
         # Normalize to 0-1 range
         if method == "minmax":
-            consistency = cv2.normalize(consistency, None, 0.0, 1.0, cv2.NORM_MINMAX)
+            consistency = cv2.normalize(consistency, None, 0.0, 1.0, cv2.NORM_MINMAX)  # type: ignore[call-overload]
         elif method == "zscore":
             # Z-score normalization
             mean_val = np.mean(consistency)
@@ -304,7 +304,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         else:
             raise ValueError(f"Unknown normalization method: {method}")
 
-        return consistency.astype(np.float32)
+        return consistency.astype(np.float32)  # type: ignore[no-any-return]
 
     def _extract_regions(
         self,
@@ -331,8 +331,8 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         # Close: Fill small holes
         # Open: Remove small noise
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)  # type: ignore[assignment]
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)  # type: ignore[assignment]
 
         # Find contours
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -471,7 +471,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
 
         return overlay
 
-    def compute_consistency_map(
+    def compute_consistency_map(  # type: ignore[override]
         self,
         transition_pairs: list[tuple[np.ndarray[Any, Any], np.ndarray[Any, Any]]],
         method: str = "minmax",

@@ -122,7 +122,7 @@ class TrainingDataExporter:
             width, height = self._get_image_size(screenshot_path)
 
             # Add image entry
-            coco["images"].append(
+            coco["images"].append(  # type: ignore[attr-defined]
                 {
                     "id": image_id,
                     "file_name": f"screenshots/{screenshot_id}.png",
@@ -135,7 +135,7 @@ class TrainingDataExporter:
             # Add element annotations
             for element in data.get("elements", []):
                 bbox = element.bbox
-                coco["annotations"].append(
+                coco["annotations"].append(  # type: ignore[attr-defined]
                     {
                         "id": annotation_id,
                         "image_id": image_id,
@@ -157,7 +157,7 @@ class TrainingDataExporter:
             if include_states:
                 for state in data.get("states", []):
                     bbox = state.bbox
-                    coco["annotations"].append(
+                    coco["annotations"].append(  # type: ignore[attr-defined]
                         {
                             "id": annotation_id,
                             "image_id": image_id,
@@ -400,6 +400,6 @@ class TrainingDataExporter:
             from PIL import Image
 
             with Image.open(image_path) as img:
-                return img.size
+                return img.size  # type: ignore[no-any-return]
         except Exception:
             return (1920, 1080)  # Default fallback

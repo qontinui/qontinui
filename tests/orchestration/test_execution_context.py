@@ -12,7 +12,7 @@ src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
 # Import directly from module to avoid cv2 dependency
-from qontinui.orchestration.execution_context import (
+from qontinui.orchestration.execution_context import (  # noqa: E402
     ActionState,
     ExecutionContext,
     ExecutionStatistics,

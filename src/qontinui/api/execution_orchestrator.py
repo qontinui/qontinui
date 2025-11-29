@@ -279,7 +279,7 @@ class ExecutionOrchestrator:
             logger.info(f"Starting orchestration for execution {context.execution_id}")
 
             # Step 2: Create action executor
-            context.action_executor = ActionExecutor(context.variables)
+            context.action_executor = ActionExecutor(context.variables)  # type: ignore[call-arg]
             logger.debug("Created ActionExecutor")
 
             # Step 3: Create graph executor

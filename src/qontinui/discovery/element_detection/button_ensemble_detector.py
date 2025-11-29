@@ -380,7 +380,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
             h_pad = min(img.shape[0] - y_pad, h + 2 * padding)
 
             detections.append(
-                (BoundingBox(x=x_pad, y=y_pad, width=w_pad, height=h_pad), confidence)
+                (BoundingBox(x=x_pad, y=y_pad, width=w_pad, height=h_pad), float(confidence))  # type: ignore[arg-type]
             )
 
         return detections
@@ -402,7 +402,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
         # Use MSER for text detection
-        mser = cv2.MSER_create(
+        mser = cv2.MSER_create(  # type: ignore[attr-defined]
             _min_area=100,
             _max_area=5000,
         )

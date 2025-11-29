@@ -283,7 +283,7 @@ class ConnectionRouter:
         Returns:
             List of paths, where each path is a list of action IDs
         """
-        paths = []
+        paths: list[list[str]] = []
 
         def dfs(current_id: str, path: list[str], visited: set[str]):
             if len(paths) >= max_paths:
@@ -353,7 +353,7 @@ class ConnectionRouter:
             return []
 
         # Find longest path
-        longest_path = []
+        longest_path: list[str] = []
 
         for entry in entry_points:
             for exit_point in exit_points:
@@ -404,7 +404,7 @@ class ConnectionRouter:
         # Calculate cyclomatic complexity estimate
         # V(G) = E - N + 2P (edges - nodes + 2*connected_components)
         edge_count = sum(
-            len(conn)
+            len(conn)  # type: ignore[arg-type,misc]
             for output_types in workflow.connections.root.values()
             for conn_lists in output_types.values()
             for conn_list in conn_lists

@@ -125,7 +125,7 @@ class Vanish(ActionInterface):
             return True  # If no find configured, consider elements gone
 
         # Use Find to check for presence
-        find_result = ActionResult(action_result.action_config)
+        find_result = ActionResult(action_result.action_config)  # type: ignore[arg-type,call-arg]
         self.find.perform(find_result, *object_collections)
 
         # Elements are gone if Find fails or finds no matches

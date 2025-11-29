@@ -5,6 +5,8 @@ Clean utilities for graph-based workflows.
 No format detection, no sequential format support.
 """
 
+from typing import Any
+
 from .schema import Action, Workflow
 
 
@@ -84,7 +86,7 @@ def find_exit_points(workflow: Workflow) -> list[str]:
     return [action.id for action in workflow.actions if action.id not in has_outgoing]
 
 
-def get_workflow_statistics(workflow: Workflow) -> dict[str, any]:
+def get_workflow_statistics(workflow: Workflow) -> dict[str, Any]:
     """
     Get statistics about a workflow.
     """
@@ -103,7 +105,7 @@ def get_workflow_statistics(workflow: Workflow) -> dict[str, any]:
     # Count action types
     for action in workflow.actions:
         action_type = action.type
-        stats["action_types"][action_type] = stats["action_types"].get(action_type, 0) + 1
+        stats["action_types"][action_type] = stats["action_types"].get(action_type, 0) + 1  # type: ignore[attr-defined,index]
 
     # Count total connections
     total_connections = 0
@@ -125,13 +127,13 @@ def get_workflow_statistics(workflow: Workflow) -> dict[str, any]:
     if workflow.variables:
         stats["variable_scopes"] = []
         if workflow.variables.local:
-            stats["variable_scopes"].append("local")
+            stats["variable_scopes"].append("local")  # type: ignore[attr-defined]
             stats["local_variable_count"] = len(workflow.variables.local)
         if workflow.variables.process:
-            stats["variable_scopes"].append("process")
+            stats["variable_scopes"].append("process")  # type: ignore[attr-defined]
             stats["process_variable_count"] = len(workflow.variables.process)
         if workflow.variables.global_vars:
-            stats["variable_scopes"].append("global")
+            stats["variable_scopes"].append("global")  # type: ignore[attr-defined]
             stats["global_variable_count"] = len(workflow.variables.global_vars)
 
     return stats
@@ -204,9 +206,9 @@ def get_connected_actions(workflow: Workflow, action_id: str) -> dict[str, list[
 
     for conn_type, connections_list in connections.items():
         targets = []
-        for connections in connections_list:
+        for connections in connections_list:  # type: ignore[assignment]
             for conn in connections:
-                targets.append(conn.action)
+                targets.append(conn.action)  # type: ignore[attr-defined]
         if targets:
             result[conn_type] = targets
 

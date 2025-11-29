@@ -13,7 +13,7 @@ from .database_storage import DatabaseStorage
 from .file_storage import FileStorage
 from .serializers import JsonSerializer, PickleSerializer
 from .state_manager import StateManager
-from .storage import SimpleStorage
+from .storage import SimpleStorage  # type: ignore[attr-defined]
 
 
 def test_serializers():

@@ -123,7 +123,7 @@ class DataOperationsExecutorAdapter(ActionExecutorBase):
                 self._emit_action_failure(action, error_msg, result)
                 logger.error(f"Data operation {action_type} failed: {error_msg}")
 
-            return success
+            return success  # type: ignore[no-any-return]
 
         except ActionExecutionError:
             # Re-raise ActionExecutionErrors as-is

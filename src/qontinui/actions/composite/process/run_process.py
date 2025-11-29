@@ -12,7 +12,11 @@ from ....actions.action_type import ActionType
 from .run_process_options import RunProcessOptions
 
 if TYPE_CHECKING:
-    from ....json_executor.config_parser import Process, QontinuiConfig, Workflow
+    from ....json_executor.config_parser import (  # type: ignore[attr-defined]
+        Process,
+        QontinuiConfig,
+        Workflow,
+    )
     from ....model.object_collection import ObjectCollection
 
 

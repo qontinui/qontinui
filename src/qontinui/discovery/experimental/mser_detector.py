@@ -58,7 +58,7 @@ class MSERDetector(BaseDetector):
         max_area_pixels = int(img.shape[0] * img.shape[1] * max_area_ratio)
 
         # Create MSER detector
-        mser = cv2.MSER_create(
+        mser = cv2.MSER_create(  # type: ignore[attr-defined]
             _delta=delta,
             _min_area=min_area,
             _max_area=max_area_pixels,

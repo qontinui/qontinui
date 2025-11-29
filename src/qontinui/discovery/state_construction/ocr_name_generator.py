@@ -281,7 +281,7 @@ class OCRNameGenerator:
             gray = image
 
         text = pytesseract.image_to_string(gray)
-        return text.strip()
+        return text.strip()  # type: ignore[no-any-return]
 
     def _extract_prominent_text(self, image: np.ndarray) -> str:
         """Extract the most prominent (largest) text from image.
@@ -335,10 +335,10 @@ class OCRNameGenerator:
             points = np.array(bbox)
             width = np.max(points[:, 0]) - np.min(points[:, 0])
             height = np.max(points[:, 1]) - np.min(points[:, 1])
-            return width * height
+            return width * height  # type: ignore[no-any-return]
 
         best = max(results, key=score_result)
-        return best[1].strip()
+        return best[1].strip()  # type: ignore[no-any-return]
 
     def _extract_prominent_tesseract(self, image: np.ndarray) -> str:
         """Extract prominent text using Tesseract's font size detection.

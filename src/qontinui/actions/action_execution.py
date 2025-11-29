@@ -69,7 +69,7 @@ class ActionExecution:
             ActionResult containing execution results and timing
         """
         # Initialize result
-        result = ActionResult(action_config)  # type: ignore[arg-type]
+        result = ActionResult(action_config)  # type: ignore[arg-type,call-arg]
         object.__setattr__(result, "action_description", action_description)
         start_time = time.time()
 

@@ -5,10 +5,18 @@ This module provides utilities for validating action configurations,
 checking action sequences, and ensuring data integrity.
 """
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import ValidationError
 
+from .models.control_flow import (
+    IfActionConfig,
+    LoopActionConfig,
+    SwitchActionConfig,
+    TryCatchActionConfig,
+)
+from .models.find_actions import WaitActionConfig
+from .models.keyboard_actions import TypeActionConfig
 from .schema import ACTION_CONFIG_MAP, Action, get_typed_config
 
 
@@ -120,38 +128,38 @@ class ActionValidator:
 
             # Check for logical issues
             if action.type == "LOOP":
-                config = get_typed_config(action)
-                if config.loop_type == "FOR" and not config.iterations:
+                loop_config = cast(LoopActionConfig, get_typed_config(action))
+                if loop_config.loop_type == "FOR" and not loop_config.iterations:
                     warnings.append(f"FOR loop action '{action.id}' has no iterations specified")
-                elif config.loop_type == "WHILE" and not config.condition:
+                elif loop_config.loop_type == "WHILE" and not loop_config.condition:
                     warnings.append(f"WHILE loop action '{action.id}' has no condition specified")
-                elif config.loop_type == "FOREACH" and not config.collection:
+                elif loop_config.loop_type == "FOREACH" and not loop_config.collection:
                     warnings.append(
                         f"FOREACH loop action '{action.id}' has no collection specified"
                     )
 
             elif action.type == "TYPE":
-                config = get_typed_config(action)
-                if not config.text and not config.text_source:
+                type_config = cast(TypeActionConfig, get_typed_config(action))
+                if not type_config.text and not type_config.text_source:
                     warnings.append(
                         f"TYPE action '{action.id}' has no text or text_source specified"
                     )
 
             elif action.type == "WAIT":
-                config = get_typed_config(action)
-                if config.wait_for == "time" and not config.duration:
+                wait_config = cast(WaitActionConfig, get_typed_config(action))
+                if wait_config.wait_for == "time" and not wait_config.duration:
                     warnings.append(
                         f"WAIT action '{action.id}' wait_for='time' but no duration specified"
                     )
-                elif config.wait_for == "target" and not config.target:
+                elif wait_config.wait_for == "target" and not wait_config.target:
                     warnings.append(
                         f"WAIT action '{action.id}' wait_for='target' but no target specified"
                     )
-                elif config.wait_for == "state" and not config.state_id:
+                elif wait_config.wait_for == "state" and not wait_config.state_id:
                     warnings.append(
                         f"WAIT action '{action.id}' wait_for='state' but no state_id specified"
                     )
-                elif config.wait_for == "condition" and not config.condition:
+                elif wait_config.wait_for == "condition" and not wait_config.condition:
                     warnings.append(
                         f"WAIT action '{action.id}' wait_for='condition' but no condition specified"
                     )
@@ -171,29 +179,31 @@ class ActionValidator:
         referenced_ids = set()
 
         try:
-            config = get_typed_config(action)
-
             # Extract references based on action type
             if action.type == "IF":
-                referenced_ids.update(config.then_actions)
-                if config.else_actions:
-                    referenced_ids.update(config.else_actions)
+                if_config = cast(IfActionConfig, get_typed_config(action))
+                referenced_ids.update(if_config.then_actions)
+                if if_config.else_actions:
+                    referenced_ids.update(if_config.else_actions)
 
             elif action.type == "LOOP":
-                referenced_ids.update(config.actions)
+                loop_config = cast(LoopActionConfig, get_typed_config(action))
+                referenced_ids.update(loop_config.actions)
 
             elif action.type == "SWITCH":
-                for case in config.cases:
+                switch_config = cast(SwitchActionConfig, get_typed_config(action))
+                for case in switch_config.cases:
                     referenced_ids.update(case.actions)
-                if config.default_actions:
-                    referenced_ids.update(config.default_actions)
+                if switch_config.default_actions:
+                    referenced_ids.update(switch_config.default_actions)
 
             elif action.type == "TRY_CATCH":
-                referenced_ids.update(config.try_actions)
-                if config.catch_actions:
-                    referenced_ids.update(config.catch_actions)
-                if config.finally_actions:
-                    referenced_ids.update(config.finally_actions)
+                try_catch_config = cast(TryCatchActionConfig, get_typed_config(action))
+                referenced_ids.update(try_catch_config.try_actions)
+                if try_catch_config.catch_actions:
+                    referenced_ids.update(try_catch_config.catch_actions)
+                if try_catch_config.finally_actions:
+                    referenced_ids.update(try_catch_config.finally_actions)
 
         except (ValidationError, AttributeError, KeyError):
             # If config parsing fails, skip reference checking for this action
@@ -217,7 +227,7 @@ class ActionValidator:
         """
         action_map = {action.id: action for action in actions}
         visited = set()
-        path = []
+        path: list[str] = []
 
         def dfs(action_id: str) -> list[str] | None:
             if action_id in visited:

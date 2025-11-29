@@ -73,7 +73,7 @@ class ExampleButtonDetector(BaseDetector):
 
         # Apply post-processing utilities
         boxes = [d["bbox"] for d in detections]
-        merged_boxes = self.merge_overlapping_boxes(boxes, overlap_threshold=0.5)
+        merged_boxes = self.merge_overlapping_boxes(boxes, overlap_threshold=0.5)  # type: ignore[arg-type]
         filtered_boxes = self.remove_contained_boxes(merged_boxes)
 
         # Rebuild detections with filtered boxes

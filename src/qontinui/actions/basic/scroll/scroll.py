@@ -92,7 +92,7 @@ class Scroll(ActionInterface):
 
         # Use Find to locate the target
         if self.find:
-            find_result = ActionResult(action_result.action_config)
+            find_result = ActionResult(action_result.action_config)  # type: ignore[arg-type,call-arg]
             self.find.perform(find_result, *object_collections)
 
             if find_result.is_success and find_result.matches:

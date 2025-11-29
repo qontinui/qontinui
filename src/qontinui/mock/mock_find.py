@@ -125,10 +125,10 @@ class MockFind:
             builder.with_success(True)
             # Set match list directly after building
             result = builder.build()
-            result.set_match_list(snapshot.match_list)  # type: ignore[arg-type]
+            result.set_match_list(snapshot.match_list)  # type: ignore[attr-defined,arg-type]
 
             if snapshot.text:
-                result.add_text_result(snapshot.text)
+                result.add_text_result(snapshot.text)  # type: ignore[attr-defined]
 
             logger.debug(f"Created successful result with {len(snapshot.match_list)} matches")
         else:
@@ -137,7 +137,7 @@ class MockFind:
             logger.debug("Created failed result (snapshot had no matches)")
 
         duration_val = snapshot.duration if snapshot.duration > 0 else 0.1
-        result.set_duration(timedelta(seconds=duration_val))
+        result.set_duration(timedelta(seconds=duration_val))  # type: ignore[attr-defined]
         return result
 
     def _get_result_from_api(
@@ -186,7 +186,7 @@ class MockFind:
                     ocr_text="",
                 )
                 result = ActionResultBuilder().with_success(True).build()
-                result.add_match(match)  # type: ignore[arg-type]
+                result.add_match(match)  # type: ignore[attr-defined,arg-type]
 
                 # Store the historical result ID for frame retrieval
                 result.historical_result_id = historical.id  # type: ignore[attr-defined]
@@ -242,7 +242,7 @@ class MockFind:
             # Generate a mock match
             match = self._create_mock_match(pattern, search_region)
             result = ActionResultBuilder().with_success(True).build()
-            result.add_match(match)  # type: ignore[arg-type]
+            result.add_match(match)  # type: ignore[attr-defined,arg-type]
             logger.debug(f"Generated mock match at {match.get_region()}")
         else:
             result = ActionResultBuilder().with_success(False).build()
@@ -293,7 +293,7 @@ class MockFind:
         """
         result = self.find(pattern, search_region)
         # Access match_list directly to maintain correct type
-        return result.match_list if result.success else []  # type: ignore[return-value]
+        return result.match_list if result.success else []  # type: ignore[attr-defined,return-value]
 
     def wait_for(self, pattern: Pattern, timeout: float = 5.0) -> Match | None:
         """Simulate waiting for a pattern.
@@ -309,7 +309,7 @@ class MockFind:
         result = self.find(pattern)
 
         # Access match_list directly to maintain correct type
-        if result.success and result.match_list:
-            return result.match_list[0]  # type: ignore[return-value]
+        if result.success and result.match_list:  # type: ignore[attr-defined]
+            return result.match_list[0]  # type: ignore[attr-defined,return-value,no-any-return]
 
         return None

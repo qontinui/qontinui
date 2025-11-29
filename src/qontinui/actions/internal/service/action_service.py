@@ -165,7 +165,7 @@ class FindStrategyRegistry:
 
     def __init__(self) -> None:
         """Initialize the registry."""
-        self._custom_finds = []
+        self._custom_finds: list[Callable[..., Any]] = []
 
     def add_custom_find(self, custom_find: Callable[..., Any]) -> None:
         """Add a custom find implementation.

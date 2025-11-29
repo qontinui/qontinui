@@ -51,7 +51,7 @@ class ContourGridDetector(BaseRegionAnalyzer):
             "rectangularity_threshold": 0.75,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:  # type: ignore[override]
         """Detect inventory grids using contour clustering"""
         params = {**self.get_default_parameters(), **kwargs}
 

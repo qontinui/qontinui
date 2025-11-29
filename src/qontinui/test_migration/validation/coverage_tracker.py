@@ -106,7 +106,7 @@ class CoverageTracker:
     def load_mapping_documentation(self, input_path: Path) -> None:
         """Load test mapping documentation from JSON file."""
         tracking_time_holder = [self.collector.tracking_start_time]
-        migration_history = self.comparator.load_mapping_documentation(
+        migration_history = self.comparator.load_mapping_documentation(  # type: ignore[func-returns-value]
             input_path, tracking_time_holder
         )
         self.collector.tracking_start_time = tracking_time_holder[0]

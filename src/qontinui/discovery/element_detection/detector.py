@@ -231,7 +231,7 @@ class FeatureDetector(ElementDetector):
     def orb(self) -> cv2.ORB:
         """Lazy-load ORB detector."""
         if self._orb is None:
-            self._orb = cv2.ORB_create(nfeatures=self.max_features)
+            self._orb = cv2.ORB_create(nfeatures=self.max_features)  # type: ignore[attr-defined]
         return self._orb
 
     def detect(self, screenshot: np.ndarray) -> list[DetectedElement]:
@@ -256,13 +256,13 @@ class FeatureDetector(ElementDetector):
             gray = screenshot
 
         # Detect ORB features
-        keypoints, descriptors = self.orb.detectAndCompute(gray, None)
+        keypoints, descriptors = self.orb.detectAndCompute(gray, None)  # type: ignore[call-overload]
 
         if not keypoints:
             return []
 
         # Cluster features into potential element regions
-        regions = self._cluster_features(keypoints, screenshot.shape[:2])
+        regions = self._cluster_features(keypoints, screenshot.shape[:2])  # type: ignore[arg-type]
 
         # Convert regions to DetectedElement objects
         elements = []

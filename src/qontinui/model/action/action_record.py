@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...actions.action_config import ActionConfig
@@ -200,7 +200,7 @@ class ActionRecordBuilder:
     def __init__(self) -> None:
         """Initialize builder with defaults."""
         self.action_config = None
-        self.match_list = []
+        self.match_list: list[Any] = []
         self.text = ""
         self.duration = 0.0
         self.timestamp = None
@@ -218,7 +218,7 @@ class ActionRecordBuilder:
         Returns:
             Self for chaining
         """
-        self.action_config = config
+        self.action_config = config  # type: ignore[assignment]
         return self
 
     def set_match_list(self, matches: list[Match]) -> ActionRecordBuilder:

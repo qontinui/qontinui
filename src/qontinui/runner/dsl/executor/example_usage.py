@@ -4,6 +4,8 @@ This module demonstrates how to use the StatementExecutor to run DSL statements
 with proper flow control, variable scoping, and expression evaluation.
 """
 
+from typing import Any
+
 from qontinui.runner.dsl.executor import (
     ExecutionContext,
     ReturnException,
@@ -296,7 +298,7 @@ def example_7_external_context():
     # Create a mock logger object
     class MockLogger:
         def __init__(self) -> None:
-            self.logs = []
+            self.logs: list[Any] = []
 
         def log(self, message):
             self.logs.append(message)

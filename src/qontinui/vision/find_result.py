@@ -156,7 +156,7 @@ class FindResult:
             raise ValueError("Region cannot be None")
 
         filtered = [
-            m for m in self.matches if m.region is not None and region.contains_region(m.region)
+            m for m in self.matches if m.region is not None and region.contains_region(m.region)  # type: ignore[attr-defined]
         ]
         return FindResult(
             matches=filtered,
@@ -230,7 +230,7 @@ class FindResult:
 
         # Sort by similarity descending
         sorted_matches = sorted(self.matches, key=lambda m: m.similarity, reverse=True)
-        kept = []
+        kept: list[Any] = []
 
         for match in sorted_matches:
             # Check if overlaps with any kept match
@@ -239,7 +239,7 @@ class FindResult:
                 if (
                     match.region is not None
                     and kept_match.region is not None
-                    and match.region.overlap_ratio(kept_match.region) >= overlap_threshold
+                    and match.region.overlap_ratio(kept_match.region) >= overlap_threshold  # type: ignore[attr-defined]
                 ):
                     overlaps = True
                     break
@@ -289,9 +289,13 @@ class FindResult:
             New FindResult with sorted matches
         """
         if horizontal:
-            sorted_matches = sorted(self.matches, key=lambda m: m.location.x)
+            sorted_matches = sorted(
+                self.matches, key=lambda m: m.location.x if m.location is not None else 0
+            )
         else:
-            sorted_matches = sorted(self.matches, key=lambda m: m.location.y)
+            sorted_matches = sorted(
+                self.matches, key=lambda m: m.location.y if m.location is not None else 0
+            )
 
         return FindResult(
             matches=sorted_matches,

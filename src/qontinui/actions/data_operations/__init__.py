@@ -129,7 +129,7 @@ class DataOperationsExecutor:
         from qontinui.config import SortActionConfig, get_typed_config
 
         try:
-            config: SortActionConfig = get_typed_config(action)
+            config: SortActionConfig = get_typed_config(action)  # type: ignore[assignment]
             logger.info(f"Sorting collection from '{config.variable_name}'")
 
             # Get collection to sort
@@ -205,7 +205,7 @@ class DataOperationsExecutor:
         from qontinui.config import FilterActionConfig, get_typed_config
 
         try:
-            config: FilterActionConfig = get_typed_config(action)
+            config: FilterActionConfig = get_typed_config(action)  # type: ignore[assignment]
             logger.info(f"Filtering collection from '{config.variable_name}'")
 
             # Get collection to filter
@@ -259,7 +259,7 @@ class DataOperationsExecutor:
         from qontinui.config import MapActionConfig, get_typed_config
 
         try:
-            config: MapActionConfig = get_typed_config(action)
+            config: MapActionConfig = get_typed_config(action)  # type: ignore[assignment]
             logger.info(f"Mapping over collection from '{config.variable_name}'")
 
             # Get collection to map
@@ -310,7 +310,7 @@ class DataOperationsExecutor:
         from qontinui.config import ReduceActionConfig, get_typed_config
 
         try:
-            config: ReduceActionConfig = get_typed_config(action)
+            config: ReduceActionConfig = get_typed_config(action)  # type: ignore[assignment]
             logger.info(f"Reducing collection from '{config.variable_name}'")
 
             # Get collection to reduce
@@ -368,7 +368,7 @@ class DataOperationsExecutor:
         from qontinui.config import StringOperationActionConfig, get_typed_config
 
         try:
-            config: StringOperationActionConfig = get_typed_config(action)
+            config: StringOperationActionConfig = get_typed_config(action)  # type: ignore[assignment]
             logger.info(f"Executing string operation: {config.operation}")
 
             # Get input string(s)
@@ -387,7 +387,7 @@ class DataOperationsExecutor:
 
             # Perform operation using StringExecutor
             result_str = self._string_executor.execute(
-                config.operation, input_str, config.parameters
+                config.operation, input_str, config.parameters  # type: ignore[arg-type]
             )
 
             # Store result
@@ -423,7 +423,7 @@ class DataOperationsExecutor:
         from qontinui.config import MathOperationActionConfig, get_typed_config
 
         try:
-            config: MathOperationActionConfig = get_typed_config(action)
+            config: MathOperationActionConfig = get_typed_config(action)  # type: ignore[assignment]
             logger.info(f"Executing math operation: {config.operation}")
 
             # Resolve operands (may be values or variable references)

@@ -120,12 +120,15 @@ class ActionImporter:
 
         # Validate actions
         try:
-            actions = self.validator.validate_actions(actions_data)
+            if self.validator is not None:
+                actions = self.validator.validate_actions(actions_data)
         except ActionValidationError as e:
             raise ImportError(f"Validation failed for {source}: {e}") from e
 
         # Check for sequence warnings
-        warnings = self.validator.validate_action_sequence(actions)
+        warnings = (
+            self.validator.validate_action_sequence(actions) if self.validator is not None else []
+        )
         if warnings:
             warning_text = "\n".join(f"  - {w}" for w in warnings)
             if self.strict:
@@ -159,7 +162,7 @@ class ActionImporter:
             else:
                 # Try to parse as JSON string
                 try:
-                    actions = self.load_from_string(data)
+                    actions = self.load_from_string(data)  # type: ignore[arg-type]
                 except ImportError:
                     raise ImportError(f"Not a valid file path or JSON string: {data}") from None
         else:

@@ -70,7 +70,7 @@ class ErrorAnalyzer:
                         java_assertion, python_equivalent
                     )
 
-                    confidence = self._calculate_assertion_confidence(
+                    confidence = self._calculate_assertion_confidence(  # type: ignore[attr-defined]
                         java_assertion, python_equivalent
                     )
 
@@ -81,7 +81,7 @@ class ErrorAnalyzer:
                             assertion_type=assertion_type,
                             semantic_equivalent=semantic_equivalent,
                             confidence=confidence,
-                            suggested_improvement=self._suggest_assertion_improvement(
+                            suggested_improvement=self._suggest_assertion_improvement(  # type: ignore[attr-defined]
                                 java_assertion, python_equivalent
                             ),
                         )

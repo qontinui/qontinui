@@ -448,7 +448,7 @@ class ButtonShadowDetector(BaseAnalyzer):
             return []
 
         # Sort by confidence/quality
-        merged = []
+        merged: list[tuple[BoundingBox, dict[str, Any]]] = []
 
         for bbox, info in candidates:
             # Check if this overlaps with any existing merged candidate
@@ -522,4 +522,4 @@ class ButtonShadowDetector(BaseAnalyzer):
             if shadow_info.get("has_3d_effect", False):
                 confidence += 0.2
 
-        return min(1.0, max(0.0, confidence))
+        return min(1.0, max(0.0, confidence))  # type: ignore[no-any-return]

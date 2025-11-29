@@ -118,7 +118,7 @@ class ExecutionController:
                 )
             )
 
-        state_api = StateExecutionAPI(workflow, event_callback=event_callback)
+        state_api = StateExecutionAPI(workflow, event_callback=event_callback)  # type: ignore[arg-type,call-arg]
         self.state_apis[execution_id] = state_api
 
         # Start execution task

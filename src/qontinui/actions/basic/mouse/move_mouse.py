@@ -97,14 +97,14 @@ class MoveMouse(ActionInterface):
                     location = state_location.location
                     if self.move_mouse_wrapper:
                         self.move_mouse_wrapper.move(location)
-                    matches.add_match_location(location)
+                    matches.add_match_location(location)  # type: ignore[attr-defined]
                     # Create a Match object for success determination
                     from ....find.match import Match
                     from ....model.match import Match as MatchObject
 
                     match_obj = MatchObject(target=location, score=1.0)
                     match = Match(match_object=match_obj)
-                    matches.add(match)
+                    matches.add(match)  # type: ignore[attr-defined]
 
             # Check if we have regions
             state_regions = obj_coll.state_regions
@@ -114,21 +114,21 @@ class MoveMouse(ActionInterface):
                     location = state_region.get_search_region().get_center()
                     if self.move_mouse_wrapper:
                         self.move_mouse_wrapper.move(location)
-                    matches.add_match_location(location)
+                    matches.add_match_location(location)  # type: ignore[attr-defined]
                     # Create a Match object for success determination
                     from ....find.match import Match
                     from ....model.match import Match as MatchObject
 
                     match_obj = MatchObject(target=location, score=1.0)
                     match = Match(match_object=match_obj)
-                    matches.add(match)
+                    matches.add(match)  # type: ignore[attr-defined]
 
             # Only use find if we have images/patterns to search for
             state_images = obj_coll.state_images
             if state_images:
                 if self.find:
                     self.find.perform(matches, obj_coll)
-                    for location in matches.get_match_locations():
+                    for location in matches.get_match_locations():  # type: ignore[attr-defined]
                         if self.move_mouse_wrapper:
                             self.move_mouse_wrapper.move(location)
                 # Find.perform will populate the matchList and success will be determined by ActionSuccessCriteria

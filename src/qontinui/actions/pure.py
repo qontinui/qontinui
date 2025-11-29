@@ -37,28 +37,28 @@ class UnifiedInputController:
     # Mouse operations - delegate to mouse controller
     def move_mouse(self, x: int, y: int) -> None:
         """Move mouse to coordinates."""
-        self._mouse.move_to(x, y)
+        self._mouse.move_mouse(x, y)
 
     def move_mouse_smooth(self, x: int, y: int, duration: float) -> None:
         """Move mouse smoothly to coordinates."""
-        self._mouse.move_to_smooth(x, y, duration)
+        self._mouse.move_mouse(x, y, duration)
 
     def mouse_down(self, button: MouseButton | str) -> None:
         """Press mouse button."""
-        self._mouse.press(
-            button if isinstance(button, MouseButton) else MouseButton[button.upper()]
+        self._mouse.mouse_down(
+            button=button if isinstance(button, MouseButton) else MouseButton[button.upper()]  # type: ignore[arg-type]
         )
 
     def mouse_up(self, button: MouseButton | str) -> None:
         """Release mouse button."""
-        self._mouse.release(
-            button if isinstance(button, MouseButton) else MouseButton[button.upper()]
+        self._mouse.mouse_up(
+            button=button if isinstance(button, MouseButton) else MouseButton[button.upper()]  # type: ignore[arg-type]
         )
 
     def click_at(self, x: int, y: int, button: MouseButton | str, clicks: int = 1) -> None:
         """Click at coordinates."""
-        self._mouse.click(
-            x, y, button if isinstance(button, MouseButton) else MouseButton[button.upper()], clicks
+        self._mouse.mouse_click(
+            x, y, button if isinstance(button, MouseButton) else MouseButton[button.upper()], clicks  # type: ignore[arg-type]
         )
 
     def scroll(self, clicks: int) -> None:
@@ -67,24 +67,25 @@ class UnifiedInputController:
 
     def get_mouse_position(self) -> tuple[int, int]:
         """Get current mouse position."""
-        return self._mouse.get_position()
+        pos = self._mouse.get_mouse_position()
+        return (pos.x, pos.y)
 
     # Keyboard operations - delegate to keyboard controller
     def key_down(self, key: str) -> None:
         """Press key down."""
-        self._keyboard.press(key)
+        self._keyboard.key_down(key)
 
     def key_up(self, key: str) -> None:
         """Release key."""
-        self._keyboard.release(key)
+        self._keyboard.key_up(key)
 
     def key_press(self, key: str) -> None:
         """Press and release key."""
-        self._keyboard.tap(key)
+        self._keyboard.key_press(key)
 
     def type_text(self, text: str, interval: float = 0.0) -> None:
         """Type text with optional interval between characters."""
-        self._keyboard.type(text, interval)
+        self._keyboard.type_text(text, interval)
 
 
 class PureActions:
@@ -323,7 +324,7 @@ class PureActions:
         """
         try:
             pos = self.controller.get_mouse_position()
-            return ActionResult(success=True, data={"x": pos.x, "y": pos.y})
+            return ActionResult(success=True, data={"x": pos[0], "y": pos[1]})
         except Exception as e:
             return ActionResult(success=False, error=str(e))
 

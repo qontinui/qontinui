@@ -105,7 +105,7 @@ class Match:
             ActionResult from click action
         """
         if not self.exists():
-            result = ActionResult()
+            result = ActionResult()  # type: ignore[call-arg]
             object.__setattr__(result, "success", False)
             object.__setattr__(result, "output_text", "Match does not exist")
             return result
@@ -124,7 +124,7 @@ class Match:
             ActionResult from double-click action
         """
         if not self.exists():
-            result = ActionResult()
+            result = ActionResult()  # type: ignore[call-arg]
             object.__setattr__(result, "success", False)
             object.__setattr__(result, "output_text", "Match does not exist")
             return result
@@ -147,7 +147,7 @@ class Match:
             ActionResult from right-click action
         """
         if not self.exists():
-            result = ActionResult()
+            result = ActionResult()  # type: ignore[call-arg]
             object.__setattr__(result, "success", False)
             object.__setattr__(result, "output_text", "Match does not exist")
             return result
@@ -172,7 +172,7 @@ class Match:
             ActionResult from move action
         """
         if not self.exists():
-            result = ActionResult()
+            result = ActionResult()  # type: ignore[call-arg]
             object.__setattr__(result, "success", False)
             object.__setattr__(result, "output_text", "Match does not exist")
             return result
@@ -198,12 +198,12 @@ class Match:
             ActionResult from drag action
         """
         if not self.exists():
-            result = ActionResult()
+            result = ActionResult()  # type: ignore[call-arg]
             object.__setattr__(result, "success", False)
             object.__setattr__(result, "output_text", "Source match does not exist")
             return result
         if not target.exists():
-            result = ActionResult()
+            result = ActionResult()  # type: ignore[call-arg]
             object.__setattr__(result, "success", False)
             object.__setattr__(result, "output_text", "Target match does not exist")
             return result
@@ -231,7 +231,7 @@ class Match:
             ActionResult from type action
         """
         if not self.exists():
-            result = ActionResult()
+            result = ActionResult()  # type: ignore[call-arg]
             object.__setattr__(result, "success", False)
             object.__setattr__(result, "output_text", "Match does not exist")
             return result
@@ -256,14 +256,14 @@ class Match:
             ActionResult from highlight action
         """
         if not self.exists():
-            result = ActionResult()
+            result = ActionResult()  # type: ignore[call-arg]
             object.__setattr__(result, "success", False)
             object.__setattr__(result, "output_text", "Match does not exist")
             return result
 
         # This would draw a rectangle around the match
         # Implementation depends on platform
-        result = ActionResult()
+        result = ActionResult()  # type: ignore[call-arg]
         object.__setattr__(result, "success", True)
         object.__setattr__(result, "defined_regions", tuple([self.region] if self.region else []))
         object.__setattr__(result, "duration", timedelta(seconds=duration))

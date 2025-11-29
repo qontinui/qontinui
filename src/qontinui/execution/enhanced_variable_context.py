@@ -148,7 +148,7 @@ class EnhancedVariableContext:
             # Auto-save if enabled and scope is persistent
             if self._auto_save and scope in ("workflow", "global"):
                 try:
-                    self.save_to_file(scope)
+                    self.save_to_file(scope)  # type: ignore[arg-type]
                 except Exception as e:
                     logger.warning(f"Auto-save failed for {scope} scope: {e}")
 

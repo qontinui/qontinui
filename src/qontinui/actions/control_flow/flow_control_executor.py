@@ -99,7 +99,7 @@ class FlowControlExecutor:
             ... )
             >>> executor.execute_break(action)  # Raises only if condition is true
         """
-        config: BreakActionConfig = get_typed_config(action)
+        config: BreakActionConfig = get_typed_config(action)  # type: ignore[assignment]
 
         # Check condition if present
         if config.condition:
@@ -162,7 +162,7 @@ class FlowControlExecutor:
             ... )
             >>> executor.execute_continue(action)  # Raises only if condition is true
         """
-        config: ContinueActionConfig = get_typed_config(action)
+        config: ContinueActionConfig = get_typed_config(action)  # type: ignore[assignment]
 
         # Check condition if present
         if config.condition:

@@ -147,7 +147,7 @@ class ButtonShapeDetector(BaseAnalyzer):
             cv2.MORPH_RECT,
             (params["morph_kernel_size"], params["morph_kernel_size"]),
         )
-        edges = cv2.dilate(edges, kernel, iterations=1)
+        edges = cv2.dilate(edges, kernel, iterations=1)  # type: ignore[call-overload]
 
         # Step 3: Find contours
         contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -242,8 +242,8 @@ class ButtonShapeDetector(BaseAnalyzer):
         h, w = region.shape[:2]
 
         # Harris corner detection
-        corners = cv2.cornerHarris(region, blockSize=2, ksize=3, k=0.04)
-        corners = cv2.dilate(corners, None)
+        corners = cv2.cornerHarris(region, blockSize=2, ksize=3, k=0.04)  # type: ignore[call-overload]
+        corners = cv2.dilate(corners, None)  # type: ignore[call-overload]
 
         # Threshold to get strong corners
         corner_threshold = 0.01 * corners.max() if corners.max() > 0 else 0

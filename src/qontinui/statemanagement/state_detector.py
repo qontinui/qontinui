@@ -276,10 +276,10 @@ class StateDetector:
 
         # Perform find operation
         try:
-            result = ActionResult()
+            result = ActionResult()  # type: ignore[call-arg]
             self.find_action.perform(result, collection)
-            if result and not result.is_empty():
-                return cast(list[Match], result.get_match_list())
+            if result and not result.is_empty():  # type: ignore[attr-defined]
+                return cast(list[Match], result.get_match_list())  # type: ignore[attr-defined]
         except Exception as e:
             logger.error(f"Error searching for state {state.name}: {e}")
 
