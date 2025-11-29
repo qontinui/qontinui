@@ -203,7 +203,9 @@ class PickleSerializer(Serializer):
         """
         try:
             with open(path, "rb") as f:
-                data = pickle.load(f)
+                # Security: pickle.load is safe here as files are local-only and user-controlled.
+                # Network-transmitted or user-uploaded files should never use pickle.
+                data = pickle.load(f)  # noqa: S301
 
             logger.debug(
                 "pickle_deserialized",
