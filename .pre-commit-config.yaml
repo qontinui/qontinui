@@ -43,3 +43,11 @@ repos:
   #       args: ['--config-file=pyproject.toml', 'src/']
   #       additional_dependencies: ['pydantic>=2.0']
   #       pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: block-claude-attribution
+        name: Block Claude Attribution
+        entry: .pre-commit-hooks/block-claude-attribution.sh
+        language: script
+        stages: [commit-msg]
