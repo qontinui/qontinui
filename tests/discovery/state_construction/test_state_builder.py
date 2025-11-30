@@ -13,23 +13,22 @@ Key test areas:
 - Integration with detectors
 """
 
+from unittest.mock import Mock, patch
+
 import numpy as np
 import pytest
-from typing import List
-from unittest.mock import Mock, MagicMock, patch
 
 from qontinui.src.qontinui.discovery.state_construction.state_builder import (
+    FallbackElementIdentifier,
+    FallbackNameGenerator,
     StateBuilder,
     TransitionInfo,
-    FallbackNameGenerator,
-    FallbackElementIdentifier,
 )
 from tests.fixtures.screenshot_fixtures import (
-    generate_synthetic_screenshot,
-    create_login_form_screenshot,
-    create_dialog_screenshot,
     ElementSpec,
     SyntheticScreenshotGenerator,
+    create_dialog_screenshot,
+    create_login_form_screenshot,
 )
 
 
@@ -43,11 +42,7 @@ class TestStateBuilderBasic:
         Returns:
             Initialized StateBuilder with default parameters
         """
-        return StateBuilder(
-            consistency_threshold=0.9,
-            min_image_area=100,
-            min_region_area=500
-        )
+        return StateBuilder(consistency_threshold=0.9, min_image_area=100, min_region_area=500)
 
     def test_builder_initialization(self, builder):
         """Test that builder initializes properly.
@@ -117,10 +112,7 @@ class TestStateBuilderBasic:
         screenshot, _ = create_login_form_screenshot()
         screenshots = [screenshot] * 2
 
-        state = builder.build_state_from_screenshots(
-            screenshots,
-            state_name="explicit_login_state"
-        )
+        state = builder.build_state_from_screenshots(screenshots, state_name="explicit_login_state")
 
         assert state.name == "explicit_login_state"
 
@@ -147,7 +139,22 @@ class TestStateNameGeneration:
 
         assert isinstance(name, str)
         assert len(name) > 0
-        assert name.replace("_", "").replace("x", "").replace("state", "").replace("0", "").replace("1", "").replace("2", "").replace("3", "").replace("4", "").replace("5", "").replace("6", "").replace("7", "").replace("8", "").replace("9", "").isalnum()
+        assert (
+            name.replace("_", "")
+            .replace("x", "")
+            .replace("state", "")
+            .replace("0", "")
+            .replace("1", "")
+            .replace("2", "")
+            .replace("3", "")
+            .replace("4", "")
+            .replace("5", "")
+            .replace("6", "")
+            .replace("7", "")
+            .replace("8", "")
+            .replace("9", "")
+            .isalnum()
+        )
 
     def test_generate_state_name_from_transitions(self, builder):
         """Test name generation with transition context.
@@ -161,7 +168,7 @@ class TestStateNameGeneration:
         transition = TransitionInfo(
             before_screenshot=screenshot,
             after_screenshot=screenshot,
-            target_state_name="settings_dialog"
+            target_state_name="settings_dialog",
         )
 
         name = builder._generate_state_name(screenshots, [transition])
@@ -176,7 +183,7 @@ class TestStateNameGeneration:
             - Generates consistent name
         """
         screenshots = []
-        for i in range(5):
+        for _i in range(5):
             img, _ = create_dialog_screenshot(dialog_title="Main Menu")
             screenshots.append(img)
 
@@ -213,11 +220,8 @@ class TestStateImagesIdentification:
         ]
 
         screenshots = []
-        for i in range(3):
-            img = generator.generate(
-                width=600, height=400,
-                elements=elements
-            )
+        for _i in range(3):
+            img = generator.generate(width=600, height=400, elements=elements)
             screenshots.append(img)
 
         state_images = builder._identify_state_images(screenshots)
@@ -251,8 +255,9 @@ class TestStateImagesIdentification:
         for i in range(3):
             # Different elements each time
             elements = [
-                ElementSpec("button", x=100 + i * 50, y=50 + i * 20,
-                           width=80, height=40, text=f"Button{i}")
+                ElementSpec(
+                    "button", x=100 + i * 50, y=50 + i * 20, width=80, height=40, text=f"Button{i}"
+                )
             ]
             img = generator.generate(width=600, height=400, elements=elements)
             screenshots.append(img)
@@ -272,23 +277,23 @@ class TestStateImagesIdentification:
         """
         # Create screenshots with consistent region
         elements = [
-            ElementSpec("rectangle", x=100, y=100, width=150, height=100,
-                       color=(200, 200, 200), border_color=(100, 100, 100))
+            ElementSpec(
+                "rectangle",
+                x=100,
+                y=100,
+                width=150,
+                height=100,
+                color=(200, 200, 200),
+                border_color=(100, 100, 100),
+            )
         ]
 
         screenshots = []
-        for i in range(3):
-            img = generator.generate(
-                width=500, height=400,
-                elements=elements
-            )
+        for _i in range(3):
+            img = generator.generate(width=500, height=400, elements=elements)
             screenshots.append(img)
 
-        regions = builder._detect_consistent_regions(
-            screenshots,
-            threshold=0.7,
-            min_area=1000
-        )
+        regions = builder._detect_consistent_regions(screenshots, threshold=0.7, min_area=1000)
 
         assert isinstance(regions, list)
 
@@ -301,12 +306,11 @@ class TestStateImagesIdentification:
         """
         # Create identical screenshots
         elements = [
-            ElementSpec("rectangle", x=50, y=50, width=100, height=100,
-                       color=(150, 150, 150))
+            ElementSpec("rectangle", x=50, y=50, width=100, height=100, color=(150, 150, 150))
         ]
 
         screenshots = []
-        for i in range(3):
+        for _i in range(3):
             img = generator.generate(width=300, height=300, elements=elements)
             screenshots.append(img)
 
@@ -390,11 +394,7 @@ class TestStateRegionsIdentification:
             - Falls back to position-based naming
         """
         screenshot = np.zeros((400, 600, 3), dtype=np.uint8)
-        region_info = {
-            "bbox": (100, 150, 200, 180),
-            "type": "panel",
-            "confidence": 0.8
-        }
+        region_info = {"bbox": (100, 150, 200, 180), "type": "panel", "confidence": 0.8}
 
         name = builder._generate_region_name(region_info, screenshot)
 
@@ -426,19 +426,19 @@ class TestStateLocationsIdentification:
                 before_screenshot=screenshot,
                 after_screenshot=screenshot,
                 click_point=(150, 200),
-                target_state_name="menu_state"
+                target_state_name="menu_state",
             ),
             TransitionInfo(
                 before_screenshot=screenshot,
                 after_screenshot=screenshot,
                 click_point=(155, 205),  # Close to first
-                target_state_name="menu_state"
+                target_state_name="menu_state",
             ),
             TransitionInfo(
                 before_screenshot=screenshot,
                 after_screenshot=screenshot,
                 click_point=(400, 300),
-                target_state_name="settings_state"
+                target_state_name="settings_state",
             ),
         ]
 
@@ -474,7 +474,7 @@ class TestStateLocationsIdentification:
                 before_screenshot=screenshot,
                 after_screenshot=screenshot,
                 click_point=None,
-                target_state_name="menu_state"
+                target_state_name="menu_state",
             ),
         ]
 
@@ -499,7 +499,7 @@ class TestStateLocationsIdentification:
                     before_screenshot=screenshot,
                     after_screenshot=screenshot,
                     click_point=(200 + i, 150 + i),  # Slight variation
-                    target_state_name="target"
+                    target_state_name="target",
                 )
             )
 
@@ -533,17 +533,16 @@ class TestStateBoundaryDetection:
         """
         screenshot = np.zeros((400, 600, 3), dtype=np.uint8)
         transitions = [
-            TransitionInfo(
-                before_screenshot=screenshot,
-                after_screenshot=screenshot
-            )
+            TransitionInfo(before_screenshot=screenshot, after_screenshot=screenshot)
         ] * 10
 
         boundary = builder._determine_state_boundary(transitions)
 
         assert boundary is None  # No detector available
 
-    @patch('qontinui.src.qontinui.discovery.state_construction.state_builder.StateBuilder.diff_detector')
+    @patch(
+        "qontinui.src.qontinui.discovery.state_construction.state_builder.StateBuilder.diff_detector"
+    )
     def test_determine_state_boundary_with_detector(self, mock_diff_detector, builder):
         """Test boundary detection with mocked detector.
 
@@ -552,19 +551,21 @@ class TestStateBoundaryDetection:
             - Returns largest region as boundary
         """
         # Mock the detector
-        from qontinui.src.qontinui.discovery.state_detection.differential_consistency_detector import StateRegion
+        from qontinui.src.qontinui.discovery.state_detection.differential_consistency_detector import (
+            StateRegion,
+        )
 
         mock_region1 = StateRegion(
             bbox=(100, 100, 200, 150),
             consistency_score=0.85,
             example_diff=np.zeros((150, 200), dtype=np.uint8),
-            pixel_count=30000
+            pixel_count=30000,
         )
         mock_region2 = StateRegion(
             bbox=(50, 50, 100, 100),
             consistency_score=0.90,
             example_diff=np.zeros((100, 100), dtype=np.uint8),
-            pixel_count=10000
+            pixel_count=10000,
         )
 
         mock_detector = Mock()
@@ -573,10 +574,7 @@ class TestStateBoundaryDetection:
 
         screenshot = np.zeros((400, 600, 3), dtype=np.uint8)
         transitions = [
-            TransitionInfo(
-                before_screenshot=screenshot,
-                after_screenshot=screenshot
-            )
+            TransitionInfo(before_screenshot=screenshot, after_screenshot=screenshot)
         ] * 10
 
         boundary = builder._determine_state_boundary(transitions)
@@ -596,10 +594,7 @@ class TestStateBoundaryDetection:
 
         screenshot = np.zeros((400, 600, 3), dtype=np.uint8)
         transitions = [
-            TransitionInfo(
-                before_screenshot=screenshot,
-                after_screenshot=screenshot
-            )
+            TransitionInfo(before_screenshot=screenshot, after_screenshot=screenshot)
         ] * 10
 
         boundary = builder._determine_state_boundary(transitions)
@@ -627,16 +622,10 @@ class TestWithTransitions:
 
         blank = np.zeros((600, 800, 3), dtype=np.uint8)
         transitions = [
-            TransitionInfo(
-                before_screenshot=blank,
-                after_screenshot=screenshot
-            )
+            TransitionInfo(before_screenshot=blank, after_screenshot=screenshot)
         ] * 12  # Need 10+ for boundary detection
 
-        state = builder.build_state_from_screenshots(
-            screenshots,
-            transitions_to_state=transitions
-        )
+        state = builder.build_state_from_screenshots(screenshots, transitions_to_state=transitions)
 
         assert state is not None
         # May or may not have usable_area depending on detector availability
@@ -656,13 +645,12 @@ class TestWithTransitions:
                 before_screenshot=screenshot,
                 after_screenshot=screenshot,
                 click_point=(400, 300),
-                target_state_name="next_state"
+                target_state_name="next_state",
             )
         ] * 3
 
         state = builder.build_state_from_screenshots(
-            screenshots,
-            transitions_from_state=transitions
+            screenshots, transitions_from_state=transitions
         )
 
         assert state is not None
@@ -680,26 +668,21 @@ class TestWithTransitions:
         screenshots = [screenshot] * 2
 
         blank = np.zeros((600, 800, 3), dtype=np.uint8)
-        transitions_to = [
-            TransitionInfo(
-                before_screenshot=blank,
-                after_screenshot=screenshot
-            )
-        ] * 12
+        transitions_to = [TransitionInfo(before_screenshot=blank, after_screenshot=screenshot)] * 12
 
         transitions_from = [
             TransitionInfo(
                 before_screenshot=screenshot,
                 after_screenshot=blank,
                 click_point=(400, 450),
-                target_state_name="close"
+                target_state_name="close",
             )
         ] * 2
 
         state = builder.build_state_from_screenshots(
             screenshots,
             transitions_to_state=transitions_to,
-            transitions_from_state=transitions_from
+            transitions_from_state=transitions_from,
         )
 
         assert state is not None
@@ -777,7 +760,7 @@ class TestTransitionInfo:
             before_screenshot=before,
             after_screenshot=after,
             click_point=(50, 75),
-            target_state_name="target"
+            target_state_name="target",
         )
 
         assert transition.click_point == (50, 75)
@@ -793,10 +776,7 @@ class TestTransitionInfo:
         before = np.zeros((100, 100, 3), dtype=np.uint8)
         after = np.ones((100, 100, 3), dtype=np.uint8)
 
-        transition = TransitionInfo(
-            before_screenshot=before,
-            after_screenshot=after
-        )
+        transition = TransitionInfo(before_screenshot=before, after_screenshot=after)
 
         assert transition.click_point is None
         assert transition.input_events == []
@@ -844,13 +824,12 @@ class TestIntegration:
                 before_screenshot=screenshot,
                 after_screenshot=screenshot,
                 click_point=(500, 400),
-                target_state_name="confirm"
+                target_state_name="confirm",
             )
         ] * 3
 
         state = builder.build_state_from_screenshots(
-            screenshots,
-            transitions_from_state=transitions
+            screenshots, transitions_from_state=transitions
         )
 
         assert state is not None
@@ -862,9 +841,7 @@ class TestIntegration:
         Verifies:
             - Building with same screenshots produces similar states
         """
-        screenshot = np.random.RandomState(42).randint(
-            0, 255, (400, 600, 3), dtype=np.uint8
-        )
+        screenshot = np.random.RandomState(42).randint(0, 255, (400, 600, 3), dtype=np.uint8)
         screenshots = [screenshot] * 2
 
         state1 = builder.build_state_from_screenshots(screenshots.copy())

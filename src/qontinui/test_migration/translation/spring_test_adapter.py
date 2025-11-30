@@ -501,8 +501,8 @@ class DependencyContainer:
 
     def __init__(self) -> None:
         """Initialize the dependency container."""
-        self._components = {}
-        self._singletons = {}
+        self._components: dict[str, Any] = {}
+        self._singletons: dict[str, Any] = {}
 
     def register_component(
         self, component_type: str, component_instance: Any, singleton: bool = True

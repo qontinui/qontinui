@@ -231,12 +231,12 @@ class MouseActionExecutor(ActionExecutorBase):
             image = self.context.config.image_map.get(image_id)
             if image and image.file_path:
                 # Use find wrapper to locate image
-                from ..wrappers.find_wrapper import Find
+                from ..wrappers.find_wrapper import Find  # type: ignore[attr-defined]
 
                 location = Find.image(image.file_path, similarity=similarity)
                 if location:
                     logger.debug(f"Found image at {location}")
-                    return location
+                    return location  # type: ignore[no-any-return]
                 else:
                     logger.warning(f"Image {image_id} not found on screen")
                     return None
@@ -494,7 +494,7 @@ class MouseActionExecutor(ActionExecutorBase):
             logger.error(f"Failed to move mouse to {location}")
 
         log_debug(f"Debug log written to: {debug_log_path}")
-        return success
+        return success  # type: ignore[no-any-return]
 
     def _execute_mouse_down(self, action: Action, typed_config: MouseDownActionConfig) -> bool:
         """Execute MOUSE_DOWN action (pure) - press and hold mouse button.
@@ -530,7 +530,7 @@ class MouseActionExecutor(ActionExecutorBase):
         else:
             logger.error(f"Failed to press {button.value} button")
 
-        return success
+        return success  # type: ignore[no-any-return]
 
     def _execute_mouse_up(self, action: Action, typed_config: MouseUpActionConfig) -> bool:
         """Execute MOUSE_UP action (pure) - release mouse button.
@@ -566,7 +566,7 @@ class MouseActionExecutor(ActionExecutorBase):
         else:
             logger.error(f"Failed to release {button.value} button")
 
-        return success
+        return success  # type: ignore[no-any-return]
 
     def _execute_scroll(self, action: Action, typed_config: ScrollActionConfig) -> bool:
         """Execute SCROLL/MOUSE_SCROLL action - scroll mouse wheel.
@@ -601,7 +601,7 @@ class MouseActionExecutor(ActionExecutorBase):
         else:
             logger.error(f"Failed to scroll {direction}")
 
-        return success
+        return success  # type: ignore[no-any-return]
 
     # Combined action executors
 
@@ -803,7 +803,7 @@ class MouseActionExecutor(ActionExecutorBase):
             end = (end_x, end_y)
         else:
             # It's a TargetConfig - get location
-            end = self._get_target_location(typed_config.destination)
+            end = self._get_target_location(typed_config.destination)  # type: ignore[arg-type]
 
         if not end:
             logger.error("Failed to get destination location for DRAG")

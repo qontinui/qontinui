@@ -20,7 +20,9 @@ from .coverage_models import (
 class CoverageStats:
     """Computes coverage statistics and metrics."""
 
-    def __init__(self, test_mappings: dict[str, TestMapping], tracking_start_time: datetime) -> None:
+    def __init__(
+        self, test_mappings: dict[str, TestMapping], tracking_start_time: datetime
+    ) -> None:
         """
         Initialize the stats calculator.
 

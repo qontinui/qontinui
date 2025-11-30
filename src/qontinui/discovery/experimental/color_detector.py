@@ -8,7 +8,7 @@ This detector uses k-means clustering to segment the image by color, then
 identifies connected regions within each color cluster.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 import cv2
 import numpy as np
@@ -32,7 +32,7 @@ class ColorClusterDetector(BaseDetector):
     def __init__(self):
         super().__init__("Color Cluster Detector")
 
-    def detect(self, image_path: str, **params) -> List[BBox]:
+    def detect(self, image_path: str, **params) -> list[BBox]:
         """
         Detect elements using color clustering
 
@@ -64,7 +64,7 @@ class ColorClusterDetector(BaseDetector):
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
         _, labels, centers = cv2.kmeans(
             pixels, n_clusters, None, criteria, 10, cv2.KMEANS_PP_CENTERS
-        )
+        )  # type: ignore[call-overload]
 
         # Reshape labels back to image
         labels = labels.reshape(img.shape[:2])
@@ -75,9 +75,7 @@ class ColorClusterDetector(BaseDetector):
             mask = (labels == cluster_id).astype(np.uint8) * 255
 
             # Find contours in this cluster
-            contours, _ = cv2.findContours(
-                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             for contour in contours:
                 x, y, w, h = cv2.boundingRect(contour)
@@ -92,7 +90,7 @@ class ColorClusterDetector(BaseDetector):
 
         return boxes
 
-    def get_param_grid(self) -> List[Dict[str, Any]]:
+    def get_param_grid(self) -> list[dict[str, Any]]:
         """Parameter grid for hyperparameter search"""
         return [
             {"n_clusters": 4, "use_hsv": False},

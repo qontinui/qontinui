@@ -9,7 +9,7 @@ Accuracy: 70-80% for clear text with good edges
 """
 
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -38,14 +38,14 @@ class EdgeMorphologyTextDetector(BaseRegionAnalyzer):
         return "edge_morphology_text_detector"
 
     @property
-    def supported_region_types(self) -> List[RegionType]:
+    def supported_region_types(self) -> list[RegionType]:
         return [RegionType.TEXT_AREA]
 
     @property
     def version(self) -> str:
         return "1.0.0"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize Edge + Morphology text detector.
 
@@ -78,7 +78,7 @@ class EdgeMorphologyTextDetector(BaseRegionAnalyzer):
         self.min_aspect_ratio = params["min_aspect_ratio"]
         self.max_aspect_ratio = params["max_aspect_ratio"]
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "canny_low": 50,
             "canny_high": 150,
@@ -116,9 +116,7 @@ class EdgeMorphologyTextDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -133,9 +131,7 @@ class EdgeMorphologyTextDetector(BaseRegionAnalyzer):
             },
         )
 
-    def _detect_text_regions(
-        self, gray: np.ndarray, screenshot_index: int
-    ) -> List[DetectedRegion]:
+    def _detect_text_regions(self, gray: np.ndarray, screenshot_index: int) -> list[DetectedRegion]:
         """Detect text regions in a grayscale image."""
         # Apply Gaussian blur to reduce noise
         blurred = cv2.GaussianBlur(gray, (3, 3), 0)
@@ -149,21 +145,15 @@ class EdgeMorphologyTextDetector(BaseRegionAnalyzer):
         )
 
         # Morphological closing to connect text regions
-        closed = cv2.morphologyEx(
-            edges, cv2.MORPH_CLOSE, kernel, iterations=self.close_iterations
-        )
+        closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=self.close_iterations)
 
         # Additional dilation to ensure text is connected
         if self.dilate_iterations > 0:
             dilate_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-            closed = cv2.dilate(
-                closed, dilate_kernel, iterations=self.dilate_iterations
-            )
+            closed = cv2.dilate(closed, dilate_kernel, iterations=self.dilate_iterations)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         detected_regions = []
 
@@ -178,10 +168,7 @@ class EdgeMorphologyTextDetector(BaseRegionAnalyzer):
 
             # Filter by aspect ratio (text is usually wider than tall)
             aspect_ratio = w / h if h > 0 else 0
-            if (
-                aspect_ratio < self.min_aspect_ratio
-                or aspect_ratio > self.max_aspect_ratio
-            ):
+            if aspect_ratio < self.min_aspect_ratio or aspect_ratio > self.max_aspect_ratio:
                 continue
 
             # Calculate additional features for confidence
@@ -207,9 +194,7 @@ class EdgeMorphologyTextDetector(BaseRegionAnalyzer):
             extent_score = min(extent * 2, 1.0)
             edge_score = min(edge_density * 10, 1.0)
 
-            confidence = (
-                aspect_score * 0.4 + extent_score * 0.3 + edge_score * 0.3
-            ) * 0.7
+            confidence = (aspect_score * 0.4 + extent_score * 0.3 + edge_score * 0.3) * 0.7
 
             detected_region = DetectedRegion(
                 bounding_box=BoundingBox(x, y, w, h),

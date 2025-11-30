@@ -71,7 +71,7 @@ class StateMemory:
         names = []
         for state_id in self.active_states:
             # Find state by ID - iterate through all states
-            for state in state_service.states.values():
+            for state in state_service.states.values():  # type: ignore[attr-defined]
                 if state.id == state_id:
                     names.append(state.name)
                     break

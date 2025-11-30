@@ -79,7 +79,7 @@ class UnknownState:
         """
         self._state = State(name="unknown")
         if state_service:
-            state_service.save(self._state)
+            state_service.save(self._state)  # type: ignore[attr-defined]
 
     @property
     def state(self) -> State:

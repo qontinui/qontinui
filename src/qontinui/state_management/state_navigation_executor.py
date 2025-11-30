@@ -25,8 +25,9 @@ Example:
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Any
 
 from qontinui.exceptions import StateException
 
@@ -50,7 +51,7 @@ class NavigationResult:
     """
 
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
     context: dict[str, Any] = field(default_factory=dict)
     target_state_ids: list[int] = field(default_factory=list)
     path: list[Any] = field(default_factory=list)  # List of TaskSequenceStateTransition
@@ -89,7 +90,7 @@ class StateNavigationExecutor:
         self,
         target_state_ids: list[int],
         execute: bool = True,
-        emit_event_callback: Optional[Callable[[str, dict], None]] = None,
+        emit_event_callback: Callable[[str, dict], None] | None = None,
     ) -> NavigationResult:
         """Navigate to reach ALL specified target states.
 
@@ -146,14 +147,18 @@ class StateNavigationExecutor:
             )
 
         except Exception as e:
-            logger.error(f"Unexpected error navigating to states {target_state_ids}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error navigating to states {target_state_ids}: {e}", exc_info=True
+            )
             error_msg = f"Unexpected error: {e}"
-            self.event_emitter.emit_navigation_failed(target_state_ids, error_msg, emit_event_callback)
+            self.event_emitter.emit_navigation_failed(
+                target_state_ids, error_msg, emit_event_callback
+            )
             return NavigationResult(
                 success=False, target_state_ids=target_state_ids, error_message=error_msg
             )
 
-    def _execute_navigation(self, target_state_ids: list[int], execute: bool) -> Optional[Any]:
+    def _execute_navigation(self, target_state_ids: list[int], execute: bool) -> Any | None:
         """Execute pathfinding navigation to target states.
 
         Args:
@@ -166,7 +171,9 @@ class StateNavigationExecutor:
         return self.navigator.navigate_to_states(target_state_ids=target_state_ids, execute=execute)
 
     def _handle_navigation_not_found(
-        self, target_state_ids: list[int], emit_event_callback: Optional[Callable[[str, dict], None]]
+        self,
+        target_state_ids: list[int],
+        emit_event_callback: Callable[[str, dict], None] | None,
     ) -> NavigationResult:
         """Handle case where no path is found to target states.
 
@@ -186,9 +193,7 @@ class StateNavigationExecutor:
             error_message=error_msg,
         )
 
-    def _build_result(
-        self, target_state_ids: list[int], nav_context: Any
-    ) -> NavigationResult:
+    def _build_result(self, target_state_ids: list[int], nav_context: Any) -> NavigationResult:
         """Build navigation result from navigation context.
 
         Args:

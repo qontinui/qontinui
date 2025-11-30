@@ -128,11 +128,13 @@ class PathfindingNavigator:
         Returns:
             NavigationContext with results, or None if no path found
         """
-        logger.debug(f"navigate_to_states called with target_state_ids={target_state_ids}, execute={execute}")
+        logger.debug(
+            f"navigate_to_states called with target_state_ids={target_state_ids}, execute={execute}"
+        )
         strategy = strategy or self.default_strategy
 
         # Find path
-        logger.debug(f"Finding path to states...")
+        logger.debug("Finding path to states...")
         path = self.find_path_to_states(
             target_state_ids=target_state_ids, strategy=strategy, use_cache=use_cache
         )
@@ -143,14 +145,14 @@ class PathfindingNavigator:
             return None
 
         # Create navigation context
-        logger.debug(f"Creating navigation context...")
+        logger.debug("Creating navigation context...")
         context = NavigationContext(path=path)
 
         # Execute if requested
         if execute:
-            logger.debug(f"Executing navigation path...")
+            logger.debug("Executing navigation path...")
             self._execute_navigation(context)
-            logger.debug(f"Navigation execution completed")
+            logger.debug("Navigation execution completed")
 
         # Record navigation
         self.navigation_history.append(context)
@@ -176,7 +178,7 @@ class PathfindingNavigator:
             NavigationPath or None if no path exists
         """
         # Get current states
-        logger.debug(f"Getting current states for pathfinding...")
+        logger.debug("Getting current states for pathfinding...")
         from_states = from_state_ids or self.state_memory.active_states
         logger.debug(f"From states: {from_states}")
         if not from_states:
@@ -192,11 +194,13 @@ class PathfindingNavigator:
                 return cached_path
 
         # Compute path using MultiState
-        logger.debug(f"Computing path using multistate_adapter...")
+        logger.debug("Computing path using multistate_adapter...")
         transitions = self.multistate_adapter.find_path_to_states(
             target_state_ids=target_state_ids, current_state_ids=from_states
         )
-        logger.debug(f"Multistate adapter returned {len(transitions) if transitions else 0} transitions")
+        logger.debug(
+            f"Multistate adapter returned {len(transitions) if transitions else 0} transitions"
+        )
 
         if not transitions:
             return None
@@ -316,7 +320,9 @@ class PathfindingNavigator:
             )
             return False
 
-        logger.info(f"Attempting navigation recovery (attempt {context.recovery_attempts}/{MAX_RECOVERY_ATTEMPTS})...")
+        logger.info(
+            f"Attempting navigation recovery (attempt {context.recovery_attempts}/{MAX_RECOVERY_ATTEMPTS})..."
+        )
 
         # Get current states after failure
         current_states = self.state_memory.active_states
@@ -340,9 +346,11 @@ class PathfindingNavigator:
             return False
 
         # Check if we're about to try the same transition again
-        if (context.failed_transition and
-            alternative_path.transitions and
-            alternative_path.transitions[0].id == context.failed_transition.id):
+        if (
+            context.failed_transition
+            and alternative_path.transitions
+            and alternative_path.transitions[0].id == context.failed_transition.id
+        ):
             logger.error(
                 f"Recovery would retry the same failed transition '{context.failed_transition.name}'. "
                 "This indicates a configuration problem - the transition likely has no workflows linked."

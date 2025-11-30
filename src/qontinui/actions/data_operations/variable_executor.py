@@ -19,7 +19,6 @@ from qontinui.config import (
 )
 
 from .coercer import TypeCoercer
-from .constants import VariableScope
 from .context import VariableContext
 from .evaluator import SafeEvaluator
 
@@ -106,7 +105,7 @@ class VariableExecutor:
             True
         """
         try:
-            config: SetVariableActionConfig = get_typed_config(action)
+            config: SetVariableActionConfig = get_typed_config(action)  # type: ignore[assignment]
 
             logger.info(f"Setting variable '{config.variable_name}'")
 
@@ -175,7 +174,7 @@ class VariableExecutor:
             True
         """
         try:
-            config: GetVariableActionConfig = get_typed_config(action)
+            config: GetVariableActionConfig = get_typed_config(action)  # type: ignore[assignment]
 
             logger.info(f"Getting variable '{config.variable_name}'")
 
@@ -257,7 +256,7 @@ class VariableExecutor:
         Raises:
             ValueError: If expression is missing or evaluation fails
         """
-        expression = config.value_source.expression
+        expression = config.value_source.expression if config.value_source is not None else None
         if not expression:
             raise ValueError("Expression source requires 'expression' field")
 
@@ -281,7 +280,7 @@ class VariableExecutor:
         # Truncate for logging
         value_preview = value[:50] + "..." if len(value) > 50 else value
         logger.debug(f"Read from clipboard: {value_preview}")
-        return value
+        return value  # type: ignore[no-any-return]
 
     def _get_value_from_ocr(self, config: SetVariableActionConfig) -> Any:
         """Get value from OCR extraction (placeholder).
@@ -298,8 +297,7 @@ class VariableExecutor:
             NotImplementedError: Always (feature not yet implemented)
         """
         raise NotImplementedError(
-            "OCR value source not yet implemented. "
-            "Requires integration with OCR engine."
+            "OCR value source not yet implemented. " "Requires integration with OCR engine."
         )
 
     def _get_value_from_target(self, config: SetVariableActionConfig) -> Any:
@@ -317,6 +315,5 @@ class VariableExecutor:
             NotImplementedError: Always (feature not yet implemented)
         """
         raise NotImplementedError(
-            "Target value source not yet implemented. "
-            "Requires integration with find operations."
+            "Target value source not yet implemented. " "Requires integration with find operations."
         )

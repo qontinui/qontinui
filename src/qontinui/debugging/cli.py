@@ -267,7 +267,7 @@ class DebugCLI(cmd.Cmd):
             history failed    - Show only failed actions
         """
         args = arg.split()
-        limit = 10
+        limit: int | None = 10
         failed_only = False
 
         if args:

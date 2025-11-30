@@ -120,8 +120,7 @@ class EnhancedVariableContext:
 
         if scope not in ("execution", "workflow", "global"):
             raise ValueError(
-                f"Invalid scope '{scope}'. Must be one of: "
-                "execution, workflow, global"
+                f"Invalid scope '{scope}'. Must be one of: " "execution, workflow, global"
             )
 
         with self._lock:
@@ -149,7 +148,7 @@ class EnhancedVariableContext:
             # Auto-save if enabled and scope is persistent
             if self._auto_save and scope in ("workflow", "global"):
                 try:
-                    self.save_to_file(scope)
+                    self.save_to_file(scope)  # type: ignore[arg-type]
                 except Exception as e:
                     logger.warning(f"Auto-save failed for {scope} scope: {e}")
 
@@ -211,8 +210,7 @@ class EnhancedVariableContext:
                     return storage[name]
                 else:
                     logger.debug(
-                        f"Variable '{name}' not found in {scope} scope, "
-                        f"returning default"
+                        f"Variable '{name}' not found in {scope} scope, " f"returning default"
                     )
                     return default
 
@@ -229,9 +227,7 @@ class EnhancedVariableContext:
                 logger.debug(f"Retrieved global variable '{name}'")
                 return self._global_vars[name]
 
-            logger.debug(
-                f"Variable '{name}' not found in any scope, returning default"
-            )
+            logger.debug(f"Variable '{name}' not found in any scope, returning default")
             return default
 
     def get_all(self, scope: VariableScope | None = None) -> dict[str, Any]:
@@ -398,8 +394,7 @@ class EnhancedVariableContext:
         """
         if scope not in ("execution", "workflow", "global"):
             raise ValueError(
-                f"Invalid scope '{scope}'. Must be one of: "
-                "execution, workflow, global"
+                f"Invalid scope '{scope}'. Must be one of: " "execution, workflow, global"
             )
 
         with self._lock:
@@ -453,8 +448,7 @@ class EnhancedVariableContext:
         """
         if scope not in ("workflow", "global"):
             raise ValueError(
-                f"Invalid scope '{scope}'. Only workflow and global support "
-                "file persistence"
+                f"Invalid scope '{scope}'. Only workflow and global support " "file persistence"
             )
 
         with self._lock:
@@ -468,8 +462,7 @@ class EnhancedVariableContext:
 
             if target_file is None:
                 raise ValueError(
-                    f"No file configured for {scope} scope. "
-                    f"Set {scope}_file in constructor."
+                    f"No file configured for {scope} scope. " f"Set {scope}_file in constructor."
                 )
 
             # Ensure parent directory exists
@@ -479,17 +472,11 @@ class EnhancedVariableContext:
             try:
                 with open(target_file, "w", encoding="utf-8") as f:
                     json.dump(storage, f, indent=2, ensure_ascii=False)
-                logger.info(
-                    f"Saved {len(storage)} {scope} variables to {target_file}"
-                )
+                logger.info(f"Saved {len(storage)} {scope} variables to {target_file}")
             except (TypeError, ValueError) as e:
-                raise ValueError(
-                    f"Failed to serialize {scope} variables to JSON: {e}"
-                ) from e
+                raise ValueError(f"Failed to serialize {scope} variables to JSON: {e}") from e
             except OSError as e:
-                raise OSError(
-                    f"Failed to write {scope} variables to {target_file}: {e}"
-                ) from e
+                raise OSError(f"Failed to write {scope} variables to {target_file}: {e}") from e
 
     def load_from_file(self, scope: Literal["workflow", "global"]) -> int:
         """Load variables from JSON file.
@@ -514,8 +501,7 @@ class EnhancedVariableContext:
         """
         if scope not in ("workflow", "global"):
             raise ValueError(
-                f"Invalid scope '{scope}'. Only workflow and global support "
-                "file persistence"
+                f"Invalid scope '{scope}'. Only workflow and global support " "file persistence"
             )
 
         with self._lock:
@@ -529,15 +515,11 @@ class EnhancedVariableContext:
 
             if target_file is None:
                 raise ValueError(
-                    f"No file configured for {scope} scope. "
-                    f"Set {scope}_file in constructor."
+                    f"No file configured for {scope} scope. " f"Set {scope}_file in constructor."
                 )
 
             if not target_file.exists():
-                logger.warning(
-                    f"{scope.capitalize()} variables file not found: "
-                    f"{target_file}"
-                )
+                logger.warning(f"{scope.capitalize()} variables file not found: " f"{target_file}")
                 return 0
 
             # Read JSON
@@ -555,20 +537,13 @@ class EnhancedVariableContext:
                 storage.clear()
                 storage.update(loaded_vars)
 
-                logger.info(
-                    f"Loaded {len(loaded_vars)} {scope} variables from "
-                    f"{target_file}"
-                )
+                logger.info(f"Loaded {len(loaded_vars)} {scope} variables from " f"{target_file}")
                 return len(loaded_vars)
 
             except json.JSONDecodeError as e:
-                raise ValueError(
-                    f"Failed to parse JSON from {target_file}: {e}"
-                ) from e
+                raise ValueError(f"Failed to parse JSON from {target_file}: {e}") from e
             except OSError as e:
-                raise OSError(
-                    f"Failed to read {scope} variables from {target_file}: {e}"
-                ) from e
+                raise OSError(f"Failed to read {scope} variables from {target_file}: {e}") from e
 
     def get_change_history(self) -> list[dict[str, Any]]:
         """Get history of variable changes.

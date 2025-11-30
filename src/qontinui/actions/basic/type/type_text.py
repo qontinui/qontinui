@@ -84,7 +84,7 @@ class TypeText(ActionInterface):
             ValueError: If matches does not contain TypeOptions configuration
         """
         # Get the configuration - expecting TypeOptions
-        action_config = matches.get_action_config()
+        action_config = matches.action_config
         if not isinstance(action_config, TypeOptions):
             raise ValueError("TypeText requires TypeOptions configuration")
 

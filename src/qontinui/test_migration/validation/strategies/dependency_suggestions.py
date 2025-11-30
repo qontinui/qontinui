@@ -4,8 +4,8 @@ Dependency fix suggestion strategies for Spring Boot and Mockito migration.
 
 from pathlib import Path
 
-from ..fix_models import FixComplexity, FixSuggestion, FixType
 from ...core.models import TestFile
+from ..fix_models import FixComplexity, FixSuggestion, FixType
 
 
 class DependencySuggestionStrategy:

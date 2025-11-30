@@ -7,7 +7,7 @@ This module serves as a facade that delegates to specialized strategy modules.
 from pathlib import Path
 
 from ..core.models import FailureAnalysis, TestFile
-from .fix_models import FixComplexity, FixSuggestion, FixType, MigrationIssuePattern
+from .fix_models import FixSuggestion
 from .strategies.assertion_suggestions import AssertionSuggestionStrategy
 from .strategies.dependency_suggestions import DependencySuggestionStrategy
 from .strategies.import_suggestions import ImportSuggestionStrategy

@@ -136,12 +136,12 @@ class ActionResultBuilder:
         self._lock = threading.RLock()
         self._action_config = action_config
         self._success = False
-        self._matches: list["Match"] = []
+        self._matches: list[Match] = []
         self._times_acted_on = 0
         self._text_parts: list[str] = []
         self._defined_regions: list[Region] = []
-        self._movements: list["Movement"] = []
-        self._execution_history: list["ExecutionRecord"] = []
+        self._movements: list[Movement] = []
+        self._execution_history: list[ExecutionRecord] = []
         self._active_states: set[str] = set()
         self._action_description = ""
         self._output_text = ""
@@ -360,9 +360,11 @@ class ActionResultBuilder:
 # Forward references for type hints
 class Movement:
     """Placeholder for Movement class."""
+
     pass
 
 
 class ExecutionRecord:
     """Placeholder for ExecutionRecord class."""
+
     pass

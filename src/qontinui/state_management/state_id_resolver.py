@@ -90,7 +90,7 @@ class StateIdResolver:
         # Convert the parent state name to ID
         state_id = self.all_states_in_project_service.get_state_id(state_transitions.state_name)
         if state_transitions.state_id is None and state_id is not None:
-            state_transitions.state_id = state_id
+            state_transitions.state_id = state_id  # type: ignore[assignment]
 
         # Process each transition
         for transition in state_transitions.get_transitions():
@@ -132,7 +132,7 @@ class StateTransitions:
         """Initialize StateTransitions."""
         self.state_name = ""
         self.state_id = None
-        self.transitions = []
+        self.transitions: list[Any] = []
 
     def get_transitions(self) -> list[Any]:
         """Get transitions.

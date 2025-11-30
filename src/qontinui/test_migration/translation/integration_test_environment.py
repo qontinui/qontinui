@@ -6,6 +6,7 @@ including component wiring, dependency injection, database mocking,
 and external service mocking patterns.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -63,7 +64,7 @@ class IntegrationTestEnvironment:
         self._external_services: dict[str, ExternalServiceConfiguration] = {}
         self._environment_variables: dict[str, str] = {}
         self._test_fixtures: list[str] = []
-        self._cleanup_handlers: list[callable] = []
+        self._cleanup_handlers: list[Callable[[], None]] = []
 
     def configure_component_wiring(self, test_file: TestFile) -> dict[str, list[str]]:
         """

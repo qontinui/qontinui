@@ -6,7 +6,7 @@ and execution times between Java and Python test executions.
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...core.models import TestResult
@@ -98,7 +98,7 @@ class PerformanceValidator:
             validation_result is one of: "equivalent", "different", "error"
         """
         metrics = self.calculate_metrics(java_result, python_result)
-        differences = []
+        differences: list[Any] = []
 
         # Consider performance equivalent if within tolerance
         if abs(metrics.performance_delta_percent) <= self.performance_tolerance_percent:

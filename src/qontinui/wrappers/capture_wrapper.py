@@ -110,7 +110,7 @@ class CaptureWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"CaptureWrapper.capture (MOCK): monitor={monitor}")
-            return self.mock_capture.capture(monitor)
+            return self.mock_capture.capture(monitor)  # type: ignore[no-any-return]
         else:
             logger.debug(f"CaptureWrapper.capture (REAL): monitor={monitor}")
             screenshot = self.hal_capture.capture_screen(monitor)
@@ -118,7 +118,7 @@ class CaptureWrapper(BaseWrapper):
             # Record screenshot if recording is enabled
             self._record_screenshot(screenshot)
 
-            return screenshot
+            return screenshot  # type: ignore[no-any-return]
 
     def capture_region(
         self,
@@ -144,7 +144,7 @@ class CaptureWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"CaptureWrapper.capture_region (MOCK): {region}")
-            return self.mock_capture.capture_region(region, monitor)
+            return self.mock_capture.capture_region(region, monitor)  # type: ignore[no-any-return]
         else:
             logger.debug(f"CaptureWrapper.capture_region (REAL): {region}")
             screenshot = self.hal_capture.capture_region(
@@ -158,7 +158,7 @@ class CaptureWrapper(BaseWrapper):
             # Record screenshot if recording is enabled
             self._record_screenshot(screenshot)
 
-            return screenshot
+            return screenshot  # type: ignore[no-any-return]
 
     def get_monitors(self) -> list["Monitor"]:
         """Get list of available monitors.
@@ -176,10 +176,10 @@ class CaptureWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug("CaptureWrapper.get_monitors (MOCK)")
-            return self.mock_capture.get_monitors()
+            return self.mock_capture.get_monitors()  # type: ignore[no-any-return]
         else:
             logger.debug("CaptureWrapper.get_monitors (REAL)")
-            return self.hal_capture.get_monitors()
+            return self.hal_capture.get_monitors()  # type: ignore[no-any-return]
 
     def get_primary_monitor(self) -> "Monitor":
         """Get primary monitor.
@@ -196,10 +196,10 @@ class CaptureWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug("CaptureWrapper.get_primary_monitor (MOCK)")
-            return self.mock_capture.get_primary_monitor()
+            return self.mock_capture.get_primary_monitor()  # type: ignore[no-any-return]
         else:
             logger.debug("CaptureWrapper.get_primary_monitor (REAL)")
-            return self.hal_capture.get_primary_monitor()
+            return self.hal_capture.get_primary_monitor()  # type: ignore[no-any-return]
 
     def get_screen_size(self) -> tuple[int, int]:
         """Get screen size.
@@ -216,10 +216,10 @@ class CaptureWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug("CaptureWrapper.get_screen_size (MOCK)")
-            return self.mock_capture.get_screen_size()
+            return self.mock_capture.get_screen_size()  # type: ignore[no-any-return]
         else:
             logger.debug("CaptureWrapper.get_screen_size (REAL)")
-            return self.hal_capture.get_screen_size()
+            return self.hal_capture.get_screen_size()  # type: ignore[no-any-return]
 
     def get_pixel_color(
         self,
@@ -246,10 +246,10 @@ class CaptureWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"CaptureWrapper.get_pixel_color (MOCK): ({x}, {y})")
-            return self.mock_capture.get_pixel_color(x, y, monitor)
+            return self.mock_capture.get_pixel_color(x, y, monitor)  # type: ignore[no-any-return]
         else:
             logger.debug(f"CaptureWrapper.get_pixel_color (REAL): ({x}, {y})")
-            return self.hal_capture.get_pixel_color(x, y, monitor)
+            return self.hal_capture.get_pixel_color(x, y, monitor)  # type: ignore[no-any-return]
 
     def save_screenshot(
         self,
@@ -276,13 +276,13 @@ class CaptureWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"CaptureWrapper.save_screenshot (MOCK): {filepath}")
-            return self.mock_capture.save_screenshot(filepath, monitor, region)
+            return self.mock_capture.save_screenshot(filepath, monitor, region)  # type: ignore[no-any-return]
         else:
             logger.debug(f"CaptureWrapper.save_screenshot (REAL): {filepath}")
             region_tuple = None
             if region:
                 region_tuple = (region.x, region.y, region.w, region.h)
-            return self.hal_capture.save_screenshot(filepath, monitor, region_tuple)
+            return self.hal_capture.save_screenshot(filepath, monitor, region_tuple)  # type: ignore[no-any-return]
 
     def _record_screenshot(self, screenshot: Image.Image):
         """Record a screenshot if recording is enabled.
@@ -300,7 +300,8 @@ class CaptureWrapper(BaseWrapper):
 
         # Record screenshot
         try:
-            controller.recorder.record_screenshot(screenshot)
-            logger.debug("Recorded screenshot")
+            if controller.recorder is not None:
+                controller.recorder.record_screenshot(screenshot)
+                logger.debug("Recorded screenshot")
         except Exception as e:
             logger.error(f"Failed to record screenshot: {e}", exc_info=True)

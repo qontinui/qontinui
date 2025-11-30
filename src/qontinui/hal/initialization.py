@@ -71,8 +71,7 @@ def initialize_hal(config: HALConfig | None = None) -> HALContainer:
         container = HALContainer.create_from_config(config)
     except ImportError as e:
         raise HALInitializationError(
-            f"Failed to import HAL backend: {e}. "
-            f"Make sure required libraries are installed."
+            f"Failed to import HAL backend: {e}. " f"Make sure required libraries are installed."
         ) from e
     except Exception as e:
         raise HALInitializationError(f"Failed to initialize HAL components: {e}") from e
@@ -153,12 +152,12 @@ def _create_screen_capture(config: HALConfig) -> IScreenCapture:
     elif backend == "pyautogui":
         from .implementations.pyautogui_capture import PyAutoGUIScreenCapture
 
-        return PyAutoGUIScreenCapture(config)
+        return PyAutoGUIScreenCapture(config)  # type: ignore[no-any-return]
 
     elif backend == "pillow":
         from .implementations.pillow_capture import PillowScreenCapture
 
-        return PillowScreenCapture(config)
+        return PillowScreenCapture(config)  # type: ignore[no-any-return]
 
     elif backend == "native":
         return _create_native_screen_capture(config)
@@ -218,17 +217,17 @@ def _create_pattern_matcher(config: HALConfig) -> IPatternMatcher:
     if backend == "opencv":
         from .implementations.opencv_matcher import OpenCVMatcher
 
-        return OpenCVMatcher(config)
+        return OpenCVMatcher(config)  # type: ignore[no-any-return]
 
     elif backend == "pyautogui":
         from .implementations.pyautogui_matcher import PyAutoGUIMatcher
 
-        return PyAutoGUIMatcher(config)
+        return PyAutoGUIMatcher(config)  # type: ignore[no-any-return]
 
     elif backend == "tensorflow":
         from .implementations.tensorflow_matcher import TensorFlowMatcher
 
-        return TensorFlowMatcher(config)
+        return TensorFlowMatcher(config)  # type: ignore[no-any-return]
 
     elif backend == "native":
         return _create_native_pattern_matcher(config)
@@ -275,12 +274,16 @@ def _create_keyboard_controller(config: HALConfig) -> IKeyboardController:
         return KeyboardOperations(keyboard.Controller())
 
     elif backend == "pyautogui":
-        # TODO: Implement PyAutoGUI keyboard operations
-        raise NotImplementedError("PyAutoGUI keyboard backend not yet implemented")
+        from .implementations.pyautogui_keyboard import PyAutoGUIKeyboardOperations
+
+        return PyAutoGUIKeyboardOperations()
 
     elif backend == "selenium":
-        # TODO: Implement Selenium keyboard operations
-        raise NotImplementedError("Selenium keyboard backend not yet implemented")
+        # Selenium keyboard operations require WebDriver instance
+        # This should be configured via SeleniumHAL, not standalone
+        raise NotImplementedError(
+            "Selenium keyboard backend requires WebDriver. Use SeleniumHAL instead."
+        )
 
     elif backend == "native":
         return _create_native_keyboard_controller(config)
@@ -312,12 +315,16 @@ def _create_mouse_controller(config: HALConfig) -> IMouseController:
         return MouseOperations(mouse.Controller())
 
     elif backend == "pyautogui":
-        # TODO: Implement PyAutoGUI mouse operations
-        raise NotImplementedError("PyAutoGUI mouse backend not yet implemented")
+        from .implementations.pyautogui_mouse import PyAutoGUIMouseOperations
+
+        return PyAutoGUIMouseOperations()
 
     elif backend == "selenium":
-        # TODO: Implement Selenium mouse operations
-        raise NotImplementedError("Selenium mouse backend not yet implemented")
+        # Selenium mouse operations require WebDriver instance
+        # This should be configured via SeleniumHAL, not standalone
+        raise NotImplementedError(
+            "Selenium mouse backend requires WebDriver. Use SeleniumHAL instead."
+        )
 
     elif backend == "native":
         return _create_native_mouse_controller(config)
@@ -384,22 +391,22 @@ def _create_ocr_engine(config: HALConfig) -> IOCREngine:
     if backend == "easyocr":
         from .implementations.easyocr_engine import EasyOCREngine
 
-        return EasyOCREngine(config)
+        return EasyOCREngine(config)  # type: ignore[no-any-return]
 
     elif backend == "tesseract":
         from .implementations.tesseract_engine import TesseractEngine
 
-        return TesseractEngine(config)
+        return TesseractEngine(config)  # type: ignore[no-any-return]
 
     elif backend == "cloud":
         from .implementations.cloud_ocr_engine import CloudOCREngine
 
-        return CloudOCREngine(config)
+        return CloudOCREngine(config)  # type: ignore[no-any-return]
 
     elif backend == "none":
         from .implementations.null_ocr_engine import NullOCREngine
 
-        return NullOCREngine(config)
+        return NullOCREngine(config)  # type: ignore[no-any-return]
 
     else:
         raise ValueError(f"Unsupported OCR engine backend: {backend}")
@@ -422,12 +429,12 @@ def _create_platform_specific(config: HALConfig) -> IPlatformSpecific:
     if platform == "windows":
         from .implementations.platform.windows import WindowsPlatform
 
-        return WindowsPlatform(config)
+        return WindowsPlatform(config)  # type: ignore[no-any-return]
 
     elif platform == "macos":
         from .implementations.platform.macos import MacOSPlatform
 
-        return MacOSPlatform(config)
+        return MacOSPlatform(config)  # type: ignore[no-any-return]
 
     elif platform == "linux":
         from .implementations.platform.linux import LinuxPlatform

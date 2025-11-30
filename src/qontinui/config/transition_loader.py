@@ -130,7 +130,7 @@ def _load_single_transition(transition_def: dict[str, Any], state_service: State
             )
 
         # Add to target state's incoming_transitions
-        to_state.incoming_transitions.append(transition)
+        to_state.incoming_transitions.append(transition)  # type: ignore[arg-type]
         logger.info(
             f"Loaded IncomingTransition '{transition_id}' to state '{to_state.name}' "
             f"with {len(transition.workflow_ids)} workflows"
@@ -166,7 +166,7 @@ def _load_single_transition(transition_def: dict[str, Any], state_service: State
         )
 
     # Add transition to the source state
-    from_state.add_transition(transition)
+    from_state.add_transition(transition)  # type: ignore[arg-type]
 
     logger.debug(
         f"ADDED transition '{transition_id}' to state '{from_state.name}' - state now has {len(from_state.transitions)} transitions"
@@ -396,7 +396,7 @@ def _link_workflows_to_transition(
 
             # Optimize helper workflows before registration
             # Transform sequential IF actions checking multiple images into a single FIND action
-            actions = _optimize_helper_workflow(actions, inline_workflow_name)
+            actions = _optimize_helper_workflow(actions, inline_workflow_name)  # type: ignore[arg-type]
 
             # Register the workflow in the registry with name
             # The registry signature is: register_workflow(id, actions, name)
@@ -547,7 +547,7 @@ def validate_transition_graph(state_service: StateService) -> list[str]:
     all_target_states = set()
     for state in state_service.get_all_states():
         for transition in state.transitions:
-            all_target_states.update(transition.activate)
+            all_target_states.update(transition.activate)  # type: ignore[attr-defined]
 
     unreachable_states = []
     for state in state_service.get_all_states():

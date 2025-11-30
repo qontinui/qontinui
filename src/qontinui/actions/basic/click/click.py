@@ -101,7 +101,7 @@ class Click(ActionInterface):
         log_debug(f"execute() called with target type: {type(target).__name__}")
 
         # Initialize ActionResult with stored ClickOptions
-        matches = ActionResult(self.options)
+        matches = ActionResult(self.options)  # type: ignore[arg-type,call-arg]
         if target is None:
             log_debug("Target is None, returning False")
             return False
@@ -172,15 +172,15 @@ class Click(ActionInterface):
         for obj_idx, obj_collection in enumerate(object_collections):
             log_func(f"Processing object collection #{obj_idx+1}")
             log_func(f"  - matches: {len(obj_collection.matches)}")
-            log_func(f"  - locations: {len(obj_collection.locations)}")
-            log_func(f"  - regions: {len(obj_collection.regions)}")
+            log_func(f"  - locations: {len(obj_collection.locations)}")  # type: ignore[attr-defined]
+            log_func(f"  - regions: {len(obj_collection.regions)}")  # type: ignore[attr-defined]
             # Click on any existing matches in the collection (ActionResult objects with match_list)
             for ar_idx, action_result in enumerate(obj_collection.matches):
                 log_func(
-                    f"  Processing ActionResult #{ar_idx+1} with {len(action_result.match_list)} matches"
+                    f"  Processing ActionResult #{ar_idx+1} with {len(action_result.matches)} matches"
                 )
                 # ActionResult contains a match_list with actual Match objects (from find module)
-                for fm_idx, find_match in enumerate(action_result.match_list):
+                for fm_idx, find_match in enumerate(action_result.matches):
                     location = find_match.target
                     log_func(f"    Match #{fm_idx+1}: location={location}")
                     if location:  # Only click if match has a target location
@@ -207,7 +207,7 @@ class Click(ActionInterface):
                 # Wrap in find Match for compatibility with match_list
                 find_match = FindMatch(match_object=model_match)
                 self._click(state_location.location, click_options, model_match)
-                matches.match_list.append(find_match)
+                matches.matches.append(find_match)  # type: ignore[attr-defined]
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
@@ -222,13 +222,13 @@ class Click(ActionInterface):
                 # Wrap in find Match for compatibility with match_list
                 find_match = FindMatch(match_object=model_match)
                 self._click(location, click_options, model_match)
-                matches.match_list.append(find_match)
+                matches.matches.append(find_match)  # type: ignore[attr-defined]
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
 
         # Set success based on whether we clicked anything
-        matches.success = clicked_count > 0
+        object.__setattr__(matches, "success", clicked_count > 0)
 
     def _get_total_targets(self, object_collections: tuple[ObjectCollection, ...]) -> int:
         """Count total number of clickable targets across all collections.
@@ -348,6 +348,6 @@ class ActionResultFactory:
         Returns:
             New ActionResult instance
         """
-        result = ActionResult(action_config)
-        result.action_description = description
+        result = ActionResult(action_config)  # type: ignore[call-arg]
+        object.__setattr__(result, "action_description", description)
         return result

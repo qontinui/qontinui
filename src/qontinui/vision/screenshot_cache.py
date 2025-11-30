@@ -10,7 +10,7 @@ import asyncio
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -94,7 +94,7 @@ class ScreenshotCache:
             # Cache it
             self._cache = CachedScreenshot(image=screenshot, timestamp=now)
 
-            return screenshot
+            return cast(np.ndarray, screenshot)
 
     def clear(self):
         """

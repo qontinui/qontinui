@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 def create_app(
     execution_manager: ExecutionManager | None = None,
     enable_cors: bool = True,
-    cors_origins: list[str] = None,
+    cors_origins: list[str] | None = None,
 ) -> FastAPI:
     """Create FastAPI application with router composition.
 
@@ -87,7 +87,7 @@ def create_app(
         Returns:
             ExecutionManager instance
         """
-        return app.state.execution_manager
+        return app.state.execution_manager  # type: ignore[no-any-return]
 
     # Override the get_manager dependency in all routers
     app.dependency_overrides[execution_router.get_manager] = get_manager_override

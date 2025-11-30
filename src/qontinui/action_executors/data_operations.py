@@ -89,7 +89,7 @@ class DataOperationsExecutorAdapter(ActionExecutorBase):
 
         try:
             # Execute via the wrapped executor
-            context = {}
+            context: dict[str, Any] = {}
 
             if action_type == "SET_VARIABLE":
                 result = self._wrapped_executor.execute_set_variable(action, context)
@@ -123,7 +123,7 @@ class DataOperationsExecutorAdapter(ActionExecutorBase):
                 self._emit_action_failure(action, error_msg, result)
                 logger.error(f"Data operation {action_type} failed: {error_msg}")
 
-            return success
+            return success  # type: ignore[no-any-return]
 
         except ActionExecutionError:
             # Re-raise ActionExecutionErrors as-is

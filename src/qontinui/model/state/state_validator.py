@@ -4,6 +4,7 @@ Performs consistency checks across state storage, lifecycle, and relationships.
 """
 
 import logging
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ class StateValidator:
         Returns:
             True if state exists
         """
-        return self._repository_contains(name)
+        return cast(bool, self._repository_contains(name))
 
     def validate_active_state(self, name: str) -> bool:
         """Validate that a state exists and is properly tracked.

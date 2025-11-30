@@ -45,7 +45,7 @@ class Vanish(ActionInterface):
             object_collections: Collections defining what should vanish
         """
         if not isinstance(action_result.action_config, VanishOptions):
-            action_result.success = False
+            object.__setattr__(action_result, "success", False)
             return
 
         vanish_options = action_result.action_config
@@ -58,12 +58,14 @@ class Vanish(ActionInterface):
             vanish_options.get_poll_interval(),
         )
 
-        action_result.success = vanished
+        object.__setattr__(action_result, "success", vanished)
         if vanished:
-            action_result.output_text = "Element(s) vanished successfully"
+            object.__setattr__(action_result, "output_text", "Element(s) vanished successfully")
         else:
-            action_result.output_text = (
-                f"Element(s) still present after {vanish_options.get_max_wait_time()} seconds"
+            object.__setattr__(
+                action_result,
+                "output_text",
+                f"Element(s) still present after {vanish_options.get_max_wait_time()} seconds",
             )
 
     def _wait_for_vanish(
@@ -94,14 +96,16 @@ class Vanish(ActionInterface):
             # Check if elements are still present
             if self._elements_are_gone(action_result, object_collections):
                 # Elements have vanished
-                action_result.duration = timedelta(seconds=time.time() - start_time)
+                object.__setattr__(
+                    action_result, "duration", timedelta(seconds=time.time() - start_time)
+                )
                 return True
 
             # Wait before next check
             time.sleep(poll_interval)
 
         # Timeout - elements still present
-        action_result.duration = timedelta(seconds=max_wait)
+        object.__setattr__(action_result, "duration", timedelta(seconds=max_wait))
         return False
 
     def _elements_are_gone(
@@ -121,8 +125,8 @@ class Vanish(ActionInterface):
             return True  # If no find configured, consider elements gone
 
         # Use Find to check for presence
-        find_result = ActionResult(action_result.action_config)
+        find_result = ActionResult(action_result.action_config)  # type: ignore[arg-type,call-arg]
         self.find.perform(find_result, *object_collections)
 
         # Elements are gone if Find fails or finds no matches
-        return not find_result.is_success or len(find_result.match_list) == 0
+        return not find_result.is_success or len(find_result.matches) == 0

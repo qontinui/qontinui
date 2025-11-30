@@ -28,8 +28,8 @@ from typing import Any
 
 from qontinui.config import Action, get_typed_config
 
-from .conditional_executor import ConditionalExecutor
 from .condition_evaluator import ConditionEvaluator
+from .conditional_executor import ConditionalExecutor
 from .exceptions import BreakLoop, ContinueLoop
 from .flow_control_executor import FlowControlExecutor
 from .loop_executor import LoopExecutor
@@ -122,7 +122,7 @@ class ControlFlowExecutor:
             ValueError: If loop configuration is invalid
         """
         config = get_typed_config(action)
-        return self._loop_executor.execute_loop(config, action.id)
+        return self._loop_executor.execute_loop(config, action.id)  # type: ignore[arg-type]
 
     def execute_if(self, action: Action) -> dict[str, Any]:
         """Execute an IF action (conditional branching).
@@ -139,7 +139,7 @@ class ControlFlowExecutor:
                 - errors: List of errors encountered (if any)
         """
         config = get_typed_config(action)
-        return self._conditional_executor.execute_if(action, config)
+        return self._conditional_executor.execute_if(action, config)  # type: ignore[arg-type]
 
     def execute_break(self, action: Action) -> None:
         """Execute a BREAK action (exit loop).
@@ -238,7 +238,7 @@ class ControlFlowExecutor:
                 for key, value in self.variables.items():
                     context.set_variable(key, value)
 
-                return result.get("success", True)
+                return result.get("success", True)  # type: ignore[no-any-return]
 
             except Exception as e:
                 logger.error(f"Action execution failed: {e}")

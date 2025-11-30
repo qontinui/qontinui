@@ -15,7 +15,7 @@ from .color_find_options import (
     HSVBinOptionsBuilder,
 )
 from .color_statistics import ColorStatistics, ColorStatisticsAnalyzer
-from .find_color import ColorProfile, FindColor
+from .find_color import ColorProfile, FindColor  # type: ignore[attr-defined]
 
 __all__ = [
     # Main actions

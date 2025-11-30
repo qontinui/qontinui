@@ -16,7 +16,9 @@ class PerceptionException(QontinuiException):
 class ElementNotFoundException(PerceptionException):
     """Raised when element cannot be found."""
 
-    def __init__(self, element_description: str, search_region: str | None = None, **kwargs) -> None:
+    def __init__(
+        self, element_description: str, search_region: str | None = None, **kwargs
+    ) -> None:
         """Initialize with search details."""
         message = f"Element '{element_description}' not found"
         if search_region:

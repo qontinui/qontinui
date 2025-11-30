@@ -5,7 +5,8 @@ This module provides hooks for tracking execution progress and timing.
 
 import logging
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from ...config import Action
 from .base import ExecutionHook

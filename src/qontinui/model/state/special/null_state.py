@@ -63,7 +63,7 @@ class NullState:
 
     def __init__(self) -> None:
         """Initialize NullState with a null state."""
-        self._state = State(name="null", state_enum=NullStateName.NULL)
+        self._state = State(name="null", state_enum=NullStateName.NULL)  # type: ignore[arg-type]
 
     @property
     def state(self) -> State:

@@ -9,6 +9,10 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from .code_actions import (
+    CodeBlockActionConfig,
+    CustomFunctionActionConfig,
+)
 from .control_flow import (
     BreakActionConfig,
     ContinueActionConfig,
@@ -55,10 +59,6 @@ from .state_actions import (
     GoToStateActionConfig,
     RunWorkflowActionConfig,
     ScreenshotActionConfig,
-)
-from .code_actions import (
-    CodeBlockActionConfig,
-    CustomFunctionActionConfig,
 )
 
 
@@ -145,4 +145,4 @@ def get_typed_config(action: Action) -> BaseModel:
     if config_class is None:
         raise ValueError(f"Unknown action type: {action.type}")
 
-    return config_class.model_validate(action.config)
+    return config_class.model_validate(action.config)  # type: ignore[no-any-return, attr-defined]

@@ -88,7 +88,9 @@ class DiagnosticReporterImpl(DiagnosticReporter):
         Returns:
             List of dependency differences
         """
-        return self._comprehensive_analyzer.detect_dependency_differences(java_test, python_test_path)
+        return self._comprehensive_analyzer.detect_dependency_differences(
+            java_test, python_test_path
+        )
 
     def detect_setup_differences(
         self, java_test: TestFile, python_test_path: Path

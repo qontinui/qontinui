@@ -292,7 +292,14 @@ class ErrorRecoveryAspect:
 
                         return result
 
-                    except (OSError, RuntimeError, ValueError, TypeError, AttributeError, ImportError) as e:
+                    except (
+                        OSError,
+                        RuntimeError,
+                        ValueError,
+                        TypeError,
+                        AttributeError,
+                        ImportError,
+                    ) as e:
                         last_exception = e
 
                         # Update error count
@@ -326,7 +333,13 @@ class ErrorRecoveryAspect:
                                 if handler.can_handle(e):
                                     try:
                                         return handler.handle(e, context)
-                                    except (OSError, RuntimeError, ValueError, TypeError, AttributeError):
+                                    except (
+                                        OSError,
+                                        RuntimeError,
+                                        ValueError,
+                                        TypeError,
+                                        AttributeError,
+                                    ):
                                         # Handler failed, try next handler
                                         continue
 
@@ -335,7 +348,13 @@ class ErrorRecoveryAspect:
                                 logger.info(f"Using fallback for {method_name}")
                                 try:
                                     return fallback()
-                                except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as fallback_error:
+                                except (
+                                    OSError,
+                                    RuntimeError,
+                                    ValueError,
+                                    TypeError,
+                                    AttributeError,
+                                ) as fallback_error:
                                     # Fallback failed, will re-raise original exception below
                                     logger.error(f"Fallback also failed: {fallback_error}")
 

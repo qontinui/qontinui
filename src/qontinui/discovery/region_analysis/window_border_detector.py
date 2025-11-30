@@ -10,7 +10,7 @@ Accuracy: 75-85% for windows with clear borders
 """
 
 from io import BytesIO
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -39,14 +39,14 @@ class WindowBorderDetector(BaseRegionAnalyzer):
         return "window_border_detector"
 
     @property
-    def supported_region_types(self) -> List[RegionType]:
+    def supported_region_types(self) -> list[RegionType]:
         return [RegionType.WINDOW]
 
     @property
     def version(self) -> str:
         return "1.0.0"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize Window Border detector.
 
@@ -66,7 +66,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
         self.border_thickness_threshold = params["border_thickness_threshold"]
         self.rectangularity_threshold = params["rectangularity_threshold"]
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_window_width": 150,
             "min_window_height": 100,
@@ -101,9 +101,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -117,11 +115,9 @@ class WindowBorderDetector(BaseRegionAnalyzer):
             },
         )
 
-    def _detect_windows(
-        self, gray: np.ndarray, screenshot_index: int
-    ) -> List[DetectedRegion]:
+    def _detect_windows(self, gray: np.ndarray, screenshot_index: int) -> list[DetectedRegion]:
         """Detect windows in an image."""
-        detected_regions = []
+        detected_regions: list[DetectedRegion] = []
         img_area = gray.shape[0] * gray.shape[1]
 
         # Apply edge detection
@@ -132,9 +128,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
         dilated = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, hierarchy = cv2.findContours(
-            dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, hierarchy = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         # Analyze each contour
         for i, contour in enumerate(contours):
@@ -190,9 +184,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
 
         return detected_regions
 
-    def _check_for_border(
-        self, gray: np.ndarray, x: int, y: int, w: int, h: int
-    ) -> bool:
+    def _check_for_border(self, gray: np.ndarray, x: int, y: int, w: int, h: int) -> bool:
         """Check if the region has a visible border."""
         # Sample pixels along the edges
         top_edge = gray[y : y + self.border_thickness_threshold, x : x + w]
@@ -202,14 +194,8 @@ class WindowBorderDetector(BaseRegionAnalyzer):
 
         # Check if edges have different intensity than interior
         interior = gray[
-            y
-            + self.border_thickness_threshold * 2 : y
-            + h
-            - self.border_thickness_threshold * 2,
-            x
-            + self.border_thickness_threshold * 2 : x
-            + w
-            - self.border_thickness_threshold * 2,
+            y + self.border_thickness_threshold * 2 : y + h - self.border_thickness_threshold * 2,
+            x + self.border_thickness_threshold * 2 : x + w - self.border_thickness_threshold * 2,
         ]
 
         if interior.size == 0:
@@ -229,7 +215,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
         # Borders are typically darker or lighter than content
         intensity_diff = abs(edge_mean - interior_mean)
 
-        return intensity_diff > 10  # Threshold for border detection
+        return intensity_diff > 10  # type: ignore[no-any-return]  # Threshold for border detection
 
     def _calculate_window_confidence(
         self,
@@ -259,9 +245,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
 
         return min(confidence, 1.0)
 
-    def _check_title_bar_region(
-        self, gray: np.ndarray, x: int, y: int, w: int, h: int
-    ) -> bool:
+    def _check_title_bar_region(self, gray: np.ndarray, x: int, y: int, w: int, h: int) -> bool:
         """Check if there's a title-bar-like region at the top."""
         # Check top 10% of window for horizontal uniformity
         title_height = min(40, int(h * 0.1))
@@ -275,11 +259,9 @@ class WindowBorderDetector(BaseRegionAnalyzer):
         row_std = np.std(row_means)
 
         # Title bars typically have uniform rows
-        return row_std < 15
+        return row_std < 15  # type: ignore[no-any-return]
 
-    def _remove_overlapping_windows(
-        self, windows: List[DetectedRegion]
-    ) -> List[DetectedRegion]:
+    def _remove_overlapping_windows(self, windows: list[DetectedRegion]) -> list[DetectedRegion]:
         """Remove overlapping windows, keeping larger ones."""
         if len(windows) <= 1:
             return windows
@@ -291,7 +273,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
             reverse=True,
         )
 
-        keep = []
+        keep: list[Any] = []
         for window in sorted_windows:
             # Check if it overlaps significantly with any kept window
             overlaps = False

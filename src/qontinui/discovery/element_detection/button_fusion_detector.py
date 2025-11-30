@@ -7,7 +7,7 @@ to achieve high recall from shape detection and high precision from text/color.
 
 import logging
 from io import BytesIO
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -53,7 +53,7 @@ class ButtonFusionDetector(BaseAnalyzer):
     def required_screenshots(self) -> int:
         return 1
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             # Strategy weights
             "shape_weight": 0.4,
@@ -96,9 +96,7 @@ class ButtonFusionDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Perform multi-strategy fusion detection"""
-        logger.info(
-            f"Running fusion detection on {len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running fusion detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -112,9 +110,7 @@ class ButtonFusionDetector(BaseAnalyzer):
             all_elements.extend(elements)
 
         # Calculate overall confidence based on agreement
-        avg_confidence = (
-            np.mean([e.confidence for e in all_elements]) if all_elements else 0.0
-        )
+        avg_confidence = np.mean([e.confidence for e in all_elements]) if all_elements else 0.0
 
         logger.info(
             f"Found {len(all_elements)} button candidates with "
@@ -138,7 +134,7 @@ class ButtonFusionDetector(BaseAnalyzer):
             },
         )
 
-    def _load_images(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots as numpy arrays"""
         images = []
         for data in screenshot_data:
@@ -147,8 +143,8 @@ class ButtonFusionDetector(BaseAnalyzer):
         return images
 
     async def _analyze_screenshot(
-        self, img: np.ndarray, screenshot_idx: int, params: Dict[str, Any]
-    ) -> List[DetectedElement]:
+        self, img: np.ndarray, screenshot_idx: int, params: dict[str, Any]
+    ) -> list[DetectedElement]:
         """Analyze single screenshot using fusion approach"""
 
         # Run all three detection strategies
@@ -171,8 +167,8 @@ class ButtonFusionDetector(BaseAnalyzer):
         return fused_elements
 
     def _detect_by_shape(
-        self, img: np.ndarray, params: Dict[str, Any]
-    ) -> List[Tuple[BoundingBox, float]]:
+        self, img: np.ndarray, params: dict[str, Any]
+    ) -> list[tuple[BoundingBox, float]]:
         """
         Detect button candidates by shape (rectangles with edges)
         Returns list of (bbox, confidence) tuples
@@ -190,9 +186,7 @@ class ButtonFusionDetector(BaseAnalyzer):
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             # Get bounding rectangle
@@ -204,9 +198,7 @@ class ButtonFusionDetector(BaseAnalyzer):
             # Filter by size and aspect ratio
             if not (params["min_area"] <= area <= params["max_area"]):
                 continue
-            if not (
-                params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]
-            ):
+            if not (params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]):
                 continue
 
             # Calculate rectangularity (how close to perfect rectangle)
@@ -226,8 +218,8 @@ class ButtonFusionDetector(BaseAnalyzer):
         return candidates
 
     def _detect_text_regions(
-        self, img: np.ndarray, params: Dict[str, Any]
-    ) -> List[Tuple[BoundingBox, float]]:
+        self, img: np.ndarray, params: dict[str, Any]
+    ) -> list[tuple[BoundingBox, float]]:
         """
         Detect regions containing button-like text
         Returns list of (bbox, confidence) tuples
@@ -240,7 +232,7 @@ class ButtonFusionDetector(BaseAnalyzer):
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
         # Use MSER (Maximally Stable Extremal Regions) to find text regions
-        mser = cv2.MSER_create(_min_area=50, _max_area=5000, _delta=5)
+        mser = cv2.MSER_create(_min_area=50, _max_area=5000, _delta=5)  # type: ignore[attr-defined]
 
         regions_mser, _ = mser.detectRegions(gray)
 
@@ -269,15 +261,13 @@ class ButtonFusionDetector(BaseAnalyzer):
             # Higher confidence for text in expected size range
             confidence = 0.7 if (200 <= area <= 2000) else 0.5
 
-            regions.append(
-                (BoundingBox(x=x_pad, y=y_pad, width=w_pad, height=h_pad), confidence)
-            )
+            regions.append((BoundingBox(x=x_pad, y=y_pad, width=w_pad, height=h_pad), confidence))
 
         return regions
 
     def _detect_by_color(
-        self, img: np.ndarray, params: Dict[str, Any]
-    ) -> List[Tuple[BoundingBox, float]]:
+        self, img: np.ndarray, params: dict[str, Any]
+    ) -> list[tuple[BoundingBox, float]]:
         """
         Detect buttons by color properties (uniform colored regions)
         Returns list of (bbox, confidence) tuples
@@ -292,21 +282,15 @@ class ButtonFusionDetector(BaseAnalyzer):
         value = hsv[:, :, 2]
 
         # Buttons are typically saturated and not too dark/bright
-        color_mask = (
-            (saturation > params["min_saturation"]) & (value > 50) & (value < 240)
-        )
+        color_mask = (saturation > params["min_saturation"]) & (value > 50) & (value < 240)
 
         # Clean mask
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        color_mask = cv2.morphologyEx(
-            color_mask.astype(np.uint8), cv2.MORPH_CLOSE, kernel
-        )
+        color_mask = cv2.morphologyEx(color_mask.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
         color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_OPEN, kernel)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -333,12 +317,12 @@ class ButtonFusionDetector(BaseAnalyzer):
 
     def _fuse_detections(
         self,
-        shape_candidates: List[Tuple[BoundingBox, float]],
-        text_regions: List[Tuple[BoundingBox, float]],
-        color_regions: List[Tuple[BoundingBox, float]],
-        params: Dict[str, Any],
+        shape_candidates: list[tuple[BoundingBox, float]],
+        text_regions: list[tuple[BoundingBox, float]],
+        color_regions: list[tuple[BoundingBox, float]],
+        params: dict[str, Any],
         screenshot_idx: int,
-    ) -> List[DetectedElement]:
+    ) -> list[DetectedElement]:
         """
         Fuse detections from multiple strategies using weighted voting
         """
@@ -359,8 +343,8 @@ class ButtonFusionDetector(BaseAnalyzer):
         for bbox, conf in text_regions:
             merged = False
             for candidate in all_candidates:
-                if self._boxes_overlap(candidate["bbox"], bbox, threshold=0.3):
-                    candidate["votes"]["text"] = conf * params["text_weight"]
+                if self._boxes_overlap(candidate["bbox"], bbox, threshold=0.3):  # type: ignore[arg-type]
+                    candidate["votes"]["text"] = conf * params["text_weight"]  # type: ignore[index]
                     merged = True
                     break
 
@@ -376,8 +360,8 @@ class ButtonFusionDetector(BaseAnalyzer):
         for bbox, conf in color_regions:
             merged = False
             for candidate in all_candidates:
-                if self._boxes_overlap(candidate["bbox"], bbox, threshold=0.3):
-                    candidate["votes"]["color"] = conf * params["color_weight"]
+                if self._boxes_overlap(candidate["bbox"], bbox, threshold=0.3):  # type: ignore[arg-type]
+                    candidate["votes"]["color"] = conf * params["color_weight"]  # type: ignore[index]
                     merged = True
                     break
 
@@ -392,8 +376,8 @@ class ButtonFusionDetector(BaseAnalyzer):
         # Calculate final scores
         for candidate in all_candidates:
             votes = candidate["votes"]
-            total_score = sum(votes.values())
-            num_strategies = len(votes)
+            total_score = sum(votes.values())  # type: ignore[attr-defined]
+            num_strategies = len(votes)  # type: ignore[arg-type]
 
             # Require minimum agreement
             if total_score < params["min_agreement_score"]:
@@ -408,11 +392,9 @@ class ButtonFusionDetector(BaseAnalyzer):
 
             elements.append(
                 DetectedElement(
-                    bounding_box=candidate["bbox"],
+                    bounding_box=candidate["bbox"],  # type: ignore[arg-type]
                     confidence=final_confidence,
-                    label=(
-                        "Button (Fused)" if is_high_confidence else "Button Candidate"
-                    ),
+                    label=("Button (Fused)" if is_high_confidence else "Button Candidate"),
                     element_type="button",
                     screenshot_index=screenshot_idx,
                     metadata={
@@ -427,8 +409,6 @@ class ButtonFusionDetector(BaseAnalyzer):
 
         return elements
 
-    def _boxes_overlap(
-        self, box1: BoundingBox, box2: BoundingBox, threshold: float = 0.3
-    ) -> bool:
+    def _boxes_overlap(self, box1: BoundingBox, box2: BoundingBox, threshold: float = 0.3) -> bool:
         """Check if two bounding boxes overlap significantly"""
         return box1.iou(box2) >= threshold

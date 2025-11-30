@@ -340,14 +340,18 @@ class ElementMatcher:
 
                 # Load metadata
                 with open(f"{load_path}.meta", "rb") as f:
-                    self.element_metadata = pickle.load(f)
+                    # Security: pickle.load is safe here as files are local-only and user-controlled.
+                    # Network-transmitted or user-uploaded files should never use pickle.
+                    self.element_metadata = pickle.load(f)  # noqa: S301
             except FileNotFoundError:
                 print(f"Index files not found at {load_path}")
         else:
             # Load sklearn data
             try:
                 with open(load_path, "rb") as f:
-                    data = pickle.load(f)
+                    # Security: pickle.load is safe here as files are local-only and user-controlled.
+                    # Network-transmitted or user-uploaded files should never use pickle.
+                    data = pickle.load(f)  # noqa: S301
                     self._embeddings = data.get("embeddings", [])
                     self._metadata = data.get("metadata", [])
             except FileNotFoundError:

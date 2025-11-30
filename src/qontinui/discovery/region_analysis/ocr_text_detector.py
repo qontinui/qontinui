@@ -8,9 +8,8 @@ Performance: 100-500ms depending on image size
 Accuracy: 85-95% for clear text, lower for stylized/game fonts
 """
 
-from dataclasses import dataclass
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -46,14 +45,14 @@ class OCRTextDetector(BaseRegionAnalyzer):
         return "ocr_text_detector"
 
     @property
-    def supported_region_types(self) -> List[RegionType]:
+    def supported_region_types(self) -> list[RegionType]:
         return [RegionType.TEXT_AREA]
 
     @property
     def version(self) -> str:
         return "1.0.0"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize OCR text detector.
 
@@ -74,7 +73,7 @@ class OCRTextDetector(BaseRegionAnalyzer):
         self.merge_nearby = params["merge_nearby"]
         self.merge_distance = params["merge_distance"]
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_confidence": 30.0,
             "level": "word",  # word, line, or block
@@ -102,9 +101,7 @@ class OCRTextDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -122,7 +119,7 @@ class OCRTextDetector(BaseRegionAnalyzer):
 
     def _detect_text_regions(
         self, image: np.ndarray, screenshot_index: int
-    ) -> List[DetectedRegion]:
+    ) -> list[DetectedRegion]:
         """Detect text regions in a single image."""
         # Get OCR data
         data = pytesseract.image_to_data(
@@ -185,9 +182,7 @@ class OCRTextDetector(BaseRegionAnalyzer):
 
         return regions
 
-    def _merge_nearby_regions(
-        self, regions: List[DetectedRegion]
-    ) -> List[DetectedRegion]:
+    def _merge_nearby_regions(self, regions: list[DetectedRegion]) -> list[DetectedRegion]:
         """Merge nearby text regions into larger blocks."""
         if not regions:
             return regions
@@ -232,11 +227,9 @@ class OCRTextDetector(BaseRegionAnalyzer):
         horizontal_gap = min(abs(box1_x2 - box2.x), abs(box2_x2 - box1.x))
 
         # Merge if close vertically or horizontally aligned and close
-        return (
-            vertical_gap <= self.merge_distance or horizontal_gap <= self.merge_distance
-        )
+        return vertical_gap <= self.merge_distance or horizontal_gap <= self.merge_distance  # type: ignore[no-any-return]
 
-    def _merge_group(self, group: List[DetectedRegion]) -> DetectedRegion:
+    def _merge_group(self, group: list[DetectedRegion]) -> DetectedRegion:
         """Merge a group of regions into one."""
         if len(group) == 1:
             return group[0]

@@ -108,11 +108,12 @@ class MSSScreenCapture(IScreenCapture):
         This prevents DPI virtualization and ensures correct multi-monitor support.
         """
         import sys
+
         if sys.platform != "win32":
             return
 
         # Skip if already set (static flag)
-        if hasattr(MSSScreenCapture, '_dpi_awareness_set'):
+        if hasattr(MSSScreenCapture, "_dpi_awareness_set"):
             return
 
         try:
@@ -435,9 +436,9 @@ class MSSScreenCapture(IScreenCapture):
 
     def clear_cache(self) -> None:
         """Clear screenshot cache."""
-        if hasattr(self, '_cache'):
+        if hasattr(self, "_cache"):
             self._cache.clear()
-        if hasattr(self, '_cache_timestamps'):
+        if hasattr(self, "_cache_timestamps"):
             self._cache_timestamps.clear()
         logger.debug("screenshot_cache_cleared")
 
@@ -463,7 +464,7 @@ class MSSScreenCapture(IScreenCapture):
         """Destructor to ensure resources are cleaned up."""
         try:
             # Only call close if object was fully initialized
-            if hasattr(self, '_cache'):
+            if hasattr(self, "_cache"):
                 self.close()
         except (OSError, RuntimeError):
             # OK to silently ignore cleanup errors in destructor

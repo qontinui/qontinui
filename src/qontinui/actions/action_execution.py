@@ -69,8 +69,8 @@ class ActionExecution:
             ActionResult containing execution results and timing
         """
         # Initialize result
-        result = ActionResult(action_config)  # type: ignore[arg-type]
-        result.action_description = action_description
+        result = ActionResult(action_config)  # type: ignore[arg-type,call-arg]
+        object.__setattr__(result, "action_description", action_description)
         start_time = time.time()
 
         try:
@@ -108,21 +108,21 @@ class ActionExecution:
         except Exception as e:
             self._failure_count += 1
             logger.error(f"Action execution failed: {e}", exc_info=True)
-            result.success = False
-            result.output_text = f"Error: {str(e)}"
+            object.__setattr__(result, "success", False)
+            object.__setattr__(result, "output_text", f"Error: {str(e)}")
 
         finally:
             # Record timing
             end_time = time.time()
             duration = end_time - start_time
-            result.duration = timedelta(seconds=duration)
+            object.__setattr__(result, "duration", timedelta(seconds=duration))
 
             # Apply custom success criteria if provided
             success_criteria = action_config.get_success_criteria()
             if success_criteria:
                 try:
                     custom_success = success_criteria(result)  # type: ignore[arg-type]
-                    result.success = custom_success
+                    object.__setattr__(result, "success", custom_success)
                 except Exception as e:
                     logger.error(f"Success criteria evaluation failed: {e}")
 

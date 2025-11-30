@@ -32,7 +32,8 @@ Example:
 """
 
 import logging
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 from qontinui.action_executors import DelegatingActionExecutor
 from qontinui.json_executor.config_parser import QontinuiConfig
@@ -132,7 +133,7 @@ class StateExecutionAPI:
         logger.debug("Created EnhancedStateMemory")
 
         # Create action executor for workflow execution
-        self.action_executor = DelegatingActionExecutor(config=self.config, hal=self.hal)
+        self.action_executor = DelegatingActionExecutor(config=self.config, hal=self.hal)  # type: ignore[call-arg]
         logger.debug("Created DelegatingActionExecutor")
 
         # Create transition executor with workflow executor
@@ -212,7 +213,7 @@ class StateExecutionAPI:
         # Register states with multistate adapter
         for state in self.config.states:
             try:
-                self.state_memory.multistate_adapter.register_qontinui_state(state)
+                self.state_memory.multistate_adapter.register_qontinui_state(state)  # type: ignore[arg-type]
                 logger.debug(f"Registered state: {state.id}")
             except Exception as e:
                 logger.warning(f"Failed to register state {state.id}: {e}")
@@ -223,7 +224,7 @@ class StateExecutionAPI:
         )
 
     def execute_transition(
-        self, transition_id: str, emit_event_callback: Optional[Callable[[str, dict], None]] = None
+        self, transition_id: str, emit_event_callback: Callable[[str, dict], None] | None = None
     ) -> TransitionExecutionResult:
         """Execute a transition by ID.
 
@@ -241,13 +242,15 @@ class StateExecutionAPI:
             >>> if result.success:
             ...     print(f"Activated: {result.activated_states}")
         """
-        return self.transition_executor_facade.execute_transition(transition_id, emit_event_callback)
+        return self.transition_executor_facade.execute_transition(
+            transition_id, emit_event_callback
+        )
 
     def navigate_to_states(
         self,
         target_state_ids: list[int],
         execute: bool = True,
-        emit_event_callback: Optional[Callable[[str, dict], None]] = None,
+        emit_event_callback: Callable[[str, dict], None] | None = None,
     ) -> NavigationResult:
         """Navigate to reach ALL specified target states.
 

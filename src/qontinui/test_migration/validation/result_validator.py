@@ -432,7 +432,7 @@ class ResultValidator:
 
         if "execution_time" in results:
             if (
-                not isinstance(results["execution_time"], (int, float))
+                not isinstance(results["execution_time"], int | float)
                 or results["execution_time"] < 0
             ):
                 raise ValueError("Invalid execution_time value")

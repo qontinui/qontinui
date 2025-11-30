@@ -75,7 +75,7 @@ class FindAction:
             FindResult with matches (works identically for mock and real)
         """
         options = options or FindOptions()
-        return self._wrapper.find(pattern, options)
+        return self._wrapper.find(pattern, options)  # type: ignore[no-any-return]
 
     async def find_async(
         self,
@@ -94,4 +94,4 @@ class FindAction:
             List of FindResults, one per pattern
         """
         options = options or FindOptions()
-        return await self._wrapper.find_async(patterns, options, max_concurrent)
+        return await self._wrapper.find_async(patterns, options, max_concurrent)  # type: ignore[no-any-return]

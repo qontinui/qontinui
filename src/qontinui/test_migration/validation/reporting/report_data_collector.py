@@ -4,15 +4,6 @@ Report data collection and aggregation for diagnostic reporting.
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from ...core.models import TestFile
-else:
-    try:
-        from ...core.models import TestFile
-    except ImportError:
-        from core.models import TestFile
 
 
 class ReportDataCollector:

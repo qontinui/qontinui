@@ -118,7 +118,7 @@ class FindWrapper:
         except Exception:
             pass
 
-        return result
+        return result  # type: ignore[no-any-return]
 
     async def find_async(
         self,
@@ -143,7 +143,7 @@ class FindWrapper:
 
         if is_mock:
             logger.debug(f"[MOCK] Finding {len(patterns)} patterns async")
-            return await self.mock_implementation.execute_async(patterns, options, max_concurrent)
+            return await self.mock_implementation.execute_async(patterns, options, max_concurrent)  # type: ignore[no-any-return]
         else:
             logger.debug(f"[REAL] Finding {len(patterns)} patterns async")
-            return await self.real_implementation.execute_async(patterns, options, max_concurrent)
+            return await self.real_implementation.execute_async(patterns, options, max_concurrent)  # type: ignore[no-any-return]

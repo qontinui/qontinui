@@ -4,11 +4,16 @@ This module contains all factory methods for Pattern creation,
 separated from the Pattern class to follow the Single Responsibility Principle.
 """
 
+from __future__ import annotations
+
 import hashlib
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from .pattern import Pattern
 
 
 class PatternFactory:
@@ -19,9 +24,7 @@ class PatternFactory:
     """
 
     @staticmethod
-    def from_image(
-        image: Any, name: str | None = None, pattern_id: str | None = None
-    ) -> "Pattern":
+    def from_image(image: Any, name: str | None = None, pattern_id: str | None = None) -> Pattern:
         """Create Pattern from Image with full mask.
 
         Args:
@@ -67,7 +70,7 @@ class PatternFactory:
         )
 
     @staticmethod
-    def from_file(img_path: str, name: str | None = None) -> "Pattern":
+    def from_file(img_path: str, name: str | None = None) -> Pattern:
         """Create Pattern from image file.
 
         Args:
@@ -91,7 +94,7 @@ class PatternFactory:
         return PatternFactory.from_image(image, name=name)
 
     @staticmethod
-    def from_match(match: Any, pattern_id: str | None = None) -> "Pattern":
+    def from_match(match: Any, pattern_id: str | None = None) -> Pattern:
         """Create Pattern from a Match object.
 
         Args:
@@ -111,9 +114,7 @@ class PatternFactory:
 
         # Extract pixel data from match
         pixel_data = (
-            match.image.get_mat_bgr()
-            if match.image
-            else np.zeros((10, 10, 3), dtype=np.uint8)
+            match.image.get_mat_bgr() if match.image else np.zeros((10, 10, 3), dtype=np.uint8)
         )
 
         # Create full mask
@@ -133,7 +134,7 @@ class PatternFactory:
         )
 
     @staticmethod
-    def from_state_image(state_image: Any, pattern_id: str | None = None) -> "Pattern":
+    def from_state_image(state_image: Any, pattern_id: str | None = None) -> Pattern:
         """Create a Pattern from a StateImage.
 
         Args:
@@ -153,11 +154,7 @@ class PatternFactory:
 
         # Extract pixel data and mask
         pixel_data = state_image.pixel_data
-        mask = (
-            state_image.mask
-            if state_image.mask is not None
-            else np.ones(pixel_data.shape[:2])
-        )
+        mask = state_image.mask if state_image.mask is not None else np.ones(pixel_data.shape[:2])
 
         return Pattern(
             id=pattern_id,
@@ -169,16 +166,12 @@ class PatternFactory:
             width=state_image.x2 - state_image.x,
             height=state_image.y2 - state_image.y,
             mask_density=(
-                state_image.mask_density
-                if hasattr(state_image, "mask_density")
-                else 1.0
+                state_image.mask_density if hasattr(state_image, "mask_density") else 1.0
             ),
             mask_type="imported",
             tags=state_image.tags if hasattr(state_image, "tags") else [],
             created_at=(
-                state_image.created_at
-                if hasattr(state_image, "created_at")
-                else datetime.now()
+                state_image.created_at if hasattr(state_image, "created_at") else datetime.now()
             ),
         )
 

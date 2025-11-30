@@ -22,7 +22,7 @@ Example:
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class StateValidator:
         """
         self.config = config
 
-    def validate_transition(self, transition_id: str) -> Optional[Any]:
+    def validate_transition(self, transition_id: str) -> Any | None:
         """Validate that transition exists in configuration.
 
         Args:
@@ -62,7 +62,7 @@ class StateValidator:
             logger.error(f"Transition '{transition_id}' not found in configuration")
         return transition
 
-    def find_transition(self, transition_id: str) -> Optional[Any]:
+    def find_transition(self, transition_id: str) -> Any | None:
         """Find transition by ID in config.
 
         Args:
@@ -109,7 +109,7 @@ class StateValidator:
 
         return available
 
-    def validate_state(self, state_id: int) -> Optional[Any]:
+    def validate_state(self, state_id: int) -> Any | None:
         """Validate that state exists in configuration.
 
         Args:
@@ -123,7 +123,7 @@ class StateValidator:
             logger.error(f"State '{state_id}' not found in configuration")
         return state
 
-    def find_state(self, state_id: int) -> Optional[Any]:
+    def find_state(self, state_id: int) -> Any | None:
         """Find state by ID in config.
 
         Args:

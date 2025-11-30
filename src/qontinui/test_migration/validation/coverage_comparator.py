@@ -82,7 +82,7 @@ class CoverageComparator:
             if mapping.migration_status == MigrationStatus.COMPLETED:
                 migration_history.append(mapping)
 
-        return migration_history
+        return migration_history  # type: ignore[return-value]
 
     def update_coverage(self, test_name: str, coverage_data: Any) -> None:
         """
@@ -110,7 +110,7 @@ class CoverageComparator:
         # Process coverage data based on type
         if isinstance(coverage_data, dict):
             self._update_coverage_from_dict(test_name, coverage_data, matching_mapping)
-        elif isinstance(coverage_data, (int, float)):
+        elif isinstance(coverage_data, int | float):
             self._update_coverage_from_percentage(test_name, coverage_data, matching_mapping)
         elif hasattr(coverage_data, "test_name"):
             # TestResult object

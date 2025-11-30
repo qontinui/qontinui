@@ -12,7 +12,7 @@ Characteristics:
 
 import logging
 from io import BytesIO
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -58,7 +58,7 @@ class ModalDialogDetector(BaseAnalyzer):
     def required_screenshots(self) -> int:
         return 1
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_width": 250,
             "max_width_ratio": 0.8,  # Max 80% of screen width
@@ -75,8 +75,7 @@ class ModalDialogDetector(BaseAnalyzer):
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect modal dialogs in screenshots"""
         logger.info(
-            f"Running modal dialog detection on "
-            f"{len(input_data.screenshots)} screenshots"
+            f"Running modal dialog detection on " f"{len(input_data.screenshots)} screenshots"
         )
 
         params = {**self.get_default_parameters(), **input_data.parameters}
@@ -88,11 +87,9 @@ class ModalDialogDetector(BaseAnalyzer):
         # Analyze each screenshot
         all_elements = []
         for screenshot_idx, (img_color, img_gray) in enumerate(
-            zip(images_color, images_gray)
+            zip(images_color, images_gray, strict=False)
         ):
-            elements = await self._analyze_screenshot(
-                img_color, img_gray, screenshot_idx, params
-            )
+            elements = await self._analyze_screenshot(img_color, img_gray, screenshot_idx, params)
             all_elements.extend(elements)
 
         logger.info(f"Detected {len(all_elements)} modal dialogs")
@@ -109,7 +106,7 @@ class ModalDialogDetector(BaseAnalyzer):
             },
         )
 
-    def _load_images_color(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_color(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots in color"""
         images = []
         for data in screenshot_data:
@@ -117,7 +114,7 @@ class ModalDialogDetector(BaseAnalyzer):
             images.append(np.array(img, dtype=np.uint8))
         return images
 
-    def _load_images_grayscale(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_grayscale(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots as grayscale"""
         images = []
         for data in screenshot_data:
@@ -130,26 +127,22 @@ class ModalDialogDetector(BaseAnalyzer):
         img_color: np.ndarray,
         img_gray: np.ndarray,
         screenshot_idx: int,
-        params: Dict[str, Any],
-    ) -> List[DetectedElement]:
+        params: dict[str, Any],
+    ) -> list[DetectedElement]:
         """Analyze a single screenshot for modal dialogs"""
         elements = []
 
         height, width = img_gray.shape
 
         # Apply edge detection
-        edges = cv2.Canny(
-            img_gray, params["edge_threshold_low"], params["edge_threshold_high"]
-        )
+        edges = cv2.Canny(img_gray, params["edge_threshold_low"], params["edge_threshold_high"])
 
         # Dilate to connect edges
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         edges = cv2.dilate(edges, kernel, iterations=2)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -178,15 +171,12 @@ class ModalDialogDetector(BaseAnalyzer):
 
             # Modals are typically centered
             is_centered = (
-                x_offset <= params["center_tolerance"]
-                and y_offset <= params["center_tolerance"]
+                x_offset <= params["center_tolerance"] and y_offset <= params["center_tolerance"]
             )
 
             # Extract dialog region
             dialog_region = (
-                img_gray[y : y + h, x : x + w]
-                if y + h <= height and x + w <= width
-                else None
+                img_gray[y : y + h, x : x + w] if y + h <= height and x + w <= width else None
             )
             if dialog_region is None or dialog_region.size == 0:
                 continue
@@ -223,9 +213,7 @@ class ModalDialogDetector(BaseAnalyzer):
 
             elements.append(
                 DetectedElement(
-                    bounding_box=BoundingBox(
-                        x=int(x), y=int(y), width=int(w), height=int(h)
-                    ),
+                    bounding_box=BoundingBox(x=int(x), y=int(y), width=int(w), height=int(h)),
                     confidence=confidence,
                     label="Modal Dialog",
                     element_type="dialog",
@@ -257,7 +245,7 @@ class ModalDialogDetector(BaseAnalyzer):
         total_pixels = title_region.size
 
         # If there's significant edge activity at top, likely a title bar
-        return (top_edge_density / total_pixels) > 0.02
+        return bool((top_edge_density / total_pixels) > 0.02)
 
     def _detect_bottom_buttons(self, dialog_region: np.ndarray) -> bool:
         """Detect if dialog has buttons at bottom"""
@@ -271,9 +259,7 @@ class ModalDialogDetector(BaseAnalyzer):
         edges = cv2.Canny(button_region, 50, 150)
 
         # Find contours (potential buttons)
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Look for 1-3 rectangular regions (buttons)
         button_count = 0
@@ -333,7 +319,7 @@ class ModalDialogDetector(BaseAnalyzer):
         )
 
         # Background should be 10-30% darker if there's an overlay
-        return dialog_brightness > background_brightness * 1.1
+        return dialog_brightness > background_brightness * 1.1  # type: ignore[no-any-return]
 
     def _calculate_confidence(
         self,

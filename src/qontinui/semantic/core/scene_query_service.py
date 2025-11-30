@@ -50,11 +50,7 @@ class SceneQueryService:
             # Fall back to substring matching if regex is invalid
             if not case_sensitive:
                 pattern = pattern.lower()
-                return [
-                    obj
-                    for obj in self.store.get_all()
-                    if pattern in obj.description.lower()
-                ]
+                return [obj for obj in self.store.get_all() if pattern in obj.description.lower()]
             return [obj for obj in self.store.get_all() if pattern in obj.description]
 
     def find_by_type(self, object_type: ObjectType | str) -> list[SemanticObject]:

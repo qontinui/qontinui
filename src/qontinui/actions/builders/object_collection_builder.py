@@ -12,7 +12,6 @@ from .scene_collection_builder import SceneCollectionBuilder
 from .string_collection_builder import StringCollectionBuilder
 
 if TYPE_CHECKING:
-    from ...model.element import Location, Pattern, Region
     from ...model.match import Match
     from ...model.state import State, StateImage, StateLocation, StateRegion, StateString
     from ..action_result import ActionResult

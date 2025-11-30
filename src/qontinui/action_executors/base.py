@@ -6,7 +6,8 @@ action executors, replacing the monolithic ActionExecutor god class.
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from ..config.schema import Action
@@ -54,6 +55,9 @@ class ExecutionContext:
     emit_event: Callable[[str, dict], None]
     emit_action_event: Callable[[str, str, bool, dict], None]
     emit_image_recognition_event: Callable[[dict], None]
+
+    # Project configuration
+    project_root: Path | None = field(default=None)  # Root directory for code loading
 
     def update_last_action_result(self, result: "ActionResult") -> None:
         """Store complete action result for subsequent actions to reference.
@@ -149,10 +153,10 @@ class ActionExecutorBase(ABC):
             action: Action being executed
         """
         self.context.emit_action_event(
-            action_id=action.id or "unknown",
-            action_type=action.type,
-            success=True,
-            data={"status": "started"},
+            action.id or "unknown",
+            action.type,
+            True,
+            {"status": "started"},
         )
 
     def _emit_action_success(self, action: Action, data: dict | None = None) -> None:
@@ -162,9 +166,7 @@ class ActionExecutorBase(ABC):
             action: Action that succeeded
             data: Optional additional data
         """
-        self.context.emit_action_event(
-            action_id=action.id or "unknown", action_type=action.type, success=True, data=data or {}
-        )
+        self.context.emit_action_event(action.id or "unknown", action.type, True, data or {})
 
     def _emit_action_failure(self, action: Action, error: str, data: dict | None = None) -> None:
         """Emit action failure event.
@@ -179,10 +181,10 @@ class ActionExecutorBase(ABC):
             failure_data.update(data)
 
         self.context.emit_action_event(
-            action_id=action.id or "unknown",
-            action_type=action.type,
-            success=False,
-            details=failure_data,
+            action.id or "unknown",
+            action.type,
+            False,
+            failure_data,
         )
 
     def _get_default_timing(self, category: str, key: str, default: float = 0.0) -> float:

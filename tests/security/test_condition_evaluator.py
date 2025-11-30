@@ -31,10 +31,7 @@ class TestConditionEvaluatorSafety:
         evaluator = ConditionEvaluator(context)
 
         config = ConditionConfig(
-            type="variable",
-            variable_name="counter",
-            operator=">",
-            expected_value=5
+            type="variable", variable_name="counter", operator=">", expected_value=5
         )
         assert evaluator.evaluate_condition(config) is True
 
@@ -43,10 +40,7 @@ class TestConditionEvaluatorSafety:
         context = ExecutionContext({"a": 5, "b": 10, "c": 15})
         evaluator = ConditionEvaluator(context)
 
-        config = ConditionConfig(
-            type="expression",
-            expression="a < b and b < c"
-        )
+        config = ConditionConfig(type="expression", expression="a < b and b < c")
         assert evaluator.evaluate_condition(config) is True
 
     def test_arithmetic_in_expression(self):
@@ -54,10 +48,7 @@ class TestConditionEvaluatorSafety:
         context = ExecutionContext({"x": 10, "y": 5})
         evaluator = ConditionEvaluator(context)
 
-        config = ConditionConfig(
-            type="expression",
-            expression="x + y == 15"
-        )
+        config = ConditionConfig(type="expression", expression="x + y == 15")
         assert evaluator.evaluate_condition(config) is True
 
     def test_empty_builtins_prevents_dangerous_ops(self):
@@ -66,10 +57,7 @@ class TestConditionEvaluatorSafety:
         evaluator = ConditionEvaluator(context)
 
         # Trying to use __import__ should fail due to empty builtins
-        config = ConditionConfig(
-            type="expression",
-            expression="__import__('os').system('ls')"
-        )
+        config = ConditionConfig(type="expression", expression="__import__('os').system('ls')")
 
         with pytest.raises(ValueError, match="Invalid expression"):
             evaluator.evaluate_condition(config)
@@ -83,10 +71,7 @@ class TestConditionEvaluatorErrorHandling:
         context = ExecutionContext({})
         evaluator = ConditionEvaluator(context)
 
-        config = ConditionConfig(
-            type="expression",
-            expression="undefined_var > 5"
-        )
+        config = ConditionConfig(type="expression", expression="undefined_var > 5")
 
         with pytest.raises(ValueError, match="Invalid expression"):
             evaluator.evaluate_condition(config)
@@ -96,10 +81,7 @@ class TestConditionEvaluatorErrorHandling:
         context = ExecutionContext({})
         evaluator = ConditionEvaluator(context)
 
-        config = ConditionConfig(
-            type="expression",
-            expression="x +"  # Invalid syntax
-        )
+        config = ConditionConfig(type="expression", expression="x +")  # Invalid syntax
 
         with pytest.raises(ValueError, match="Invalid expression"):
             evaluator.evaluate_condition(config)
@@ -109,10 +91,7 @@ class TestConditionEvaluatorErrorHandling:
         context = ExecutionContext({"x": "string", "y": 5})
         evaluator = ConditionEvaluator(context)
 
-        config = ConditionConfig(
-            type="expression",
-            expression="x + y"  # Can't add string and int
-        )
+        config = ConditionConfig(type="expression", expression="x + y")  # Can't add string and int
 
         with pytest.raises(ValueError, match="Invalid expression"):
             evaluator.evaluate_condition(config)
@@ -122,10 +101,7 @@ class TestConditionEvaluatorErrorHandling:
         context = ExecutionContext({"x": 10})
         evaluator = ConditionEvaluator(context)
 
-        config = ConditionConfig(
-            type="expression",
-            expression="x / 0"
-        )
+        config = ConditionConfig(type="expression", expression="x / 0")
 
         with pytest.raises(ValueError, match="Invalid expression"):
             evaluator.evaluate_condition(config)
@@ -156,14 +132,12 @@ class TestConditionTypes:
 
         for operator, expected_value, expected_result in operators_tests:
             config = ConditionConfig(
-                type="variable",
-                variable_name="x",
-                operator=operator,
-                expected_value=expected_value
+                type="variable", variable_name="x", operator=operator, expected_value=expected_value
             )
             result = evaluator.evaluate_condition(config)
-            assert result == expected_result, \
-                f"Failed for operator {operator} with expected {expected_value}"
+            assert (
+                result == expected_result
+            ), f"Failed for operator {operator} with expected {expected_value}"
 
     def test_contains_operator(self):
         """Test the contains operator."""
@@ -172,19 +146,13 @@ class TestConditionTypes:
 
         # String contains
         config = ConditionConfig(
-            type="variable",
-            variable_name="text",
-            operator="contains",
-            expected_value="world"
+            type="variable", variable_name="text", operator="contains", expected_value="world"
         )
         assert evaluator.evaluate_condition(config) is True
 
         # List contains
         config = ConditionConfig(
-            type="variable",
-            variable_name="items",
-            operator="contains",
-            expected_value=2
+            type="variable", variable_name="items", operator="contains", expected_value=2
         )
         assert evaluator.evaluate_condition(config) is True
 
@@ -194,10 +162,7 @@ class TestConditionTypes:
         evaluator = ConditionEvaluator(context)
 
         config = ConditionConfig(
-            type="variable",
-            variable_name="text",
-            operator="matches",
-            expected_value=r"hello\d+"
+            type="variable", variable_name="text", operator="matches", expected_value=r"hello\d+"
         )
         assert evaluator.evaluate_condition(config) is True
 
@@ -211,10 +176,7 @@ class TestVariableAccess:
         evaluator = ConditionEvaluator(context)
 
         config = ConditionConfig(
-            type="variable",
-            variable_name="nonexistent",
-            operator="==",
-            expected_value=None
+            type="variable", variable_name="nonexistent", operator="==", expected_value=None
         )
         # Should not raise, should treat as None
         result = evaluator.evaluate_condition(config)
@@ -225,10 +187,7 @@ class TestVariableAccess:
         context = ExecutionContext({"a": 1, "b": 2, "c": 3})
         evaluator = ConditionEvaluator(context)
 
-        config = ConditionConfig(
-            type="expression",
-            expression="a + b == c"
-        )
+        config = ConditionConfig(type="expression", expression="a + b == c")
         assert evaluator.evaluate_condition(config) is True
 
     def test_namespaced_variable_access(self):
@@ -237,10 +196,7 @@ class TestVariableAccess:
         evaluator = ConditionEvaluator(context)
 
         # Should work both as 'x' and 'variables.x' (though latter not in current impl)
-        config = ConditionConfig(
-            type="expression",
-            expression="x == 10"
-        )
+        config = ConditionConfig(type="expression", expression="x == 10")
         assert evaluator.evaluate_condition(config) is True
 
 

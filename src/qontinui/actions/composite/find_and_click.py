@@ -134,7 +134,9 @@ class FindAndClickOptionsBuilder(ActionConfigBuilder):
             This builder instance for chaining
         """
         # Create new ClickOptions with updated click count instead of mutating
-        self.click_options = ClickOptionsBuilder(self.click_options).set_number_of_clicks(count).build()
+        self.click_options = (
+            ClickOptionsBuilder(self.click_options).set_number_of_clicks(count).build()
+        )
         return self
 
     def build(self) -> FindAndClickOptions:
@@ -173,7 +175,7 @@ class FindAndClick(ActionInterface):
         Returns:
             FIND_AND_CLICK action type
         """
-        return ActionType.FIND_AND_CLICK
+        return ActionType.FIND_AND_CLICK  # type: ignore[no-any-return, attr-defined]
 
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Find element and click on it.
@@ -197,31 +199,31 @@ class FindAndClick(ActionInterface):
             click_options = ClickOptionsBuilder().build()
 
         # Step 1: Find the target
-        find_result = ActionResult(action_config=find_options)
+        find_result = ActionResult(action_config=find_options)  # type: ignore[call-arg]
         self.find.perform(find_result, *object_collections)
 
         # Copy find results to main matches
-        matches.match_list = find_result.match_list
-        matches.match_locations = find_result.match_locations
+        object.__setattr__(matches, "matches", find_result.matches)
+        matches.match_locations = find_result.match_locations  # type: ignore[attr-defined]
 
-        if not find_result.match_list:
-            matches.success = False
+        if not find_result.matches:
+            object.__setattr__(matches, "success", False)
             logger.debug("FindAndClick: No matches found")
             return
 
         # Step 2: Click on found element(s)
-        click_result = ActionResult(action_config=click_options)
+        click_result = ActionResult(action_config=click_options)  # type: ignore[call-arg]
         # Pass the matches as an ObjectCollection for clicking
         click_collection = ObjectCollection()
-        for match in find_result.match_list:
-            click_collection.add_match(match)
+        for match in find_result.matches:
+            click_collection.add_match(match)  # type: ignore[attr-defined]
 
         self.click.perform(click_result, click_collection)
 
         # Update success status
-        matches.success = click_result.success
+        object.__setattr__(matches, "success", click_result.success)
 
         logger.debug(
-            f"FindAndClick: Found {len(find_result.match_list)} matches, "
+            f"FindAndClick: Found {len(find_result.matches)} matches, "
             f"clicked {'successfully' if matches.success else 'unsuccessfully'}"
         )

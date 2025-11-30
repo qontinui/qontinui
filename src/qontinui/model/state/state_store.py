@@ -254,9 +254,7 @@ class StateStore:
 
         return self._lifecycle.deactivate(name)
 
-    def add_transition(
-        self, from_state: str, to_state: str, transition: StateTransition
-    ) -> bool:
+    def add_transition(self, from_state: str, to_state: str, transition: StateTransition) -> bool:
         """Add a transition between states.
 
         Args:

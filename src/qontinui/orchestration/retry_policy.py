@@ -4,9 +4,9 @@ Provides retry configuration, backoff strategies, and continue-on-error logic.
 """
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Callable
 
 
 class BackoffStrategy(Enum):

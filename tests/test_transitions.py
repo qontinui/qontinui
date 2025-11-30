@@ -46,9 +46,7 @@ TEST CATEGORIES:
 TOTAL: 23 test cases
 """
 
-import json
-from typing import Any
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -56,13 +54,11 @@ from qontinui.config.schema import Action, Connections, Workflow, WorkflowMetada
 from qontinui.json_executor.config_parser import (
     ConfigParser,
     ExecutionSettings,
-    ImageAsset,
     IncomingTransition,
     OutgoingTransition,
     QontinuiConfig,
     RecognitionSettings,
     State,
-    StateImage,
 )
 from qontinui.json_executor.state_executor import StateExecutor
 from qontinui.state_management.models import State as StateGraphState
@@ -73,7 +69,9 @@ from qontinui.state_management.traversal import StateTraversal, TraversalStrateg
 # ====================
 # HELPER FUNCTION
 # ====================
-def create_workflow(id: str, name: str, description: str = "", actions: list[Action] = None) -> Workflow:
+def create_workflow(
+    id: str, name: str, description: str = "", actions: list[Action] = None
+) -> Workflow:
     """
     Helper function to create a v2.0.0 Workflow with graph format.
 
@@ -260,9 +258,7 @@ def state_graph_simple() -> StateGraph:
     # Add states
     for state_name in ["Main", "Processing", "Inventory", "Settings", "Final"]:
         state = StateGraphState(
-            name=state_name,
-            elements=[],
-            metadata={"description": f"{state_name} state"}
+            name=state_name, elements=[], metadata={"description": f"{state_name} state"}
         )
         graph.add_state(state)
 
@@ -321,9 +317,7 @@ def state_graph_complex() -> StateGraph:
     states = ["S1", "S2", "S3", "S4", "S5", "S6", "Goal"]
     for state_name in states:
         state = StateGraphState(
-            name=state_name,
-            elements=[],
-            metadata={"description": f"State {state_name}"}
+            name=state_name, elements=[], metadata={"description": f"State {state_name}"}
         )
         graph.add_state(state)
 
@@ -540,7 +534,9 @@ def test_incoming_transition_failure_prevents_activation(multi_state_config: Qon
     assert executor.action_executor.execute_action.call_count >= 1
 
 
-def test_multi_state_activation_partial_failures(basic_states: list[State], basic_workflow: Workflow):
+def test_multi_state_activation_partial_failures(
+    basic_states: list[State], basic_workflow: Workflow
+):
     """Test multi-state activation with some IncomingTransitions failing."""
     # Create verify workflows
     verify_inventory = create_workflow(
@@ -948,10 +944,35 @@ def test_complex_multi_state_json_config():
             }
         ],
         "states": [
-            {"id": "s1", "name": "S1", "description": "", "stateImages": [], "position": {"x": 0, "y": 0}, "isInitial": True},
-            {"id": "s2", "name": "S2", "description": "", "stateImages": [], "position": {"x": 1, "y": 0}},
-            {"id": "s3", "name": "S3", "description": "", "stateImages": [], "position": {"x": 2, "y": 0}},
-            {"id": "s4", "name": "S4", "description": "", "stateImages": [], "position": {"x": 3, "y": 0}},
+            {
+                "id": "s1",
+                "name": "S1",
+                "description": "",
+                "stateImages": [],
+                "position": {"x": 0, "y": 0},
+                "isInitial": True,
+            },
+            {
+                "id": "s2",
+                "name": "S2",
+                "description": "",
+                "stateImages": [],
+                "position": {"x": 1, "y": 0},
+            },
+            {
+                "id": "s3",
+                "name": "S3",
+                "description": "",
+                "stateImages": [],
+                "position": {"x": 2, "y": 0},
+            },
+            {
+                "id": "s4",
+                "name": "S4",
+                "description": "",
+                "stateImages": [],
+                "position": {"x": 3, "y": 0},
+            },
         ],
         "transitions": [
             {

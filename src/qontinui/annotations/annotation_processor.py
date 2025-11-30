@@ -89,7 +89,7 @@ class AnnotationProcessor:
             f"Brobot annotation processing complete. "
             f"{len(state_map)} states and {transition_count} transitions registered."
         )
-        logger.info(f"Total states in StateService: {len(self.state_service.states)}")
+        logger.info(f"Total states in StateService: {len(self.state_service.states)}")  # type: ignore[attr-defined]
 
         # Create and return event
         event = StatesRegisteredEvent(
@@ -158,7 +158,7 @@ class AnnotationProcessor:
             )
             # Add initial states to the registry
             for state_name in initial_state_names:
-                initial_state: State | None = self.state_service.get_state(state_name)
+                initial_state: State | None = self.state_service.get_state(state_name)  # type: ignore[arg-type]
                 if initial_state is not None:
                     self.initial_states.add_state(initial_state)
                     logger.debug(f"Added {state_name} to initial states registry")

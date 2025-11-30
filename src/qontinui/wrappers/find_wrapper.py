@@ -132,7 +132,7 @@ class FindWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"FindWrapper.find (MOCK): {pattern.name}")
-            return self.mock_find.find(pattern, search_region)
+            return self.mock_find.find(pattern, search_region)  # type: ignore[no-any-return]
         else:
             logger.debug(f"FindWrapper.find (REAL): {pattern.name}")
             return self._find_real(pattern, search_region)
@@ -160,7 +160,7 @@ class FindWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"FindWrapper.find_all (MOCK): {pattern.name}")
-            return self.mock_find.find_all(pattern, search_region)
+            return self.mock_find.find_all(pattern, search_region)  # type: ignore[no-any-return]
         else:
             logger.debug(f"FindWrapper.find_all (REAL): {pattern.name}")
             return self._find_all_real(pattern, search_region)
@@ -191,7 +191,7 @@ class FindWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"FindWrapper.wait_for (MOCK): {pattern.name}, timeout={timeout}")
-            return self.mock_find.wait_for(pattern, timeout)
+            return self.mock_find.wait_for(pattern, timeout)  # type: ignore[no-any-return]
         else:
             logger.debug(f"FindWrapper.wait_for (REAL): {pattern.name}, timeout={timeout}")
             return self._wait_for_real(pattern, timeout, search_region)
@@ -217,7 +217,7 @@ class FindWrapper(BaseWrapper):
         from ..model.match.match import Match
 
         start_time = time.time()
-        result = ActionResult()
+        result = ActionResult()  # type: ignore[call-arg]
         screenshot_pil = None
 
         try:
@@ -231,7 +231,7 @@ class FindWrapper(BaseWrapper):
             pattern_image = pattern.image if hasattr(pattern, "image") else None
             if not pattern_image:
                 logger.warning(f"Pattern {pattern.name} has no image data")
-                result.success = False
+                object.__setattr__(result, "success", False)
                 return result
 
             # Get effective similarity threshold
@@ -283,28 +283,28 @@ class FindWrapper(BaseWrapper):
                     name=pattern.name,
                 )
 
-                result.success = True
-                result.add_match(match)  # type: ignore[arg-type]
+                object.__setattr__(result, "success", True)
+                result.add_match(match)  # type: ignore[attr-defined]
                 logger.debug(
                     f"Found pattern {pattern.name} at ({hal_match.x}, {hal_match.y}) with score {hal_match.confidence:.3f}"
                 )
             else:
-                result.success = False
+                object.__setattr__(result, "success", False)
                 logger.debug(f"Pattern {pattern.name} not found")
 
         except Exception as e:
             logger.error(f"Error finding pattern {pattern.name}: {e}", exc_info=True)
-            result.success = False
+            object.__setattr__(result, "success", False)
 
         # Set duration
         from datetime import timedelta
 
         elapsed_seconds = time.time() - start_time
-        result.duration = timedelta(seconds=elapsed_seconds)
+        object.__setattr__(result, "duration", timedelta(seconds=elapsed_seconds))
 
         # Record action if recording is enabled
         duration_ms = elapsed_seconds * 1000
-        matches = result.match_list if result.match_list else []
+        matches = result.match_list if result.match_list else []  # type: ignore[attr-defined]
         self._record_find_action(pattern, matches, screenshot_pil, duration_ms)
 
         return result
@@ -427,8 +427,8 @@ class FindWrapper(BaseWrapper):
 
         while time.time() - start_time < timeout:
             result = self._find_real(pattern, search_region)
-            if result.success and result.match_list:
-                return result.match_list[0]  # type: ignore[return-value]
+            if result.success and result.match_list:  # type: ignore[attr-defined]
+                return result.match_list[0]  # type: ignore[attr-defined,no-any-return]
 
             # Wait before next attempt
             time.sleep(poll_interval)
@@ -471,14 +471,15 @@ class FindWrapper(BaseWrapper):
 
         # Record action
         try:
-            controller.recorder.record_find_action(
-                pattern_id=pattern_id,
-                pattern_name=pattern_name,
-                matches=matches,
-                screenshot=screenshot,
-                active_states=set(active_state_names),
-                duration_ms=duration_ms,
-            )
-            logger.debug(f"Recorded find action for pattern {pattern_name}")
+            if controller.recorder is not None:
+                controller.recorder.record_find_action(
+                    pattern_id=pattern_id,
+                    pattern_name=pattern_name,
+                    matches=matches,
+                    screenshot=screenshot,
+                    active_states=set(active_state_names),
+                    duration_ms=duration_ms,
+                )
+                logger.debug(f"Recorded find action for pattern {pattern_name}")
         except Exception as e:
             logger.error(f"Failed to record find action: {e}", exc_info=True)

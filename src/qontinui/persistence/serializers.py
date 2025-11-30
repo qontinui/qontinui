@@ -90,9 +90,7 @@ class JsonSerializer(Serializer):
             logger.debug("json_serialized", path=str(path), size=path.stat().st_size)
 
         except Exception as e:
-            raise StorageWriteException(
-                key=path.stem, storage_type="JSON", reason=str(e)
-            ) from e
+            raise StorageWriteException(key=path.stem, storage_type="JSON", reason=str(e)) from e
 
     def deserialize(self, path: Path) -> Any:
         """Deserialize data from JSON file.
@@ -115,9 +113,7 @@ class JsonSerializer(Serializer):
             return data
 
         except Exception as e:
-            raise StorageReadException(
-                key=path.stem, storage_type="JSON", reason=str(e)
-            ) from e
+            raise StorageReadException(key=path.stem, storage_type="JSON", reason=str(e)) from e
 
     @property
     def file_extension(self) -> str:
@@ -179,9 +175,7 @@ class PickleSerializer(Serializer):
             )
 
         except Exception as e:
-            raise StorageWriteException(
-                key=path.stem, storage_type="Pickle", reason=str(e)
-            ) from e
+            raise StorageWriteException(key=path.stem, storage_type="Pickle", reason=str(e)) from e
 
     def deserialize(self, path: Path) -> Any:
         """Deserialize data from Pickle file.
@@ -209,7 +203,9 @@ class PickleSerializer(Serializer):
         """
         try:
             with open(path, "rb") as f:
-                data = pickle.load(f)
+                # Security: pickle.load is safe here as files are local-only and user-controlled.
+                # Network-transmitted or user-uploaded files should never use pickle.
+                data = pickle.load(f)  # noqa: S301
 
             logger.debug(
                 "pickle_deserialized",
@@ -220,9 +216,7 @@ class PickleSerializer(Serializer):
             return data
 
         except Exception as e:
-            raise StorageReadException(
-                key=path.stem, storage_type="Pickle", reason=str(e)
-            ) from e
+            raise StorageReadException(key=path.stem, storage_type="Pickle", reason=str(e)) from e
 
     @property
     def file_extension(self) -> str:

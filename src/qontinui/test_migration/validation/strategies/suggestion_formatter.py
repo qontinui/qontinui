@@ -4,8 +4,11 @@ Suggestion formatting and application utilities.
 
 from pathlib import Path
 
-from ..fix_models import FixComplexity, FixSuggestion, FixType
 from ...core.models import FailureAnalysis, TestFile
+from ..fix_models import FixComplexity, FixSuggestion, FixType
+from .assertion_suggestions import AssertionSuggestionStrategy
+from .import_suggestions import ImportSuggestionStrategy
+from .syntax_suggestions import SyntaxSuggestionStrategy
 
 
 class SuggestionFormatter:
@@ -13,9 +16,9 @@ class SuggestionFormatter:
 
     def __init__(
         self,
-        assertion_strategy,
-        import_strategy,
-        syntax_strategy,
+        assertion_strategy: AssertionSuggestionStrategy,
+        import_strategy: ImportSuggestionStrategy,
+        syntax_strategy: SyntaxSuggestionStrategy,
     ) -> None:
         """
         Initialize the suggestion formatter.

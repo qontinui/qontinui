@@ -5,7 +5,6 @@ Confidence scoring logic for fix suggestions.
 import re
 
 from ..fix_models import FixSuggestion, MigrationIssuePattern
-from ...core.models import FailureAnalysis, TestFile
 
 
 class SuggestionScorer:

@@ -257,7 +257,7 @@ class FindImage(Find):
             self._method = "feature"
 
         # Call parent implementation
-        return super()._perform_find()
+        return super()._perform_find()  # type: ignore[no-any-return,misc]
 
     def highlight_matches(self, duration: float = 2.0) -> "FindImage":
         """Highlight all found matches on screen.

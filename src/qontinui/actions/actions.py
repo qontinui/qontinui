@@ -8,7 +8,7 @@ import logging
 from typing import Any, cast
 
 from ..model.element import Location, Pattern, Region
-from .action_result import ActionResult
+from .action_result import ActionResult, ActionResultBuilder
 from .fluent import FluentActions
 from .pure import PureActions
 
@@ -68,15 +68,11 @@ class Actions:
                 result: ActionResult = self._mock_find.find(target, region)
                 return result
             # Fallback if mock not initialized
-            result = ActionResult()
-            result.success = False
-            return result
+            return ActionResultBuilder().with_success(False).build()
         else:
             # Live implementation would use real computer vision
             # For now, return empty result
-            result = ActionResult()
-            result.success = True
-            return result
+            return ActionResultBuilder().with_success(True).build()
 
     def click(self, target: Any, button: str = "left") -> ActionResult:
         """Click on a target.
@@ -95,24 +91,24 @@ class Actions:
             if self._mock_actions:
                 result: ActionResult = self._mock_actions.click(target, button)
                 return result
-            result = ActionResult()
-            result.success = True
-            return result
+            return ActionResultBuilder().with_success(True).build()
         else:
             # Live implementation
             if isinstance(target, Pattern):
 
                 # Find pattern first, then click
                 find_result = self.find(target)
-                if find_result.success and find_result.get_match_list():
-                    match = find_result.get_match_list()[0]
+                if find_result.success and find_result.matches:
+                    match = find_result.matches[0]
                     location = match.center
                     return cast(ActionResult, self.pure.mouse_click(location.x, location.y, button))
                 else:
-                    result = ActionResult()
-                    result.success = False
-                    result.output_text = "Pattern not found"
-                    return result
+                    return (
+                        ActionResultBuilder()
+                        .with_success(False)
+                        .with_output_text("Pattern not found")
+                        .build()
+                    )
             elif isinstance(target, Location):
 
                 return cast(ActionResult, self.pure.mouse_click(target.x, target.y, button))
@@ -121,10 +117,12 @@ class Actions:
                 center = target.get_center()
                 return cast(ActionResult, self.pure.mouse_click(center.x, center.y, button))
             else:
-                result = ActionResult()
-                result.success = False
-                result.output_text = f"Unsupported target type: {type(target)}"
-                return result
+                return (
+                    ActionResultBuilder()
+                    .with_success(False)
+                    .with_output_text(f"Unsupported target type: {type(target)}")
+                    .build()
+                )
 
     def type(self, text: str, target: Any | None = None) -> ActionResult:
         """Type text, optionally at a target location.
@@ -143,9 +141,7 @@ class Actions:
             if self._mock_actions:
                 result: ActionResult = self._mock_actions.type(text, target)
                 return result
-            result = ActionResult()
-            result.success = True
-            return result
+            return ActionResultBuilder().with_success(True).build()
         else:
             # Live implementation
             if target:
@@ -155,13 +151,11 @@ class Actions:
 
             # Type the text
             for char in text:
-                result = self.pure.type_character(char)
+                result = self.pure.type_character(char)  # type: ignore[assignment]
                 if not result.success:
                     return result
 
-            result = ActionResult()
-            result.success = True
-            return result
+            return ActionResultBuilder().with_success(True).build()
 
     def key(self, key_name: str) -> ActionResult:
         """Press a key.
@@ -179,9 +173,7 @@ class Actions:
             if self._mock_actions:
                 result: ActionResult = self._mock_actions.key(key_name)
                 return result
-            result = ActionResult()
-            result.success = True
-            return result
+            return ActionResultBuilder().with_success(True).build()
         else:
             # Live implementation
 
@@ -202,9 +194,7 @@ class Actions:
         if MockModeManager.is_mock_mode():
             # In mock mode, don't actually wait
             logger.debug(f"[Mock] Wait {seconds}s")
-            result = ActionResult()
-            result.success = True
-            return result
+            return ActionResultBuilder().with_success(True).build()
         else:
             # Live implementation
 
@@ -226,9 +216,7 @@ class Actions:
         if MockModeManager.is_mock_mode():
             # In mock mode, check if pattern would be found
             find_result = self.find(target)
-            result = ActionResult()
-            result.success = find_result.success
-            return result
+            return ActionResultBuilder().with_success(find_result.success).build()
         else:
             # Live implementation would poll for pattern
             import time
@@ -238,15 +226,15 @@ class Actions:
             while time.time() - start_time < timeout:
                 find_result = self.find(target)
                 if find_result.success:
-                    result = ActionResult()
-                    result.success = True
-                    return result
+                    return ActionResultBuilder().with_success(True).build()
                 time.sleep(0.5)
 
-            result = ActionResult()
-            result.success = False
-            result.output_text = f"Pattern {target.name} not found after {timeout}s"
-            return result
+            return (
+                ActionResultBuilder()
+                .with_success(False)
+                .with_output_text(f"Pattern {target.name} not found after {timeout}s")
+                .build()
+            )
 
     def wait_vanish(self, target: Pattern, timeout: float = 30.0) -> ActionResult:
         """Wait for a pattern to disappear.
@@ -264,9 +252,7 @@ class Actions:
         if MockModeManager.is_mock_mode():
             # In mock mode, just return success
             logger.debug(f"[Mock] Wait for {target.name} to vanish")
-            result = ActionResult()
-            result.success = True
-            return result
+            return ActionResultBuilder().with_success(True).build()
         else:
             # Live implementation would poll until pattern disappears
             import time
@@ -276,15 +262,15 @@ class Actions:
             while time.time() - start_time < timeout:
                 find_result = self.find(target)
                 if not find_result.success:
-                    result = ActionResult()
-                    result.success = True
-                    return result
+                    return ActionResultBuilder().with_success(True).build()
                 time.sleep(0.5)
 
-            result = ActionResult()
-            result.success = False
-            result.output_text = f"Pattern {target.name} still visible after {timeout}s"
-            return result
+            return (
+                ActionResultBuilder()
+                .with_success(False)
+                .with_output_text(f"Pattern {target.name} still visible after {timeout}s")
+                .build()
+            )
 
     def drag(self, from_target: Any, to_target: Any, duration: float = 1.0) -> ActionResult:
         """Drag from one target to another.
@@ -304,9 +290,7 @@ class Actions:
             if self._mock_actions:
                 result: ActionResult = self._mock_actions.drag(from_target, to_target, duration)
                 return result
-            result = ActionResult()
-            result.success = True
-            return result
+            return ActionResultBuilder().with_success(True).build()
         else:
             # Live implementation
             # Convert targets to locations
@@ -314,16 +298,18 @@ class Actions:
             to_loc = self._get_location(to_target)
 
             if not from_loc or not to_loc:
-                result = ActionResult()
-                result.success = False
-                result.output_text = "Could not determine drag locations"
-                return result
+                return (
+                    ActionResultBuilder()
+                    .with_success(False)
+                    .with_output_text("Could not determine drag locations")
+                    .build()
+                )
 
             # Perform drag
 
             return cast(
                 ActionResult,
-                self.pure.mouse_drag(from_loc.x, from_loc.y, to_loc.x, to_loc.y, duration),
+                self.pure.mouse_drag(from_loc.x, from_loc.y, to_loc.x, to_loc.y, duration),  # type: ignore[attr-defined]
             )
 
     def _get_location(self, target: Any) -> Location | None:
@@ -342,8 +328,8 @@ class Actions:
         elif isinstance(target, Pattern):
 
             find_result = self.find(target)
-            if find_result.success and find_result.get_match_list():
-                return cast(Location, find_result.get_match_list()[0].center)
+            if find_result.success and find_result.matches:
+                return cast(Location, find_result.matches[0].center)
         elif isinstance(target, tuple | list) and len(target) == 2:
             return Location(target[0], target[1])
 

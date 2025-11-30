@@ -27,11 +27,7 @@ class MockInput(IInputController):
 
     def _record_action(self, action_type: str, **kwargs) -> None:
         """Record action for history tracking."""
-        self._action_history.append({
-            "type": action_type,
-            "timestamp": datetime.now(),
-            **kwargs
-        })
+        self._action_history.append({"type": action_type, "timestamp": datetime.now(), **kwargs})
 
     # Mouse operations
 
@@ -110,8 +106,15 @@ class MockInput(IInputController):
         """Mock drag mouse from start to end position (instant)."""
         logger.debug(f"[MOCK] Mouse drag from ({start_x}, {start_y}) to ({end_x}, {end_y})")
         self._mouse_position = MousePosition(x=end_x, y=end_y)
-        self._record_action("mouse_drag", start_x=start_x, start_y=start_y,
-                          end_x=end_x, end_y=end_y, button=button.value, duration=duration)
+        self._record_action(
+            "mouse_drag",
+            start_x=start_x,
+            start_y=start_y,
+            end_x=end_x,
+            end_y=end_y,
+            button=button.value,
+            duration=duration,
+        )
         return True
 
     def mouse_scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:

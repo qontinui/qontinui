@@ -3,11 +3,7 @@
 Based on Brobot's mock pattern - simulates screen capture instantly.
 """
 
-import hashlib
 import logging
-from datetime import datetime
-from io import BytesIO
-from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -37,7 +33,7 @@ class MockScreen(IScreenCapture):
         self._mock_screens: dict[str, np.ndarray] = {}
         logger.debug(f"MockScreen initialized ({width}x{height})")
 
-    def capture_screen(self, monitor_index: int = 0) -> np.ndarray:
+    def capture_screen(self, monitor_index: int = 0) -> np.ndarray:  # type: ignore[override]
         """Mock capture entire screen (instant).
 
         Returns:
@@ -51,7 +47,7 @@ class MockScreen(IScreenCapture):
         screen = np.zeros((self._height, self._width, 3), dtype=np.uint8)
         return screen
 
-    def capture_region(
+    def capture_region(  # type: ignore[override]
         self, x: int, y: int, width: int, height: int, monitor_index: int = 0
     ) -> np.ndarray:
         """Mock capture screen region (instant).
@@ -76,8 +72,11 @@ class MockScreen(IScreenCapture):
         region = np.zeros((height, width, 3), dtype=np.uint8)
         return region
 
-    def save_screenshot(
-        self, file_path: str, monitor_index: int = 0, region: tuple[int, int, int, int] | None = None
+    def save_screenshot(  # type: ignore[override]
+        self,
+        file_path: str,
+        monitor_index: int = 0,
+        region: tuple[int, int, int, int] | None = None,
     ) -> bool:
         """Mock save screenshot to file (instant).
 
@@ -136,7 +135,7 @@ class MockScreen(IScreenCapture):
             height=self._height,
             scale=1.0,
             is_primary=True,
-            name="Mock Monitor"
+            name="Mock Monitor",
         )
         return [monitor]
 
@@ -154,7 +153,7 @@ class MockScreen(IScreenCapture):
             height=self._height,
             scale=1.0,
             is_primary=True,
-            name="Mock Monitor"
+            name="Mock Monitor",
         )
 
     def get_pixel_color(self, x: int, y: int, monitor: int | None = None) -> tuple[int, int, int]:

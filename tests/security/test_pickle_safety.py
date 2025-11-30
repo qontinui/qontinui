@@ -34,13 +34,9 @@ class TestPickleNormalOperation:
 
         # Complex nested structure
         data = {
-            "nested": {
-                "deep": {
-                    "value": [1, 2, {"inner": "data"}]
-                }
-            },
+            "nested": {"deep": {"value": [1, 2, {"inner": "data"}]}},
             "tuple": (1, 2, 3),
-            "set": {4, 5, 6}
+            "set": {4, 5, 6},
         }
 
         file_path = tmp_path / "complex.pkl"
@@ -145,7 +141,7 @@ class TestErrorHandling:
         serializer = PickleSerializer()
         file_path = tmp_path / "nonexistent.pkl"
 
-        with pytest.raises(Exception):  # StorageReadException or FileNotFoundError
+        with pytest.raises((FileNotFoundError, OSError)):
             serializer.deserialize(file_path)
 
     def test_serialize_to_invalid_path(self):
@@ -153,7 +149,7 @@ class TestErrorHandling:
         serializer = PickleSerializer()
         invalid_path = Path("/invalid/path/that/does/not/exist/file.pkl")
 
-        with pytest.raises(Exception):  # StorageWriteException or OSError
+        with pytest.raises((FileNotFoundError, OSError, PermissionError)):
             serializer.serialize({"data": "value"}, invalid_path)
 
 
@@ -233,6 +229,7 @@ class TestPathValidation:
 
         # Use relative path
         import os
+
         original_dir = os.getcwd()
         try:
             os.chdir(tmp_path)

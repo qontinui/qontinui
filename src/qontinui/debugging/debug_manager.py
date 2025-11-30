@@ -37,12 +37,12 @@ class DebugManager:
             with cls._lock:
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
-                    cls._instance._initialized = False
+                    cls._instance._initialized = False  # type: ignore[has-type]
         return cls._instance
 
     def __init__(self) -> None:
         """Initialize the debug manager (only runs once)."""
-        if self._initialized:
+        if self._initialized:  # type: ignore[has-type]
             return
 
         self._sessions: dict[str, DebugSession] = {}

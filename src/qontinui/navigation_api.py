@@ -102,7 +102,7 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
             logger.debug(f"State '{state.name}' has {len(state.transitions)} transitions")
 
         # Step 4: Initialize StateMemory with populated StateService
-        _state_memory = StateMemory(state_service=_state_service)
+        _state_memory = StateMemory(state_service=_state_service)  # type: ignore[arg-type]
         logger.debug("StateMemory initialized")
 
         # Step 5: Activate initial states
@@ -155,8 +155,8 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
                 states_with_transitions += 1
                 logger.info(f"State '{state.name}' has {len(state.transitions)} transitions")
             for transition in state.transitions:
-                logger.info(f"Registering transition: {transition.id} from state '{state.name}'")
-                _navigator.multistate_adapter.register_qontinui_transition(transition)
+                logger.info(f"Registering transition: {transition.id} from state '{state.name}'")  # type: ignore[attr-defined]
+                _navigator.multistate_adapter.register_qontinui_transition(transition)  # type: ignore[arg-type]
                 transition_count += 1
 
         logger.info(f"Found {states_with_transitions} states with transitions")
@@ -255,7 +255,7 @@ def open_states(state_identifiers: list[str | int]) -> bool:
     for identifier in state_identifiers:
         if isinstance(identifier, int):
             state_id = identifier
-            state = _state_service.get_state_by_id(state_id)
+            state = _state_service.get_state_by_id(state_id)  # type: ignore[attr-defined]
             if not state:
                 logger.error(f"State ID {state_id} not found in state service")
                 return False

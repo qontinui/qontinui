@@ -6,7 +6,7 @@ operations on operands with variable resolution support.
 
 import logging
 import math
-from typing import Any
+from typing import Any, cast
 
 from .context import VariableContext
 from .evaluator import SafeEvaluator
@@ -127,16 +127,14 @@ class MathExecutor:
 
         for i, operand in enumerate(operands):
             try:
-                if isinstance(operand, (int, float)):
+                if isinstance(operand, int | float):
                     # Direct numeric value
                     resolved.append(float(operand))
                 elif isinstance(operand, dict):
                     # Variable reference
                     var_name = operand.get("variableName")
                     if not var_name:
-                        raise ValueError(
-                            f"Operand {i}: Variable reference missing 'variableName'"
-                        )
+                        raise ValueError(f"Operand {i}: Variable reference missing 'variableName'")
 
                     value = self.variable_context.get(var_name)
                     if value is None:
@@ -147,9 +145,7 @@ class MathExecutor:
                     # Try to convert to float
                     resolved.append(float(operand))
             except (ValueError, TypeError) as e:
-                raise ValueError(
-                    f"Operand {i}: Cannot convert to number: {operand}"
-                ) from e
+                raise ValueError(f"Operand {i}: Cannot convert to number: {operand}") from e
 
         return resolved
 
@@ -303,7 +299,7 @@ class MathExecutor:
         if len(operands) != 2:
             raise ValueError("POWER requires exactly 2 operands")
 
-        return operands[0] ** operands[1]
+        return cast(float, operands[0] ** operands[1])
 
     def _sqrt(self, operands: list[float]) -> float:
         """Calculate square root of operand.

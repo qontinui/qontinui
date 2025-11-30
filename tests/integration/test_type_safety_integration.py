@@ -7,7 +7,6 @@ and the codebase maintains strong type safety.
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
 
 import pytest
 
@@ -68,6 +67,7 @@ class TestTypeHintUsage:
     def test_keyboard_operations_type_hints(self):
         """Test KeyboardOperations has correct type hints."""
         from unittest.mock import Mock
+
         from pynput import keyboard
 
         mock_keyboard = Mock(spec=keyboard.Controller)
@@ -86,6 +86,7 @@ class TestTypeHintUsage:
     def test_mouse_operations_type_hints(self):
         """Test MouseOperations has correct type hints."""
         from unittest.mock import Mock
+
         from pynput import mouse
 
         mock_mouse = Mock(spec=mouse.Controller)
@@ -333,16 +334,16 @@ class TestTypeAnnotationCoverage:
                 # Public method should have annotations
                 sig = inspect.signature(method)
                 # At minimum should have return annotation
-                assert (
-                    sig.return_annotation != inspect.Signature.empty
-                    or name in ["__str__", "__repr__"]
-                ), f"Method {name} missing return type hint"
+                assert sig.return_annotation != inspect.Signature.empty or name in [
+                    "__str__",
+                    "__repr__",
+                ], f"Method {name} missing return type hint"
 
     def test_public_functions_have_type_hints(self):
         """Test that public functions have type hints."""
-        from qontinui.actions import result_builders, result_extractors
-
         import inspect
+
+        from qontinui.actions import result_builders
 
         # Check builder functions
         for name, func in inspect.getmembers(result_builders, predicate=inspect.isfunction):
@@ -372,6 +373,7 @@ class TestOptionalTypeHandling:
     def test_optional_parameters(self):
         """Test functions with Optional parameters."""
         from unittest.mock import Mock
+
         from pynput import mouse
 
         mock_mouse = Mock(spec=mouse.Controller)

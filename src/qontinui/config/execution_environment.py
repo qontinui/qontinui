@@ -11,8 +11,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, cast
 
-from ..exceptions import ConfigurationError
-
 logger = logging.getLogger(__name__)
 
 
@@ -249,7 +247,7 @@ class ExecutionEnvironment:
 
             return screen_count, (width, height), int(dpi)
 
-        except (ImportError, OSError, RuntimeError) as e:
+        except (ImportError, OSError, RuntimeError):
             # Fallback to platform-specific methods if tkinter fails
             # This can happen in headless environments or display issues
             if self.system_info and self.system_info.platform == Platform.LINUX:
@@ -278,7 +276,7 @@ class ExecutionEnvironment:
 
                     return screens, primary_res, None
 
-                except (subprocess.CalledProcessError, FileNotFoundError, ValueError) as e:
+                except (subprocess.CalledProcessError, FileNotFoundError, ValueError):
                     # xrandr not available or failed to parse
                     pass
 
@@ -306,7 +304,7 @@ class ExecutionEnvironment:
                             vm in content for vm in ["vmware", "virtualbox", "qemu", "kvm", "xen"]
                         ):
                             return True
-                except (OSError, IOError, PermissionError) as e:
+                except (OSError, PermissionError):
                     # File not readable or doesn't exist
                     pass
 
@@ -336,7 +334,7 @@ class ExecutionEnvironment:
             with open("/proc/1/cgroup") as f:
                 if "docker" in f.read() or "kubepods" in f.read():
                     return True
-        except (OSError, IOError, FileNotFoundError) as e:
+        except (OSError, FileNotFoundError):
             # /proc/1/cgroup doesn't exist or not readable
             pass
 
@@ -357,7 +355,7 @@ class ExecutionEnvironment:
             with open("/proc/version") as f:
                 if "microsoft" in f.read().lower():
                     return True
-        except (OSError, IOError, FileNotFoundError) as e:
+        except (OSError, FileNotFoundError):
             # /proc/version doesn't exist or not readable
             pass
 

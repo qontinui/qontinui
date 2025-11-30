@@ -13,8 +13,8 @@ from ..model.transition.enhanced_state_transition import (
     TaskSequenceStateTransition,
 )
 from ..multistate_integration.multistate_adapter import MultiStateAdapter
-from .action_executor import ActionExecutor
-from .config_parser import Process, QontinuiConfig
+from .action_executor import ActionExecutor  # type: ignore[attr-defined]
+from .config_parser import QontinuiConfig
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class MultiStateExecutor:
 
             # Create MultiState representation with state verification callback
             multistate_id = f"state_{state.name.replace(' ', '_').lower()}"
-            multistate = self.adapter.manager.add_state(
+            self.adapter.manager.add_state(
                 id=multistate_id,
                 name=state.name,
                 blocking=blocking,
@@ -76,7 +76,9 @@ class MultiStateExecutor:
             self.state_name_to_hash[state.name] = state_hash
             self.state_hash_to_name[state_hash] = state.name
 
-            print(f"Registered state: {state.name} (hash: {state_hash}) -> MultiState: {multistate_id}")
+            print(
+                f"Registered state: {state.name} (hash: {state_hash}) -> MultiState: {multistate_id}"
+            )
 
         # Register all transitions with MultiState
         for trans in self.config.transitions:
@@ -95,7 +97,9 @@ class MultiStateExecutor:
             # Register with MultiState
             self._register_multistate_transition(trans)
 
-        print(f"Registered {len(self.config.states)} states and {len(self.config.transitions)} transitions")
+        print(
+            f"Registered {len(self.config.states)} states and {len(self.config.transitions)} transitions"
+        )
 
     def _register_multistate_transition(self, transition: TaskSequenceStateTransition):
         """Register a TaskSequenceStateTransition with MultiState."""
@@ -145,7 +149,7 @@ class MultiStateExecutor:
 
         # Register transition with MultiState
         if from_states or activate_states:  # Only register if we have valid states
-            multi_trans = self.adapter.manager.add_transition(
+            self.adapter.manager.add_transition(
                 id=f"trans_{transition.id}",
                 name=transition.name or f"Transition {transition.id}",
                 from_states=from_states,
@@ -249,14 +253,14 @@ class MultiStateExecutor:
             return False
 
         # Brobot StateImage objects have Image objects, not image IDs
-        if not state.state_images:
+        if not state.state_images:  # type: ignore[attr-defined]
             # State has no identifying images, consider it active
             return True
 
         # Check all state images (Brobot uses state_images list)
-        for state_image in state.state_images:
+        for state_image in state.state_images:  # type: ignore[attr-defined]
             # StateImage has an Image object with a file path
-            if state_image.image and hasattr(state_image.image, 'path'):
+            if state_image.image and hasattr(state_image.image, "path"):
                 similarity = state_image.get_similarity()
                 location = self.action_executor._find_image_on_screen(
                     state_image.image.path, similarity
@@ -352,7 +356,6 @@ class MultiStateExecutor:
         self._sync_multistate_active_states()
 
         return True
-
 
     def _should_continue(self) -> bool:
         """Determine if the state machine should continue executing."""

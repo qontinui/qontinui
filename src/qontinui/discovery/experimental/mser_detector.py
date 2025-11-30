@@ -8,10 +8,9 @@ This detector uses MSER to identify stable regions in the image that may
 correspond to UI elements like text, buttons, and icons.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 import cv2
-import numpy as np
 
 from .base_detector import BaseDetector
 from .types import BBox
@@ -32,7 +31,7 @@ class MSERDetector(BaseDetector):
     def __init__(self):
         super().__init__("MSER Detector")
 
-    def detect(self, image_path: str, **params) -> List[BBox]:
+    def detect(self, image_path: str, **params) -> list[BBox]:
         """
         Detect elements using MSER
 
@@ -59,7 +58,7 @@ class MSERDetector(BaseDetector):
         max_area_pixels = int(img.shape[0] * img.shape[1] * max_area_ratio)
 
         # Create MSER detector
-        mser = cv2.MSER_create(
+        mser = cv2.MSER_create(  # type: ignore[attr-defined]
             _delta=delta,
             _min_area=min_area,
             _max_area=max_area_pixels,
@@ -83,7 +82,7 @@ class MSERDetector(BaseDetector):
 
         return boxes
 
-    def get_param_grid(self) -> List[Dict[str, Any]]:
+    def get_param_grid(self) -> list[dict[str, Any]]:
         """Parameter grid for hyperparameter search"""
         return [
             # Conservative - larger stable regions

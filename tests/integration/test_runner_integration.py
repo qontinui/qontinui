@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, Mock, mock_open, patch
+from typing import Any
+from unittest.mock import Mock, patch
 
 import cv2
 import numpy as np
@@ -151,7 +151,7 @@ class TestScreenshotLoading:
         screenshots = self._load_screenshots_from_dir(temp_screenshot_dir)
 
         # Verify order by checking text content
-        for i, screenshot in enumerate(screenshots):
+        for _i, screenshot in enumerate(screenshots):
             # Extract text region and verify it contains expected index
             # (In real implementation, would use OCR or metadata)
             assert screenshot is not None
@@ -196,7 +196,7 @@ class TestScreenshotLoading:
     # Helper methods
     def _load_screenshots_from_dir(
         self, directory: Path, pattern: str = "*.png"
-    ) -> List[np.ndarray]:
+    ) -> list[np.ndarray]:
         """Load screenshots from directory."""
         if not directory.exists():
             raise FileNotFoundError(f"Directory not found: {directory}")
@@ -297,12 +297,14 @@ class TestEventLoading:
         assert len(by_screenshot[1]) == 1
 
     # Helper methods
-    def _load_events_from_json(self, filepath: Path, validate: bool = False) -> List[Dict[str, Any]]:
+    def _load_events_from_json(
+        self, filepath: Path, validate: bool = False
+    ) -> list[dict[str, Any]]:
         """Load events from JSON file."""
         if not filepath.exists():
             raise FileNotFoundError(f"Events file not found: {filepath}")
 
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             events = json.load(f)
 
         if validate:
@@ -420,7 +422,7 @@ class TestStateSerialization:
         assert len(loaded_json["state_images"]) == len(sample_state.state_images)
 
     # Helper methods
-    def _serialize_state(self, state: State) -> Dict[str, Any]:
+    def _serialize_state(self, state: State) -> dict[str, Any]:
         """Serialize a State object to dictionary."""
         state_dict = {
             "name": state.name,
@@ -526,9 +528,7 @@ class TestRunnerIntegrationPoints:
         output = {
             "status": "success",
             "detected_states": [self._serialize_state(sample_state)],
-            "transitions": [
-                {"from": "test_state", "to": "settings", "confidence": 0.85}
-            ],
+            "transitions": [{"from": "test_state", "to": "settings", "confidence": 0.85}],
             "metadata": {
                 "total_screenshots": 100,
                 "total_transitions": 15,
@@ -546,12 +546,12 @@ class TestRunnerIntegrationPoints:
         assert "metadata" in loaded
 
     # Helper methods
-    def _call_runner_service(self, command: str, **kwargs) -> Dict[str, Any]:
+    def _call_runner_service(self, command: str, **kwargs) -> dict[str, Any]:
         """Mock calling runner service."""
         # In real implementation, would use subprocess or HTTP
         return {"success": True, "command": command, "params": kwargs}
 
-    def _load_screenshots_from_dir(self, directory: Path) -> List[np.ndarray]:
+    def _load_screenshots_from_dir(self, directory: Path) -> list[np.ndarray]:
         """Load screenshots from directory."""
         screenshots = []
         for filepath in sorted(directory.glob("*.png")):
@@ -560,7 +560,7 @@ class TestRunnerIntegrationPoints:
                 screenshots.append(img)
         return screenshots
 
-    def _serialize_state(self, state: State) -> Dict[str, Any]:
+    def _serialize_state(self, state: State) -> dict[str, Any]:
         """Serialize state to dict."""
         return {
             "name": state.name,
@@ -628,7 +628,7 @@ class TestDataFlowIntegration:
         assert isinstance(state.state_images, list)
 
     # Helper methods
-    def _load_screenshots(self, directory: Path) -> List[np.ndarray]:
+    def _load_screenshots(self, directory: Path) -> list[np.ndarray]:
         """Load screenshots."""
         screenshots = []
         for filepath in sorted(directory.glob("*.png")):
@@ -637,14 +637,14 @@ class TestDataFlowIntegration:
                 screenshots.append(img)
         return screenshots
 
-    def _load_events(self, filepath: Path) -> List[Dict[str, Any]]:
+    def _load_events(self, filepath: Path) -> list[dict[str, Any]]:
         """Load events."""
         with open(filepath) as f:
             return json.load(f)
 
     def _extract_transitions(
-        self, screenshots: List[np.ndarray], events: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, screenshots: list[np.ndarray], events: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Extract transitions from screenshots and events."""
         # Simplified: just return mock transitions
         return [
@@ -653,7 +653,7 @@ class TestDataFlowIntegration:
         ]
 
     def _build_state(
-        self, screenshots: List[np.ndarray], transitions: Optional[List[Dict[str, Any]]]
+        self, screenshots: list[np.ndarray], transitions: list[dict[str, Any]] | None
     ) -> State:
         """Build state from data."""
         if not screenshots:
@@ -662,9 +662,7 @@ class TestDataFlowIntegration:
         state = State(name="flow_test_state", description="State from data flow test")
         return state
 
-    def _serialize_output(
-        self, state: State, transitions: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _serialize_output(self, state: State, transitions: list[dict[str, Any]]) -> dict[str, Any]:
         """Serialize output."""
         return {
             "state": {"name": state.name, "description": state.description},
@@ -715,7 +713,7 @@ class TestImageFormatHandling:
         assert len(screenshots) == 2
 
     # Helper method
-    def _load_images(self, directory: Path, pattern: str) -> List[np.ndarray]:
+    def _load_images(self, directory: Path, pattern: str) -> list[np.ndarray]:
         """Load images matching pattern."""
         images = []
         for filepath in directory.glob(pattern):

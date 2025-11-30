@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from .action_config import ActionConfig
 from .action_execution import ActionExecution
-from .action_result import ActionResult
+from .action_result import ActionResult, ActionResultBuilder
 from .action_service import ActionService
 from .object_collection import ObjectCollection
 
@@ -112,17 +112,17 @@ class Action:
             # Execute the chain
             if self.action_chain_executor:
                 return self.action_chain_executor.execute_chain(
-                    action_config, ActionResult(), object_collections
+                    action_config, ActionResultBuilder().build(), object_collections
                 )
             else:
                 print("Warning: Action chain executor not available for chained actions")
-                return ActionResult()
+                return ActionResultBuilder().build()
 
         # Single action execution
         action = self.action_service.get_action(action_config)
         if action is None:
             print(f"Not a valid Action for {action_config.__class__.__name__}")
-            return ActionResult()
+            return ActionResultBuilder().build()
 
         # Always use action execution for lifecycle management
         return self.action_execution.perform(
@@ -189,7 +189,7 @@ class Action:
             find_config = PatternFindOptionsBuilder().build()
             find_result = self.perform(find_config, image_collection)
 
-            if not find_result.success or not find_result.match_list:
+            if not find_result.success or not find_result.matches:
                 # Find failed, return the find result
                 return find_result
 
@@ -197,7 +197,7 @@ class Action:
             # Build collection with matches and any direct locations/regions
             click_builder = ObjectCollectionBuilder()
             # Convert find.Match to model.Match objects
-            model_matches = [m.match_object for m in find_result.match_list]
+            model_matches = [m.match_object for m in find_result.matches]
             click_builder.with_match_objects_as_regions(*model_matches)
             if locations:
                 click_builder.with_locations(*locations)
@@ -236,7 +236,7 @@ class Action:
         # Would need TypeOptions to be implemented
         # config = TypeOptions()
         # return self.perform(config, collection)
-        return ActionResult()  # Placeholder
+        return ActionResultBuilder().build()  # Placeholder
 
     def execute(self, action_func: Callable[[], Any], target: Any | None = None) -> ActionResult:
         """Execute a primitive action function with lifecycle management.

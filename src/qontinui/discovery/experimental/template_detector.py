@@ -8,7 +8,7 @@ This detector uses corner detection (good features to track) and morphological
 operations to identify rectangular UI elements.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 import cv2
 import numpy as np
@@ -32,7 +32,7 @@ class TemplateDetector(BaseDetector):
     def __init__(self):
         super().__init__("Template/Corner Detector")
 
-    def detect(self, image_path: str, **params) -> List[BBox]:
+    def detect(self, image_path: str, **params) -> list[BBox]:
         """
         Detect elements using corner detection
 
@@ -88,16 +88,14 @@ class TemplateDetector(BaseDetector):
         # Create a mask with corners
         corner_mask = np.zeros_like(gray)
         for x, y in corners:
-            cv2.circle(corner_mask, (x, y), 3, 255, -1)
+            cv2.circle(corner_mask, (x, y), 3, 255, -1)  # type: ignore[call-overload]
 
         # Dilate to connect nearby corners
         kernel = np.ones((15, 15), np.uint8)
         dilated = cv2.dilate(corner_mask, kernel, iterations=2)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -112,7 +110,7 @@ class TemplateDetector(BaseDetector):
 
         return boxes
 
-    def get_param_grid(self) -> List[Dict[str, Any]]:
+    def get_param_grid(self) -> list[dict[str, Any]]:
         """Parameter grid for hyperparameter search"""
         return [
             # High quality - fewer corners

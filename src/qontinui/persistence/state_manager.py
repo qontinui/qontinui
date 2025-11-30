@@ -88,7 +88,7 @@ class StateManager:
         if data is not None:
             logger.info("state_loaded", state_name=state_name)
 
-        return data
+        return data  # type: ignore[no-any-return]
 
     def delete_state(self, state_name: str) -> bool:
         """Delete a state.

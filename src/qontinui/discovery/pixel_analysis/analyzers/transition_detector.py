@@ -106,7 +106,7 @@ class TransitionDetector:
         # Even small visual changes indicate a transition
         confidence = 0.5 + (normalized_diff * 0.5)
 
-        return confidence
+        return confidence  # type: ignore[no-any-return]
 
     def _is_duplicate_transition(
         self, transitions: list[StateTransition], new_transition: StateTransition

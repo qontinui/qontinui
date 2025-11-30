@@ -37,6 +37,7 @@ class TestPathResolution:
 
         # Change to tmp directory
         import os
+
         original_dir = os.getcwd()
         try:
             os.chdir(tmp_path)
@@ -83,7 +84,7 @@ class TestPathTraversalPrevention:
         # Paths with null bytes should fail before causing issues
         dangerous_paths = [
             "test\x00file",  # Null byte
-            "test\nfile",    # Newline
+            "test\nfile",  # Newline
         ]
 
         for dangerous_path in dangerous_paths:
@@ -101,8 +102,7 @@ class TestSymlinkHandling:
     """Test that symlinks are handled securely."""
 
     @pytest.mark.skipif(
-        not hasattr(Path, "symlink_to"),
-        reason="Symlinks not supported on this platform"
+        not hasattr(Path, "symlink_to"), reason="Symlinks not supported on this platform"
     )
     def test_symlink_resolution(self, tmp_path: Path):
         """Test that symlinks are resolved to their targets."""

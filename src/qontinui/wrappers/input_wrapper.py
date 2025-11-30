@@ -102,10 +102,10 @@ class MouseWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"MouseWrapper.move (MOCK): ({x}, {y})")
-            return self.mock_mouse.move(x, y, duration)
+            return self.mock_mouse.move(x, y, duration)  # type: ignore[no-any-return]
         else:
             logger.debug(f"MouseWrapper.move (REAL): ({x}, {y})")
-            return self.hal_input.mouse_move(x, y, duration)
+            return self.hal_input.mouse_move(x, y, duration)  # type: ignore[no-any-return]
 
     def click(
         self,
@@ -127,13 +127,13 @@ class MouseWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"MouseWrapper.click (MOCK): ({x}, {y}), clicks={clicks}")
-            return self.mock_mouse.click(x, y, button, clicks)
+            return self.mock_mouse.click(x, y, button, clicks)  # type: ignore[no-any-return]
         else:
             logger.debug(f"MouseWrapper.click (REAL): ({x}, {y}), clicks={clicks}")
             from ..hal.interfaces.input_controller import MouseButton as MB
 
             btn = button if button else MB.LEFT
-            return self.hal_input.mouse_click(x, y, btn, clicks)
+            return self.hal_input.mouse_click(x, y, btn, clicks)  # type: ignore[no-any-return]
 
     def double_click(
         self,
@@ -175,10 +175,10 @@ class MouseWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"MouseWrapper.drag (MOCK): ({start_x},{start_y}) → ({end_x},{end_y})")
-            return self.mock_mouse.drag(start_x, start_y, end_x, end_y, duration)
+            return self.mock_mouse.drag(start_x, start_y, end_x, end_y, duration)  # type: ignore[no-any-return]
         else:
             logger.debug(f"MouseWrapper.drag (REAL): ({start_x},{start_y}) → ({end_x},{end_y})")
-            return self.hal_input.drag(start_x, start_y, end_x, end_y, duration)
+            return self.hal_input.drag(start_x, start_y, end_x, end_y, duration)  # type: ignore[no-any-return]
 
     def scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
         """Scroll mouse wheel.
@@ -193,10 +193,10 @@ class MouseWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"MouseWrapper.scroll (MOCK): clicks={clicks}")
-            return self.mock_mouse.scroll(clicks, x, y)
+            return self.mock_mouse.scroll(clicks, x, y)  # type: ignore[no-any-return]
         else:
             logger.debug(f"MouseWrapper.scroll (REAL): clicks={clicks}")
-            return self.hal_input.scroll(clicks, x, y)
+            return self.hal_input.scroll(clicks, x, y)  # type: ignore[no-any-return]
 
     def get_position(self) -> "MousePosition":
         """Get current mouse position.
@@ -206,10 +206,10 @@ class MouseWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug("MouseWrapper.get_position (MOCK)")
-            return self.mock_mouse.get_position()
+            return self.mock_mouse.get_position()  # type: ignore[no-any-return]
         else:
             logger.debug("MouseWrapper.get_position (REAL)")
-            return self.hal_input.get_mouse_position()
+            return self.hal_input.get_mouse_position()  # type: ignore[no-any-return]
 
 
 class KeyboardWrapper(BaseWrapper):
@@ -289,10 +289,10 @@ class KeyboardWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"KeyboardWrapper.type_text (MOCK): '{text[:50]}...'")
-            return self.mock_keyboard.type_text(text, interval)
+            return self.mock_keyboard.type_text(text, interval)  # type: ignore[no-any-return]
         else:
             logger.debug(f"KeyboardWrapper.type_text (REAL): '{text[:50]}...'")
-            return self.hal_input.type_text(text, interval)
+            return self.hal_input.type_text(text, interval)  # type: ignore[no-any-return]
 
     def press(self, key: str, presses: int = 1) -> bool:
         """Press key.
@@ -306,10 +306,10 @@ class KeyboardWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"KeyboardWrapper.press (MOCK): {key} x{presses}")
-            return self.mock_keyboard.press(key, presses)
+            return self.mock_keyboard.press(key, presses)  # type: ignore[no-any-return]
         else:
             logger.debug(f"KeyboardWrapper.press (REAL): {key} x{presses}")
-            return self.hal_input.key_press(key, presses)
+            return self.hal_input.key_press(key, presses)  # type: ignore[no-any-return]
 
     def hotkey(self, *keys: str) -> bool:
         """Press key combination.
@@ -322,10 +322,10 @@ class KeyboardWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"KeyboardWrapper.hotkey (MOCK): {'+'.join(keys)}")
-            return self.mock_keyboard.hotkey(*keys)
+            return self.mock_keyboard.hotkey(*keys)  # type: ignore[no-any-return]
         else:
             logger.debug(f"KeyboardWrapper.hotkey (REAL): {'+'.join(keys)}")
-            return self.hal_input.hotkey(*keys)
+            return self.hal_input.hotkey(*keys)  # type: ignore[no-any-return]
 
     def key_down(self, key: str) -> bool:
         """Press and hold key.
@@ -338,10 +338,10 @@ class KeyboardWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"KeyboardWrapper.key_down (MOCK): {key}")
-            return self.mock_keyboard.key_down(key)
+            return self.mock_keyboard.key_down(key)  # type: ignore[no-any-return]
         else:
             logger.debug(f"KeyboardWrapper.key_down (REAL): {key}")
-            return self.hal_input.key_down(key)
+            return self.hal_input.key_down(key)  # type: ignore[no-any-return]
 
     def key_up(self, key: str) -> bool:
         """Release key.
@@ -354,7 +354,7 @@ class KeyboardWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"KeyboardWrapper.key_up (MOCK): {key}")
-            return self.mock_keyboard.key_up(key)
+            return self.mock_keyboard.key_up(key)  # type: ignore[no-any-return]
         else:
             logger.debug(f"KeyboardWrapper.key_up (REAL): {key}")
-            return self.hal_input.key_up(key)
+            return self.hal_input.key_up(key)  # type: ignore[no-any-return]
