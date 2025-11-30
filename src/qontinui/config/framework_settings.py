@@ -8,28 +8,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .qontinui_properties import (
-    AnalysisConfig,
-    AutomationConfig,
-    AutoScalingConfig,
-    CaptureConfig,
-    ConsoleActionConfig,
-    CoreConfig,
-    DatasetConfig,
-    DpiConfig,
-    GuiAccessConfig,
-    HighlightConfig,
-    IllustrationConfig,
-    ImageDebugConfig,
-    LoggingConfig,
-    MockConfig,
-    MonitorConfig,
-    MouseConfig,
     QontinuiProperties,
-    RecordingConfig,
-    ScreenshotConfig,
-    SikuliConfig,
-    StartupConfig,
-    TestingConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -119,12 +98,12 @@ class FrameworkSettings:
         """Ensure singleton instance."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
+            cls._instance._initialized = False  # type: ignore[has-type]
         return cls._instance
 
     def __init__(self) -> None:
         """Initialize settings if not already done."""
-        if not self._initialized:
+        if not self._initialized:  # type: ignore[has-type]
             props = QontinuiProperties()
 
             # Initialize themed configuration groups

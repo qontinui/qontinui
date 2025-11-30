@@ -41,11 +41,12 @@ else:
         force=True,
     )
 
+# Discovery System
 # CRITICAL: Initialize DPI awareness BEFORE any other imports
 # This ensures physical resolution capture on Windows
 # Actions (Brobot-style)
 # Navigation API
-from . import navigation_api, registry
+from . import discovery, navigation_api, registry
 from .actions import (
     Action,
     ActionChain,
@@ -62,9 +63,6 @@ from .actions import (
     TypeOptions,
     WaitOptions,
 )
-
-# Discovery System
-from . import discovery
 from .discovery import (
     DifferentialConsistencyDetector,
     ElementIdentifier,

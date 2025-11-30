@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from .coverage_models import MigrationSummary, TestCategory, TestMapping
+from .coverage_models import MigrationSummary, TestMapping
 
 
 class CoverageReporter:

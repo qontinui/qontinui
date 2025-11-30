@@ -77,7 +77,7 @@ class ExecutionHistory:
 
             # Trim history
             if len(self.history) > self.max_history:
-                self.history = self.history[:self.max_history]
+                self.history = self.history[: self.max_history]
 
             logger.debug(
                 f"Added execution {context.execution_id} to history "
@@ -85,9 +85,7 @@ class ExecutionHistory:
             )
 
     async def get_history(
-        self,
-        workflow_id: str | None = None,
-        limit: int | None = None
+        self, workflow_id: str | None = None, limit: int | None = None
     ) -> list[dict]:
         """Get execution history, optionally filtered by workflow.
 

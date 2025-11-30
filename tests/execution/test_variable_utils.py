@@ -1,6 +1,5 @@
 """Tests for variable utility functions."""
 
-import json
 import tempfile
 from pathlib import Path
 
@@ -97,7 +96,7 @@ class TestSerialization:
 
         # Not serializable
         assert not is_json_serializable(lambda x: x)
-        assert not is_json_serializable(set([1, 2, 3]))
+        assert not is_json_serializable({1, 2, 3})
 
 
 class TestVariableNameValidation:
@@ -182,9 +181,7 @@ class TestNestedVariables:
 
     def test_get_nested_variable(self):
         """Test getting nested variable with dot notation."""
-        variables = {
-            "user": {"name": "alice", "address": {"city": "NYC", "zip": "10001"}}
-        }
+        variables = {"user": {"name": "alice", "address": {"city": "NYC", "zip": "10001"}}}
 
         assert get_nested_variable(variables, "user.name") == "alice"
         assert get_nested_variable(variables, "user.address.city") == "NYC"
@@ -205,20 +202,13 @@ class TestNestedVariables:
         assert variables == {"user": {"name": "alice"}}
 
         assert set_nested_variable(variables, "user.address.city", "NYC") is True
-        assert variables == {
-            "user": {"name": "alice", "address": {"city": "NYC"}}
-        }
+        assert variables == {"user": {"name": "alice", "address": {"city": "NYC"}}}
 
     def test_set_nested_without_creating(self):
         """Test setting nested variable without creating missing paths."""
         variables = {}
 
-        assert (
-            set_nested_variable(
-                variables, "user.name", "alice", create_missing=False
-            )
-            is False
-        )
+        assert set_nested_variable(variables, "user.name", "alice", create_missing=False) is False
         assert variables == {}
 
 
@@ -271,12 +261,10 @@ class TestSanitization:
         variables = {
             "valid": "text",
             "func": lambda x: x,
-            "set": set([1, 2, 3]),
+            "set": {1, 2, 3},
         }
 
-        sanitized = sanitize_for_persistence(
-            variables, skip_non_serializable=True
-        )
+        sanitized = sanitize_for_persistence(variables, skip_non_serializable=True)
 
         assert sanitized == {"valid": "text"}
         assert "func" not in sanitized
@@ -286,9 +274,7 @@ class TestSanitization:
         """Test sanitizing converts non-serializable to string."""
         variables = {"func": lambda x: x}
 
-        sanitized = sanitize_for_persistence(
-            variables, skip_non_serializable=False
-        )
+        sanitized = sanitize_for_persistence(variables, skip_non_serializable=False)
 
         assert "func" in sanitized
         assert isinstance(sanitized["func"], str)
@@ -358,13 +344,9 @@ class TestSnapshot:
         original_workflow = {"b": 2}
         original_global = {"c": 3}
 
-        snapshot = create_variable_snapshot(
-            original_exec, original_workflow, original_global
-        )
+        snapshot = create_variable_snapshot(original_exec, original_workflow, original_global)
 
-        restored_exec, restored_workflow, restored_global = (
-            restore_variable_snapshot(snapshot)
-        )
+        restored_exec, restored_workflow, restored_global = restore_variable_snapshot(snapshot)
 
         assert restored_exec == original_exec
         assert restored_workflow == original_workflow
@@ -425,9 +407,7 @@ class TestComplexScenarios:
         # Access nested values
         assert get_nested_variable(config, "database.host") == "localhost"
         assert get_nested_variable(config, "database.port") == 5432
-        assert (
-            get_nested_variable(config, "database.credentials.username") == "admin"
-        )
+        assert get_nested_variable(config, "database.credentials.username") == "admin"
 
         # Update nested value
         set_nested_variable(config, "database.port", 3306)

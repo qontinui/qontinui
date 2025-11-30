@@ -7,7 +7,6 @@ and spatial relationships.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -38,12 +37,12 @@ class Region:
         image: Optional region image
     """
 
-    bounds: Tuple[int, int, int, int]
+    bounds: tuple[int, int, int, int]
     region_type: RegionType = RegionType.UNKNOWN
-    properties: Optional[dict] = None
+    properties: dict | None = None
     stability_score: float = 0.0
     element_count: int = 0
-    image: Optional[np.ndarray] = None
+    image: np.ndarray | None = None
 
     def __repr__(self) -> str:
         """String representation of region."""
@@ -57,7 +56,7 @@ class RegionAnalyzer(ABC):
     """Abstract base class for region analysis."""
 
     @abstractmethod
-    def analyze(self, screenshot: np.ndarray) -> List[Region]:
+    def analyze(self, screenshot: np.ndarray) -> list[Region]:
         """Analyze screenshot and extract regions.
 
         Args:
@@ -94,7 +93,7 @@ class BasicRegionAnalyzer(RegionAnalyzer):
         self.edge_threshold = 50
         self.blur_kernel = 5
 
-    def analyze(self, screenshot: np.ndarray) -> List[Region]:
+    def analyze(self, screenshot: np.ndarray) -> list[Region]:
         """Analyze screenshot and extract regions.
 
         Currently returns a placeholder implementation.
@@ -192,14 +191,10 @@ class SpatialRelationshipAnalyzer:
         x1, y1, w1, h1 = region1.bounds
         x2, y2, w2, h2 = region2.bounds
 
-        return (
-            x1 >= x2 and y1 >= y2 and (x1 + w1) <= (x2 + w2) and (y1 + h1) <= (y2 + h2)
-        )
+        return x1 >= x2 and y1 >= y2 and (x1 + w1) <= (x2 + w2) and (y1 + h1) <= (y2 + h2)
 
     @staticmethod
-    def are_adjacent(
-        region1: Region, region2: Region, tolerance: int = 10
-    ) -> Tuple[bool, str]:
+    def are_adjacent(region1: Region, region2: Region, tolerance: int = 10) -> tuple[bool, str]:
         """Check if regions are adjacent.
 
         Args:

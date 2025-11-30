@@ -8,16 +8,12 @@ import threading
 import time
 from pathlib import Path
 
-import pytest
-
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from qontinui.orchestration.execution_context import (
-    ActionState,
+from qontinui.orchestration.execution_context import (  # noqa: E402
     ExecutionContext,
-    ExecutionStatistics,
 )
 
 
@@ -329,7 +325,9 @@ class TestExecutionContextThreading:
                     # Concurrent substitutions
                     result = context.substitute_variables("Hello ${name}, count is ${count}")
                     if result != "Hello test, count is 42":
-                        errors.append(f"Thread {thread_id}: Unexpected substitution result: {result}")
+                        errors.append(
+                            f"Thread {thread_id}: Unexpected substitution result: {result}"
+                        )
 
                     # Also modify variables
                     if i % 10 == 0:

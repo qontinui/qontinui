@@ -80,7 +80,7 @@ class VerificationOptionsBuilder:
     def __init__(self) -> None:
         self.event = Event.NONE
         self.text = ""
-        self.images = []
+        self.images: list[str] = []
         self.timeout = 5.0
 
     def set_event(self, event: Event) -> "VerificationOptionsBuilder":

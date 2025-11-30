@@ -9,6 +9,7 @@ Clean design for understanding and debugging workflow execution.
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -252,7 +253,7 @@ class RoutingContext:
 
         return (self.end_time - self.start_time).total_seconds()
 
-    def get_statistics(self) -> dict[str, any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get execution statistics.
 

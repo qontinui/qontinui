@@ -180,7 +180,9 @@ class MultiStateAdapter:
         actual_multi_id = multi_transition.id
         self.transition_mappings[actual_multi_id] = transition
 
-        logger.info(f"Registered transition mapping: Qontinui '{transition.id}' -> MultiState '{actual_multi_id}'")
+        logger.info(
+            f"Registered transition mapping: Qontinui '{transition.id}' -> MultiState '{actual_multi_id}'"
+        )
 
         return multi_transition
 
@@ -270,12 +272,16 @@ class MultiStateAdapter:
         qontinui_transitions = []
         for multi_transition in path.transitions_sequence:
             # Extract the ID from the MultiState Transition object
-            multi_transition_id = multi_transition.id if hasattr(multi_transition, 'id') else str(multi_transition)
+            multi_transition_id = (
+                multi_transition.id if hasattr(multi_transition, "id") else str(multi_transition)
+            )
 
             if multi_transition_id in self.transition_mappings:
                 qontinui_transitions.append(self.transition_mappings[multi_transition_id])
             else:
-                logger.warning(f"Transition '{multi_transition_id}' not found in mappings. Available: {list(self.transition_mappings.keys())}")
+                logger.warning(
+                    f"Transition '{multi_transition_id}' not found in mappings. Available: {list(self.transition_mappings.keys())}"
+                )
 
         logger.info(f"Converted to {len(qontinui_transitions)} Qontinui transitions")
         return qontinui_transitions

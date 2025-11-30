@@ -19,7 +19,7 @@ class StringCollectionBuilder:
 
     def __init__(self) -> None:
         """Initialize builder with empty list."""
-        self.state_strings: list["StateString"] = []
+        self.state_strings: list[StateString] = []
 
     def with_strings(self, *strings) -> "StringCollectionBuilder":
         """Add strings to collection.

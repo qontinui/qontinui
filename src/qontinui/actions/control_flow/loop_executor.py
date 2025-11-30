@@ -79,11 +79,12 @@ class LoopExecutor:
             config.max_iterations,
         )
 
-        result = {
+        errors_list: list[dict[str, Any]] = []
+        result: dict[str, Any] = {
             "success": True,
             "iterations_completed": 0,
             "stopped_early": False,
-            "errors": [],
+            "errors": errors_list,
             "action_id": action_id,
             "loop_type": config.loop_type,
         }
@@ -108,12 +109,14 @@ class LoopExecutor:
         except ValueError as e:
             logger.error("Loop configuration error: %s", str(e))
             result["success"] = False
-            result["errors"].append({"type": "ValueError", "message": str(e)})
+            if isinstance(result["errors"], list):
+                errors_list.append({"type": "ValueError", "message": str(e)})
 
         except RuntimeError as e:
             logger.error("Loop execution error: %s", str(e))
             result["success"] = False
-            result["errors"].append({"type": "RuntimeError", "message": str(e)})
+            if isinstance(result["errors"], list):
+                errors_list.append({"type": "RuntimeError", "message": str(e)})
 
         finally:
             end_time = time.time()
@@ -154,7 +157,8 @@ class LoopExecutor:
             )
             iterations = max_iterations
 
-        result = {"iterations_completed": 0, "errors": []}
+        errors_list: list[dict[str, Any]] = []
+        result: dict[str, Any] = {"iterations_completed": 0, "errors": errors_list}
 
         for i in range(iterations):
             logger.debug("FOR loop iteration %d/%d", i + 1, iterations)
@@ -167,7 +171,7 @@ class LoopExecutor:
             try:
                 # Execute actions in this iteration
                 exec_result = self._execute_action_sequence(config.actions)
-                result["errors"].extend(exec_result["errors"])
+                errors_list.extend(exec_result["errors"])
 
                 # Check if we should break on error
                 if exec_result["errors"] and config.break_on_error:
@@ -176,15 +180,15 @@ class LoopExecutor:
 
             except ContinueLoop as e:
                 logger.debug("Continue to next iteration: %s", e.message)
-                result["iterations_completed"] += 1
+                result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
                 continue
 
             except BreakLoop:
                 # Let BreakLoop propagate up
-                result["iterations_completed"] += 1
+                result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
                 raise
 
-            result["iterations_completed"] += 1
+            result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
 
         return result
 
@@ -204,7 +208,8 @@ class LoopExecutor:
             raise ValueError("WHILE loop requires 'condition' to be specified")
 
         max_iterations = config.max_iterations or 10000  # Safety limit
-        result = {"iterations_completed": 0, "errors": []}
+        errors_list: list[dict[str, Any]] = []
+        result: dict[str, Any] = {"iterations_completed": 0, "errors": errors_list}
 
         iteration = 0
         while iteration < max_iterations:
@@ -213,7 +218,7 @@ class LoopExecutor:
                 condition_result = self.condition_evaluator.evaluate_condition(config.condition)
             except ValueError as e:
                 logger.error("Failed to evaluate WHILE condition: %s", str(e))
-                result["errors"].append(
+                errors_list.append(
                     {"type": "ConditionEvaluationError", "message": str(e), "iteration": iteration}
                 )
                 break
@@ -231,7 +236,7 @@ class LoopExecutor:
             try:
                 # Execute actions in this iteration
                 exec_result = self._execute_action_sequence(config.actions)
-                result["errors"].extend(exec_result["errors"])
+                errors_list.extend(exec_result["errors"])
 
                 # Check if we should break on error
                 if exec_result["errors"] and config.break_on_error:
@@ -240,21 +245,21 @@ class LoopExecutor:
 
             except ContinueLoop as e:
                 logger.debug("Continue to next iteration: %s", e.message)
-                result["iterations_completed"] += 1
+                result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
                 iteration += 1
                 continue
 
             except BreakLoop:
                 # Let BreakLoop propagate up
-                result["iterations_completed"] += 1
+                result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
                 raise
 
-            result["iterations_completed"] += 1
+            result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
             iteration += 1
 
         if iteration >= max_iterations:
             logger.warning("WHILE loop hit max_iterations (%d), stopping", max_iterations)
-            result["errors"].append(
+            errors_list.append(
                 {
                     "type": "MaxIterationsExceeded",
                     "message": f"Hit max_iterations: {max_iterations}",
@@ -307,7 +312,8 @@ class LoopExecutor:
             )
             items = items[:max_iterations]
 
-        result = {"iterations_completed": 0, "errors": []}
+        errors_list: list[dict[str, Any]] = []
+        result: dict[str, Any] = {"iterations_completed": 0, "errors": errors_list}
 
         for index, item in enumerate(items):
             logger.debug("FOREACH iteration %d/%d, item=%s", index + 1, len(items), item)
@@ -320,7 +326,7 @@ class LoopExecutor:
             try:
                 # Execute actions in this iteration
                 exec_result = self._execute_action_sequence(config.actions)
-                result["errors"].extend(exec_result["errors"])
+                errors_list.extend(exec_result["errors"])
 
                 # Check if we should break on error
                 if exec_result["errors"] and config.break_on_error:
@@ -329,15 +335,15 @@ class LoopExecutor:
 
             except ContinueLoop as e:
                 logger.debug("Continue to next iteration: %s", e.message)
-                result["iterations_completed"] += 1
+                result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
                 continue
 
             except BreakLoop:
                 # Let BreakLoop propagate up
-                result["iterations_completed"] += 1
+                result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
                 raise
 
-            result["iterations_completed"] += 1
+            result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
 
         return result
 
@@ -370,7 +376,7 @@ class LoopExecutor:
                 raise KeyError(f"Collection variable '{var_name}' not found")
 
             items = self.context.get_variable(var_name)
-            if not isinstance(items, (list, tuple)):
+            if not isinstance(items, list | tuple):
                 raise ValueError(
                     f"Collection variable '{var_name}' is not iterable "
                     f"(got {type(items).__name__})"
@@ -416,7 +422,8 @@ class LoopExecutor:
                 - actions_executed: Number of actions executed
                 - errors: List of errors encountered during execution
         """
-        result = {"actions_executed": 0, "errors": []}
+        errors_list: list[dict[str, Any]] = []
+        result: dict[str, Any] = {"actions_executed": 0, "errors": errors_list}
 
         # Check if execute_action callback is available
         if not hasattr(self.context, "execute_action") or not callable(self.context.execute_action):
@@ -435,39 +442,37 @@ class LoopExecutor:
                 # Check for success
                 if not action_result.get("success", True):
                     logger.warning("Action %s failed", action_id)
-                    result["errors"].append(
+                    errors_list.append(
                         {
                             "action_id": action_id,
                             "message": action_result.get("error", "Action failed"),
                         }
                     )
 
-                result["actions_executed"] += 1
+                result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
 
             except (BreakLoop, ContinueLoop):
                 # Let control flow exceptions propagate to loop handler
-                result["actions_executed"] += 1
+                result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
                 raise
 
             except ValueError as e:
                 logger.error("Action %s raised ValueError: %s", action_id, str(e))
-                result["errors"].append(
+                errors_list.append(
                     {"action_id": action_id, "type": "ValueError", "message": str(e)}
                 )
-                result["actions_executed"] += 1
+                result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
 
             except RuntimeError as e:
                 logger.error("Action %s raised RuntimeError: %s", action_id, str(e))
-                result["errors"].append(
+                errors_list.append(
                     {"action_id": action_id, "type": "RuntimeError", "message": str(e)}
                 )
-                result["actions_executed"] += 1
+                result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
 
             except KeyError as e:
                 logger.error("Action %s raised KeyError: %s", action_id, str(e))
-                result["errors"].append(
-                    {"action_id": action_id, "type": "KeyError", "message": str(e)}
-                )
-                result["actions_executed"] += 1
+                errors_list.append({"action_id": action_id, "type": "KeyError", "message": str(e)})
+                result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
 
         return result

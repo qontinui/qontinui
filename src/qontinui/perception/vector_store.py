@@ -438,7 +438,9 @@ class VectorStore:
             metadata_path = path / "metadata.pkl"
             if metadata_path.exists():
                 with open(metadata_path, "rb") as f:
-                    data = pickle.load(f)
+                    # Security: pickle.load is safe here as files are local-only and user-controlled.
+                    # Network-transmitted or user-uploaded files should never use pickle.
+                    data = pickle.load(f)  # noqa: S301
                     self.metadata = data["metadata"]
                     self.id_to_index = data["id_to_index"]
                     self.id_counter = data["id_counter"]

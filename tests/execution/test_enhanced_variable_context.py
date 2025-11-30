@@ -212,9 +212,7 @@ class TestPersistence:
             workflow_file = Path(tmpdir) / "workflow_vars.json"
 
             # Create context with auto_save enabled
-            context = EnhancedVariableContext(
-                workflow_file=workflow_file, auto_save=True
-            )
+            context = EnhancedVariableContext(workflow_file=workflow_file, auto_save=True)
 
             context.set("auto_saved", True, scope="workflow")
 
@@ -435,9 +433,7 @@ class TestUsageScenarios:
             global_file = Path(tmpdir) / "global_vars.json"
 
             # Initialize with global config
-            context = EnhancedVariableContext(
-                workflow_file=workflow_file, global_file=global_file
-            )
+            context = EnhancedVariableContext(workflow_file=workflow_file, global_file=global_file)
 
             # Set global configuration (shared across workflows)
             context.set("api_url", "https://api.example.com", scope="global")
@@ -476,6 +472,4 @@ class TestUsageScenarios:
             context2 = EnhancedVariableContext(global_file=global_file)
             context2.load_from_file("global")
 
-            assert context2.get("shared_config", scope="global") == {
-                "mode": "production"
-            }
+            assert context2.get("shared_config", scope="global") == {"mode": "production"}

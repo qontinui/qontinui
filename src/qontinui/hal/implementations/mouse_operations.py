@@ -147,7 +147,7 @@ class MouseOperations(IMouseController):
             for i in range(clicks):
                 self._mouse.click(pynput_button)
                 if i < clicks - 1 and interval > 0:
-                    TimeWrapper.wait(interval)
+                    TimeWrapper().wait(seconds=interval)
 
             logger.debug(f"Mouse clicked {clicks} time(s) with {button}")
             return True
@@ -252,11 +252,11 @@ class MouseOperations(IMouseController):
             self._mouse.press(pynput_button)
 
             # Move to end position
-            TimeWrapper.wait(0.1)  # Small delay before drag
+            TimeWrapper().wait(seconds=0.1)  # Small delay before drag
             self.mouse_move(end_x, end_y, duration)
 
             # Release button
-            TimeWrapper.wait(0.1)  # Small delay before release
+            TimeWrapper().wait(seconds=0.1)  # Small delay before release
             self._mouse.release(pynput_button)
 
             logger.debug(f"Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")

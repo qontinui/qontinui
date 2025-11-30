@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any, cast
 
-from lark import Lark, Token, Transformer, Tree
+from lark import Lark, Token, Transformer
 from lark.exceptions import LarkError
 
 logger = logging.getLogger(__name__)

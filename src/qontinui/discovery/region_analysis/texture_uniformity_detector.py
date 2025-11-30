@@ -6,14 +6,18 @@ and Local Binary Patterns (LBP).
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
-from scipy import ndimage
 from sklearn.cluster import DBSCAN
 
-from qontinui.discovery.region_analysis.base import BaseRegionAnalyzer, BoundingBox, DetectedRegion, RegionType
+from qontinui.discovery.region_analysis.base import (
+    BaseRegionAnalyzer,
+    BoundingBox,
+    DetectedRegion,
+    RegionType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +38,7 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
     def name(self) -> str:
         return "texture_uniformity_detector"
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "lbp_radius": 3,
             "lbp_points": 24,
@@ -48,7 +52,7 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
             "use_gabor": True,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> List[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:  # type: ignore[override]
         """Detect inventory grids using texture uniformity"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -71,13 +75,11 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
             return []
 
         # Cluster regions into grids
-        grid_regions = self._cluster_into_grids(uniform_regions, gray.shape, params)
+        grid_regions = self._cluster_into_grids(uniform_regions, gray.shape, params)  # type: ignore[arg-type]
 
         return grid_regions
 
-    def _compute_lbp(
-        self, gray: np.ndarray, radius: int = 3, n_points: int = 24
-    ) -> np.ndarray:
+    def _compute_lbp(self, gray: np.ndarray, radius: int = 3, n_points: int = 24) -> np.ndarray:
         """
         Compute Local Binary Pattern
 
@@ -119,8 +121,8 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
         return lbp
 
     def _compute_texture_map(
-        self, gray: np.ndarray, params: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, gray: np.ndarray, params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """
         Compute texture features for sliding windows
 
@@ -171,8 +173,8 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
         return windows
 
     def _find_uniform_texture_regions(
-        self, texture_map: List[Dict[str, Any]], params: Dict[str, Any]
-    ) -> List[List[Dict[str, Any]]]:
+        self, texture_map: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[list[dict[str, Any]]]:
         """
         Find groups of windows with similar texture
 
@@ -211,10 +213,7 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
 
             # Add similar windows
             for j in range(n):
-                if (
-                    j not in visited
-                    and similarity[i, j] > params["texture_similarity_threshold"]
-                ):
+                if j not in visited and similarity[i, j] > params["texture_similarity_threshold"]:
                     cluster.append(texture_map[j])
                     visited.add(j)
 
@@ -225,10 +224,10 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
 
     def _cluster_into_grids(
         self,
-        uniform_regions: List[List[Dict[str, Any]]],
-        img_shape: Tuple[int, int],
-        params: Dict[str, Any],
-    ) -> List[DetectedRegion]:
+        uniform_regions: list[list[dict[str, Any]]],
+        img_shape: tuple[int, int],
+        params: dict[str, Any],
+    ) -> list[DetectedRegion]:
         """Cluster uniform texture regions into grid structures"""
         grid_regions = []
 
@@ -238,9 +237,7 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
 
             # Use DBSCAN to find spatially contiguous groups
             window_size = params["window_size"]
-            clustering = DBSCAN(
-                eps=window_size * 1.5, min_samples=params["min_grid_rows"]
-            )
+            clustering = DBSCAN(eps=window_size * 1.5, min_samples=params["min_grid_rows"])
             labels = clustering.fit_predict(positions)
 
             # Process each spatial cluster
@@ -248,25 +245,18 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
                 if label == -1:  # noise
                     continue
 
-                cluster_windows = [
-                    cluster[i] for i in range(len(cluster)) if labels[i] == label
-                ]
+                cluster_windows = [cluster[i] for i in range(len(cluster)) if labels[i] == label]
 
-                if (
-                    len(cluster_windows)
-                    >= params["min_grid_rows"] * params["min_grid_cols"]
-                ):
-                    grid_region = self._extract_grid_from_windows(
-                        cluster_windows, params
-                    )
+                if len(cluster_windows) >= params["min_grid_rows"] * params["min_grid_cols"]:
+                    grid_region = self._extract_grid_from_windows(cluster_windows, params)
                     if grid_region:
                         grid_regions.append(grid_region)
 
         return grid_regions
 
     def _extract_grid_from_windows(
-        self, windows: List[Dict[str, Any]], params: Dict[str, Any]
-    ) -> Optional[DetectedRegion]:
+        self, windows: list[dict[str, Any]], params: dict[str, Any]
+    ) -> DetectedRegion | None:
         """Extract grid structure from uniform texture windows"""
         if len(windows) < params["min_grid_rows"] * params["min_grid_cols"]:
             return None
@@ -275,22 +265,15 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
         positions = [(w["x"], w["y"]) for w in windows]
 
         # Compute horizontal and vertical spacings
-        x_positions = sorted(set(x for x, y in positions))
-        y_positions = sorted(set(y for x, y in positions))
+        x_positions = sorted({x for x, y in positions})
+        y_positions = sorted({y for x, y in positions})
 
-        if (
-            len(x_positions) < params["min_grid_cols"]
-            or len(y_positions) < params["min_grid_rows"]
-        ):
+        if len(x_positions) < params["min_grid_cols"] or len(y_positions) < params["min_grid_rows"]:
             return None
 
         # Calculate spacing
-        x_diffs = [
-            x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)
-        ]
-        y_diffs = [
-            y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)
-        ]
+        x_diffs = [x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)]
+        y_diffs = [y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)]
 
         if not x_diffs or not y_diffs:
             return None

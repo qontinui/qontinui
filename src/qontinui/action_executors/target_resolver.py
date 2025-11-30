@@ -341,7 +341,7 @@ class TargetResolver:
         """
         if self.context.last_action_result:
             logger.debug("Resolving Last Find Result from context")
-            return self.context.last_action_result
+            return self.context.last_action_result  # type: ignore[no-any-return]
         else:
             logger.error("Last Find Result requested but no previous result available")
             return None

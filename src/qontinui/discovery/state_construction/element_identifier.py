@@ -7,7 +7,7 @@ element types, and understands spatial relationships within UI layouts.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -95,7 +95,7 @@ class IdentifiedElement:
     bounds: tuple[int, int, int, int]
     confidence: float
     properties: dict[str, Any]
-    state_image: Optional[StateImage] = None
+    state_image: StateImage | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -159,7 +159,7 @@ class ElementIdentifier:
         self.adjacency_tolerance = 10  # pixels
 
     def identify_regions(
-        self, screenshot: np.ndarray, state_images: Optional[list[StateImage]] = None
+        self, screenshot: np.ndarray, state_images: list[StateImage] | None = None
     ) -> list[IdentifiedRegion]:
         """Identify functional regions in a screenshot.
 
@@ -195,7 +195,7 @@ class ElementIdentifier:
         return regions
 
     def classify_image_type(
-        self, state_image: StateImage, screenshot: Optional[np.ndarray] = None
+        self, state_image: StateImage, screenshot: np.ndarray | None = None
     ) -> ElementType:
         """Classify the type of a StateImage element.
 
@@ -386,7 +386,6 @@ class ElementIdentifier:
         """
         title_bars = []
         height, width = screenshot.shape[:2]
-        gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
 
         # Scan top portion of screen
         scan_height = min(height // 3, 200)
@@ -405,9 +404,7 @@ class ElementIdentifier:
                 # Analyze characteristics
                 if self._has_title_bar_characteristics(region):
                     # Look for actual width (might not span full screen)
-                    actual_bounds = self._find_actual_title_bar_bounds(
-                        screenshot, y, bar_height
-                    )
+                    actual_bounds = self._find_actual_title_bar_bounds(screenshot, y, bar_height)
 
                     if actual_bounds:
                         x, y_pos, w, h = actual_bounds
@@ -442,7 +439,7 @@ class ElementIdentifier:
         relationships = []
 
         for i, elem1 in enumerate(elements):
-            for j, elem2 in enumerate(elements[i + 1 :], start=i + 1):
+            for _j, elem2 in enumerate(elements[i + 1 :], start=i + 1):
                 # Check for various relationship types
                 rel = self._analyze_element_pair(elem1, elem2)
                 if rel:
@@ -451,7 +448,7 @@ class ElementIdentifier:
         return relationships
 
     def _extract_element_properties(
-        self, state_image: StateImage, screenshot: Optional[np.ndarray] = None
+        self, state_image: StateImage, screenshot: np.ndarray | None = None
     ) -> dict[str, Any]:
         """Extract visual and contextual properties of an element.
 
@@ -465,9 +462,7 @@ class ElementIdentifier:
         properties = {
             "width": state_image.width,
             "height": state_image.height,
-            "aspect_ratio": state_image.width / state_image.height
-            if state_image.height > 0
-            else 0,
+            "aspect_ratio": state_image.width / state_image.height if state_image.height > 0 else 0,
             "area": state_image.width * state_image.height,
             "position": (state_image.x, state_image.y),
             "frequency": state_image.frequency,
@@ -484,9 +479,7 @@ class ElementIdentifier:
             properties["relative_x"] = state_image.x / screen_width
             properties["relative_y"] = state_image.y / screen_height
             properties["in_top_region"] = state_image.y < screen_height * 0.15
-            properties["in_corner"] = self._is_in_corner(
-                state_image, screen_width, screen_height
-            )
+            properties["in_corner"] = self._is_in_corner(state_image, screen_width, screen_height)
 
         return properties
 
@@ -531,9 +524,7 @@ class ElementIdentifier:
 
         return features
 
-    def _is_window_control(
-        self, state_image: StateImage, properties: dict[str, Any]
-    ) -> bool:
+    def _is_window_control(self, state_image: StateImage, properties: dict[str, Any]) -> bool:
         """Check if element appears to be a window control button.
 
         Args:
@@ -581,9 +572,7 @@ class ElementIdentifier:
 
         # Button-like aspect ratio
         if not (
-            self.button_aspect_ratio_range[0]
-            <= aspect_ratio
-            <= self.button_aspect_ratio_range[1]
+            self.button_aspect_ratio_range[0] <= aspect_ratio <= self.button_aspect_ratio_range[1]
         ):
             return False
 
@@ -648,11 +637,9 @@ class ElementIdentifier:
         edge_density = properties.get("edge_density", 0)
 
         # Should have clear edges (border) but not too complex
-        return 0.1 <= edge_density <= 0.5
+        return 0.1 <= edge_density <= 0.5  # type: ignore[no-any-return]
 
-    def _is_likely_logo(
-        self, state_image: StateImage, properties: dict[str, Any]
-    ) -> bool:
+    def _is_likely_logo(self, state_image: StateImage, properties: dict[str, Any]) -> bool:
         """Check if element is likely a logo.
 
         Args:
@@ -681,9 +668,7 @@ class ElementIdentifier:
 
         return True
 
-    def _is_in_corner(
-        self, state_image: StateImage, screen_width: int, screen_height: int
-    ) -> bool:
+    def _is_in_corner(self, state_image: StateImage, screen_width: int, screen_height: int) -> bool:
         """Check if element is in a screen corner.
 
         Args:
@@ -703,9 +688,7 @@ class ElementIdentifier:
 
         return (x_left or x_right) and (y_top or y_bottom)
 
-    def _cluster_parallel_lines(
-        self, lines: list[tuple], tolerance: int = 10
-    ) -> list[list[tuple]]:
+    def _cluster_parallel_lines(self, lines: list[tuple], tolerance: int = 10) -> list[list[tuple]]:
         """Cluster parallel lines that are close together.
 
         Args:
@@ -737,7 +720,7 @@ class ElementIdentifier:
         h_lines: list[tuple],
         v_lines: list[tuple],
         screenshot: np.ndarray,
-    ) -> Optional[IdentifiedRegion]:
+    ) -> IdentifiedRegion | None:
         """Extract a grid region from horizontal and vertical line clusters.
 
         Args:
@@ -773,10 +756,7 @@ class ElementIdentifier:
         cell_height = height / rows if rows > 0 else 0
 
         # Cells should be reasonable size
-        if (
-            cell_width < self.grid_cell_min_size
-            or cell_height < self.grid_cell_min_size
-        ):
+        if cell_width < self.grid_cell_min_size or cell_height < self.grid_cell_min_size:
             return None
 
         properties = {
@@ -795,9 +775,7 @@ class ElementIdentifier:
             sub_elements=[],
         )
 
-    def _calculate_grid_regularity(
-        self, h_lines: list[tuple], v_lines: list[tuple]
-    ) -> float:
+    def _calculate_grid_regularity(self, h_lines: list[tuple], v_lines: list[tuple]) -> float:
         """Calculate how regular/uniform a grid pattern is.
 
         Args:
@@ -872,8 +850,8 @@ class ElementIdentifier:
         # Panels typically have visible borders
         if border_density > 0.3:
             properties["is_panel"] = True
-            properties["confidence"] = min(0.9, border_density)
-            properties["border_density"] = float(border_density)
+            properties["confidence"] = min(0.9, border_density)  # type: ignore[assignment]
+            properties["border_density"] = float(border_density)  # type: ignore[assignment]
 
         return properties
 
@@ -896,7 +874,6 @@ class ElementIdentifier:
             return False
 
         # Check for uniform color (typical for title bars)
-        mean_color = np.mean(region, axis=(0, 1))
         std_color = np.std(region, axis=(0, 1))
         color_uniformity = np.mean(std_color)
 
@@ -908,7 +885,7 @@ class ElementIdentifier:
 
     def _find_actual_title_bar_bounds(
         self, screenshot: np.ndarray, y: int, height: int
-    ) -> Optional[tuple[int, int, int, int]]:
+    ) -> tuple[int, int, int, int] | None:
         """Find actual bounds of a title bar (may not span full width).
 
         Args:
@@ -986,7 +963,7 @@ class ElementIdentifier:
         # Sort by confidence (descending)
         sorted_regions = sorted(regions, key=lambda r: r.confidence, reverse=True)
 
-        keep = []
+        keep: list[Any] = []
         for region in sorted_regions:
             # Check overlap with kept regions
             overlaps = False
@@ -1042,11 +1019,11 @@ class ElementIdentifier:
         min_w, min_h = self.min_region_size
         max_w, max_h = self.max_region_size
 
-        return min_w <= w <= max_w and min_h <= h <= max_h
+        return min_w <= w <= max_w and min_h <= h <= max_h  # type: ignore[no-any-return]
 
     def _analyze_element_pair(
         self, elem1: IdentifiedElement, elem2: IdentifiedElement
-    ) -> Optional[SpatialRelationship]:
+    ) -> SpatialRelationship | None:
         """Analyze spatial relationship between two elements.
 
         Args:
@@ -1090,10 +1067,10 @@ class ElementIdentifier:
             properties["adjacency"] = "below"
 
         # Check containment
-        if (x1 <= x2 and y1 <= y2 and x1 + w1 >= x2 + w2 and y1 + h1 >= y2 + h2):
+        if x1 <= x2 and y1 <= y2 and x1 + w1 >= x2 + w2 and y1 + h1 >= y2 + h2:
             relationship = "contains"
             properties["containment"] = "contains"
-        elif (x2 <= x1 and y2 <= y1 and x2 + w2 >= x1 + w1 and y2 + h2 >= y1 + h1):
+        elif x2 <= x1 and y2 <= y1 and x2 + w2 >= x1 + w1 and y2 + h2 >= y1 + h1:
             relationship = "contained_by"
             properties["containment"] = "contained_by"
 

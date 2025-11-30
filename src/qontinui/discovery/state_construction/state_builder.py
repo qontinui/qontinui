@@ -31,7 +31,7 @@ Example Usage:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 import cv2
 import numpy as np
@@ -62,10 +62,10 @@ class TransitionInfo:
 
     before_screenshot: np.ndarray
     after_screenshot: np.ndarray
-    click_point: Optional[Tuple[int, int]] = None
-    input_events: List[Dict[str, Any]] = None
-    target_state_name: Optional[str] = None
-    timestamp: Optional[float] = None
+    click_point: tuple[int, int] | None = None
+    input_events: list[dict[str, Any]] | None = None
+    target_state_name: str | None = None
+    timestamp: float | None = None
 
     def __post_init__(self):
         """Initialize default values."""
@@ -150,35 +150,53 @@ class StateBuilder:
     def diff_detector(self):
         """Lazy-load DifferentialConsistencyDetector."""
         if self._diff_detector is None:
-            # TODO: Implement DifferentialConsistencyDetector
-            # For now, return None
-            self._diff_detector = None
+            try:
+                from qontinui.discovery.state_detection.differential_consistency_detector import (
+                    DifferentialConsistencyDetector,
+                )
+
+                self._diff_detector = DifferentialConsistencyDetector()
+            except ImportError:
+                # Fallback: return None if not available
+                self._diff_detector = None
         return self._diff_detector
 
     @property
     def name_generator(self):
         """Lazy-load OCRNameGenerator."""
         if self._name_generator is None:
-            # TODO: Implement OCRNameGenerator
-            # For now, use fallback
-            self._name_generator = FallbackNameGenerator()
+            try:
+                from qontinui.discovery.state_construction.ocr_name_generator import (
+                    OCRNameGenerator,
+                )
+
+                self._name_generator = OCRNameGenerator()
+            except ImportError:
+                # Fallback: use simple implementation if OCR not available
+                self._name_generator = FallbackNameGenerator()
         return self._name_generator
 
     @property
     def element_identifier(self):
         """Lazy-load ElementIdentifier."""
         if self._element_identifier is None:
-            # TODO: Implement ElementIdentifier
-            # For now, use fallback
-            self._element_identifier = FallbackElementIdentifier()
+            try:
+                from qontinui.discovery.state_construction.element_identifier import (
+                    ElementIdentifier,
+                )
+
+                self._element_identifier = ElementIdentifier()
+            except ImportError:
+                # Fallback: use simple implementation
+                self._element_identifier = FallbackElementIdentifier()
         return self._element_identifier
 
     def build_state_from_screenshots(
         self,
-        screenshot_sequence: List[np.ndarray],
-        transitions_to_state: Optional[List[TransitionInfo]] = None,
-        transitions_from_state: Optional[List[TransitionInfo]] = None,
-        state_name: Optional[str] = None,
+        screenshot_sequence: list[np.ndarray],
+        transitions_to_state: list[TransitionInfo] | None = None,
+        transitions_from_state: list[TransitionInfo] | None = None,
+        state_name: str | None = None,
     ) -> State:
         """Build a complete State object from screenshot data.
 
@@ -257,8 +275,8 @@ class StateBuilder:
 
     def _generate_state_name(
         self,
-        screenshots: List[np.ndarray],
-        transitions: Optional[List[TransitionInfo]],
+        screenshots: list[np.ndarray],
+        transitions: list[TransitionInfo] | None,
     ) -> str:
         """Generate meaningful name for the state.
 
@@ -285,11 +303,9 @@ class StateBuilder:
         if transitions and transitions[0].target_state_name:
             name = transitions[0].target_state_name
 
-        return name
+        return name  # type: ignore[no-any-return]
 
-    def _identify_state_images(
-        self, screenshots: List[np.ndarray]
-    ) -> List[StateImage]:
+    def _identify_state_images(self, screenshots: list[np.ndarray]) -> list[StateImage]:
         """Identify StateImages - persistent visual elements that define the state.
 
         StateImages are visual patterns that consistently appear across all screenshots
@@ -307,7 +323,6 @@ class StateBuilder:
         Returns:
             List of StateImage objects with names and locations
         """
-        from qontinui.model.element.image import Image
         from qontinui.model.element.pattern import Pattern
         from qontinui.model.state.state_image import StateImage
 
@@ -322,7 +337,7 @@ class StateBuilder:
 
         # Convert to StateImages
         state_images = []
-        for idx, region_info in enumerate(consistent_regions):
+        for _idx, region_info in enumerate(consistent_regions):
             bbox = region_info["bbox"]
             x, y, w, h = bbox
 
@@ -334,8 +349,11 @@ class StateBuilder:
             name = self.name_generator.generate_name_from_image(img_data, context)
 
             # Create Pattern from image data
-            pattern = Pattern(name=name)
-            pattern._image_data = img_data  # Store raw data
+            import numpy as np
+
+            mask = np.ones(img_data.shape[:2], dtype=np.uint8) * 255  # Default full mask
+            pattern = Pattern(id=name, name=name, pixel_data=img_data, mask=mask)  # type: ignore[call-arg]
+            pattern._image_data = img_data  # type: ignore[attr-defined]  # Store raw data
 
             # Create StateImage
             state_image = StateImage(image=pattern, name=name)
@@ -352,10 +370,10 @@ class StateBuilder:
 
     def _detect_consistent_regions(
         self,
-        screenshots: List[np.ndarray],
+        screenshots: list[np.ndarray],
         threshold: float,
         min_area: int,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Detect regions that are consistent across all screenshots.
 
         Uses edge detection and template matching to find regions that appear
@@ -369,7 +387,7 @@ class StateBuilder:
         Returns:
             List of region dictionaries with bbox and confidence
         """
-        regions = []
+        regions: list[dict[str, Any]] = []
 
         if len(screenshots) < 2:
             return regions
@@ -396,9 +414,7 @@ class StateBuilder:
                 continue
 
             # Check if this region is consistent across all screenshots
-            consistency_score = self._check_region_consistency(
-                screenshots, (x, y, w, h)
-            )
+            consistency_score = self._check_region_consistency(screenshots, (x, y, w, h))
 
             if consistency_score >= threshold:
                 regions.append(
@@ -412,7 +428,7 @@ class StateBuilder:
         return regions
 
     def _check_region_consistency(
-        self, screenshots: List[np.ndarray], bbox: Tuple[int, int, int, int]
+        self, screenshots: list[np.ndarray], bbox: tuple[int, int, int, int]
     ) -> float:
         """Check how consistent a region is across screenshots.
 
@@ -451,7 +467,7 @@ class StateBuilder:
         return float(np.mean(similarities))
 
     def _classify_image_context(
-        self, bbox: Tuple[int, int, int, int], screenshot: np.ndarray
+        self, bbox: tuple[int, int, int, int], screenshot: np.ndarray
     ) -> str:
         """Classify what type of element this is based on position and size.
 
@@ -489,9 +505,7 @@ class StateBuilder:
 
         return "element"
 
-    def _identify_state_regions(
-        self, screenshots: List[np.ndarray]
-    ) -> List[StateRegion]:
+    def _identify_state_regions(self, screenshots: list[np.ndarray]) -> list[StateRegion]:
         """Identify StateRegions - functional areas like panels, grids, or lists.
 
         StateRegions represent interactive or significant areas within a state.
@@ -538,9 +552,7 @@ class StateBuilder:
 
         return regions
 
-    def _generate_region_name(
-        self, region_info: Dict[str, Any], screenshot: np.ndarray
-    ) -> str:
+    def _generate_region_name(self, region_info: dict[str, Any], screenshot: np.ndarray) -> str:
         """Generate name for a region.
 
         Tries OCR first, falls back to type + position.
@@ -562,14 +574,14 @@ class StateBuilder:
 
         # If OCR gives meaningful name, use it
         if len(ocr_name) > len(region_type) + 5:
-            return ocr_name
+            return ocr_name  # type: ignore[no-any-return]
 
         # Otherwise use type + position
         return f"{region_type}_{x}_{y}"
 
     def _identify_state_locations(
-        self, transitions: Optional[List[TransitionInfo]]
-    ) -> List[StateLocation]:
+        self, transitions: list[TransitionInfo] | None
+    ) -> list[StateLocation]:
         """Identify StateLocations - clickable points that trigger transitions.
 
         Clusters click points from transitions to find stable, effective click locations.
@@ -588,7 +600,7 @@ class StateBuilder:
             return []
 
         # Group transitions by target state
-        by_target: Dict[str, List[TransitionInfo]] = {}
+        by_target: dict[str, list[TransitionInfo]] = {}
         for trans in transitions:
             target = trans.target_state_name or "unknown"
             if target not in by_target:
@@ -599,9 +611,7 @@ class StateBuilder:
 
         for target_state, trans_list in by_target.items():
             # Extract click points
-            click_points = [
-                t.click_point for t in trans_list if t.click_point is not None
-            ]
+            click_points = [t.click_point for t in trans_list if t.click_point is not None]
 
             if not click_points:
                 continue
@@ -615,9 +625,7 @@ class StateBuilder:
 
             # Create Location and StateLocation
             loc = Location(x=int(centroid[0]), y=int(centroid[1]))
-            state_location = StateLocation(
-                location=loc, name=f"click_to_{target_state}"
-            )
+            state_location = StateLocation(location=loc, name=f"click_to_{target_state}")
             state_location.metadata["target_state"] = target_state
             state_location.metadata["confidence"] = float(consistency)
             state_location.metadata["sample_size"] = len(click_points)
@@ -627,8 +635,8 @@ class StateBuilder:
         return locations
 
     def _determine_state_boundary(
-        self, transitions: List[TransitionInfo]
-    ) -> Optional[Tuple[int, int, int, int]]:
+        self, transitions: list[TransitionInfo]
+    ) -> tuple[int, int, int, int] | None:
         """Determine bounding box of state using differential consistency.
 
         Useful for modal dialogs, popup windows, or other overlay states where
@@ -661,7 +669,7 @@ class StateBuilder:
 
             # Return largest region as state boundary
             largest = max(regions, key=lambda r: r.bbox[2] * r.bbox[3])
-            return largest.bbox
+            return largest.bbox  # type: ignore[no-any-return]
 
         except Exception:
             # Detector failed, return None
@@ -691,9 +699,9 @@ class FallbackElementIdentifier:
     Uses basic geometric heuristics.
     """
 
-    def identify_regions(self, screenshots: List[np.ndarray]) -> List[Dict[str, Any]]:
+    def identify_regions(self, screenshots: list[np.ndarray]) -> list[dict[str, Any]]:
         """Identify regions using basic heuristics."""
-        regions = []
+        regions: list[dict[str, Any]] = []
 
         if not screenshots:
             return regions

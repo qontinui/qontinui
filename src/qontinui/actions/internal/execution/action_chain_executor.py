@@ -8,7 +8,7 @@ from typing import Any, Optional
 from ...action_chain_options import ActionChainOptions, ChainingStrategy
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...object_collection import ObjectCollection
 from ..service.action_service import ActionService
 
@@ -65,8 +65,8 @@ class ActionChainExecutor:
         Raises:
             ActionFailedException: If any action in the chain fails
         """
-        # Create a new result that will accumulate all execution history
-        final_result = ActionResult()
+        # Create a builder to accumulate results
+        result_builder = ActionResultBuilder()
 
         # Execute the initial action
         current_result = self._execute_action(
@@ -74,12 +74,12 @@ class ActionChainExecutor:
         )
 
         # Store the initial action's result in history
-        final_result.add_execution_record(self._create_action_record(current_result))  # type: ignore[arg-type]
+        result_builder.add_execution_record(self._create_action_record(current_result))  # type: ignore[arg-type]
 
         # If initial action failed, return immediately
         if not current_result.is_success:
-            final_result.success = False
-            return final_result
+            result_builder.with_success(False)
+            return result_builder.build()
 
         # Execute subsequent actions based on strategy
         for next_action in chain_options.get_chained_actions():
@@ -88,24 +88,26 @@ class ActionChainExecutor:
             )
 
             # Store each action's result in history
-            final_result.add_execution_record(self._create_action_record(current_result))  # type: ignore[arg-type]
+            result_builder.add_execution_record(self._create_action_record(current_result))  # type: ignore[arg-type]
 
             # If any action fails, stop the chain
             if not current_result.is_success:
                 break
 
-        # Copy final state to the result
-        final_result.match_list = current_result.match_list
-        final_result.success = current_result.is_success
-        final_result.duration = current_result.duration
-        final_result.text = current_result.text
-        final_result.active_states = current_result.active_states
+        # Copy final state to the builder
+        for match in current_result.matches:
+            result_builder.add_match(match)
+        result_builder.with_success(current_result.is_success)
+        if current_result.duration:
+            result_builder.with_timing(duration=current_result.duration)
+        if current_result.text:
+            result_builder.add_text(current_result.text)
 
         # Copy movements if any
-        for movement in current_result.get_movements():
-            final_result.add_movement(movement)
+        for movement in current_result.movements:
+            result_builder.add_movement(movement)
 
-        return final_result
+        return result_builder.build()
 
     def _execute_next_in_chain(
         self,
@@ -148,19 +150,17 @@ class ActionChainExecutor:
         """
         # Create search regions from previous matches
         search_regions = []
-        for match in previous_result.match_list:
+        for match in previous_result.matches:
             search_regions.append(match.get_region())
 
         if not search_regions:
             # No regions to search within
-            empty_result = ActionResult()
-            empty_result.success = False
-            return empty_result
+            return ActionResultBuilder().with_success(False).build()
 
         # Update the action configuration to search within these regions
         # This is a simplified approach - in full implementation would modify search regions
         # For now, execute with the original configuration
-        return self._execute_action(next_action, ActionResult(next_action))  # type: ignore[arg-type]
+        return self._execute_action(next_action, ActionResultBuilder().build())
 
     def _execute_confirming_action(
         self,
@@ -180,7 +180,9 @@ class ActionChainExecutor:
         """
         # Execute the action with original collections
         # The action should confirm the previous results
-        return self._execute_action(next_action, ActionResult(next_action), original_collections)  # type: ignore[arg-type]
+        return self._execute_action(
+            next_action, ActionResultBuilder().build(), original_collections
+        )
 
     def _execute_action(
         self,
@@ -211,8 +213,7 @@ class ActionChainExecutor:
                     return result
 
         # No action found or service not available
-        result.success = False
-        return result
+        return ActionResultBuilder().with_success(False).build()
 
     def _create_action_record(self, action_result: ActionResult) -> dict[str, Any]:
         """Create an action record for history tracking.
@@ -225,7 +226,7 @@ class ActionChainExecutor:
         """
         return {
             "success": action_result.is_success,
-            "matches": len(action_result.match_list),
+            "matches": len(action_result.matches),
             "duration": action_result.duration,
             "text": action_result.text,
         }
@@ -255,7 +256,8 @@ class ActionExecution:
         Returns:
             Result of the action
         """
-        result = ActionResult(config)  # type: ignore[arg-type]
-        result.action_description = description
+        builder = ActionResultBuilder(config)
+        builder.with_description(description)
+        result = builder.build()
         action.perform(result, *collections)
         return result

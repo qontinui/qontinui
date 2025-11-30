@@ -15,7 +15,6 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 
 @dataclass
@@ -57,7 +56,7 @@ class QualityGateChecker:
         self.reports_dir = reports_dir
         self.thresholds = thresholds
         self.verbose = verbose
-        self.results: List[QualityGate] = []
+        self.results: list[QualityGate] = []
 
     def check_circular_dependencies(self) -> bool:
         """Check for circular dependencies."""
@@ -83,10 +82,12 @@ class QualityGateChecker:
         )
 
         if self.verbose and not passed:
-            print(f"\n❌ Circular Dependencies Check Failed:")
-            print(f"   Found {cycles_found} cycles (threshold: {self.thresholds.max_circular_dependencies})")
+            print("\n❌ Circular Dependencies Check Failed:")
+            print(
+                f"   Found {cycles_found} cycles (threshold: {self.thresholds.max_circular_dependencies})"
+            )
             if cycles_found > 0:
-                print(f"   Cycles:")
+                print("   Cycles:")
                 for cycle in data["cycles"][:5]:  # Show first 5
                     print(f"     - {' -> '.join(cycle['cycle'])}")
                 if cycles_found > 5:
@@ -124,11 +125,11 @@ class QualityGateChecker:
         )
 
         if self.verbose and not passed:
-            print(f"\n❌ God Classes Check Failed:")
+            print("\n❌ God Classes Check Failed:")
             print(
                 f"   Found {critical_count} critical god classes (threshold: {self.thresholds.max_god_classes_critical})"
             )
-            print(f"   Top offenders:")
+            print("   Top offenders:")
             sorted_classes = sorted(
                 critical_classes, key=lambda x: x.get("num_lines", 0), reverse=True
             )
@@ -169,14 +170,16 @@ class QualityGateChecker:
         )
 
         if self.verbose and not passed:
-            print(f"\n❌ Security Check Failed:")
+            print("\n❌ Security Check Failed:")
             print(
                 f"   Found {critical_count} critical vulnerabilities (threshold: {self.thresholds.max_security_critical})"
             )
             print(f"   Also found {high_count} high severity vulnerabilities")
-            print(f"   Top issues:")
+            print("   Top issues:")
             for vuln in critical_vulns[:5]:
-                print(f"     - {vuln.get('file', 'unknown')}:{vuln.get('line', 0)} - {vuln.get('message', 'No details')}")
+                print(
+                    f"     - {vuln.get('file', 'unknown')}:{vuln.get('line', 0)} - {vuln.get('message', 'No details')}"
+                )
 
         if self.verbose and high_count > self.thresholds.max_security_high:
             print(
@@ -209,7 +212,7 @@ class QualityGateChecker:
         )
 
         if self.verbose and not passed:
-            print(f"\n❌ Type Coverage Check Failed:")
+            print("\n❌ Type Coverage Check Failed:")
             print(f"   Coverage: {coverage:.1f}% (minimum: {self.thresholds.min_type_coverage}%)")
             total_funcs = data.get("overall_coverage", {}).get("total_functions", 0)
             with_hints = data.get("overall_coverage", {}).get("functions_with_hints", 0)
@@ -245,12 +248,12 @@ class QualityGateChecker:
         )
 
         if self.verbose and not passed:
-            print(f"\n❌ Race Conditions Check Failed:")
+            print("\n❌ Race Conditions Check Failed:")
             print(
                 f"   Found {critical_count} critical race conditions (threshold: {self.thresholds.max_race_conditions_critical})"
             )
             print(f"   Total race conditions: {total_count}")
-            print(f"   Top issues:")
+            print("   Top issues:")
             for rc in critical_races[:5]:
                 print(
                     f"     - {rc.get('file', 'unknown')}:{rc.get('line', 0)} - {rc.get('type', 'unknown type')}"

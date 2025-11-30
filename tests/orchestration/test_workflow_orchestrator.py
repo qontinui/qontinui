@@ -3,7 +3,6 @@
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, call
 
 import pytest
 
@@ -12,9 +11,9 @@ src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
 # Import directly from module to avoid cv2 dependency
-from qontinui.orchestration.execution_context import ExecutionContext
-from qontinui.orchestration.retry_policy import RetryPolicy
-from qontinui.orchestration.workflow_orchestrator import (
+from qontinui.orchestration.execution_context import ExecutionContext  # noqa: E402
+from qontinui.orchestration.retry_policy import RetryPolicy  # noqa: E402
+from qontinui.orchestration.workflow_orchestrator import (  # noqa: E402
     WorkflowOrchestrator,
     WorkflowResult,
 )

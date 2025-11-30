@@ -10,7 +10,7 @@ Thread Safety:
 import re
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -271,6 +271,7 @@ class ExecutionContext:
             return text
 
         with self._lock:
+
             def replace_var(match: re.Match[str]) -> str:
                 var_name = match.group(1)
                 value = self._variables.get(var_name)
@@ -297,7 +298,9 @@ class ExecutionContext:
             self._statistics.total_actions += 1
             return state
 
-    def complete_action(self, state: ActionState, success: bool, error: Exception | None = None) -> None:
+    def complete_action(
+        self, state: ActionState, success: bool, error: Exception | None = None
+    ) -> None:
         """Record the completion of an action.
 
         Args:

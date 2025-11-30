@@ -5,8 +5,8 @@ Syntax fix suggestion strategies for Java to Python migration.
 import re
 from pathlib import Path
 
-from ..fix_models import FixComplexity, FixSuggestion, FixType
 from ...core.models import TestFile
+from ..fix_models import FixComplexity, FixSuggestion, FixType
 
 
 class SyntaxSuggestionStrategy:

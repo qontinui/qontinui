@@ -136,7 +136,7 @@ class MetricsCollector:
             logger.warning("Metrics collector already running")
             return
 
-        port = port or self.settings.metrics_port
+        port = port or self.settings.metrics_port  # type: ignore[attr-defined]
 
         # Start Prometheus HTTP server
         try:
@@ -174,7 +174,7 @@ class MetricsCollector:
                 thread_count.set(process.num_threads())
 
                 # Wait before next collection
-                time.sleep(self.settings.health_check_interval)
+                time.sleep(self.settings.health_check_interval)  # type: ignore[attr-defined]
 
             except Exception as e:
                 logger.error("system_metrics_collection_failed", error=str(e))

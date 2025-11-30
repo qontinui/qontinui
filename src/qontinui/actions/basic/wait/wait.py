@@ -172,7 +172,7 @@ class Wait(ActionInterface):
         success = self.execute(target=target)
 
         # Update matches with results
-        matches.success = success
+        object.__setattr__(matches, "success", success)
 
     def execute(
         self, target: Any | None = None, condition: Callable[[], bool] | None = None
@@ -374,13 +374,13 @@ class Wait(ActionInterface):
 
     def _pause_before(self) -> None:
         """Apply pre-action pause from options."""
-        if self.options.pause_before > 0:
-            time.sleep(self.options.pause_before)
+        if self.options.pause_before > 0:  # type: ignore[attr-defined]
+            time.sleep(self.options.pause_before)  # type: ignore[attr-defined]
 
     def _pause_after(self) -> None:
         """Apply post-action pause from options."""
-        if self.options.pause_after > 0:
-            time.sleep(self.options.pause_after)
+        if self.options.pause_after > 0:  # type: ignore[attr-defined]
+            time.sleep(self.options.pause_after)  # type: ignore[attr-defined]
 
     def get_elapsed_time(self) -> float:
         """Get elapsed wait time.

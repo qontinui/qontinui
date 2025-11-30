@@ -17,7 +17,8 @@ Dependencies:
 Note: SAM3 requires access to model checkpoints which may require registration.
 """
 
-from typing import Any, Dict, List
+import os
+from typing import Any
 
 import cv2
 import numpy as np
@@ -76,9 +77,7 @@ class SAM3Detector(BaseDetector):
             if checkpoint_path is None:
                 print("SAM3 checkpoint not found. Will skip SAM3 detection.")
                 print("Download from: https://github.com/facebookresearch/sam3")
-                print(
-                    "Note: You need to request access to SAM3 checkpoints on Hugging Face"
-                )
+                print("Note: You need to request access to SAM3 checkpoints on Hugging Face")
                 self.sam_available = False
                 return
 
@@ -95,15 +94,13 @@ class SAM3Detector(BaseDetector):
 
         except ImportError as e:
             print(f"SAM3 not available: {e}")
-            print(
-                "Install with: pip install git+https://github.com/facebookresearch/sam3.git"
-            )
+            print("Install with: pip install git+https://github.com/facebookresearch/sam3.git")
             self.sam_available = False
         except Exception as e:
             print(f"Error loading SAM3: {e}")
             self.sam_available = False
 
-    def detect(self, image_path: str, **params) -> List[BBox]:
+    def detect(self, image_path: str, **params) -> list[BBox]:
         """
         Detect elements using SAM3
 
@@ -144,17 +141,9 @@ class SAM3Detector(BaseDetector):
                 results = self.processor.segment()
 
                 if results and "masks" in results:
-                    for idx, mask in enumerate(results["masks"]):
-                        bbox = (
-                            results.get("boxes", [])[idx]
-                            if "boxes" in results
-                            else None
-                        )
-                        confidence = (
-                            results.get("scores", [])[idx]
-                            if "scores" in results
-                            else 1.0
-                        )
+                    for idx, _mask in enumerate(results["masks"]):
+                        bbox = results.get("boxes", [])[idx] if "boxes" in results else None
+                        confidence = results.get("scores", [])[idx] if "scores" in results else 1.0
 
                         if bbox is not None:
                             x1, y1, x2, y2 = bbox
@@ -213,7 +202,7 @@ class SAM3Detector(BaseDetector):
             traceback.print_exc()
             return []
 
-    def get_param_grid(self) -> List[Dict[str, Any]]:
+    def get_param_grid(self) -> list[dict[str, Any]]:
         """Parameter grid for hyperparameter search"""
         if not self.sam_available:
             return []

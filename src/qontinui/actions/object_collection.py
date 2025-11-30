@@ -4,12 +4,11 @@ Container for GUI elements serving as action targets.
 """
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..model.element import Location, Pattern, Region, Scene
-    from ..model.match import Match
-    from ..model.state import State, StateImage, StateLocation, StateRegion, StateString
+    from ..model.element import Scene
+    from ..model.state import StateImage, StateLocation, StateRegion, StateString
     from .action_result import ActionResult
 
 
@@ -81,6 +80,9 @@ class ObjectCollection:
 
         Knowing how many times an object Match was acted on is valuable
         for understanding the actual automation as well as for performing mocks.
+
+        Note: ActionResult instances in matches are immutable and cannot be modified.
+        Their times_acted_on value is set during construction via ActionResultBuilder.
         """
         for sio in self.state_images:
             sio.set_times_acted_on(0)
@@ -90,8 +92,7 @@ class ObjectCollection:
             sr.set_times_acted_on(0)
         for ss in self.state_strings:
             ss.set_times_acted_on(0)
-        for m in self.matches:
-            m.set_times_acted_on(0)
+        # Skip matches as ActionResult is immutable
 
     def get_first_object_name(self) -> str:
         """Get name of first object in collection.
@@ -219,7 +220,7 @@ class ObjectCollection:
 
 
 # Import ObjectCollectionBuilder from builders package
-from .builders import ObjectCollectionBuilder
+from .builders import ObjectCollectionBuilder  # noqa: E402
 
 # Add Builder class attribute to support Brobot's nested class pattern
 # This allows: ObjectCollection.Builder() instead of ObjectCollectionBuilder()

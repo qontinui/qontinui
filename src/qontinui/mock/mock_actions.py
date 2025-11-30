@@ -6,7 +6,7 @@ All mock behavior is contained here, keeping application code clean.
 import logging
 from typing import Any, cast
 
-from ..actions.action_result import ActionResult
+from ..actions.action_result import ActionResult, ActionResultBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +37,13 @@ class MockActions:
         target_name = self._get_target_name(target)
         logger.info(f"[Mock] Click {button} on {target_name}")
 
-        result = ActionResult()
-        result.success = True
-        result.action_description = f"Clicked {target_name}"
-        return result
+        result = (
+            ActionResultBuilder()
+            .with_success(True)
+            .with_action_description(f"Clicked {target_name}")  # type: ignore[attr-defined]
+            .build()
+        )
+        return result  # type: ignore[no-any-return]
 
     def type(self, text: str, target: Any | None = None) -> ActionResult:
         """Mock type action.
@@ -58,11 +61,14 @@ class MockActions:
         else:
             logger.info(f"[Mock] Type '{text}'")
 
-        result = ActionResult()
-        result.success = True
-        result.action_description = f"Typed: {text}"
-        result.selected_text = text
-        return result
+        result = (
+            ActionResultBuilder()
+            .with_success(True)
+            .with_action_description(f"Typed: {text}")  # type: ignore[attr-defined]
+            .with_selected_text(text)
+            .build()
+        )
+        return result  # type: ignore[no-any-return]
 
     def key(self, key_name: str) -> ActionResult:
         """Mock key press.
@@ -75,10 +81,13 @@ class MockActions:
         """
         logger.info(f"[Mock] Press key: {key_name}")
 
-        result = ActionResult()
-        result.success = True
-        result.action_description = f"Pressed {key_name}"
-        return result
+        result = (
+            ActionResultBuilder()
+            .with_success(True)
+            .with_action_description(f"Pressed {key_name}")  # type: ignore[attr-defined]
+            .build()
+        )
+        return result  # type: ignore[no-any-return]
 
     def drag(self, from_target: Any, to_target: Any, duration: float = 1.0) -> ActionResult:
         """Mock drag action.
@@ -95,10 +104,13 @@ class MockActions:
         to_name = self._get_target_name(to_target)
         logger.info(f"[Mock] Drag from {from_name} to {to_name} over {duration}s")
 
-        result = ActionResult()
-        result.success = True
-        result.action_description = f"Dragged from {from_name} to {to_name}"
-        return result
+        result = (
+            ActionResultBuilder()
+            .with_success(True)
+            .with_action_description(f"Dragged from {from_name} to {to_name}")  # type: ignore[attr-defined]
+            .build()
+        )
+        return result  # type: ignore[no-any-return]
 
     def _get_target_name(self, target: Any) -> str:
         """Get a readable name for a target.

@@ -105,9 +105,9 @@ class Match:
             ActionResult from click action
         """
         if not self.exists():
-            result = ActionResult()
-            result.success = False
-            result.output_text = "Match does not exist"
+            result = ActionResult()  # type: ignore[call-arg]
+            object.__setattr__(result, "success", False)
+            object.__setattr__(result, "output_text", "Match does not exist")
             return result
 
         # Use Action system to click at the target location
@@ -124,9 +124,9 @@ class Match:
             ActionResult from double-click action
         """
         if not self.exists():
-            result = ActionResult()
-            result.success = False
-            result.output_text = "Match does not exist"
+            result = ActionResult()  # type: ignore[call-arg]
+            object.__setattr__(result, "success", False)
+            object.__setattr__(result, "output_text", "Match does not exist")
             return result
 
         from ..actions import Action
@@ -147,9 +147,9 @@ class Match:
             ActionResult from right-click action
         """
         if not self.exists():
-            result = ActionResult()
-            result.success = False
-            result.output_text = "Match does not exist"
+            result = ActionResult()  # type: ignore[call-arg]
+            object.__setattr__(result, "success", False)
+            object.__setattr__(result, "output_text", "Match does not exist")
             return result
 
         from ..actions import Action
@@ -172,9 +172,9 @@ class Match:
             ActionResult from move action
         """
         if not self.exists():
-            result = ActionResult()
-            result.success = False
-            result.output_text = "Match does not exist"
+            result = ActionResult()  # type: ignore[call-arg]
+            object.__setattr__(result, "success", False)
+            object.__setattr__(result, "output_text", "Match does not exist")
             return result
 
         from ..actions import Action
@@ -198,14 +198,14 @@ class Match:
             ActionResult from drag action
         """
         if not self.exists():
-            result = ActionResult()
-            result.success = False
-            result.output_text = "Source match does not exist"
+            result = ActionResult()  # type: ignore[call-arg]
+            object.__setattr__(result, "success", False)
+            object.__setattr__(result, "output_text", "Source match does not exist")
             return result
         if not target.exists():
-            result = ActionResult()
-            result.success = False
-            result.output_text = "Target match does not exist"
+            result = ActionResult()  # type: ignore[call-arg]
+            object.__setattr__(result, "success", False)
+            object.__setattr__(result, "output_text", "Target match does not exist")
             return result
 
         from ..actions import Action
@@ -231,9 +231,9 @@ class Match:
             ActionResult from type action
         """
         if not self.exists():
-            result = ActionResult()
-            result.success = False
-            result.output_text = "Match does not exist"
+            result = ActionResult()  # type: ignore[call-arg]
+            object.__setattr__(result, "success", False)
+            object.__setattr__(result, "output_text", "Match does not exist")
             return result
 
         # Click first to focus
@@ -256,17 +256,17 @@ class Match:
             ActionResult from highlight action
         """
         if not self.exists():
-            result = ActionResult()
-            result.success = False
-            result.output_text = "Match does not exist"
+            result = ActionResult()  # type: ignore[call-arg]
+            object.__setattr__(result, "success", False)
+            object.__setattr__(result, "output_text", "Match does not exist")
             return result
 
         # This would draw a rectangle around the match
         # Implementation depends on platform
-        result = ActionResult()
-        result.success = True
-        result.defined_regions = [self.region] if self.region else []
-        result.duration = timedelta(seconds=duration)
+        result = ActionResult()  # type: ignore[call-arg]
+        object.__setattr__(result, "success", True)
+        object.__setattr__(result, "defined_regions", tuple([self.region] if self.region else []))
+        object.__setattr__(result, "duration", timedelta(seconds=duration))
         return result
 
     def get_text(self) -> str:

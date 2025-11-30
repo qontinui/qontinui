@@ -6,7 +6,6 @@ and input operations all working together without race conditions.
 
 import threading
 import time
-from typing import List
 
 import pytest
 
@@ -14,9 +13,6 @@ from qontinui.actions.action_result import ActionResult
 from qontinui.actions.result_builder import ActionResultBuilder
 from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import StateRegistry
-from qontinui.hal.implementations.keyboard_operations import KeyboardOperations
-from qontinui.hal.implementations.mouse_operations import MouseOperations
-from qontinui.hal.interfaces.input_controller import Key, MouseButton
 from qontinui.model.element.location import Location
 from qontinui.model.element.region import Region
 
@@ -45,8 +41,8 @@ class TestConcurrentActionWorkflows:
 
     def test_concurrent_action_workflows_basic(self):
         """10 threads executing action workflows concurrently."""
-        results: List[ActionResult] = []
-        errors: List[Exception] = []
+        results: list[ActionResult] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def execute_workflow(thread_id: int):
@@ -58,9 +54,9 @@ class TestConcurrentActionWorkflows:
                     match = MockMatch(thread_id * 100 + i * 10, i * 10, f"match_{thread_id}_{i}")
                     builder.add_match(match)
 
-                result = builder.with_success(True).with_description(
-                    f"Workflow {thread_id}"
-                ).build()
+                result = (
+                    builder.with_success(True).with_description(f"Workflow {thread_id}").build()
+                )
 
                 # Register some states
                 @state(name=f"state_workflow_{thread_id}_a")
@@ -103,8 +99,8 @@ class TestConcurrentActionWorkflows:
 
     def test_concurrent_workflows_with_state_transitions(self):
         """Test workflows that register and transition states concurrently."""
-        registries: List[StateRegistry] = []
-        errors: List[Exception] = []
+        registries: list[StateRegistry] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def execute_state_workflow(thread_id: int):
@@ -167,7 +163,7 @@ class TestConcurrentActionWorkflows:
     def test_concurrent_workflows_with_action_results(self):
         """Test workflows that build and merge action results concurrently."""
         final_result = ActionResult()
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def execute_result_workflow(thread_id: int):
@@ -208,9 +204,9 @@ class TestConcurrentActionWorkflows:
 
     def test_concurrent_workflows_mixed_operations(self):
         """Test realistic workflows with mixed operations."""
-        results: List[ActionResult] = []
-        registries: List[StateRegistry] = []
-        errors: List[Exception] = []
+        results: list[ActionResult] = []
+        registries: list[StateRegistry] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def execute_complex_workflow(thread_id: int):
@@ -233,9 +229,9 @@ class TestConcurrentActionWorkflows:
                     pass
 
                 registry = StateRegistry()
-                start_id = registry.register_state(StartState)
-                middle_id = registry.register_state(MiddleState)
-                end_id = registry.register_state(EndState)
+                registry.register_state(StartState)
+                registry.register_state(MiddleState)
+                registry.register_state(EndState)
 
                 # 3. Add matches to result
                 for i in range(3):
@@ -286,8 +282,8 @@ class TestConcurrentActionWorkflows:
         """Test concurrent access to result properties during modifications."""
         result = ActionResult()
         stop_flag = threading.Event()
-        read_counts: List[int] = []
-        errors: List[Exception] = []
+        read_counts: list[int] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def writer():
@@ -353,7 +349,7 @@ class TestConcurrentStateManagement:
     def test_concurrent_state_registration_across_workflows(self):
         """Multiple workflows registering states in shared registry."""
         shared_registry = StateRegistry()
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def register_workflow_states(workflow_id: int):
@@ -373,9 +369,7 @@ class TestConcurrentStateManagement:
                     errors.append(e)
 
         # Execute registrations
-        threads = [
-            threading.Thread(target=register_workflow_states, args=(i,)) for i in range(20)
-        ]
+        threads = [threading.Thread(target=register_workflow_states, args=(i,)) for i in range(20)]
         for t in threads:
             t.start()
         for t in threads:
@@ -392,8 +386,8 @@ class TestConcurrentStateManagement:
 
     def test_workflow_state_isolation(self):
         """Each workflow has its own registry - no interference."""
-        registries: List[StateRegistry] = []
-        errors: List[Exception] = []
+        registries: list[StateRegistry] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def isolated_workflow(workflow_id: int):
@@ -447,8 +441,8 @@ class TestConcurrentResultOperations:
 
     def test_concurrent_result_building(self):
         """Multiple threads building results simultaneously."""
-        results: List[ActionResult] = []
-        errors: List[Exception] = []
+        results: list[ActionResult] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def build_result(builder_id: int):
@@ -487,14 +481,14 @@ class TestConcurrentResultOperations:
         assert len(errors) == 0, f"Errors: {errors}"
         assert len(results) == 25
 
-        for i, result in enumerate(results):
+        for _i, result in enumerate(results):
             assert result.success
             assert len(result.match_list) == 10
 
     def test_concurrent_result_merging(self):
         """Test merging results from multiple threads."""
         master_result = ActionResult()
-        errors: List[Exception] = []
+        errors: list[Exception] = []
         lock = threading.Lock()
 
         def create_and_merge(thread_id: int):

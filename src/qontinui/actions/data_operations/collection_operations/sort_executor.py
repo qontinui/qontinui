@@ -36,9 +36,7 @@ class SortExecutor:
         ["100", "30", "5"]
     """
 
-    def __init__(
-        self, variable_context: VariableContext, evaluator: SafeEvaluator
-    ) -> None:
+    def __init__(self, variable_context: VariableContext, evaluator: SafeEvaluator) -> None:
         """Initialize the sort executor.
 
         Args:
@@ -96,9 +94,7 @@ class SortExecutor:
         )
 
         # Determine sort key function
-        key_func = self._build_sort_key_function(
-            sort_by, comparator, custom_comparator
-        )
+        key_func = self._build_sort_key_function(sort_by, comparator, custom_comparator)
 
         # Perform sort
         reverse = order == "DESC"
@@ -134,9 +130,14 @@ class SortExecutor:
         # Start with property extraction if sort_by is specified
         if sort_by:
             properties = [sort_by] if isinstance(sort_by, str) else sort_by
-            base_key_func = lambda item: self._extract_property(item, properties)
+
+            def base_key_func(item: Any) -> Any:
+                return self._extract_property(item, properties)
+
         else:
-            base_key_func = lambda item: item
+
+            def base_key_func(item: Any) -> Any:
+                return item
 
         # Apply comparator transformation
         if not comparator:

@@ -38,7 +38,7 @@ Usage:
 """
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -101,7 +101,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         transition_pairs: list[tuple[np.ndarray[Any, Any], np.ndarray[Any, Any]]],
         consistency_threshold: float = 0.7,
         min_region_area: int = 500,
-        **params: Any
+        **params: Any,
     ) -> list[StateRegion]:
         """Detect state regions from before/after screenshot pairs.
 
@@ -146,8 +146,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
 
         # Step 2: Analyze consistency across all differences
         consistency_map = self._compute_consistency(
-            diff_images,
-            method=params.get('normalize_method', 'minmax')
+            diff_images, method=params.get("normalize_method", "minmax")
         )
 
         # Step 3: Extract regions from consistency map
@@ -155,22 +154,16 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
             consistency_map,
             consistency_threshold,
             min_region_area,
-            kernel_size=params.get('morphology_kernel_size', 5)
+            kernel_size=params.get("morphology_kernel_size", 5),
         )
 
         # Step 4: Score and rank regions
-        scored_regions = self._score_regions(
-            regions,
-            consistency_map,
-            diff_images
-        )
+        scored_regions = self._score_regions(regions, consistency_map, diff_images)
 
         return scored_regions
 
     def detect_multi(
-        self,
-        screenshots: list[np.ndarray[Any, Any]],
-        **params: Any
+        self, screenshots: list[np.ndarray[Any, Any]], **params: Any
     ) -> dict[int, list[dict[str, Any]]]:
         """Detect patterns across multiple screenshots.
 
@@ -186,15 +179,11 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
             Dictionary mapping screenshot index to detected regions
         """
         # Create consecutive pairs
-        pairs = [
-            (screenshots[i], screenshots[i + 1])
-            for i in range(len(screenshots) - 1)
-        ]
+        pairs = [(screenshots[i], screenshots[i + 1]) for i in range(len(screenshots) - 1)]
 
         if len(pairs) < 10:
             raise ValueError(
-                f"Need at least 10 screenshot pairs (11 screenshots), "
-                f"got {len(pairs)} pairs"
+                f"Need at least 10 screenshot pairs (11 screenshots), " f"got {len(pairs)} pairs"
             )
 
         # Detect regions
@@ -210,7 +199,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
                     "bbox": region.bbox,
                     "confidence": region.consistency_score,
                     "type": "state_region",
-                    "pixel_count": region.pixel_count
+                    "pixel_count": region.pixel_count,
                 }
                 for region in regions
             ]
@@ -218,8 +207,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         return result
 
     def _compute_differences(
-        self,
-        pairs: list[tuple[np.ndarray[Any, Any], np.ndarray[Any, Any]]]
+        self, pairs: list[tuple[np.ndarray[Any, Any], np.ndarray[Any, Any]]]
     ) -> np.ndarray[Any, Any]:
         """Compute difference images for all transition pairs.
 
@@ -235,7 +223,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         """
         diffs: list[np.ndarray[Any, Any]] = []
 
-        reference_shape: Optional[tuple[int, int]] = None
+        reference_shape: tuple[int, int] | None = None
 
         for idx, (before, after) in enumerate(pairs):
             # Ensure same size
@@ -245,7 +233,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
 
             # Check consistency across all pairs
             if reference_shape is None:
-                reference_shape = before.shape[:2]
+                reference_shape = before.shape[:2]  # type: ignore[assignment]
             elif before.shape[:2] != reference_shape:
                 raise ValueError(
                     f"Inconsistent dimensions in pair {idx}: "
@@ -270,9 +258,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         return np.stack(diffs, axis=0)
 
     def _compute_consistency(
-        self,
-        diff_images: np.ndarray[Any, Any],
-        method: str = 'minmax'
+        self, diff_images: np.ndarray[Any, Any], method: str = "minmax"
     ) -> np.ndarray[Any, Any]:
         """Compute consistency score for each pixel across all differences.
 
@@ -303,15 +289,9 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         consistency = mean_diff / (std_diff + epsilon)
 
         # Normalize to 0-1 range
-        if method == 'minmax':
-            consistency = cv2.normalize(
-                consistency,
-                None,
-                0.0,
-                1.0,
-                cv2.NORM_MINMAX
-            )
-        elif method == 'zscore':
+        if method == "minmax":
+            consistency = cv2.normalize(consistency, None, 0.0, 1.0, cv2.NORM_MINMAX)  # type: ignore[call-overload]
+        elif method == "zscore":
             # Z-score normalization
             mean_val = np.mean(consistency)
             std_val = np.std(consistency)
@@ -324,14 +304,14 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         else:
             raise ValueError(f"Unknown normalization method: {method}")
 
-        return consistency.astype(np.float32)
+        return consistency.astype(np.float32)  # type: ignore[no-any-return]
 
     def _extract_regions(
         self,
         consistency_map: np.ndarray[Any, Any],
         threshold: float,
         min_area: int,
-        kernel_size: int = 5
+        kernel_size: int = 5,
     ) -> list[tuple[int, int, int, int]]:
         """Extract connected regions from consistency map.
 
@@ -350,19 +330,12 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         # Clean up with morphological operations
         # Close: Fill small holes
         # Open: Remove small noise
-        kernel = cv2.getStructuringElement(
-            cv2.MORPH_RECT,
-            (kernel_size, kernel_size)
-        )
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)  # type: ignore[assignment]
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)  # type: ignore[assignment]
 
         # Find contours
-        contours, _ = cv2.findContours(
-            mask,
-            cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Extract bounding boxes
         bboxes: list[tuple[int, int, int, int]] = []
@@ -379,7 +352,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         self,
         bboxes: list[tuple[int, int, int, int]],
         consistency_map: np.ndarray[Any, Any],
-        diff_images: np.ndarray[Any, Any]
+        diff_images: np.ndarray[Any, Any],
     ) -> list[StateRegion]:
         """Score regions by average consistency within bounding box.
 
@@ -397,22 +370,24 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
             x, y, w, h = bbox
 
             # Extract consistency values in this region
-            region_consistency = consistency_map[y:y+h, x:x+w]
+            region_consistency = consistency_map[y : y + h, x : x + w]
             avg_consistency = float(np.mean(region_consistency))
 
             # Get representative difference image (median across all transitions)
-            region_diffs = diff_images[:, y:y+h, x:x+w]
+            region_diffs = diff_images[:, y : y + h, x : x + w]
             median_diff = np.median(region_diffs, axis=0).astype(np.uint8)
 
             # Calculate pixel count
             pixel_count = w * h
 
-            regions.append(StateRegion(
-                bbox=bbox,
-                consistency_score=avg_consistency,
-                example_diff=median_diff,
-                pixel_count=pixel_count
-            ))
+            regions.append(
+                StateRegion(
+                    bbox=bbox,
+                    consistency_score=avg_consistency,
+                    example_diff=median_diff,
+                    pixel_count=pixel_count,
+                )
+            )
 
         # Sort by consistency score (highest first)
         regions.sort(key=lambda r: r.consistency_score, reverse=True)
@@ -424,7 +399,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         consistency_map: np.ndarray[Any, Any],
         regions: list[StateRegion],
         screenshot: np.ndarray[Any, Any],
-        show_scores: bool = True
+        show_scores: bool = True,
     ) -> np.ndarray[Any, Any]:
         """Create visualization of detected regions overlaid on screenshot.
 
@@ -438,10 +413,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
             Visualization image with heatmap and bounding boxes
         """
         # Create heatmap from consistency map
-        heatmap = cv2.applyColorMap(
-            (consistency_map * 255).astype(np.uint8),
-            cv2.COLORMAP_JET
-        )
+        heatmap = cv2.applyColorMap((consistency_map * 255).astype(np.uint8), cv2.COLORMAP_JET)
 
         # Convert screenshot to BGR if grayscale
         if len(screenshot.shape) == 2:
@@ -451,10 +423,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
 
         # Resize heatmap if needed
         if heatmap.shape[:2] != screenshot_bgr.shape[:2]:
-            heatmap = cv2.resize(
-                heatmap,
-                (screenshot_bgr.shape[1], screenshot_bgr.shape[0])
-            )
+            heatmap = cv2.resize(heatmap, (screenshot_bgr.shape[1], screenshot_bgr.shape[0]))
 
         # Overlay heatmap on screenshot (60% screenshot, 40% heatmap)
         overlay = cv2.addWeighted(screenshot_bgr, 0.6, heatmap, 0.4, 0)
@@ -472,17 +441,12 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
                 thickness = 2
 
             # Draw rectangle
-            cv2.rectangle(overlay, (x, y), (x+w, y+h), color, thickness)
+            cv2.rectangle(overlay, (x, y), (x + w, y + h), color, thickness)
 
             # Add consistency score label if requested
             if show_scores:
                 label = f"{region.consistency_score:.2f}"
-                label_size = cv2.getTextSize(
-                    label,
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    2
-                )[0]
+                label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)[0]
 
                 # Draw label background
                 label_y = max(y - 10, label_size[1] + 5)
@@ -491,7 +455,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
                     (x, label_y - label_size[1] - 5),
                     (x + label_size[0] + 5, label_y + 5),
                     color,
-                    -1  # Filled
+                    -1,  # Filled
                 )
 
                 # Draw label text
@@ -502,15 +466,15 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     (0, 0, 0),  # Black text
-                    2
+                    2,
                 )
 
         return overlay
 
-    def compute_consistency_map(
+    def compute_consistency_map(  # type: ignore[override]
         self,
         transition_pairs: list[tuple[np.ndarray[Any, Any], np.ndarray[Any, Any]]],
-        method: str = 'minmax'
+        method: str = "minmax",
     ) -> np.ndarray[Any, Any]:
         """Compute consistency map from transition pairs.
 
@@ -547,24 +511,8 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
             List of parameter configurations for tuning
         """
         return [
-            {
-                "consistency_threshold": 0.6,
-                "min_region_area": 500,
-                "morphology_kernel_size": 3
-            },
-            {
-                "consistency_threshold": 0.7,
-                "min_region_area": 500,
-                "morphology_kernel_size": 5
-            },
-            {
-                "consistency_threshold": 0.8,
-                "min_region_area": 1000,
-                "morphology_kernel_size": 5
-            },
-            {
-                "consistency_threshold": 0.7,
-                "min_region_area": 500,
-                "morphology_kernel_size": 7
-            },
+            {"consistency_threshold": 0.6, "min_region_area": 500, "morphology_kernel_size": 3},
+            {"consistency_threshold": 0.7, "min_region_area": 500, "morphology_kernel_size": 5},
+            {"consistency_threshold": 0.8, "min_region_area": 1000, "morphology_kernel_size": 5},
+            {"consistency_threshold": 0.7, "min_region_area": 500, "morphology_kernel_size": 7},
         ]

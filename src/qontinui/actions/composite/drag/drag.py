@@ -78,16 +78,18 @@ class Drag(ActionInterface):
                                First collection defines source, second defines target.
         """
         if not isinstance(action_result.action_config, DragOptions):
-            action_result.success = False
+            object.__setattr__(action_result, "success", False)
             return
 
         drag_options = action_result.action_config
 
         # Ensure we have at least 2 object collections (source and target)
         if len(object_collections) < 2:
-            action_result.success = False
-            action_result.output_text = (
-                "Drag requires at least 2 object collections (source and target)"
+            object.__setattr__(action_result, "success", False)
+            object.__setattr__(
+                action_result,
+                "output_text",
+                "Drag requires at least 2 object collections (source and target)",
             )
             return
 
@@ -237,16 +239,16 @@ class Drag(ActionInterface):
             source: Source result from chain execution
             target: Target result to populate
         """
-        target.success = source.is_success
-        target.match_list = source.match_list
-        target.duration = source.duration
-        target.text = source.text
-        target.active_states = source.active_states
+        object.__setattr__(target, "success", source.is_success)
+        object.__setattr__(target, "matches", source.matches)
+        object.__setattr__(target, "duration", source.duration)
+        object.__setattr__(target, "text", source.text)
+        object.__setattr__(target, "active_states", source.active_states)
 
         # Copy movements
-        for movement in source.get_movements():
-            target.add_movement(movement)
+        for movement in source.movements:
+            target.add_movement(movement)  # type: ignore[attr-defined]
 
         # Copy execution history
-        for record in source.get_execution_records():
-            target.add_execution_record(record)
+        for record in source.execution_history:
+            target.add_execution_record(record)  # type: ignore[attr-defined]

@@ -364,7 +364,7 @@ class MonitorProperties:
         self.multi_monitor_enabled = False
         self.log_monitor_info = False
         self.default_screen_index = 0
-        self.operation_monitor_map = {}
+        self.operation_monitor_map: dict[str, int] = {}
 
 
 class Screen:

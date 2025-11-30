@@ -15,8 +15,8 @@ from qontinui.model.element.pattern import Pattern
 # Decorator for skipping tests that require a working X display
 # This uses a lambda to defer evaluation until test time (after fixtures run)
 skip_without_display = pytest.mark.skipif(
-    lambda: os.environ.get('DISPLAY', '') == ':99',
-    reason="Requires X display (run with Xvfb or in GUI environment)"
+    lambda: os.environ.get("DISPLAY", "") == ":99",
+    reason="Requires X display (run with Xvfb or in GUI environment)",
 )
 
 
@@ -34,7 +34,7 @@ class TestMaskedMatching:
         # Create template: red square with green bar at top
         template_data = np.zeros((50, 50, 3), dtype=np.uint8)
         template_data[10:40, 10:40] = [255, 0, 0]  # Red square in center
-        template_data[0:10, 0:50] = [0, 255, 0]    # Green bar at top
+        template_data[0:10, 0:50] = [0, 255, 0]  # Green bar at top
 
         # Create mask that only includes the red square (ignores green bar)
         mask = np.zeros((50, 50), dtype=np.float32)
@@ -47,13 +47,13 @@ class TestMaskedMatching:
             pixel_data=template_data,
             mask=mask,
             width=50,
-            height=50
+            height=50,
         )
 
         # Create screenshot with red square but DIFFERENT top bar (blue instead of green)
         screenshot_data = np.zeros((200, 200, 3), dtype=np.uint8)
         screenshot_data[50:100, 50:100] = [255, 0, 0]  # Red square at (50, 50)
-        screenshot_data[40:50, 50:100] = [0, 0, 255]   # BLUE bar (different from template)
+        screenshot_data[40:50, 50:100] = [0, 0, 255]  # BLUE bar (different from template)
         screenshot = Image.from_numpy(screenshot_data, name="screenshot")
 
         # Execute find with mask - should match despite different top bars
@@ -73,7 +73,7 @@ class TestMaskedMatching:
         # Create template: red square with green bar at top
         template_data = np.zeros((50, 50, 3), dtype=np.uint8)
         template_data[10:40, 10:40] = [255, 0, 0]  # Red square
-        template_data[0:10, 0:50] = [0, 255, 0]    # Green bar
+        template_data[0:10, 0:50] = [0, 255, 0]  # Green bar
 
         # Create Pattern WITHOUT mask (all ones = no masking)
         template_pattern = Pattern(
@@ -82,13 +82,13 @@ class TestMaskedMatching:
             pixel_data=template_data,
             mask=np.ones((50, 50), dtype=np.float32),
             width=50,
-            height=50
+            height=50,
         )
 
         # Create screenshot with red square but BLUE bar
         screenshot_data = np.zeros((200, 200, 3), dtype=np.uint8)
         screenshot_data[50:100, 50:100] = [255, 0, 0]  # Red square
-        screenshot_data[40:50, 50:100] = [0, 0, 255]   # BLUE bar
+        screenshot_data[40:50, 50:100] = [0, 0, 255]  # BLUE bar
         screenshot = Image.from_numpy(screenshot_data, name="screenshot")
 
         # Execute find without mask - should NOT match due to different top bars
@@ -114,7 +114,7 @@ class TestMaskedMatching:
             pixel_data=template_data,
             mask=mask,
             width=30,
-            height=30
+            height=30,
         )
 
         # Create screenshot with exact match
@@ -127,7 +127,9 @@ class TestMaskedMatching:
 
         # Should find perfect match
         assert len(results.matches) > 0, "Should find perfect match with mask"
-        assert results.matches.first.similarity >= 0.95, "Perfect match should have very high confidence"
+        assert (
+            results.matches.first.similarity >= 0.95
+        ), "Perfect match should have very high confidence"
 
     @skip_without_display
     def test_image_converts_to_pattern_with_full_mask(self):

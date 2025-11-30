@@ -166,7 +166,7 @@ class TemplateMatcher(ImageMatcher):
             # Extract matches from result
             matches = self._extract_matches(
                 result=result,
-                template_shape=template_bgr.shape,
+                template_shape=template_bgr.shape,  # type: ignore[arg-type]
                 pattern=pattern,
                 offset=(offset_x, offset_y),
                 find_all=find_all,
@@ -218,7 +218,7 @@ class TemplateMatcher(ImageMatcher):
             result = image.get_mat_bgr()
             if result is None:
                 raise ImageProcessingError("get_mat_bgr() returned None")
-            return result
+            return result  # type: ignore[no-any-return]
 
         # Already numpy array
         if isinstance(image, np.ndarray):
@@ -634,8 +634,8 @@ class TemplateMatcher(ImageMatcher):
 
         # Determine why matching failed (if best match is below threshold)
         why_failed = None
-        if top_matches and top_matches[0]["confidence"] < threshold:
-            best_confidence = top_matches[0]["confidence"]
+        if top_matches and float(top_matches[0]["confidence"]) < threshold:  # type: ignore[arg-type]
+            best_confidence = float(top_matches[0]["confidence"])  # type: ignore[arg-type]
             gap = threshold - best_confidence
             why_failed = f"Best match confidence {best_confidence:.4f} is below threshold {threshold:.4f} (gap: {gap:.4f})"
 

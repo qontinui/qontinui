@@ -133,7 +133,7 @@ class StateImage:
         options = build_find_options(ctx, explicit_find_all=True)
 
         result = action.find(pattern=pattern, options=options)
-        return Matches(result.matches)
+        return Matches(result.matches)  # type: ignore[arg-type]
 
     def exists(self) -> bool:
         """Check if this state image exists using FindAction with proper cascade.

@@ -22,8 +22,9 @@ Example:
 """
 
 import logging
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class StateEventEmitter:
 
     @staticmethod
     def emit_transition_start(
-        transition_id: str, emit_event_callback: Optional[Callable[[str, dict], None]]
+        transition_id: str, emit_event_callback: Callable[[str, dict], None] | None
     ) -> None:
         """Emit transition start event.
 
@@ -62,7 +63,7 @@ class StateEventEmitter:
 
     @staticmethod
     def emit_transition_complete(
-        result: Any, emit_event_callback: Optional[Callable[[str, dict], None]]
+        result: Any, emit_event_callback: Callable[[str, dict], None] | None
     ) -> None:
         """Emit transition completion event.
 
@@ -84,7 +85,7 @@ class StateEventEmitter:
 
     @staticmethod
     def emit_transition_failed(
-        transition_id: str, error: str, emit_event_callback: Optional[Callable[[str, dict], None]]
+        transition_id: str, error: str, emit_event_callback: Callable[[str, dict], None] | None
     ) -> None:
         """Emit transition failed event.
 
@@ -107,7 +108,7 @@ class StateEventEmitter:
     def emit_navigation_start(
         target_state_ids: list[int],
         execute: bool,
-        emit_event_callback: Optional[Callable[[str, dict], None]],
+        emit_event_callback: Callable[[str, dict], None] | None,
     ) -> None:
         """Emit navigation start event.
 
@@ -130,7 +131,7 @@ class StateEventEmitter:
     def emit_navigation_complete(
         result: Any,
         nav_context: Any,
-        emit_event_callback: Optional[Callable[[str, dict], None]],
+        emit_event_callback: Callable[[str, dict], None] | None,
     ) -> None:
         """Emit navigation completion event.
 
@@ -155,7 +156,7 @@ class StateEventEmitter:
     def emit_navigation_failed(
         target_state_ids: list[int],
         error: str,
-        emit_event_callback: Optional[Callable[[str, dict], None]],
+        emit_event_callback: Callable[[str, dict], None] | None,
     ) -> None:
         """Emit navigation failed event.
 

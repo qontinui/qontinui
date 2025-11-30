@@ -65,7 +65,7 @@ class PatternBuilder:
 
         # Create pattern
         pattern_name = pattern_config.get("name", image_id)
-        return Pattern(pixel_data=pixel_data, mask=mask, name=pattern_name, image_id=image_id)
+        return Pattern(id=image_id, pixel_data=pixel_data, mask=mask, name=pattern_name)
 
     def build_from_file(self, file_path: Path, image_id: str) -> Pattern | None:
         """Build Pattern from file path without mask.
@@ -84,7 +84,7 @@ class PatternBuilder:
         # Default mask (all pixels considered)
         mask = np.ones(pixel_data.shape[:2], dtype=np.uint8) * 255
 
-        return Pattern(pixel_data=pixel_data, mask=mask, name=image_id, image_id=image_id)
+        return Pattern(id=image_id, pixel_data=pixel_data, mask=mask, name=image_id)
 
     def _load_image_file(self, file_path: Path) -> np.ndarray | None:
         """Load image file using cv2.

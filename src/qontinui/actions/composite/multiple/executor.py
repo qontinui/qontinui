@@ -1,7 +1,7 @@
 """Task executor for managing ThreadPool execution."""
 
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from typing import Callable
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ....model.action.action_record import ActionRecord
 from .task import ActionTask

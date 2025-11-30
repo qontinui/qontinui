@@ -156,7 +156,6 @@ class NavigationActionExecutor(ActionExecutorBase):
         # Overriding it here with self.context.workflow_executor (which may be None)
         # breaks navigation transitions.
         # Old code: navigation_api.set_workflow_executor(self.context.workflow_executor)
-
         # Convert state IDs to state names for the navigation API
         target_names = [st.name for st in target_states]
         logger.info(f"Navigating to {len(state_ids)} state(s): {', '.join(target_names)}")

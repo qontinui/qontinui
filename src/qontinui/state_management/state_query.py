@@ -22,7 +22,7 @@ Example:
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class StateQuery:
             ...     print(f"Available: {t.name}")
         """
         active_states = self.state_memory.active_states
-        return self.validator.get_available_transitions(active_states)
+        return cast(list[Any], self.validator.get_available_transitions(active_states))
 
     def get_statistics(self) -> dict[str, Any]:
         """Get statistics about state execution.

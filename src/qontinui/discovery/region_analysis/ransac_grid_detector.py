@@ -7,12 +7,17 @@ noise and missing/occluded slots.
 
 import logging
 from random import sample
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
 
-from qontinui.discovery.region_analysis.base import BaseRegionAnalyzer, BoundingBox, DetectedRegion, RegionType
+from qontinui.discovery.region_analysis.base import (
+    BaseRegionAnalyzer,
+    BoundingBox,
+    DetectedRegion,
+    RegionType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +38,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
     def name(self) -> str:
         return "ransac_grid_detector"
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_cell_size": 24,
             "max_cell_size": 150,
@@ -44,7 +49,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
             "min_grid_cols": 2,
         }
 
-    def analyze(self, image: np.ndarray, **kwargs) -> List[DetectedRegion]:
+    def analyze(self, image: np.ndarray, **kwargs) -> list[DetectedRegion]:  # type: ignore[override]
         """Detect inventory grids using RANSAC"""
         params = {**self.get_default_parameters(), **kwargs}
 
@@ -67,7 +72,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
             return []
 
         # Convert models to detected regions
-        regions = []
+        regions: list[Any] = []
         for model in grid_models:
             region = self._model_to_region(model, params)
             if region:
@@ -76,8 +81,8 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         return regions
 
     def _find_candidate_rectangles(
-        self, gray: np.ndarray, params: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, gray: np.ndarray, params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Find candidate rectangular regions that could be grid cells"""
         # Edge detection
         edges = cv2.Canny(gray, 50, 150)
@@ -87,11 +92,9 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        candidates = []
+        candidates: list[Any] = []
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -133,21 +136,21 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         return candidates
 
     def _ransac_grid_fitting(
-        self, candidates: List[Dict[str, Any]], params: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, candidates: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """
         Use RANSAC to fit grid models to candidate rectangles
 
         Returns:
             List of grid model dictionaries
         """
-        best_models = []
+        best_models: list[Any] = []
         remaining_candidates = candidates.copy()
 
         # Try to find multiple grids
         while len(remaining_candidates) >= params["min_inliers"]:
             best_model = None
-            best_inliers = []
+            best_inliers: list[Any] = []
             best_score = 0
 
             # RANSAC iterations
@@ -187,18 +190,16 @@ class RANSACGridDetector(BaseRegionAnalyzer):
                 best_models.append(best_model)
 
                 # Remove inliers from remaining candidates
-                inlier_set = set(id(p) for p in best_inliers)
-                remaining_candidates = [
-                    c for c in remaining_candidates if id(c) not in inlier_set
-                ]
+                inlier_set = {id(p) for p in best_inliers}
+                remaining_candidates = [c for c in remaining_candidates if id(c) not in inlier_set]
             else:
                 break
 
         return best_models
 
     def _fit_grid_model(
-        self, points: List[Dict[str, Any]], params: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+        self, points: list[dict[str, Any]], params: dict[str, Any]
+    ) -> dict[str, Any] | None:
         """
         Fit a grid model to a set of points
 
@@ -212,7 +213,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         centers = np.array([(p["cx"], p["cy"]) for p in points])
 
         # Find potential spacing by looking at distances
-        distances = []
+        distances: list[Any] = []
         for i in range(len(centers)):
             for j in range(i + 1, len(centers)):
                 dist = np.linalg.norm(centers[i] - centers[j])
@@ -234,7 +235,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
 
         # Calculate grid dimensions
         # Project points onto grid
-        grid_positions = []
+        grid_positions: list[Any] = []
         for cx, cy in centers:
             dx, dy = cx - origin[0], cy - origin[1]
             grid_x = round(dx / spacing)
@@ -273,12 +274,12 @@ class RANSACGridDetector(BaseRegionAnalyzer):
 
     def _count_inliers(
         self,
-        candidates: List[Dict[str, Any]],
-        model: Dict[str, Any],
-        params: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        candidates: list[dict[str, Any]],
+        model: dict[str, Any],
+        params: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """Count candidates that fit the grid model"""
-        inliers = []
+        inliers: list[Any] = []
         origin = model["origin"]
         spacing = model["spacing"]
         threshold = spacing * params["ransac_threshold"]
@@ -306,8 +307,8 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         return inliers
 
     def _model_to_region(
-        self, model: Dict[str, Any], params: Dict[str, Any]
-    ) -> Optional[DetectedRegion]:
+        self, model: dict[str, Any], params: dict[str, Any]
+    ) -> DetectedRegion | None:
         """Convert grid model to DetectedRegion"""
         rows = model["rows"]
         cols = model["cols"]
@@ -328,7 +329,7 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         height = rows * spacing_y + cell_height
 
         # Generate cell metadata
-        cells = []
+        cells: list[Any] = []
         for row in range(rows):
             for col in range(cols):
                 cells.append(

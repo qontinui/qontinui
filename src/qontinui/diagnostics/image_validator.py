@@ -64,16 +64,16 @@ class PathValidator:
             )
 
         if not directory.is_dir():
-            return ValidationResult(valid=False, path=str(directory), reason="Path is not a directory")
+            return ValidationResult(
+                valid=False, path=str(directory), reason="Path is not a directory"
+            )
 
         try:
             # Test read access
             list(directory.iterdir())
             return ValidationResult(valid=True, path=str(directory))
         except PermissionError:
-            return ValidationResult(
-                valid=False, path=str(directory), reason="Permission denied"
-            )
+            return ValidationResult(valid=False, path=str(directory), reason="Permission denied")
 
     @staticmethod
     def validate_file(file_path: str | Path) -> ValidationResult:

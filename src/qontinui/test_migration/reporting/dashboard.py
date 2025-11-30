@@ -31,7 +31,9 @@ class MigrationReportingDashboard:
     - PDF reports for documentation
     """
 
-    def __init__(self, java_source_dir: Path | None = None, python_target_dir: Path | None = None) -> None:
+    def __init__(
+        self, java_source_dir: Path | None = None, python_target_dir: Path | None = None
+    ) -> None:
         """Initialize the reporting dashboard."""
         # Use default paths if not provided
         if java_source_dir is None:

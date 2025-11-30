@@ -23,6 +23,7 @@ packages = [{include = "qontinui", from = "src"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 pynput = "^1.7"
+pyautogui = "^0.9.54"
 opencv-python-headless = "^4.9"
 transformers = "^4.36"
 torch = "^2.2"
@@ -30,7 +31,7 @@ torchvision = ">=0.17"
 # SAM3: Install manually with: pip install git+https://github.com/facebookresearch/sam3.git
 # (Poetry cannot handle git dependencies without proper packaging)
 accelerate = "^0.25"
-timm = "^0.9"
+timm = ">=1.0.22"  # Required by SAM3
 supervision = "^0.26"
 tokenizers = "^0.15"
 ultralytics = "^8.0"

@@ -38,7 +38,6 @@ class ImagePreprocessor:
         Returns:
             Preprocessed image
         """
-        import cv2
 
         result = image.copy()
 
@@ -64,7 +63,6 @@ class ImagePreprocessor:
         Returns:
             Processed image
         """
-        import cv2
 
         if operation == TextPreprocessing.GRAYSCALE:
             return self._to_grayscale(image)

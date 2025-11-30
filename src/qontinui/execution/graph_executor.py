@@ -135,7 +135,7 @@ class GraphExecutor:
 
         # Initialize graph components
         self.traverser = GraphTraverser(workflow)
-        self.router = ConnectionRouter(workflow.connections, self.traverser.action_map)
+        self.router = ConnectionRouter(workflow.connections, self.traverser.action_map)  # type: ignore[arg-type]
 
         # Execution hooks
         self.hooks: list[Any] = []
@@ -278,7 +278,7 @@ class GraphExecutor:
             action_id, from_action_id = execution_queue.popleft()
 
             # Skip if already executed
-            if self.execution_state.is_completed(action_id):
+            if self.execution_state is not None and self.execution_state.is_completed(action_id):
                 logger.debug(f"Skipping '{action_id}' - already executed")
                 continue
 
@@ -293,7 +293,8 @@ class GraphExecutor:
                 result = self._execute_action(action)
 
                 # Mark as completed
-                self.execution_state.mark_completed(action_id, result)
+                if self.execution_state is not None:
+                    self.execution_state.mark_completed(action_id, result)
 
                 # Route to next actions
                 next_actions = self._route_to_next_actions(action, result)
@@ -301,22 +302,23 @@ class GraphExecutor:
                 # Add next actions to queue
                 for next_action_id, _ in next_actions:
                     if next_action_id not in queued_actions:
-                        execution_queue.append((next_action_id, action_id))
+                        execution_queue.append((next_action_id, action_id))  # type: ignore[arg-type]
                         queued_actions.add(next_action_id)
 
             except Exception as e:
                 # Mark as failed
-                self.execution_state.mark_failed(action_id, e)
+                if self.execution_state is not None:
+                    self.execution_state.mark_failed(action_id, e)
 
                 # Model-based GUI automation principle: always continue, never stop on error
                 # Check for error path to follow
-                error_next = self.router._get_connections(action_id, "error")
+                error_next = self.router._get_connections(action_id, "error")  # type: ignore[attr-defined]
                 if error_next:
                     # Follow error path
                     logger.debug(f"Action '{action_id}' failed, following error path")
                     for next_action_id, _ in error_next:
                         if next_action_id not in queued_actions:
-                            execution_queue.append((next_action_id, action_id))
+                            execution_queue.append((next_action_id, action_id))  # type: ignore[arg-type]
                             queued_actions.add(next_action_id)
                 else:
                     # No error path - continue with normal execution
@@ -345,12 +347,14 @@ class GraphExecutor:
         logger.info(f"Executing action '{action.id}' (type={action.type})")
 
         # Mark as executing
-        self.execution_state.mark_executing(action.id)
+        if self.execution_state is not None:
+            self.execution_state.mark_executing(action.id)
 
         # Call before_action hooks
         for hook in self.hooks:
             try:
-                hook.before_action(action, self.execution_state.context)
+                if self.execution_state is not None:
+                    hook.before_action(action, self.execution_state.context)
             except Exception as e:
                 logger.warning(f"Hook {type(hook).__name__}.before_action failed: {e}")
 
@@ -363,13 +367,16 @@ class GraphExecutor:
                 "success": success,
                 "action_id": action.id,
                 "action_type": action.type,
-                "context": self.execution_state.context.copy(),
+                "context": (
+                    self.execution_state.context.copy() if self.execution_state is not None else {}
+                ),
             }
 
             # Call after_action hooks
             for hook in self.hooks:
                 try:
-                    hook.after_action(action, self.execution_state.context, result)
+                    if self.execution_state is not None:
+                        hook.after_action(action, self.execution_state.context, result)
                 except Exception as e:
                     logger.warning(f"Hook {type(hook).__name__}.after_action failed: {e}")
 
@@ -379,7 +386,8 @@ class GraphExecutor:
             # Call error hooks
             for hook in self.hooks:
                 try:
-                    hook.on_error(action, self.execution_state.context, e)
+                    if self.execution_state is not None:
+                        hook.on_error(action, self.execution_state.context, e)
                 except Exception as hook_error:
                     logger.warning(f"Hook {type(hook).__name__}.on_error failed: {hook_error}")
 
@@ -398,14 +406,15 @@ class GraphExecutor:
             List of (action_id, input_index) tuples for next actions
         """
         # Use router to determine next actions
-        routing_decision = self.router.route(action, result, self.execution_state.context)
+        context = self.execution_state.context if self.execution_state is not None else {}
+        routing_decision = self.router.route(action, result, context)  # type: ignore[arg-type]
 
         logger.debug(
-            f"Routing decision for '{action.id}': {routing_decision.connection_type} -> "
-            f"{len(routing_decision.next_actions)} actions ({routing_decision.reason})"
+            f"Routing decision for '{action.id}': {routing_decision.connection_type} -> "  # type: ignore[attr-defined]
+            f"{len(routing_decision.next_actions)} actions ({routing_decision.reason})"  # type: ignore[attr-defined]
         )
 
-        return routing_decision.next_actions
+        return routing_decision.next_actions  # type: ignore[attr-defined,no-any-return]
 
     def get_execution_progress(self) -> dict[str, Any]:
         """Get current execution progress.
@@ -458,7 +467,7 @@ class GraphExecutor:
 
         # Validate routing for critical actions
         for action in self.workflow.actions:
-            is_valid_routing, routing_warnings = self.router.validate_routing(action.id)
+            is_valid_routing, routing_warnings = self.router.validate_routing(action.id)  # type: ignore[arg-type]
             if not is_valid_routing:
                 all_errors.extend(routing_warnings)
 
@@ -485,7 +494,7 @@ class GraphExecutor:
         }
 
         # Add action type distribution
-        action_types = {}
+        action_types: dict[str, int] = {}
         for action in self.workflow.actions:
             action_types[action.type] = action_types.get(action.type, 0) + 1
         stats["action_types"] = action_types

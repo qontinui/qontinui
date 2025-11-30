@@ -284,20 +284,21 @@ class GraphTraverser:
             return
 
         # Mark as current
-        self.state.set_current_action(action_id)
+        if self.state is not None:
+            self.state.set_current_action(action_id)
 
         # Start recording
-        record = self.state.start_action(action_id, action.type)
+        record = self.state.start_action(action_id, action.type) if self.state is not None else None
 
         logger.info(f"Executing action: {action_id} (type: {action.type}, depth: {depth})")
 
         try:
             # Execute the action
-            context = self.state.get_all_context()
+            context = self.state.get_all_context() if self.state is not None else {}
             result = self.action_executor(action, context)
 
             # Update context with result
-            if result:
+            if result and self.state is not None:
                 self.state.update_context(result)
 
             # Determine output type based on action type and result
@@ -305,39 +306,45 @@ class GraphTraverser:
             output_index = 0
 
             # Mark as completed
-            record.complete(result, output_type, output_index)
+            if record is not None:
+                record.complete(result, output_type, output_index)
 
             # Queue next actions
             next_actions = self.get_next_actions(action_id, output_type, output_index)
 
             for next_action in next_actions:
                 # Check if already visited (cycle detection)
-                if self.state.is_visited(next_action.id):
+                if self.state is not None and self.state.is_visited(next_action.id):
                     # Allow revisiting for LOOP actions
                     if action.type != "LOOP":
                         logger.warning(f"Cycle detected: action '{next_action.id}' already visited")
                         continue
 
-                self.state.add_pending(next_action.id, depth=depth + 1)
+                if self.state is not None:
+                    self.state.add_pending(next_action.id, depth=depth + 1)
 
             # Mark as visited (after queuing to allow loops)
-            self.state.mark_visited(action_id)
+            if self.state is not None:
+                self.state.mark_visited(action_id)
 
         except Exception as e:
             logger.error(f"Action execution failed: {action_id} - {e}")
-            record.fail(str(e))
+            if record is not None:
+                record.fail(str(e))
 
             # Try error path if available
             if self.resolver.validate_output_exists(action_id, "error"):
                 error_actions = self.get_next_actions(action_id, "error", 0)
                 for error_action in error_actions:
-                    self.state.add_pending(error_action.id, depth=depth + 1)
+                    if self.state is not None:
+                        self.state.add_pending(error_action.id, depth=depth + 1)
             else:
                 # Re-raise if no error handler
                 raise
 
         finally:
-            self.state.set_current_action(None)
+            if self.state is not None:
+                self.state.set_current_action(None)
 
     def _determine_output_type(self, action: Action, result: dict[str, Any]) -> str:
         """

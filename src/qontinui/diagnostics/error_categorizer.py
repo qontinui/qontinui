@@ -175,14 +175,18 @@ class FixSuggester:
 
         if category == ErrorCategory.MISSING_LIBRARY:
             library = issue.get("library", "")
-            return FixSuggester.FIX_TEMPLATES.get(library, f"Install {library}: pip install {library.lower()}")
+            return FixSuggester.FIX_TEMPLATES.get(
+                library, f"Install {library}: pip install {library.lower()}"
+            )
 
         if category == ErrorCategory.MISSING_PATH:
             return f"Create directory: {issue.get('path', '')}"
 
         if category == ErrorCategory.PERFORMANCE_ISSUE:
             value = issue.get("value", 0)
-            return f"High average load time ({value:.1f}ms) - consider image optimization or caching"
+            return (
+                f"High average load time ({value:.1f}ms) - consider image optimization or caching"
+            )
 
         if category == ErrorCategory.LOAD_FAILURE:
             value = issue.get("value", 0)

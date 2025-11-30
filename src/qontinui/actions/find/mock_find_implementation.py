@@ -68,12 +68,12 @@ class MockFindImplementation:
     ) -> list[Match]:
         """Get matches from pattern's ActionHistory."""
         # Get random snapshot from history
-        snapshot = pattern.match_history.get_random_snapshot(
+        snapshot = pattern.match_history.get_random_snapshot(  # type: ignore[attr-defined]
             active_states=set(), action_type="FIND"  # TODO: integrate with state management
         )
 
-        if snapshot and snapshot.match_list:
-            return snapshot.match_list
+        if snapshot and snapshot.matches:
+            return snapshot.matches  # type: ignore[no-any-return]
 
         return []
 

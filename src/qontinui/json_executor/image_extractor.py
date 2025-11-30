@@ -125,9 +125,7 @@ class ImageExtractor:
         if pattern.image_id:
             # Pattern references an existing image in the images array
             if pattern.image_id in existing_image_map:
-                logger.debug(
-                    f"StateImage {state_image.id} -> references image {pattern.image_id}"
-                )
+                logger.debug(f"StateImage {state_image.id} -> references image {pattern.image_id}")
                 return existing_image_map[pattern.image_id]
             else:
                 logger.warning(

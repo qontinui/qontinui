@@ -28,8 +28,6 @@ Example:
     ...     print(f"Found {element.label} at {element.bounding_box}")
 """
 
-from typing import List
-
 # Base classes and data models
 from .analysis_base import (
     AnalysisInput,
@@ -57,7 +55,7 @@ from .modal_dialog_detector import ModalDialogDetector
 from .sidebar_detector import SidebarDetector
 from .typography_detector import TypographyDetector
 
-__all__: List[str] = [
+__all__: list[str] = [
     # Base classes
     "AnalysisInput",
     "AnalysisResult",

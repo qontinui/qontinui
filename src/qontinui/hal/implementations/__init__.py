@@ -1,17 +1,20 @@
 """HAL implementation modules."""
 
 # Screen capture implementations
-from .mss_capture import MSSScreenCapture
-
 # OCR engine implementations
 from .easyocr_engine import EasyOCREngine
-
-# Pattern matcher implementations
-from .opencv_matcher import OpenCVMatcher
 
 # Input controller implementations (standalone keyboard and mouse)
 from .keyboard_operations import KeyboardOperations
 from .mouse_operations import MouseOperations
+from .mss_capture import MSSScreenCapture
+
+# Pattern matcher implementations
+from .opencv_matcher import OpenCVMatcher
+
+# PyAutoGUI implementations
+from .pyautogui_keyboard import PyAutoGUIKeyboardOperations
+from .pyautogui_mouse import PyAutoGUIMouseOperations
 
 __all__ = [
     "MSSScreenCapture",
@@ -19,4 +22,6 @@ __all__ = [
     "EasyOCREngine",
     "KeyboardOperations",
     "MouseOperations",
+    "PyAutoGUIKeyboardOperations",
+    "PyAutoGUIMouseOperations",
 ]

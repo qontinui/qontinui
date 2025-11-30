@@ -94,10 +94,14 @@ class ValidationReporter:
 
         total = len(self.validation_history)
         equivalent = sum(
-            1 for c in self.validation_history if c["validation_result"] == ValidationResult.EQUIVALENT
+            1
+            for c in self.validation_history
+            if c["validation_result"] == ValidationResult.EQUIVALENT
         )
         different = sum(
-            1 for c in self.validation_history if c["validation_result"] == ValidationResult.DIFFERENT
+            1
+            for c in self.validation_history
+            if c["validation_result"] == ValidationResult.DIFFERENT
         )
         errors = sum(
             1 for c in self.validation_history if c["validation_result"] == ValidationResult.ERROR
@@ -141,7 +145,9 @@ class ValidationReporter:
                             "java_time": c["performance_metrics"].java_execution_time,
                             "python_time": c["performance_metrics"].python_execution_time,
                             "time_difference": c["performance_metrics"].time_difference,
-                            "performance_delta_percent": c["performance_metrics"].performance_delta_percent,
+                            "performance_delta_percent": c[
+                                "performance_metrics"
+                            ].performance_delta_percent,
                         }
                         if c["performance_metrics"]
                         else None

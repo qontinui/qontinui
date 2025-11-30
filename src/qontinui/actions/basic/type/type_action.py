@@ -150,9 +150,9 @@ class TypeAction(ActionInterface):
         success = self.execute(text_to_type)
 
         # Update matches with results
-        matches.success = success
+        object.__setattr__(matches, "success", success)
         if success:
-            matches.add_text_result(text_to_type)
+            matches.add_text_result(text_to_type)  # type: ignore[attr-defined]
 
     def execute(self, text: str, target: Any | None = None) -> bool:
         """Execute type action.

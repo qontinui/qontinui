@@ -87,7 +87,7 @@ class Find(ActionInterface):
             ValueError: If matches does not contain BaseFindOptions configuration
         """
         # Validate configuration
-        action_config = matches.get_action_config()
+        action_config = matches.action_config
         if not isinstance(action_config, BaseFindOptions):
             raise ValueError("Find requires BaseFindOptions configuration")
 
@@ -99,7 +99,7 @@ class Find(ActionInterface):
         else:
             # Placeholder implementation when pipeline not available
             print("FindPipeline not available, performing placeholder find")
-            matches.success = False
+            object.__setattr__(matches, "success", False)
 
 
 class FindPipeline:
@@ -124,4 +124,4 @@ class FindPipeline:
         """
         # Placeholder implementation
         print(f"Executing find with strategy: {find_options.get_find_strategy()}")
-        matches.success = False
+        object.__setattr__(matches, "success", False)

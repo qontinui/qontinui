@@ -84,7 +84,7 @@ class ConfigManager:
         if data is not None:
             logger.info("config_loaded", config_name=config_name)
 
-        return data
+        return data  # type: ignore[no-any-return]
 
     def delete_config(self, config_name: str) -> bool:
         """Delete a configuration.

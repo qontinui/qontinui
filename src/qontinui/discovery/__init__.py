@@ -31,6 +31,19 @@ Example:
 
 # Base classes
 from .base_detector import BaseDetector
+
+# Click analysis - import key classes for convenience
+from .click_analysis import (
+    ClickBoundingBoxInferrer,
+    ClickContextAnalyzer,
+    DetectionStrategy,
+    ElementBoundaryFinder,
+    ElementType,
+    InferenceConfig,
+    InferenceResult,
+    InferredBoundingBox,
+    infer_bbox_from_click,
+)
 from .models import AnalysisResult, DiscoveredState, StateImage
 from .multi_screenshot_detector import MultiScreenshotDetector
 
@@ -38,13 +51,6 @@ from .multi_screenshot_detector import MultiScreenshotDetector
 from .pixel_analysis.analyzers import PixelStabilityAnalyzer
 from .pixel_analysis.extractor import StableRegionExtractor
 from .pixel_stability_matrix_analyzer import PixelStabilityMatrixAnalyzer
-
-# State detection - import key classes for convenience
-from .state_detection import (
-    DifferentialConsistencyDetector,
-    StateDetector,
-    TransitionDetector,
-)
 
 # State construction - import key classes for convenience
 from .state_construction import (
@@ -54,12 +60,20 @@ from .state_construction import (
     TransitionInfo,
 )
 
+# State detection - import key classes for convenience
+from .state_detection import (
+    DifferentialConsistencyDetector,
+    StateDetector,
+    TransitionDetector,
+)
+
 # Submodules available for import
 # from qontinui.discovery import element_detection
 # from qontinui.discovery import region_analysis
 # from qontinui.discovery import state_detection
 # from qontinui.discovery import state_construction
 # from qontinui.discovery import experimental
+# from qontinui.discovery import click_analysis
 
 __all__ = [
     # Base classes
@@ -82,10 +96,21 @@ __all__ = [
     "ElementIdentifier",
     "OCRNameGenerator",
     "TransitionInfo",
+    # Click analysis (convenience exports)
+    "ClickBoundingBoxInferrer",
+    "ElementBoundaryFinder",
+    "ClickContextAnalyzer",
+    "InferredBoundingBox",
+    "InferenceConfig",
+    "InferenceResult",
+    "ElementType",
+    "DetectionStrategy",
+    "infer_bbox_from_click",
     # Submodules
     "element_detection",
     "region_analysis",
     "state_detection",
     "state_construction",
     "experimental",
+    "click_analysis",
 ]

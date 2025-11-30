@@ -41,15 +41,15 @@ class Screen:
     """
 
     _mock_screen = MockScreen()
-    _screen_capture: 'IScreenCapture | None' = None
+    _screen_capture: "IScreenCapture | None" = None
     _screen_capture_lock = threading.Lock()
-    _pattern_matcher: 'IPatternMatcher | None' = None
+    _pattern_matcher: "IPatternMatcher | None" = None
     _pattern_matcher_lock = threading.Lock()
-    _ocr_engine: 'IOCREngine | None' = None
+    _ocr_engine: "IOCREngine | None" = None
     _ocr_engine_lock = threading.Lock()
 
     @classmethod
-    def _get_screen_capture(cls) -> 'IScreenCapture':
+    def _get_screen_capture(cls) -> "IScreenCapture":
         """Lazy initialization of screen capture.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -58,11 +58,12 @@ class Screen:
             with cls._screen_capture_lock:
                 if cls._screen_capture is None:
                     from ..hal.factory import HALFactory
+
                     cls._screen_capture = HALFactory.get_screen_capture()
         return cls._screen_capture
 
     @classmethod
-    def _get_pattern_matcher(cls) -> 'IPatternMatcher':
+    def _get_pattern_matcher(cls) -> "IPatternMatcher":
         """Lazy initialization of pattern matcher.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -71,11 +72,12 @@ class Screen:
             with cls._pattern_matcher_lock:
                 if cls._pattern_matcher is None:
                     from ..hal.factory import HALFactory
+
                     cls._pattern_matcher = HALFactory.get_pattern_matcher()
         return cls._pattern_matcher
 
     @classmethod
-    def _get_ocr_engine(cls) -> 'IOCREngine':
+    def _get_ocr_engine(cls) -> "IOCREngine":
         """Lazy initialization of OCR engine.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -84,6 +86,7 @@ class Screen:
             with cls._ocr_engine_lock:
                 if cls._ocr_engine is None:
                     from ..hal.factory import HALFactory
+
                     cls._ocr_engine = HALFactory.get_ocr_engine()
         return cls._ocr_engine
 
@@ -106,7 +109,7 @@ class Screen:
             return result
         else:
             capture = cls._get_screen_capture()
-            result = capture.capture_screen(monitor_index)
+            result = capture.capture_screen(monitor_index)  # type: ignore[assignment]
             logger.debug(f"[LIVE] Screen captured (monitor {monitor_index})")
             return result
 
@@ -132,7 +135,7 @@ class Screen:
             return result
         else:
             capture = cls._get_screen_capture()
-            result = capture.capture_region(x, y, width, height, monitor_index)
+            result = capture.capture_region(x, y, width, height, monitor_index)  # type: ignore[assignment]
             logger.debug(f"[LIVE] Region captured ({x}, {y}, {width}x{height})")
             return result
 
@@ -159,7 +162,7 @@ class Screen:
             return result
         else:
             capture = cls._get_screen_capture()
-            result = capture.save_screenshot(file_path, monitor_index, region)
+            result = capture.save_screenshot(file_path, monitor_index, region)  # type: ignore[assignment]
             logger.debug(f"[LIVE] Screenshot saved to {file_path}")
             return result
 
@@ -177,7 +180,7 @@ class Screen:
             return cls._mock_screen.get_screen_size(monitor_index)
         else:
             capture = cls._get_screen_capture()
-            return capture.get_screen_size(monitor_index)
+            return capture.get_screen_size()  # type: ignore[call-arg]
 
     @classmethod
     def monitor_count(cls) -> int:
@@ -190,7 +193,7 @@ class Screen:
             return cls._mock_screen.get_monitor_count()
         else:
             capture = cls._get_screen_capture()
-            return capture.get_monitor_count()
+            return capture.get_monitor_count()  # type: ignore[attr-defined,no-any-return]
 
     @classmethod
     def reset_mock(cls) -> None:

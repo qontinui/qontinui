@@ -1,7 +1,6 @@
 """Threading tests for StateRegistry to verify thread-safety of concurrent state registration."""
 
 import threading
-from typing import List
 
 import pytest
 
@@ -23,8 +22,8 @@ class TestStateRegistryThreading:
         registry = StateRegistry()
         num_threads = 10
         states_per_thread = 10
-        threads: List[threading.Thread] = []
-        all_state_ids: List[int] = []
+        threads: list[threading.Thread] = []
+        all_state_ids: list[int] = []
         lock = threading.Lock()
 
         def register_states(thread_id: int):
@@ -80,8 +79,8 @@ class TestStateRegistryThreading:
         """
         registry = StateRegistry()
         num_threads = 20
-        threads: List[threading.Thread] = []
-        collected_ids: List[int] = []
+        threads: list[threading.Thread] = []
+        collected_ids: list[int] = []
         lock = threading.Lock()
 
         # Define a single state that all threads will try to register
@@ -123,7 +122,7 @@ class TestStateRegistryThreading:
         registry = StateRegistry()
         num_threads = 10
         states_per_thread = 50
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         def register_states(thread_id: int):
             """Each thread registers unique states."""
@@ -154,9 +153,7 @@ class TestStateRegistryThreading:
 
         # Verify: all assigned IDs are in the correct range
         all_ids = set(registry.state_ids.values())
-        assert all_ids == set(
-            range(1, expected_count + 1)
-        ), f"State IDs are not in expected range"
+        assert all_ids == set(range(1, expected_count + 1)), "State IDs are not in expected range"
 
     def test_concurrent_state_registration_with_groups(self):
         """Test that group registration is thread-safe.
@@ -167,7 +164,7 @@ class TestStateRegistryThreading:
         registry = StateRegistry()
         num_threads = 10
         states_per_thread = 10
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         def register_states_with_group(thread_id: int):
             """Each thread registers states in the same group."""
@@ -205,7 +202,7 @@ class TestStateRegistryThreading:
         registry = StateRegistry()
         num_threads = 10
         states_per_thread = 10
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         def register_initial_states(thread_id: int):
             """Each thread registers initial states."""
@@ -272,8 +269,8 @@ class TestStateRegistryThreading:
         """
         registry = StateRegistry()
         num_threads = 10
-        threads: List[threading.Thread] = []
-        exceptions: List[Exception] = []
+        threads: list[threading.Thread] = []
+        exceptions: list[Exception] = []
         exceptions_lock = threading.Lock()
         success_count = [0]
         success_lock = threading.Lock()
@@ -281,6 +278,7 @@ class TestStateRegistryThreading:
         def register_state_safe(thread_id: int):
             """Try to register state, catch exceptions."""
             try:
+
                 @state(name=f"state_{thread_id}")
                 class DynamicState:
                     pass
@@ -379,7 +377,7 @@ class TestStateRegistryThreading:
         """
         registry = StateRegistry()
         num_iterations = 50
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
         stop_flag = threading.Event()
 
         def register_continuously():
@@ -437,7 +435,7 @@ class TestStateRegistryThreading:
         registry = StateRegistry()
         num_threads = 5
         operations_per_thread = 20
-        threads: List[threading.Thread] = []
+        threads: list[threading.Thread] = []
 
         def mixed_operations(thread_id: int):
             """Each thread performs various registry operations."""

@@ -45,7 +45,7 @@ class Scroll(ActionInterface):
             object_collections: Collections defining what/where to scroll
         """
         if not isinstance(action_result.action_config, ScrollOptions):
-            action_result.success = False
+            object.__setattr__(action_result, "success", False)
             return
 
         scroll_options = action_result.action_config
@@ -53,8 +53,8 @@ class Scroll(ActionInterface):
         # Find the location to scroll at
         location = self._find_scroll_location(action_result, object_collections)
         if not location:
-            action_result.success = False
-            action_result.output_text = "Could not find location to scroll"
+            object.__setattr__(action_result, "success", False)
+            object.__setattr__(action_result, "output_text", "Could not find location to scroll")
             return
 
         # Perform the scroll operations
@@ -66,9 +66,13 @@ class Scroll(ActionInterface):
             scroll_options.get_delay_between_scrolls(),
         )
 
-        action_result.success = success
+        object.__setattr__(action_result, "success", success)
         if success:
-            action_result.output_text = f"Scrolled {scroll_options.get_direction().name} {scroll_options.get_clicks()} times"
+            object.__setattr__(
+                action_result,
+                "output_text",
+                f"Scrolled {scroll_options.get_direction().name} {scroll_options.get_clicks()} times",
+            )
 
     def _find_scroll_location(
         self, action_result: ActionResult, object_collections: tuple[Any, ...]
@@ -88,12 +92,12 @@ class Scroll(ActionInterface):
 
         # Use Find to locate the target
         if self.find:
-            find_result = ActionResult(action_result.action_config)
+            find_result = ActionResult(action_result.action_config)  # type: ignore[arg-type,call-arg]
             self.find.perform(find_result, *object_collections)
 
-            if find_result.is_success and find_result.match_list:
+            if find_result.is_success and find_result.matches:
                 # Use the first match's location
-                first_match = find_result.match_list[0]
+                first_match = find_result.matches[0]
                 return cast(Location | None, first_match.get_target())
 
         return None

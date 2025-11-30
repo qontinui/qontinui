@@ -10,7 +10,6 @@ from datetime import datetime
 from .coverage_models import (
     MigrationStatus,
     MigrationSummary,
-    TestCategory,
     TestMapping,
 )
 from .coverage_stats import CoverageStats
@@ -104,9 +103,7 @@ class CoverageAnalyzer:
 
         return recommendations
 
-    def generate_migration_summary(
-        self, recent_migrations: list[TestMapping]
-    ) -> MigrationSummary:
+    def generate_migration_summary(self, recent_migrations: list[TestMapping]) -> MigrationSummary:
         """
         Generate comprehensive migration summary.
 

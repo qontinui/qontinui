@@ -5,7 +5,7 @@ Base classes and interfaces for analysis modules
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 
@@ -54,12 +54,12 @@ class DetectedElement:
 
     bounding_box: BoundingBox
     confidence: float  # 0.0 to 1.0
-    label: Optional[str] = None
-    element_type: Optional[str] = None  # button, input, image, etc.
+    label: str | None = None
+    element_type: str | None = None  # button, input, image, etc.
     screenshot_index: int = 0  # Which screenshot in the set
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             "bounding_box": {
@@ -82,11 +82,11 @@ class AnalysisResult:
 
     analyzer_type: AnalysisType
     analyzer_name: str
-    elements: List[DetectedElement]
+    elements: list[DetectedElement]
     confidence: float  # Overall confidence in this analysis
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             "analyzer_type": self.analyzer_type.value,
@@ -102,9 +102,9 @@ class AnalysisInput:
     """Input data for analysis"""
 
     annotation_set_id: UUID
-    screenshots: List[Dict[str, Any]]  # List of screenshot metadata
-    screenshot_data: List[bytes]  # Actual image data
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    screenshots: list[dict[str, Any]]  # List of screenshot metadata
+    screenshot_data: list[bytes]  # Actual image data
+    parameters: dict[str, Any] = field(default_factory=dict)
 
 
 class BaseAnalyzer(ABC):
@@ -115,7 +115,7 @@ class BaseAnalyzer(ABC):
     Analyzers should be stateless and thread-safe.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize the analyzer
 
@@ -178,7 +178,7 @@ class BaseAnalyzer(ABC):
         """Whether this analyzer can process multiple screenshots"""
         return False
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         """
         Get default parameters for this analyzer
 

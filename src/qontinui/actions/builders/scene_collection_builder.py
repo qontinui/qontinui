@@ -6,7 +6,7 @@ Handles Scenes for offline processing.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...model.element import Pattern, Scene
+    from ...model.element import Scene
 
 
 class SceneCollectionBuilder:
@@ -20,7 +20,7 @@ class SceneCollectionBuilder:
 
     def __init__(self) -> None:
         """Initialize builder with empty list."""
-        self.scenes: list["Scene"] = []
+        self.scenes: list[Scene] = []
 
     def with_scenes(self, *scenes) -> "SceneCollectionBuilder":
         """Add scenes to collection.

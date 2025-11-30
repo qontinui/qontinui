@@ -11,7 +11,7 @@ Characteristics:
 
 import logging
 from io import BytesIO
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -57,7 +57,7 @@ class SidebarDetector(BaseAnalyzer):
     def required_screenshots(self) -> int:
         return 1
 
-    def get_default_parameters(self) -> Dict[str, Any]:
+    def get_default_parameters(self) -> dict[str, Any]:
         return {
             "min_sidebar_width": 150,
             "max_sidebar_width": 350,
@@ -71,10 +71,7 @@ class SidebarDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect sidebars in screenshots"""
-        logger.info(
-            f"Running sidebar detection on "
-            f"{len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running sidebar detection on " f"{len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -85,11 +82,9 @@ class SidebarDetector(BaseAnalyzer):
         # Analyze each screenshot
         all_elements = []
         for screenshot_idx, (img_color, img_gray) in enumerate(
-            zip(images_color, images_gray)
+            zip(images_color, images_gray, strict=False)
         ):
-            elements = await self._analyze_screenshot(
-                img_color, img_gray, screenshot_idx, params
-            )
+            elements = await self._analyze_screenshot(img_color, img_gray, screenshot_idx, params)
             all_elements.extend(elements)
 
         logger.info(f"Detected {len(all_elements)} sidebars")
@@ -106,7 +101,7 @@ class SidebarDetector(BaseAnalyzer):
             },
         )
 
-    def _load_images_color(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_color(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots in color"""
         images = []
         for data in screenshot_data:
@@ -114,7 +109,7 @@ class SidebarDetector(BaseAnalyzer):
             images.append(np.array(img, dtype=np.uint8))
         return images
 
-    def _load_images_grayscale(self, screenshot_data: List[bytes]) -> List[np.ndarray]:
+    def _load_images_grayscale(self, screenshot_data: list[bytes]) -> list[np.ndarray]:
         """Load screenshots as grayscale"""
         images = []
         for data in screenshot_data:
@@ -127,8 +122,8 @@ class SidebarDetector(BaseAnalyzer):
         img_color: np.ndarray,
         img_gray: np.ndarray,
         screenshot_idx: int,
-        params: Dict[str, Any],
-    ) -> List[DetectedElement]:
+        params: dict[str, Any],
+    ) -> list[DetectedElement]:
         """Analyze a single screenshot for sidebars"""
         elements = []
 
@@ -178,8 +173,8 @@ class SidebarDetector(BaseAnalyzer):
         x_start: int,
         x_end: int,
         side: str,
-        params: Dict[str, Any],
-    ) -> Tuple[BoundingBox, float, Dict[str, Any]] | None:
+        params: dict[str, Any],
+    ) -> tuple[BoundingBox, float, dict[str, Any]] | None:
         """Detect sidebar in a specific edge region"""
         height, width = img_gray.shape
 
@@ -188,9 +183,7 @@ class SidebarDetector(BaseAnalyzer):
         region_width = x_end - x_start
 
         # Apply edge detection
-        edges = cv2.Canny(
-            edge_region, params["edge_threshold_low"], params["edge_threshold_high"]
-        )
+        edges = cv2.Canny(edge_region, params["edge_threshold_low"], params["edge_threshold_high"])
 
         # Find vertical line (sidebar boundary)
         # Look for strong vertical edges
@@ -219,9 +212,7 @@ class SidebarDetector(BaseAnalyzer):
             sidebar_x = x_start + boundary_offset
 
         # Validate sidebar width
-        if not (
-            params["min_sidebar_width"] <= sidebar_width <= params["max_sidebar_width"]
-        ):
+        if not (params["min_sidebar_width"] <= sidebar_width <= params["max_sidebar_width"]):
             return None
 
         # Extract sidebar region
@@ -258,9 +249,7 @@ class SidebarDetector(BaseAnalyzer):
         if confidence < 0.5:
             return None
 
-        bbox = BoundingBox(
-            x=int(sidebar_x), y=0, width=int(sidebar_width), height=int(height)
-        )
+        bbox = BoundingBox(x=int(sidebar_x), y=0, width=int(sidebar_width), height=int(height))
 
         metadata = {
             "method": "sidebar_detection",
@@ -271,7 +260,7 @@ class SidebarDetector(BaseAnalyzer):
 
         return (bbox, confidence, metadata)
 
-    def _detect_stacked_items(self, sidebar_region: np.ndarray) -> List[int]:
+    def _detect_stacked_items(self, sidebar_region: np.ndarray) -> list[int]:
         """Detect vertically stacked items in sidebar"""
         # Find horizontal projection (sum edges across width)
         horizontal_projection = np.sum(sidebar_region, axis=1)
@@ -297,7 +286,7 @@ class SidebarDetector(BaseAnalyzer):
         vertical_extent: int,
         total_height: int,
         num_items: int,
-        params: Dict[str, Any],
+        params: dict[str, Any],
     ) -> float:
         """Calculate confidence score"""
         confidence = 0.5  # Base confidence
@@ -305,9 +294,7 @@ class SidebarDetector(BaseAnalyzer):
         # Width in typical range (180-250px)
         if 180 <= sidebar_width <= 250:
             confidence += 0.15
-        elif (
-            params["min_sidebar_width"] <= sidebar_width <= params["max_sidebar_width"]
-        ):
+        elif params["min_sidebar_width"] <= sidebar_width <= params["max_sidebar_width"]:
             confidence += 0.08
 
         # Spans most of screen height

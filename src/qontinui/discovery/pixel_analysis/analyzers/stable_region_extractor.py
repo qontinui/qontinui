@@ -191,9 +191,7 @@ class StableRegionExtractor:
                 # Keep region as-is
                 decomposed_regions.append(region)
 
-        logger.info(
-            f"Decomposition: {len(regions)} regions -> {len(decomposed_regions)} regions"
-        )
+        logger.info(f"Decomposition: {len(regions)} regions -> {len(decomposed_regions)} regions")
         return decomposed_regions
 
     def _should_decompose_region(self, region: dict[str, Any]) -> bool:

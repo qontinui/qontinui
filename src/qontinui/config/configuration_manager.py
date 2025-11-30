@@ -50,12 +50,12 @@ class ConfigurationManager:
         """Ensure singleton instance."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
+            cls._instance._initialized = False  # type: ignore[has-type]
         return cls._instance
 
     def __init__(self) -> None:
         """Initialize configuration manager."""
-        if not self._initialized:
+        if not self._initialized:  # type: ignore[has-type]
             self.settings = get_settings()
             self.environment = get_environment()
             self._profiles: dict[str, dict[str, Any]] = self._load_default_profiles()

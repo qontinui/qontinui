@@ -3,10 +3,10 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from cli_commands.base_command import BaseCommand, CommandResult
 from cli_utils.config_loader import ConfigLoader
 from cli_utils.output_formatter import OutputFormatter
 from orchestrator import TestMigrationOrchestrator
-from cli_commands.base_command import BaseCommand, CommandResult
 
 
 class MigrateCommand(BaseCommand):
