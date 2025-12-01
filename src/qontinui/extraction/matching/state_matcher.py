@@ -43,7 +43,7 @@ class StateVariableMatcher:
         relevant_conditionals = [
             cond
             for cond in conditional_renders
-            if state_var.name in cond.dependent_variables
+            if state_var.id in cond.controlling_variables
             or state_var.name in cond.condition
         ]
 
@@ -78,7 +78,7 @@ class StateVariableMatcher:
 
         # Get all components rendered by this conditional
         all_components = (
-            conditional.true_branch_components + conditional.false_branch_components
+            conditional.renders_when_true + conditional.renders_when_false
         )
 
         for component_name in all_components:
@@ -110,7 +110,7 @@ class StateVariableMatcher:
         # Look for runtime states that contain components from the conditional
         for runtime_state in runtime_states:
             # Check if any conditionally-rendered components appear in this state
-            for component_name in conditional.true_branch_components:
+            for component_name in conditional.renders_when_true:
                 similarity = self._find_component_in_state(
                     component_name, runtime_state
                 )
@@ -121,7 +121,7 @@ class StateVariableMatcher:
                             strength=similarity * 0.7,  # Scale down since it's indirect
                             description=f"Component '{component_name}' appears when {state_var.name} is true",
                             static_reference=f"{state_var.name}=true",
-                            runtime_reference=runtime_state.capture_id,
+                            runtime_reference=runtime_state.id,
                             metadata={
                                 "conditional_id": conditional.id,
                                 "component": component_name,
@@ -130,7 +130,7 @@ class StateVariableMatcher:
                         )
                     )
 
-            for component_name in conditional.false_branch_components:
+            for component_name in conditional.renders_when_false:
                 similarity = self._find_component_in_state(
                     component_name, runtime_state
                 )
@@ -141,7 +141,7 @@ class StateVariableMatcher:
                             strength=similarity * 0.7,
                             description=f"Component '{component_name}' appears when {state_var.name} is false",
                             static_reference=f"{state_var.name}=false",
-                            runtime_reference=runtime_state.capture_id,
+                            runtime_reference=runtime_state.id,
                             metadata={
                                 "conditional_id": conditional.id,
                                 "component": component_name,
@@ -202,19 +202,19 @@ class StateVariableMatcher:
         component_kebab = self._to_kebab_case(component_name)
         best_similarity = 0.0
 
-        # Check in extracted states
-        for state in runtime_state.states:
-            # Check state name
-            if state.name:
+        # Check in detected regions
+        for region in runtime_state.regions:
+            # Check region type name
+            if region.region_type:
                 similarity = SequenceMatcher(
-                    None, component_lower, state.name.lower()
+                    None, component_lower, region.region_type.value.lower()
                 ).ratio()
                 best_similarity = max(best_similarity, similarity)
 
             # Check aria label
-            if state.aria_label:
+            if region.aria_label:
                 similarity = SequenceMatcher(
-                    None, component_lower, state.aria_label.lower()
+                    None, component_lower, region.aria_label.lower()
                 ).ratio()
                 best_similarity = max(best_similarity, similarity)
 

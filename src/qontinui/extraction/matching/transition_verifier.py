@@ -10,9 +10,14 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
-from ..models.correlated import InferredTransition, VerifiedTransition
-from ..models.runtime import ExtractedElement, RuntimeStateCapture
+from ..models.correlated import (
+    InferredTransition,
+    VerificationDiscrepancy,
+    VerifiedTransition,
+)
 from ..models.static import EventHandler
+from ..runtime.types import RuntimeStateCapture
+from ..web.models import ExtractedElement
 
 if TYPE_CHECKING:
     from ..runtime.base import RuntimeExtractor
@@ -63,11 +68,18 @@ class TransitionVerifier:
                     f"Could not find trigger element for transition: {transition.id}"
                 )
                 return VerifiedTransition(
-                    inferred=transition,
+                    id=f"verified_{transition.id}",
+                    inferred=transition.id,
                     verified=False,
-                    error="Trigger element not found",
+                    verification_method="trigger_not_found",
                     confidence=0.0,
-                    execution_time_ms=(time.time() - start_time) * 1000,
+                    discrepancies=[
+                        VerificationDiscrepancy(
+                            discrepancy_type="missing_trigger",
+                            description="Trigger element not found",
+                        )
+                    ],
+                    metadata={"execution_time_ms": (time.time() - start_time) * 1000},
                 )
 
             # Capture before state
@@ -77,8 +89,8 @@ class TransitionVerifier:
             if before_state.screenshot_path:
                 before_screenshot = str(before_state.screenshot_path)
 
-            # Execute the interaction
-            await self._execute_interaction(trigger_element, transition.event_type)
+            # Execute the interaction (use "click" as default event type)
+            await self._execute_interaction(trigger_element, "click")
 
             # Wait for state to stabilize
             await asyncio.sleep(0.5)  # Give time for animations/transitions
@@ -94,10 +106,10 @@ class TransitionVerifier:
             actual_appear = list(after_state_ids - before_state_ids)
             actual_disappear = list(before_state_ids - after_state_ids)
 
-            # Compare with expected changes
+            # Compare with expected changes (from causes_appear/causes_disappear)
             matches, discrepancies = self.compare_state_changes(
-                transition.expected_appear,
-                transition.expected_disappear,
+                transition.causes_appear,
+                transition.causes_disappear,
                 actual_appear,
                 actual_disappear,
             )
@@ -110,15 +122,22 @@ class TransitionVerifier:
             execution_time = (time.time() - start_time) * 1000
 
             return VerifiedTransition(
-                inferred=transition,
+                id=f"verified_{transition.id}",
+                inferred=transition.id,
                 verified=matches,
-                actual_appear=actual_appear,
-                actual_disappear=actual_disappear,
-                discrepancies=discrepancies,
+                verification_method="runtime_execution",
+                action_type="click",
+                trigger_element=trigger_element.id,
+                trigger_selector=trigger_element.selector,
+                causes_appear=actual_appear,
+                causes_disappear=actual_disappear,
                 confidence=confidence,
-                execution_time_ms=execution_time,
-                screenshot_before=before_screenshot,
-                screenshot_after=after_screenshot,
+                discrepancies=discrepancies,
+                metadata={
+                    "execution_time_ms": execution_time,
+                    "screenshot_before": before_screenshot,
+                    "screenshot_after": after_screenshot,
+                },
             )
 
         except Exception as e:
@@ -127,11 +146,18 @@ class TransitionVerifier:
             )
             execution_time = (time.time() - start_time) * 1000
             return VerifiedTransition(
-                inferred=transition,
+                id=f"verified_{transition.id}",
+                inferred=transition.id,
                 verified=False,
-                error=str(e),
+                verification_method="error",
                 confidence=0.0,
-                execution_time_ms=execution_time,
+                discrepancies=[
+                    VerificationDiscrepancy(
+                        discrepancy_type="execution_error",
+                        description=str(e),
+                    )
+                ],
+                metadata={"execution_time_ms": execution_time},
             )
 
     async def find_trigger_element(
@@ -146,7 +172,7 @@ class TransitionVerifier:
         Returns:
             Element that has this handler, or None if not found.
         """
-        return await self._find_trigger_by_handler(handler.name, elements)
+        return await self._find_trigger_by_handler(handler.handler_name, elements)
 
     def compare_state_changes(
         self,
@@ -154,7 +180,7 @@ class TransitionVerifier:
         expected_disappear: list[str],
         actual_appear: list[str],
         actual_disappear: list[str],
-    ) -> tuple[bool, list[str]]:
+    ) -> tuple[bool, list[VerificationDiscrepancy]]:
         """Compare expected vs actual state changes.
 
         Args:
@@ -166,7 +192,7 @@ class TransitionVerifier:
         Returns:
             Tuple of (overall_match, list_of_discrepancies).
         """
-        discrepancies: list[str] = []
+        discrepancies: list[VerificationDiscrepancy] = []
 
         # Check for expected appears that didn't happen
         for expected_id in expected_appear:
@@ -176,7 +202,12 @@ class TransitionVerifier:
             )
             if not found:
                 discrepancies.append(
-                    f"Expected '{expected_id}' to appear but it didn't"
+                    VerificationDiscrepancy(
+                        discrepancy_type="missing_element",
+                        description=f"Expected '{expected_id}' to appear but it didn't",
+                        expected=expected_id,
+                        actual=None,
+                    )
                 )
 
         # Check for expected disappears that didn't happen
@@ -187,7 +218,12 @@ class TransitionVerifier:
             )
             if not found:
                 discrepancies.append(
-                    f"Expected '{expected_id}' to disappear but it didn't"
+                    VerificationDiscrepancy(
+                        discrepancy_type="missing_element",
+                        description=f"Expected '{expected_id}' to disappear but it didn't",
+                        expected=expected_id,
+                        actual=None,
+                    )
                 )
 
         # Check for unexpected appears
@@ -196,7 +232,14 @@ class TransitionVerifier:
                 expected.lower() in actual_id.lower() for expected in expected_appear
             )
             if not found and expected_appear:  # Only flag if we had expectations
-                discrepancies.append(f"Unexpected state appeared: '{actual_id}'")
+                discrepancies.append(
+                    VerificationDiscrepancy(
+                        discrepancy_type="extra_element",
+                        description=f"Unexpected state appeared: '{actual_id}'",
+                        expected=None,
+                        actual=actual_id,
+                    )
+                )
 
         # Check for unexpected disappears
         for actual_id in actual_disappear:
@@ -204,7 +247,14 @@ class TransitionVerifier:
                 expected.lower() in actual_id.lower() for expected in expected_disappear
             )
             if not found and expected_disappear:  # Only flag if we had expectations
-                discrepancies.append(f"Unexpected state disappeared: '{actual_id}'")
+                discrepancies.append(
+                    VerificationDiscrepancy(
+                        discrepancy_type="extra_element",
+                        description=f"Unexpected state disappeared: '{actual_id}'",
+                        expected=None,
+                        actual=actual_id,
+                    )
+                )
 
         # Overall match is true if no discrepancies or only minor ones
         matches = len(discrepancies) == 0
@@ -282,7 +332,7 @@ class TransitionVerifier:
     def _compute_verification_confidence(
         self,
         matches: bool,
-        discrepancies: list[str],
+        discrepancies: list[VerificationDiscrepancy],
         transition: InferredTransition,
         actual_appear: list[str],
         actual_disappear: list[str],
