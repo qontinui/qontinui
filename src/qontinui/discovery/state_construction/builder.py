@@ -388,9 +388,9 @@ class FeatureIdentifier:
         if surrounding.size > element_region.size:
             surrounding_mean = np.mean(surrounding, axis=(0, 1))
             color_difference = np.linalg.norm(mean_color - surrounding_mean)
-            is_color_unique = color_difference > 50
+            is_color_unique = bool(color_difference > 50)
         else:
-            is_color_unique = False
+            is_color_unique = bool(False)
 
         # Element is distinctive if it meets multiple criteria
         distinctive_score = sum(

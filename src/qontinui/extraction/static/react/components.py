@@ -9,7 +9,7 @@ This module provides functions to extract React components:
 
 from pathlib import Path
 
-from qontinui.extraction.static.models import ComponentDefinition
+from qontinui.extraction.models import ComponentDefinition, ComponentType
 
 
 def extract_function_components(
@@ -49,15 +49,18 @@ def extract_function_components(
 
                 components.append(
                     ComponentDefinition(
+                        id=f"{file_path}:{func_name}",
                         name=func_name,
                         file_path=file_path,
-                        is_default_export=func.get("is_default_export", False),
-                        props=props,
-                        state_variables=state_vars,
-                        hooks_used=hooks,
+                        line_number=func.get("line", 0),
+                        component_type=ComponentType.FUNCTION,
+                        framework="react",
+                        props={prop: "any" for prop in props},
+                        state_variables_used=state_vars,
                         metadata={
                             "type": "function_component",
-                            "line": func.get("line", 0),
+                            "is_default_export": func.get("is_default_export", False),
+                            "hooks_used": hooks,
                         },
                     )
                 )
@@ -84,15 +87,18 @@ def extract_function_components(
 
                     components.append(
                         ComponentDefinition(
+                            id=f"{file_path}:{var_name}",
                             name=var_name,
                             file_path=file_path,
-                            is_default_export=var_decl.get("is_default_export", False),
-                            props=props,
-                            state_variables=state_vars,
-                            hooks_used=hooks,
+                            line_number=var_decl.get("line", 0),
+                            component_type=ComponentType.FUNCTION,
+                            framework="react",
+                            props={prop: "any" for prop in props},
+                            state_variables_used=state_vars,
                             metadata={
                                 "type": "arrow_function_component",
-                                "line": var_decl.get("line", 0),
+                                "is_default_export": var_decl.get("is_default_export", False),
+                                "hooks_used": hooks,
                             },
                         )
                     )
@@ -145,14 +151,17 @@ def extract_class_components(
 
             components.append(
                 ComponentDefinition(
+                    id=f"{file_path}:{class_name}",
                     name=class_name,
                     file_path=file_path,
-                    is_default_export=cls.get("is_default_export", False),
-                    props=props,
-                    state_variables=state_vars,
+                    line_number=cls.get("line", 0),
+                    component_type=ComponentType.CLASS,
+                    framework="react",
+                    props={prop: "any" for prop in props},
+                    state_variables_used=state_vars,
                     metadata={
                         "type": "class_component",
-                        "line": cls.get("line", 0),
+                        "is_default_export": cls.get("is_default_export", False),
                         "lifecycle_methods": lifecycle_methods,
                         "is_pure": "Pure" in superclass_name,
                     },
@@ -193,8 +202,8 @@ def build_component_tree(
             if element_name and element_name[0].isupper():
                 # Check if we have this component in our list
                 if element_name in component_map:
-                    if element_name not in component.children_components:
-                        component.children_components.append(element_name)
+                    if element_name not in component.child_components:
+                        component.child_components.append(element_name)
 
 
 def _returns_jsx(func_node: dict) -> bool:
@@ -345,11 +354,14 @@ def _get_superclass_name(superclass_node: dict) -> str:
     node_type = superclass_node.get("type", "")
 
     if node_type == "identifier":
-        return superclass_node.get("name", "")
+        name = superclass_node.get("name", "")
+        return str(name) if name is not None else ""
     elif node_type == "member_expression":
         obj = superclass_node.get("object", {}).get("name", "")
         prop = superclass_node.get("property", {}).get("name", "")
-        return f"{obj}.{prop}"
+        obj_str = str(obj) if obj is not None else ""
+        prop_str = str(prop) if prop is not None else ""
+        return f"{obj_str}.{prop_str}" if obj_str and prop_str else ""
     else:
         return ""
 
@@ -482,10 +494,11 @@ def _get_jsx_name(name_node: dict) -> str:
     node_type = name_node.get("type", "")
 
     if node_type == "jsx_identifier":
-        return name_node.get("name", "")
+        name = name_node.get("name", "")
+        return str(name) if name is not None else ""
     elif node_type == "jsx_member_expression":
         obj = _get_jsx_name(name_node.get("object", {}))
         prop = _get_jsx_name(name_node.get("property", {}))
-        return f"{obj}.{prop}"
+        return f"{obj}.{prop}" if obj and prop else ""
     else:
         return ""

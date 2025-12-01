@@ -253,13 +253,13 @@ class StateStructure:
                 self.screenshots[state.screenshot.id] = state.screenshot
 
         # Add new transitions
-        for transition in new_result.verified_transitions:
-            self.transitions.append(transition)
-            self.transition_origins[transition.id] = source_id
+        for verified in new_result.verified_transitions:
+            self.transitions.append(verified)
+            self.transition_origins[verified.id] = source_id
 
-        for transition in new_result.inferred_transitions:
-            self.transitions.append(transition)
-            self.transition_origins[transition.id] = source_id
+        for inferred in new_result.inferred_transitions:
+            self.transitions.append(inferred)
+            self.transition_origins[inferred.id] = source_id
 
         # Add elements from runtime extraction if available
         if new_result.runtime_extraction and hasattr(

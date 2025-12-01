@@ -6,6 +6,7 @@ QontinUI extraction system to provide comprehensive static analysis.
 """
 
 from pathlib import Path
+from typing import Any
 
 from .parser import (
     ComponentInfo,
@@ -67,7 +68,7 @@ class TypeScriptAnalysisReport:
         Returns:
             Dict mapping event types to their handlers and state changes
         """
-        interaction_map = {}
+        interaction_map: dict[str, list[dict[str, Any]]] = {}
         for file_path, file_result in self.parse_result.files.items():
             for handler in file_result.event_handlers:
                 event = handler.event
@@ -168,7 +169,7 @@ class TypeScriptAnalysisReport:
         Returns:
             List of component names
         """
-        components = []
+        components: list[str] = []
         for file_result in self.parse_result.files.values():
             # Check if any component in this file uses the state
             has_state = any(s.name == state_name for s in file_result.state_variables)
@@ -205,7 +206,7 @@ class TypeScriptAnalysisReport:
         total_conditionals = 0
         total_handlers = 0
         component_types = {"function": 0, "arrow_function": 0, "class": 0}
-        hook_types = {}
+        hook_types: dict[str, int] = {}
 
         for file_result in self.parse_result.files.values():
             total_components += len(file_result.components)

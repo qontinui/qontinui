@@ -123,7 +123,7 @@ class BackgroundRemovalAnalyzer:
             and len(screenshots) >= self.config.min_screenshots_for_variance
         ):
             variance_mask = self._detect_by_temporal_variance(screenshots)
-            background_mask = cv2.bitwise_or(background_mask, variance_mask)
+            background_mask = cv2.bitwise_or(background_mask, variance_mask).astype(np.uint8)
             logger.debug(
                 f"Temporal variance detected {np.sum(variance_mask > 0)} background pixels"
             )
@@ -131,7 +131,7 @@ class BackgroundRemovalAnalyzer:
         # Strategy 2: Edge density (low edge regions are likely background)
         if self.config.use_edge_density:
             edge_mask = self._detect_by_edge_density(screenshots[0])
-            background_mask = cv2.bitwise_or(background_mask, edge_mask)
+            background_mask = cv2.bitwise_or(background_mask, edge_mask).astype(np.uint8)
             logger.debug(
                 f"Edge density detected {np.sum(edge_mask > 0)} background pixels"
             )
@@ -139,7 +139,7 @@ class BackgroundRemovalAnalyzer:
         # Strategy 3: Uniformity (large uniform regions are likely background)
         if self.config.use_uniformity:
             uniformity_mask = self._detect_by_uniformity(screenshots[0])
-            background_mask = cv2.bitwise_or(background_mask, uniformity_mask)
+            background_mask = cv2.bitwise_or(background_mask, uniformity_mask).astype(np.uint8)
             logger.debug(
                 f"Uniformity detected {np.sum(uniformity_mask > 0)} background pixels"
             )
@@ -181,7 +181,7 @@ class BackgroundRemovalAnalyzer:
         pixel_std = np.std(stack, axis=2)
 
         # Pixels with high variance are background
-        variance_mask = (pixel_std > self.config.variance_threshold).astype(
+        variance_mask: np.ndarray = (pixel_std > self.config.variance_threshold).astype(
             np.uint8
         ) * 255
 
