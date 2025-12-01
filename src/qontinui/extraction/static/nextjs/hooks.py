@@ -32,8 +32,9 @@ def extract_use_router(parse_results: dict) -> list["StateVariable"]:
     Returns:
         List of state variables from useRouter
     """
+    from qontinui.extraction.models.static import StateVariable
 
-    state_variables = []
+    state_variables: list[StateVariable] = []
 
     # Placeholder - real implementation would:
     # 1. Look for useRouter() calls from 'next/router'
@@ -74,8 +75,9 @@ def extract_use_search_params(parse_results: dict) -> list["StateVariable"]:
     Returns:
         List of state variables from useSearchParams
     """
+    from qontinui.extraction.models.static import StateVariable
 
-    state_variables = []
+    state_variables: list[StateVariable] = []
 
     # Placeholder - real implementation would:
     # 1. Look for useSearchParams() calls from 'next/navigation'
@@ -115,8 +117,9 @@ def extract_use_pathname(parse_results: dict) -> list["StateVariable"]:
     Returns:
         List of state variables from usePathname
     """
+    from qontinui.extraction.models.static import StateVariable
 
-    state_variables = []
+    state_variables: list[StateVariable] = []
 
     # Placeholder - real implementation would:
     # 1. Look for usePathname() calls from 'next/navigation'
@@ -157,8 +160,9 @@ def extract_use_params(parse_results: dict) -> list["StateVariable"]:
     Returns:
         List of state variables from useParams
     """
+    from qontinui.extraction.models.static import StateVariable
 
-    state_variables = []
+    state_variables: list[StateVariable] = []
 
     # Placeholder - real implementation would:
     # 1. Look for useParams() calls from 'next/navigation'
