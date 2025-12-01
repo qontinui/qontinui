@@ -254,9 +254,7 @@ class TestHybridPathFinderThreading:
                         # Read string representation (accesses cache size)
                         str_repr = str(finder)
                         if "HybridPathFinder" not in str_repr:
-                            errors.append(
-                                f"Thread {thread_id}: Invalid string representation"
-                            )
+                            errors.append(f"Thread {thread_id}: Invalid string representation")
             except Exception as e:
                 errors.append(f"Thread {thread_id}: {e}")
 
@@ -331,9 +329,7 @@ class TestHybridPathFinderThreading:
                         with finder._lock:
                             size = len(finder._path_cache)
                             if size < 0:
-                                errors.append(
-                                    f"Thread {thread_id}: Negative cache size"
-                                )
+                                errors.append(f"Thread {thread_id}: Negative cache size")
                     else:
                         # Clear
                         if i % 9 == 2:

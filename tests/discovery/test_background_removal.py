@@ -136,15 +136,10 @@ def test_statistics_calculation():
     masked, stats = analyzer.remove_backgrounds([screenshot])
 
     assert stats["total_pixels"] == 100 * 100
-    assert (
-        stats["foreground_pixels"] + stats["background_pixels"] == stats["total_pixels"]
-    )
+    assert stats["foreground_pixels"] + stats["background_pixels"] == stats["total_pixels"]
     assert 0 <= stats["foreground_percentage"] <= 100
     assert 0 <= stats["background_percentage"] <= 100
-    assert (
-        abs(stats["foreground_percentage"] + stats["background_percentage"] - 100)
-        < 0.01
-    )
+    assert abs(stats["foreground_percentage"] + stats["background_percentage"] - 100) < 0.01
 
 
 def test_visualize_mask():

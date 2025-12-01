@@ -88,9 +88,7 @@ class TestMockIntegration:
                 # Step 2: Generate equivalent Qontinui mocks
                 generated_mocks = []
                 for mock_usage in mock_usages:
-                    qontinui_mock_code = self.generator.create_equivalent_mock(
-                        mock_usage
-                    )
+                    qontinui_mock_code = self.generator.create_equivalent_mock(mock_usage)
                     generated_mocks.append(qontinui_mock_code)
 
                     # Verify generated code contains expected elements
@@ -133,9 +131,7 @@ class TestMockIntegration:
                 mock_usages = self.analyzer.identify_mock_usage(test_file)
 
                 # Find GUI-related mocks
-                gui_mocks = [
-                    m for m in mock_usages if self.analyzer._is_brobot_gui_mock(m)
-                ]
+                gui_mocks = [m for m in mock_usages if self.analyzer._is_brobot_gui_mock(m)]
 
                 for gui_mock in gui_mocks:
                     # Extract GUI model
@@ -143,25 +139,15 @@ class TestMockIntegration:
 
                     if gui_model:
                         # Generate state simulation
-                        simulation_code = self.generator.preserve_state_simulation(
-                            gui_model
-                        )
+                        simulation_code = self.generator.preserve_state_simulation(gui_model)
 
                         # Verify simulation preserves GUI elements
-                        assert (
-                            "usernameField" in simulation_code
-                            or "element" in simulation_code
-                        )
-                        assert (
-                            "MockState" in simulation_code
-                            or "GuiSimulator" in simulation_code
-                        )
+                        assert "usernameField" in simulation_code or "element" in simulation_code
+                        assert "MockState" in simulation_code or "GuiSimulator" in simulation_code
 
                         # Verify action mapping
                         assert "click" in simulation_code
-                        assert (
-                            "type_text" in simulation_code or "type" in simulation_code
-                        )
+                        assert "type_text" in simulation_code or "type" in simulation_code
 
     def test_mock_behavior_mapping(self):
         """Test behavior mapping from Brobot to Qontinui patterns."""
@@ -183,9 +169,7 @@ class TestMockIntegration:
         qontinui_code = self.generator.create_equivalent_mock(mock_usage)
 
         # Create behavior mapping
-        behavior_mapping = self.generator.create_mock_behavior_mapping(
-            mock_usage, qontinui_code
-        )
+        behavior_mapping = self.generator.create_mock_behavior_mapping(mock_usage, qontinui_code)
 
         # Verify behavior mapping
         assert "setup" in behavior_mapping
@@ -262,9 +246,7 @@ class TestMockIntegration:
                 ), f"Expected some of {expected_types}, found {found_types}"
 
                 # Generate integration test setup
-                integration_setup = self.generator.generate_integration_test_setup(
-                    mock_usages
-                )
+                integration_setup = self.generator.generate_integration_test_setup(mock_usages)
 
                 # Verify integration setup
                 assert "IntegratedMockEnvironment" in integration_setup
@@ -448,9 +430,7 @@ class TestMockIntegration:
                     if self.analyzer._is_brobot_gui_mock(mock_usage):
                         gui_model = self.analyzer.extract_gui_model(mock_usage)
                         if gui_model:
-                            simulation_code = self.generator.preserve_state_simulation(
-                                gui_model
-                            )
+                            simulation_code = self.generator.preserve_state_simulation(gui_model)
                             qontinui_test_parts.append(simulation_code)
 
                 # Combine all parts

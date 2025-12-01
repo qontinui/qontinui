@@ -73,9 +73,7 @@ class ActionRecord:
             "text": self.text,
             "duration": self.duration,
             "timestamp": self.timestamp.isoformat(),
-            "active_states": sorted(
-                self.active_states
-            ),  # Convert set to sorted list for JSON
+            "active_states": sorted(self.active_states),  # Convert set to sorted list for JSON
             "metadata": self.metadata,
         }
 
@@ -196,9 +194,7 @@ class ActionRecord:
         return ActionRecord(
             action_type=data["action_type"],
             action_success=data["action_success"],
-            match_list=[
-                ActionRecord._dict_to_match(m) for m in data.get("match_list", [])
-            ],
+            match_list=[ActionRecord._dict_to_match(m) for m in data.get("match_list", [])],
             text=data.get("text", ""),
             duration=data.get("duration", 0.0),
             timestamp=datetime.fromisoformat(data["timestamp"]),
@@ -310,14 +306,10 @@ class ActionHistory:
             return record.match_list
 
         # Strategy 2: Subset match (S_Ξ^h ⊆ S_Ξ) - snapshot states are subset of current
-        subset_matches = [
-            r for r in successful if r.active_states.issubset(active_states)
-        ]
+        subset_matches = [r for r in successful if r.active_states.issubset(active_states)]
         if subset_matches:
             # Choose snapshot with most overlapping states
-            record = max(
-                subset_matches, key=lambda r: (len(r.active_states), r.timestamp)
-            )
+            record = max(subset_matches, key=lambda r: (len(r.active_states), r.timestamp))
             logger.debug(
                 f"Subset match: {record.active_states} ⊆ {active_states} -> {len(record.match_list)} matches"
             )
@@ -331,9 +323,7 @@ class ActionHistory:
         ]
         if overlap_matches:
             # Choose snapshot with highest overlap, then most recent
-            record, overlap_count = max(
-                overlap_matches, key=lambda x: (x[1], x[0].timestamp)
-            )
+            record, overlap_count = max(overlap_matches, key=lambda x: (x[1], x[0].timestamp))
             logger.debug(
                 f"Overlap match: {record.active_states} ∩ {active_states} ({overlap_count} common) -> {len(record.match_list)} matches"
             )
@@ -351,9 +341,7 @@ class ActionHistory:
         logger.warning("No successful records with matches in history")
         return []
 
-    def get_random_record(
-        self, active_states: set[str] | None = None
-    ) -> ActionRecord | None:
+    def get_random_record(self, active_states: set[str] | None = None) -> ActionRecord | None:
         """Get a random record matching the active states.
 
         Args:
@@ -369,9 +357,7 @@ class ActionHistory:
 
         if active_states:
             # Find records with overlapping states
-            candidates = [
-                r for r in self.snapshots if r.active_states.intersection(active_states)
-            ]
+            candidates = [r for r in self.snapshots if r.active_states.intersection(active_states)]
         else:
             candidates = self.snapshots
 

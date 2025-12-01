@@ -120,9 +120,7 @@ class StateVariable:
     scope: StateScope = StateScope.LOCAL
 
     # Impact
-    controls_visibility: list[str] = field(
-        default_factory=list
-    )  # Conditional render IDs
+    controls_visibility: list[str] = field(default_factory=list)  # Conditional render IDs
     affected_components: list[str] = field(default_factory=list)  # Component IDs
 
     # Metadata
@@ -213,9 +211,7 @@ class EventHandler:
     trigger_selector: str | None = None  # CSS selector if available
 
     # Effects
-    state_changes: list[str] = field(
-        default_factory=list
-    )  # State variable IDs modified
+    state_changes: list[str] = field(default_factory=list)  # State variable IDs modified
     navigation: str | None = None  # Route navigated to
     api_calls: list[str] = field(default_factory=list)  # API call IDs
 

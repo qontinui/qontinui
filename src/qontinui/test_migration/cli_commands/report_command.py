@@ -21,9 +21,7 @@ class ReportCommand(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         """Add report command arguments."""
-        parser.add_argument(
-            "test_directory", type=Path, help="Directory containing migrated tests"
-        )
+        parser.add_argument("test_directory", type=Path, help="Directory containing migrated tests")
 
         parser.add_argument(
             "--format",
@@ -81,6 +79,4 @@ class ReportCommand(BaseCommand):
             return CommandResult(exit_code=0, message=f"Report saved to: {output_file}")
 
         except Exception as e:
-            return CommandResult(
-                exit_code=1, message=f"Report generation failed: {str(e)}"
-            )
+            return CommandResult(exit_code=1, message=f"Report generation failed: {str(e)}")

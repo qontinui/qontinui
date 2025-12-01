@@ -76,9 +76,7 @@ class TestBrobotMockAnalyzer:
         brobot_mocks = [
             m
             for m in mock_usages
-            if "Brobot" in m.mock_class
-            or "State" in m.mock_class
-            or "Action" in m.mock_class
+            if "Brobot" in m.mock_class or "State" in m.mock_class or "Action" in m.mock_class
         ]
         assert len(brobot_mocks) >= 2  # BrobotMock, StateObject, ActionMock
 
@@ -102,9 +100,7 @@ class TestBrobotMockAnalyzer:
             ):
                 mock_usages = self.analyzer.identify_mock_usage(test_file)
 
-        programmatic_mocks = [
-            m for m in mock_usages if m.mock_type == "brobot_programmatic_mock"
-        ]
+        programmatic_mocks = [m for m in mock_usages if m.mock_type == "brobot_programmatic_mock"]
         assert len(programmatic_mocks) >= 2  # Should find BrobotMock and RegionMock
 
     def test_identify_brobot_specific_mocks(self):
@@ -140,9 +136,7 @@ class TestBrobotMockAnalyzer:
                 mock_usages = self.analyzer.identify_mock_usage(test_file)
 
         # Should find BrobotTest environment and state mock
-        brobot_test_mocks = [
-            m for m in mock_usages if m.mock_type == "brobot_test_environment"
-        ]
+        brobot_test_mocks = [m for m in mock_usages if m.mock_type == "brobot_test_environment"]
         state_mocks = [m for m in mock_usages if m.mock_type == "brobot_state_mock"]
 
         assert len(brobot_test_mocks) >= 1
@@ -222,9 +216,7 @@ class TestBrobotMockAnalyzer:
         """Test identification of GUI-related mocks."""
         gui_mock = MockUsage(mock_type="brobot_state_mock", mock_class="StateObject")
 
-        non_gui_mock = MockUsage(
-            mock_type="brobot_programmatic_mock", mock_class="UtilityClass"
-        )
+        non_gui_mock = MockUsage(mock_type="brobot_programmatic_mock", mock_class="UtilityClass")
 
         assert self.analyzer._is_brobot_gui_mock(gui_mock)
         assert not self.analyzer._is_brobot_gui_mock(non_gui_mock)
@@ -308,9 +300,7 @@ class TestBrobotMockAnalyzer:
                 Dependency(java_import="org.mockito.Mock"),
             ],
             test_methods=[
-                TestMethod(
-                    name="testMethod", annotations=["@Test"], body="assertEquals(1, 1);"
-                )
+                TestMethod(name="testMethod", annotations=["@Test"], body="assertEquals(1, 1);")
             ],
         )
 
@@ -360,10 +350,7 @@ class TestBrobotMockAnalyzer:
         # Should identify multiple types of mocks
         mock_types = [usage.mock_type for usage in mock_usages]
         assert "brobot_test_environment" in mock_types
-        assert (
-            "brobot_annotation_mock" in mock_types
-            or "brobot_programmatic_mock" in mock_types
-        )
+        assert "brobot_annotation_mock" in mock_types or "brobot_programmatic_mock" in mock_types
 
     def test_empty_file_handling(self):
         """Test handling of empty or minimal test files."""
@@ -372,9 +359,7 @@ class TestBrobotMockAnalyzer:
         )
 
         with patch.object(Path, "exists", return_value=True):
-            with patch.object(
-                Path, "read_text", return_value="public class EmptyTest {}"
-            ):
+            with patch.object(Path, "read_text", return_value="public class EmptyTest {}"):
                 mock_usages = self.analyzer.identify_mock_usage(empty_test_file)
 
         assert isinstance(mock_usages, list)

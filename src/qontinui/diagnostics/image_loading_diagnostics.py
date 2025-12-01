@@ -93,9 +93,7 @@ class ImageLoadingDiagnostics:
 
         # Test specific images
         if self.config.test_images:
-            specific_tests = self.image_loader.load_multiple_images(
-                self.config.test_images
-            )
+            specific_tests = self.image_loader.load_multiple_images(self.config.test_images)
             results["specific_tests"] = specific_tests
             self.reporter.print_test_results(specific_tests, self.config.verbose)
 
@@ -136,15 +134,11 @@ class ImageLoadingDiagnostics:
         # Categorize environment issues
         env = results.get("environment", {})
         libs = env.get("image_libraries", {})
-        categorized_issues["library_issues"] = (
-            ErrorCategorizer.categorize_library_issues(libs)
-        )
+        categorized_issues["library_issues"] = ErrorCategorizer.categorize_library_issues(libs)
 
         # Categorize path issues
         paths = results.get("paths", {})
-        categorized_issues["path_issues"] = ErrorCategorizer.categorize_path_issues(
-            paths
-        )
+        categorized_issues["path_issues"] = ErrorCategorizer.categorize_path_issues(paths)
 
         # Categorize performance issues
         perf = results.get("performance", {})
@@ -158,8 +152,8 @@ class ImageLoadingDiagnostics:
         # Categorize directory issues
         dirs = results.get("directories", {})
         if dirs:
-            categorized_issues["directory_issues"] = (
-                ErrorCategorizer.categorize_directory_issues(dirs)
+            categorized_issues["directory_issues"] = ErrorCategorizer.categorize_directory_issues(
+                dirs
             )
         else:
             categorized_issues["directory_issues"] = []

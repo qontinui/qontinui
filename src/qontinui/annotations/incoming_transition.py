@@ -9,9 +9,7 @@ from functools import wraps
 from typing import Any
 
 
-def incoming_transition(
-    description: str = "", timeout: int = 5, required: bool = True
-) -> Any:
+def incoming_transition(description: str = "", timeout: int = 5, required: bool = True) -> Any:
     """Marks a method as an IncomingTransition.
 
     An IncomingTransition (arrival/finish transition) verifies that we have
@@ -76,10 +74,7 @@ def is_incoming_transition(method: Any) -> bool:
     Returns:
         True if method is decorated with @incoming_transition
     """
-    return (
-        hasattr(method, "_qontinui_incoming_transition")
-        and method._qontinui_incoming_transition
-    )
+    return hasattr(method, "_qontinui_incoming_transition") and method._qontinui_incoming_transition
 
 
 def get_incoming_transition_metadata(method: Any) -> dict[str, Any] | None:

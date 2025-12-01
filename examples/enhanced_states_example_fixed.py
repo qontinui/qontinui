@@ -29,9 +29,7 @@ try:
     from qontinui.model.transition.enhanced_state_transition import StaysVisible
 except ImportError:
     print("Note: Enhanced modules not yet integrated into main qontinui package")
-    print(
-        "To use this example, ensure the enhanced modules are in the correct locations"
-    )
+    print("To use this example, ensure the enhanced modules are in the correct locations")
 
     # For demonstration, we'll define simplified versions
     from enum import Enum
@@ -88,9 +86,7 @@ except ImportError:
 
         def decorator(cls):
             cls._is_transition = True
-            cls._from_states = (
-                from_states if isinstance(from_states, list) else [from_states]
-            )
+            cls._from_states = from_states if isinstance(from_states, list) else [from_states]
             cls._to_states = to_states if isinstance(to_states, list) else [to_states]
             cls._activate_all = activate_all
             cls._exit_all = exit_all
@@ -112,9 +108,7 @@ except ImportError:
 
     def incoming_transition(to_state, **kwargs):
         """Shorthand for incoming transitions."""
-        return transition_set(
-            to_states=to_state, transition_type=TransitionType.INCOMING, **kwargs
-        )
+        return transition_set(to_states=to_state, transition_type=TransitionType.INCOMING, **kwargs)
 
 
 # =============================================================================
@@ -222,9 +216,7 @@ class ErrorState:
 # =============================================================================
 
 
-@outgoing_transition(
-    LoginState, MainMenuState, stays_visible=StaysVisible.FALSE, path_cost=1
-)
+@outgoing_transition(LoginState, MainMenuState, stays_visible=StaysVisible.FALSE, path_cost=1)
 class LoginSuccessTransition:
     """Simple transition from login to main menu."""
 

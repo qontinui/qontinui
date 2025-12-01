@@ -75,8 +75,7 @@ class ModalDialogDetector(BaseAnalyzer):
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect modal dialogs in screenshots"""
         logger.info(
-            f"Running modal dialog detection on "
-            f"{len(input_data.screenshots)} screenshots"
+            f"Running modal dialog detection on " f"{len(input_data.screenshots)} screenshots"
         )
 
         params = {**self.get_default_parameters(), **input_data.parameters}
@@ -90,9 +89,7 @@ class ModalDialogDetector(BaseAnalyzer):
         for screenshot_idx, (img_color, img_gray) in enumerate(
             zip(images_color, images_gray, strict=False)
         ):
-            elements = await self._analyze_screenshot(
-                img_color, img_gray, screenshot_idx, params
-            )
+            elements = await self._analyze_screenshot(img_color, img_gray, screenshot_idx, params)
             all_elements.extend(elements)
 
         logger.info(f"Detected {len(all_elements)} modal dialogs")
@@ -138,18 +135,14 @@ class ModalDialogDetector(BaseAnalyzer):
         height, width = img_gray.shape
 
         # Apply edge detection
-        edges = cv2.Canny(
-            img_gray, params["edge_threshold_low"], params["edge_threshold_high"]
-        )
+        edges = cv2.Canny(img_gray, params["edge_threshold_low"], params["edge_threshold_high"])
 
         # Dilate to connect edges
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         edges = cv2.dilate(edges, kernel, iterations=2)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -178,15 +171,12 @@ class ModalDialogDetector(BaseAnalyzer):
 
             # Modals are typically centered
             is_centered = (
-                x_offset <= params["center_tolerance"]
-                and y_offset <= params["center_tolerance"]
+                x_offset <= params["center_tolerance"] and y_offset <= params["center_tolerance"]
             )
 
             # Extract dialog region
             dialog_region = (
-                img_gray[y : y + h, x : x + w]
-                if y + h <= height and x + w <= width
-                else None
+                img_gray[y : y + h, x : x + w] if y + h <= height and x + w <= width else None
             )
             if dialog_region is None or dialog_region.size == 0:
                 continue
@@ -223,9 +213,7 @@ class ModalDialogDetector(BaseAnalyzer):
 
             elements.append(
                 DetectedElement(
-                    bounding_box=BoundingBox(
-                        x=int(x), y=int(y), width=int(w), height=int(h)
-                    ),
+                    bounding_box=BoundingBox(x=int(x), y=int(y), width=int(w), height=int(h)),
                     confidence=confidence,
                     label="Modal Dialog",
                     element_type="dialog",
@@ -271,9 +259,7 @@ class ModalDialogDetector(BaseAnalyzer):
         edges = cv2.Canny(button_region, 50, 150)
 
         # Find contours (potential buttons)
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Look for 1-3 rectangular regions (buttons)
         button_count = 0

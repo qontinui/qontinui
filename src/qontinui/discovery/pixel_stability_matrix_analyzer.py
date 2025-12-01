@@ -55,14 +55,10 @@ class PixelStabilityMatrixAnalyzer:
             AnalysisResult with discovered StateImages and States
         """
         if not screenshots or len(screenshots) < self.config.min_screenshots_present:
-            logger.warning(
-                f"Need at least {self.config.min_screenshots_present} screenshots"
-            )
+            logger.warning(f"Need at least {self.config.min_screenshots_present} screenshots")
             return AnalysisResult(states=[], state_images=[], transitions=[])
 
-        logger.info(
-            f"Starting Pixel Stability Matrix analysis with {len(screenshots)} screenshots"
-        )
+        logger.info(f"Starting Pixel Stability Matrix analysis with {len(screenshots)} screenshots")
 
         # Step 1: Build stability matrix
         stability_matrix = self._build_stability_matrix(screenshots, region)
@@ -90,9 +86,7 @@ class PixelStabilityMatrixAnalyzer:
         # Step 4: Group StateImages into States
         states = self._discover_states(state_images, screenshots)
 
-        logger.info(
-            f"Discovered {len(state_images)} StateImages and {len(states)} States"
-        )
+        logger.info(f"Discovered {len(state_images)} StateImages and {len(states)} States")
 
         return AnalysisResult(
             states=states,
@@ -162,14 +156,10 @@ class PixelStabilityMatrixAnalyzer:
                 if pixels_processed % 10000 == 0:
                     logger.debug(f"Processed {pixels_processed}/{total_pixels} pixels")
 
-        logger.info(
-            f"Stability matrix built: {len(stability_matrix)} stable pixels found"
-        )
+        logger.info(f"Stability matrix built: {len(stability_matrix)} stable pixels found")
         return stability_matrix
 
-    def _pixels_match(
-        self, pixel1: np.ndarray[Any, Any], pixel2: np.ndarray[Any, Any]
-    ) -> bool:
+    def _pixels_match(self, pixel1: np.ndarray[Any, Any], pixel2: np.ndarray[Any, Any]) -> bool:
         """Check if two pixels match within tolerance"""
         if pixel1.shape != pixel2.shape:
             return False
@@ -200,9 +190,7 @@ class PixelStabilityMatrixAnalyzer:
         logger.info(f"Found {len(pattern_groups)} unique presence patterns")
         for pattern, pixels in pattern_groups.items():
             screenshots = pattern.split(",")
-            logger.debug(
-                f"Pattern {pattern}: {len(pixels)} pixels in screenshots {screenshots}"
-            )
+            logger.debug(f"Pattern {pattern}: {len(pixels)} pixels in screenshots {screenshots}")
 
         return pattern_groups
 
@@ -298,9 +286,7 @@ class PixelStabilityMatrixAnalyzer:
         pixel_hash = hashlib.md5(masked_region.tobytes()).hexdigest()
 
         # Calculate pixel statistics
-        dark_pct, light_pct, avg_brightness = self._calculate_pixel_percentages(
-            masked_region, mask
-        )
+        dark_pct, light_pct, avg_brightness = self._calculate_pixel_percentages(masked_region, mask)
 
         # Calculate mask density (how much of the bounding box is filled)
         mask_density = float(np.sum(mask) / (width * height))

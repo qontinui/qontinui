@@ -42,9 +42,7 @@ class MouseUp(ActionInterface):
         """
         return ActionType.MOUSE_UP
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Release mouse button.
 
         Important:

@@ -114,13 +114,9 @@ class ActionImporter:
         if not self.validate:
             # Create Action models without validation
             try:
-                return [
-                    Action.model_validate(action_data) for action_data in actions_data
-                ]
+                return [Action.model_validate(action_data) for action_data in actions_data]
             except Exception as e:
-                raise ImportError(
-                    f"Error creating Action models from {source}: {e}"
-                ) from e
+                raise ImportError(f"Error creating Action models from {source}: {e}") from e
 
         # Validate actions
         try:
@@ -131,9 +127,7 @@ class ActionImporter:
 
         # Check for sequence warnings
         warnings = (
-            self.validator.validate_action_sequence(actions)
-            if self.validator is not None
-            else []
+            self.validator.validate_action_sequence(actions) if self.validator is not None else []
         )
         if warnings:
             warning_text = "\n".join(f"  - {w}" for w in warnings)
@@ -170,9 +164,7 @@ class ActionImporter:
                 try:
                     actions = self.load_from_string(data)  # type: ignore[arg-type]
                 except ImportError:
-                    raise ImportError(
-                        f"Not a valid file path or JSON string: {data}"
-                    ) from None
+                    raise ImportError(f"Not a valid file path or JSON string: {data}") from None
         else:
             raise ImportError(
                 f"Invalid data type: expected dict, str, or Path, got {type(data).__name__}"
@@ -227,10 +219,7 @@ class ActionImporter:
         if errors and self.strict:
             raise ImportError(f"Errors loading from {directory}:\n" + "\n".join(errors))
         elif errors:
-            print(
-                f"Warning: Errors loading some files from {directory}:\n"
-                + "\n".join(errors)
-            )
+            print(f"Warning: Errors loading some files from {directory}:\n" + "\n".join(errors))
 
         return results
 

@@ -51,15 +51,11 @@ class TestConcurrentActionWorkflows:
                 # Create action result with matches
                 builder = ActionResultBuilder()
                 for i in range(5):
-                    match = MockMatch(
-                        thread_id * 100 + i * 10, i * 10, f"match_{thread_id}_{i}"
-                    )
+                    match = MockMatch(thread_id * 100 + i * 10, i * 10, f"match_{thread_id}_{i}")
                     builder.add_match(match)
 
                 result = (
-                    builder.with_success(True)
-                    .with_description(f"Workflow {thread_id}")
-                    .build()
+                    builder.with_success(True).with_description(f"Workflow {thread_id}").build()
                 )
 
                 # Register some states
@@ -87,9 +83,7 @@ class TestConcurrentActionWorkflows:
                     errors.append(e)
 
         # Start all threads
-        threads = [
-            threading.Thread(target=execute_workflow, args=(i,)) for i in range(10)
-        ]
+        threads = [threading.Thread(target=execute_workflow, args=(i,)) for i in range(10)]
         for t in threads:
             t.start()
 
@@ -101,9 +95,7 @@ class TestConcurrentActionWorkflows:
         assert len(errors) == 0, f"Errors occurred: {errors}"
         assert len(results) == 10, f"Expected 10 results, got {len(results)}"
         assert all(r.success for r in results), "Not all workflows succeeded"
-        assert all(
-            len(r.match_list) == 5 for r in results
-        ), "Not all workflows have 5 matches"
+        assert all(len(r.match_list) == 5 for r in results), "Not all workflows have 5 matches"
 
     def test_concurrent_workflows_with_state_transitions(self):
         """Test workflows that register and transition states concurrently."""
@@ -118,9 +110,7 @@ class TestConcurrentActionWorkflows:
                 registry = StateRegistry()
 
                 # Define states
-                @state(
-                    name=f"initial_state_{thread_id}", initial=True, profiles=["test"]
-                )
+                @state(name=f"initial_state_{thread_id}", initial=True, profiles=["test"])
                 class InitialState:
                     pass
 
@@ -155,10 +145,7 @@ class TestConcurrentActionWorkflows:
                     errors.append(e)
 
         # Execute workflows
-        threads = [
-            threading.Thread(target=execute_state_workflow, args=(i,))
-            for i in range(10)
-        ]
+        threads = [threading.Thread(target=execute_state_workflow, args=(i,)) for i in range(10)]
         for t in threads:
             t.start()
         for t in threads:
@@ -186,9 +173,7 @@ class TestConcurrentActionWorkflows:
                 builder = ActionResultBuilder()
 
                 for i in range(3):
-                    match = MockMatch(
-                        thread_id * 50 + i * 10, i * 5, f"result_{thread_id}_{i}"
-                    )
+                    match = MockMatch(thread_id * 50 + i * 10, i * 5, f"result_{thread_id}_{i}")
                     builder.add_match(match)
 
                 partial = builder.with_success(True).build()
@@ -206,10 +191,7 @@ class TestConcurrentActionWorkflows:
                     errors.append(e)
 
         # Execute workflows
-        threads = [
-            threading.Thread(target=execute_result_workflow, args=(i,))
-            for i in range(10)
-        ]
+        threads = [threading.Thread(target=execute_result_workflow, args=(i,)) for i in range(10)]
         for t in threads:
             t.start()
         for t in threads:
@@ -275,10 +257,7 @@ class TestConcurrentActionWorkflows:
                     errors.append(e)
 
         # Execute complex workflows
-        threads = [
-            threading.Thread(target=execute_complex_workflow, args=(i,))
-            for i in range(15)
-        ]
+        threads = [threading.Thread(target=execute_complex_workflow, args=(i,)) for i in range(15)]
         for t in threads:
             t.start()
         for t in threads:
@@ -390,10 +369,7 @@ class TestConcurrentStateManagement:
                     errors.append(e)
 
         # Execute registrations
-        threads = [
-            threading.Thread(target=register_workflow_states, args=(i,))
-            for i in range(20)
-        ]
+        threads = [threading.Thread(target=register_workflow_states, args=(i,)) for i in range(20)]
         for t in threads:
             t.start()
         for t in threads:
@@ -444,9 +420,7 @@ class TestConcurrentStateManagement:
                     errors.append(e)
 
         # Execute workflows
-        threads = [
-            threading.Thread(target=isolated_workflow, args=(i,)) for i in range(20)
-        ]
+        threads = [threading.Thread(target=isolated_workflow, args=(i,)) for i in range(20)]
         for t in threads:
             t.start()
         for t in threads:
@@ -538,9 +512,7 @@ class TestConcurrentResultOperations:
                     errors.append(e)
 
         # Merge from multiple threads
-        threads = [
-            threading.Thread(target=create_and_merge, args=(i,)) for i in range(20)
-        ]
+        threads = [threading.Thread(target=create_and_merge, args=(i,)) for i in range(20)]
         for t in threads:
             t.start()
         for t in threads:

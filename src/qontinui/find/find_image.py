@@ -118,9 +118,7 @@ class FindImage(Find):
         Returns:
             Self for chaining
         """
-        region = Region(
-            location.x - radius, location.y - radius, radius * 2, radius * 2
-        )
+        region = Region(location.x - radius, location.y - radius, radius * 2, radius * 2)
         self.search_region(region)
         return self
 

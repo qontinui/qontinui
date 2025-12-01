@@ -93,12 +93,8 @@ class ExecutorConfig:
     retry_on_failure: bool = False
     max_retries: int = 3
     retry_delay: float = 1.0
-    pre_execution_hooks: list[Callable[[ExecutionContext], None]] = field(
-        default_factory=list
-    )
-    post_execution_hooks: list[Callable[[ExecutionContext], None]] = field(
-        default_factory=list
-    )
+    pre_execution_hooks: list[Callable[[ExecutionContext], None]] = field(default_factory=list)
+    post_execution_hooks: list[Callable[[ExecutionContext], None]] = field(default_factory=list)
 
 
 class ActionExecutor:
@@ -208,9 +204,7 @@ class ActionExecutor:
         self._execution_count += 1
 
         if self.config.enable_logging:
-            logger.debug(
-                f"Initializing action execution: {context.action.__class__.__name__}"
-            )
+            logger.debug(f"Initializing action execution: {context.action.__class__.__name__}")
 
     def _pre_execution(self, context: ExecutionContext) -> None:
         """Pre-execution phase.

@@ -51,9 +51,7 @@ class GraphTraverser:
     def __init__(
         self,
         workflow: Workflow,
-        action_executor: (
-            Callable[[Action, dict[str, Any]], dict[str, Any]] | None
-        ) = None,
+        action_executor: Callable[[Action, dict[str, Any]], dict[str, Any]] | None = None,
         max_iterations: int = 10000,
     ) -> None:
         """
@@ -86,9 +84,7 @@ class GraphTraverser:
         # Check for entry points
         entry_points = self.get_entry_actions()
         if not entry_points:
-            raise ValueError(
-                "Workflow has no entry points (actions with no incoming connections)"
-            )
+            raise ValueError("Workflow has no entry points (actions with no incoming connections)")
 
         # Check for orphaned actions
         orphaned = self._find_orphaned_actions()
@@ -109,9 +105,7 @@ class GraphTraverser:
         """
         for action in self.workflow.actions:
             for output_type, _ in self.resolver.get_all_outputs(action.id):
-                connections = self.resolver.resolve_output_connection(
-                    action.id, output_type
-                )
+                connections = self.resolver.resolve_output_connection(action.id, output_type)
                 for conn in connections:
                     if conn.action == action.id:
                         raise CycleDetectedError(
@@ -139,9 +133,7 @@ class GraphTraverser:
 
             # Add connected actions
             for output_type, _ in self.resolver.get_all_outputs(action_id):
-                connections = self.resolver.resolve_output_connection(
-                    action_id, output_type
-                )
+                connections = self.resolver.resolve_output_connection(action_id, output_type)
                 for conn in connections:
                     if conn.action not in reachable:
                         queue.append(conn.action)
@@ -298,15 +290,9 @@ class GraphTraverser:
             self.state.set_current_action(action_id)
 
         # Start recording
-        record = (
-            self.state.start_action(action_id, action.type)
-            if self.state is not None
-            else None
-        )
+        record = self.state.start_action(action_id, action.type) if self.state is not None else None
 
-        logger.info(
-            f"Executing action: {action_id} (type: {action.type}, depth: {depth})"
-        )
+        logger.info(f"Executing action: {action_id} (type: {action.type}, depth: {depth})")
 
         try:
             # Execute the action
@@ -333,9 +319,7 @@ class GraphTraverser:
                 if self.state is not None and self.state.is_visited(next_action.id):
                     # Allow revisiting for LOOP actions
                     if action.type != "LOOP":
-                        logger.warning(
-                            f"Cycle detected: action '{next_action.id}' already visited"
-                        )
+                        logger.warning(f"Cycle detected: action '{next_action.id}' already visited")
                         continue
 
                 if self.state is not None:
@@ -402,9 +386,7 @@ class GraphTraverser:
         # Default: main output
         return "main"
 
-    def _default_executor(
-        self, action: Action, context: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _default_executor(self, action: Action, context: dict[str, Any]) -> dict[str, Any]:
         """
         Default action executor (for testing).
 
@@ -465,9 +447,7 @@ class GraphTraverser:
         # Continue execution from where we left off
         while self.state.has_pending():
             if not self.state.increment_iteration():
-                raise InfiniteLoopError(
-                    f"Iteration limit ({self.max_iterations}) exceeded"
-                )
+                raise InfiniteLoopError(f"Iteration limit ({self.max_iterations}) exceeded")
 
             pending = self.state.get_next_pending()
             if not pending:

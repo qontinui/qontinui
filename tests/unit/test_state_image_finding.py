@@ -115,9 +115,7 @@ class TestStateImageFinding:
         Expected: exists() returns True
         """
         # Create a mock match
-        mock_match = (
-            MatchBuilder().set_region_xywh(100, 200, 50, 30).set_sim_score(0.85).build()
-        )
+        mock_match = MatchBuilder().set_region_xywh(100, 200, 50, 30).set_sim_score(0.85).build()
 
         # Mock the find system to return matches
         with patch.object(state_image_with_image, "find") as mock_find:
@@ -129,9 +127,7 @@ class TestStateImageFinding:
             assert result is True
             mock_find.assert_called_once()
 
-    def test_state_image_exists_returns_false_when_not_found(
-        self, state_image_with_image
-    ):
+    def test_state_image_exists_returns_false_when_not_found(self, state_image_with_image):
         """Test StateImage.exists() returns False when image not found.
 
         Scenario: Image is not found on screen (mocked)
@@ -154,17 +150,11 @@ class TestStateImageFinding:
         Expected: find() returns Matches object containing all matches
         """
         # Create multiple mock matches
-        match1 = (
-            MatchBuilder().set_region_xywh(10, 20, 50, 30).set_sim_score(0.95).build()
-        )
+        match1 = MatchBuilder().set_region_xywh(10, 20, 50, 30).set_sim_score(0.95).build()
 
-        match2 = (
-            MatchBuilder().set_region_xywh(100, 200, 50, 30).set_sim_score(0.85).build()
-        )
+        match2 = MatchBuilder().set_region_xywh(100, 200, 50, 30).set_sim_score(0.85).build()
 
-        match3 = (
-            MatchBuilder().set_region_xywh(200, 300, 50, 30).set_sim_score(0.75).build()
-        )
+        match3 = MatchBuilder().set_region_xywh(200, 300, 50, 30).set_sim_score(0.75).build()
 
         expected_matches = [match1, match2, match3]
 
@@ -236,9 +226,7 @@ class TestStateImageFinding:
         Expected: Match objects work fine without state_object_data
         """
         # Create match without state_object_data
-        match = (
-            MatchBuilder().set_region_xywh(10, 20, 100, 50).set_sim_score(0.8).build()
-        )
+        match = MatchBuilder().set_region_xywh(10, 20, 100, 50).set_sim_score(0.8).build()
 
         assert match is not None
         assert match.score == 0.8
@@ -271,9 +259,7 @@ class TestStateImageFinding:
         Expected: Finding works without accessing real screen
         """
         # Create expected match
-        expected_match = (
-            MatchBuilder().set_region_xywh(50, 75, 100, 50).set_sim_score(0.88).build()
-        )
+        expected_match = MatchBuilder().set_region_xywh(50, 75, 100, 50).set_sim_score(0.88).build()
 
         # Mock at the FindImage level
         with patch("qontinui.model.state.state_image.FindImage") as MockFindImage:
@@ -300,9 +286,7 @@ class TestStateImageFinding:
         Expected: exists() delegates to find() and checks for matches
         """
         # Create a mock match
-        mock_match = (
-            MatchBuilder().set_region_xywh(10, 20, 30, 40).set_sim_score(0.9).build()
-        )
+        mock_match = MatchBuilder().set_region_xywh(10, 20, 30, 40).set_sim_score(0.9).build()
 
         with patch.object(state_image_with_image, "find") as mock_find:
             mock_matches = Matches([mock_match])
@@ -314,9 +298,7 @@ class TestStateImageFinding:
             mock_find.assert_called_once()
             assert result is True
 
-    def test_state_image_find_returns_empty_matches_when_none_found(
-        self, state_image_with_image
-    ):
+    def test_state_image_find_returns_empty_matches_when_none_found(self, state_image_with_image):
         """Test StateImage.find() returns empty Matches when nothing found.
 
         Scenario: No matches found on screen
@@ -369,9 +351,7 @@ class TestStateImageFinding:
         Expected: Returns True when matches exist, False otherwise
         """
         # Test with matches
-        match = (
-            MatchBuilder().set_region_xywh(10, 20, 30, 40).set_sim_score(0.8).build()
-        )
+        match = MatchBuilder().set_region_xywh(10, 20, 30, 40).set_sim_score(0.8).build()
         matches_with_results = Matches([match])
         assert matches_with_results.has_matches() is True
 
@@ -385,9 +365,7 @@ class TestStateImageFinding:
         Scenario: StateImage uses Pattern instead of Image
         Expected: Pattern is properly converted and used in finding
         """
-        expected_match = (
-            MatchBuilder().set_region_xywh(10, 20, 30, 40).set_sim_score(0.87).build()
-        )
+        expected_match = MatchBuilder().set_region_xywh(10, 20, 30, 40).set_sim_score(0.87).build()
 
         with patch("qontinui.model.state.state_image.FindImage") as MockFindImage:
             mock_finder = MagicMock()
@@ -408,9 +386,7 @@ class TestStateImageFinding:
         Scenario: exists() is called multiple times
         Expected: Each call performs independent find operation
         """
-        mock_match = (
-            MatchBuilder().set_region_xywh(10, 20, 30, 40).set_sim_score(0.9).build()
-        )
+        mock_match = MatchBuilder().set_region_xywh(10, 20, 30, 40).set_sim_score(0.9).build()
 
         with patch.object(state_image_with_image, "find") as mock_find:
             # First call returns match
@@ -437,9 +413,7 @@ class TestStateImageFinding:
         # Create a pattern directly
         import numpy as np
 
-        pattern_image = Image.from_numpy(
-            np.zeros((50, 100, 3), dtype=np.uint8), name="test"
-        )
+        pattern_image = Image.from_numpy(np.zeros((50, 100, 3), dtype=np.uint8), name="test")
 
         state_image = StateImage(image=pattern_image, name="test_state_image")
         state_image.set_similarity(0.88)

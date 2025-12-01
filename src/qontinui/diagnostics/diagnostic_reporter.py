@@ -84,9 +84,7 @@ class DiagnosticReporter:
             logger.info(f"Success Rate: {report['success_rate']:.1f}%")
 
             if "average_load_time_ms" in report:
-                logger.info(
-                    f"Average Load Time: {report['average_load_time_ms']:.2f}ms"
-                )
+                logger.info(f"Average Load Time: {report['average_load_time_ms']:.2f}ms")
                 logger.info(f"Min Load Time: {report['min_load_time_ms']:.2f}ms")
                 logger.info(f"Max Load Time: {report['max_load_time_ms']:.2f}ms")
 
@@ -142,9 +140,7 @@ class DiagnosticReporter:
             summary["issues"].append(f"{perf['failed_loads']} load failures")  # type: ignore[attr-defined]
 
         summary["overall_ok"] = (
-            summary["environment_ok"]
-            and summary["paths_ok"]
-            and summary["performance_ok"]
+            summary["environment_ok"] and summary["paths_ok"] and summary["performance_ok"]
         )
 
         return summary

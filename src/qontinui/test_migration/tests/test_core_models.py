@@ -168,9 +168,7 @@ class TestMigrationConfig:
 
     def test_migration_config_defaults(self):
         """Test migration configuration with defaults."""
-        config = MigrationConfig(
-            source_directories=[Path("src")], target_directory=Path("tests")
-        )
+        config = MigrationConfig(source_directories=[Path("src")], target_directory=Path("tests"))
 
         assert config.java_test_patterns == ["*Test.java", "*Tests.java"]
         assert config.exclude_patterns == []

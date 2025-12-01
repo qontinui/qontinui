@@ -102,9 +102,7 @@ class BaseDetectorTest(ABC):
         screenshot = generator.generate(
             width=800,
             height=600,
-            elements=[
-                ElementSpec("button", x=100, y=100, width=120, height=40, text="Submit")
-            ],
+            elements=[ElementSpec("button", x=100, y=100, width=120, height=40, text="Submit")],
         )
 
         if hasattr(detector, "detect"):
@@ -384,9 +382,7 @@ def assert_detection_confidence_valid(confidence: float):
     assert 0.0 <= confidence <= 1.0, f"Invalid confidence: {confidence}"
 
 
-def calculate_iou(
-    bbox1: tuple[int, int, int, int], bbox2: tuple[int, int, int, int]
-) -> float:
+def calculate_iou(bbox1: tuple[int, int, int, int], bbox2: tuple[int, int, int, int]) -> float:
     """
     Calculate Intersection over Union (IoU) between two bounding boxes.
 

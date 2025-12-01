@@ -132,9 +132,7 @@ class TypographyDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Perform typography-based detection"""
-        logger.info(
-            f"Running typography detection on {len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running typography detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -147,9 +145,7 @@ class TypographyDetector(BaseAnalyzer):
             elements = await self._analyze_screenshot(img, screenshot_idx, params)
             all_elements.extend(elements)
 
-        avg_confidence = (
-            np.mean([e.confidence for e in all_elements]) if all_elements else 0.0
-        )
+        avg_confidence = np.mean([e.confidence for e in all_elements]) if all_elements else 0.0
 
         logger.info(
             f"Found {len(all_elements)} button text regions with "
@@ -184,9 +180,7 @@ class TypographyDetector(BaseAnalyzer):
         # Detect text regions
         text_regions = self._detect_text_regions(img, params)
 
-        logger.info(
-            f"Screenshot {screenshot_idx}: Found {len(text_regions)} text regions"
-        )
+        logger.info(f"Screenshot {screenshot_idx}: Found {len(text_regions)} text regions")
 
         elements = []
         for text_bbox in text_regions:
@@ -231,9 +225,7 @@ class TypographyDetector(BaseAnalyzer):
 
         return elements
 
-    def _detect_text_regions(
-        self, img: np.ndarray, params: dict[str, Any]
-    ) -> list[BoundingBox]:
+    def _detect_text_regions(self, img: np.ndarray, params: dict[str, Any]) -> list[BoundingBox]:
         """
         Detect text regions in image
 
@@ -347,9 +339,7 @@ class TypographyDetector(BaseAnalyzer):
         avg_stroke_width = avg_distance * 2
 
         # Check if in valid range
-        if not (
-            params["min_stroke_width"] <= avg_stroke_width <= params["max_stroke_width"]
-        ):
+        if not (params["min_stroke_width"] <= avg_stroke_width <= params["max_stroke_width"]):
             return None
 
         # Bold if stroke width is above threshold
@@ -414,9 +404,7 @@ class TypographyDetector(BaseAnalyzer):
 
         return center_ratio >= 0.7
 
-    def _calculate_confidence(
-        self, features: dict[str, Any], params: dict[str, Any]
-    ) -> float:
+    def _calculate_confidence(self, features: dict[str, Any], params: dict[str, Any]) -> float:
         """
         Calculate confidence based on typography features
         """
@@ -484,13 +472,9 @@ class TypographyDetector(BaseAnalyzer):
                 w_expanded = min(img.shape[1] - x_expanded, w + 2 * expansion)
                 h_expanded = min(img.shape[0] - y_expanded, h + 2 * expansion)
 
-        return BoundingBox(
-            x=x_expanded, y=y_expanded, width=w_expanded, height=h_expanded
-        )
+        return BoundingBox(x=x_expanded, y=y_expanded, width=w_expanded, height=h_expanded)
 
-    def _validate_button(
-        self, img: np.ndarray, bbox: BoundingBox, params: dict[str, Any]
-    ) -> bool:
+    def _validate_button(self, img: np.ndarray, bbox: BoundingBox, params: dict[str, Any]) -> bool:
         """
         Validate that expanded region has button-like properties
         """

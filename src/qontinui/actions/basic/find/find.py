@@ -62,9 +62,7 @@ class Find(ActionInterface):
         """
         return ActionType.FIND
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the find operation to locate GUI elements on screen.
 
         This method serves as a facade, delegating the entire find process to the

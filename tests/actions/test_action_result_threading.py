@@ -88,9 +88,7 @@ class TestActionResultBuilderThreading:
 
         # Verify: all match values are unique (no duplicates)
         values = [m.value for m in result.matches]
-        assert len(values) == len(
-            set(values)
-        ), "Found duplicate matches (race condition)"
+        assert len(values) == len(set(values)), "Found duplicate matches (race condition)"
 
     def test_concurrent_defined_region_additions(self):
         """Test that adding defined regions concurrently is thread-safe.

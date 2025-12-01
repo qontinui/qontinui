@@ -86,9 +86,7 @@ class BaseStateBuilderTest(ABC):
             result = builder.construct_state(empty_elements)
 
         # Should return None or empty state
-        assert result is None or (
-            hasattr(result, "elements") and len(result.elements) == 0
-        )
+        assert result is None or (hasattr(result, "elements") and len(result.elements) == 0)
 
     def test_build_from_single_element(self, builder):
         """
@@ -216,9 +214,7 @@ class BaseStateValidatorTest:
             result = validator.is_valid(state)
 
         # Should pass validation
-        assert result is True or (
-            isinstance(result, dict) and result.get("valid", False)
-        )
+        assert result is True or (isinstance(result, dict) and result.get("valid", False))
 
     def test_validate_incomplete_state(self, validator):
         """Test validation of incomplete state."""
@@ -330,9 +326,7 @@ class StateOptimizationTest:
             for i in range(20)
         ]
 
-        state = MockState(
-            state_id="complex_state", name="Complex State", elements=elements
-        )
+        state = MockState(state_id="complex_state", name="Complex State", elements=elements)
 
         if hasattr(optimizer, "simplify"):
             simplified = optimizer.simplify(state)
@@ -535,9 +529,7 @@ def assert_state_well_formed(state: Any):
     assert hasattr(state, "state_id") or hasattr(state, "id"), "State must have ID"
 
     # Check for name
-    assert hasattr(state, "name") or hasattr(
-        state, "state_name"
-    ), "State must have name"
+    assert hasattr(state, "name") or hasattr(state, "state_name"), "State must have name"
 
     # Check for elements or regions (optional for some states)
     _ = (hasattr(state, "elements") and isinstance(state.elements, list)) or (
@@ -617,18 +609,14 @@ def merge_states(state1: Any, state2: Any) -> MockState:
 
     # Create merged state
     merged_id = f"{getattr(state1, 'state_id', 'state1')}__{getattr(state2, 'state_id', 'state2')}"
-    merged_name = (
-        f"{getattr(state1, 'name', 'State1')} + {getattr(state2, 'name', 'State2')}"
-    )
+    merged_name = f"{getattr(state1, 'name', 'State1')} + {getattr(state2, 'name', 'State2')}"
 
     return MockState(
         state_id=merged_id,
         name=merged_name,
         elements=elements,
         regions=regions,
-        confidence=min(
-            getattr(state1, "confidence", 1.0), getattr(state2, "confidence", 1.0)
-        ),
+        confidence=min(getattr(state1, "confidence", 1.0), getattr(state2, "confidence", 1.0)),
     )
 
 

@@ -55,9 +55,7 @@ class ExecutionHistory:
             # Calculate duration
             duration = 0
             if context.end_time:
-                duration = int(
-                    (context.end_time - context.start_time).total_seconds() * 1000
-                )
+                duration = int((context.end_time - context.start_time).total_seconds() * 1000)
 
             # Create record
             record = {

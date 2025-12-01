@@ -55,9 +55,7 @@ class BreakpointManager:
             raise ValueError("action_type is required for ACTION_TYPE breakpoint")
         if breakpoint_type in (BreakpointType.CONDITIONAL, BreakpointType.MATCH_COUNT):
             if not condition:
-                raise ValueError(
-                    f"condition is required for {breakpoint_type.value} breakpoint"
-                )
+                raise ValueError(f"condition is required for {breakpoint_type.value} breakpoint")
 
         bp_id = str(uuid.uuid4())
 
@@ -196,9 +194,7 @@ class BreakpointManager:
             self._breakpoints.clear()
             return count
 
-    def check_breakpoint(
-        self, context: dict[str, Any]
-    ) -> tuple[bool, list[Breakpoint]]:
+    def check_breakpoint(self, context: dict[str, Any]) -> tuple[bool, list[Breakpoint]]:
         """Check if any breakpoint should trigger for the given context.
 
         Args:

@@ -254,9 +254,7 @@ class Pattern(BaseModel):
         default=None, alias="imageId"
     )  # Reference to image in images array
     mask: str | None = None  # Optional mask data (None = match entire image)
-    search_regions: list[SearchRegion] = Field(
-        default_factory=list, alias="searchRegions"
-    )
+    search_regions: list[SearchRegion] = Field(default_factory=list, alias="searchRegions")
     fixed: bool = False
 
     model_config = {"populate_by_name": True}
@@ -315,9 +313,7 @@ class StateImage(BaseModel):
     required: bool = True
     shared: bool = False
     source: str = ""
-    search_regions: list[SearchRegion] = Field(
-        default_factory=list, alias="searchRegions"
-    )
+    search_regions: list[SearchRegion] = Field(default_factory=list, alias="searchRegions")
 
     model_config = {"populate_by_name": True}
 
@@ -470,13 +466,9 @@ class State(BaseModel):
     id: str
     name: str
     description: str = ""
-    identifying_images: list[StateImage] = Field(
-        default_factory=list, alias="stateImages"
-    )
+    identifying_images: list[StateImage] = Field(default_factory=list, alias="stateImages")
     state_regions: list[StateRegion] = Field(default_factory=list, alias="regions")
-    state_locations: list[StateLocation] = Field(
-        default_factory=list, alias="locations"
-    )
+    state_locations: list[StateLocation] = Field(default_factory=list, alias="locations")
     state_strings: list[StateString] = Field(default_factory=list, alias="strings")
     position: dict[str, int] = Field(default_factory=dict)
     is_initial: bool = Field(default=False, alias="isInitial")
@@ -748,9 +740,7 @@ class RecognitionSettings(BaseModel):
         :class:`ExecutionSettings`: Related execution configuration
     """
 
-    default_threshold: float = Field(
-        default=DEFAULT_SIMILARITY_THRESHOLD, alias="defaultThreshold"
-    )
+    default_threshold: float = Field(default=DEFAULT_SIMILARITY_THRESHOLD, alias="defaultThreshold")
     search_algorithm: str = Field(default="template_matching", alias="searchAlgorithm")
     multi_scale_search: bool = Field(default=True, alias="multiScaleSearch")
     color_space: str = Field(default="rgb", alias="colorSpace")
@@ -773,14 +763,10 @@ class QontinuiConfig(BaseModel):
     states: list[State] = Field(default_factory=list)
     categories: list[str] = Field(default_factory=list)
     execution_settings: ExecutionSettings = Field(default_factory=ExecutionSettings)
-    recognition_settings: RecognitionSettings = Field(
-        default_factory=RecognitionSettings
-    )
+    recognition_settings: RecognitionSettings = Field(default_factory=RecognitionSettings)
     schedules: list[Any] = Field(default_factory=list)  # List of ScheduleConfig objects
     transitions: list[
-        Annotated[
-            "OutgoingTransition | IncomingTransition", Field(discriminator="type")
-        ]
+        Annotated["OutgoingTransition | IncomingTransition", Field(discriminator="type")]
     ] = Field(default_factory=list)
     settings: dict[str, Any] = Field(default_factory=dict)
 
@@ -789,9 +775,7 @@ class QontinuiConfig(BaseModel):
     workflow_map: dict[str, Workflow] = Field(default_factory=dict)
     state_map: dict[str, State] = Field(default_factory=dict)
     image_map: dict[str, ImageAsset] = Field(default_factory=dict)
-    schedule_map: dict[str, Any] = Field(
-        default_factory=dict
-    )  # Schedule ID -> ScheduleConfig
+    schedule_map: dict[str, Any] = Field(default_factory=dict)  # Schedule ID -> ScheduleConfig
 
     model_config = {"populate_by_name": True, "arbitrary_types_allowed": True}
 

@@ -36,14 +36,10 @@ class StateTransitionsJointTable:
     activation_groups: dict[str, set[int]] = field(default_factory=dict)
 
     # Reverse mapping for group lookup
-    state_to_groups: dict[int, set[str]] = field(
-        default_factory=lambda: defaultdict(set)
-    )
+    state_to_groups: dict[int, set[str]] = field(default_factory=lambda: defaultdict(set))
 
     # Initial states by profile
-    initial_states: dict[str, set[int]] = field(
-        default_factory=lambda: defaultdict(set)
-    )
+    initial_states: dict[str, set[int]] = field(default_factory=lambda: defaultdict(set))
 
     # All registered states
     all_states: set[int] = field(default_factory=set)
@@ -92,9 +88,7 @@ class StateTransitionsJointTable:
         """
         return self.to_transitions.get(state_id, [])
 
-    def get_transitions_to_activate(
-        self, target_states: set[int]
-    ) -> list[StateTransition]:
+    def get_transitions_to_activate(self, target_states: set[int]) -> list[StateTransition]:
         """Find transitions that activate ALL target states.
 
         This is crucial for multi-state activation - we need transitions
@@ -141,9 +135,7 @@ class StateTransitionsJointTable:
 
         return transitions
 
-    def get_incoming_transitions(
-        self, states: set[int]
-    ) -> dict[int, list[StateTransition]]:
+    def get_incoming_transitions(self, states: set[int]) -> dict[int, list[StateTransition]]:
         """Get all incoming transitions for a set of states.
 
         This is used after activation to execute incoming transitions

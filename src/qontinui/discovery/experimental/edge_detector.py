@@ -69,9 +69,7 @@ class EdgeBasedDetector(BaseDetector):
             edges = cv2.dilate(edges, kernel, iterations=iterations)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Convert contours to bounding boxes
         boxes = []

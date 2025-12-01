@@ -22,7 +22,7 @@ from ..base import DetectedRegion, InteractionAction, RuntimeExtractor, StateCha
 if TYPE_CHECKING:
     from ...models.base import Screenshot
     from ...web.models import ExtractedState
-    from ..types import ExtractionTarget, RuntimeStateCapture, RuntimeExtractionSession
+    from ..types import ExtractionTarget, RuntimeExtractionSession, RuntimeStateCapture
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class PlaywrightExtractor(RuntimeExtractor):
         self._screenshot_counter = 0
         self._capture_counter = 0
         self.is_connected = False
-        self.session: "RuntimeExtractionSession | None" = None
+        self.session: RuntimeExtractionSession | None = None
 
     async def connect(self, target: "ExtractionTarget") -> None:
         """
@@ -195,9 +195,7 @@ class PlaywrightExtractor(RuntimeExtractor):
             # Add to session
             self.add_capture(capture)
 
-            logger.info(
-                f"Extracted state: {len(elements)} elements, {len(states)} states"
-            )
+            logger.info(f"Extracted state: {len(elements)} elements, {len(states)} states")
             return capture
 
         except Exception as e:
@@ -504,9 +502,7 @@ class PlaywrightExtractor(RuntimeExtractor):
             before_state_ids = {s.id for s in before_capture.states}
             after_state_ids = {s.id for s in after_capture.states}
 
-            appeared_states = [
-                s.id for s in after_capture.states if s.id not in before_state_ids
-            ]
+            appeared_states = [s.id for s in after_capture.states if s.id not in before_state_ids]
             disappeared_states = [
                 s.id for s in before_capture.states if s.id not in after_state_ids
             ]
@@ -521,14 +517,10 @@ class PlaywrightExtractor(RuntimeExtractor):
                 url_changed=(before_url != after_url),
                 new_url=after_url if before_url != after_url else None,
                 screenshot_before=(
-                    str(before_capture.screenshot_path)
-                    if before_capture.screenshot_path
-                    else None
+                    str(before_capture.screenshot_path) if before_capture.screenshot_path else None
                 ),
                 screenshot_after=(
-                    str(after_capture.screenshot_path)
-                    if after_capture.screenshot_path
-                    else None
+                    str(after_capture.screenshot_path) if after_capture.screenshot_path else None
                 ),
                 metadata={
                     "action": {

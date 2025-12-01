@@ -63,9 +63,7 @@ class ActionService:
 
         # Additional actions will be registered as they are implemented
 
-    def register(
-        self, config_type: type[ActionConfig], action_type: type[ActionInterface]
-    ) -> None:
+    def register(self, config_type: type[ActionConfig], action_type: type[ActionInterface]) -> None:
         """Register an action mapping.
 
         Args:
@@ -92,9 +90,7 @@ class ActionService:
         # Look up the action type in registry
         action_type = self._registry.get(config_type)
         if not action_type:
-            logger.warning(
-                f"No action registered for config type: {config_type.__name__}"
-            )
+            logger.warning(f"No action registered for config type: {config_type.__name__}")
             return None
 
         # Get or create action instance
@@ -102,18 +98,14 @@ class ActionService:
             try:
                 # Create instance with default dependencies
                 # In a real implementation, this would use dependency injection
-                self._action_instances[action_type] = self._create_action_instance(
-                    action_type
-                )
+                self._action_instances[action_type] = self._create_action_instance(action_type)
             except Exception as e:
                 logger.error(f"Failed to create action instance: {e}")
                 return None
 
         return self._action_instances[action_type]
 
-    def _create_action_instance(
-        self, action_type: type[ActionInterface]
-    ) -> ActionInterface:
+    def _create_action_instance(self, action_type: type[ActionInterface]) -> ActionInterface:
         """Create an action instance with dependencies.
 
         Args:

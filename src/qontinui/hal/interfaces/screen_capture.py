@@ -90,9 +90,7 @@ class IScreenCapture(ABC):
         pass
 
     @abstractmethod
-    def get_pixel_color(
-        self, x: int, y: int, monitor: int | None = None
-    ) -> tuple[int, int, int]:
+    def get_pixel_color(self, x: int, y: int, monitor: int | None = None) -> tuple[int, int, int]:
         """Get color of pixel at coordinates.
 
         Args:

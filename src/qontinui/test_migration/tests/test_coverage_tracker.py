@@ -70,9 +70,7 @@ class TestCoverageTracker:
 
         # Then register the Python test
         python_path = Path("/test/python/test_calculator.py")
-        self.tracker.register_python_test(
-            python_path, self.java_test_file.path, "TestCalculator"
-        )
+        self.tracker.register_python_test(python_path, self.java_test_file.path, "TestCalculator")
 
         mapping_key = str(self.java_test_file.path.resolve())
         mapping = self.tracker.test_mappings[mapping_key]
@@ -114,9 +112,7 @@ class TestCoverageTracker:
         assert mapping.migration_notes == "Starting migration"
 
         # Update to completed
-        self.tracker.update_migration_status(
-            self.java_test_file.path, MigrationStatus.COMPLETED
-        )
+        self.tracker.update_migration_status(self.java_test_file.path, MigrationStatus.COMPLETED)
 
         assert mapping.migration_status == MigrationStatus.COMPLETED
         assert mapping.migration_date is not None
@@ -126,9 +122,7 @@ class TestCoverageTracker:
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
 
         # Add method mappings
-        self.tracker.add_method_mapping(
-            self.java_test_file.path, "testAddition", "test_addition"
-        )
+        self.tracker.add_method_mapping(self.java_test_file.path, "testAddition", "test_addition")
         self.tracker.add_method_mapping(
             self.java_test_file.path, "testSubtraction", "test_subtraction"
         )
@@ -179,15 +173,11 @@ class TestCoverageTracker:
         """Test coverage metrics calculation."""
         # Register Java tests
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
-        self.tracker.register_java_test(
-            self.integration_test_file, TestCategory.INTEGRATION_BASIC
-        )
+        self.tracker.register_java_test(self.integration_test_file, TestCategory.INTEGRATION_BASIC)
 
         # Migrate one test
         python_path = Path("/test/python/test_calculator.py")
-        self.tracker.register_python_test(
-            python_path, self.java_test_file.path, "TestCalculator"
-        )
+        self.tracker.register_python_test(python_path, self.java_test_file.path, "TestCalculator")
 
         # Add method mappings
         self.tracker.add_method_mapping(self.java_test_file.path, "testAdd", "test_add")
@@ -207,9 +197,7 @@ class TestCoverageTracker:
         """Test category breakdown calculation."""
         # Register tests in different categories
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
-        self.tracker.register_java_test(
-            self.integration_test_file, TestCategory.INTEGRATION_SPRING
-        )
+        self.tracker.register_java_test(self.integration_test_file, TestCategory.INTEGRATION_SPRING)
 
         breakdown = self.tracker.get_category_breakdown()
 
@@ -221,13 +209,9 @@ class TestCoverageTracker:
         """Test status breakdown calculation."""
         # Register tests with different statuses
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
-        self.tracker.update_migration_status(
-            self.java_test_file.path, MigrationStatus.COMPLETED
-        )
+        self.tracker.update_migration_status(self.java_test_file.path, MigrationStatus.COMPLETED)
 
-        self.tracker.register_java_test(
-            self.integration_test_file, TestCategory.INTEGRATION_BASIC
-        )
+        self.tracker.register_java_test(self.integration_test_file, TestCategory.INTEGRATION_BASIC)
         self.tracker.update_migration_status(
             self.integration_test_file.path, MigrationStatus.FAILED
         )
@@ -243,9 +227,7 @@ class TestCoverageTracker:
         # Register and migrate a test
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
         python_path = Path("/test/python/test_calculator.py")
-        self.tracker.register_python_test(
-            python_path, self.java_test_file.path, "TestCalculator"
-        )
+        self.tracker.register_python_test(python_path, self.java_test_file.path, "TestCalculator")
 
         recent = self.tracker.get_recent_migrations(limit=5)
 
@@ -260,14 +242,10 @@ class TestCoverageTracker:
 
         # Failed migration
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
-        self.tracker.update_migration_status(
-            self.java_test_file.path, MigrationStatus.FAILED
-        )
+        self.tracker.update_migration_status(self.java_test_file.path, MigrationStatus.FAILED)
 
         # Incomplete method mapping
-        self.tracker.register_java_test(
-            self.integration_test_file, TestCategory.INTEGRATION_BASIC
-        )
+        self.tracker.register_java_test(self.integration_test_file, TestCategory.INTEGRATION_BASIC)
         self.tracker.update_migration_status(
             self.integration_test_file.path, MigrationStatus.COMPLETED
         )
@@ -301,9 +279,7 @@ class TestCoverageTracker:
                 test_type=TestType.UNIT,
                 class_name=f"Test{i}",
             )
-            self.tracker.update_migration_status(
-                test_file.path, MigrationStatus.COMPLETED
-            )
+            self.tracker.update_migration_status(test_file.path, MigrationStatus.COMPLETED)
 
         recommendations = self.tracker.generate_recommendations()
 
@@ -315,9 +291,7 @@ class TestCoverageTracker:
         # Set up test scenario
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
         python_path = Path("/test/python/test_calculator.py")
-        self.tracker.register_python_test(
-            python_path, self.java_test_file.path, "TestCalculator"
-        )
+        self.tracker.register_python_test(python_path, self.java_test_file.path, "TestCalculator")
 
         summary = self.tracker.generate_migration_summary()
 
@@ -336,9 +310,7 @@ class TestCoverageTracker:
         # Set up test data
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
         python_path = Path("/test/python/test_calculator.py")
-        self.tracker.register_python_test(
-            python_path, self.java_test_file.path, "TestCalculator"
-        )
+        self.tracker.register_python_test(python_path, self.java_test_file.path, "TestCalculator")
         self.tracker.add_method_mapping(self.java_test_file.path, "testAdd", "test_add")
 
         with TemporaryDirectory() as temp_dir:
@@ -363,9 +335,7 @@ class TestCoverageTracker:
         """Test exporting progress report to JSON."""
         # Set up test data
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
-        self.tracker.update_migration_status(
-            self.java_test_file.path, MigrationStatus.COMPLETED
-        )
+        self.tracker.update_migration_status(self.java_test_file.path, MigrationStatus.COMPLETED)
 
         with TemporaryDirectory() as temp_dir:
             output_path = Path(temp_dir) / "progress.json"
@@ -441,13 +411,9 @@ class TestCoverageTracker:
         """Test getting list of unmigrated tests."""
         # Register tests with different statuses
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
-        self.tracker.update_migration_status(
-            self.java_test_file.path, MigrationStatus.COMPLETED
-        )
+        self.tracker.update_migration_status(self.java_test_file.path, MigrationStatus.COMPLETED)
 
-        self.tracker.register_java_test(
-            self.integration_test_file, TestCategory.INTEGRATION_BASIC
-        )
+        self.tracker.register_java_test(self.integration_test_file, TestCategory.INTEGRATION_BASIC)
         # Leave as NOT_STARTED
 
         unmigrated = self.tracker.get_unmigrated_tests()
@@ -460,9 +426,7 @@ class TestCoverageTracker:
         """Test getting detailed migration statistics."""
         # Set up test scenario
         self.tracker.register_java_test(self.java_test_file, TestCategory.UNIT_SIMPLE)
-        self.tracker.update_migration_status(
-            self.java_test_file.path, MigrationStatus.COMPLETED
-        )
+        self.tracker.update_migration_status(self.java_test_file.path, MigrationStatus.COMPLETED)
         self.tracker.add_method_mapping(self.java_test_file.path, "testAdd", "test_add")
 
         stats = self.tracker.get_migration_statistics()

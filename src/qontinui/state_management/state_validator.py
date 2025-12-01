@@ -96,10 +96,7 @@ class StateValidator:
         """
         available = []
         for transition in self.config.transitions:
-            if (
-                hasattr(transition, "from_state")
-                and transition.from_state in active_states
-            ):
+            if hasattr(transition, "from_state") and transition.from_state in active_states:
                 available.append(transition)
             elif hasattr(transition, "from_states") and any(
                 s in active_states for s in transition.from_states

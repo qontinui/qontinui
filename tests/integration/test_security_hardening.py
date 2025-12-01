@@ -318,8 +318,7 @@ class TestSecurityDocumentation:
         # Should mention security
         doc_lower = SafeEvaluator.__doc__.lower()
         assert any(
-            keyword in doc_lower
-            for keyword in ["safe", "security", "restrict", "sandbox"]
+            keyword in doc_lower for keyword in ["safe", "security", "restrict", "sandbox"]
         ), "SafeEvaluator should document its security features"
 
     def test_security_constraints_documented(self):
@@ -331,8 +330,7 @@ class TestSecurityDocumentation:
         # Should document restrictions or safety
         doc_lower = doc.lower()
         assert any(
-            keyword in doc_lower
-            for keyword in ["safe", "restrict", "allow", "block", "whitelist"]
+            keyword in doc_lower for keyword in ["safe", "restrict", "allow", "block", "whitelist"]
         ), "safe_eval should document security constraints"
 
 

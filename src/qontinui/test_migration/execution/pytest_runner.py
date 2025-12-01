@@ -119,9 +119,7 @@ class PytestRunner(TestRunner):
                 capture_output=True,
                 text=True,
                 cwd=test_file.parent,
-                timeout=self.test_config.get(
-                    "timeout", 300
-                ),  # 5 minute default timeout
+                timeout=self.test_config.get("timeout", 300),  # 5 minute default timeout
             )
 
             execution_time = time.time() - start_time
@@ -207,17 +205,13 @@ class PytestRunner(TestRunner):
                 capture_output=True,
                 text=True,
                 cwd=test_directory,
-                timeout=self.test_config.get(
-                    "suite_timeout", 1800
-                ),  # 30 minute default
+                timeout=self.test_config.get("suite_timeout", 1800),  # 30 minute default
             )
 
             execution_time = time.time() - start_time
 
             # Parse suite results
-            return self._parse_suite_results(
-                test_directory, result, execution_time, test_files
-            )
+            return self._parse_suite_results(test_directory, result, execution_time, test_files)
 
         except subprocess.TimeoutExpired:
             execution_time = time.time() - start_time
@@ -265,9 +259,7 @@ class PytestRunner(TestRunner):
                 ],
             )
 
-    def run_specific_tests(
-        self, test_patterns: list[str], base_directory: Path
-    ) -> TestResults:
+    def run_specific_tests(self, test_patterns: list[str], base_directory: Path) -> TestResults:
         """
         Run specific tests matching the given patterns.
 
@@ -374,9 +366,7 @@ class PytestRunner(TestRunner):
         output = subprocess_result.stdout + subprocess_result.stderr
 
         # Parse pytest output for test counts
-        total_tests, passed_tests, failed_tests, skipped_tests = (
-            self._parse_test_counts(output)
-        )
+        total_tests, passed_tests, failed_tests, skipped_tests = self._parse_test_counts(output)
 
         # Create individual results from output
         individual_results = self._parse_individual_results(output, test_files)
@@ -417,9 +407,7 @@ class PytestRunner(TestRunner):
         total = passed + failed + skipped
         return total, passed, failed, skipped
 
-    def _parse_individual_results(
-        self, output: str, test_files: list[Path]
-    ) -> list[TestResult]:
+    def _parse_individual_results(self, output: str, test_files: list[Path]) -> list[TestResult]:
         """Parse individual test results from pytest output."""
         results = []
 
@@ -538,9 +526,7 @@ class PytestRunner(TestRunner):
                 timeout=10,
             )
             if result.returncode != 0:
-                errors.append(
-                    f"Python executable not working: {self.python_executable}"
-                )
+                errors.append(f"Python executable not working: {self.python_executable}")
         except (OSError, RuntimeError) as e:
             # OSError: Process execution failures
             # RuntimeError: Unexpected execution errors

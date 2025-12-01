@@ -284,9 +284,7 @@ class FindExecutor:
                 result = filter_instance.filter(result)
             except ValueError as e:
                 # Re-raise validation errors from filters
-                raise ValueError(
-                    f"Filter {type(filter_instance).__name__} failed: {e}"
-                ) from e
+                raise ValueError(f"Filter {type(filter_instance).__name__} failed: {e}") from e
             except Exception as e:
                 # Wrap unexpected errors
                 raise RuntimeError(

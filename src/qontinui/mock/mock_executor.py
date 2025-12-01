@@ -138,9 +138,7 @@ class MockExecutor:
         result.success_rate = successful_count / total_count if total_count > 0 else 0.0
         result.success = result.success_rate == 1.0
 
-        logger.info(
-            f"Mock execution complete: {successful_count}/{total_count} actions succeeded"
-        )
+        logger.info(f"Mock execution complete: {successful_count}/{total_count} actions succeeded")
         logger.info(f"Final states: {result.final_states}")
 
         return result
@@ -180,17 +178,11 @@ class MockExecutor:
 
         # Create visualization based on action type
         if action_type in ["FIND", "FIND_ALL"]:
-            return self._create_find_visualization(
-                action_spec, action_record, screenshot_path
-            )
+            return self._create_find_visualization(action_spec, action_record, screenshot_path)
         elif action_type == "CLICK":
-            return self._create_click_visualization(
-                action_spec, action_record, screenshot_path
-            )
+            return self._create_click_visualization(action_spec, action_record, screenshot_path)
         elif action_type == "TYPE":
-            return self._create_type_visualization(
-                action_spec, action_record, screenshot_path
-            )
+            return self._create_type_visualization(action_spec, action_record, screenshot_path)
         else:
             # Generic action
             return ActionVisualization(
@@ -212,11 +204,7 @@ class MockExecutor:
             # Extract match regions from Match objects
             matches = []
             for match in action_record.match_list:
-                region = (
-                    match.target.region
-                    if match.target and match.target.region
-                    else None
-                )
+                region = match.target.region if match.target and match.target.region else None
                 if region:
                     matches.append(
                         {
@@ -262,9 +250,7 @@ class MockExecutor:
         action_location = None
         if action_record and action_record.match_list:
             match = action_record.match_list[0]
-            region = (
-                match.target.region if match.target and match.target.region else None
-            )
+            region = match.target.region if match.target and match.target.region else None
             if region:
                 # Click at center of match region
                 action_location = (
@@ -297,9 +283,7 @@ class MockExecutor:
         action_location = None
         if action_record and action_record.match_list:
             match = action_record.match_list[0]
-            region = (
-                match.target.region if match.target and match.target.region else None
-            )
+            region = match.target.region if match.target and match.target.region else None
             if region:
                 action_location = (region.x, region.y)
 

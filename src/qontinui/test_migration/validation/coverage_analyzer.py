@@ -18,9 +18,7 @@ from .coverage_stats import CoverageStats
 class CoverageAnalyzer:
     """Analyzes coverage data and generates insights."""
 
-    def __init__(
-        self, test_mappings: dict[str, TestMapping], stats: CoverageStats
-    ) -> None:
+    def __init__(self, test_mappings: dict[str, TestMapping], stats: CoverageStats) -> None:
         """
         Initialize the analyzer.
 
@@ -84,42 +82,28 @@ class CoverageAnalyzer:
 
         # Progress-based recommendations
         if progress.completion_percentage < 25:
-            recommendations.append(
-                "Consider prioritizing simple unit tests for initial migration"
-            )
+            recommendations.append("Consider prioritizing simple unit tests for initial migration")
         elif progress.completion_percentage < 75:
-            recommendations.append(
-                "Focus on integration tests and complex mock scenarios"
-            )
+            recommendations.append("Focus on integration tests and complex mock scenarios")
         else:
-            recommendations.append(
-                "Review failed migrations and complete remaining edge cases"
-            )
+            recommendations.append("Review failed migrations and complete remaining edge cases")
 
         # Issue-based recommendations
         if issues["failed_migrations"] > 5:
-            recommendations.append(
-                "Investigate common failure patterns in migration process"
-            )
+            recommendations.append("Investigate common failure patterns in migration process")
 
         if issues["incomplete_method_mapping"] > 0:
-            recommendations.append(
-                "Complete method-level mapping for better traceability"
-            )
+            recommendations.append("Complete method-level mapping for better traceability")
 
         if issues["orphaned_python_tests"] > 0:
-            recommendations.append(
-                "Review orphaned Python tests for proper Java test association"
-            )
+            recommendations.append("Review orphaned Python tests for proper Java test association")
 
         if progress.success_rate < 80:
             recommendations.append("Consider improving migration tooling or process")
 
         return recommendations
 
-    def generate_migration_summary(
-        self, recent_migrations: list[TestMapping]
-    ) -> MigrationSummary:
+    def generate_migration_summary(self, recent_migrations: list[TestMapping]) -> MigrationSummary:
         """
         Generate comprehensive migration summary.
 

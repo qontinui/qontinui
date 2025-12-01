@@ -64,9 +64,7 @@ class TransitionVerifier:
             )
 
             if not trigger_element:
-                logger.warning(
-                    f"Could not find trigger element for transition: {transition.id}"
-                )
+                logger.warning(f"Could not find trigger element for transition: {transition.id}")
                 return VerifiedTransition(
                     id=f"verified_{transition.id}",
                     inferred=transition.id,
@@ -141,9 +139,7 @@ class TransitionVerifier:
             )
 
         except Exception as e:
-            logger.error(
-                f"Error verifying transition {transition.id}: {e}", exc_info=True
-            )
+            logger.error(f"Error verifying transition {transition.id}: {e}", exc_info=True)
             execution_time = (time.time() - start_time) * 1000
             return VerifiedTransition(
                 id=f"verified_{transition.id}",
@@ -197,9 +193,7 @@ class TransitionVerifier:
         # Check for expected appears that didn't happen
         for expected_id in expected_appear:
             # Try partial matching since IDs might not match exactly
-            found = any(
-                expected_id.lower() in actual_id.lower() for actual_id in actual_appear
-            )
+            found = any(expected_id.lower() in actual_id.lower() for actual_id in actual_appear)
             if not found:
                 discrepancies.append(
                     VerificationDiscrepancy(
@@ -212,10 +206,7 @@ class TransitionVerifier:
 
         # Check for expected disappears that didn't happen
         for expected_id in expected_disappear:
-            found = any(
-                expected_id.lower() in actual_id.lower()
-                for actual_id in actual_disappear
-            )
+            found = any(expected_id.lower() in actual_id.lower() for actual_id in actual_disappear)
             if not found:
                 discrepancies.append(
                     VerificationDiscrepancy(
@@ -228,9 +219,7 @@ class TransitionVerifier:
 
         # Check for unexpected appears
         for actual_id in actual_appear:
-            found = any(
-                expected.lower() in actual_id.lower() for expected in expected_appear
-            )
+            found = any(expected.lower() in actual_id.lower() for expected in expected_appear)
             if not found and expected_appear:  # Only flag if we had expectations
                 discrepancies.append(
                     VerificationDiscrepancy(
@@ -243,9 +232,7 @@ class TransitionVerifier:
 
         # Check for unexpected disappears
         for actual_id in actual_disappear:
-            found = any(
-                expected.lower() in actual_id.lower() for expected in expected_disappear
-            )
+            found = any(expected.lower() in actual_id.lower() for expected in expected_disappear)
             if not found and expected_disappear:  # Only flag if we had expectations
                 discrepancies.append(
                     VerificationDiscrepancy(
@@ -306,9 +293,7 @@ class TransitionVerifier:
 
         return None
 
-    async def _execute_interaction(
-        self, element: ExtractedElement, event_type: str
-    ) -> None:
+    async def _execute_interaction(self, element: ExtractedElement, event_type: str) -> None:
         """Execute an interaction on an element.
 
         Args:
@@ -320,9 +305,7 @@ class TransitionVerifier:
 
         # Note: This is a placeholder - the actual implementation would use
         # the extractor's simulate_interaction method with proper action objects
-        logger.info(
-            f"Executing {event_type} on element {element.id} ({element.selector})"
-        )
+        logger.info(f"Executing {event_type} on element {element.id} ({element.selector})")
 
         # In a real implementation, this would be:
         # await self.extractor.simulate_interaction(

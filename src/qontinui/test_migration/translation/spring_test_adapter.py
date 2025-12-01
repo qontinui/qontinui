@@ -90,11 +90,7 @@ class SpringTestAdapter:
             self._process_annotation(annotation, spring_config, "class")
 
         # Process method-level annotations
-        for method in (
-            test_file.test_methods
-            + test_file.setup_methods
-            + test_file.teardown_methods
-        ):
+        for method in test_file.test_methods + test_file.setup_methods + test_file.teardown_methods:
             for annotation in method.annotations:
                 self._process_annotation(annotation, spring_config, "method", method)
 
@@ -158,9 +154,7 @@ class SpringTestAdapter:
 
         return setup_lines
 
-    def create_dependency_injection_setup(
-        self, test_file: TestFile
-    ) -> dict[str, list[str]]:
+    def create_dependency_injection_setup(self, test_file: TestFile) -> dict[str, list[str]]:
         """
         Create Python dependency injection patterns from Spring's @Autowired and similar.
 
@@ -206,9 +200,7 @@ class SpringTestAdapter:
             handler = self._spring_annotation_mappings[annotation_name]
             handler(annotation, config, scope, method)
 
-    def _process_field_annotation(
-        self, annotation: str, field_name: str, config: dict[str, Any]
-    ):
+    def _process_field_annotation(self, annotation: str, field_name: str, config: dict[str, Any]):
         """Process field-level annotations like @Autowired, @MockBean."""
         annotation_name = annotation.split("(")[0].strip()
 
@@ -242,9 +234,7 @@ class SpringTestAdapter:
         config["imports"].add("from unittest.mock import Mock, patch")
 
         # Extract configuration from annotation
-        web_environment = self._extract_annotation_parameter(
-            annotation, "webEnvironment"
-        )
+        web_environment = self._extract_annotation_parameter(annotation, "webEnvironment")
         classes = self._extract_annotation_parameter(annotation, "classes")
         properties = self._extract_annotation_parameter(annotation, "properties")
 
@@ -261,9 +251,7 @@ class SpringTestAdapter:
 
         if properties:
             setup_code.append(f"# Test properties: {properties}")
-            config["environment_setup"].extend(
-                self._convert_properties_to_env_vars(properties)
-            )
+            config["environment_setup"].extend(self._convert_properties_to_env_vars(properties))
 
         config["setup_code"].extend(setup_code)
 
@@ -334,9 +322,7 @@ class SpringTestAdapter:
             property_name = self._extract_property_name(value_expression)
             if property_name:
                 env_var = property_name.upper().replace(".", "_")
-                config["environment_setup"].append(
-                    f"os.environ['{env_var}'] = 'test_value'"
-                )
+                config["environment_setup"].append(f"os.environ['{env_var}'] = 'test_value'")
 
     def _handle_test_property_source(
         self,
@@ -352,9 +338,7 @@ class SpringTestAdapter:
         properties = self._extract_annotation_parameter(annotation, "properties")
 
         if properties:
-            config["environment_setup"].extend(
-                self._convert_properties_to_env_vars(properties)
-            )
+            config["environment_setup"].extend(self._convert_properties_to_env_vars(properties))
 
     def _handle_active_profiles(
         self,
@@ -371,9 +355,7 @@ class SpringTestAdapter:
         ) or self._extract_annotation_parameter(annotation, "value")
 
         if profiles:
-            config["environment_setup"].append(
-                f"os.environ['ACTIVE_PROFILES'] = '{profiles}'"
-            )
+            config["environment_setup"].append(f"os.environ['ACTIVE_PROFILES'] = '{profiles}'")
 
     def _handle_dirties_context(
         self,
@@ -527,9 +509,7 @@ class SpringTestAdapter:
         # For now, return empty dict as placeholder
         return {}
 
-    def _extract_annotation_parameter(
-        self, annotation: str, parameter_name: str
-    ) -> str | None:
+    def _extract_annotation_parameter(self, annotation: str, parameter_name: str) -> str | None:
         """Extract a parameter value from an annotation."""
         # Pattern to match parameter=value in annotation
         pattern = rf"{parameter_name}\s*=\s*([^,)]+)"
@@ -581,9 +561,7 @@ class SpringTestAdapter:
             "# Use pytest fixture or dependency injection container",
         ]
 
-    def _convert_constructor_injection(
-        self, constructor_info: dict[str, Any]
-    ) -> list[str]:
+    def _convert_constructor_injection(self, constructor_info: dict[str, Any]) -> list[str]:
         """Convert constructor injection to Python equivalent."""
         return [
             "# Constructor injection",

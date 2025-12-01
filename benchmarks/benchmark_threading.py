@@ -77,9 +77,7 @@ def benchmark_lock_overhead(num_operations: int = 100000) -> dict[str, Any]:
     # Calculate overhead
     overhead = with_lock_time - no_lock_time
     overhead_percent = (overhead / no_lock_time) * 100 if no_lock_time > 0 else 0
-    overhead_per_op = (
-        (overhead / num_operations) * 1000 if num_operations > 0 else 0
-    )  # ms
+    overhead_per_op = (overhead / num_operations) * 1000 if num_operations > 0 else 0  # ms
 
     # Determine grade
     if overhead_percent <= 10:
@@ -105,9 +103,7 @@ def benchmark_lock_overhead(num_operations: int = 100000) -> dict[str, Any]:
     # Print results
     print(f"Without lock:        {results['no_lock_time_ms']:.1f} ms")
     print(f"With lock:           {results['with_lock_time_ms']:.1f} ms")
-    print(
-        f"Overhead:            {results['overhead_ms']:.1f} ms ({overhead_percent:.1f}%)"
-    )
+    print(f"Overhead:            {results['overhead_ms']:.1f} ms ({overhead_percent:.1f}%)")
     print(f"Overhead/operation:  {results['overhead_per_op_us']:.3f} us")
     print(f"Grade:               {grade}")
 
@@ -188,12 +184,8 @@ def benchmark_lock_contention(
     # Print results
     print(f"Baseline time:       {results['baseline_time_ms']:.1f} ms")
     print(f"Threaded time:       {results['threaded_time_ms']:.1f} ms")
-    print(
-        f"Overhead:            {results['overhead_ms']:.1f} ms ({overhead_percent:.1f}%)"
-    )
-    print(
-        f"Correctness:         {'PASS' if correct else 'FAIL'} ({actual_count}/{expected_count})"
-    )
+    print(f"Overhead:            {results['overhead_ms']:.1f} ms ({overhead_percent:.1f}%)")
+    print(f"Correctness:         {'PASS' if correct else 'FAIL'} ({actual_count}/{expected_count})")
     print(f"Grade:               {grade}")
 
     return results
@@ -350,9 +342,7 @@ def run_all_benchmarks() -> list[dict[str, Any]]:
                 else "lock_overhead"
             )
             print(
-                f"{test_name:<30} "
-                f"{result['overhead_percent']:<15.1f} "
-                f"{result['grade']:<15}"
+                f"{test_name:<30} " f"{result['overhead_percent']:<15.1f} " f"{result['grade']:<15}"
             )
 
     return results

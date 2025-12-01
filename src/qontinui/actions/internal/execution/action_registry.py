@@ -362,9 +362,7 @@ class ActionRegistry:
 
         return matches
 
-    def register_factory(
-        self, name: str, factory: Callable[..., ActionInterface]
-    ) -> None:
+    def register_factory(self, name: str, factory: Callable[..., ActionInterface]) -> None:
         """Register a factory function for an action.
 
         Args:

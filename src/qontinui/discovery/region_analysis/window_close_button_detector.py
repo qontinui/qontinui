@@ -98,9 +98,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -129,9 +127,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         # Method 1: Template matching with X patterns
         for size in range(self.min_button_size, self.max_button_size + 1, 4):
             template = self._create_x_template(size)
-            buttons = self._template_match(
-                search_region, template, size, search_left, 0
-            )
+            buttons = self._template_match(search_region, template, size, search_left, 0)
             detected_buttons.extend(buttons)
 
         # Method 2: Look for small square regions with diagonal lines
@@ -179,10 +175,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
         offset_y: int,
     ) -> list[tuple]:
         """Perform template matching."""
-        if (
-            search_region.shape[0] < template.shape[0]
-            or search_region.shape[1] < template.shape[1]
-        ):
+        if search_region.shape[0] < template.shape[0] or search_region.shape[1] < template.shape[1]:
             return []
 
         result = cv2.matchTemplate(search_region, template, cv2.TM_CCOEFF_NORMED)
@@ -252,9 +245,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
                         if abs(w - h) < w * 0.3:
                             x = min_x + offset_x
                             y = min_y + offset_y
-                            confidence = (
-                                0.6  # Moderate confidence for geometric detection
-                            )
+                            confidence = 0.6  # Moderate confidence for geometric detection
 
                             buttons.append((x, y, w, h, confidence, "geometric_x"))
 

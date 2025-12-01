@@ -103,9 +103,7 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         # Debug: Check if transitions were actually added to states
         logger.debug("Checking states after transition loading:")
         for state in _state_service.get_all_states():
-            logger.debug(
-                f"State '{state.name}' has {len(state.transitions)} transitions"
-            )
+            logger.debug(f"State '{state.name}' has {len(state.transitions)} transitions")
 
         # Step 4: Initialize StateMemory with populated StateService
         _state_memory = StateMemory(state_service=_state_service)  # type: ignore[arg-type]
@@ -159,24 +157,18 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         for state in _state_service.get_all_states():
             if state.transitions:
                 states_with_transitions += 1
-                logger.info(
-                    f"State '{state.name}' has {len(state.transitions)} transitions"
-                )
+                logger.info(f"State '{state.name}' has {len(state.transitions)} transitions")
             for transition in state.transitions:
                 logger.info(f"Registering transition: {transition.id} from state '{state.name}'")  # type: ignore[attr-defined]
                 _navigator.multistate_adapter.register_qontinui_transition(transition)  # type: ignore[arg-type]
                 transition_count += 1
 
         logger.info(f"Found {states_with_transitions} states with transitions")
-        logger.info(
-            f"Registered {transition_count} total transitions with multistate adapter"
-        )
+        logger.info(f"Registered {transition_count} total transitions with multistate adapter")
 
         _initialized = True
 
-        logger.info(
-            f"Navigation system initialized successfully with {state_count} states"
-        )
+        logger.info(f"Navigation system initialized successfully with {state_count} states")
         return True
 
     except Exception as e:
@@ -198,9 +190,7 @@ def open_state(state_name: str) -> bool:
         True if navigation succeeded, False otherwise
     """
     if not _initialized:
-        logger.error(
-            "Navigation system not initialized - call load_configuration() first"
-        )
+        logger.error("Navigation system not initialized - call load_configuration() first")
         return False
 
     if not _navigator:
@@ -247,9 +237,7 @@ def open_states(state_identifiers: list[str | int]) -> bool:
         True if navigation succeeded and ALL target states were reached, False otherwise
     """
     if not _initialized:
-        logger.error(
-            "Navigation system not initialized - call load_configuration() first"
-        )
+        logger.error("Navigation system not initialized - call load_configuration() first")
         return False
 
     if not _navigator:
@@ -394,14 +382,10 @@ def reset_to_initial_state() -> bool:
         for state in _state_service.get_all_states():
             if state.is_initial and state.id is not None:
                 _state_memory.add_active_state(state.id)
-                logger.debug(
-                    f"Re-activated initial state: {state.name} (ID: {state.id})"
-                )
+                logger.debug(f"Re-activated initial state: {state.name} (ID: {state.id})")
                 initial_state_count += 1
 
-        logger.info(
-            f"Reset complete - activated {initial_state_count} initial state(s)"
-        )
+        logger.info(f"Reset complete - activated {initial_state_count} initial state(s)")
         return True
 
     except Exception as e:

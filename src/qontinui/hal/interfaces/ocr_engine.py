@@ -43,9 +43,7 @@ class IOCREngine(ABC):
     """Interface for OCR operations."""
 
     @abstractmethod
-    def extract_text(
-        self, image: Image.Image, languages: list[str] | None = None
-    ) -> str:
+    def extract_text(self, image: Image.Image, languages: list[str] | None = None) -> str:
         """Extract all text from image.
 
         Args:

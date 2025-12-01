@@ -181,9 +181,7 @@ class TestNestedVariables:
 
     def test_get_nested_variable(self):
         """Test getting nested variable with dot notation."""
-        variables = {
-            "user": {"name": "alice", "address": {"city": "NYC", "zip": "10001"}}
-        }
+        variables = {"user": {"name": "alice", "address": {"city": "NYC", "zip": "10001"}}}
 
         assert get_nested_variable(variables, "user.name") == "alice"
         assert get_nested_variable(variables, "user.address.city") == "NYC"
@@ -210,10 +208,7 @@ class TestNestedVariables:
         """Test setting nested variable without creating missing paths."""
         variables = {}
 
-        assert (
-            set_nested_variable(variables, "user.name", "alice", create_missing=False)
-            is False
-        )
+        assert set_nested_variable(variables, "user.name", "alice", create_missing=False) is False
         assert variables == {}
 
 
@@ -349,13 +344,9 @@ class TestSnapshot:
         original_workflow = {"b": 2}
         original_global = {"c": 3}
 
-        snapshot = create_variable_snapshot(
-            original_exec, original_workflow, original_global
-        )
+        snapshot = create_variable_snapshot(original_exec, original_workflow, original_global)
 
-        restored_exec, restored_workflow, restored_global = restore_variable_snapshot(
-            snapshot
-        )
+        restored_exec, restored_workflow, restored_global = restore_variable_snapshot(snapshot)
 
         assert restored_exec == original_exec
         assert restored_workflow == original_workflow

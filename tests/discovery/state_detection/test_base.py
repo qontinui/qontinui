@@ -195,12 +195,8 @@ class BaseStateTypeTest:
         # Create elements based on state type
         if self.state_type == "login":
             elements = [
-                ElementSpec(
-                    "input", x=300, y=200, width=200, height=35, text="username"
-                ),
-                ElementSpec(
-                    "input", x=300, y=250, width=200, height=35, text="password"
-                ),
+                ElementSpec("input", x=300, y=200, width=200, height=35, text="username"),
+                ElementSpec("input", x=300, y=250, width=200, height=35, text="password"),
                 ElementSpec("button", x=350, y=310, width=100, height=40, text="Login"),
             ]
         elif self.state_type == "menu":
@@ -231,9 +227,7 @@ class BaseStateTypeTest:
                 ElementSpec("button", x=540, y=410, width=80, height=35, text="Cancel"),
             ]
         else:
-            elements = [
-                ElementSpec("button", x=100, y=100, width=120, height=40, text="Action")
-            ]
+            elements = [ElementSpec("button", x=100, y=100, width=120, height=40, text="Action")]
 
         screenshot = generator.generate(width=800, height=600, elements=elements)
 
@@ -339,12 +333,8 @@ class StateTransitionTest:
             ElementSpec("input", x=100, y=200, width=200, height=35),
         ]
 
-        screenshot1 = generator.generate(
-            width=800, height=600, elements=elements, noise_level=0.01
-        )
-        screenshot2 = generator.generate(
-            width=800, height=600, elements=elements, noise_level=0.01
-        )
+        screenshot1 = generator.generate(width=800, height=600, elements=elements, noise_level=0.01)
+        screenshot2 = generator.generate(width=800, height=600, elements=elements, noise_level=0.01)
 
         if hasattr(detector, "detect_states"):
             states1 = detector.detect_states(screenshot1)

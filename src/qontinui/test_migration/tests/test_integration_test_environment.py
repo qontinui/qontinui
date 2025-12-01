@@ -58,10 +58,7 @@ class TestIntegrationTestEnvironment:
 
         # Verify imports
         assert "import pytest" in wiring_config["imports"]
-        assert (
-            "from unittest.mock import Mock, MagicMock, patch"
-            in wiring_config["imports"]
-        )
+        assert "from unittest.mock import Mock, MagicMock, patch" in wiring_config["imports"]
 
         # Verify component registry is generated
         registry_code = "\n".join(wiring_config["component_registry"])
@@ -126,9 +123,7 @@ class TestIntegrationTestEnvironment:
             mock_responses={"http://api.example.com/users": {"users": []}},
         )
 
-        setup_code = self.environment.configure_external_service_mocking(
-            [service_config]
-        )
+        setup_code = self.environment.configure_external_service_mocking([service_config])
 
         assert len(setup_code) > 0
         setup_text = "\n".join(setup_code)
@@ -143,9 +138,7 @@ class TestIntegrationTestEnvironment:
             service_name="notification_queue", service_type="message_queue"
         )
 
-        setup_code = self.environment.configure_external_service_mocking(
-            [service_config]
-        )
+        setup_code = self.environment.configure_external_service_mocking([service_config])
 
         assert len(setup_code) > 0
         setup_text = "\n".join(setup_code)
@@ -158,9 +151,7 @@ class TestIntegrationTestEnvironment:
             service_name="file_storage", service_type="file_system"
         )
 
-        setup_code = self.environment.configure_external_service_mocking(
-            [service_config]
-        )
+        setup_code = self.environment.configure_external_service_mocking([service_config])
 
         assert len(setup_code) > 0
         setup_text = "\n".join(setup_code)
@@ -173,9 +164,7 @@ class TestIntegrationTestEnvironment:
             service_name="redis_cache", service_type="cache"
         )
 
-        setup_code = self.environment.configure_external_service_mocking(
-            [service_config]
-        )
+        setup_code = self.environment.configure_external_service_mocking([service_config])
 
         assert len(setup_code) > 0
         setup_text = "\n".join(setup_code)
@@ -190,9 +179,7 @@ class TestIntegrationTestEnvironment:
             MockUsage(mock_type="spring_mock", mock_class="DataRepository")
         )
 
-        scenario_config = self.environment.create_multi_component_test_scenario(
-            self.test_file
-        )
+        scenario_config = self.environment.create_multi_component_test_scenario(self.test_file)
 
         assert "imports" in scenario_config
         assert "fixtures" in scenario_config
@@ -299,9 +286,7 @@ class TestIntegrationTestGenerator:
 
     def test_generate_integration_test_file_with_database(self):
         """Test integration test file generation with database configuration."""
-        db_config = DatabaseConfiguration(
-            database_type="in_memory", schema_files=["schema.sql"]
-        )
+        db_config = DatabaseConfiguration(database_type="in_memory", schema_files=["schema.sql"])
 
         result = self.generator.generate_integration_test_file(
             self.test_file, database_config=db_config

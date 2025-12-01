@@ -40,9 +40,7 @@ class MockScreen(IScreenCapture):
             Synthetic screen image as numpy array
         """
         self._capture_count += 1
-        logger.debug(
-            f"[MOCK] Screen capture #{self._capture_count} (monitor {monitor_index})"
-        )
+        logger.debug(f"[MOCK] Screen capture #{self._capture_count} (monitor {monitor_index})")
 
         # Return synthetic blank screen
         # In real mock mode, this would be populated with expected patterns
@@ -158,9 +156,7 @@ class MockScreen(IScreenCapture):
             name="Mock Monitor",
         )
 
-    def get_pixel_color(
-        self, x: int, y: int, monitor: int | None = None
-    ) -> tuple[int, int, int]:
+    def get_pixel_color(self, x: int, y: int, monitor: int | None = None) -> tuple[int, int, int]:
         """Get color of pixel at coordinates.
 
         Args:
@@ -180,9 +176,7 @@ class MockScreen(IScreenCapture):
 
     # Mock-specific methods
 
-    def set_mock_screen(
-        self, screen_id: str, image: np.ndarray | Image.Image | str
-    ) -> None:
+    def set_mock_screen(self, screen_id: str, image: np.ndarray | Image.Image | str) -> None:
         """Set a mock screen state for testing.
 
         Args:

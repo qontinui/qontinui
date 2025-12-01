@@ -146,9 +146,7 @@ async def get_active_states(
         # Delegate to ExecutionManager (which delegates to StateExecutionAPI)
         active_states = manager.get_active_states(execution_id=execution_id)
 
-        return ActiveStatesResponse(
-            execution_id=execution_id, active_states=active_states
-        )
+        return ActiveStatesResponse(execution_id=execution_id, active_states=active_states)
 
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
@@ -180,9 +178,7 @@ async def get_available_transitions(
         # Delegate to ExecutionManager (which delegates to StateExecutionAPI)
         transitions = manager.get_available_transitions(execution_id=execution_id)
 
-        return AvailableTransitionsResponse(
-            execution_id=execution_id, transitions=transitions
-        )
+        return AvailableTransitionsResponse(execution_id=execution_id, transitions=transitions)
 
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e

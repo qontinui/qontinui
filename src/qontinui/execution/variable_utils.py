@@ -45,8 +45,7 @@ def load_variables_from_json(file_path: Path | str) -> dict[str, Any]:
 
         if not isinstance(variables, dict):
             raise ValueError(
-                f"Invalid format in {file_path}: expected dict, "
-                f"got {type(variables).__name__}"
+                f"Invalid format in {file_path}: expected dict, " f"got {type(variables).__name__}"
             )
 
         logger.info(f"Loaded {len(variables)} variables from {file_path}")
@@ -123,9 +122,7 @@ def merge_variable_scopes(
         {'x': 1, 'y': 20, 'z': 30}
     """
     if precedence not in ("last", "first"):
-        raise ValueError(
-            f"Invalid precedence '{precedence}'. Must be 'last' or 'first'"
-        )
+        raise ValueError(f"Invalid precedence '{precedence}'. Must be 'last' or 'first'")
 
     merged: dict[str, Any] = {}
 
@@ -417,8 +414,7 @@ def sanitize_for_persistence(
         if not is_json_serializable(value):
             if skip_non_serializable:
                 logger.warning(
-                    f"Skipping non-serializable variable '{key}': "
-                    f"{type(value).__name__}"
+                    f"Skipping non-serializable variable '{key}': " f"{type(value).__name__}"
                 )
                 continue
             else:

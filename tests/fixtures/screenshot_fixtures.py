@@ -149,9 +149,7 @@ class SyntheticScreenshotGenerator:
 
         # Border
         if element.border_color:
-            cv2.rectangle(
-                image, (x1, y1), (x2, y2), element.border_color, element.border_width
-            )
+            cv2.rectangle(image, (x1, y1), (x2, y2), element.border_color, element.border_width)
 
         # Text
         if element.text:
@@ -213,9 +211,7 @@ class SyntheticScreenshotGenerator:
         cv2.rectangle(image, (x1, y1), (x2, y2), (255, 255, 255), -1)
 
         # Border
-        cv2.rectangle(
-            image, (x1, y1), (x2, y2), element.border_color or (150, 150, 150), 1
-        )
+        cv2.rectangle(image, (x1, y1), (x2, y2), element.border_color or (150, 150, 150), 1)
 
         # Text if provided
         if element.text:
@@ -237,15 +233,11 @@ class SyntheticScreenshotGenerator:
 
         # Box background
         cv2.rectangle(image, (x1, y1), (x2, y2), (255, 255, 255), -1)
-        cv2.rectangle(
-            image, (x1, y1), (x2, y2), element.border_color or (100, 100, 100), 2
-        )
+        cv2.rectangle(image, (x1, y1), (x2, y2), element.border_color or (100, 100, 100), 2)
 
         # Check mark if metadata indicates checked
         if element.metadata and element.metadata.get("checked", False):
-            cv2.line(
-                image, (x1 + 3, y1 + size // 2), (x1 + size // 3, y2 - 3), (0, 0, 0), 2
-            )
+            cv2.line(image, (x1 + 3, y1 + size // 2), (x1 + size // 3, y2 - 3), (0, 0, 0), 2)
             cv2.line(image, (x1 + size // 3, y2 - 3), (x2 - 3, y1 + 3), (0, 0, 0), 2)
 
     def _draw_rectangle(self, image: np.ndarray, element: ElementSpec) -> None:
@@ -254,9 +246,7 @@ class SyntheticScreenshotGenerator:
         x2, y2 = element.x + element.width, element.y + element.height
         cv2.rectangle(image, (x1, y1), (x2, y2), element.color, -1)
         if element.border_color:
-            cv2.rectangle(
-                image, (x1, y1), (x2, y2), element.border_color, element.border_width
-            )
+            cv2.rectangle(image, (x1, y1), (x2, y2), element.border_color, element.border_width)
 
     def generate_with_known_elements(
         self,
@@ -575,9 +565,7 @@ def create_button_screenshot(
     if button_text is None:
         button_text = [f"Button {i+1}" for i in range(num_buttons)]
     elif len(button_text) < num_buttons:
-        button_text.extend(
-            [f"Button {i+1}" for i in range(len(button_text), num_buttons)]
-        )
+        button_text.extend([f"Button {i+1}" for i in range(len(button_text), num_buttons)])
 
     buttons = []
     for i in range(num_buttons):
@@ -759,9 +747,7 @@ def create_login_form_screenshot(
             border_width=1,
         ),
         # Title
-        ElementSpec(
-            "text", x=form_x + 100, y=form_y + 30, text="Login", text_color=(50, 50, 50)
-        ),
+        ElementSpec("text", x=form_x + 100, y=form_y + 30, text="Login", text_color=(50, 50, 50)),
         # Username label
         ElementSpec(
             "text",

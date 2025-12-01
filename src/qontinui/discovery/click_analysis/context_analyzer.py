@@ -118,16 +118,12 @@ class ClickContextAnalyzer:
 
             border_edges = np.sum(edges[border_mask] > 0)
             total_border = np.sum(border_mask)
-            features["border_strength"] = (
-                border_edges / total_border if total_border > 0 else 0.0
-            )
+            features["border_strength"] = border_edges / total_border if total_border > 0 else 0.0
         else:
             features["border_strength"] = 0.0
 
         # Rectangularity (how rectangular is the content)
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
             contour_area = cv2.contourArea(largest_contour)

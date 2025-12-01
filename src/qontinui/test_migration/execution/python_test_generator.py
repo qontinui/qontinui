@@ -208,9 +208,7 @@ class PythonTestGenerator(TestTranslator):
 
         # Add mock imports if needed
         if test_file.mock_usage:
-            imports.append(
-                "from qontinui.test_migration.mocks import QontinuiMockGenerator"
-            )
+            imports.append("from qontinui.test_migration.mocks import QontinuiMockGenerator")
 
         # Add integration test imports for integration tests
         if test_file.test_type == TestType.INTEGRATION:
@@ -311,9 +309,7 @@ class PythonTestGenerator(TestTranslator):
 
         for mock_usage in mock_usages:
             if mock_usage.mock_type == "brobot_mock":
-                lines.append(
-                    "# Brobot mock setup - TODO: Implement Qontinui equivalent"
-                )
+                lines.append("# Brobot mock setup - TODO: Implement Qontinui equivalent")
                 lines.append(f"# Original mock: {mock_usage.mock_class}")
             elif mock_usage.mock_type == "spring_mock":
                 lines.append("# Spring mock setup")
@@ -357,19 +353,11 @@ class PythonTestGenerator(TestTranslator):
             line = self.translate_assertions(line)
 
             # Basic syntax conversions
-            line = re.sub(
-                r"String\s+(\w+)\s*=", r"\1 =", line
-            )  # String variable declaration
+            line = re.sub(r"String\s+(\w+)\s*=", r"\1 =", line)  # String variable declaration
             line = re.sub(r"int\s+(\w+)\s*=", r"\1 =", line)  # int variable declaration
-            line = re.sub(
-                r"boolean\s+(\w+)\s*=", r"\1 =", line
-            )  # boolean variable declaration
-            line = re.sub(
-                r"double\s+(\w+)\s*=", r"\1 =", line
-            )  # double variable declaration
-            line = re.sub(
-                r"float\s+(\w+)\s*=", r"\1 =", line
-            )  # float variable declaration
+            line = re.sub(r"boolean\s+(\w+)\s*=", r"\1 =", line)  # boolean variable declaration
+            line = re.sub(r"double\s+(\w+)\s*=", r"\1 =", line)  # double variable declaration
+            line = re.sub(r"float\s+(\w+)\s*=", r"\1 =", line)  # float variable declaration
 
             if line:
                 python_lines.append(line)
@@ -383,9 +371,7 @@ class PythonTestGenerator(TestTranslator):
 
         return cast(str | None, self.dependency_mappings.get(dependency.java_import))
 
-    def generate_test_file_path(
-        self, test_file: TestFile, target_directory: Path
-    ) -> Path:
+    def generate_test_file_path(self, test_file: TestFile, target_directory: Path) -> Path:
         """
         Generate the target path for a migrated test file.
 
@@ -403,9 +389,7 @@ class PythonTestGenerator(TestTranslator):
         python_class_name = self._convert_class_name(test_file.class_name)
         # Convert TestCalculator -> test_calculator.py
         file_name_base = (
-            python_class_name[4:]
-            if python_class_name.startswith("Test")
-            else python_class_name
+            python_class_name[4:] if python_class_name.startswith("Test") else python_class_name
         )
         file_name = f"test_{file_name_base.lower()}.py"
 

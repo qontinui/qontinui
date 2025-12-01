@@ -388,9 +388,7 @@ class TestErrorRecovery:
                     errors.append(e)
 
         # Run workers
-        threads = [
-            threading.Thread(target=worker_with_errors, args=(i,)) for i in range(5)
-        ]
+        threads = [threading.Thread(target=worker_with_errors, args=(i,)) for i in range(5)]
         for t in threads:
             t.start()
         for t in threads:

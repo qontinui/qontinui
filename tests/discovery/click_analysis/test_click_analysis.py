@@ -34,9 +34,7 @@ def create_simple_button_screenshot(
 ) -> np.ndarray:
     """Create a screenshot with a simple rectangular button."""
     screenshot = np.full((height, width, 3), bg_color, dtype=np.uint8)
-    screenshot[button_y : button_y + button_h, button_x : button_x + button_w] = (
-        button_color
-    )
+    screenshot[button_y : button_y + button_h, button_x : button_x + button_w] = button_color
     return screenshot
 
 
@@ -591,9 +589,7 @@ class TestPerformance:
         screenshot = create_simple_button_screenshot()
         click_location = (400, 300)
 
-        results = [
-            inferrer.infer_bounding_box(screenshot, click_location) for _ in range(5)
-        ]
+        results = [inferrer.infer_bounding_box(screenshot, click_location) for _ in range(5)]
 
         # All results should have same primary bbox
         bboxes = [r.primary_bbox.as_bbox_list() for r in results]

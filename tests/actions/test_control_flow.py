@@ -257,14 +257,10 @@ def test_for_loop_continue(continue_action_executor):
 
 def test_while_loop_variable_condition(mock_action_executor):
     """Test WHILE loop with variable condition."""
-    executor = ControlFlowExecutor(
-        action_executor=mock_action_executor, variables={"counter": 0}
-    )
+    executor = ControlFlowExecutor(action_executor=mock_action_executor, variables={"counter": 0})
 
     # Mock executor that increments counter
-    def incrementing_executor(
-        action_id: str, variables: dict[str, Any]
-    ) -> dict[str, Any]:
+    def incrementing_executor(action_id: str, variables: dict[str, Any]) -> dict[str, Any]:
         variables["counter"] = variables.get("counter", 0) + 1
         mock_action_executor(action_id, variables)
         return {"success": True}
@@ -295,13 +291,9 @@ def test_while_loop_variable_condition(mock_action_executor):
 
 def test_while_loop_expression_condition(mock_action_executor):
     """Test WHILE loop with expression condition."""
-    executor = ControlFlowExecutor(
-        action_executor=mock_action_executor, variables={"x": 0}
-    )
+    executor = ControlFlowExecutor(action_executor=mock_action_executor, variables={"x": 0})
 
-    def incrementing_executor(
-        action_id: str, variables: dict[str, Any]
-    ) -> dict[str, Any]:
+    def incrementing_executor(action_id: str, variables: dict[str, Any]) -> dict[str, Any]:
         variables["x"] = variables.get("x", 0) + 2
         mock_action_executor(action_id, variables)
         return {"success": True}
@@ -488,9 +480,7 @@ def test_foreach_loop_max_iterations_limit(mock_action_executor):
 
 def test_if_then_true_condition(mock_action_executor):
     """Test IF action with true condition executes THEN branch."""
-    executor = ControlFlowExecutor(
-        action_executor=mock_action_executor, variables={"value": 10}
-    )
+    executor = ControlFlowExecutor(action_executor=mock_action_executor, variables={"value": 10})
 
     action = Action(
         id="if-1",
@@ -522,9 +512,7 @@ def test_if_then_true_condition(mock_action_executor):
 
 def test_if_else_false_condition(mock_action_executor):
     """Test IF action with false condition executes ELSE branch."""
-    executor = ControlFlowExecutor(
-        action_executor=mock_action_executor, variables={"value": 3}
-    )
+    executor = ControlFlowExecutor(action_executor=mock_action_executor, variables={"value": 3})
 
     action = Action(
         id="if-1",
@@ -556,9 +544,7 @@ def test_if_else_false_condition(mock_action_executor):
 
 def test_if_no_else_branch(mock_action_executor):
     """Test IF action without else branch."""
-    executor = ControlFlowExecutor(
-        action_executor=mock_action_executor, variables={"value": 3}
-    )
+    executor = ControlFlowExecutor(action_executor=mock_action_executor, variables={"value": 3})
 
     action = Action(
         id="if-1",
@@ -749,12 +735,8 @@ def test_condition_operators():
     ]
 
     for operator, expected, should_match in test_cases:
-        result = executor._compare_values(
-            executor.variables["value"], operator, expected
-        )
-        assert (
-            result == should_match
-        ), f"Failed: 10 {operator} {expected} should be {should_match}"
+        result = executor._compare_values(executor.variables["value"], operator, expected)
+        assert result == should_match, f"Failed: 10 {operator} {expected} should be {should_match}"
 
 
 def test_condition_contains_operator():
@@ -968,9 +950,7 @@ def test_nested_loop_simulation(mock_action_executor):
 
 def test_loop_with_if_simulation(mock_action_executor):
     """Test loop containing IF statement."""
-    executor = ControlFlowExecutor(
-        action_executor=mock_action_executor, variables={"threshold": 5}
-    )
+    executor = ControlFlowExecutor(action_executor=mock_action_executor, variables={"threshold": 5})
 
     action = Action(
         id="loop-1",

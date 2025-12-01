@@ -132,9 +132,7 @@ class FrameworkSettings:
             # Keep properties object for serialization
             self._properties = props
             self._initialized = True
-            logger.info(
-                "FrameworkSettings initialized with themed configuration groups"
-            )
+            logger.info("FrameworkSettings initialized with themed configuration groups")
 
     @classmethod
     def get_instance(cls) -> "FrameworkSettings":
@@ -324,9 +322,7 @@ class FrameworkSettings:
             warnings.append("Illustration enabled in headless mode (will be ignored)")
 
         if self.core.mock and self.screenshot.save_snapshots:
-            warnings.append(
-                "Screenshot saving enabled in mock mode (no real screenshots)"
-            )
+            warnings.append("Screenshot saving enabled in mock mode (no real screenshots)")
 
         return warnings
 

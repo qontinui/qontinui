@@ -98,9 +98,7 @@ def benchmark_config_loading(
         Benchmark results dictionary
     """
     print(f"\n{'=' * 60}")
-    print(
-        f"Benchmarking {config_size} config: {num_workflows} workflows, {num_actions} actions"
-    )
+    print(f"Benchmarking {config_size} config: {num_workflows} workflows, {num_actions} actions")
     print(f"{'=' * 60}")
 
     # Generate mock config

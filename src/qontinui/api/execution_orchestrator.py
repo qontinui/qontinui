@@ -163,9 +163,7 @@ class OrchestrationHook:
             },
         )
 
-    async def on_error(
-        self, action: Any, context_vars: dict[str, Any], error: Exception
-    ) -> None:
+    async def on_error(self, action: Any, context_vars: dict[str, Any], error: Exception) -> None:
         """Called when action execution fails.
 
         Args:

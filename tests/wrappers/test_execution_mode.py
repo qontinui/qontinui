@@ -45,9 +45,7 @@ class TestExecutionModeConfig:
         screenshot_dir = tmp_path / "screenshots"
         screenshot_dir.mkdir()
 
-        config = ExecutionModeConfig(
-            mode=MockMode.SCREENSHOT, screenshot_dir=str(screenshot_dir)
-        )
+        config = ExecutionModeConfig(mode=MockMode.SCREENSHOT, screenshot_dir=str(screenshot_dir))
         assert config.mode == MockMode.SCREENSHOT
         assert config.is_screenshot_mode()
         assert config.is_real()  # Screenshot mode is considered "real"
@@ -59,18 +57,14 @@ class TestExecutionModeConfig:
         screenshot_dir.mkdir()
 
         # Even with MOCK mode, if screenshot_dir exists, is_mock() returns False
-        config = ExecutionModeConfig(
-            mode=MockMode.MOCK, screenshot_dir=str(screenshot_dir)
-        )
+        config = ExecutionModeConfig(mode=MockMode.MOCK, screenshot_dir=str(screenshot_dir))
         assert not config.is_mock()  # Screenshots take precedence
 
     def test_screenshot_dir_nonexistent(self, tmp_path):
         """Test screenshot mode with non-existent directory."""
         screenshot_dir = tmp_path / "nonexistent"
 
-        config = ExecutionModeConfig(
-            mode=MockMode.SCREENSHOT, screenshot_dir=str(screenshot_dir)
-        )
+        config = ExecutionModeConfig(mode=MockMode.SCREENSHOT, screenshot_dir=str(screenshot_dir))
         # Directory doesn't exist, so screenshot mode is not active
         assert not config.is_screenshot_mode()
 

@@ -43,9 +43,7 @@ class BaseChainMode(ABC):
         """
         pass
 
-    def _record_action(
-        self, chain_action: "ChainAction", success: bool, duration: float
-    ) -> None:
+    def _record_action(self, chain_action: "ChainAction", success: bool, duration: float) -> None:
         """Record action execution in history.
 
         Args:

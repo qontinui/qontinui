@@ -105,9 +105,7 @@ class DiagnosticReporterImpl(DiagnosticReporter):
         Returns:
             List of setup differences
         """
-        return self._comprehensive_analyzer.detect_setup_differences(
-            java_test, python_test_path
-        )
+        return self._comprehensive_analyzer.detect_setup_differences(java_test, python_test_path)
 
     def compare_assertion_logic(
         self, java_test: TestFile, python_test_path: Path

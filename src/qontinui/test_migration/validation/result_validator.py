@@ -77,9 +77,7 @@ class ResultValidator:
     behavioral equivalence verification and performance comparison metrics.
     """
 
-    def __init__(
-        self, equivalence_config: BehavioralEquivalenceConfig | None = None
-    ) -> None:
+    def __init__(self, equivalence_config: BehavioralEquivalenceConfig | None = None) -> None:
         """
         Initialize the result validator.
 
@@ -131,17 +129,13 @@ class ResultValidator:
 
             # Perform comparison based on type
             if comparison_type == ComparisonType.OUTPUT:
-                result, differences, similarity = self._compare_outputs(
-                    java_result, python_result
-                )
+                result, differences, similarity = self._compare_outputs(java_result, python_result)
             elif comparison_type == ComparisonType.BEHAVIOR:
                 result, differences, similarity = self._compare_behavior(
                     java_result, python_result, performance_metrics
                 )
             elif comparison_type == ComparisonType.PERFORMANCE:
-                result, differences = self._compare_performance(
-                    java_result, python_result
-                )
+                result, differences = self._compare_performance(java_result, python_result)
                 similarity = 1.0 if result == "equivalent" else 0.0
             elif comparison_type == ComparisonType.EXCEPTION:
                 result, differences, similarity = self._compare_exceptions(
@@ -218,12 +212,8 @@ class ResultValidator:
         comparisons = []
 
         # Create mapping of test names to results
-        java_map = {
-            result.test_name: result for result in java_results.individual_results
-        }
-        python_map = {
-            result.test_name: result for result in python_results.individual_results
-        }
+        java_map = {result.test_name: result for result in java_results.individual_results}
+        python_map = {result.test_name: result for result in python_results.individual_results}
 
         # Compare each test that exists in both suites
         common_tests = set(java_map.keys()) & set(python_map.keys())
@@ -278,12 +268,8 @@ class ResultValidator:
         metrics = {}
 
         # Create mapping of test names to results
-        java_map = {
-            result.test_name: result for result in java_results.individual_results
-        }
-        python_map = {
-            result.test_name: result for result in python_results.individual_results
-        }
+        java_map = {result.test_name: result for result in java_results.individual_results}
+        python_map = {result.test_name: result for result in python_results.individual_results}
 
         # Calculate metrics for common tests
         common_tests = set(java_map.keys()) & set(python_map.keys())
@@ -330,9 +316,7 @@ class ResultValidator:
             for result in execution_results:
                 self.validate_test_results(result)
         else:
-            raise ValueError(
-                f"Unsupported execution results type: {type(execution_results)}"
-            )
+            raise ValueError(f"Unsupported execution results type: {type(execution_results)}")
 
     def _compare_outputs(
         self, java_result: "TestResult", python_result: "TestResult"
@@ -352,9 +336,7 @@ class ResultValidator:
         )
 
         # Calculate similarity first
-        similarity = self.output_validator.calculate_similarity_score(
-            java_output, python_output
-        )
+        similarity = self.output_validator.calculate_similarity_score(java_output, python_output)
 
         # Use assertion validator for behavior check
         result, differences = self.assertion_validator.validate_behavior(
@@ -363,9 +345,7 @@ class ResultValidator:
 
         # If behavior validator says to check exceptions, delegate to exception validator
         if result == "check_exceptions":
-            result, differences, similarity = self._compare_exceptions(
-                java_result, python_result
-            )
+            result, differences, similarity = self._compare_exceptions(java_result, python_result)
 
         return result, differences, similarity
 
@@ -407,9 +387,7 @@ class ResultValidator:
         if results.skipped_tests < 0:
             raise ValueError("Skipped tests count cannot be negative")
 
-        calculated_total = (
-            results.passed_tests + results.failed_tests + results.skipped_tests
-        )
+        calculated_total = results.passed_tests + results.failed_tests + results.skipped_tests
         if calculated_total != results.total_tests:
             raise ValueError(
                 f"Test counts inconsistent: {results.passed_tests} + {results.failed_tests} "
@@ -430,9 +408,7 @@ class ResultValidator:
         if not result.test_file:
             raise ValueError("Test file is required")
         if result.execution_time < 0:
-            raise ValueError(
-                f"Execution time cannot be negative for test {result.test_name}"
-            )
+            raise ValueError(f"Execution time cannot be negative for test {result.test_name}")
 
         if not result.passed and not result.error_message:
             import logging
@@ -443,24 +419,15 @@ class ResultValidator:
     def _validate_results_dict(self, results: dict) -> None:
         """Validate results in dictionary format."""
         if "total_tests" in results:
-            if (
-                not isinstance(results["total_tests"], int)
-                or results["total_tests"] < 0
-            ):
+            if not isinstance(results["total_tests"], int) or results["total_tests"] < 0:
                 raise ValueError("Invalid total_tests value")
 
         if "passed_tests" in results:
-            if (
-                not isinstance(results["passed_tests"], int)
-                or results["passed_tests"] < 0
-            ):
+            if not isinstance(results["passed_tests"], int) or results["passed_tests"] < 0:
                 raise ValueError("Invalid passed_tests value")
 
         if "failed_tests" in results:
-            if (
-                not isinstance(results["failed_tests"], int)
-                or results["failed_tests"] < 0
-            ):
+            if not isinstance(results["failed_tests"], int) or results["failed_tests"] < 0:
                 raise ValueError("Invalid failed_tests value")
 
         if "execution_time" in results:
@@ -470,9 +437,7 @@ class ResultValidator:
             ):
                 raise ValueError("Invalid execution_time value")
 
-        if "individual_results" in results and isinstance(
-            results["individual_results"], list
-        ):
+        if "individual_results" in results and isinstance(results["individual_results"], list):
             for result in results["individual_results"]:
                 if isinstance(result, dict):
                     self._validate_results_dict(result)

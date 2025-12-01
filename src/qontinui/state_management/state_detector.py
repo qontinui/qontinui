@@ -105,9 +105,7 @@ class StateDetector:
             return
 
         current_active_states = set(self.state_memory.active_states)
-        logger.debug(
-            f"Checking {len(current_active_states)} active states for visibility"
-        )
+        logger.debug(f"Checking {len(current_active_states)} active states for visibility")
 
         states_no_longer_visible = set()
         for state_id in current_active_states:
@@ -162,9 +160,7 @@ class StateDetector:
                 )
                 self.state_memory.add_active_state(SpecialStateType.UNKNOWN.value)
             else:
-                logger.info(
-                    f"Rebuilt active states: {self.state_memory.get_active_state_names()}"
-                )
+                logger.info(f"Rebuilt active states: {self.state_memory.get_active_state_names()}")
 
     def search_all_images_for_current_states(self) -> None:
         """Perform comprehensive search for all defined states on the current screen.
@@ -198,9 +194,7 @@ class StateDetector:
             if self.find_state_by_name(state_name):
                 found += 1
 
-        logger.info(
-            f"Comprehensive search complete: found {found} of {total_states} states"
-        )
+        logger.info(f"Comprehensive search complete: found {found} of {total_states} states")
 
     def find_state_by_name(self, state_name: str) -> bool:
         """Search for a specific state by name on the current screen.
@@ -310,9 +304,7 @@ class StateDetector:
                     name = self.all_states_in_project_service.get_state_name(state_id)
                     if name:
                         state_names.append(name)
-                logger.info(
-                    f"Refresh complete. Active states: {', '.join(state_names)}"
-                )
+                logger.info(f"Refresh complete. Active states: {', '.join(state_names)}")
 
             return active_states
 
@@ -460,9 +452,7 @@ class StateDetector:
                 # Remove states that are no longer active
                 for state_id in current_active_state_ids:
                     if self.all_states_in_project_service is not None:
-                        name = self.all_states_in_project_service.get_state_name(
-                            state_id
-                        )
+                        name = self.all_states_in_project_service.get_state_name(state_id)
                         if name and name not in found_states:
                             self.state_memory.remove_active_state(state_id)
 
@@ -485,9 +475,7 @@ class StateDetector:
                 )
                 self.state_memory.add_active_state(SpecialStateType.UNKNOWN.value)
             else:
-                logger.info(
-                    f"Rebuilt active states: {self.state_memory.get_active_state_names()}"
-                )
+                logger.info(f"Rebuilt active states: {self.state_memory.get_active_state_names()}")
 
     async def _search_all_images_async(self) -> None:
         """Async version of search_all_images_for_current_states using parallel search.

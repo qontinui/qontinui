@@ -73,9 +73,7 @@ class StateTransitionService:
             if transition.to_state:
                 self._registered_states.add(transition.to_state)
 
-            logger.debug(
-                f"Registered transition: {from_state} -> {transition.to_state}"
-            )
+            logger.debug(f"Registered transition: {from_state} -> {transition.to_state}")
         else:
             logger.warning("Cannot register transition without from_state")
 
@@ -134,10 +132,7 @@ class StateTransitionService:
             # Check if this transition leads to the target state
             if hasattr(transition, "to_state") and transition.to_state == to_state:
                 return transition
-            elif (
-                hasattr(transition, "activate_names")
-                and to_state in transition.activate_names
-            ):
+            elif hasattr(transition, "activate_names") and to_state in transition.activate_names:
                 return transition
 
         return None
@@ -218,9 +213,7 @@ class StateTransitionService:
                 f"Error executing transition from {from_state} to {to_state}",
                 exc_info=e,
             )
-            self._record_transition(
-                from_state, to_state, False, start_time, error=str(e)
-            )
+            self._record_transition(from_state, to_state, False, start_time, error=str(e))
             return False
 
     def _record_transition(

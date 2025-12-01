@@ -40,12 +40,8 @@ class SchedulerExecutor:
         self.state_executor = state_executor
 
         # Initialize StateAwareScheduler with state detection
-        state_detector = (
-            getattr(state_executor, "state_detector", None) if state_executor else None
-        )
-        state_memory = (
-            getattr(state_executor, "state_memory", None) if state_executor else None
-        )
+        state_detector = getattr(state_executor, "state_detector", None) if state_executor else None
+        state_memory = getattr(state_executor, "state_memory", None) if state_executor else None
 
         self.scheduler = StateAwareScheduler(
             state_detector=state_detector,
@@ -138,9 +134,7 @@ class SchedulerExecutor:
             schedule: Schedule configuration
         """
         if not schedule.interval_seconds:
-            logger.error(
-                f"Interval schedule '{schedule.name}' has no interval configured"
-            )
+            logger.error(f"Interval schedule '{schedule.name}' has no interval configured")
             return
 
         def task() -> bool:
@@ -176,9 +170,7 @@ class SchedulerExecutor:
             schedule: Schedule configuration
         """
         if not schedule.cron_expression:
-            logger.error(
-                f"Time-based schedule '{schedule.name}' has no cron expression"
-            )
+            logger.error(f"Time-based schedule '{schedule.name}' has no cron expression")
             return
 
         try:
@@ -219,9 +211,7 @@ class SchedulerExecutor:
 
                 # Check end time
                 if schedule.end_time and datetime.now() > schedule.end_time:
-                    logger.info(
-                        f"Schedule '{schedule.name}' reached end time, stopping"
-                    )
+                    logger.info(f"Schedule '{schedule.name}' reached end time, stopping")
                     break
 
                 # Execute with state checking
@@ -290,9 +280,7 @@ class SchedulerExecutor:
         """
         return self.scheduler.get_all_schedules()
 
-    def get_execution_history(
-        self, schedule_id: str | None = None
-    ) -> list[ExecutionRecord]:
+    def get_execution_history(self, schedule_id: str | None = None) -> list[ExecutionRecord]:
         """Get execution history.
 
         Args:

@@ -42,9 +42,7 @@ class MouseDown(ActionInterface):
         """
         return ActionType.MOUSE_DOWN
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Press and hold mouse button.
 
         Important:

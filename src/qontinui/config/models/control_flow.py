@@ -15,17 +15,13 @@ from .targets import TargetConfig
 class ConditionConfig(BaseModel):
     """Condition configuration for control flow."""
 
-    type: Literal[
-        "image_exists", "image_vanished", "text_exists", "variable", "expression"
-    ]
+    type: Literal["image_exists", "image_vanished", "text_exists", "variable", "expression"]
     image_id: str | None = Field(None, alias="imageId")
     text: str | None = None
     variable_name: str | None = Field(None, alias="variableName")
     expression: str | None = None
     expected_value: Any | None = Field(None, alias="expectedValue")
-    operator: (
-        Literal["==", "!=", ">", "<", ">=", "<=", "contains", "matches"] | None
-    ) = None
+    operator: Literal["==", "!=", ">", "<", ">=", "<=", "contains", "matches"] | None = None
 
     model_config = {"populate_by_name": True}
 

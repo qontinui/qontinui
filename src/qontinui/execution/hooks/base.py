@@ -29,9 +29,7 @@ class ExecutionHook(ABC):
         pass
 
     @abstractmethod
-    def after_action(
-        self, action: Action, context: dict[str, Any], result: dict[str, Any]
-    ):
+    def after_action(self, action: Action, context: dict[str, Any], result: dict[str, Any]):
         """Called after successful action execution.
 
         Args:

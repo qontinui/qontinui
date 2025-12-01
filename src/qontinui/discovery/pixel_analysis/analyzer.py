@@ -81,9 +81,7 @@ class PixelStabilityAnalyzer:
         self._update_progress(100, "Analysis complete")
 
         # Calculate statistics
-        statistics = self._calculate_statistics(
-            screenshots, state_images, states, stability_map
-        )
+        statistics = self._calculate_statistics(screenshots, state_images, states, stability_map)
 
         return AnalysisResult(
             states=states,
@@ -93,9 +91,7 @@ class PixelStabilityAnalyzer:
             statistics=statistics,
         )
 
-    def create_stability_map(
-        self, screenshots: list[np.ndarray[Any, Any]]
-    ) -> np.ndarray[Any, Any]:
+    def create_stability_map(self, screenshots: list[np.ndarray[Any, Any]]) -> np.ndarray[Any, Any]:
         """
         Create a map showing pixel stability across screenshots.
 
@@ -119,13 +115,11 @@ class PixelStabilityAnalyzer:
         # For RGB images, check if all channels are stable
         if len(pixel_variance.shape) == 3:
             # All channels must be below threshold
-            stability_map = np.all(
-                pixel_variance < self.config.variance_threshold, axis=2
-            ).astype(np.uint8)
-        else:
-            stability_map = (pixel_variance < self.config.variance_threshold).astype(
+            stability_map = np.all(pixel_variance < self.config.variance_threshold, axis=2).astype(
                 np.uint8
             )
+        else:
+            stability_map = (pixel_variance < self.config.variance_threshold).astype(np.uint8)
 
         return cast(np.ndarray[Any, Any], stability_map)
 
@@ -219,9 +213,7 @@ class PixelStabilityAnalyzer:
                     continue
 
                 # Extract pixel data
-                pixel_data = reference_image[
-                    y_min : y_max + 1, x_min : x_max + 1
-                ].copy()
+                pixel_data = reference_image[y_min : y_max + 1, x_min : x_max + 1].copy()
 
                 # Calculate pixel hash
                 pixel_hash = self._calculate_pixel_hash(pixel_data)
@@ -331,23 +323,17 @@ class PixelStabilityAnalyzer:
 
         # Build co-occurrence matrix
         n = len(state_images)
-        cooccurrence: np.ndarray[tuple[int, int], np.dtype[np.float64]] = np.zeros(
-            (n, n)
-        )
+        cooccurrence: np.ndarray[tuple[int, int], np.dtype[np.float64]] = np.zeros((n, n))
 
         for i in range(n):
             for j in range(i, n):
                 # Count screenshots where both appear
-                common = set(state_images[i].screenshot_ids) & set(
-                    state_images[j].screenshot_ids
-                )
+                common = set(state_images[i].screenshot_ids) & set(state_images[j].screenshot_ids)
                 cooccurrence[i, j] = len(common)
                 cooccurrence[j, i] = len(common)
 
         # Normalize by total screenshots
-        cooccurrence = (
-            (cooccurrence / len(screenshots)).astype(np.float64).reshape((n, n))
-        )
+        cooccurrence = (cooccurrence / len(screenshots)).astype(np.float64).reshape((n, n))
 
         # Group StateImages that ALWAYS appear together (when one appears, all appear)
         grouped = []
@@ -383,9 +369,7 @@ class PixelStabilityAnalyzer:
             state_image_ids = [state_images[idx].id for idx in group_indices]
 
             # Find screenshots where ALL state images appear together (intersection)
-            screenshot_sets = [
-                set(state_images[idx].screenshot_ids) for idx in group_indices
-            ]
+            screenshot_sets = [set(state_images[idx].screenshot_ids) for idx in group_indices]
             # Since we grouped images that appear in exactly the same screenshots,
             # all sets should be identical, so intersection equals any individual set
             if screenshot_sets:
@@ -435,8 +419,7 @@ class PixelStabilityAnalyzer:
         for i, img in enumerate(screenshots[1:], 1):
             if img.shape != ref_shape:
                 raise ValueError(
-                    f"Screenshot {i} has different dimensions: "
-                    f"{img.shape} vs {ref_shape}"
+                    f"Screenshot {i} has different dimensions: " f"{img.shape} vs {ref_shape}"
                 )
 
     def _calculate_pixel_hash(self, pixel_data: np.ndarray[Any, Any]) -> str:
@@ -495,12 +478,8 @@ class PixelStabilityAnalyzer:
 
             # Apply mask and count in one operation
             masked_brightness = brightness * active_pixels
-            dark_pixels = np.count_nonzero(
-                (masked_brightness < dark_threshold) & active_pixels
-            )
-            light_pixels = np.count_nonzero(
-                (masked_brightness > light_threshold) & active_pixels
-            )
+            dark_pixels = np.count_nonzero((masked_brightness < dark_threshold) & active_pixels)
+            light_pixels = np.count_nonzero((masked_brightness > light_threshold) & active_pixels)
         else:
             # No mask - use all pixels
             total_pixels = brightness.size
@@ -516,9 +495,7 @@ class PixelStabilityAnalyzer:
 
         return dark_percentage, light_percentage
 
-    def _is_region_present(
-        self, region: dict[str, Any], screenshot: np.ndarray[Any, Any]
-    ) -> bool:
+    def _is_region_present(self, region: dict[str, Any], screenshot: np.ndarray[Any, Any]) -> bool:
         """Check if a region is present in a screenshot using masked similarity."""
         x, y, x2, y2 = region["x"], region["y"], region["x2"], region["y2"]
 
@@ -539,17 +516,13 @@ class PixelStabilityAnalyzer:
                 # No mask - do simple comparison
                 # Calculate mean absolute difference
                 diff = np.mean(
-                    np.abs(
-                        roi.astype(np.float32) - region["pixel_data"].astype(np.float32)
-                    )
+                    np.abs(roi.astype(np.float32) - region["pixel_data"].astype(np.float32))
                 )
                 similarity = 1.0 - (diff / 255.0)
                 return cast(bool, similarity >= self.config.similarity_threshold)
 
             # Expand mask once and cache it in the region
-            mask_expanded = (
-                np.expand_dims(mask, axis=2) if len(roi.shape) == 3 else mask
-            )
+            mask_expanded = np.expand_dims(mask, axis=2) if len(roi.shape) == 3 else mask
             region["mask_expanded"] = mask_expanded  # Cache for future use
 
             # Also cache active pixel count
@@ -582,9 +555,7 @@ class PixelStabilityAnalyzer:
         # Use similarity threshold from config
         return cast(bool, similarity >= self.config.similarity_threshold)
 
-    def _decompose_complex_regions(
-        self, regions: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+    def _decompose_complex_regions(self, regions: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Decompose complex regions into rectangles.
 
@@ -611,12 +582,8 @@ class PixelStabilityAnalyzer:
             "total_screenshots": len(screenshots),
             "states_found": len(states),
             "state_images_found": len(state_images),
-            "average_state_images_per_state": (
-                len(state_images) / len(states) if states else 0
-            ),
-            "pixel_stability_score": (
-                stable_pixels / total_pixels if total_pixels else 0
-            ),
+            "average_state_images_per_state": (len(state_images) / len(states) if states else 0),
+            "pixel_stability_score": (stable_pixels / total_pixels if total_pixels else 0),
             "stable_pixel_count": int(stable_pixels),
             "total_pixel_count": int(total_pixels),
         }

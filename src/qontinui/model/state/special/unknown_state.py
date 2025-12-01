@@ -116,9 +116,7 @@ class UnknownState:
         """
         from ..state_transition import StateTransition
 
-        transition = StateTransition(
-            from_state=self._state, to_state=target_state, action=action
-        )
+        transition = StateTransition(from_state=self._state, to_state=target_state, action=action)
         self._state.add_transition(transition)
 
     def clear_recovery_transitions(self) -> None:

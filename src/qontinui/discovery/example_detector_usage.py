@@ -23,9 +23,7 @@ class ExampleButtonDetector(BaseDetector):
         """Initialize the button detector."""
         super().__init__("example_button_detector")
 
-    def detect(
-        self, image: np.ndarray[Any, Any], **params: Any
-    ) -> list[dict[str, Any]]:
+    def detect(self, image: np.ndarray[Any, Any], **params: Any) -> list[dict[str, Any]]:
         """Detect button-like regions in the image.
 
         Args:
@@ -50,9 +48,7 @@ class ExampleButtonDetector(BaseDetector):
         edges = cv2.Canny(gray, threshold, threshold * 2)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         detections = []
 
@@ -81,9 +77,7 @@ class ExampleButtonDetector(BaseDetector):
         filtered_boxes = self.remove_contained_boxes(merged_boxes)
 
         # Rebuild detections with filtered boxes
-        return [
-            {"bbox": box, "confidence": 0.8, "type": "button"} for box in filtered_boxes
-        ]
+        return [{"bbox": box, "confidence": 0.8, "type": "button"} for box in filtered_boxes]
 
     def get_param_grid(self) -> list[dict[str, Any]]:
         """Return parameter configurations for hyperparameter tuning."""
@@ -205,9 +199,7 @@ def example_multi_screenshot_detection() -> None:
 
     # Create detector and run detection
     detector = ExampleConsistencyDetector()
-    results = detector.detect_multi(
-        screenshots, consistency_threshold=0.95, min_frequency=0.7
-    )
+    results = detector.detect_multi(screenshots, consistency_threshold=0.95, min_frequency=0.7)
 
     print(f"\nMulti-screenshot detection with {detector.name}:")
     print(f"  Analyzed {len(screenshots)} screenshots")

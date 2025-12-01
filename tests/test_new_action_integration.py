@@ -86,13 +86,9 @@ class TestControlFlowIntegration:
 
         assert test_value == 42, f"Test value incorrect: {test_value}"
         # Since testValue (42) > 30, the then branch should execute
-        assert (
-            result_var == "value is greater than 30"
-        ), f"Result incorrect: {result_var}"
+        assert result_var == "value is greater than 30", f"Result incorrect: {result_var}"
 
-        logger.info(
-            f"IF/ELSE test completed: testValue={test_value}, result={result_var}"
-        )
+        logger.info(f"IF/ELSE test completed: testValue={test_value}, result={result_var}")
 
 
 class TestVariableOperations:

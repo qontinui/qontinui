@@ -308,9 +308,7 @@ class TestFailureAnalyzer(FailureAnalyzer):
 
         return max_confidence
 
-    def _generate_diagnostic_info(
-        self, failure: TestFailure, error_text: str
-    ) -> dict[str, Any]:
+    def _generate_diagnostic_info(self, failure: TestFailure, error_text: str) -> dict[str, Any]:
         """Generate detailed diagnostic information."""
         diagnostic_info: dict[str, Any] = {
             "failure_type": failure.failure_type.value,
@@ -323,9 +321,7 @@ class TestFailureAnalyzer(FailureAnalyzer):
         }
 
         # Check all patterns and collect matches
-        all_patterns = (
-            self._migration_patterns + self._code_patterns + self._syntax_patterns
-        )
+        all_patterns = self._migration_patterns + self._code_patterns + self._syntax_patterns
 
         for pattern in all_patterns:
             if re.search(pattern.pattern, error_text, re.IGNORECASE):
@@ -361,9 +357,7 @@ class TestFailureAnalyzer(FailureAnalyzer):
         suggestions = []
 
         if is_migration_issue:
-            suggestions.extend(
-                self._get_migration_fix_suggestions(failure, diagnostic_info)
-            )
+            suggestions.extend(self._get_migration_fix_suggestions(failure, diagnostic_info))
 
         if is_code_issue:
             suggestions.extend(self._get_code_fix_suggestions(failure, diagnostic_info))
@@ -383,23 +377,15 @@ class TestFailureAnalyzer(FailureAnalyzer):
         error_text = f"{failure.error_message}\n{failure.stack_trace}"
 
         if "brobot" in error_text.lower():
-            suggestions.append(
-                "Replace Brobot imports with equivalent Qontinui imports"
-            )
+            suggestions.append("Replace Brobot imports with equivalent Qontinui imports")
             suggestions.append("Update Brobot mock usage to use Qontinui mocks")
 
         if re.search(r"@Test|@Before|@After", error_text):
-            suggestions.append(
-                "Convert JUnit annotations to pytest fixtures and decorators"
-            )
-            suggestions.append(
-                "Replace @Test with pytest test function naming convention (test_*)"
-            )
+            suggestions.append("Convert JUnit annotations to pytest fixtures and decorators")
+            suggestions.append("Replace @Test with pytest test function naming convention (test_*)")
 
         if re.search(r"assertEquals|assertTrue|assertFalse", error_text):
-            suggestions.append(
-                "Convert JUnit assertions to pytest assertions (assert statements)"
-            )
+            suggestions.append("Convert JUnit assertions to pytest assertions (assert statements)")
             suggestions.append(
                 "Update assertion syntax from assertEquals(expected, actual) "
                 "to assert actual == expected"
@@ -409,14 +395,10 @@ class TestFailureAnalyzer(FailureAnalyzer):
             suggestions.append(
                 "Replace Spring Boot annotations with Python dependency injection patterns"
             )
-            suggestions.append(
-                "Set up Python application context equivalent for integration tests"
-            )
+            suggestions.append("Set up Python application context equivalent for integration tests")
 
         if "SyntaxError" in error_text:
-            suggestions.append(
-                "Review Java-to-Python syntax conversion for completeness"
-            )
+            suggestions.append("Review Java-to-Python syntax conversion for completeness")
             suggestions.append("Check for proper Python indentation and syntax")
 
         return suggestions
@@ -430,26 +412,16 @@ class TestFailureAnalyzer(FailureAnalyzer):
         error_text = f"{failure.error_message}\n{failure.stack_trace}"
 
         if "AssertionError" in error_text:
-            suggestions.append(
-                "Review test expectations - the actual behavior may have changed"
-            )
+            suggestions.append("Review test expectations - the actual behavior may have changed")
             suggestions.append(
                 "Verify that the migrated code produces equivalent results to the Java version"
             )
-            suggestions.append(
-                "Check if test data or setup conditions are correctly migrated"
-            )
+            suggestions.append("Check if test data or setup conditions are correctly migrated")
 
         if "NoneType" in error_text:
-            suggestions.append(
-                "Check for proper object initialization in the migrated code"
-            )
-            suggestions.append(
-                "Verify that null handling is correctly implemented in Python"
-            )
-            suggestions.append(
-                "Review dependency injection and object creation patterns"
-            )
+            suggestions.append("Check for proper object initialization in the migrated code")
+            suggestions.append("Verify that null handling is correctly implemented in Python")
+            suggestions.append("Review dependency injection and object creation patterns")
 
         if "IndexError" in error_text or "KeyError" in error_text:
             suggestions.append("Verify data structure access patterns in migrated code")
@@ -459,9 +431,7 @@ class TestFailureAnalyzer(FailureAnalyzer):
         if "TimeoutError" in error_text or "timeout" in error_text.lower():
             suggestions.append("Review performance characteristics of migrated code")
             suggestions.append("Check for infinite loops or blocking operations")
-            suggestions.append(
-                "Adjust timeout values for Python execution characteristics"
-            )
+            suggestions.append("Adjust timeout values for Python execution characteristics")
 
         return suggestions
 

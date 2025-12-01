@@ -117,9 +117,7 @@ class StateMemory:
         if state:
             state.probability_exists = 0
 
-        logger.debug(
-            f"State {state_id} deactivated. Active states: {self.active_states}"
-        )
+        logger.debug(f"State {state_id} deactivated. Active states: {self.active_states}")
 
     def adjust_active_states_with_matches(
         self, matches: Matches, state_service: StateService
@@ -153,9 +151,7 @@ class StateMemory:
 
         # Optionally remove states that weren't found
         # (This depends on the search scope and configuration)
-        logger.debug(
-            f"Adjusted active states from matches. Found states: {found_state_ids}"
-        )
+        logger.debug(f"Adjusted active states from matches. Found states: {found_state_ids}")
 
     def set_active_states(self, state_ids: set[int]) -> None:
         """Set the complete set of active states.

@@ -24,9 +24,7 @@ class DragOptions(ActionConfig):
         """
         super().__init__(builder)
         self.mouse_press_options: MousePressOptions = builder.mouse_press_options
-        self.delay_between_mouse_down_and_move: float = (
-            builder.delay_between_mouse_down_and_move
-        )
+        self.delay_between_mouse_down_and_move: float = builder.delay_between_mouse_down_and_move
         self.delay_after_drag: float = builder.delay_after_drag
 
     def get_mouse_press_options(self) -> MousePressOptions:
@@ -106,9 +104,7 @@ class DragOptionsBuilder(ActionConfigBuilder):
 
         if original:
             self.mouse_press_options = original.mouse_press_options
-            self.delay_between_mouse_down_and_move = (
-                original.delay_between_mouse_down_and_move
-            )
+            self.delay_between_mouse_down_and_move = original.delay_between_mouse_down_and_move
             self.delay_after_drag = original.delay_after_drag
         else:
             self.mouse_press_options = (
@@ -131,9 +127,7 @@ class DragOptionsBuilder(ActionConfigBuilder):
         self.mouse_press_options = mouse_press_options
         return self
 
-    def set_delay_between_mouse_down_and_move(
-        self, seconds: float
-    ) -> "DragOptionsBuilder":
+    def set_delay_between_mouse_down_and_move(self, seconds: float) -> "DragOptionsBuilder":
         """Set the delay between mouse down and the drag movement.
 
         Args:

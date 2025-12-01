@@ -55,9 +55,7 @@ class EnhancedActiveStateSet:
     allow_multiple_blocking: bool = False  # Allow multiple blocking states
     track_activation_time: bool = True
 
-    def add_state(
-        self, state_id: int, group: str | None = None, blocking: bool = False
-    ) -> bool:
+    def add_state(self, state_id: int, group: str | None = None, blocking: bool = False) -> bool:
         """Add a state to the active set.
 
         Args:
@@ -95,9 +93,7 @@ class EnhancedActiveStateSet:
             activation = StateActivation(state_id=state_id, group=group)
             self._add_to_history(activation)
 
-        logger.info(
-            f"Activated state {state_id}" + (f" in group {group}" if group else "")
-        )
+        logger.info(f"Activated state {state_id}" + (f" in group {group}" if group else ""))
         return True
 
     def add_states(self, state_ids: set[int], group: str | None = None) -> set[int]:

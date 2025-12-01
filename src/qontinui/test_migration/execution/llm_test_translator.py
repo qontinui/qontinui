@@ -464,8 +464,7 @@ class {python_class_name}:
                         insert_index = i + 1
                         break
                 elif not in_docstring and (
-                    line.strip().startswith("import ")
-                    or line.strip().startswith("from ")
+                    line.strip().startswith("import ") or line.strip().startswith("from ")
                 ):
                     insert_index = i
                     break
@@ -527,15 +526,15 @@ class {python_class_name}:
 
         # Check that all original test methods are translated
         for test_method in test_file.test_methods:
-            expected_method = f"test_{test_method.name.replace('test', '').replace('Test', '').lower()}"
+            expected_method = (
+                f"test_{test_method.name.replace('test', '').replace('Test', '').lower()}"
+            )
             if expected_method not in python_code.lower():
                 errors.append(f"Missing translated method for {test_method.name}")
 
         # Check for mock usage if original had mocks
         if test_file.mock_usage and "Mock" not in python_code:
-            errors.append(
-                "Original test used mocks but translation doesn't include mock imports"
-            )
+            errors.append("Original test used mocks but translation doesn't include mock imports")
 
         return errors
 

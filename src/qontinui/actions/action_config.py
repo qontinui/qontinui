@@ -323,9 +323,7 @@ class ActionConfigBuilder(ABC):
         self.logging_options.log_on_failure = True
         return self
 
-    def set_logging_options(
-        self, logging_options: LoggingOptions
-    ) -> "ActionConfigBuilder":
+    def set_logging_options(self, logging_options: LoggingOptions) -> "ActionConfigBuilder":
         """Set complete logging options.
 
         Args:

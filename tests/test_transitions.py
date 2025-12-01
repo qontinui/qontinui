@@ -171,9 +171,7 @@ def basic_workflow() -> Workflow:
 
 
 @pytest.fixture
-def multi_state_config(
-    basic_states: list[State], basic_workflow: Workflow
-) -> QontinuiConfig:
+def multi_state_config(basic_states: list[State], basic_workflow: Workflow) -> QontinuiConfig:
     """Create config with multiple states and transitions."""
     transitions = [
         # OutgoingTransition with multi-state activation
@@ -225,9 +223,7 @@ def multi_state_config(
 
 
 @pytest.fixture
-def empty_activate_config(
-    basic_states: list[State], basic_workflow: Workflow
-) -> QontinuiConfig:
+def empty_activate_config(basic_states: list[State], basic_workflow: Workflow) -> QontinuiConfig:
     """Config with empty activate_states list."""
     transitions = [
         OutgoingTransition(
@@ -414,9 +410,7 @@ def test_outgoing_transition_stays_visible_true(multi_state_config: QontinuiConf
     assert "state_final" in executor.active_states
 
 
-def test_outgoing_transition_deactivate_states(
-    basic_states: list[State], basic_workflow: Workflow
-):
+def test_outgoing_transition_deactivate_states(basic_states: list[State], basic_workflow: Workflow):
     """Test OutgoingTransition explicitly deactivates states."""
     transitions = [
         OutgoingTransition(
@@ -665,9 +659,7 @@ def test_empty_activate_states_only_to_state(empty_activate_config: QontinuiConf
     assert "state_settings" not in executor.active_states
 
 
-def test_no_to_state_only_activate_states(
-    basic_states: list[State], basic_workflow: Workflow
-):
+def test_no_to_state_only_activate_states(basic_states: list[State], basic_workflow: Workflow):
     """Test OutgoingTransition with no to_state, only activate_states."""
     transitions = [
         OutgoingTransition(
@@ -1192,9 +1184,7 @@ def test_pathfinding_with_invalid_states(state_graph_simple: StateGraph):
     traversal = StateTraversal(state_graph_simple)
 
     # Invalid start state
-    result = traversal.find_path(
-        "InvalidStart", "Final", TraversalStrategy.BREADTH_FIRST
-    )
+    result = traversal.find_path("InvalidStart", "Final", TraversalStrategy.BREADTH_FIRST)
     assert result is None
 
     # Invalid goal state

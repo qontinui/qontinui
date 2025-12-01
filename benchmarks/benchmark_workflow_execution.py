@@ -144,18 +144,14 @@ def benchmark_workflow_execution(
     print(
         f"Overhead:            {results['overhead_time_ms']:.1f} ms ({results['overhead_percent']:.1f}%)"
     )
-    print(
-        f"Overhead/action:     {results['overhead_per_action_ms']:.2f} ms [{overhead_grade}]"
-    )
+    print(f"Overhead/action:     {results['overhead_per_action_ms']:.2f} ms [{overhead_grade}]")
     print(f"Target time:         {results['target_time_ms']:.1f} ms")
     print(f"Grade:               {grade}")
 
     return results
 
 
-def benchmark_parallel_workflows(
-    num_workflows: int, actions_per_workflow: int
-) -> dict[str, Any]:
+def benchmark_parallel_workflows(num_workflows: int, actions_per_workflow: int) -> dict[str, Any]:
     """Benchmark parallel workflow execution.
 
     Args:
@@ -174,9 +170,7 @@ def benchmark_parallel_workflows(
     # Create workflows
     workflows = []
     for i in range(num_workflows):
-        actions = [
-            MockAction(f"wf{i}_action_{j}", 0.001) for j in range(actions_per_workflow)
-        ]
+        actions = [MockAction(f"wf{i}_action_{j}", 0.001) for j in range(actions_per_workflow)]
         workflow = MockWorkflow(f"parallel_workflow_{i}", actions)
         workflows.append(workflow)
 
@@ -247,9 +241,7 @@ def run_all_benchmarks() -> list[dict[str, Any]]:
     print(f"\n{'=' * 60}")
     print("SUMMARY")
     print(f"{'=' * 60}")
-    print(
-        f"{'Workflow Type':<20} {'Exec Time':<15} {'Overhead/Action':<20} {'Grade':<15}"
-    )
+    print(f"{'Workflow Type':<20} {'Exec Time':<15} {'Overhead/Action':<20} {'Grade':<15}")
     print(f"{'-' * 70}")
 
     for result in results:

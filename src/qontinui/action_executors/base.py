@@ -166,13 +166,9 @@ class ActionExecutorBase(ABC):
             action: Action that succeeded
             data: Optional additional data
         """
-        self.context.emit_action_event(
-            action.id or "unknown", action.type, True, data or {}
-        )
+        self.context.emit_action_event(action.id or "unknown", action.type, True, data or {})
 
-    def _emit_action_failure(
-        self, action: Action, error: str, data: dict | None = None
-    ) -> None:
+    def _emit_action_failure(self, action: Action, error: str, data: dict | None = None) -> None:
         """Emit action failure event.
 
         Args:
@@ -191,9 +187,7 @@ class ActionExecutorBase(ABC):
             failure_data,
         )
 
-    def _get_default_timing(
-        self, category: str, key: str, default: float = 0.0
-    ) -> float:
+    def _get_default_timing(self, category: str, key: str, default: float = 0.0) -> float:
         """Get default timing value from configuration.
 
         Args:

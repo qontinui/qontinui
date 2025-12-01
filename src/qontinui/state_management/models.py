@@ -68,9 +68,7 @@ class Element:
         return {
             "id": self.id,
             "bbox": self.bbox,
-            "embedding": (
-                self.embedding.tolist() if self.embedding is not None else None
-            ),
+            "embedding": (self.embedding.tolist() if self.embedding is not None else None),
             "description": self.description,
             "element_type": self.element_type.value,
             "co_occurrences": self.co_occurrences,
@@ -243,9 +241,7 @@ class State:
             timestamp=timestamp,
         )
 
-    def is_active(
-        self, current_elements: list[Element], threshold: float = 0.7
-    ) -> bool:
+    def is_active(self, current_elements: list[Element], threshold: float = 0.7) -> bool:
         """Check if this state is currently active based on visible elements.
 
         Args:

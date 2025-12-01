@@ -38,9 +38,7 @@ class FilterExecutor:
         [35, 40]
     """
 
-    def __init__(
-        self, variable_context: VariableContext, evaluator: SafeEvaluator
-    ) -> None:
+    def __init__(self, variable_context: VariableContext, evaluator: SafeEvaluator) -> None:
         """Initialize the filter executor.
 
         Args:

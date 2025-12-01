@@ -31,9 +31,7 @@ class ValidateCommand(BaseCommand):
             help="Output format for results (default: text)",
         )
 
-        parser.add_argument(
-            "--report-file", type=Path, help="Save validation report to file"
-        )
+        parser.add_argument("--report-file", type=Path, help="Save validation report to file")
 
     def execute(self, args: Namespace) -> CommandResult:
         """Execute the validate command."""

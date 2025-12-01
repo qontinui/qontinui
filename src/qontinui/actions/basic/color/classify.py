@@ -41,9 +41,7 @@ class Classify(ActionInterface):
         """
         return ActionType.CLASSIFY
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Perform scene classification using color-based analysis.
 
         Delegates to FindColor which handles the actual classification logic.

@@ -141,9 +141,7 @@ class ActionLifecycleAspect:
 
             try:
                 # Pre-execution
-                self._pre_execution(
-                    context, action_instance, action_result, object_collections
-                )
+                self._pre_execution(context, action_instance, action_result, object_collections)
 
                 # Execute action
                 result = func(action_instance, action_result, *object_collections)
@@ -193,8 +191,7 @@ class ActionLifecycleAspect:
         """
         if self.log_events:
             logger.debug(
-                f"[{context.action_id}] Starting {context.action_type} "
-                f"({context.action_class})"
+                f"[{context.action_id}] Starting {context.action_type} " f"({context.action_class})"
             )
 
         # Pre-action pause
@@ -255,8 +252,7 @@ class ActionLifecycleAspect:
         """
         # This would integrate with screenshot capture service
         logger.debug(
-            f"Would capture {phase} screenshot for "
-            f"{context.action_type} [{context.action_id}]"
+            f"Would capture {phase} screenshot for " f"{context.action_type} [{context.action_id}]"
         )
 
     def _update_metrics(self, context: ActionContext) -> None:

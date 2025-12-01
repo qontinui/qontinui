@@ -88,15 +88,11 @@ class DefaultStateMatcher:
                 continue
 
             # Find the most likely runtime state for this component
-            runtime_state = self._find_best_runtime_state(
-                component, all_states, evidence
-            )
+            runtime_state = self._find_best_runtime_state(component, all_states, evidence)
 
             # Get state variables for this component (those used by this component)
             component_state_vars = [
-                sv.id
-                for sv in static.state_variables
-                if sv.id in component.state_variables_used
+                sv.id for sv in static.state_variables if sv.id in component.state_variables_used
             ]
 
             # Get element IDs that match this component
@@ -118,9 +114,7 @@ class DefaultStateMatcher:
             )
 
             # Compute confidence
-            correlated.confidence = compute_state_confidence(
-                correlated, strong_evidence
-            )
+            correlated.confidence = compute_state_confidence(correlated, strong_evidence)
 
             logger.info(
                 f"Correlated state: {correlated.name} "
@@ -190,9 +184,7 @@ class DefaultStateMatcher:
                 verified.append(result)
 
             except Exception as e:
-                logger.error(
-                    f"Error verifying transition {transition.id}: {e}", exc_info=True
-                )
+                logger.error(f"Error verifying transition {transition.id}: {e}", exc_info=True)
                 # Add failed verification
                 from ..models.correlated import VerificationDiscrepancy
 

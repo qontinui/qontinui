@@ -291,14 +291,9 @@ public class ExampleTest {
     def test_map_to_python_equivalent(self):
         """Test mapping of Java imports to Python equivalents."""
         assert self.scanner._map_to_python_equivalent("org.junit.Test") == "pytest"
-        assert (
-            self.scanner._map_to_python_equivalent("org.mockito.Mock")
-            == "unittest.mock.Mock"
-        )
+        assert self.scanner._map_to_python_equivalent("org.mockito.Mock") == "unittest.mock.Mock"
         assert self.scanner._map_to_python_equivalent("java.util.List") == "typing.List"
-        assert (
-            self.scanner._map_to_python_equivalent("unknown.import") == "unknown.import"
-        )
+        assert self.scanner._map_to_python_equivalent("unknown.import") == "unknown.import"
 
     def test_requires_adaptation(self):
         """Test identification of imports requiring adaptation."""

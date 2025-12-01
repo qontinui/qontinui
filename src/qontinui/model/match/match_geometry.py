@@ -28,9 +28,7 @@ class MatchGeometry:
         """
         region = match.get_region()
         if region:
-            return Location(
-                x=region.x + region.width // 2, y=region.y + region.height // 2
-            )
+            return Location(x=region.x + region.width // 2, y=region.y + region.height // 2)
         return match.target if match.target else Location(0, 0)
 
     @staticmethod

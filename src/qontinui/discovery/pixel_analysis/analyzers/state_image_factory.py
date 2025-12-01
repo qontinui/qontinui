@@ -85,9 +85,7 @@ class StateImageFactory:
 
         return state_images
 
-    def _is_region_present(
-        self, region: dict[str, Any], screenshot: np.ndarray[Any, Any]
-    ) -> bool:
+    def _is_region_present(self, region: dict[str, Any], screenshot: np.ndarray[Any, Any]) -> bool:
         """Check if a region is present in a screenshot using masked similarity."""
         x, y, x2, y2 = region["x"], region["y"], region["x2"], region["y2"]
 
@@ -108,17 +106,13 @@ class StateImageFactory:
                 # No mask - do simple comparison
                 # Calculate mean absolute difference
                 diff = np.mean(
-                    np.abs(
-                        roi.astype(np.float32) - region["pixel_data"].astype(np.float32)
-                    )
+                    np.abs(roi.astype(np.float32) - region["pixel_data"].astype(np.float32))
                 )
                 similarity = 1.0 - (diff / 255.0)
                 return cast(bool, similarity >= self.config.similarity_threshold)
 
             # Expand mask once and cache it in the region
-            mask_expanded = (
-                np.expand_dims(mask, axis=2) if len(roi.shape) == 3 else mask
-            )
+            mask_expanded = np.expand_dims(mask, axis=2) if len(roi.shape) == 3 else mask
             region["mask_expanded"] = mask_expanded  # Cache for future use
 
             # Also cache active pixel count
@@ -201,12 +195,8 @@ class StateImageFactory:
 
             # Apply mask and count in one operation
             masked_brightness = brightness * active_pixels
-            dark_pixels = np.count_nonzero(
-                (masked_brightness < dark_threshold) & active_pixels
-            )
-            light_pixels = np.count_nonzero(
-                (masked_brightness > light_threshold) & active_pixels
-            )
+            dark_pixels = np.count_nonzero((masked_brightness < dark_threshold) & active_pixels)
+            light_pixels = np.count_nonzero((masked_brightness > light_threshold) & active_pixels)
         else:
             # No mask - use all pixels
             total_pixels = brightness.size

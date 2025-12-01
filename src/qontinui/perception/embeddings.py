@@ -186,9 +186,7 @@ class EmbeddingGenerator:
 
                 # Normalize if requested
                 if normalize:
-                    image_features = image_features / image_features.norm(
-                        dim=-1, keepdim=True
-                    )
+                    image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
                 # Convert to numpy
                 new_embeddings = image_features.cpu().numpy()
@@ -216,9 +214,7 @@ class EmbeddingGenerator:
             # For single image, return the first embedding (guaranteed to be non-None at this point)
             result = embeddings[0]
             if result is None:
-                raise InferenceException(
-                    self.model_name, "Failed to generate image embedding"
-                )
+                raise InferenceException(self.model_name, "Failed to generate image embedding")
             return result
 
     def encode_text(
@@ -279,9 +275,7 @@ class EmbeddingGenerator:
 
                 # Normalize if requested
                 if normalize:
-                    text_features = text_features / text_features.norm(
-                        dim=-1, keepdim=True
-                    )
+                    text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
                 # Convert to numpy
                 new_embeddings = text_features.cpu().numpy()
@@ -309,9 +303,7 @@ class EmbeddingGenerator:
             # For single text, return the first embedding (guaranteed to be non-None at this point)
             result = embeddings[0]
             if result is None:
-                raise InferenceException(
-                    self.model_name, "Failed to generate text embedding"
-                )
+                raise InferenceException(self.model_name, "Failed to generate text embedding")
             return result
 
     def encode_multimodal(
@@ -335,14 +327,8 @@ class EmbeddingGenerator:
         text_emb_result = self.encode_text(text, normalize=True)
 
         # Ensure we have single embeddings, not lists
-        image_emb = (
-            image_emb_result[0]
-            if isinstance(image_emb_result, list)
-            else image_emb_result
-        )
-        text_emb = (
-            text_emb_result[0] if isinstance(text_emb_result, list) else text_emb_result
-        )
+        image_emb = image_emb_result[0] if isinstance(image_emb_result, list) else image_emb_result
+        text_emb = text_emb_result[0] if isinstance(text_emb_result, list) else text_emb_result
 
         # Fuse embeddings
         if fusion == "average":
@@ -385,12 +371,8 @@ class EmbeddingGenerator:
 
         if metric == "cosine":
             # Normalize embeddings
-            embeddings1 = embeddings1 / np.linalg.norm(
-                embeddings1, axis=1, keepdims=True
-            )
-            embeddings2 = embeddings2 / np.linalg.norm(
-                embeddings2, axis=1, keepdims=True
-            )
+            embeddings1 = embeddings1 / np.linalg.norm(embeddings1, axis=1, keepdims=True)
+            embeddings2 = embeddings2 / np.linalg.norm(embeddings2, axis=1, keepdims=True)
             # Compute cosine similarity
             similarity = np.dot(embeddings1, embeddings2.T)
 
@@ -462,9 +444,7 @@ class EmbeddingGenerator:
             top_k_indices = indices[np.argsort(similarities)[::-1]]
 
         # Return results
-        results = [
-            (int(idx), float(similarities[i])) for i, idx in enumerate(top_k_indices)
-        ]
+        results = [(int(idx), float(similarities[i])) for i, idx in enumerate(top_k_indices)]
 
         return results
 

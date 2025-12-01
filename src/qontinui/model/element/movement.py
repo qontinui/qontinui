@@ -68,9 +68,7 @@ class Movement:
         Returns:
             Angle in radians from horizontal (0 is right, pi/2 is up)
         """
-        return math.atan2(
-            -self.delta_y, self.delta_x
-        )  # Negative because Y increases downward
+        return math.atan2(-self.delta_y, self.delta_x)  # Negative because Y increases downward
 
     @property
     def angle_degrees(self) -> float:
@@ -159,7 +157,9 @@ class Movement:
 
     def __repr__(self) -> str:
         """Developer representation."""
-        return f"Movement(start_location={self.start_location!r}, end_location={self.end_location!r})"
+        return (
+            f"Movement(start_location={self.start_location!r}, end_location={self.end_location!r})"
+        )
 
     @classmethod
     def from_coordinates(cls, x1: int, y1: int, x2: int, y2: int) -> "Movement":

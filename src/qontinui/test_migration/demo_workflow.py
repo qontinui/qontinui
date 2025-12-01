@@ -256,9 +256,7 @@ def demonstrate_cli_usage():
     print()
 
     print("3. Generate HTML report:")
-    print(
-        "   python cli.py report /path/to/qontinui/tests --format html --output report.html"
-    )
+    print("   python cli.py report /path/to/qontinui/tests --format html --output report.html")
     print()
 
     print("4. Create configuration file:")
@@ -266,9 +264,7 @@ def demonstrate_cli_usage():
     print()
 
     print("5. Dry run migration:")
-    print(
-        "   python cli.py migrate /path/to/brobot/tests /path/to/qontinui/tests --dry-run"
-    )
+    print("   python cli.py migrate /path/to/brobot/tests /path/to/qontinui/tests --dry-run")
 
 
 def main():

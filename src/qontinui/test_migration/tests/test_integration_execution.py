@@ -29,9 +29,7 @@ class TestExecutionIntegration:
     def test_generate_and_validate_test_file(self):
         """Test generating a test file and validating it."""
         # Create a test file model
-        test_method = TestMethod(
-            name="shouldCreateUser", body="assertEquals(expected, actual);"
-        )
+        test_method = TestMethod(name="shouldCreateUser", body="assertEquals(expected, actual);")
 
         test_file = TestFile(
             path=Path("UserServiceTest.java"),
@@ -61,9 +59,7 @@ class TestExecutionIntegration:
             temp_path = Path(temp_dir)
 
             # Create test file model
-            test_method = TestMethod(
-                name="testSimpleAssertion", body="assertTrue(true);"
-            )
+            test_method = TestMethod(name="testSimpleAssertion", body="assertTrue(true);")
 
             test_file = TestFile(
                 path=Path("SimpleTest.java"),
@@ -102,9 +98,7 @@ class TestExecutionIntegration:
             temp_path = Path(temp_dir)
 
             # Create and generate test file
-            test_method = TestMethod(
-                name="testSimpleAssertion", body="assertTrue(true);"
-            )
+            test_method = TestMethod(name="testSimpleAssertion", body="assertTrue(true);")
 
             test_file = TestFile(
                 path=Path("SimpleTest.java"),
@@ -166,18 +160,14 @@ test_service.py::test_processData PASSED
                     path=Path("ServiceTest.java"),
                     test_type=TestType.UNIT,
                     class_name="ServiceTest",
-                    test_methods=[
-                        TestMethod(name="processData", body="assertEquals(1, 1);")
-                    ],
+                    test_methods=[TestMethod(name="processData", body="assertEquals(1, 1);")],
                 ),
             ]
 
             # Generate and save test files
             for test_file in test_files:
                 python_content = self.generator.translate_test_file(test_file)
-                target_path = self.generator.generate_test_file_path(
-                    test_file, temp_path
-                )
+                target_path = self.generator.generate_test_file_path(test_file, temp_path)
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 target_path.write_text(python_content)
 
@@ -224,9 +214,7 @@ test_service.py::test_processData PASSED
 
     def test_generate_integration_test(self):
         """Test generating an integration test file."""
-        test_method = TestMethod(
-            name="testIntegration", body="// Integration test logic"
-        )
+        test_method = TestMethod(name="testIntegration", body="// Integration test logic")
 
         test_file = TestFile(
             path=Path("UserServiceIntegrationTest.java"),

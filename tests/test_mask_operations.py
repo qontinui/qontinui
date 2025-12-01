@@ -105,9 +105,7 @@ class TestMaskGeneration:
         assert np.sum(intersection) == 2500  # Top-left quadrant only
 
         # Test weighted combination
-        weighted = self.generator.combine_masks(
-            [mask1, mask2], "weighted", weights=[0.7, 0.3]
-        )
+        weighted = self.generator.combine_masks([mask1, mask2], "weighted", weights=[0.7, 0.3])
         assert weighted.shape == (100, 100)
 
 
@@ -166,9 +164,7 @@ class TestMaskedPattern:
             positive_samples.append(sample)
 
         # Optimize mask by stability
-        optimized_mask, metrics = self.pattern.optimize_mask(
-            positive_samples, method="stability"
-        )
+        optimized_mask, metrics = self.pattern.optimize_mask(positive_samples, method="stability")
 
         assert optimized_mask.shape == self.mask.shape
         assert "method" in metrics

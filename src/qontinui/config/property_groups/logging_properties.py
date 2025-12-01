@@ -21,18 +21,10 @@ class LoggingConfig(BaseModel):
 
     # Category-specific levels
     actions_level: str = Field(default="INFO", description="Log level for actions")
-    transitions_level: str = Field(
-        default="INFO", description="Log level for state transitions"
-    )
-    matching_level: str = Field(
-        default="WARN", description="Log level for pattern matching"
-    )
-    performance_level: str = Field(
-        default="INFO", description="Log level for performance metrics"
-    )
-    state_level: str = Field(
-        default="DEBUG", description="Log level for state management"
-    )
+    transitions_level: str = Field(default="INFO", description="Log level for state transitions")
+    matching_level: str = Field(default="WARN", description="Log level for pattern matching")
+    performance_level: str = Field(default="INFO", description="Log level for performance metrics")
+    state_level: str = Field(default="DEBUG", description="Log level for state management")
 
     # Output configuration
     output_format: str = Field(
@@ -40,32 +32,18 @@ class LoggingConfig(BaseModel):
         pattern="^(SIMPLE|STRUCTURED|JSON)$",
         description="Output format",
     )
-    include_timestamp: bool = Field(
-        default=True, description="Include timestamp in logs"
-    )
-    include_thread: bool = Field(
-        default=False, description="Include thread name in logs"
-    )
-    include_correlation_id: bool = Field(
-        default=True, description="Include correlation ID"
-    )
+    include_timestamp: bool = Field(default=True, description="Include timestamp in logs")
+    include_thread: bool = Field(default=False, description="Include thread name in logs")
+    include_correlation_id: bool = Field(default=True, description="Include correlation ID")
 
     # Performance
     async_logging: bool = Field(default=True, description="Use asynchronous logging")
-    buffer_size: int = Field(
-        default=8192, ge=1024, description="Buffer size for async logging"
-    )
+    buffer_size: int = Field(default=8192, ge=1024, description="Buffer size for async logging")
 
     # Enrichment
-    include_screenshots: bool = Field(
-        default=False, description="Attach screenshots to logs"
-    )
-    include_similarity_scores: bool = Field(
-        default=True, description="Include similarity scores"
-    )
-    include_timing_breakdown: bool = Field(
-        default=True, description="Include timing breakdown"
-    )
+    include_screenshots: bool = Field(default=False, description="Attach screenshots to logs")
+    include_similarity_scores: bool = Field(default=True, description="Include similarity scores")
+    include_timing_breakdown: bool = Field(default=True, description="Include timing breakdown")
 
 
 class LoggingProperties(BaseModel):

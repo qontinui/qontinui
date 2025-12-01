@@ -137,9 +137,7 @@ class Click(ActionInterface):
         log_debug(f"Debug log written to: {debug_log_path}")
         return matches.success
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute click operations on provided locations, regions, or existing matches.
 
         Click is an ATOMIC action that only performs mouse clicks. It does NOT search
@@ -197,9 +195,7 @@ class Click(ActionInterface):
                         if self.time and clicked_count < self._get_total_targets(
                             object_collections
                         ):
-                            self.time.wait(
-                                click_options.get_pause_between_individual_actions()
-                            )
+                            self.time.wait(click_options.get_pause_between_individual_actions())
 
             # Click on any locations in the collection
             for state_location in obj_collection.state_locations:
@@ -213,9 +209,7 @@ class Click(ActionInterface):
                 self._click(state_location.location, click_options, model_match)
                 matches.matches.append(find_match)  # type: ignore[attr-defined]
                 clicked_count += 1
-                if self.time and clicked_count < self._get_total_targets(
-                    object_collections
-                ):
+                if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
 
             # Click on any regions in the collection (at their center)
@@ -230,17 +224,13 @@ class Click(ActionInterface):
                 self._click(location, click_options, model_match)
                 matches.matches.append(find_match)  # type: ignore[attr-defined]
                 clicked_count += 1
-                if self.time and clicked_count < self._get_total_targets(
-                    object_collections
-                ):
+                if self.time and clicked_count < self._get_total_targets(object_collections):
                     self.time.wait(click_options.get_pause_between_individual_actions())
 
         # Set success based on whether we clicked anything
         object.__setattr__(matches, "success", clicked_count > 0)
 
-    def _get_total_targets(
-        self, object_collections: tuple[ObjectCollection, ...]
-    ) -> int:
+    def _get_total_targets(self, object_collections: tuple[ObjectCollection, ...]) -> int:
         """Count total number of clickable targets across all collections.
 
         Args:
@@ -256,9 +246,7 @@ class Click(ActionInterface):
             count += len(obj_collection.state_regions)
         return count
 
-    def _click(
-        self, location: Location, click_options: ClickOptions, match: ModelMatch
-    ) -> None:
+    def _click(self, location: Location, click_options: ClickOptions, match: ModelMatch) -> None:
         """Perform multiple clicks on a single location with configurable timing and post-click behavior.
 
         This method handles the low-level click execution for a single match, including:

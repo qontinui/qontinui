@@ -19,13 +19,9 @@ class MigrateCommand(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         """Add migrate command arguments."""
-        parser.add_argument(
-            "source", type=Path, help="Source directory containing Java tests"
-        )
+        parser.add_argument("source", type=Path, help="Source directory containing Java tests")
 
-        parser.add_argument(
-            "target", type=Path, help="Target directory for Python tests"
-        )
+        parser.add_argument("target", type=Path, help="Target directory for Python tests")
 
         parser.add_argument(
             "--preserve-structure",
@@ -82,9 +78,7 @@ class MigrateCommand(BaseCommand):
             help="Output format for results (default: text)",
         )
 
-        parser.add_argument(
-            "--report-file", type=Path, help="Save migration report to file"
-        )
+        parser.add_argument("--report-file", type=Path, help="Save migration report to file")
 
     def execute(self, args: Namespace) -> CommandResult:
         """Execute the migrate command."""
@@ -116,9 +110,7 @@ class MigrateCommand(BaseCommand):
 
             # Save report if requested
             if args.report_file:
-                OutputFormatter.save_migration_report(
-                    results, args.report_file, orchestrator
-                )
+                OutputFormatter.save_migration_report(results, args.report_file, orchestrator)
 
             # Return appropriate exit code
             return CommandResult(exit_code=0 if results.failed_tests == 0 else 1)

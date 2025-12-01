@@ -131,9 +131,7 @@ class TransitionFunction:
 
         try:
             # Check pre-condition
-            if self.pre_condition and not self._check_condition(
-                self.pre_condition, self.timeout
-            ):
+            if self.pre_condition and not self._check_condition(self.pre_condition, self.timeout):
                 result = TransitionResult(
                     success=False,
                     error="Pre-condition not met",
@@ -260,9 +258,7 @@ class TransitionFunction:
             Transition result with next state
         """
         if not self.function:
-            return TransitionResult(
-                success=False, error="No conditional function defined"
-            )
+            return TransitionResult(success=False, error="No conditional function defined")
 
         try:
             if params:
@@ -306,9 +302,7 @@ class TransitionFunction:
                     data=combined_data,
                 )
 
-        return TransitionResult(
-            success=True, duration=total_duration, data=combined_data
-        )
+        return TransitionResult(success=True, duration=total_duration, data=combined_data)
 
     def _execute_with_retries(self, params: dict[str, Any]) -> TransitionResult:
         """Execute with retry logic.
@@ -445,9 +439,7 @@ class TransitionFunction:
         Returns:
             True if composite
         """
-        return self.transition_type == TransitionType.COMPOSITE or bool(
-            self.child_functions
-        )
+        return self.transition_type == TransitionType.COMPOSITE or bool(self.child_functions)
 
     def validate(self) -> bool:
         """Validate the transition function configuration.
@@ -471,9 +463,7 @@ class TransitionFunction:
 
     def __str__(self) -> str:
         """String representation."""
-        children = (
-            f", {len(self.child_functions)} children" if self.child_functions else ""
-        )
+        children = f", {len(self.child_functions)} children" if self.child_functions else ""
         fallback = ", with fallback" if self.fallback_function else ""
         return f"TransitionFunction({self.name}, {self.transition_type.name}{children}{fallback})"
 
