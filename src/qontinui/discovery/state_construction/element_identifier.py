@@ -923,12 +923,55 @@ class ElementIdentifier:
         """
         screen_height, screen_width = screenshot.shape[:2]
 
-        # For now, return full width
-        # TODO: Implement more sophisticated detection of actual title bar edges
-        if y + height > screen_height:
+        if y + height > screen_height or y < 0:
             return None
 
-        return (0, y, screen_width, height)
+        # Extract the horizontal strip at the title bar position
+        title_strip = screenshot[y : y + height, :]
+
+        # Convert to grayscale for edge detection
+        gray = cv2.cvtColor(title_strip, cv2.COLOR_BGR2GRAY)
+
+        # Detect vertical edges to find left and right boundaries
+        edges = cv2.Canny(gray, 30, 100)
+
+        # Sum edge pixels vertically to get a horizontal profile
+        vertical_edge_profile = np.sum(edges, axis=0)
+
+        # Smooth the profile to reduce noise
+        kernel_size = max(3, screen_width // 200)
+        if kernel_size % 2 == 0:
+            kernel_size += 1
+        smoothed = cv2.GaussianBlur(
+            vertical_edge_profile.astype(np.float32).reshape(1, -1),
+            (kernel_size, 1),
+            0,
+        ).flatten()
+
+        # Find significant edge positions (potential boundaries)
+        threshold = np.mean(smoothed) + np.std(smoothed)
+        edge_positions = np.where(smoothed > threshold)[0]
+
+        if len(edge_positions) < 2:
+            # No clear edges found, return full width
+            return (0, y, screen_width, height)
+
+        # Find leftmost and rightmost significant edges
+        left_bound = int(edge_positions[0])
+        right_bound = int(edge_positions[-1])
+
+        # Ensure reasonable bounds
+        min_width = screen_width // 4
+        if right_bound - left_bound < min_width:
+            # Too narrow, likely not a real title bar
+            return (0, y, screen_width, height)
+
+        # Add small padding to include the full title bar
+        padding = 5
+        left_bound = max(0, left_bound - padding)
+        right_bound = min(screen_width, right_bound + padding)
+
+        return (left_bound, y, right_bound - left_bound, height)
 
     def _refine_regions_with_elements(
         self, regions: list[IdentifiedRegion], state_images: list[StateImage]
