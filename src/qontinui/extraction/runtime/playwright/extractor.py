@@ -429,14 +429,25 @@ class PlaywrightExtractor(RuntimeExtractor):
                 e for e in before_capture.elements if e.id not in after_element_ids
             ]
 
+            # Find states that appeared/disappeared
+            before_state_ids = {s.id for s in before_capture.states}
+            after_state_ids = {s.id for s in after_capture.states}
+
+            appeared_states = [
+                s.id for s in after_capture.states if s.id not in before_state_ids
+            ]
+            disappeared_states = [
+                s.id for s in before_capture.states if s.id not in after_state_ids
+            ]
+
             state_change = StateChange(
                 action=action,
                 before_capture=before_capture,
                 after_capture=after_capture,
                 appeared_elements=appeared_elements,
                 disappeared_elements=disappeared_elements,
-                appeared_states=[],  # TODO: Compare states
-                disappeared_states=[],  # TODO: Compare states
+                appeared_states=appeared_states,
+                disappeared_states=disappeared_states,
             )
 
             return state_change
