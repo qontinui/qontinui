@@ -92,9 +92,16 @@ class DefaultStateMatcher:
                 component, all_states, evidence
             )
 
-            # Get state variables for this component
+            # Get state variables for this component (those used by this component)
             component_state_vars = [
-                sv for sv in static.state_variables if sv.component == component.name
+                sv.id
+                for sv in static.state_variables
+                if sv.id in component.state_variables_used
+            ]
+
+            # Get element IDs that match this component
+            matched_element_ids = [
+                e.id for e in all_elements if any(ev.runtime_reference == e.id for ev in evidence)
             ]
 
             # Create correlated state
@@ -102,20 +109,12 @@ class DefaultStateMatcher:
             correlated = CorrelatedState(
                 id=state_id,
                 name=component.name,
-                component=component,
-                state_variables=component_state_vars,
-                runtime_state=runtime_state,
-                elements=[
-                    e
-                    for e in all_elements
-                    if any(ev.runtime_reference == e.id for ev in evidence)
-                ],
-                evidence=strong_evidence,
-                screenshot_id=(
-                    first_capture.screenshot_path.name
-                    if first_capture.screenshot_path
-                    else None
-                ),
+                source_component=component.id,
+                controlling_variables=component_state_vars,
+                elements=matched_element_ids,
+                match_evidence=strong_evidence,
+                source_file=component.file_path,
+                source_line=component.line_number,
             )
 
             # Compute confidence
@@ -170,7 +169,7 @@ class DefaultStateMatcher:
         verifier = TransitionVerifier(runtime_extractor)
 
         for transition in transitions:
-            logger.debug(f"Verifying transition: {transition.name}")
+            logger.debug(f"Verifying transition: {transition.id}")
 
             try:
                 # Get current state
@@ -183,7 +182,7 @@ class DefaultStateMatcher:
                 result.confidence = compute_transition_confidence(result)
 
                 logger.info(
-                    f"Verified transition: {transition.name} "
+                    f"Verified transition: {transition.id} "
                     f"(verified: {result.verified}, "
                     f"confidence: {result.confidence:.2f})"
                 )
@@ -192,15 +191,24 @@ class DefaultStateMatcher:
 
             except Exception as e:
                 logger.error(
-                    f"Error verifying transition {transition.name}: {e}", exc_info=True
+                    f"Error verifying transition {transition.id}: {e}", exc_info=True
                 )
                 # Add failed verification
+                from ..models.correlated import VerificationDiscrepancy
+
                 verified.append(
                     VerifiedTransition(
-                        inferred=transition,
+                        id=f"verified_{transition.id}",
+                        inferred=transition.id,
                         verified=False,
-                        error=str(e),
+                        verification_method="error",
                         confidence=0.0,
+                        discrepancies=[
+                            VerificationDiscrepancy(
+                                discrepancy_type="execution_error",
+                                description=str(e),
+                            )
+                        ],
                     )
                 )
 

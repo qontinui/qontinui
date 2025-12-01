@@ -103,14 +103,10 @@ def compute_transition_confidence(transition: VerifiedTransition) -> float:
     Returns:
         Confidence score between 0.0 and 1.0.
     """
-    # If verification failed completely
-    if transition.error:
-        return 0.0
-
     # If not verified at all
     if not transition.verified:
-        # Check if we at least executed something
-        if transition.actual_appear or transition.actual_disappear:
+        # Check if we at least have observed data (has discrepancies means we tried)
+        if len(transition.discrepancies) > 0:
             # Something happened, just not what we expected
             return 0.3
         return 0.0
@@ -134,26 +130,15 @@ def compute_transition_confidence(transition: VerifiedTransition) -> float:
         # Many discrepancies - low confidence
         confidence = 0.2
 
-    # Adjust based on whether we got any correct predictions
-    expected_count = len(transition.inferred.expected_appear) + len(
-        transition.inferred.expected_disappear
-    )
-    actual_count = len(transition.actual_appear) + len(transition.actual_disappear)
+    # Adjust based on whether we have effects recorded
+    expected_count = len(transition.causes_appear) + len(transition.causes_disappear)
 
     if expected_count > 0:
-        # Bonus if we got the rough magnitude right
-        magnitude_ratio = min(actual_count, expected_count) / max(
-            actual_count, expected_count, 1
-        )
-        if magnitude_ratio > 0.7:
-            confidence = min(1.0, confidence + 0.1)
+        # Bonus if we have effects recorded (indicates successful verification)
+        confidence = min(1.0, confidence + 0.1)
 
-    # Penalty if we expected changes but nothing happened
-    if expected_count > 0 and actual_count == 0:
-        confidence *= 0.5
-
-    # Bonus for fast execution (indicates reliable transition)
-    if transition.execution_time_ms < 500:
+    # Bonus if we have both inferred and observed transitions
+    if transition.inferred and transition.observed:
         confidence = min(1.0, confidence + 0.05)
 
     return min(1.0, max(0.0, confidence))
