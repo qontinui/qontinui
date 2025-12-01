@@ -336,7 +336,7 @@ def create_fs_mock(files: dict[str, str]) -> dict[str, Any]:
         ...     '/data.txt': 'Hello world'
         ... })
     """
-    mocks = {}
+    mocks: dict[str, Any] = {}
 
     # Mock exists for specified files
     def exists_mock(args):
