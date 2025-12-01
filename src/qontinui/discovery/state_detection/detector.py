@@ -231,8 +231,32 @@ class TransitionDetector:
         Returns:
             Tuple of (from_state, to_state) if transition detected, None otherwise
         """
-        # Placeholder implementation
-        # TODO: Implement transition detection logic
+        if self.state_detector is None or previous_frame is None:
+            return None
+
+        # Detect state in both frames
+        previous_result = self.state_detector.detect(previous_frame)
+        current_result = self.state_detector.detect(current_frame)
+
+        # Check if we have valid detections with sufficient confidence
+        if (
+            previous_result.state_id is None
+            or current_result.state_id is None
+            or previous_result.confidence < 0.5
+            or current_result.confidence < 0.5
+        ):
+            return None
+
+        # Check if state changed
+        if previous_result.state_id != current_result.state_id:
+            # Update tracked previous state
+            from_state = self.previous_state or previous_result.state_id
+            to_state = current_result.state_id
+            self.previous_state = to_state
+            return (from_state, to_state)
+
+        # Update previous state even if no transition
+        self.previous_state = current_result.state_id
         return None
 
     def is_stable_state(self, frames: list[np.ndarray]) -> bool:
@@ -247,9 +271,26 @@ class TransitionDetector:
         if len(frames) < self.stability_threshold:
             return False
 
-        # TODO: Implement stability check
-        # Check if all frames detect the same state
-        return False
+        if self.state_detector is None:
+            return False
+
+        # Detect state in all frames
+        detected_states: list[str | None] = []
+        for frame in frames:
+            result = self.state_detector.detect(frame)
+            # Only consider high-confidence detections
+            if result.confidence >= 0.7:
+                detected_states.append(result.state_id)
+            else:
+                detected_states.append(None)
+
+        # Check if all detections are valid and identical
+        if None in detected_states:
+            return False
+
+        # All frames should detect the same state
+        unique_states = set(detected_states)
+        return len(unique_states) == 1 and None not in unique_states
 
 
 class MultiFrameValidator:
