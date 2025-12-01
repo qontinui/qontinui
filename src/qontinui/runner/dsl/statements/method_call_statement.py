@@ -85,7 +85,11 @@ class MethodCallStatement(Statement):
         if "arguments" in data:
             arguments = [Expression.from_dict(arg) for arg in data["arguments"]]
 
-        return cls(object=data.get("object"), method=data.get("method", ""), arguments=arguments)
+        return cls(
+            object=data.get("object"),
+            method=data.get("method", ""),
+            arguments=arguments,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.

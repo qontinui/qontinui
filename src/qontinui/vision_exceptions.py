@@ -27,7 +27,11 @@ class ElementNotFoundException(PerceptionException):
         super().__init__(
             message,
             error_code="ELEMENT_NOT_FOUND",
-            context={"element": element_description, "search_region": search_region, **kwargs},
+            context={
+                "element": element_description,
+                "search_region": search_region,
+                **kwargs,
+            },
         )
 
 

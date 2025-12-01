@@ -46,7 +46,9 @@ class ConfigLoader:
             diagnostic_level=config_data.get("diagnostic_level", "detailed"),
             parallel_execution=config_data.get("parallel_execution", True),
             comparison_mode=config_data.get("comparison_mode", "behavioral"),
-            java_test_patterns=config_data.get("java_test_patterns", ["*Test.java", "*Tests.java"]),
+            java_test_patterns=config_data.get(
+                "java_test_patterns", ["*Test.java", "*Tests.java"]
+            ),
             exclude_patterns=config_data.get("exclude_patterns", []),
         )
 
@@ -62,7 +64,9 @@ class ConfigLoader:
             preserve_structure=getattr(args, "preserve_structure", True),
             enable_mock_migration=getattr(args, "enable_mocks", True),
             diagnostic_level=(
-                "detailed" if args.verbose > 1 else "normal" if args.verbose > 0 else "minimal"
+                "detailed"
+                if args.verbose > 1
+                else "normal" if args.verbose > 0 else "minimal"
             ),
             parallel_execution=getattr(args, "parallel", True),
             comparison_mode="behavioral",
@@ -95,7 +99,9 @@ class ConfigLoader:
                 "parallel_execution",
             ]
 
-            missing_fields = [field for field in required_fields if field not in config_data]
+            missing_fields = [
+                field for field in required_fields if field not in config_data
+            ]
 
             if missing_fields:
                 return False, f"Missing required fields: {missing_fields}"

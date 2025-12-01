@@ -37,7 +37,10 @@ class EmptyMatch:
     """
 
     def __init__(
-        self, name: str = "no match", search_image: Image | None = None, scene: Scene | None = None
+        self,
+        name: str = "no match",
+        search_image: Image | None = None,
+        scene: Scene | None = None,
     ) -> None:
         """Initialize EmptyMatch.
 
@@ -98,7 +101,9 @@ class EmptyMatch:
 
     def __repr__(self) -> str:
         """Developer representation."""
-        return f"EmptyMatch(name='{self.name}', region={self.region}, score={self.score})"
+        return (
+            f"EmptyMatch(name='{self.name}', region={self.region}, score={self.score})"
+        )
 
     @classmethod
     def builder(cls) -> "EmptyMatchBuilder":
@@ -175,6 +180,8 @@ class EmptyMatchBuilder:
         Returns:
             Configured EmptyMatch instance
         """
-        match = EmptyMatch(name=self.name, search_image=self.search_image, scene=self.scene)
+        match = EmptyMatch(
+            name=self.name, search_image=self.search_image, scene=self.scene
+        )
         match.region = self.region
         return match

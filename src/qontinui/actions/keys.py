@@ -132,7 +132,15 @@ class Key(Enum):
         Returns:
             True if the key is a modifier
         """
-        modifiers = {cls.SHIFT, cls.CTRL, cls.CONTROL, cls.ALT, cls.META, cls.WIN, cls.CMD}
+        modifiers = {
+            cls.SHIFT,
+            cls.CTRL,
+            cls.CONTROL,
+            cls.ALT,
+            cls.META,
+            cls.WIN,
+            cls.CMD,
+        }
         return key in modifiers
 
     @classmethod

@@ -32,7 +32,9 @@ class FindColorOrchestrator:
         self._mu_strategy = MUStrategy()
         self._classification_strategy = ClassificationStrategy()
 
-    def find(self, matches: ActionResult, object_collections: list[ObjectCollection]) -> None:
+    def find(
+        self, matches: ActionResult, object_collections: list[ObjectCollection]
+    ) -> None:
         """Find matches based on color.
 
         Args:
@@ -105,13 +107,19 @@ class FindColorOrchestrator:
         """
         color_strategy = options.get_color_strategy()
         if color_strategy == ColorStrategy.KMEANS:
-            return self._kmeans_strategy.find_color_regions(scene, target_images, options)
+            return self._kmeans_strategy.find_color_regions(
+                scene, target_images, options
+            )
         elif color_strategy == ColorStrategy.MU:
             return self._mu_strategy.find_color_regions(scene, target_images, options)
         else:  # CLASSIFICATION
-            return self._classification_strategy.find_color_regions(scene, target_images, options)
+            return self._classification_strategy.find_color_regions(
+                scene, target_images, options
+            )
 
-    def _sort_matches(self, matches: list[Match], options: ColorFindOptions) -> list[Match]:
+    def _sort_matches(
+        self, matches: list[Match], options: ColorFindOptions
+    ) -> list[Match]:
         """Sort matches based on strategy.
 
         Args:
@@ -124,7 +132,8 @@ class FindColorOrchestrator:
         if options.get_color_strategy() == ColorStrategy.CLASSIFICATION:
             # Sort by region size (largest first)
             matches.sort(
-                key=lambda m: m.region.width * m.region.height if m.region else 0, reverse=True
+                key=lambda m: m.region.width * m.region.height if m.region else 0,
+                reverse=True,
             )
         else:
             # Sort by similarity score (highest first)

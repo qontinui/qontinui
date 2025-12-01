@@ -165,7 +165,10 @@ class WorkflowOrchestrator:
                     # Execute single action normally
                     action = actions[index]
                     result = self._execute_action_with_retry(
-                        action=action, index=index, context=context, retry_policy=retry_policy
+                        action=action,
+                        index=index,
+                        context=context,
+                        retry_policy=retry_policy,
                     )
 
                     if not result.success:
@@ -187,7 +190,9 @@ class WorkflowOrchestrator:
             context.complete_workflow()
             self._emit_event("workflow_completed", statistics=context.statistics)
 
-            return WorkflowResult(success=True, context=context, completed_actions=completed)
+            return WorkflowResult(
+                success=True, context=context, completed_actions=completed
+            )
 
         except Exception as e:
             logger.error(f"Workflow execution failed with unexpected error: {e}")
@@ -235,7 +240,10 @@ class WorkflowOrchestrator:
                     # Action succeeded
                     context.complete_action(action_state, success=True)
                     self._emit_event(
-                        "action_completed", action=action_name, index=index, attempts=attempt + 1
+                        "action_completed",
+                        action=action_name,
+                        index=index,
+                        attempts=attempt + 1,
                     )
                     return ActionResult(success=True)
 
@@ -244,7 +252,9 @@ class WorkflowOrchestrator:
                     context.record_retry(action_state)
                     retry_policy.wait_for_retry(attempt)
                     attempt += 1
-                    self._emit_event("action_retrying", action=action_name, attempt=attempt)
+                    self._emit_event(
+                        "action_retrying", action=action_name, attempt=attempt
+                    )
                     continue
 
                 # No more retries
@@ -261,13 +271,18 @@ class WorkflowOrchestrator:
                     retry_policy.wait_for_retry(attempt)
                     attempt += 1
                     self._emit_event(
-                        "action_retrying", action=action_name, attempt=attempt, error=str(e)
+                        "action_retrying",
+                        action=action_name,
+                        attempt=attempt,
+                        error=str(e),
                     )
                     continue
 
                 # No more retries
                 context.complete_action(action_state, success=False, error=e)
-                self._emit_event("action_failed", action=action_name, index=index, error=str(e))
+                self._emit_event(
+                    "action_failed", action=action_name, index=index, error=str(e)
+                )
                 return ActionResult(success=False, error=e)
 
     def execute_with_condition(
@@ -348,7 +363,9 @@ class WorkflowOrchestrator:
             except Exception as e:
                 logger.warning(f"Event emission failed: {e}")
 
-    def _detect_if_image_exists_batches(self, actions: list[Any]) -> list[dict[str, Any]]:
+    def _detect_if_image_exists_batches(
+        self, actions: list[Any]
+    ) -> list[dict[str, Any]]:
         """Detect consecutive IF-image_exists actions for batching.
 
         Args:

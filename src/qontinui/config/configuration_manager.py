@@ -65,7 +65,9 @@ class ConfigurationManager:
             # Auto-load configuration
             self._auto_load_configuration()
 
-            logger.info(f"ConfigurationManager initialized in {self.environment.mode.value} mode")
+            logger.info(
+                f"ConfigurationManager initialized in {self.environment.mode.value} mode"
+            )
 
     @classmethod
     def get_instance(cls) -> "ConfigurationManager":
@@ -313,8 +315,13 @@ class ConfigurationManager:
         if self.environment.is_headless() and self.settings.illustration.enabled:
             warnings.append("Illustration enabled in headless environment")
 
-        if not self.environment.supports_screenshots() and self.settings.screenshot.save_snapshots:
-            warnings.append("Screenshot saving enabled but environment doesn't support it")
+        if (
+            not self.environment.supports_screenshots()
+            and self.settings.screenshot.save_snapshots
+        ):
+            warnings.append(
+                "Screenshot saving enabled but environment doesn't support it"
+            )
 
         # Mode-specific validation
         if self.environment.mode == ExecutionMode.PRODUCTION:
@@ -333,19 +340,33 @@ class ConfigurationManager:
             )
 
         # Logging settings validation
-        if props.logging.global_level not in ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"]:
+        if props.logging.global_level not in [
+            "OFF",
+            "ERROR",
+            "WARN",
+            "INFO",
+            "DEBUG",
+            "TRACE",
+        ]:
             warnings.append(f"Invalid logging level: {props.logging.global_level}")
 
         # Automation settings validation
         if props.automation.fail_fast and props.automation.max_retries > 0:
-            warnings.append("fail_fast enabled with max_retries > 0 - retries will be ignored")
+            warnings.append(
+                "fail_fast enabled with max_retries > 0 - retries will be ignored"
+            )
 
         # Highlight settings validation
         if self.environment.is_headless() and props.highlight.enabled:
-            warnings.append("Highlight enabled in headless environment (will have no effect)")
+            warnings.append(
+                "Highlight enabled in headless environment (will have no effect)"
+            )
 
         # Console action settings validation
-        if props.console.console_actions and not props.console.report_individual_actions:
+        if (
+            props.console.console_actions
+            and not props.console.report_individual_actions
+        ):
             warnings.append(
                 "console_actions enabled but report_individual_actions disabled - no output will be shown"
             )

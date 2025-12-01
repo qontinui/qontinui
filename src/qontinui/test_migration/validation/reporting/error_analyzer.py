@@ -101,7 +101,9 @@ class ErrorAnalyzer:
 
         return differences
 
-    def calculate_assertion_confidence(self, java_assertion: str, python_assertion: str) -> float:
+    def calculate_assertion_confidence(
+        self, java_assertion: str, python_assertion: str
+    ) -> float:
         """
         Calculate confidence in assertion equivalence.
 
@@ -113,8 +115,12 @@ class ErrorAnalyzer:
             Confidence score (0.0 to 1.0)
         """
         # Base confidence on content similarity and semantic equivalence
-        content_similarity = self._calculate_content_similarity(java_assertion, python_assertion)
-        semantic_equivalent = self._check_semantic_equivalence(java_assertion, python_assertion)
+        content_similarity = self._calculate_content_similarity(
+            java_assertion, python_assertion
+        )
+        semantic_equivalent = self._check_semantic_equivalence(
+            java_assertion, python_assertion
+        )
 
         confidence = content_similarity
         if semantic_equivalent:
@@ -122,7 +128,9 @@ class ErrorAnalyzer:
 
         return confidence
 
-    def suggest_assertion_improvement(self, java_assertion: str, python_assertion: str) -> str:
+    def suggest_assertion_improvement(
+        self, java_assertion: str, python_assertion: str
+    ) -> str:
         """
         Suggest improvements for assertion migration.
 
@@ -136,7 +144,9 @@ class ErrorAnalyzer:
         if not python_assertion:
             return f"Add Python assertion equivalent to: {java_assertion}"
 
-        confidence = self.calculate_assertion_confidence(java_assertion, python_assertion)
+        confidence = self.calculate_assertion_confidence(
+            java_assertion, python_assertion
+        )
 
         if confidence < 0.5:
             return "Review assertion migration - low confidence match"
@@ -212,7 +222,9 @@ class ErrorAnalyzer:
         # Use difflib to calculate similarity ratio
         return difflib.SequenceMatcher(None, content1, content2).ratio()
 
-    def _check_semantic_equivalence(self, java_assertion: str, python_assertion: str) -> bool:
+    def _check_semantic_equivalence(
+        self, java_assertion: str, python_assertion: str
+    ) -> bool:
         """Check if Java and Python assertions are semantically equivalent."""
         # Extract and compare the logical structure
         java_logic = self._extract_assertion_logic(java_assertion)

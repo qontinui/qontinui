@@ -39,7 +39,9 @@ class FindAll:
     use_sliding_window: bool = False  # Use sliding window for thorough search
     window_step: int = 5  # Step size for sliding window
 
-    def find(self, object_collection: ObjectCollection, options: PatternFindOptions) -> list[Match]:
+    def find(
+        self, object_collection: ObjectCollection, options: PatternFindOptions
+    ) -> list[Match]:
         """Find all occurrences of patterns.
 
         Args:
@@ -87,10 +89,14 @@ class FindAll:
 
                 # Slide window across region
                 for y in range(
-                    region.y, region.y + region.height - pattern_height, self.window_step
+                    region.y,
+                    region.y + region.height - pattern_height,
+                    self.window_step,
                 ):
                     for x in range(
-                        region.x, region.x + region.width - pattern_width, self.window_step
+                        region.x,
+                        region.x + region.width - pattern_width,
+                        self.window_step,
                     ):
                         # Create window region
                         window = Region(x, y, pattern_width * 2, pattern_height * 2)
@@ -106,7 +112,9 @@ class FindAll:
 
         return all_matches
 
-    def _filter_duplicates(self, matches: list[Match], options: PatternFindOptions) -> list[Match]:
+    def _filter_duplicates(
+        self, matches: list[Match], options: PatternFindOptions
+    ) -> list[Match]:
         """Remove duplicate matches at same location.
 
         Args:
@@ -138,7 +146,9 @@ class FindAll:
         logger.debug(f"Filtered {len(matches) - len(unique_matches)} duplicate matches")
         return unique_matches
 
-    def _filter_overlapping(self, matches: list[Match], options: PatternFindOptions) -> list[Match]:
+    def _filter_overlapping(
+        self, matches: list[Match], options: PatternFindOptions
+    ) -> list[Match]:
         """Remove overlapping matches based on IoU.
 
         Args:
@@ -160,7 +170,10 @@ class FindAll:
             is_overlapping = False
 
             for accepted in filtered:
-                if self._calculate_overlap(match.region, accepted.region) > self.overlap_threshold:
+                if (
+                    self._calculate_overlap(match.region, accepted.region)
+                    > self.overlap_threshold
+                ):
                     is_overlapping = True
                     break
 
@@ -170,7 +183,9 @@ class FindAll:
         logger.debug(f"Filtered {len(matches) - len(filtered)} overlapping matches")
         return filtered
 
-    def _filter_by_distance(self, matches: list[Match], options: PatternFindOptions) -> list[Match]:
+    def _filter_by_distance(
+        self, matches: list[Match], options: PatternFindOptions
+    ) -> list[Match]:
         """Filter matches that are too close together.
 
         Args:
@@ -199,7 +214,9 @@ class FindAll:
             if not too_close:
                 filtered.append(match)
 
-        logger.debug(f"Filtered {len(matches) - len(filtered)} matches too close together")
+        logger.debug(
+            f"Filtered {len(matches) - len(filtered)} matches too close together"
+        )
         return filtered
 
     def _sort_matches(self, matches: list[Match]) -> list[Match]:
@@ -219,7 +236,9 @@ class FindAll:
 
         return sorted(matches, key=sort_key)
 
-    def _calculate_overlap(self, region1: Region | None, region2: Region | None) -> float:
+    def _calculate_overlap(
+        self, region1: Region | None, region2: Region | None
+    ) -> float:
         """Calculate overlap ratio between two regions.
 
         Args:
@@ -253,7 +272,9 @@ class FindAll:
 
         return intersection / union
 
-    def _calculate_distance(self, loc1: Location | None, loc2: Location | None) -> float:
+    def _calculate_distance(
+        self, loc1: Location | None, loc2: Location | None
+    ) -> float:
         """Calculate distance between two locations.
 
         Args:

@@ -34,7 +34,9 @@ class Scroll(ActionInterface):
         """
         self.find = find
 
-    def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, action_result: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the scroll operation.
 
         First finds the target location using Find, then performs the
@@ -54,7 +56,9 @@ class Scroll(ActionInterface):
         location = self._find_scroll_location(action_result, object_collections)
         if not location:
             object.__setattr__(action_result, "success", False)
-            object.__setattr__(action_result, "output_text", "Could not find location to scroll")
+            object.__setattr__(
+                action_result, "output_text", "Could not find location to scroll"
+            )
             return
 
         # Perform the scroll operations

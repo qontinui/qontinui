@@ -35,7 +35,9 @@ def test_import_dsl():
     assert QontinuiDSLParser is not None
 
 
-@pytest.mark.skip(reason="Migrations module requires AI dependencies (faiss, torch, transformers)")
+@pytest.mark.skip(
+    reason="Migrations module requires AI dependencies (faiss, torch, transformers)"
+)
 def test_import_migrations():
     """Test importing migration modules."""
     from qontinui.migrations import BrobotConverter

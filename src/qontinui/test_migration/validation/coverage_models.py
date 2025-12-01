@@ -58,7 +58,9 @@ class TestMapping:
     migration_status: MigrationStatus
     migration_date: datetime | None = None
     migration_notes: str = ""
-    test_methods: dict[str, str] = field(default_factory=dict)  # java_method -> python_method
+    test_methods: dict[str, str] = field(
+        default_factory=dict
+    )  # java_method -> python_method
 
     @property
     def is_migrated(self) -> bool:
@@ -70,7 +72,9 @@ class TestMapping:
         """Calculate success rate of method migrations."""
         if not self.test_methods:
             return 0.0
-        return len([m for m in self.test_methods.values() if m]) / len(self.test_methods)
+        return len([m for m in self.test_methods.values() if m]) / len(
+            self.test_methods
+        )
 
 
 @dataclass

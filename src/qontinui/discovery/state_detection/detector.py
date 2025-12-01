@@ -46,7 +46,10 @@ class StateSignature:
 
     def __repr__(self) -> str:
         """String representation of signature."""
-        return f"StateSignature(id={self.state_id}, " f"required={len(self.required_elements)})"
+        return (
+            f"StateSignature(id={self.state_id}, "
+            f"required={len(self.required_elements)})"
+        )
 
 
 @dataclass
@@ -135,7 +138,10 @@ class SignatureBasedDetector(StateDetector):
         # 4. Return best matching state
 
         return StateDetectionResult(
-            state_id=None, confidence=0.0, matching_elements=[], method=DetectionMethod.SIGNATURE
+            state_id=None,
+            confidence=0.0,
+            matching_elements=[],
+            method=DetectionMethod.SIGNATURE,
         )
 
     def register_state(self, state_id: str, signature: StateSignature) -> None:
@@ -160,7 +166,9 @@ class SignatureBasedDetector(StateDetector):
             Match score between 0.0 and 1.0
         """
         # Check required elements
-        required_found = len(signature.required_elements.intersection(detected_elements))
+        required_found = len(
+            signature.required_elements.intersection(detected_elements)
+        )
         required_total = len(signature.required_elements)
 
         if required_total == 0:

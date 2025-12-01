@@ -116,7 +116,9 @@ class TestWorkflowOrchestrator:
         """Test workflow continues after failure with continue_on_error."""
         executor = MockActionExecutor(success_sequence=[True, False, True])
         policy = RetryPolicy(max_retries=0, continue_on_error=True)
-        orchestrator = WorkflowOrchestrator(action_executor=executor, retry_policy=policy)
+        orchestrator = WorkflowOrchestrator(
+            action_executor=executor, retry_policy=policy
+        )
 
         actions = [MockAction("action1"), MockAction("action2"), MockAction("action3")]
         result = orchestrator.execute_workflow(actions)
@@ -131,7 +133,9 @@ class TestWorkflowOrchestrator:
         # First call fails, second succeeds
         executor = MockActionExecutor(success_sequence=[False, True])
         policy = RetryPolicy(max_retries=1, base_delay=0.01)
-        orchestrator = WorkflowOrchestrator(action_executor=executor, retry_policy=policy)
+        orchestrator = WorkflowOrchestrator(
+            action_executor=executor, retry_policy=policy
+        )
 
         actions = [MockAction("action1")]
         result = orchestrator.execute_workflow(actions, retry_policy=policy)
@@ -145,7 +149,9 @@ class TestWorkflowOrchestrator:
         """Test workflow when all retries fail."""
         executor = MockActionExecutor(success_sequence=[False, False, False])
         policy = RetryPolicy(max_retries=2, base_delay=0.01)
-        orchestrator = WorkflowOrchestrator(action_executor=executor, retry_policy=policy)
+        orchestrator = WorkflowOrchestrator(
+            action_executor=executor, retry_policy=policy
+        )
 
         actions = [MockAction("action1")]
         result = orchestrator.execute_workflow(actions, retry_policy=policy)
@@ -159,7 +165,9 @@ class TestWorkflowOrchestrator:
         """Test that events are emitted during execution."""
         executor = MockActionExecutor(success_sequence=[True, True])
         emitter = MockEventEmitter()
-        orchestrator = WorkflowOrchestrator(action_executor=executor, event_emitter=emitter)
+        orchestrator = WorkflowOrchestrator(
+            action_executor=executor, event_emitter=emitter
+        )
 
         actions = [MockAction("action1"), MockAction("action2")]
         result = orchestrator.execute_workflow(actions)
@@ -190,7 +198,9 @@ class TestWorkflowOrchestrator:
         """Test that execution statistics are tracked."""
         executor = MockActionExecutor(success_sequence=[True, False, True])
         policy = RetryPolicy(max_retries=0, continue_on_error=True)
-        orchestrator = WorkflowOrchestrator(action_executor=executor, retry_policy=policy)
+        orchestrator = WorkflowOrchestrator(
+            action_executor=executor, retry_policy=policy
+        )
 
         actions = [MockAction("a1"), MockAction("a2"), MockAction("a3")]
         result = orchestrator.execute_workflow(actions)
@@ -293,7 +303,9 @@ class TestWorkflowOrchestrator:
         executor = MockActionExecutor(success_sequence=[False, True])
         # Default policy: no retry
         default_policy = RetryPolicy.no_retry()
-        orchestrator = WorkflowOrchestrator(action_executor=executor, retry_policy=default_policy)
+        orchestrator = WorkflowOrchestrator(
+            action_executor=executor, retry_policy=default_policy
+        )
 
         # Override with retry policy
         override_policy = RetryPolicy(max_retries=1, base_delay=0.01)
@@ -308,7 +320,9 @@ class TestWorkflowOrchestrator:
         """Test extraction of action names for logging."""
         executor = MockActionExecutor(success_sequence=[True])
         emitter = MockEventEmitter()
-        orchestrator = WorkflowOrchestrator(action_executor=executor, event_emitter=emitter)
+        orchestrator = WorkflowOrchestrator(
+            action_executor=executor, event_emitter=emitter
+        )
 
         actions = [MockAction("test_action")]
         orchestrator.execute_workflow(actions)
@@ -327,7 +341,9 @@ class TestWorkflowOrchestrator:
 
         executor = MockActionExecutor(success_sequence=[True])
         emitter = FailingEmitter()
-        orchestrator = WorkflowOrchestrator(action_executor=executor, event_emitter=emitter)
+        orchestrator = WorkflowOrchestrator(
+            action_executor=executor, event_emitter=emitter
+        )
 
         actions = [MockAction("action1")]
         # Should not raise despite emitter failures

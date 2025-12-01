@@ -57,7 +57,9 @@ class TemplateMatchEngine:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TEMPLATE_MATCH_ENGINE: {msg}\n")
@@ -86,7 +88,10 @@ class TemplateMatchEngine:
         log_debug("  Calling find_patterns()...")
         # Find patterns on screen
         result = self.find_patterns(
-            patterns=patterns, threshold=similarity, image_ids=image_ids, strategy=strategy
+            patterns=patterns,
+            threshold=similarity,
+            image_ids=image_ids,
+            strategy=strategy,
         )
         log_debug(f"  find_patterns() returned: {result}")
         return result
@@ -132,7 +137,9 @@ class TemplateMatchEngine:
 
         if action_result:
             self.context.update_last_action_result(action_result)
-            logger.debug(f"Found {len(action_result.matches)} matches using {strategy} strategy")
+            logger.debug(
+                f"Found {len(action_result.matches)} matches using {strategy} strategy"
+            )
 
         return action_result
 
@@ -156,7 +163,9 @@ class TemplateMatchEngine:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TEMPLATE_MATCH_ENGINE: {msg}\n")
@@ -181,7 +190,9 @@ class TemplateMatchEngine:
 
         log_debug(f"  FindAction.find() returned: {find_result}")
         log_debug(f"  find_result.found: {find_result.found if find_result else 'N/A'}")
-        log_debug(f"  find_result.matches: {find_result.matches if find_result else 'N/A'}")
+        log_debug(
+            f"  find_result.matches: {find_result.matches if find_result else 'N/A'}"
+        )
 
         if not find_result.found or not find_result.matches:
             log_debug(f"  Pattern {pattern.name} not found - returning None")
@@ -210,7 +221,9 @@ class TemplateMatchEngine:
         self.context.update_last_action_result(action_result)
         log_debug("  Updated context.last_action_result")
 
-        logger.debug(f"Found {len(action_result.matches)} matches for pattern {pattern.name}")
+        logger.debug(
+            f"Found {len(action_result.matches)} matches for pattern {pattern.name}"
+        )
         return action_result
 
     def _run_async_find(
@@ -263,7 +276,10 @@ class TemplateMatchEngine:
         return loop.run_until_complete(find_all_patterns())
 
     def _build_result_with_strategy(
-        self, async_results: list[tuple[Pattern, int, Any]], strategy: str, image_ids: list[str]
+        self,
+        async_results: list[tuple[Pattern, int, Any]],
+        strategy: str,
+        image_ids: list[str],
     ) -> ActionResult | None:
         """Build ActionResult by applying search strategy.
 
@@ -288,7 +304,8 @@ class TemplateMatchEngine:
         elif strategy == "BEST":
             # Find result with highest confidence
             best_tuple = max(
-                async_results, key=lambda r: r[2].matches[0].score if r[2].matches else 0
+                async_results,
+                key=lambda r: r[2].matches[0].score if r[2].matches else 0,
             )
             _, idx, find_result = best_tuple
             self._add_matches_to_builder(builder, find_result, idx, image_ids)
@@ -318,7 +335,11 @@ class TemplateMatchEngine:
         return builder.build()
 
     def _add_matches_to_builder(
-        self, builder: ActionResultBuilder, find_result: Any, idx: int, image_ids: list[str]
+        self,
+        builder: ActionResultBuilder,
+        find_result: Any,
+        idx: int,
+        image_ids: list[str],
     ) -> None:
         """Add matches from find_result to builder with metadata tagging.
 

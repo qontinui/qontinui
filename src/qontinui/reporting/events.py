@@ -92,7 +92,9 @@ class EventRegistry:
             True if any callbacks registered
         """
         # Single bool check + len check - very fast (~2-5 nanoseconds)
-        return self._enabled and (bool(self._callbacks) or bool(self._wildcard_callbacks))
+        return self._enabled and (
+            bool(self._callbacks) or bool(self._wildcard_callbacks)
+        )
 
     def register(
         self,
@@ -215,7 +217,10 @@ class EventRegistry:
                 logger.error(
                     f"Event callback failed for {event.type.value}: {e}",
                     exc_info=True,
-                    extra={"event_type": event.type.value, "callback": callback.__name__},
+                    extra={
+                        "event_type": event.type.value,
+                        "callback": callback.__name__,
+                    },
                 )
                 # Still continue to other callbacks
 
@@ -284,7 +289,9 @@ def unregister_callback(
     _event_registry.unregister(event_type, callback)
 
 
-def emit_event(event_type: EventType, data: dict[str, Any] | None = None, **kwargs) -> None:
+def emit_event(
+    event_type: EventType, data: dict[str, Any] | None = None, **kwargs
+) -> None:
     """Emit an event (internal library use).
 
     Args:
@@ -313,7 +320,11 @@ def emit_event(event_type: EventType, data: dict[str, Any] | None = None, **kwar
 
     # Fast path: no listeners registered (critical for performance)
     if not _event_registry.has_listeners:
-        print("[emit_event] NO LISTENERS - skipping event emission", file=sys.stderr, flush=True)
+        print(
+            "[emit_event] NO LISTENERS - skipping event emission",
+            file=sys.stderr,
+            flush=True,
+        )
         return
 
     event = Event(
@@ -322,7 +333,9 @@ def emit_event(event_type: EventType, data: dict[str, Any] | None = None, **kwar
         context=kwargs,
     )
     print(
-        f"[emit_event] Calling registry.emit() for {event_type.value}", file=sys.stderr, flush=True
+        f"[emit_event] Calling registry.emit() for {event_type.value}",
+        file=sys.stderr,
+        flush=True,
     )
     _event_registry.emit(event)
     print(

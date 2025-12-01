@@ -103,7 +103,10 @@ class TestKeyboardMouseIntegration:
                     errors.append(e)
 
         # Run concurrently
-        threads = [threading.Thread(target=keyboard_worker), threading.Thread(target=mouse_worker)]
+        threads = [
+            threading.Thread(target=keyboard_worker),
+            threading.Thread(target=mouse_worker),
+        ]
 
         for t in threads:
             t.start()

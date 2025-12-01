@@ -86,7 +86,9 @@ class ImageLoader:
             return result
 
         except (ImportError, AttributeError) as e:
-            result = LoadResult(success=False, image_name=image_name, failure_reason=str(e))
+            result = LoadResult(
+                success=False, image_name=image_name, failure_reason=str(e)
+            )
             self.load_history[image_name] = result
             return result
 
@@ -158,14 +160,18 @@ class ImageLoader:
         failed = total_attempts - successful
 
         load_times = [
-            r.load_time_ms for r in self.load_history.values() if r.load_time_ms is not None
+            r.load_time_ms
+            for r in self.load_history.values()
+            if r.load_time_ms is not None
         ]
 
         stats: dict[str, int | float] = {
             "total_attempts": total_attempts,
             "successful_loads": successful,
             "failed_loads": failed,
-            "success_rate": (successful / total_attempts * 100) if total_attempts > 0 else 0.0,
+            "success_rate": (
+                (successful / total_attempts * 100) if total_attempts > 0 else 0.0
+            ),
         }
 
         if load_times:

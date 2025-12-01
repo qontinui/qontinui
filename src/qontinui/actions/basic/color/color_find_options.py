@@ -193,7 +193,9 @@ class HSVBinOptionsBuilder:
             A new instance of HSVBinOptions
         """
         return HSVBinOptions(
-            hue_bins=self.hue_bins, saturation_bins=self.saturation_bins, value_bins=self.value_bins
+            hue_bins=self.hue_bins,
+            saturation_bins=self.saturation_bins,
+            value_bins=self.value_bins,
         )
 
 

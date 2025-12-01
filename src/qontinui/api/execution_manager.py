@@ -308,7 +308,9 @@ class ExecutionManager:
         Returns:
             List of execution records
         """
-        return await self.status_tracker.get_execution_history(workflow_id=workflow_id, limit=limit)
+        return await self.status_tracker.get_execution_history(
+            workflow_id=workflow_id, limit=limit
+        )
 
     # ========================================================================
     # Event Streaming - Delegated to ExecutionEventBus
@@ -349,7 +351,9 @@ class ExecutionManager:
     # State Operations - Delegated to StateOperationsFacade
     # ========================================================================
 
-    def execute_transition(self, execution_id: str, transition_id: str) -> dict[str, Any]:
+    def execute_transition(
+        self, execution_id: str, transition_id: str
+    ) -> dict[str, Any]:
         """Execute a transition via StateExecutionAPI.
 
         ExecutionManager NEVER touches state - all state operations delegated
@@ -372,7 +376,9 @@ class ExecutionManager:
         """
         return self.state_operations.execute_transition(execution_id, transition_id)
 
-    def navigate_to_states(self, execution_id: str, target_state_ids: list[str]) -> dict[str, Any]:
+    def navigate_to_states(
+        self, execution_id: str, target_state_ids: list[str]
+    ) -> dict[str, Any]:
         """Navigate to target states via StateExecutionAPI.
 
         ExecutionManager NEVER touches state - all state operations delegated

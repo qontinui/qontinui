@@ -133,7 +133,9 @@ class TestJSONConfigValidation:
         action_dict = {
             "id": "action-1",
             "type": "CLICK",
-            "config": {"target": {"type": "coordinates", "coordinates": {"x": 100, "y": 200}}},
+            "config": {
+                "target": {"type": "coordinates", "coordinates": {"x": 100, "y": 200}}
+            },
         }
 
         action = Action(**action_dict)
@@ -144,7 +146,9 @@ class TestJSONConfigValidation:
         action_dict = {
             "id": "action-1",
             "type": "CLICK",
-            "config": {"target": {"type": "coordinates", "coordinates": {"x": 100, "y": 200}}},
+            "config": {
+                "target": {"type": "coordinates", "coordinates": {"x": 100, "y": 200}}
+            },
             "base": {},
         }
 
@@ -160,7 +164,9 @@ class TestRealConfigFiles:
     def test_bdo_config_56(self):
         """Test that bdo_config (56).json parses correctly."""
         # Path to the actual config file
-        config_path = Path(__file__).parent.parent.parent.parent.parent / "bdo_config (56).json"
+        config_path = (
+            Path(__file__).parent.parent.parent.parent.parent / "bdo_config (56).json"
+        )
 
         # Skip if file doesn't exist (CI/CD environments)
         if not config_path.exists():
@@ -180,7 +186,9 @@ class TestRealConfigFiles:
                     )
 
         # Verify at least one action has base settings
-        assert len(actions_with_base) > 0, "Expected at least one action with base settings"
+        assert (
+            len(actions_with_base) > 0
+        ), "Expected at least one action with base settings"
 
         # Verify all base settings were parsed correctly
         for action_info in actions_with_base:

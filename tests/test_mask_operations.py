@@ -58,7 +58,10 @@ class TestMaskGeneration:
             variations.append(variation)
 
         mask, metadata = self.generator.generate_mask(
-            self.test_image, MaskType.STABILITY, variations=variations, stability_threshold=0.9
+            self.test_image,
+            MaskType.STABILITY,
+            variations=variations,
+            stability_threshold=0.9,
         )
 
         assert mask.shape == (100, 100)
@@ -102,7 +105,9 @@ class TestMaskGeneration:
         assert np.sum(intersection) == 2500  # Top-left quadrant only
 
         # Test weighted combination
-        weighted = self.generator.combine_masks([mask1, mask2], "weighted", weights=[0.7, 0.3])
+        weighted = self.generator.combine_masks(
+            [mask1, mask2], "weighted", weights=[0.7, 0.3]
+        )
         assert weighted.shape == (100, 100)
 
 
@@ -117,7 +122,10 @@ class TestMaskedPattern:
         self.mask[10:40, 10:40] = 0.5  # Partial mask in center
 
         self.pattern = MaskedPattern(
-            id="test_pattern", name="Test Pattern", pixel_data=self.image, mask=self.mask
+            id="test_pattern",
+            name="Test Pattern",
+            pixel_data=self.image,
+            mask=self.mask,
         )
 
     def test_pattern_creation(self):
@@ -158,7 +166,9 @@ class TestMaskedPattern:
             positive_samples.append(sample)
 
         # Optimize mask by stability
-        optimized_mask, metrics = self.pattern.optimize_mask(positive_samples, method="stability")
+        optimized_mask, metrics = self.pattern.optimize_mask(
+            positive_samples, method="stability"
+        )
 
         assert optimized_mask.shape == self.mask.shape
         assert "method" in metrics

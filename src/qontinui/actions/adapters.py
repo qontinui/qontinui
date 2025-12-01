@@ -91,7 +91,9 @@ class ActionAdapter:
         return self._keyboard.type_character(char)
 
     # Screen Actions (delegated to ScreenAdapter)
-    def capture_screen(self, region: tuple[int, int, int, int] | None = None) -> AdapterResult:
+    def capture_screen(
+        self, region: tuple[int, int, int, int] | None = None
+    ) -> AdapterResult:
         """Capture screenshot."""
         return self._screen.capture_screen(region)
 

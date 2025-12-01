@@ -8,9 +8,8 @@ from typing import Any, cast
 
 from config import TestMigrationConfig
 from core.models import MigrationConfig, TestFile, TestResult, TestResults
-from execution.pytest_runner import PytestRunner
-
 from discovery.scanner import BrobotTestScanner
+from execution.pytest_runner import PytestRunner
 
 
 class MinimalMigrationOrchestrator:
@@ -116,7 +115,9 @@ class MinimalMigrationOrchestrator:
 
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
             handler.setFormatter(formatter)
             logger.addHandler(handler)
 

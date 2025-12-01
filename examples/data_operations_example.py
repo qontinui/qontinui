@@ -39,7 +39,10 @@ def example_set_variable():
         type="SET_VARIABLE",
         config={
             "variableName": "total_gold",
-            "valueSource": {"type": "expression", "expression": "player_gold * 2 + 500"},
+            "valueSource": {
+                "type": "expression",
+                "expression": "player_gold * 2 + 500",
+            },
             "scope": "local",
         },
     )
@@ -52,7 +55,12 @@ def example_set_variable():
     action = Action(
         id="set_string_num",
         type="SET_VARIABLE",
-        config={"variableName": "price", "value": "123.45", "type": "number", "scope": "local"},
+        config={
+            "variableName": "price",
+            "value": "123.45",
+            "type": "number",
+            "scope": "local",
+        },
     )
     result = executor.execute_set_variable(action, context)
     print(f"   Result: {result}")
@@ -74,14 +82,18 @@ def example_get_variable():
 
     # Example 1: Get existing variable
     print("1. Getting existing variable:")
-    action = Action(id="get_username", type="GET_VARIABLE", config={"variableName": "username"})
+    action = Action(
+        id="get_username", type="GET_VARIABLE", config={"variableName": "username"}
+    )
     result = executor.execute_get_variable(action, context)
     print(f"   Result: {result}")
 
     # Example 2: Get non-existent variable with default
     print("\n2. Getting non-existent variable with default:")
     action = Action(
-        id="get_level", type="GET_VARIABLE", config={"variableName": "level", "defaultValue": 1}
+        id="get_level",
+        type="GET_VARIABLE",
+        config={"variableName": "level", "defaultValue": 1},
     )
     result = executor.execute_get_variable(action, context)
     print(f"   Result: {result}")
@@ -196,7 +208,12 @@ def example_filter():
         type="FILTER",
         config={
             "variableName": "items",
-            "condition": {"type": "property", "property": "price", "operator": ">", "value": 100},
+            "condition": {
+                "type": "property",
+                "property": "price",
+                "operator": ">",
+                "value": 100,
+            },
             "outputVariable": "expensive_items",
         },
     )
@@ -259,7 +276,9 @@ def example_filter():
     result = executor.execute_filter(action, context)
     filtered_items = result["filtered_collection"]
     print(f"   Filtered count: {len(filtered_items)}")
-    print(f"   Items: {[(item['name'], item['price'], item['level']) for item in filtered_items]}")
+    print(
+        f"   Items: {[(item['name'], item['price'], item['level']) for item in filtered_items]}"
+    )
 
 
 def example_variable_scopes():
@@ -382,7 +401,11 @@ def example_reduce_operation():
     reduce_action = Action(
         id="reduce-1",
         type="REDUCE",
-        config={"variableName": "numbers", "operation": "sum", "outputVariable": "total"},
+        config={
+            "variableName": "numbers",
+            "operation": "sum",
+            "outputVariable": "total",
+        },
     )
 
     result = executor.execute_reduce(reduce_action, context)
@@ -393,7 +416,11 @@ def example_reduce_operation():
     reduce_action2 = Action(
         id="reduce-2",
         type="REDUCE",
-        config={"variableName": "numbers", "operation": "average", "outputVariable": "avg"},
+        config={
+            "variableName": "numbers",
+            "operation": "average",
+            "outputVariable": "avg",
+        },
     )
 
     result = executor.execute_reduce(reduce_action2, context)
@@ -404,13 +431,21 @@ def example_reduce_operation():
     reduce_min = Action(
         id="reduce-3a",
         type="REDUCE",
-        config={"variableName": "numbers", "operation": "min", "outputVariable": "minimum"},
+        config={
+            "variableName": "numbers",
+            "operation": "min",
+            "outputVariable": "minimum",
+        },
     )
 
     reduce_max = Action(
         id="reduce-3b",
         type="REDUCE",
-        config={"variableName": "numbers", "operation": "max", "outputVariable": "maximum"},
+        config={
+            "variableName": "numbers",
+            "operation": "max",
+            "outputVariable": "maximum",
+        },
     )
 
     min_result = executor.execute_reduce(reduce_min, context)

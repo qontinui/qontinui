@@ -11,6 +11,7 @@ Submodules:
     - state_construction: State object creation from detected elements
     - experimental: Research and experimental detection features
     - pixel_analysis: Low-level pixel stability analysis
+    - background_removal: Remove dynamic backgrounds for robust comparison
 
 The discovery system forms the foundation for automated testing and exploration
 by enabling the system to understand and navigate application states without
@@ -28,6 +29,17 @@ Example:
     >>> builder = StateBuilder()
     >>> state = builder.build_state(elements, screenshot)
 """
+
+# Background removal
+from .background_removal import (
+    BackgroundRemovalAnalyzer,
+    BackgroundRemovalConfig,
+    create_default_config,
+    decode_base64_image,
+    encode_image_to_base64,
+    remove_backgrounds_from_base64,
+    remove_backgrounds_simple,
+)
 
 # Base classes
 from .base_detector import BaseDetector
@@ -76,6 +88,14 @@ from .state_detection import (
 # from qontinui.discovery import click_analysis
 
 __all__ = [
+    # Background removal
+    "BackgroundRemovalAnalyzer",
+    "BackgroundRemovalConfig",
+    "create_default_config",
+    "remove_backgrounds_simple",
+    "remove_backgrounds_from_base64",
+    "decode_base64_image",
+    "encode_image_to_base64",
     # Base classes
     "BaseDetector",
     "MultiScreenshotDetector",
@@ -113,4 +133,5 @@ __all__ = [
     "state_construction",
     "experimental",
     "click_analysis",
+    "background_removal",
 ]

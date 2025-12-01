@@ -15,7 +15,12 @@ class TestActionConfig:
 
     def test_fluent_interface(self):
         """Test fluent configuration interface using Builder pattern."""
-        config = ClickOptionsBuilder().set_pause_before_begin(0.5).set_pause_after_end(1.0).build()
+        config = (
+            ClickOptionsBuilder()
+            .set_pause_before_begin(0.5)
+            .set_pause_after_end(1.0)
+            .build()
+        )
 
         assert config.get_pause_before_begin() == 0.5
         assert config.get_pause_after_end() == 1.0
@@ -26,7 +31,12 @@ class TestClickOptions:
 
     def test_click_options_inherits_config(self):
         """Test that ClickOptions inherits from ActionConfig."""
-        options = ClickOptionsBuilder().set_pause_before_begin(0.5).set_pause_after_end(1.0).build()
+        options = (
+            ClickOptionsBuilder()
+            .set_pause_before_begin(0.5)
+            .set_pause_after_end(1.0)
+            .build()
+        )
 
         # Should have ActionConfig methods
         assert options.get_pause_before_begin() == 0.5
@@ -51,7 +61,9 @@ class TestPrimitives:
 
         # Create a mock PureActions instance
         mock_pure = Mock()
-        mock_pure.mouse_click.return_value = ActionResultBuilder().with_success(True).build()
+        mock_pure.mouse_click.return_value = (
+            ActionResultBuilder().with_success(True).build()
+        )
 
         options = ClickOptionsBuilder().build()
         click = MouseClick(options, pure_actions=mock_pure)
@@ -68,9 +80,15 @@ class TestPrimitives:
 
         # Create a mock PureActions instance
         mock_pure = Mock()
-        mock_pure.mouse_down.return_value = ActionResultBuilder().with_success(True).build()
-        mock_pure.mouse_move.return_value = ActionResultBuilder().with_success(True).build()
-        mock_pure.mouse_up.return_value = ActionResultBuilder().with_success(True).build()
+        mock_pure.mouse_down.return_value = (
+            ActionResultBuilder().with_success(True).build()
+        )
+        mock_pure.mouse_move.return_value = (
+            ActionResultBuilder().with_success(True).build()
+        )
+        mock_pure.mouse_up.return_value = (
+            ActionResultBuilder().with_success(True).build()
+        )
 
         options = DragOptionsBuilder().set_delay_after_drag(0.5).build()
         drag = MouseDrag(options, pure_actions=mock_pure)
@@ -86,7 +104,9 @@ class TestPrimitives:
 
         # Create a mock PureActions instance
         mock_pure = Mock()
-        mock_pure.type_character.return_value = ActionResultBuilder().with_success(True).build()
+        mock_pure.type_character.return_value = (
+            ActionResultBuilder().with_success(True).build()
+        )
 
         type_action = TypeText(pure_actions=mock_pure)
         result = type_action.execute_text("Hello")

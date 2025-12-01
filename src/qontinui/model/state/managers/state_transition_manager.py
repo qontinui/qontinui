@@ -124,5 +124,7 @@ class StateTransitionManager:
             parts.append(f"  -> {t.to_state}")
         parts.append(f"Incoming transitions: {len(self.incoming_transitions)}")
         for t in self.incoming_transitions:
-            parts.append(f"  <- {t.from_state if hasattr(t, 'from_state') else 'unknown'}")
+            parts.append(
+                f"  <- {t.from_state if hasattr(t, 'from_state') else 'unknown'}"
+            )
         return "\n".join(parts)

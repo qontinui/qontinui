@@ -54,7 +54,11 @@ class TestDiagnosticReporter:
                 "test_file": "test_example.py",
                 "test_name": "test_method",
                 "matched_patterns": [
-                    {"description": "Brobot import error", "pattern": "brobot", "confidence": 0.9}
+                    {
+                        "description": "Brobot import error",
+                        "pattern": "brobot",
+                        "confidence": 0.9,
+                    }
                 ],
             },
         )
@@ -175,7 +179,9 @@ def test_example():
             python_path = Path(f.name)
 
         try:
-            differences = self.reporter.detect_dependency_differences(java_test, python_path)
+            differences = self.reporter.detect_dependency_differences(
+                java_test, python_path
+            )
 
             # Should find missing unittest.mock import and unknown library
             assert len(differences) >= 1
@@ -195,7 +201,9 @@ def test_example():
             path=Path("test.java"),
             test_type=TestType.UNIT,
             class_name="TestClass",
-            test_methods=[TestMethod(name="testMethod", annotations=["@Test", "@BeforeEach"])],
+            test_methods=[
+                TestMethod(name="testMethod", annotations=["@Test", "@BeforeEach"])
+            ],
             setup_methods=[TestMethod(name="setUp", annotations=["@BeforeEach"])],
         )
 
@@ -216,7 +224,9 @@ def test_method():
             assert len(differences) > 0
 
             # Check for missing BeforeEach annotation
-            missing_annotations = [d for d in differences if d.setup_type == "annotation"]
+            missing_annotations = [
+                d for d in differences if d.setup_type == "annotation"
+            ]
             assert len(missing_annotations) > 0
 
         finally:
@@ -232,7 +242,10 @@ def test_method():
             test_methods=[
                 TestMethod(
                     name="testMethod",
-                    assertions=["assertEquals(expected, actual)", "assertTrue(condition)"],
+                    assertions=[
+                        "assertEquals(expected, actual)",
+                        "assertTrue(condition)",
+                    ],
                 )
             ],
         )
@@ -271,7 +284,9 @@ def test_method():
             dependencies=[Dependency(java_import="org.junit.jupiter.api.Test")],
             test_methods=[
                 TestMethod(
-                    name="testMethod", annotations=["@Test"], assertions=["assertEquals(1, 1)"]
+                    name="testMethod",
+                    annotations=["@Test"],
+                    assertions=["assertEquals(1, 1)"],
                 )
             ],
         )
@@ -385,8 +400,14 @@ def test_example():
     def test_classify_assertion(self):
         """Test assertion classification."""
         assert self.reporter._classify_assertion("assertEquals(a, b)") == "junit_equals"
-        assert self.reporter._classify_assertion("assertTrue(condition)") == "junit_boolean"
-        assert self.reporter._classify_assertion("assertFalse(condition)") == "junit_boolean"
+        assert (
+            self.reporter._classify_assertion("assertTrue(condition)")
+            == "junit_boolean"
+        )
+        assert (
+            self.reporter._classify_assertion("assertFalse(condition)")
+            == "junit_boolean"
+        )
         assert self.reporter._classify_assertion("assertNull(value)") == "junit_null"
         assert self.reporter._classify_assertion("assertNotNull(value)") == "junit_null"
         assert (
@@ -416,7 +437,9 @@ def test_example():
 
         # Note: This is a simplified test - the actual implementation
         # may need more sophisticated logic
-        equivalent = self.reporter._check_semantic_equivalence(java_assertion, python_assertion)
+        equivalent = self.reporter._check_semantic_equivalence(
+            java_assertion, python_assertion
+        )
         not_equivalent = self.reporter._check_semantic_equivalence(
             java_assertion, different_assertion
         )
@@ -428,7 +451,9 @@ def test_example():
     def test_suggest_python_equivalent(self):
         """Test Python equivalent suggestions."""
         assert "pytest" in self.reporter._suggest_python_equivalent("org.junit.Test")
-        assert "unittest.mock" in self.reporter._suggest_python_equivalent("org.mockito.Mock")
+        assert "unittest.mock" in self.reporter._suggest_python_equivalent(
+            "org.mockito.Mock"
+        )
         assert "pytest.fixture" in self.reporter._suggest_python_equivalent(
             "org.springframework.test"
         )
@@ -441,7 +466,9 @@ def test_example():
         # All issues resolved
         dep_diffs = [
             DependencyDifference(
-                java_dependency="test", python_equivalent="pytest", missing_in_python=False
+                java_dependency="test",
+                python_equivalent="pytest",
+                missing_in_python=False,
             )
         ]
         setup_diffs = [
@@ -465,12 +492,16 @@ def test_example():
         assert 0 <= completeness <= 1
 
         # No issues - should be 100% complete
-        completeness_perfect = self.reporter._calculate_migration_completeness([], [], [])
+        completeness_perfect = self.reporter._calculate_migration_completeness(
+            [], [], []
+        )
         assert completeness_perfect == 1.0
 
     def test_calculate_overall_confidence(self):
         """Test overall confidence calculation."""
-        dep_diffs = [DependencyDifference(java_dependency="test", requires_manual_mapping=False)]
+        dep_diffs = [
+            DependencyDifference(java_dependency="test", requires_manual_mapping=False)
+        ]
         setup_diffs = [
             SetupDifference(
                 setup_type="annotation", java_setup="@Test", migration_status="complete"
@@ -502,7 +533,9 @@ def test_example():
             DependencyDifference(java_dependency="test2", requires_manual_mapping=True),
         ]
         setup_diffs = [
-            SetupDifference(setup_type="annotation", java_setup="@Test", migration_status="missing")
+            SetupDifference(
+                setup_type="annotation", java_setup="@Test", migration_status="missing"
+            )
         ]
         assert_diffs = [
             AssertionDifference(
@@ -529,7 +562,9 @@ def test_example():
 
         # Should include recommendations for each type of issue
         rec_text = " ".join(recommendations)
-        assert "dependencies" in rec_text or "setup" in rec_text or "assertion" in rec_text
+        assert (
+            "dependencies" in rec_text or "setup" in rec_text or "assertion" in rec_text
+        )
 
     def test_dependency_difference_dataclass(self):
         """Test DependencyDifference dataclass."""
@@ -610,9 +645,15 @@ def test_example():
         nonexistent_path = Path("nonexistent_file.py")
 
         # Should handle gracefully without crashing
-        dep_diffs = self.reporter.detect_dependency_differences(java_test, nonexistent_path)
-        setup_diffs = self.reporter.detect_setup_differences(java_test, nonexistent_path)
-        assert_diffs = self.reporter.compare_assertion_logic(java_test, nonexistent_path)
+        dep_diffs = self.reporter.detect_dependency_differences(
+            java_test, nonexistent_path
+        )
+        setup_diffs = self.reporter.detect_setup_differences(
+            java_test, nonexistent_path
+        )
+        assert_diffs = self.reporter.compare_assertion_logic(
+            java_test, nonexistent_path
+        )
 
         # Should return empty lists or handle gracefully
         assert isinstance(dep_diffs, list)
@@ -625,7 +666,9 @@ def test_example():
         mock_now = datetime(2023, 1, 1, 12, 0, 0)
         mock_datetime.now.return_value = mock_now
 
-        analysis = FailureAnalysis(is_migration_issue=True, is_code_issue=False, confidence=0.8)
+        analysis = FailureAnalysis(
+            is_migration_issue=True, is_code_issue=False, confidence=0.8
+        )
 
         report = self.reporter.generate_failure_report(analysis)
 

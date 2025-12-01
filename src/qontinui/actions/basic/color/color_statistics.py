@@ -86,7 +86,10 @@ class ColorStatistics:
             Similarity score (0.0 to 1.0)
         """
         # Calculate normalized differences for each channel
-        h_diff = min(abs(self.h_mean - other.h_mean), 360 - abs(self.h_mean - other.h_mean)) / 180.0
+        h_diff = (
+            min(abs(self.h_mean - other.h_mean), 360 - abs(self.h_mean - other.h_mean))
+            / 180.0
+        )
         s_diff = abs(self.s_mean - other.s_mean) / 255.0
         v_diff = abs(self.v_mean - other.v_mean) / 255.0
 
@@ -159,7 +162,10 @@ class ColorStatisticsAnalyzer:
         return stats
 
     def create_color_mask(
-        self, image: np.ndarray[Any, Any], stats: ColorStatistics, tolerance_std: float = 2.0
+        self,
+        image: np.ndarray[Any, Any],
+        stats: ColorStatistics,
+        tolerance_std: float = 2.0,
     ) -> np.ndarray[Any, Any]:
         """Create a binary mask for pixels matching color statistics.
 

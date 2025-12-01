@@ -31,7 +31,9 @@ class StateComponents:
         Returns:
             Total component count
         """
-        return len(self.state_images) + len(self.state_strings) + len(self.state_objects)
+        return (
+            len(self.state_images) + len(self.state_strings) + len(self.state_objects)
+        )
 
 
 class StateComponentExtractor:
@@ -141,7 +143,9 @@ class StateComponentExtractor:
 
         return nested
 
-    def _extract_from_list(self, item_list: list[Any], components: StateComponents) -> None:
+    def _extract_from_list(
+        self, item_list: list[Any], components: StateComponents
+    ) -> None:
         """Extract state components from a list.
 
         Args:

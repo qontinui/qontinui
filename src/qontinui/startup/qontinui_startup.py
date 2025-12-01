@@ -80,7 +80,9 @@ class QontinuiStartup:
                 screen = HALFactory.get_screen_capture()
                 screen_size = screen.get_screen_size()
                 print(f"Screen Resolution: {screen_size[0]}x{screen_size[1]}")
-                print(f"✓ SUCCESS: Capturing at resolution {screen_size[0]}x{screen_size[1]}")
+                print(
+                    f"✓ SUCCESS: Capturing at resolution {screen_size[0]}x{screen_size[1]}"
+                )
             except (ImportError, Exception):
                 # Skip screen check - it can fail in headless environments
                 print("Note: Screen resolution check skipped (no display available)")

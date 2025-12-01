@@ -11,7 +11,9 @@ from qontinui.test_migration.core.models import (
     TestMethod,
     TestType,
 )
-from qontinui.test_migration.translation.java_to_python_translator import JavaToPythonTranslator
+from qontinui.test_migration.translation.java_to_python_translator import (
+    JavaToPythonTranslator,
+)
 
 
 class TestJavaToPythonTranslator:
@@ -103,7 +105,9 @@ class TestJavaToPythonTranslator:
         assert result == "assert not(condition)"
 
         # assertEquals
-        result = self.translator._basic_assertion_translation("assertEquals(expected, actual)")
+        result = self.translator._basic_assertion_translation(
+            "assertEquals(expected, actual)"
+        )
         assert result == "assert(expected, actual)"
 
     def test_java_line_translation(self):
@@ -136,7 +140,9 @@ class TestJavaToPythonTranslator:
     def test_setup_method_translation(self):
         """Test @Before method translation."""
         setup_method = TestMethod(
-            name="setUp", annotations=["@Before"], body="userService = new UserService();"
+            name="setUp",
+            annotations=["@Before"],
+            body="userService = new UserService();",
         )
 
         python_lines = self.translator._translate_setup_method(setup_method)
@@ -176,7 +182,9 @@ class TestJavaToPythonTranslator:
     def test_test_method_with_timeout(self):
         """Test @Test method with timeout annotation."""
         test_method = TestMethod(
-            name="testWithTimeout", annotations=["@Test(timeout = 5000)"], body="// test code"
+            name="testWithTimeout",
+            annotations=["@Test(timeout = 5000)"],
+            body="// test code",
         )
 
         python_lines = self.translator._translate_test_method_full(test_method)
@@ -225,7 +233,9 @@ class TestJavaToPythonTranslator:
             ],
             setup_methods=[
                 TestMethod(
-                    name="setUp", annotations=["@Before"], body="userService = new UserService();"
+                    name="setUp",
+                    annotations=["@Before"],
+                    body="userService = new UserService();",
                 )
             ],
             test_methods=[

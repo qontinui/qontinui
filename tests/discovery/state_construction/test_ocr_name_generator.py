@@ -65,7 +65,9 @@ class TestOCRNameGenerator:
 
     def test_sanitize_text_truncation(self, generator):
         """Test long text truncation."""
-        long_text = "this is a very long text that should be truncated to fifty characters"
+        long_text = (
+            "this is a very long text that should be truncated to fifty characters"
+        )
         result = generator._sanitize_text(long_text)
         assert len(result) <= 50
         assert result.isidentifier()
@@ -82,7 +84,9 @@ class TestOCRNameGenerator:
         name = generator._generate_fallback_name(image, "button")
 
         assert "button" in name
-        assert "200x100" in name or "100x200" in name  # width x height or height x width
+        assert (
+            "200x100" in name or "100x200" in name
+        )  # width x height or height x width
         assert name.replace("_", "").replace("x", "").replace("button", "").isdigit()
 
     def test_generate_hash_based_name(self, generator):
@@ -136,8 +140,22 @@ class TestOCRNameGenerator:
 
         # Mock detected text regions
         regions = [
-            {"text": "Main Menu", "x": 100, "y": 50, "width": 200, "height": 40, "area": 8000},
-            {"text": "Footer", "x": 100, "y": 550, "width": 150, "height": 20, "area": 3000},
+            {
+                "text": "Main Menu",
+                "x": 100,
+                "y": 50,
+                "width": 200,
+                "height": 40,
+                "area": 8000,
+            },
+            {
+                "text": "Footer",
+                "x": 100,
+                "y": 550,
+                "width": 150,
+                "height": 20,
+                "area": 3000,
+            },
         ]
 
         name = generator.generate_state_name(screenshot, detected_text_regions=regions)

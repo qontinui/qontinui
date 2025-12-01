@@ -5,8 +5,15 @@ Integration tests for FixSuggestionEngine with DiagnosticReporter.
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from qontinui.test_migration.core.models import FailureAnalysis, TestFile, TestMethod, TestType
-from qontinui.test_migration.validation.diagnostic_reporter import DiagnosticReporterImpl
+from qontinui.test_migration.core.models import (
+    FailureAnalysis,
+    TestFile,
+    TestMethod,
+    TestType,
+)
+from qontinui.test_migration.validation.diagnostic_reporter import (
+    DiagnosticReporterImpl,
+)
 from qontinui.test_migration.validation.fix_suggestion_engine import (  # type: ignore[attr-defined]
     FixComplexity,
     FixSuggestionEngine,
@@ -80,7 +87,9 @@ def test_action():
             assert len(fix_suggestions) > 0
 
             # Should have import fix for Brobot
-            import_fixes = [s for s in fix_suggestions if s.fix_type == FixType.IMPORT_FIX]
+            import_fixes = [
+                s for s in fix_suggestions if s.fix_type == FixType.IMPORT_FIX
+            ]
             assert len(import_fixes) > 0
 
             brobot_fix = next(
@@ -90,11 +99,15 @@ def test_action():
             assert "qontinui" in brobot_fix.suggested_code.lower()
 
             # Should have assertion fix
-            assertion_fixes = [s for s in fix_suggestions if s.fix_type == FixType.ASSERTION_FIX]
+            assertion_fixes = [
+                s for s in fix_suggestions if s.fix_type == FixType.ASSERTION_FIX
+            ]
             assert len(assertion_fixes) > 0
 
             # Apply simple fixes
-            applied_fixes = self.fix_engine.apply_simple_fixes(fix_suggestions, python_path)
+            applied_fixes = self.fix_engine.apply_simple_fixes(
+                fix_suggestions, python_path
+            )
 
             # Verify fixes were applied
             assert len(applied_fixes) > 0
@@ -168,7 +181,9 @@ def setUp():
             assert FixType.ASSERTION_FIX in fix_types
 
             # Check annotation fixes
-            annotation_fixes = [s for s in fix_suggestions if s.fix_type == FixType.ANNOTATION_FIX]
+            annotation_fixes = [
+                s for s in fix_suggestions if s.fix_type == FixType.ANNOTATION_FIX
+            ]
             assert len(annotation_fixes) > 0
 
             test_annotation_fix = next(
@@ -178,7 +193,9 @@ def setUp():
             assert "def test_" in test_annotation_fix.suggested_code
 
             # Check assertion fixes
-            assertion_fixes = [s for s in fix_suggestions if s.fix_type == FixType.ASSERTION_FIX]
+            assertion_fixes = [
+                s for s in fix_suggestions if s.fix_type == FixType.ASSERTION_FIX
+            ]
             assert len(assertion_fixes) > 0
 
             equals_fix = next(
@@ -191,7 +208,9 @@ def setUp():
             dependency_diffs = self.diagnostic_reporter.detect_dependency_differences(
                 java_test, python_path
             )
-            setup_diffs = self.diagnostic_reporter.detect_setup_differences(java_test, python_path)
+            setup_diffs = self.diagnostic_reporter.detect_setup_differences(
+                java_test, python_path
+            )
             assertion_diffs = self.diagnostic_reporter.compare_assertion_logic(
                 java_test, python_path
             )
@@ -263,13 +282,15 @@ class TestServiceIntegration:
             spring_fixes = [
                 s
                 for s in fix_suggestions
-                if "spring" in s.description.lower() or "autowired" in s.description.lower()
+                if "spring" in s.description.lower()
+                or "autowired" in s.description.lower()
             ]
             assert len(spring_fixes) > 0
 
             # Check for SpringBootTest fix
             springboot_fix = next(
-                (s for s in fix_suggestions if "@SpringBootTest" in s.original_code), None
+                (s for s in fix_suggestions if "@SpringBootTest" in s.original_code),
+                None,
             )
             assert springboot_fix is not None
             assert "pytest.fixture" in springboot_fix.suggested_code
@@ -303,7 +324,9 @@ class TestServiceIntegration:
             },
         )
 
-        high_confidence_suggestions = self.fix_engine.suggest_fixes(high_confidence_analysis)
+        high_confidence_suggestions = self.fix_engine.suggest_fixes(
+            high_confidence_analysis
+        )
 
         # Create failure analysis with low confidence
         low_confidence_analysis = FailureAnalysis(
@@ -317,16 +340,18 @@ class TestServiceIntegration:
             },
         )
 
-        low_confidence_suggestions = self.fix_engine.suggest_fixes(low_confidence_analysis)
+        low_confidence_suggestions = self.fix_engine.suggest_fixes(
+            low_confidence_analysis
+        )
 
         # High confidence analysis should produce more specific, higher confidence suggestions
         if high_confidence_suggestions and low_confidence_suggestions:
-            avg_high_confidence = sum(s.confidence for s in high_confidence_suggestions) / len(
-                high_confidence_suggestions
-            )
-            avg_low_confidence = sum(s.confidence for s in low_confidence_suggestions) / len(
-                low_confidence_suggestions
-            )
+            avg_high_confidence = sum(
+                s.confidence for s in high_confidence_suggestions
+            ) / len(high_confidence_suggestions)
+            avg_low_confidence = sum(
+                s.confidence for s in low_confidence_suggestions
+            ) / len(low_confidence_suggestions)
 
             # High confidence analysis should generally produce higher confidence suggestions
             assert avg_high_confidence >= avg_low_confidence
@@ -384,12 +409,16 @@ def testMethod():
                 failure_analysis, java_test, python_path
             )
 
-            applied_fixes = self.fix_engine.apply_simple_fixes(fix_suggestions, python_path)
+            applied_fixes = self.fix_engine.apply_simple_fixes(
+                fix_suggestions, python_path
+            )
 
             if applied_fixes:
                 # Generate post-fix diagnostic report
-                post_fix_report = self.diagnostic_reporter.generate_comprehensive_report(
-                    java_test, python_path
+                post_fix_report = (
+                    self.diagnostic_reporter.generate_comprehensive_report(
+                        java_test, python_path
+                    )
                 )
                 post_fix_completeness = post_fix_report.migration_completeness
 
@@ -487,7 +516,11 @@ def testComplexScenario():
 
             # Should have multiple types of fixes
             fix_types = {s.fix_type for s in fix_suggestions}
-            expected_types = {FixType.IMPORT_FIX, FixType.ANNOTATION_FIX, FixType.ASSERTION_FIX}
+            expected_types = {
+                FixType.IMPORT_FIX,
+                FixType.ANNOTATION_FIX,
+                FixType.ASSERTION_FIX,
+            }
 
             # Should have at least some of the expected fix types
             assert len(fix_types.intersection(expected_types)) > 0
@@ -591,7 +624,9 @@ def testComplexScenario():
             assert suggestions[0].confidence >= 0.7
 
             # Simple fixes should be prioritized over complex ones for same confidence
-            simple_fixes = [s for s in suggestions if s.complexity == FixComplexity.SIMPLE]
+            simple_fixes = [
+                s for s in suggestions if s.complexity == FixComplexity.SIMPLE
+            ]
             if simple_fixes:
                 # Simple fixes should have reasonable confidence
                 assert any(s.confidence >= 0.7 for s in simple_fixes)

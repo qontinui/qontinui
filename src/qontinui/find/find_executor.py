@@ -238,13 +238,23 @@ class FindExecutor:
             return None
 
         if isinstance(search_region, Region):
-            return (search_region.x, search_region.y, search_region.width, search_region.height)
+            return (
+                search_region.x,
+                search_region.y,
+                search_region.width,
+                search_region.height,
+            )
 
         if isinstance(search_region, SearchRegions) and search_region.regions:
             # For multiple regions, pass the first one to matcher
             # RegionFilter should be used to filter by all regions
             first_region = search_region.regions[0]
-            return (first_region.x, first_region.y, first_region.width, first_region.height)
+            return (
+                first_region.x,
+                first_region.y,
+                first_region.width,
+                first_region.height,
+            )
 
         return None
 
@@ -274,7 +284,9 @@ class FindExecutor:
                 result = filter_instance.filter(result)
             except ValueError as e:
                 # Re-raise validation errors from filters
-                raise ValueError(f"Filter {type(filter_instance).__name__} failed: {e}") from e
+                raise ValueError(
+                    f"Filter {type(filter_instance).__name__} failed: {e}"
+                ) from e
             except Exception as e:
                 # Wrap unexpected errors
                 raise RuntimeError(

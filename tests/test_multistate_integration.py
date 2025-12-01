@@ -165,11 +165,21 @@ def test_multi_target_pathfinding():
     transitions = [
         # Main to workspace
         StateTransition(
-            id=1, name="Open Workspace", from_states={1}, activate={2, 3, 4}, exit=set(), score=1.0
+            id=1,
+            name="Open Workspace",
+            from_states={1},
+            activate={2, 3, 4},
+            exit=set(),
+            score=1.0,
         ),
         # Workspace to panels
         StateTransition(
-            id=2, name="Show Search", from_states={2, 3, 4}, activate={20}, exit=set(), score=0.5
+            id=2,
+            name="Show Search",
+            from_states={2, 3, 4},
+            activate={20},
+            exit=set(),
+            score=0.5,
         ),
         StateTransition(
             id=3,
@@ -180,7 +190,12 @@ def test_multi_target_pathfinding():
             score=0.5,
         ),
         StateTransition(
-            id=4, name="Show Debug", from_states={2, 3, 4}, activate={22}, exit=set(), score=0.5
+            id=4,
+            name="Show Debug",
+            from_states={2, 3, 4},
+            activate={22},
+            exit=set(),
+            score=0.5,
         ),
     ]
 

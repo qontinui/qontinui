@@ -42,7 +42,10 @@ class MethodCallExpression(Expression):
     """List of argument expressions to pass to the method."""
 
     def __init__(
-        self, object: str | None = None, method: str = "", arguments: list[Expression] | None = None
+        self,
+        object: str | None = None,
+        method: str = "",
+        arguments: list[Expression] | None = None,
     ) -> None:
         """Initialize method call expression.
 
@@ -70,7 +73,11 @@ class MethodCallExpression(Expression):
         if "arguments" in data:
             arguments = [Expression.from_dict(arg) for arg in data["arguments"]]
 
-        return cls(object=data.get("object"), method=data.get("method", ""), arguments=arguments)
+        return cls(
+            object=data.get("object"),
+            method=data.get("method", ""),
+            arguments=arguments,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.

@@ -10,7 +10,9 @@ This module tests all expression types including:
 
 import pytest
 
-from qontinui.runner.dsl.expressions.binary_operation_expression import BinaryOperationExpression
+from qontinui.runner.dsl.expressions.binary_operation_expression import (
+    BinaryOperationExpression,
+)
 from qontinui.runner.dsl.expressions.builder_expression import (
     BuilderExpression,
     BuilderMethodCall,
@@ -595,7 +597,9 @@ class TestMethodCallExpression:
             "expressionType": "methodCall",
             "object": "service",
             "method": "execute",
-            "arguments": [{"expressionType": "literal", "valueType": "integer", "value": 42}],
+            "arguments": [
+                {"expressionType": "literal", "valueType": "integer", "value": 42}
+            ],
         }
 
         expr = MethodCallExpression.from_dict(data)
@@ -693,7 +697,11 @@ class TestBuilderExpression:
                 {
                     "method": "withHeader",
                     "arguments": [
-                        {"expressionType": "literal", "valueType": "string", "value": "key"}
+                        {
+                            "expressionType": "literal",
+                            "valueType": "string",
+                            "value": "key",
+                        }
                     ],
                 },
                 {"method": "build", "arguments": []},
@@ -721,7 +729,9 @@ class TestBuilderExpression:
         """Test BuilderMethodCall from_dict."""
         data = {
             "method": "setProperty",
-            "arguments": [{"expressionType": "literal", "valueType": "integer", "value": 100}],
+            "arguments": [
+                {"expressionType": "literal", "valueType": "integer", "value": 100}
+            ],
         }
 
         method_call = BuilderMethodCall.from_dict(data)
@@ -829,13 +839,21 @@ class TestExpressionPolymorphism:
                 "expressionType": "binaryOperation",
                 "operator": ">",
                 "left": {"expressionType": "variable", "name": "x"},
-                "right": {"expressionType": "literal", "valueType": "integer", "value": 5},
+                "right": {
+                    "expressionType": "literal",
+                    "valueType": "integer",
+                    "value": 5,
+                },
             },
             "right": {
                 "expressionType": "binaryOperation",
                 "operator": "<=",
                 "left": {"expressionType": "variable", "name": "y"},
-                "right": {"expressionType": "literal", "valueType": "integer", "value": 10},
+                "right": {
+                    "expressionType": "literal",
+                    "valueType": "integer",
+                    "value": 10,
+                },
             },
         }
 

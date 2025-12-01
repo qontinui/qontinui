@@ -12,7 +12,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
+from qontinui.model.transition.enhanced_state_transition import (
+    TaskSequenceStateTransition,
+)
 from qontinui.state_management.state_memory import StateMemory
 
 from .enhanced_transition_executor import EnhancedTransitionExecutor
@@ -53,7 +55,9 @@ class NavigationContext:
 
     path: NavigationPath
     current_transition_index: int = 0
-    completed_transitions: list[TaskSequenceStateTransition] = field(default_factory=list)
+    completed_transitions: list[TaskSequenceStateTransition] = field(
+        default_factory=list
+    )
     failed_transition: TaskSequenceStateTransition | None = None
     rollback_performed: bool = False
     targets_reached: set[int] = field(default_factory=set)
@@ -99,7 +103,9 @@ class PathfindingNavigator:
         self.default_strategy = default_strategy
 
         # Path cache for performance
-        self.path_cache: dict[tuple[frozenset[int], frozenset[int]], NavigationPath] = {}
+        self.path_cache: dict[tuple[frozenset[int], frozenset[int]], NavigationPath] = (
+            {}
+        )
 
         # Navigation history
         self.navigation_history: list[NavigationContext] = []
@@ -207,7 +213,9 @@ class PathfindingNavigator:
 
         # Build navigation path
         path = self._build_navigation_path(
-            from_states=from_states, target_states=set(target_state_ids), transitions=transitions
+            from_states=from_states,
+            target_states=set(target_state_ids),
+            transitions=transitions,
         )
 
         # Cache path
@@ -265,7 +273,9 @@ class PathfindingNavigator:
         Returns:
             True if all targets reached
         """
-        logger.info(f"Executing navigation path with {len(context.path.transitions)} transitions")
+        logger.info(
+            f"Executing navigation path with {len(context.path.transitions)} transitions"
+        )
 
         for i, transition in enumerate(context.path.transitions):
             context.current_transition_index = i
@@ -281,7 +291,9 @@ class PathfindingNavigator:
                     if state_id in context.path.target_states:
                         context.targets_reached.add(state_id)
 
-                logger.debug(f"Completed transition {i+1}/{len(context.path.transitions)}")
+                logger.debug(
+                    f"Completed transition {i+1}/{len(context.path.transitions)}"
+                )
             else:
                 context.failed_transition = transition
                 logger.warning(f"Failed at transition {i+1}: {transition.name}")
@@ -293,7 +305,9 @@ class PathfindingNavigator:
         # Check if all targets reached
         all_reached = context.targets_reached == context.path.target_states
         if all_reached:
-            logger.info(f"Successfully reached all {len(context.path.target_states)} target states")
+            logger.info(
+                f"Successfully reached all {len(context.path.target_states)} target states"
+            )
         else:
             missing = context.path.target_states - context.targets_reached
             logger.warning(f"Failed to reach states: {missing}")
@@ -358,7 +372,9 @@ class PathfindingNavigator:
             return False
 
         # Execute alternative path
-        logger.info(f"Found alternative path with {len(alternative_path.transitions)} transitions")
+        logger.info(
+            f"Found alternative path with {len(alternative_path.transitions)} transitions"
+        )
 
         # Update context with new path
         context.path = alternative_path
@@ -400,7 +416,9 @@ class PathfindingNavigator:
             True if ALL targets are reachable
         """
         path = self.find_path_to_states(
-            target_state_ids=target_state_ids, from_state_ids=from_state_ids, use_cache=True
+            target_state_ids=target_state_ids,
+            from_state_ids=from_state_ids,
+            use_cache=True,
         )
         return path is not None
 
@@ -412,7 +430,9 @@ class PathfindingNavigator:
         """
         total = len(self.navigation_history)
         successful = sum(
-            1 for ctx in self.navigation_history if ctx.targets_reached == ctx.path.target_states
+            1
+            for ctx in self.navigation_history
+            if ctx.targets_reached == ctx.path.target_states
         )
 
         complexity_counts = {"simple": 0, "moderate": 0, "complex": 0}
@@ -465,7 +485,9 @@ class PathfindingNavigator:
             Explanation string
         """
         lines = []
-        lines.append(f"Navigation path to reach {len(path.target_states)} target states:")
+        lines.append(
+            f"Navigation path to reach {len(path.target_states)} target states:"
+        )
         lines.append(f"- Complexity: {path.complexity}")
         lines.append(f"- Total cost: {path.total_cost:.2f}")
         lines.append(f"- Estimated duration: {path.estimated_duration:.1f}s")

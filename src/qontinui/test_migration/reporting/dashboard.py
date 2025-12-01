@@ -47,7 +47,10 @@ class MigrationReportingDashboard:
         self.diagnostic_reporter = DiagnosticReporterImpl()
 
     def generate_comprehensive_report(
-        self, test_directory: Path, include_coverage: bool = True, include_diagnostics: bool = True
+        self,
+        test_directory: Path,
+        include_coverage: bool = True,
+        include_diagnostics: bool = True,
     ) -> dict[str, Any]:
         """
         Generate a comprehensive migration report.
@@ -71,7 +74,9 @@ class MigrationReportingDashboard:
             report_data["coverage"] = self._generate_coverage_report(test_directory)
 
         if include_diagnostics:
-            report_data["diagnostics"] = self._generate_diagnostic_report(test_directory)
+            report_data["diagnostics"] = self._generate_diagnostic_report(
+                test_directory
+            )
 
         return report_data
 
@@ -222,10 +227,16 @@ class MigrationReportingDashboard:
                 complexity["total_lines"] = total_lines
 
                 if complexity["largest_file"] is None or lines > file_sizes[0]:
-                    complexity["largest_file"] = {"file": str(test_file), "lines": lines}
+                    complexity["largest_file"] = {
+                        "file": str(test_file),
+                        "lines": lines,
+                    }
 
                 if complexity["smallest_file"] is None or lines < file_sizes[0]:
-                    complexity["smallest_file"] = {"file": str(test_file), "lines": lines}
+                    complexity["smallest_file"] = {
+                        "file": str(test_file),
+                        "lines": lines,
+                    }
 
             except (OSError, UnicodeDecodeError):
                 # OSError: File system errors (permission denied, file not found, etc.)

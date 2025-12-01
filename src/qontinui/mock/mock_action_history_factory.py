@@ -156,7 +156,10 @@ class MockActionHistoryFactory:
         """
         # Lower-left quarter of 1920x1080 screen
         region = Region(
-            x=random.randint(50, 300), y=random.randint(700, 900), width=width, height=height
+            x=random.randint(50, 300),
+            y=random.randint(700, 900),
+            width=width,
+            height=height,
         )
 
         return (
@@ -321,7 +324,10 @@ class MockActionHistoryBuilder:
                 center_location.region = match_region
 
                 match_obj = MatchObject(
-                    score=similarity, target=center_location, name=f"mock_match_{i}", ocr_text=""
+                    score=similarity,
+                    target=center_location,
+                    name=f"mock_match_{i}",
+                    ocr_text="",
                 )
 
                 # Create Match wrapper - but Match expects match_object not MatchObject
@@ -330,7 +336,9 @@ class MockActionHistoryBuilder:
                 matches.append(match)
 
             # Generate duration
-            duration = random.uniform(self._min_duration / 1000.0, self._max_duration / 1000.0)
+            duration = random.uniform(
+                self._min_duration / 1000.0, self._max_duration / 1000.0
+            )
 
             # Create record
             record = ActionRecord(

@@ -12,8 +12,15 @@ from pathlib import Path
 # Add the src directory to the path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from qontinui.test_migration.core.models import MockUsage, TestFile, TestMethod, TestType
-from qontinui.test_migration.execution.hybrid_test_translator import HybridTestTranslator
+from qontinui.test_migration.core.models import (
+    MockUsage,
+    TestFile,
+    TestMethod,
+    TestType,
+)
+from qontinui.test_migration.execution.hybrid_test_translator import (
+    HybridTestTranslator,
+)
 from qontinui.test_migration.execution.llm_test_translator import LLMTestTranslator
 from qontinui.test_migration.execution.python_test_generator import PythonTestGenerator
 

@@ -42,7 +42,9 @@ class Path:
     total_cost: float = 0.0
     total_probability: float = 1.0
 
-    def add_state(self, state_id: int, transition: StateTransition | None = None) -> None:
+    def add_state(
+        self, state_id: int, transition: StateTransition | None = None
+    ) -> None:
         """Add a state and optional transition to the path."""
         self.states.append(state_id)
         if transition:
@@ -116,14 +118,21 @@ class HybridPathFinder:
     reliability_weight: float = 0.2
 
     # Cache
-    _path_cache: dict[tuple[frozenset[int], frozenset[int]], Path] = field(default_factory=dict)
+    _path_cache: dict[tuple[frozenset[int], frozenset[int]], Path] = field(
+        default_factory=dict
+    )
 
     # Thread safety
-    _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
+    _lock: threading.RLock = field(
+        default_factory=threading.RLock, repr=False, compare=False
+    )
     """Lock for thread-safe access to cache and weights."""
 
     def find_path_to_states(
-        self, start_states: set[int], target_states: set[int], strategy: PathStrategy | None = None
+        self,
+        start_states: set[int],
+        target_states: set[int],
+        strategy: PathStrategy | None = None,
     ) -> Path | None:
         """Find path considering multiple active states and targets.
 
@@ -179,7 +188,9 @@ class HybridPathFinder:
                 self._path_cache[cache_key] = path
 
         if path:
-            logger.info(f"Found path with {len(path)} states, cost={path.total_cost:.2f}")
+            logger.info(
+                f"Found path with {len(path)} states, cost={path.total_cost:.2f}"
+            )
         else:
             logger.warning("No path found")
 
@@ -200,7 +211,9 @@ class HybridPathFinder:
         """
         return self._find_all_paths_recursive(start_states, target_states, max_paths)
 
-    def _find_shortest_path(self, start_states: set[int], target_states: set[int]) -> Path | None:
+    def _find_shortest_path(
+        self, start_states: set[int], target_states: set[int]
+    ) -> Path | None:
         """Find shortest path using BFS (Qontinui's efficient approach).
 
         Args:
@@ -250,7 +263,9 @@ class HybridPathFinder:
 
         return None
 
-    def _find_optimal_path(self, start_states: set[int], target_states: set[int]) -> Path | None:
+    def _find_optimal_path(
+        self, start_states: set[int], target_states: set[int]
+    ) -> Path | None:
         """Find optimal path using A* (Qontinui's approach with enhancements).
 
         Args:
@@ -308,7 +323,9 @@ class HybridPathFinder:
                     path_cost = self._calculate_path_cost(new_path)
 
                     # Add heuristic (estimated cost to target)
-                    heuristic = self._estimate_cost_to_targets(next_state, target_states)
+                    heuristic = self._estimate_cost_to_targets(
+                        next_state, target_states
+                    )
                     total_cost = path_cost + heuristic
 
                     counter += 1
@@ -469,7 +486,9 @@ class HybridPathFinder:
 
         return cost
 
-    def _estimate_cost_to_targets(self, from_state: int, target_states: set[int]) -> float:
+    def _estimate_cost_to_targets(
+        self, from_state: int, target_states: set[int]
+    ) -> float:
         """Heuristic estimate of cost to reach all targets.
 
         Args:

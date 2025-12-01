@@ -40,7 +40,9 @@ class StateOperationsFacade:
 
         logger.info("StateOperationsFacade initialized")
 
-    def execute_transition(self, execution_id: str, transition_id: str) -> dict[str, Any]:
+    def execute_transition(
+        self, execution_id: str, transition_id: str
+    ) -> dict[str, Any]:
         """Execute a transition via StateExecutionAPI.
 
         Args:
@@ -71,7 +73,9 @@ class StateOperationsFacade:
             "error": result.error,  # type: ignore[attr-defined]
         }
 
-    def navigate_to_states(self, execution_id: str, target_state_ids: list[str]) -> dict[str, Any]:
+    def navigate_to_states(
+        self, execution_id: str, target_state_ids: list[str]
+    ) -> dict[str, Any]:
         """Navigate to target states via StateExecutionAPI.
 
         Args:

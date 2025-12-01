@@ -246,7 +246,9 @@ class ActionResultBuilder:
         self._movements.append(movement)
         return self
 
-    def with_execution_history(self, history: list["ActionRecord"]) -> "ActionResultBuilder":
+    def with_execution_history(
+        self, history: list["ActionRecord"]
+    ) -> "ActionResultBuilder":
         """Set execution history.
 
         Args:

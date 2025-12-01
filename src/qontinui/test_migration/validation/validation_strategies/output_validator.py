@@ -24,7 +24,9 @@ class OutputValidator:
     and similarity score calculation.
     """
 
-    def __init__(self, ignore_whitespace: bool = True, ignore_case: bool = False) -> None:
+    def __init__(
+        self, ignore_whitespace: bool = True, ignore_case: bool = False
+    ) -> None:
         """
         Initialize the output validator.
 
@@ -131,7 +133,9 @@ class OutputValidator:
             return 1.0
 
         # Count matching characters at same positions
-        matches = sum(1 for i in range(min(len(text1), len(text2))) if text1[i] == text2[i])
+        matches = sum(
+            1 for i in range(min(len(text1), len(text2))) if text1[i] == text2[i]
+        )
 
         return matches / max_len
 

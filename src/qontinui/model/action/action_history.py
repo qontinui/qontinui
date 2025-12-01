@@ -189,7 +189,9 @@ class ActionHistory:
                     failure_start = record
                 consecutive_failures += 1
             else:
-                if consecutive_failures >= 3 and failure_start is not None:  # Pattern threshold
+                if (
+                    consecutive_failures >= 3 and failure_start is not None
+                ):  # Pattern threshold
                     patterns.append(
                         {
                             "start": failure_start.timestamp,
@@ -357,8 +359,12 @@ class ActionHistory:
             if records:
                 print(f"\n  {state}:")
                 print(f"    Records: {len(records)}")
-                print(f"    Success rate: {self.get_success_rate(state_name=state):.1%}")
-                print(f"    Avg duration: {self.get_average_duration(state_name=state):.3f}s")
+                print(
+                    f"    Success rate: {self.get_success_rate(state_name=state):.1%}"
+                )
+                print(
+                    f"    Avg duration: {self.get_average_duration(state_name=state):.3f}s"
+                )
 
     def __str__(self) -> str:
         """String representation."""

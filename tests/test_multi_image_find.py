@@ -52,7 +52,9 @@ class TestFindStateImageActionConfigSchema:
 
     def test_single_image_id(self):
         """Test single image ID in list format."""
-        config = FindStateImageActionConfig(stateId="state-1", imageIds=["stateimage-123"])
+        config = FindStateImageActionConfig(
+            stateId="state-1", imageIds=["stateimage-123"]
+        )
         assert config.image_ids == ["stateimage-123"]
         assert config.state_id == "state-1"
 
@@ -103,14 +105,16 @@ class TestSearchStrategyIntegration:
     def test_all_strategy_config(self):
         """Test ALL strategy configuration."""
         target = ImageTarget(
-            imageIds=["btn-1", "btn-2", "btn-3"], searchOptions={"searchStrategy": "ALL"}
+            imageIds=["btn-1", "btn-2", "btn-3"],
+            searchOptions={"searchStrategy": "ALL"},
         )
         assert target.search_options.search_strategy == "ALL"
 
     def test_each_strategy_config(self):
         """Test EACH strategy configuration."""
         target = ImageTarget(
-            imageIds=["indicator-1", "indicator-2"], searchOptions={"searchStrategy": "EACH"}
+            imageIds=["indicator-1", "indicator-2"],
+            searchOptions={"searchStrategy": "EACH"},
         )
         assert target.search_options.search_strategy == "EACH"
 

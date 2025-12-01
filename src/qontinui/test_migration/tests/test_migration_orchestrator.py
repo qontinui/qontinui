@@ -162,7 +162,9 @@ public class SampleTest {
         assert len(orchestrator.migration_state["failed_migrations"]) == 0
 
     @patch("qontinui.src.qontinui.test_migration.orchestrator.BrobotTestScanner")
-    def test_migrate_test_suite_no_tests_found(self, mock_scanner, orchestrator, temp_directories):
+    def test_migrate_test_suite_no_tests_found(
+        self, mock_scanner, orchestrator, temp_directories
+    ):
         """Test migration when no tests are found."""
         source_dir, target_dir = temp_directories
 
@@ -302,7 +304,9 @@ public class SampleTest {
         # Current implementation should return False
         assert result is False
 
-    def test_generate_target_path_preserve_structure(self, orchestrator, temp_directories):
+    def test_generate_target_path_preserve_structure(
+        self, orchestrator, temp_directories
+    ):
         """Test target path generation with structure preservation."""
         source_dir, target_dir = temp_directories
 
@@ -333,7 +337,9 @@ public class SampleTest {
 
         # Create config with flat structure
         config = MigrationConfig(
-            source_directories=[source_dir], target_directory=target_dir, preserve_structure=False
+            source_directories=[source_dir],
+            target_directory=target_dir,
+            preserve_structure=False,
         )
         orchestrator = TestMigrationOrchestrator(config)
 

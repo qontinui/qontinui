@@ -233,7 +233,9 @@ test_example.py::test_function2 PASSED
             assert result.total_tests > 0
             assert result.passed_tests == 0
             assert result.failed_tests > 0
-            assert all("timed out" in r.error_message for r in result.individual_results)
+            assert all(
+                "timed out" in r.error_message for r in result.individual_results
+            )
 
     def test_parse_test_counts_simple(self):
         """Test parsing test counts from pytest output."""

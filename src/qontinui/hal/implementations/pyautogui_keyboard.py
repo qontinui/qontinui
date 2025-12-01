@@ -94,7 +94,9 @@ class PyAutoGUIKeyboardOperations(IKeyboardController):
             return key
         return str(key)
 
-    def key_press(self, key: str | Key, presses: int = 1, interval: float = 0.0) -> bool:
+    def key_press(
+        self, key: str | Key, presses: int = 1, interval: float = 0.0
+    ) -> bool:
         """Press key (down and up).
 
         Args:

@@ -121,13 +121,17 @@ def merge_nearby_components(
         sizes = [(r["width"], r["height"]) for r in merged_regions]
         densities = [r["mask_density"] for r in merged_regions]
         logger.info(f"Region sizes range: {min(sizes)} to {max(sizes)}")
-        logger.info(f"Mask densities range: {min(densities):.2f} to {max(densities):.2f}")
+        logger.info(
+            f"Mask densities range: {min(densities):.2f} to {max(densities):.2f}"
+        )
 
     return merged_regions
 
 
 def visualize_merged_regions(
-    image: np.ndarray[Any, Any], merged_regions: list[dict[str, Any]], original_components: int = 0
+    image: np.ndarray[Any, Any],
+    merged_regions: list[dict[str, Any]],
+    original_components: int = 0,
 ) -> np.ndarray[Any, Any]:
     """
     Visualize merged regions on an image for debugging.
@@ -194,7 +198,9 @@ def test_merge_parameters(
 
     for gap in gap_values:
         for min_pix in min_pixel_values:
-            regions = merge_nearby_components(stability_map, max_gap=gap, min_pixels=min_pix)
+            regions = merge_nearby_components(
+                stability_map, max_gap=gap, min_pixels=min_pix
+            )
 
             key = f"gap_{gap}_minpix_{min_pix}"
             results[key] = {
@@ -202,7 +208,9 @@ def test_merge_parameters(
                 "min_pixels": min_pix,
                 "num_regions": len(regions),
                 "reduction": f"{num_original} -> {len(regions)}",
-                "reduction_pct": (1 - len(regions) / num_original) * 100 if num_original > 0 else 0,
+                "reduction_pct": (
+                    (1 - len(regions) / num_original) * 100 if num_original > 0 else 0
+                ),
             }
 
             logger.info(

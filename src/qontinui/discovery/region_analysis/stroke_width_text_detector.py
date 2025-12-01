@@ -105,7 +105,9 @@ class StrokeWidthTextDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions)
+            if all_regions
+            else 0.0
         )
 
         return RegionAnalysisResult(
@@ -120,7 +122,9 @@ class StrokeWidthTextDetector(BaseRegionAnalyzer):
             },
         )
 
-    def _detect_text_regions(self, gray: np.ndarray, screenshot_index: int) -> list[DetectedRegion]:
+    def _detect_text_regions(
+        self, gray: np.ndarray, screenshot_index: int
+    ) -> list[DetectedRegion]:
         """Detect text regions using SWT."""
         # Compute SWT image
         swt_image = self._compute_swt(gray)
@@ -137,7 +141,9 @@ class StrokeWidthTextDetector(BaseRegionAnalyzer):
             bbox, confidence, metadata = region_data
 
             detected_region = DetectedRegion(
-                bounding_box=BoundingBox(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]),
+                bounding_box=BoundingBox(
+                    bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]
+                ),
                 confidence=confidence,
                 region_type=RegionType.TEXT_AREA,
                 label=f"swt_text_{i}",
@@ -304,14 +310,19 @@ class StrokeWidthTextDetector(BaseRegionAnalyzer):
                     continue
 
                 # Check stroke width similarity
-                sw_ratio = letter["mean_stroke_width"] / (other["mean_stroke_width"] + 1e-5)
+                sw_ratio = letter["mean_stroke_width"] / (
+                    other["mean_stroke_width"] + 1e-5
+                )
                 if sw_ratio < 0.5 or sw_ratio > 2.0:
                     continue
 
                 # Check spatial proximity
                 dist = np.linalg.norm(letter["centroid"] - other["centroid"])
                 avg_height = (
-                    letter["bbox"][3] - letter["bbox"][1] + other["bbox"][3] - other["bbox"][1]
+                    letter["bbox"][3]
+                    - letter["bbox"][1]
+                    + other["bbox"][3]
+                    - other["bbox"][1]
                 ) / 2
 
                 # Should be nearby (within 3x height)

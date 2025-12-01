@@ -68,13 +68,17 @@ class StableRegionExtractor:
         return regions
 
     def _find_connected_components(
-        self, binary_map: np.ndarray[Any, Any], reference_image: np.ndarray[Any, Any] | None = None
+        self,
+        binary_map: np.ndarray[Any, Any],
+        reference_image: np.ndarray[Any, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Find connected components in binary map."""
         regions = []
 
         # Find contours
-        contours, _ = cv2.findContours(binary_map, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            binary_map, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         for contour in contours:
             # Get bounding rectangle
@@ -166,7 +170,9 @@ class StableRegionExtractor:
 
         return merged
 
-    def _calculate_overlap(self, region1: dict[str, Any], region2: dict[str, Any]) -> float:
+    def _calculate_overlap(
+        self, region1: dict[str, Any], region2: dict[str, Any]
+    ) -> float:
         """Calculate overlap ratio between two regions."""
         # Calculate intersection
         x1 = max(region1["x"], region2["x"])

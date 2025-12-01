@@ -58,7 +58,9 @@ class RunProcess(ActionInterface):
         """
         return ActionType.RUN_PROCESS
 
-    def perform(self, action_result: ActionResult, *object_collections: "ObjectCollection") -> None:
+    def perform(
+        self, action_result: ActionResult, *object_collections: "ObjectCollection"
+    ) -> None:
         """Execute the workflow with optional repetition.
 
         Args:
@@ -82,7 +84,9 @@ class RunProcess(ActionInterface):
         if not workflow_id:
             object.__setattr__(action_result, "success", False)
             object.__setattr__(
-                action_result, "output_text", "RUN_PROCESS: No workflow/process ID specified"
+                action_result,
+                "output_text",
+                "RUN_PROCESS: No workflow/process ID specified",
             )
             return
 
@@ -107,9 +111,13 @@ class RunProcess(ActionInterface):
 
         # Execute with repetition
         if repetition.get_until_success():
-            self._execute_until_success(workflow, repetition, action_result, object_collections)
+            self._execute_until_success(
+                workflow, repetition, action_result, object_collections
+            )
         else:
-            self._execute_fixed_count(workflow, repetition, action_result, object_collections)
+            self._execute_fixed_count(
+                workflow, repetition, action_result, object_collections
+            )
 
     def _get_workflow(self, workflow_id: str) -> "Workflow | Process | None":
         """Get a workflow by ID from the configuration.

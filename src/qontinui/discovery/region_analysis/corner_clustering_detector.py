@@ -102,7 +102,8 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
             threshold = params["quality_level"] * dst.max()
             corners_y, corners_x = np.where(dst > threshold)
             corners = np.array(
-                [[[x, y]] for x, y in zip(corners_x, corners_y, strict=False)], dtype=np.float32
+                [[[x, y]] for x, y in zip(corners_x, corners_y, strict=False)],
+                dtype=np.float32,
             )
 
         if corners is None:
@@ -161,7 +162,9 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
             }
         ]
 
-    def _find_dominant_spacing(self, distances: list[float], params: dict[str, Any]) -> int | None:
+    def _find_dominant_spacing(
+        self, distances: list[float], params: dict[str, Any]
+    ) -> int | None:
         """Find the dominant spacing from a list of distances"""
         if not distances:
             return None
@@ -172,7 +175,10 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
             # Find existing bin
             found_bin = False
             for bin_center in bins.keys():
-                if abs(dist - float(bin_center)) / float(bin_center) < params["spacing_tolerance"]:
+                if (
+                    abs(dist - float(bin_center)) / float(bin_center)
+                    < params["spacing_tolerance"]
+                ):
                     bins[bin_center].append(dist)
                     found_bin = True
                     break
@@ -227,7 +233,9 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
         grid_coords = np.array(list(grid_points.keys()))
 
         # DBSCAN to find contiguous grids
-        clustering = DBSCAN(eps=1.5, min_samples=params["min_grid_rows"] * params["min_grid_cols"])
+        clustering = DBSCAN(
+            eps=1.5, min_samples=params["min_grid_rows"] * params["min_grid_cols"]
+        )
         labels = clustering.fit_predict(grid_coords)
 
         # Extract each grid cluster
@@ -239,7 +247,9 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
             cluster_coords = grid_coords[labels == label]
 
             if len(cluster_coords) >= params["min_grid_rows"] * params["min_grid_cols"]:
-                region = self._create_grid_region(cluster_coords, spacing_x, spacing_y, params)
+                region = self._create_grid_region(
+                    cluster_coords, spacing_x, spacing_y, params
+                )
                 if region:
                     regions.append(region)
 

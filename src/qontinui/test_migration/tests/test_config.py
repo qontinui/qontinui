@@ -81,9 +81,13 @@ class TestTestMigrationConfig:
         assert "io.github.jspinak.brobot.actions.BrobotSettings" in mappings
 
         # Check that mappings point to Qontinui equivalents
-        assert "qontinui.test_migration.mocks" in mappings["io.github.jspinak.brobot.mock.Mock"]
         assert (
-            "qontinui.core.settings" in mappings["io.github.jspinak.brobot.actions.BrobotSettings"]
+            "qontinui.test_migration.mocks"
+            in mappings["io.github.jspinak.brobot.mock.Mock"]
+        )
+        assert (
+            "qontinui.core.settings"
+            in mappings["io.github.jspinak.brobot.actions.BrobotSettings"]
         )
 
     def test_get_pytest_markers(self):

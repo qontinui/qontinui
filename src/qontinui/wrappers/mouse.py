@@ -180,7 +180,9 @@ class Mouse:
             return controller.click_at(x, y, button)
 
     @classmethod
-    def double_click_at(cls, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
+    def double_click_at(
+        cls, x: int, y: int, button: MouseButton = MouseButton.LEFT
+    ) -> bool:
         """Double click at specific coordinates.
 
         Args:
@@ -199,7 +201,10 @@ class Mouse:
 
     @classmethod
     def down(
-        cls, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
+        cls,
+        x: int | None = None,
+        y: int | None = None,
+        button: MouseButton = MouseButton.LEFT,
     ) -> bool:
         """Press and hold mouse button.
 
@@ -219,7 +224,10 @@ class Mouse:
 
     @classmethod
     def up(
-        cls, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
+        cls,
+        x: int | None = None,
+        y: int | None = None,
+        button: MouseButton = MouseButton.LEFT,
     ) -> bool:
         """Release mouse button.
 
@@ -263,12 +271,20 @@ class Mouse:
         is_mock = MockModeManager.is_mock_mode()
 
         if is_mock:
-            result = cls._mock_input.mouse_drag(start_x, start_y, end_x, end_y, button, duration)
-            logger.debug(f"[MOCK] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+            result = cls._mock_input.mouse_drag(
+                start_x, start_y, end_x, end_y, button, duration
+            )
+            logger.debug(
+                f"[MOCK] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})"
+            )
         else:
             controller = cls._get_controller()
-            result = controller.mouse_drag(start_x, start_y, end_x, end_y, button, duration)
-            logger.debug(f"[LIVE] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+            result = controller.mouse_drag(
+                start_x, start_y, end_x, end_y, button, duration
+            )
+            logger.debug(
+                f"[LIVE] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})"
+            )
 
         # Emit event after successful drag
         if result:

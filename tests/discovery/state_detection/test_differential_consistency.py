@@ -252,7 +252,9 @@ class TestRegionExtraction:
         consistency_map = np.zeros((200, 200), dtype=np.float32)
         consistency_map[:, :] = 0.3  # Low consistency everywhere
 
-        regions = detector._extract_regions(consistency_map, threshold=0.7, min_area=100)
+        regions = detector._extract_regions(
+            consistency_map, threshold=0.7, min_area=100
+        )
 
         assert len(regions) == 0
 
@@ -408,12 +410,21 @@ class TestDynamicBackgrounds:
                     color=(240, 240, 240),
                     border_color=(100, 100, 100),
                 ),
-                ElementSpec("button", x=160, y=70, width=80, height=30, text="Option 1"),
-                ElementSpec("button", x=160, y=110, width=80, height=30, text="Option 2"),
-                ElementSpec("button", x=160, y=150, width=80, height=30, text="Option 3"),
+                ElementSpec(
+                    "button", x=160, y=70, width=80, height=30, text="Option 1"
+                ),
+                ElementSpec(
+                    "button", x=160, y=110, width=80, height=30, text="Option 2"
+                ),
+                ElementSpec(
+                    "button", x=160, y=150, width=80, height=30, text="Option 3"
+                ),
             ]
             after = generator.generate(
-                width=400, height=300, background_color=after_bg_color, elements=menu_elements
+                width=400,
+                height=300,
+                background_color=after_bg_color,
+                elements=menu_elements,
             )
 
             pairs.append((before, after))
@@ -492,7 +503,12 @@ class TestDynamicBackgrounds:
             # Before: background with moving element
             before_elements = [
                 ElementSpec(
-                    "rectangle", x=20 + i * 10, y=100, width=30, height=30, color=(255, 0, 0)
+                    "rectangle",
+                    x=20 + i * 10,
+                    y=100,
+                    width=30,
+                    height=30,
+                    color=(255, 0, 0),
                 )  # Moving red square
             ]
             before = generator.generate(width=400, height=300, elements=before_elements)
@@ -500,7 +516,12 @@ class TestDynamicBackgrounds:
             # After: same moving element + static dialog
             after_elements = [
                 ElementSpec(
-                    "rectangle", x=20 + i * 10, y=100, width=30, height=30, color=(255, 0, 0)
+                    "rectangle",
+                    x=20 + i * 10,
+                    y=100,
+                    width=30,
+                    height=30,
+                    color=(255, 0, 0),
                 ),  # Moving red square
                 ElementSpec(
                     "rectangle",
@@ -618,7 +639,9 @@ class TestVisualization:
             )
         ]
 
-        vis = detector.visualize_consistency(consistency_map, regions, screenshot, show_scores=True)
+        vis = detector.visualize_consistency(
+            consistency_map, regions, screenshot, show_scores=True
+        )
 
         assert vis.shape == (200, 300, 3)
         assert vis.dtype == np.uint8
@@ -676,7 +699,9 @@ class TestDetectMultiMethod:
             img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
             screenshots.append(img)
 
-        result = detector.detect_multi(screenshots, consistency_threshold=0.5, min_region_area=100)
+        result = detector.detect_multi(
+            screenshots, consistency_threshold=0.5, min_region_area=100
+        )
 
         assert isinstance(result, dict)
         # Should have entries for indices 1-11 (after screenshots)
@@ -760,10 +785,22 @@ class TestEdgeCases:
         """
         pairs = []
         pairs.extend(
-            [(np.zeros((100, 100, 3), dtype=np.uint8), np.zeros((100, 100, 3), dtype=np.uint8))] * 5
+            [
+                (
+                    np.zeros((100, 100, 3), dtype=np.uint8),
+                    np.zeros((100, 100, 3), dtype=np.uint8),
+                )
+            ]
+            * 5
         )
         pairs.extend(
-            [(np.zeros((120, 120, 3), dtype=np.uint8), np.zeros((120, 120, 3), dtype=np.uint8))] * 5
+            [
+                (
+                    np.zeros((120, 120, 3), dtype=np.uint8),
+                    np.zeros((120, 120, 3), dtype=np.uint8),
+                )
+            ]
+            * 5
         )
 
         with pytest.raises(ValueError) as exc_info:
@@ -819,7 +856,10 @@ class TestStateRegionDataclass:
         """
         diff = np.zeros((50, 50), dtype=np.uint8)
         region = StateRegion(
-            bbox=(10, 20, 30, 40), consistency_score=0.87, example_diff=diff, pixel_count=1200
+            bbox=(10, 20, 30, 40),
+            consistency_score=0.87,
+            example_diff=diff,
+            pixel_count=1200,
         )
 
         assert region.bbox == (10, 20, 30, 40)
@@ -836,7 +876,10 @@ class TestStateRegionDataclass:
         """
         diff = np.zeros((50, 50), dtype=np.uint8)
         region = StateRegion(
-            bbox=(10, 20, 30, 40), consistency_score=0.87, example_diff=diff, pixel_count=1200
+            bbox=(10, 20, 30, 40),
+            consistency_score=0.87,
+            example_diff=diff,
+            pixel_count=1200,
         )
 
         repr_str = repr(region)

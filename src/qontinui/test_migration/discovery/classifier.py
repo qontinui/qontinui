@@ -131,7 +131,10 @@ class TestClassifier:
             "powermock": ["org.powermock", "powermock"],
             "easymock": ["org.easymock", "easymock"],
             # Spring testing
-            "spring_test": ["org.springframework.test", "org.springframework.boot.test"],
+            "spring_test": [
+                "org.springframework.test",
+                "org.springframework.boot.test",
+            ],
             # Database testing
             "h2": ["org.h2", "h2"],
             "testcontainers": ["org.testcontainers", "testcontainers"],
@@ -238,15 +241,25 @@ class TestClassifier:
                 for pattern in patterns:
                     if pattern in dependency.java_import:
                         if category == "junit" or category == "testng":
-                            dependency_analysis["testing_frameworks"].append(dependency.java_import)
+                            dependency_analysis["testing_frameworks"].append(
+                                dependency.java_import
+                            )
                         elif category in ["mockito", "powermock", "easymock"]:
-                            dependency_analysis["mocking_frameworks"].append(dependency.java_import)
+                            dependency_analysis["mocking_frameworks"].append(
+                                dependency.java_import
+                            )
                         elif category == "spring_test":
-                            dependency_analysis["spring_testing"].append(dependency.java_import)
+                            dependency_analysis["spring_testing"].append(
+                                dependency.java_import
+                            )
                         elif category in ["h2", "testcontainers"]:
-                            dependency_analysis["database_testing"].append(dependency.java_import)
+                            dependency_analysis["database_testing"].append(
+                                dependency.java_import
+                            )
                         elif category in ["wiremock", "rest_assured"]:
-                            dependency_analysis["web_testing"].append(dependency.java_import)
+                            dependency_analysis["web_testing"].append(
+                                dependency.java_import
+                            )
                         elif category in ["assertj", "hamcrest"]:
                             dependency_analysis["assertion_libraries"].append(
                                 dependency.java_import
@@ -337,7 +350,9 @@ class TestClassifier:
 
         return False
 
-    def _detect_brobot_mocks(self, content: str, test_file: TestFile) -> list[MockUsage]:
+    def _detect_brobot_mocks(
+        self, content: str, test_file: TestFile
+    ) -> list[MockUsage]:
         """Detect Brobot mock usage patterns."""
         mock_usages = []
 
@@ -350,13 +365,17 @@ class TestClassifier:
                     mock_type="brobot_mock",
                     mock_class=mock_pattern,
                     gui_model=gui_model,
-                    simulation_scope=self._determine_simulation_scope(content, mock_pattern),
+                    simulation_scope=self._determine_simulation_scope(
+                        content, mock_pattern
+                    ),
                 )
                 mock_usages.append(mock_usage)
 
         return mock_usages
 
-    def _detect_spring_mocks(self, content: str, test_file: TestFile) -> list[MockUsage]:
+    def _detect_spring_mocks(
+        self, content: str, test_file: TestFile
+    ) -> list[MockUsage]:
         """Detect Spring mock usage patterns."""
         mock_usages = []
 
@@ -371,7 +390,9 @@ class TestClassifier:
 
         return mock_usages
 
-    def _detect_mockito_mocks(self, content: str, test_file: TestFile) -> list[MockUsage]:
+    def _detect_mockito_mocks(
+        self, content: str, test_file: TestFile
+    ) -> list[MockUsage]:
         """Detect Mockito mock usage patterns."""
         mock_usages = []
 
@@ -386,7 +407,9 @@ class TestClassifier:
 
         return mock_usages
 
-    def _extract_gui_model_from_content(self, content: str, mock_pattern: str) -> GuiModel:
+    def _extract_gui_model_from_content(
+        self, content: str, mock_pattern: str
+    ) -> GuiModel:
         """Extract GUI model information from Brobot mock usage."""
         # This is a simplified extraction - could be enhanced with more sophisticated parsing
         gui_model = GuiModel(model_name=f"{mock_pattern}_model")

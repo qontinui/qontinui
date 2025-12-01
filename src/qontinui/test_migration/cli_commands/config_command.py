@@ -18,15 +18,21 @@ class ConfigCommand(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         """Add config command arguments."""
-        parser.add_argument("--create", action="store_true", help="Create a new configuration file")
+        parser.add_argument(
+            "--create", action="store_true", help="Create a new configuration file"
+        )
 
         parser.add_argument(
-            "--validate", action="store_true", help="Validate an existing configuration file"
+            "--validate",
+            action="store_true",
+            help="Validate an existing configuration file",
         )
 
         parser.add_argument("--output", type=Path, help="Output file for configuration")
 
-        parser.add_argument("--input", type=Path, help="Input configuration file to validate")
+        parser.add_argument(
+            "--input", type=Path, help="Input configuration file to validate"
+        )
 
     def execute(self, args: Namespace) -> CommandResult:
         """Execute the config command."""
@@ -35,13 +41,17 @@ class ConfigCommand(BaseCommand):
         elif args.validate:
             return self._validate_config_file(args)
         else:
-            return CommandResult(exit_code=1, message="Error: Must specify --create or --validate")
+            return CommandResult(
+                exit_code=1, message="Error: Must specify --create or --validate"
+            )
 
     def _create_config_file(self, args: Namespace) -> CommandResult:
         """Create a new configuration file."""
         try:
             # Create default configuration
-            config = TestMigrationConfig.create_default_config([], Path("tests/migrated"))
+            config = TestMigrationConfig.create_default_config(
+                [], Path("tests/migrated")
+            )
 
             # Convert to dictionary for serialization
             config_dict = {
@@ -63,17 +73,23 @@ class ConfigCommand(BaseCommand):
             with open(output_file, "w") as f:
                 json.dump(config_dict, f, indent=2)
 
-            return CommandResult(exit_code=0, message=f"Configuration file created: {output_file}")
+            return CommandResult(
+                exit_code=0, message=f"Configuration file created: {output_file}"
+            )
 
         except Exception as e:
-            return CommandResult(exit_code=1, message=f"Failed to create configuration: {str(e)}")
+            return CommandResult(
+                exit_code=1, message=f"Failed to create configuration: {str(e)}"
+            )
 
     def _validate_config_file(self, args: Namespace) -> CommandResult:
         """Validate an existing configuration file."""
         config_file = args.input or args.config
 
         if not config_file:
-            return CommandResult(exit_code=1, message="Error: No configuration file specified")
+            return CommandResult(
+                exit_code=1, message="Error: No configuration file specified"
+            )
 
         is_valid, error_message = ConfigLoader.validate_config_file(config_file)
 

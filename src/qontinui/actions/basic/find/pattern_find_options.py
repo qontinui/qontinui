@@ -192,7 +192,9 @@ class PatternFindOptionsBuilder(BaseFindOptionsBuilder["PatternFindOptionsBuilde
         if original:
             self.strategy = original.strategy
             self.do_on_each = original.do_on_each
-            self.match_fusion_options = original.match_fusion_options.to_builder().build()
+            self.match_fusion_options = (
+                original.match_fusion_options.to_builder().build()
+            )
         else:
             self.strategy = Strategy.FIRST
             self.do_on_each = DoOnEach.FIRST

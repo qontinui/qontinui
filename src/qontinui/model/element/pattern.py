@@ -28,7 +28,9 @@ class Pattern:
     """
 
     # Class-level optimizer (shared across all patterns)
-    _optimizer: PatternOptimizer = field(default_factory=PatternOptimizer, init=False, repr=False)
+    _optimizer: PatternOptimizer = field(
+        default_factory=PatternOptimizer, init=False, repr=False
+    )
 
     # Class-level similarity calculator (shared across all patterns)
     _similarity_calculator: SimilarityCalculator = field(
@@ -73,7 +75,9 @@ class Pattern:
     rotation_invariant: bool = False
 
     # Brobot Pattern properties
-    fixed: bool = False  # An image that should always appear in the same location has fixed==true
+    fixed: bool = (
+        False  # An image that should always appear in the same location has fixed==true
+    )
     dynamic: bool = False  # Dynamic images cannot be found using pattern matching
 
     # Search regions - Following Brobot's model with SearchRegions object
@@ -131,7 +135,9 @@ class Pattern:
         return int(self.mask.size)
 
     def calculate_similarity(
-        self, other_image: np.ndarray[Any, Any], other_mask: np.ndarray[Any, Any] | None = None
+        self,
+        other_image: np.ndarray[Any, Any],
+        other_mask: np.ndarray[Any, Any] | None = None,
     ) -> float:
         """
         Calculate similarity between this pattern and another image.
@@ -299,7 +305,9 @@ class Pattern:
         return None
 
     def get_effective_similarity(
-        self, find_options_similarity: float | None = None, application_default: float = 0.7
+        self,
+        find_options_similarity: float | None = None,
+        application_default: float = 0.7,
     ) -> float:
         """Get the effective similarity threshold with proper precedence.
 
@@ -446,7 +454,9 @@ class Pattern:
         return PatternFactory.from_match(match, pattern_id)
 
     @classmethod
-    def from_state_image(cls, state_image: Any, pattern_id: str | None = None) -> "Pattern":
+    def from_state_image(
+        cls, state_image: Any, pattern_id: str | None = None
+    ) -> "Pattern":
         """Create a Pattern from a StateImage (delegates to factory).
 
         Args:

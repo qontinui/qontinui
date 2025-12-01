@@ -11,7 +11,9 @@ This module tests all statement types including:
 
 import pytest
 
-from qontinui.runner.dsl.expressions.binary_operation_expression import BinaryOperationExpression
+from qontinui.runner.dsl.expressions.binary_operation_expression import (
+    BinaryOperationExpression,
+)
 from qontinui.runner.dsl.expressions.literal_expression import LiteralExpression
 from qontinui.runner.dsl.expressions.variable_expression import VariableExpression
 from qontinui.runner.dsl.statements.assignment_statement import AssignmentStatement
@@ -90,7 +92,11 @@ class TestVariableDeclarationStatement:
             "statementType": "variableDeclaration",
             "variableName": "counter",
             "variableType": "integer",
-            "initialValue": {"expressionType": "literal", "valueType": "integer", "value": 0},
+            "initialValue": {
+                "expressionType": "literal",
+                "valueType": "integer",
+                "value": 0,
+            },
         }
 
         stmt = VariableDeclarationStatement.from_dict(data)
@@ -460,7 +466,9 @@ class TestReturnStatement:
 
     def test_to_dict_with_value(self):
         """Test converting to dictionary with value."""
-        stmt = ReturnStatement(value=LiteralExpression(value_type="string", value="success"))
+        stmt = ReturnStatement(
+            value=LiteralExpression(value_type="string", value="success")
+        )
 
         result = stmt.to_dict()
 
@@ -481,7 +489,11 @@ class TestReturnStatement:
         """Test creating from dictionary with value."""
         data = {
             "statementType": "return",
-            "value": {"expressionType": "literal", "valueType": "boolean", "value": True},
+            "value": {
+                "expressionType": "literal",
+                "valueType": "boolean",
+                "value": True,
+            },
         }
 
         stmt = ReturnStatement.from_dict(data)
@@ -499,7 +511,9 @@ class TestReturnStatement:
 
     def test_round_trip_serialization(self):
         """Test round-trip serialization."""
-        original = ReturnStatement(value=LiteralExpression(value_type="double", value=3.14))
+        original = ReturnStatement(
+            value=LiteralExpression(value_type="double", value=3.14)
+        )
 
         serialized = original.to_dict()
         restored = ReturnStatement.from_dict(serialized)
@@ -577,7 +591,11 @@ class TestMethodCallStatement:
             "object": "api",
             "method": "call",
             "arguments": [
-                {"expressionType": "literal", "valueType": "string", "value": "endpoint"}
+                {
+                    "expressionType": "literal",
+                    "valueType": "string",
+                    "value": "endpoint",
+                }
             ],
         }
 
@@ -696,7 +714,11 @@ class TestStatementPolymorphism:
                 "expressionType": "binaryOperation",
                 "operator": ">",
                 "left": {"expressionType": "variable", "name": "x"},
-                "right": {"expressionType": "literal", "valueType": "integer", "value": 0},
+                "right": {
+                    "expressionType": "literal",
+                    "valueType": "integer",
+                    "value": 0,
+                },
             },
             "thenStatements": [
                 {
@@ -720,7 +742,11 @@ class TestStatementPolymorphism:
             "elseStatements": [
                 {
                     "statementType": "return",
-                    "value": {"expressionType": "literal", "valueType": "integer", "value": 0},
+                    "value": {
+                        "expressionType": "literal",
+                        "valueType": "integer",
+                        "value": 0,
+                    },
                 }
             ],
         }

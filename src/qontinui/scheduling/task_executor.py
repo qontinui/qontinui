@@ -147,7 +147,10 @@ class TaskExecutor:
             return False
 
     def execute_with_retry(
-        self, task: ScheduledTask, max_retries: int | None = None, retry_delay: float = 1.0
+        self,
+        task: ScheduledTask,
+        max_retries: int | None = None,
+        retry_delay: float = 1.0,
     ) -> bool:
         """Execute a task with automatic retry on failure.
 
@@ -198,6 +201,8 @@ class TaskExecutor:
             "total_failed": self.total_failed,
             "total_timeout": self.total_timeout,
             "success_rate": (
-                self.total_succeeded / self.total_executed if self.total_executed > 0 else 0.0
+                self.total_succeeded / self.total_executed
+                if self.total_executed > 0
+                else 0.0
             ),
         }

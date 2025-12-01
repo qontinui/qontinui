@@ -88,14 +88,20 @@ class IfStatement(Statement):
 
         then_statements = []
         if "thenStatements" in data:
-            then_statements = [Statement.from_dict(stmt) for stmt in data["thenStatements"]]
+            then_statements = [
+                Statement.from_dict(stmt) for stmt in data["thenStatements"]
+            ]
 
         else_statements = []
         if "elseStatements" in data:
-            else_statements = [Statement.from_dict(stmt) for stmt in data["elseStatements"]]
+            else_statements = [
+                Statement.from_dict(stmt) for stmt in data["elseStatements"]
+            ]
 
         return cls(
-            condition=condition, then_statements=then_statements, else_statements=else_statements
+            condition=condition,
+            then_statements=then_statements,
+            else_statements=else_statements,
         )
 
     def to_dict(self) -> dict[str, Any]:

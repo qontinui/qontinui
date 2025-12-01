@@ -95,7 +95,9 @@ class ConditionalExecutor:
 
         try:
             # Evaluate condition using ConditionEvaluator
-            condition_result = self.condition_evaluator.evaluate_condition(config.condition)
+            condition_result = self.condition_evaluator.evaluate_condition(
+                config.condition
+            )
             result["condition_result"] = condition_result
 
             logger.debug("Condition evaluated to: %s", condition_result)
@@ -104,11 +106,15 @@ class ConditionalExecutor:
             if condition_result:
                 result["branch_taken"] = "then"
                 actions_to_execute = config.then_actions
-                logger.debug("Executing THEN branch with %d actions", len(actions_to_execute))
+                logger.debug(
+                    "Executing THEN branch with %d actions", len(actions_to_execute)
+                )
             else:
                 result["branch_taken"] = "else"
                 actions_to_execute = config.else_actions or []
-                logger.debug("Executing ELSE branch with %d actions", len(actions_to_execute))
+                logger.debug(
+                    "Executing ELSE branch with %d actions", len(actions_to_execute)
+                )
 
             # Execute the selected action sequence
             exec_result = self._execute_action_sequence(actions_to_execute)
@@ -125,14 +131,18 @@ class ConditionalExecutor:
             logger.error("IF condition evaluation failed: %s", str(e), exc_info=True)
             result["success"] = False
             if isinstance(result["errors"], list):
-                result["errors"].append({"type": "ConditionEvaluationError", "message": str(e)})
+                result["errors"].append(
+                    {"type": "ConditionEvaluationError", "message": str(e)}
+                )
 
         except TypeError as e:
             # Type error during condition evaluation
             logger.error("IF condition type error: %s", str(e), exc_info=True)
             result["success"] = False
             if isinstance(result["errors"], list):
-                result["errors"].append({"type": "ConditionTypeError", "message": str(e)})
+                result["errors"].append(
+                    {"type": "ConditionTypeError", "message": str(e)}
+                )
 
         except Exception as e:
             # Unexpected error
@@ -191,7 +201,9 @@ class ConditionalExecutor:
                 # orchestration including error handling, event emission, etc.
                 # Note: execute_action is a method that may be added to ExecutionContext
                 # If it doesn't exist, we'll catch the AttributeError below
-                success = getattr(self.context, "execute_action", lambda x: False)(action)
+                success = getattr(self.context, "execute_action", lambda x: False)(
+                    action
+                )
 
                 # Track execution
                 if not success:
@@ -208,9 +220,15 @@ class ConditionalExecutor:
 
             except Exception as e:
                 # Unexpected exception during action execution
-                logger.error("Action %s raised exception: %s", action_id, str(e), exc_info=True)
+                logger.error(
+                    "Action %s raised exception: %s", action_id, str(e), exc_info=True
+                )
                 errors_list.append(
-                    {"action_id": action_id, "type": type(e).__name__, "message": str(e)}
+                    {
+                        "action_id": action_id,
+                        "type": type(e).__name__,
+                        "message": str(e),
+                    }
                 )
                 result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
 

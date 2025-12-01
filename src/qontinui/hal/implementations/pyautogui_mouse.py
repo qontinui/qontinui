@@ -125,7 +125,10 @@ class PyAutoGUIMouseOperations(IMouseController):
             raise InputControlError("mouse_click", str(e)) from e
 
     def mouse_down(
-        self, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
+        self,
+        x: int | None = None,
+        y: int | None = None,
+        button: MouseButton = MouseButton.LEFT,
     ) -> bool:
         """Press and hold mouse button.
 
@@ -156,7 +159,10 @@ class PyAutoGUIMouseOperations(IMouseController):
             raise InputControlError("mouse_down", str(e)) from e
 
     def mouse_up(
-        self, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
+        self,
+        x: int | None = None,
+        y: int | None = None,
+        button: MouseButton = MouseButton.LEFT,
     ) -> bool:
         """Release mouse button.
 
@@ -223,14 +229,18 @@ class PyAutoGUIMouseOperations(IMouseController):
                 button=pyautogui_button,
             )
 
-            logger.debug(f"Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+            logger.debug(
+                f"Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})"
+            )
             return True
 
         except Exception as e:
             logger.error(f"Mouse drag failed: {e}")
             raise InputControlError("mouse_drag", str(e)) from e
 
-    def mouse_scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
+    def mouse_scroll(
+        self, clicks: int, x: int | None = None, y: int | None = None
+    ) -> bool:
         """Scroll mouse wheel.
 
         Args:
@@ -283,7 +293,9 @@ class PyAutoGUIMouseOperations(IMouseController):
         """
         return self.mouse_click(x, y, button, clicks=1)
 
-    def double_click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
+    def double_click_at(
+        self, x: int, y: int, button: MouseButton = MouseButton.LEFT
+    ) -> bool:
         """Double click at specific coordinates.
 
         Args:
@@ -311,7 +323,9 @@ class PyAutoGUIMouseOperations(IMouseController):
         Returns:
             True if successful
         """
-        return self.mouse_drag(start_x, start_y, end_x, end_y, MouseButton.LEFT, duration)
+        return self.mouse_drag(
+            start_x, start_y, end_x, end_y, MouseButton.LEFT, duration
+        )
 
     def move_mouse(self, x: int, y: int, duration: float = 0.0) -> bool:
         """Move mouse to position (alias for mouse_move).

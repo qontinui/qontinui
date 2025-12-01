@@ -46,7 +46,9 @@ class FilePathValidator:
         # Check for dangerous patterns
         for pattern in cls.DANGEROUS_PATTERNS:
             if re.search(pattern, file_path):
-                raise ValueError(f"Invalid file path: contains forbidden pattern '{pattern}'")
+                raise ValueError(
+                    f"Invalid file path: contains forbidden pattern '{pattern}'"
+                )
 
         # Ensure .py extension
         if not file_path.endswith(".py"):
@@ -112,7 +114,9 @@ class PythonFileLoader:
             return self._cache[file_path]
 
         # Validate path
-        absolute_path = self.validator.validate_path(file_path, project_root=self.project_root)
+        absolute_path = self.validator.validate_path(
+            file_path, project_root=self.project_root
+        )
 
         # Load file content
         try:

@@ -189,8 +189,12 @@ def test_get_image_case_sensitive():
     registry.register_image("TestId", image2)
 
     # Verify case sensitivity
-    assert registry.get_image("testid") is image1, "Lowercase ID should return first image"
-    assert registry.get_image("TestId") is image2, "Mixed case ID should return second image"
+    assert (
+        registry.get_image("testid") is image1
+    ), "Lowercase ID should return first image"
+    assert (
+        registry.get_image("TestId") is image2
+    ), "Mixed case ID should return second image"
     assert registry.get_image("TESTID") is None, "Uppercase ID should return None"
 
 
@@ -561,7 +565,9 @@ def test_registered_empty_image():
 # ============================================================================
 
 
-def test_register_image_created_from_different_sources(temp_image_file, sample_pil_image):
+def test_register_image_created_from_different_sources(
+    temp_image_file, sample_pil_image
+):
     """Test that images from all creation methods work with registry.
 
     Validates:

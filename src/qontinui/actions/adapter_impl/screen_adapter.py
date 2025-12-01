@@ -12,7 +12,9 @@ class ScreenAdapter(ABC):
     """Abstract base for screen-specific actions."""
 
     @abstractmethod
-    def capture_screen(self, region: tuple[int, int, int, int] | None = None) -> AdapterResult:
+    def capture_screen(
+        self, region: tuple[int, int, int, int] | None = None
+    ) -> AdapterResult:
         """Capture screenshot."""
         pass
 
@@ -33,7 +35,9 @@ class HALScreenAdapter(ScreenAdapter):
         """
         self.screen_capture = screen_capture
 
-    def capture_screen(self, region: tuple[int, int, int, int] | None = None) -> AdapterResult:
+    def capture_screen(
+        self, region: tuple[int, int, int, int] | None = None
+    ) -> AdapterResult:
         """Capture screenshot."""
         try:
             if region:
@@ -67,7 +71,9 @@ class SeleniumScreenAdapter(ScreenAdapter):
         """
         self.driver = driver
 
-    def capture_screen(self, region: tuple[int, int, int, int] | None = None) -> AdapterResult:
+    def capture_screen(
+        self, region: tuple[int, int, int, int] | None = None
+    ) -> AdapterResult:
         """Capture browser screenshot."""
         try:
             import io

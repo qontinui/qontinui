@@ -36,7 +36,9 @@ class StateImage:
 
     # Search configuration
     _search_region: Region | None = None
-    _search_regions: SearchRegions | None = None  # SearchRegions associated with this StateImage
+    _search_regions: SearchRegions | None = (
+        None  # SearchRegions associated with this StateImage
+    )
 
     # Similarity threshold for this state image
     #
@@ -111,7 +113,10 @@ class StateImage:
             Matches object with all found matches
         """
         from ...actions.find import FindAction
-        from ...actions.find.find_options_builder import CascadeContext, build_find_options
+        from ...actions.find.find_options_builder import (
+            CascadeContext,
+            build_find_options,
+        )
 
         pattern = self.get_pattern()
         action = FindAction()
@@ -142,7 +147,10 @@ class StateImage:
             True if image found on screen
         """
         from ...actions.find import FindAction
-        from ...actions.find.find_options_builder import CascadeContext, build_find_options
+        from ...actions.find.find_options_builder import (
+            CascadeContext,
+            build_find_options,
+        )
 
         pattern = self.get_pattern()
         action = FindAction()
@@ -176,7 +184,10 @@ class StateImage:
             True if image appeared
         """
         from ...actions.find import FindAction
-        from ...actions.find.find_options_builder import CascadeContext, build_find_options
+        from ...actions.find.find_options_builder import (
+            CascadeContext,
+            build_find_options,
+        )
 
         pattern = self.get_pattern()
         action = FindAction()

@@ -107,7 +107,8 @@ class EnhancedStateMemory(StateMemory):
 
             # Generate reveal transition
             reveal_transition = self.multistate_adapter.generate_reveal_transition(
-                covering_state_id=state_id, hidden_state_ids=occlusion_info.hidden_state_ids
+                covering_state_id=state_id,
+                hidden_state_ids=occlusion_info.hidden_state_ids,
             )
 
             if reveal_transition:
@@ -190,7 +191,9 @@ class EnhancedStateMemory(StateMemory):
             return
 
         group_states = self.state_groups[group_name]
-        logger.info(f"Deactivating group '{group_name}' with {len(group_states)} states")
+        logger.info(
+            f"Deactivating group '{group_name}' with {len(group_states)} states"
+        )
 
         # Deactivate all states together
         self.active_states.difference_update(group_states)

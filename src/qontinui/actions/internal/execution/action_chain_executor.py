@@ -84,7 +84,10 @@ class ActionChainExecutor:
         # Execute subsequent actions based on strategy
         for next_action in chain_options.get_chained_actions():
             current_result = self._execute_next_in_chain(
-                chain_options.get_strategy(), current_result, next_action, object_collections
+                chain_options.get_strategy(),
+                current_result,
+                next_action,
+                object_collections,
             )
 
             # Store each action's result in history

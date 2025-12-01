@@ -52,9 +52,16 @@ class MatchResult:
         """Create from dictionary."""
         region_data = data["region"]
         region = Region(
-            region_data["x"], region_data["y"], region_data["width"], region_data["height"]
+            region_data["x"],
+            region_data["y"],
+            region_data["width"],
+            region_data["height"],
         )
-        return cls(region=region, score=data["score"], state_image_id=data.get("state_image_id"))
+        return cls(
+            region=region,
+            score=data["score"],
+            state_image_id=data.get("state_image_id"),
+        )
 
 
 @dataclass
@@ -87,7 +94,9 @@ class ActionSnapshot:
     # State context
     state_name: str = ""
     state_id: str = ""
-    active_states: list[str] = field(default_factory=list)  # All states active at this moment
+    active_states: list[str] = field(
+        default_factory=list
+    )  # All states active at this moment
 
     # Success indicators
     action_success: bool = False  # Did the action execute successfully?

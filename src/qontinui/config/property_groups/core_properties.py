@@ -12,11 +12,21 @@ class CoreConfig(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    image_path: str = Field(default="classpath:images/", description="Path to image resources")
-    mock: bool = Field(default=False, description="Enable mock mode for testing without GUI")
-    headless: bool = Field(default=False, description="Run in headless mode without display")
-    sikuli_jar_path: str | None = Field(default=None, description="Path to SikuliX jar file")
-    tesseract_path: str | None = Field(default=None, description="Path to Tesseract executable")
+    image_path: str = Field(
+        default="classpath:images/", description="Path to image resources"
+    )
+    mock: bool = Field(
+        default=False, description="Enable mock mode for testing without GUI"
+    )
+    headless: bool = Field(
+        default=False, description="Run in headless mode without display"
+    )
+    sikuli_jar_path: str | None = Field(
+        default=None, description="Path to SikuliX jar file"
+    )
+    tesseract_path: str | None = Field(
+        default=None, description="Path to Tesseract executable"
+    )
     image_cache_size: int = Field(
         default=100, ge=0, description="Maximum number of images to cache"
     )
@@ -43,7 +53,9 @@ class StartupConfig(BaseModel):
         default=False, description="Activate only the first found state"
     )
     startup_delay: int = Field(
-        default=0, ge=0, description="Delay in seconds before initial state verification"
+        default=0,
+        ge=0,
+        description="Delay in seconds before initial state verification",
     )
 
 
@@ -71,7 +83,8 @@ class AutomationConfig(BaseModel):
         default=1000, ge=0, description="Delay in milliseconds between retry attempts"
     )
     continue_on_failure: bool = Field(
-        default=False, description="Continue with remaining automation steps after failure"
+        default=False,
+        description="Continue with remaining automation steps after failure",
     )
     timeout_seconds: int = Field(
         default=0,
@@ -94,7 +107,9 @@ class CoreProperties(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    core: CoreConfig = Field(default_factory=CoreConfig, description="Core framework settings")
+    core: CoreConfig = Field(
+        default_factory=CoreConfig, description="Core framework settings"
+    )
     startup: StartupConfig = Field(
         default_factory=StartupConfig, description="Startup configuration"
     )

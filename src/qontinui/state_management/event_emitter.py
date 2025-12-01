@@ -85,7 +85,9 @@ class StateEventEmitter:
 
     @staticmethod
     def emit_transition_failed(
-        transition_id: str, error: str, emit_event_callback: Callable[[str, dict], None] | None
+        transition_id: str,
+        error: str,
+        emit_event_callback: Callable[[str, dict], None] | None,
     ) -> None:
         """Emit transition failed event.
 

@@ -46,7 +46,8 @@ class PhysicalScreen:
 
         # Check if scaling is needed
         self.needs_scaling = (
-            self.physical_width != logical_width or self.physical_height != logical_height
+            self.physical_width != logical_width
+            or self.physical_height != logical_height
         )
 
         if self.needs_scaling:
@@ -138,7 +139,9 @@ class PhysicalScreen:
 
         return self._capture_physical_resolution(x, y, w, h)
 
-    def _capture_physical_resolution(self, x: int, y: int, w: int, h: int) -> Image.Image:
+    def _capture_physical_resolution(
+        self, x: int, y: int, w: int, h: int
+    ) -> Image.Image:
         """Capture at physical resolution.
 
         Args:

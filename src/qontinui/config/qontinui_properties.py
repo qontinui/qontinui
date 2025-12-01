@@ -25,9 +25,17 @@ from .property_groups.display_properties import (
 )
 from .property_groups.input_properties import MouseConfig, SikuliConfig
 from .property_groups.logging_properties import LoggingConfig
-from .property_groups.output_properties import DatasetConfig, RecordingConfig, ScreenshotConfig
+from .property_groups.output_properties import (
+    DatasetConfig,
+    RecordingConfig,
+    ScreenshotConfig,
+)
 from .property_groups.timing_properties import MockConfig
-from .property_groups.vision_properties import AnalysisConfig, AutoScalingConfig, ImageDebugConfig
+from .property_groups.vision_properties import (
+    AnalysisConfig,
+    AutoScalingConfig,
+    ImageDebugConfig,
+)
 
 
 class QontinuiProperties(BaseModel):
@@ -68,7 +76,9 @@ class QontinuiProperties(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     # Delegated property access through composition
-    core: CoreConfig = Field(default_factory=CoreConfig, description="Core framework settings")
+    core: CoreConfig = Field(
+        default_factory=CoreConfig, description="Core framework settings"
+    )
     startup: StartupConfig = Field(
         default_factory=StartupConfig, description="Startup configuration"
     )
@@ -130,9 +140,12 @@ class QontinuiProperties(BaseModel):
     monitor: MonitorConfig = Field(
         default_factory=MonitorConfig, description="Monitor configuration settings"
     )
-    dpi: DpiConfig = Field(default_factory=DpiConfig, description="DPI and scaling configuration")
+    dpi: DpiConfig = Field(
+        default_factory=DpiConfig, description="DPI and scaling configuration"
+    )
     capture: CaptureConfig = Field(
-        default_factory=CaptureConfig, description="Screen capture provider configuration"
+        default_factory=CaptureConfig,
+        description="Screen capture provider configuration",
     )
 
     def to_yaml(self, path: Path | None = None) -> str:

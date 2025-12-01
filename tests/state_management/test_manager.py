@@ -223,7 +223,9 @@ class TestQontinuiStateManager:
         assert len(manager.state_evidence) == 0
         assert len(manager.activation_history) == 0
 
-    def test_get_state_graph_visualization(self, manager, sample_state, sample_transition):
+    def test_get_state_graph_visualization(
+        self, manager, sample_state, sample_transition
+    ):
         """Test state graph visualization."""
         manager.add_state(sample_state)
         home_state = State(name="home", elements=[], min_elements=0)
@@ -246,7 +248,9 @@ class TestQontinuiStateManager:
 
         # Create parent and child states
         parent_state = State(name="main", elements=[], min_elements=0)
-        child_state = State(name="main_login", elements=[], min_elements=0, parent_state="main")
+        child_state = State(
+            name="main_login", elements=[], min_elements=0, parent_state="main"
+        )
 
         manager.add_state(parent_state)
         manager.add_state(child_state, parent="main")

@@ -84,7 +84,9 @@ class PixelStabilityAnalyzer:
         self._update_progress(100, "Analysis complete")
 
         # Calculate statistics
-        statistics = self._calculate_statistics(screenshots, state_images, states, stability_map)
+        statistics = self._calculate_statistics(
+            screenshots, state_images, states, stability_map
+        )
 
         return AnalysisResult(
             states=states,
@@ -121,8 +123,12 @@ class PixelStabilityAnalyzer:
             "total_screenshots": len(screenshots),
             "states_found": len(states),
             "state_images_found": len(state_images),
-            "average_state_images_per_state": (len(state_images) / len(states) if states else 0),
-            "pixel_stability_score": stable_pixels / total_pixels if total_pixels else 0,
+            "average_state_images_per_state": (
+                len(state_images) / len(states) if states else 0
+            ),
+            "pixel_stability_score": (
+                stable_pixels / total_pixels if total_pixels else 0
+            ),
             "stable_pixel_count": int(stable_pixels),
             "total_pixel_count": int(total_pixels),
         }

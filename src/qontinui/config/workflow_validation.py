@@ -34,7 +34,9 @@ class ValidationResult(BaseModel):
     ):
         """Add an error to the validation result."""
         self.errors.append(
-            ValidationError(type=error_type, message=message, action_id=action_id, details=details)
+            ValidationError(
+                type=error_type, message=message, action_id=action_id, details=details
+            )
         )
         self.valid = False
 
@@ -54,7 +56,8 @@ def validate_workflow(workflow: Workflow) -> ValidationResult:
     # Format must be 'graph'
     if workflow.format != "graph":
         result.add_error(
-            "invalid_format", f"Workflow format must be 'graph', got '{workflow.format}'"
+            "invalid_format",
+            f"Workflow format must be 'graph', got '{workflow.format}'",
         )
 
     # Must have connections

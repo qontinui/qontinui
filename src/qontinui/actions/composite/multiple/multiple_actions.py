@@ -132,7 +132,9 @@ class MultipleActionsOptionsBuilder(ActionConfigBuilder):
             self.fail_fast = False
             self.record_actions = True
 
-    def set_strategy(self, strategy: ExecutionStrategy) -> "MultipleActionsOptionsBuilder":
+    def set_strategy(
+        self, strategy: ExecutionStrategy
+    ) -> "MultipleActionsOptionsBuilder":
         """Set the execution strategy.
 
         Args:
@@ -194,7 +196,9 @@ class MultipleActionsOptionsBuilder(ActionConfigBuilder):
         self.fail_fast = fail_fast
         return self
 
-    def set_record_actions(self, record_actions: bool) -> "MultipleActionsOptionsBuilder":
+    def set_record_actions(
+        self, record_actions: bool
+    ) -> "MultipleActionsOptionsBuilder":
         """Set whether to record action execution.
 
         Args:
@@ -359,7 +363,9 @@ class MultipleActions(ActionInterface):
         # Default to FIND as a generic action type
         return ActionType.FIND
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, matches: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute multiple actions using the Qontinui framework pattern.
 
         Args:
@@ -453,7 +459,8 @@ class MultipleActions(ActionInterface):
             Dictionary of task name to result
         """
         return {
-            task.name: (task.result if task.result is not None else False) for task in self._tasks
+            task.name: (task.result if task.result is not None else False)
+            for task in self._tasks
         }
 
     def get_successful_tasks(self) -> list[ActionTask]:

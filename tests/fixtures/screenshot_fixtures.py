@@ -149,7 +149,9 @@ class SyntheticScreenshotGenerator:
 
         # Border
         if element.border_color:
-            cv2.rectangle(image, (x1, y1), (x2, y2), element.border_color, element.border_width)
+            cv2.rectangle(
+                image, (x1, y1), (x2, y2), element.border_color, element.border_width
+            )
 
         # Text
         if element.text:
@@ -191,7 +193,11 @@ class SyntheticScreenshotGenerator:
         cv2.circle(image, (center_x, center_y), radius, element.color, -1)
         if element.border_color:
             cv2.circle(
-                image, (center_x, center_y), radius, element.border_color, element.border_width
+                image,
+                (center_x, center_y),
+                radius,
+                element.border_color,
+                element.border_width,
             )
 
         # Draw inner symbol (simplified)
@@ -207,7 +213,9 @@ class SyntheticScreenshotGenerator:
         cv2.rectangle(image, (x1, y1), (x2, y2), (255, 255, 255), -1)
 
         # Border
-        cv2.rectangle(image, (x1, y1), (x2, y2), element.border_color or (150, 150, 150), 1)
+        cv2.rectangle(
+            image, (x1, y1), (x2, y2), element.border_color or (150, 150, 150), 1
+        )
 
         # Text if provided
         if element.text:
@@ -229,11 +237,15 @@ class SyntheticScreenshotGenerator:
 
         # Box background
         cv2.rectangle(image, (x1, y1), (x2, y2), (255, 255, 255), -1)
-        cv2.rectangle(image, (x1, y1), (x2, y2), element.border_color or (100, 100, 100), 2)
+        cv2.rectangle(
+            image, (x1, y1), (x2, y2), element.border_color or (100, 100, 100), 2
+        )
 
         # Check mark if metadata indicates checked
         if element.metadata and element.metadata.get("checked", False):
-            cv2.line(image, (x1 + 3, y1 + size // 2), (x1 + size // 3, y2 - 3), (0, 0, 0), 2)
+            cv2.line(
+                image, (x1 + 3, y1 + size // 2), (x1 + size // 3, y2 - 3), (0, 0, 0), 2
+            )
             cv2.line(image, (x1 + size // 3, y2 - 3), (x2 - 3, y1 + 3), (0, 0, 0), 2)
 
     def _draw_rectangle(self, image: np.ndarray, element: ElementSpec) -> None:
@@ -242,7 +254,9 @@ class SyntheticScreenshotGenerator:
         x2, y2 = element.x + element.width, element.y + element.height
         cv2.rectangle(image, (x1, y1), (x2, y2), element.color, -1)
         if element.border_color:
-            cv2.rectangle(image, (x1, y1), (x2, y2), element.border_color, element.border_width)
+            cv2.rectangle(
+                image, (x1, y1), (x2, y2), element.border_color, element.border_width
+            )
 
     def generate_with_known_elements(
         self,
@@ -461,7 +475,13 @@ def create_test_element(
         >>> assert button.text == "Submit"
     """
     return ElementSpec(
-        element_type=element_type, x=x, y=y, width=width, height=height, text=text, **kwargs
+        element_type=element_type,
+        x=x,
+        y=y,
+        width=width,
+        height=height,
+        text=text,
+        **kwargs,
     )
 
 
@@ -489,7 +509,10 @@ def create_menu_transition_pair() -> tuple[np.ndarray, np.ndarray]:
     ]
 
     before_screenshot = generator.generate(
-        width=800, height=600, background_color=(240, 240, 240), elements=before_elements
+        width=800,
+        height=600,
+        background_color=(240, 240, 240),
+        elements=before_elements,
     )
 
     # After: Menu opened with options
@@ -552,7 +575,9 @@ def create_button_screenshot(
     if button_text is None:
         button_text = [f"Button {i+1}" for i in range(num_buttons)]
     elif len(button_text) < num_buttons:
-        button_text.extend([f"Button {i+1}" for i in range(len(button_text), num_buttons)])
+        button_text.extend(
+            [f"Button {i+1}" for i in range(len(button_text), num_buttons)]
+        )
 
     buttons = []
     for i in range(num_buttons):
@@ -734,16 +759,26 @@ def create_login_form_screenshot(
             border_width=1,
         ),
         # Title
-        ElementSpec("text", x=form_x + 100, y=form_y + 30, text="Login", text_color=(50, 50, 50)),
+        ElementSpec(
+            "text", x=form_x + 100, y=form_y + 30, text="Login", text_color=(50, 50, 50)
+        ),
         # Username label
         ElementSpec(
-            "text", x=form_x + 30, y=form_y + 80, text="Username:", text_color=(70, 70, 70)
+            "text",
+            x=form_x + 30,
+            y=form_y + 80,
+            text="Username:",
+            text_color=(70, 70, 70),
         ),
         # Username input
         ElementSpec("input", x=form_x + 30, y=form_y + 110, width=240, height=35),
         # Password label
         ElementSpec(
-            "text", x=form_x + 30, y=form_y + 160, text="Password:", text_color=(70, 70, 70)
+            "text",
+            x=form_x + 30,
+            y=form_y + 160,
+            text="Password:",
+            text_color=(70, 70, 70),
         ),
         # Password input
         ElementSpec("input", x=form_x + 30, y=form_y + 190, width=240, height=35),
@@ -817,13 +852,31 @@ def create_multi_region_screenshot(
                 border_color=(150, 150, 150),
             ),
             ElementSpec(
-                "button", x=10, y=10, width=80, height=40, text="File", color=(200, 200, 200)
+                "button",
+                x=10,
+                y=10,
+                width=80,
+                height=40,
+                text="File",
+                color=(200, 200, 200),
             ),
             ElementSpec(
-                "button", x=100, y=10, width=80, height=40, text="Edit", color=(200, 200, 200)
+                "button",
+                x=100,
+                y=10,
+                width=80,
+                height=40,
+                text="Edit",
+                color=(200, 200, 200),
             ),
             ElementSpec(
-                "button", x=190, y=10, width=80, height=40, text="View", color=(200, 200, 200)
+                "button",
+                x=190,
+                y=10,
+                width=80,
+                height=40,
+                text="View",
+                color=(200, 200, 200),
             ),
         ]
         regions_dict["toolbar"] = toolbar_elements
@@ -843,7 +896,13 @@ def create_multi_region_screenshot(
                 color=(240, 240, 240),
                 border_color=(180, 180, 180),
             ),
-            ElementSpec("text", x=10, y=sidebar_y + 20, text="Navigation", text_color=(70, 70, 70)),
+            ElementSpec(
+                "text",
+                x=10,
+                y=sidebar_y + 20,
+                text="Navigation",
+                text_color=(70, 70, 70),
+            ),
         ]
         # Add navigation items
         for i in range(5):
@@ -887,7 +946,10 @@ def create_multi_region_screenshot(
         all_elements.extend(content_elements)
 
     screenshot = generator.generate(
-        width=width, height=height, background_color=(200, 200, 200), elements=all_elements
+        width=width,
+        height=height,
+        background_color=(200, 200, 200),
+        elements=all_elements,
     )
 
     return screenshot, regions_dict

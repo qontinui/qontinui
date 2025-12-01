@@ -70,7 +70,13 @@ class TestSafeExpressionEvaluation:
         evaluator = SafeEvaluator()
 
         assert evaluator.safe_eval("[x*2 for x in range(5)]", {}) == [0, 2, 4, 6, 8]
-        assert evaluator.safe_eval("[x for x in range(10) if x % 2 == 0]", {}) == [0, 2, 4, 6, 8]
+        assert evaluator.safe_eval("[x for x in range(10) if x % 2 == 0]", {}) == [
+            0,
+            2,
+            4,
+            6,
+            8,
+        ]
 
     def test_variable_access(self):
         """Test that variables in context are accessible."""

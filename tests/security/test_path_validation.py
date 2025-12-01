@@ -102,7 +102,8 @@ class TestSymlinkHandling:
     """Test that symlinks are handled securely."""
 
     @pytest.mark.skipif(
-        not hasattr(Path, "symlink_to"), reason="Symlinks not supported on this platform"
+        not hasattr(Path, "symlink_to"),
+        reason="Symlinks not supported on this platform",
     )
     def test_symlink_resolution(self, tmp_path: Path):
         """Test that symlinks are resolved to their targets."""
@@ -158,7 +159,9 @@ class TestSecurityDocumentation:
 
         assert docstring is not None
         assert "DO NOT" in docstring or "Never" in docstring
-        assert any(word in docstring.lower() for word in ["network", "upload", "untrusted"])
+        assert any(
+            word in docstring.lower() for word in ["network", "upload", "untrusted"]
+        )
 
     def test_security_docs_referenced(self):
         """Test that security documentation is referenced."""

@@ -14,7 +14,9 @@ class RegexMatcher(BaseMatcher):
     Matches text using Python regular expressions.
     """
 
-    def __init__(self, case_sensitive: bool = False, ignore_whitespace: bool = False) -> None:
+    def __init__(
+        self, case_sensitive: bool = False, ignore_whitespace: bool = False
+    ) -> None:
         """Initialize regex matcher.
 
         Args:

@@ -132,13 +132,17 @@ class BackgroundRemovalAnalyzer:
         if self.config.use_edge_density:
             edge_mask = self._detect_by_edge_density(screenshots[0])
             background_mask = cv2.bitwise_or(background_mask, edge_mask)
-            logger.debug(f"Edge density detected {np.sum(edge_mask > 0)} background pixels")
+            logger.debug(
+                f"Edge density detected {np.sum(edge_mask > 0)} background pixels"
+            )
 
         # Strategy 3: Uniformity (large uniform regions are likely background)
         if self.config.use_uniformity:
             uniformity_mask = self._detect_by_uniformity(screenshots[0])
             background_mask = cv2.bitwise_or(background_mask, uniformity_mask)
-            logger.debug(f"Uniformity detected {np.sum(uniformity_mask > 0)} background pixels")
+            logger.debug(
+                f"Uniformity detected {np.sum(uniformity_mask > 0)} background pixels"
+            )
 
         # Apply morphological operations to clean up mask
         if self.config.apply_morphology:
@@ -177,7 +181,9 @@ class BackgroundRemovalAnalyzer:
         pixel_std = np.std(stack, axis=2)
 
         # Pixels with high variance are background
-        variance_mask = (pixel_std > self.config.variance_threshold).astype(np.uint8) * 255
+        variance_mask = (pixel_std > self.config.variance_threshold).astype(
+            np.uint8
+        ) * 255
 
         return variance_mask
 
@@ -219,7 +225,9 @@ class BackgroundRemovalAnalyzer:
                 edge_density[y:y_end, x:x_end] = density
 
         # Low edge density = background
-        edge_mask = (edge_density < self.config.edge_density_threshold).astype(np.uint8) * 255
+        edge_mask = (edge_density < self.config.edge_density_threshold).astype(
+            np.uint8
+        ) * 255
 
         return edge_mask
 
@@ -239,7 +247,9 @@ class BackgroundRemovalAnalyzer:
         if len(screenshot.shape) == 3:
             lab = cv2.cvtColor(screenshot, cv2.COLOR_BGR2LAB)
         else:
-            lab = cv2.cvtColor(cv2.cvtColor(screenshot, cv2.COLOR_GRAY2BGR), cv2.COLOR_BGR2LAB)
+            lab = cv2.cvtColor(
+                cv2.cvtColor(screenshot, cv2.COLOR_GRAY2BGR), cv2.COLOR_BGR2LAB
+            )
 
         # Calculate local standard deviation
         region_size = self.config.uniformity_region_size
@@ -275,7 +285,8 @@ class BackgroundRemovalAnalyzer:
             Cleaned binary mask
         """
         kernel = np.ones(
-            (self.config.morphology_kernel_size, self.config.morphology_kernel_size), np.uint8
+            (self.config.morphology_kernel_size, self.config.morphology_kernel_size),
+            np.uint8,
         )
 
         # Opening: removes small foreground noise
@@ -368,7 +379,9 @@ class BackgroundRemovalAnalyzer:
             "image_size": (screenshots[0].shape[1], screenshots[0].shape[0]),
         }
 
-    def visualize_mask(self, screenshot: np.ndarray, background_mask: np.ndarray) -> np.ndarray:
+    def visualize_mask(
+        self, screenshot: np.ndarray, background_mask: np.ndarray
+    ) -> np.ndarray:
         """
         Create visualization showing background mask overlay
 
@@ -390,7 +403,9 @@ class BackgroundRemovalAnalyzer:
 
         # Apply overlay only where background
         mask_3channel = cv2.cvtColor(background_mask, cv2.COLOR_GRAY2BGR)
-        vis = np.where(mask_3channel == 255, cv2.addWeighted(vis, 0.6, overlay, 0.4, 0), vis)
+        vis = np.where(
+            mask_3channel == 255, cv2.addWeighted(vis, 0.6, overlay, 0.4, 0), vis
+        )
 
         return vis
 
@@ -530,7 +545,9 @@ def remove_backgrounds_from_base64(
 
         # Process screenshots
         analyzer = BackgroundRemovalAnalyzer(config)
-        masked_screenshots, stats = analyzer.remove_backgrounds(screenshots, debug=debug)
+        masked_screenshots, stats = analyzer.remove_backgrounds(
+            screenshots, debug=debug
+        )
 
         # Encode results back to base64
         base64_results = []

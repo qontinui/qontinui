@@ -137,12 +137,16 @@ class BrobotTestScanner(TestScanner):
             content = test_file.path.read_text(encoding="utf-8")
 
             # Extract import statements
-            import_pattern = r"import\s+(?:static\s+)?([a-zA-Z_][a-zA-Z0-9_.]*(?:\.\*)?)\s*;"
+            import_pattern = (
+                r"import\s+(?:static\s+)?([a-zA-Z_][a-zA-Z0-9_.]*(?:\.\*)?)\s*;"
+            )
             imports = re.findall(import_pattern, content)
 
             for import_stmt in imports:
                 # Skip java.lang imports (implicit)
-                if import_stmt.startswith("java.lang.") and not import_stmt.endswith(".*"):
+                if import_stmt.startswith("java.lang.") and not import_stmt.endswith(
+                    ".*"
+                ):
                     continue
 
                 dependency = Dependency(

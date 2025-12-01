@@ -104,10 +104,14 @@ class ValidationReporter:
             if c["validation_result"] == ValidationResult.DIFFERENT
         )
         errors = sum(
-            1 for c in self.validation_history if c["validation_result"] == ValidationResult.ERROR
+            1
+            for c in self.validation_history
+            if c["validation_result"] == ValidationResult.ERROR
         )
 
-        avg_similarity = sum(c["similarity_score"] for c in self.validation_history) / total
+        avg_similarity = (
+            sum(c["similarity_score"] for c in self.validation_history) / total
+        )
 
         return {
             "total_comparisons": total,
@@ -118,7 +122,9 @@ class ValidationReporter:
             "average_similarity_score": avg_similarity,
             "comparison_types": {
                 comp_type.value: sum(
-                    1 for c in self.validation_history if c["comparison_type"] == comp_type
+                    1
+                    for c in self.validation_history
+                    if c["comparison_type"] == comp_type
                 )
                 for comp_type in ComparisonType
             },
@@ -143,7 +149,9 @@ class ValidationReporter:
                     "performance_metrics": (
                         {
                             "java_time": c["performance_metrics"].java_execution_time,
-                            "python_time": c["performance_metrics"].python_execution_time,
+                            "python_time": c[
+                                "performance_metrics"
+                            ].python_execution_time,
                             "time_difference": c["performance_metrics"].time_difference,
                             "performance_delta_percent": c[
                                 "performance_metrics"

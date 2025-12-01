@@ -44,7 +44,11 @@ class BaseOCREngine(ABC):
 
     @abstractmethod
     def extract_text(
-        self, image: np.ndarray, region: Region, language: str, confidence_threshold: float
+        self,
+        image: np.ndarray,
+        region: Region,
+        language: str,
+        confidence_threshold: float,
     ) -> list[OCRResult]:
         """Extract text from an image.
 

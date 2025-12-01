@@ -86,9 +86,13 @@ class TestControlFlowIntegration:
 
         assert test_value == 42, f"Test value incorrect: {test_value}"
         # Since testValue (42) > 30, the then branch should execute
-        assert result_var == "value is greater than 30", f"Result incorrect: {result_var}"
+        assert (
+            result_var == "value is greater than 30"
+        ), f"Result incorrect: {result_var}"
 
-        logger.info(f"IF/ELSE test completed: testValue={test_value}, result={result_var}")
+        logger.info(
+            f"IF/ELSE test completed: testValue={test_value}, result={result_var}"
+        )
 
 
 class TestVariableOperations:
@@ -152,7 +156,17 @@ class TestCollectionOperations:
         total = action_executor.variable_context.get("total")
 
         assert numbers == [5, 2, 8, 1, 9, 3, 7, 4, 6], f"Numbers incorrect: {numbers}"
-        assert sorted_numbers == [1, 2, 3, 4, 5, 6, 7, 8, 9], f"Sorted incorrect: {sorted_numbers}"
+        assert sorted_numbers == [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+        ], f"Sorted incorrect: {sorted_numbers}"
         # Filtered: numbers > 5 from sorted list = [6, 7, 8, 9]
         assert filtered == [6, 7, 8, 9], f"Filtered incorrect: {filtered}"
         # Doubled: [12, 14, 16, 18]

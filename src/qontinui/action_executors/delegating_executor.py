@@ -208,7 +208,9 @@ class DelegatingActionExecutor:
             )
             return False
         except ValueError as e:
-            logger.warning(f"Unknown action type {action.type}, continuing without validation: {e}")
+            logger.warning(
+                f"Unknown action type {action.type}, continuing without validation: {e}"
+            )
             typed_config = None
 
         # Extract action details for logging
@@ -272,7 +274,9 @@ class DelegatingActionExecutor:
                 import tempfile
                 from datetime import datetime
 
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_action_success_trace.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_action_success_trace.log"
+                )
                 try:
                     with open(debug_log, "a", encoding="utf-8") as f:
                         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
@@ -317,7 +321,9 @@ class DelegatingActionExecutor:
                             file=sys.stderr,
                             flush=True,
                         )
-                        logger.info(f"[PAUSE] Completed pause_after_end for action {action.type}")
+                        logger.info(
+                            f"[PAUSE] Completed pause_after_end for action {action.type}"
+                        )
 
                     # Log action completion time
                     action_end_time = time.time()
@@ -353,11 +359,15 @@ class DelegatingActionExecutor:
 
                 # If this was the last attempt or we shouldn't continue on error, fail
                 if attempt >= total_attempts - 1:
-                    logger.error(f"All {total_attempts} attempts failed for action {action.id}")
+                    logger.error(
+                        f"All {total_attempts} attempts failed for action {action.id}"
+                    )
                     return False
 
                 # Otherwise, retry
-                logger.info(f"Retrying after error... (attempt {attempt + 2}/{total_attempts})")
+                logger.info(
+                    f"Retrying after error... (attempt {attempt + 2}/{total_attempts})"
+                )
                 self.time_wrapper.wait(1)
 
         # All attempts exhausted
@@ -460,7 +470,9 @@ class DelegatingActionExecutor:
 
     # Workflow execution methods (delegated from old executor)
 
-    def execute_workflow(self, workflow_id: str, initial_context: dict | None = None) -> dict:
+    def execute_workflow(
+        self, workflow_id: str, initial_context: dict | None = None
+    ) -> dict:
         """Execute a workflow by ID, using graph or sequential execution.
 
         Args:
@@ -496,7 +508,9 @@ class DelegatingActionExecutor:
             logger.info(f"Using SEQUENTIAL EXECUTION for workflow '{workflow.name}'")
             return self._execute_workflow_sequential(workflow)
 
-    def _execute_workflow_graph(self, workflow: Any, initial_context: dict | None = None) -> dict:
+    def _execute_workflow_graph(
+        self, workflow: Any, initial_context: dict | None = None
+    ) -> dict:
         """Execute workflow using graph-based execution.
 
         Args:
@@ -557,7 +571,9 @@ class DelegatingActionExecutor:
                 results["success"] = False
                 results["errors"].append({"action_id": action.id, "error": str(e)})
                 # Model-based GUI automation principle: always continue, never stop on error
-                logger.debug(f"Action '{action.id}' raised exception, continuing execution: {e}")
+                logger.debug(
+                    f"Action '{action.id}' raised exception, continuing execution: {e}"
+                )
 
         logger.info(
             f"Sequential execution completed for '{workflow.name}': "

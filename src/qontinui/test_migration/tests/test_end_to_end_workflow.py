@@ -242,7 +242,13 @@ def test_subtraction():
         cli = TestMigrationCLI()
 
         # Test dry run
-        args = ["migrate", str(source_dir), str(target_dir), "--dry-run", "--no-parallel"]
+        args = [
+            "migrate",
+            str(source_dir),
+            str(target_dir),
+            "--dry-run",
+            "--no-parallel",
+        ]
 
         exit_code = cli.run(args)
 
@@ -583,7 +589,9 @@ public class ProblematicTest {
                 "stack_trace": "Mock stack trace",
             }
 
-            recovery_result = orchestrator.recover_from_failure("ProblematicTest", error_info)
+            recovery_result = orchestrator.recover_from_failure(
+                "ProblematicTest", error_info
+            )
 
             # Current implementation returns False, but the mechanism is tested
             assert isinstance(recovery_result, bool)

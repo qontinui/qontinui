@@ -48,7 +48,9 @@ class BaseFindOptions(ActionConfig, ABC):
         self.capture_image: bool = builder.capture_image
         self.use_defined_region: bool = builder.use_defined_region
         self.max_matches_to_act_on: int = builder.max_matches_to_act_on
-        self.match_adjustment_options: MatchAdjustmentOptions = builder.match_adjustment_options
+        self.match_adjustment_options: MatchAdjustmentOptions = (
+            builder.match_adjustment_options
+        )
         self.search_duration: float = builder.search_duration
 
     @abstractmethod
@@ -93,7 +95,9 @@ class BaseFindOptions(ActionConfig, ABC):
         return self.search_duration
 
 
-class BaseFindOptionsBuilder[TBuilder: "BaseFindOptionsBuilder[Any]"](ActionConfigBuilder):
+class BaseFindOptionsBuilder[TBuilder: "BaseFindOptionsBuilder[Any]"](
+    ActionConfigBuilder
+):
     """Abstract generic builder for constructing BaseFindOptions and its subclasses.
 
     Port of BaseFindOptions from Qontinui framework.Builder.
@@ -115,7 +119,9 @@ class BaseFindOptionsBuilder[TBuilder: "BaseFindOptionsBuilder[Any]"](ActionConf
             self.capture_image = original.capture_image
             self.use_defined_region = original.use_defined_region
             self.max_matches_to_act_on = original.max_matches_to_act_on
-            self.match_adjustment_options = original.match_adjustment_options.to_builder().build()
+            self.match_adjustment_options = (
+                original.match_adjustment_options.to_builder().build()
+            )
             self.search_duration = original.search_duration
         else:
             self.similarity = DEFAULT_MIN_SIMILARITY
@@ -211,7 +217,9 @@ class BaseFindOptionsBuilder[TBuilder: "BaseFindOptionsBuilder[Any]"](ActionConf
         self.max_matches_to_act_on = max_matches_to_act_on
         return self._self()
 
-    def set_match_adjustment(self, match_adjustment_options: MatchAdjustmentOptions) -> TBuilder:
+    def set_match_adjustment(
+        self, match_adjustment_options: MatchAdjustmentOptions
+    ) -> TBuilder:
         """Set the match adjustment options for post-processing found matches.
 
         This allows for resizing match regions or targeting specific points within matches.

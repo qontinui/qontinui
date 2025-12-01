@@ -120,7 +120,9 @@ class MockCapture:
         if self.screenshot_dir:
             cached = self._load_from_cache("fullscreen.png")
             if cached:
-                return cached.crop((region.x, region.y, region.x + region.w, region.y + region.h))
+                return cached.crop(
+                    (region.x, region.y, region.x + region.w, region.y + region.h)
+                )
 
         # Generate mock region
         return self._generate_mock_region(region.w, region.h)
@@ -267,7 +269,9 @@ class MockCapture:
         logger.debug("Generating mock fullscreen screenshot")
 
         # Create a simple gradient image
-        image = Image.new("RGB", (self.mock_width, self.mock_height), color=(240, 240, 240))
+        image = Image.new(
+            "RGB", (self.mock_width, self.mock_height), color=(240, 240, 240)
+        )
 
         # Add some visual elements to make it look more realistic
         from PIL import ImageDraw
@@ -311,6 +315,8 @@ class MockCapture:
         from PIL import ImageDraw
 
         draw = ImageDraw.Draw(image)
-        draw.rectangle([(0, 0), (width - 1, height - 1)], outline=(150, 150, 150), width=2)
+        draw.rectangle(
+            [(0, 0), (width - 1, height - 1)], outline=(150, 150, 150), width=2
+        )
 
         return image

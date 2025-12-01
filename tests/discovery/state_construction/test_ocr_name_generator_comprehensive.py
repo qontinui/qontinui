@@ -35,10 +35,12 @@ class TestOCREngineSelection:
     """Test OCR engine selection and initialization."""
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR", True
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        True,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT", True
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        True,
     )
     def test_auto_prefers_easyocr(self):
         """Test that 'auto' mode prefers easyocr when available.
@@ -53,10 +55,12 @@ class TestOCREngineSelection:
             assert generator.engine == "easyocr"
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR", False
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        False,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT", True
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        True,
     )
     def test_auto_fallback_to_tesseract(self):
         """Test that 'auto' mode falls back to tesseract.
@@ -68,10 +72,12 @@ class TestOCREngineSelection:
         assert generator.engine == "tesseract"
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR", False
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        False,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT", False
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        False,
     )
     def test_auto_raises_when_none_available(self):
         """Test error when no OCR engine available.
@@ -87,7 +93,8 @@ class TestOCREngineSelection:
         assert "easyocr" in str(exc_info.value).lower()
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT", False
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        False,
     )
     def test_explicit_tesseract_unavailable(self):
         """Test error when requesting unavailable tesseract.
@@ -101,7 +108,8 @@ class TestOCREngineSelection:
         assert "tesseract not available" in str(exc_info.value).lower()
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR", False
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        False,
     )
     def test_explicit_easyocr_unavailable(self):
         """Test error when requesting unavailable easyocr.
@@ -115,9 +123,12 @@ class TestOCREngineSelection:
         assert "easyocr not available" in str(exc_info.value).lower()
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR", True
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        True,
     )
-    @patch("qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader")
+    @patch(
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+    )
     def test_easyocr_reader_initialization(self, mock_reader_class):
         """Test that easyocr reader is initialized correctly.
 
@@ -190,8 +201,12 @@ class TestTextExtractionMocked:
 
         assert text == ""
 
-    @patch("qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract")
-    def test_extract_text_tesseract_success(self, mock_pytesseract, mock_generator_tesseract):
+    @patch(
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+    )
+    def test_extract_text_tesseract_success(
+        self, mock_pytesseract, mock_generator_tesseract
+    ):
         """Test successful text extraction with tesseract.
 
         Verifies:
@@ -205,8 +220,12 @@ class TestTextExtractionMocked:
 
         assert text == "Main Menu"
 
-    @patch("qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract")
-    def test_extract_text_tesseract_empty(self, mock_pytesseract, mock_generator_tesseract):
+    @patch(
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+    )
+    def test_extract_text_tesseract_empty(
+        self, mock_pytesseract, mock_generator_tesseract
+    ):
         """Test tesseract with no text found.
 
         Verifies:
@@ -276,8 +295,16 @@ class TestProminentTextExtraction:
         # Mock results with different bbox sizes
         mock_generator_easyocr.reader.readtext.return_value = [
             ([[10, 10], [60, 10], [60, 30], [10, 30]], "Small", 0.9),  # 50x20 = 1000
-            ([[10, 50], [200, 50], [200, 90], [10, 90]], "Large Heading", 0.95),  # 190x40 = 7600
-            ([[10, 100], [80, 100], [80, 120], [10, 120]], "Medium", 0.85),  # 70x20 = 1400
+            (
+                [[10, 50], [200, 50], [200, 90], [10, 90]],
+                "Large Heading",
+                0.95,
+            ),  # 190x40 = 7600
+            (
+                [[10, 100], [80, 100], [80, 120], [10, 120]],
+                "Medium",
+                0.85,
+            ),  # 70x20 = 1400
         ]
 
         text = mock_generator_easyocr._extract_prominent_text(image)
@@ -298,9 +325,12 @@ class TestProminentTextExtraction:
         assert text == ""
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT", True
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        True,
     )
-    @patch("qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract")
+    @patch(
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+    )
     def test_extract_prominent_tesseract_largest_height(self, mock_pytesseract):
         """Test tesseract prominence based on font height.
 
@@ -322,9 +352,12 @@ class TestProminentTextExtraction:
         assert text == "Large"
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT", True
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        True,
     )
-    @patch("qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract")
+    @patch(
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+    )
     def test_extract_prominent_tesseract_confidence_filter(self, mock_pytesseract):
         """Test that low-confidence text is filtered out.
 
@@ -480,14 +513,39 @@ class TestGenerateStateName:
         screenshot = np.zeros((600, 800, 3), dtype=np.uint8)
 
         regions = [
-            {"text": "Footer Text", "x": 100, "y": 500, "width": 200, "height": 30, "area": 6000},
-            {"text": "Inventory", "x": 100, "y": 50, "width": 300, "height": 40, "area": 12000},
-            {"text": "Small", "x": 400, "y": 100, "width": 50, "height": 20, "area": 1000},
+            {
+                "text": "Footer Text",
+                "x": 100,
+                "y": 500,
+                "width": 200,
+                "height": 30,
+                "area": 6000,
+            },
+            {
+                "text": "Inventory",
+                "x": 100,
+                "y": 50,
+                "width": 300,
+                "height": 40,
+                "area": 12000,
+            },
+            {
+                "text": "Small",
+                "x": 400,
+                "y": 100,
+                "width": 50,
+                "height": 20,
+                "area": 1000,
+            },
         ]
 
         with patch.object(mock_generator, "_extract_text", return_value=""):
-            with patch.object(mock_generator, "_extract_prominent_text", return_value=""):
-                name = mock_generator.generate_state_name(screenshot, detected_text_regions=regions)
+            with patch.object(
+                mock_generator, "_extract_prominent_text", return_value=""
+            ):
+                name = mock_generator.generate_state_name(
+                    screenshot, detected_text_regions=regions
+                )
 
         assert name == "inventory"
 
@@ -509,7 +567,9 @@ class TestGenerateStateName:
         screenshot = np.zeros((600, 800, 3), dtype=np.uint8)
 
         with patch.object(mock_generator, "_extract_text", return_value=""):
-            with patch.object(mock_generator, "_extract_prominent_text", return_value=""):
+            with patch.object(
+                mock_generator, "_extract_prominent_text", return_value=""
+            ):
                 name = mock_generator.generate_state_name(screenshot)
 
         assert name.startswith("state_")
@@ -683,7 +743,9 @@ class TestNameValidatorComprehensive:
             "123456789",  # Mostly numeric
         ]
         for name in not_meaningful:
-            assert not NameValidator.is_meaningful(name), f"Should not be meaningful: {name}"
+            assert not NameValidator.is_meaningful(
+                name
+            ), f"Should not be meaningful: {name}"
 
     def test_suggest_alternative_sequential(self):
         """Test sequential alternative suggestions.
@@ -785,9 +847,12 @@ class TestConvenienceFunctionsWithMocking:
     """Test convenience functions with mocked OCR."""
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR", True
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        True,
     )
-    @patch("qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader")
+    @patch(
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+    )
     def test_generate_element_name_convenience(self, mock_reader_class):
         """Test convenience function for element names.
 
@@ -805,9 +870,12 @@ class TestConvenienceFunctionsWithMocking:
         assert name.isidentifier()
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR", True
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        True,
     )
-    @patch("qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader")
+    @patch(
+        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+    )
     def test_generate_state_name_convenience(self, mock_reader_class):
         """Test convenience function for state names.
 
@@ -860,7 +928,9 @@ class TestIntegrationWithSyntheticScreenshots:
             - Naming is deterministic
         """
         generator = SyntheticScreenshotGenerator()
-        elements = [ElementSpec("button", x=100, y=100, width=120, height=40, text="Submit")]
+        elements = [
+            ElementSpec("button", x=100, y=100, width=120, height=40, text="Submit")
+        ]
         screenshot = generator.generate(width=600, height=400, elements=elements)
 
         with patch.object(mock_generator, "_extract_text", return_value=""):
@@ -894,7 +964,9 @@ class TestErrorRecovery:
         image = np.zeros((100, 200, 3), dtype=np.uint8)
 
         with patch.object(
-            mock_generator, "_extract_text_easyocr", side_effect=RuntimeError("OCR failed")
+            mock_generator,
+            "_extract_text_easyocr",
+            side_effect=RuntimeError("OCR failed"),
         ):
             # Should not crash, should use fallback
             name = mock_generator.generate_name_from_image(image, "button")
@@ -910,7 +982,9 @@ class TestErrorRecovery:
             - Handles image processing errors
         """
         # Corrupt image data
-        corrupt = np.array([[1, 2], [3, 4]], dtype=np.uint8)  # Too small for most operations
+        corrupt = np.array(
+            [[1, 2], [3, 4]], dtype=np.uint8
+        )  # Too small for most operations
 
         with patch.object(mock_generator, "_extract_text", return_value=""):
             # Should not crash

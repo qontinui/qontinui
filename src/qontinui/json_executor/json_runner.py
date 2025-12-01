@@ -45,7 +45,9 @@ class JSONRunner:
         self.parser = ConfigParser()
         self.config: QontinuiConfig | None = None
         self.state_executor: StateExecutor | None = None
-        self.scheduler_executor: SchedulerExecutor | None = None  # State-aware scheduler
+        self.scheduler_executor: SchedulerExecutor | None = (
+            None  # State-aware scheduler
+        )
         self.monitor_index: int = 0  # Default to primary monitor
         self.monitor_manager = MonitorManager()
         self._should_stop = False  # Flag to request execution stop
@@ -111,7 +113,9 @@ class JSONRunner:
 
                 import threading
 
-                cleanup_thread = threading.Thread(target=cleanup_old_config, daemon=True)
+                cleanup_thread = threading.Thread(
+                    target=cleanup_old_config, daemon=True
+                )
                 cleanup_thread.start()
 
             print(f"Loading configuration from: {path}")
@@ -134,7 +138,9 @@ class JSONRunner:
 
             # Initialize scheduler if schedules exist
             if self.config.schedules:
-                print(f"Initializing scheduler with {len(self.config.schedules)} schedules...")
+                print(
+                    f"Initializing scheduler with {len(self.config.schedules)} schedules..."
+                )
                 self.scheduler_executor = SchedulerExecutor(
                     runner=self,
                     state_executor=self.state_executor,
@@ -346,7 +352,9 @@ class JSONRunner:
                     f"Monitor {monitor_index} configured: {monitor_info.width}x{monitor_info.height} at ({monitor_info.x}, {monitor_info.y})"
                 )
             else:
-                print(f"Warning: Monitor {monitor_index} not found, using default monitor")
+                print(
+                    f"Warning: Monitor {monitor_index} not found, using default monitor"
+                )
                 self.monitor_manager.primary_monitor_index = 0
         except (RuntimeError, IndexError, ValueError) as e:
             print(f"Error configuring monitor {monitor_index}: {e}")
@@ -422,7 +430,8 @@ class JSONRunner:
 
         # Count transitions from all states
         transition_count = sum(
-            len(s.outgoing_transitions) + len(s.incoming_transitions) for s in self.config.states
+            len(s.outgoing_transitions) + len(s.incoming_transitions)
+            for s in self.config.states
         )
 
         summary = {
@@ -434,8 +443,12 @@ class JSONRunner:
             "transitions": transition_count,
             "images": len(self.config.images),
             "schedules": len(self.config.schedules),
-            "current_state": self.state_executor.current_state if self.state_executor else None,
-            "active_states": list(self.state_executor.active_states) if self.state_executor else [],
+            "current_state": (
+                self.state_executor.current_state if self.state_executor else None
+            ),
+            "active_states": (
+                list(self.state_executor.active_states) if self.state_executor else []
+            ),
         }
 
         # Add scheduler info if available

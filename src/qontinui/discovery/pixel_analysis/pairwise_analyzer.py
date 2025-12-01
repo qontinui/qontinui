@@ -157,7 +157,9 @@ class PairwiseStateAnalyzer:
 
         return regions
 
-    def _is_region_present(self, region: dict[str, Any], screenshot: np.ndarray[Any, Any]) -> bool:
+    def _is_region_present(
+        self, region: dict[str, Any], screenshot: np.ndarray[Any, Any]
+    ) -> bool:
         """Check if a region is present in a screenshot."""
         x_min, y_min, x_max, y_max = region["bbox"]
 
@@ -178,7 +180,9 @@ class PairwiseStateAnalyzer:
         if "mask" in region and region["mask"] is not None:
             mask = region["mask"]
             masked_diff = (
-                diff * np.expand_dims(mask, axis=2) if len(diff.shape) == 3 else diff * mask
+                diff * np.expand_dims(mask, axis=2)
+                if len(diff.shape) == 3
+                else diff * mask
             )
             active_pixels = np.sum(mask)
             if active_pixels == 0:
@@ -194,7 +198,9 @@ class PairwiseStateAnalyzer:
         """Create hash for region deduplication."""
         return hashlib.sha256(pixels.tobytes()).hexdigest()
 
-    def _group_into_states(self, regions: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    def _group_into_states(
+        self, regions: dict[str, dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Group regions by their exact screenshot presence."""
 
         # Group regions by their presence pattern
@@ -225,7 +231,10 @@ class PairwiseStateAnalyzer:
         return states
 
     def _calculate_statistics(
-        self, regions: dict[str, dict[str, Any]], states: list[dict[str, Any]], num_screenshots: int
+        self,
+        regions: dict[str, dict[str, Any]],
+        states: list[dict[str, Any]],
+        num_screenshots: int,
     ) -> dict[str, Any]:
         """Calculate analysis statistics."""
 

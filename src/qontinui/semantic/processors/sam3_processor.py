@@ -49,7 +49,9 @@ class SAM3Processor(SemanticProcessor):
         self.processor = None
 
         # Use provided generator or fall back to basic
-        self.description_generator = description_generator or BasicDescriptionGenerator()
+        self.description_generator = (
+            description_generator or BasicDescriptionGenerator()
+        )
 
         if HAS_SAM3:
             self._initialize_model()
@@ -104,7 +106,8 @@ class SAM3Processor(SemanticProcessor):
         else:
             # Normalize to 0-255 if needed
             normalized = (
-                (screenshot - screenshot.min()) * (255.0 / (screenshot.max() - screenshot.min()))
+                (screenshot - screenshot.min())
+                * (255.0 / (screenshot.max() - screenshot.min()))
             ).astype(np.uint8)
             pil_image = Image.fromarray(normalized)
 
@@ -122,17 +125,26 @@ class SAM3Processor(SemanticProcessor):
                         break
 
                     bbox = results.get("boxes", [])[i] if "boxes" in results else None
-                    confidence = results.get("scores", [])[i] if "scores" in results else 1.0
+                    confidence = (
+                        results.get("scores", [])[i] if "scores" in results else 1.0
+                    )
 
                     mask_data = {
                         "segmentation": mask,
-                        "bbox": bbox if bbox is not None else self._mask_to_bbox_list(mask),
+                        "bbox": (
+                            bbox if bbox is not None else self._mask_to_bbox_list(mask)
+                        ),
                         "predicted_iou": confidence,
                     }
 
-                    semantic_obj = self._mask_to_semantic_object(mask_data, screenshot, index=i)
+                    semantic_obj = self._mask_to_semantic_object(
+                        mask_data, screenshot, index=i
+                    )
 
-                    if semantic_obj and semantic_obj.confidence >= self._config.min_confidence:
+                    if (
+                        semantic_obj
+                        and semantic_obj.confidence >= self._config.min_confidence
+                    ):
                         scene.add_object(semantic_obj)
 
                     if len(scene.objects) >= self._config.max_objects:
@@ -179,7 +191,10 @@ class SAM3Processor(SemanticProcessor):
                             mask_data, screenshot, index=len(scene.objects)
                         )
 
-                        if semantic_obj and semantic_obj.confidence >= self._config.min_confidence:
+                        if (
+                            semantic_obj
+                            and semantic_obj.confidence >= self._config.min_confidence
+                        ):
                             scene.add_object(semantic_obj)
 
                         if len(scene.objects) >= self._config.max_objects:
@@ -255,7 +270,9 @@ class SAM3Processor(SemanticProcessor):
             image, mask=mask, bbox=tuple(bbox) if bbox else None
         )
 
-    def _classify_segment(self, mask: np.ndarray[Any, Any], bbox: list[int]) -> ObjectType:
+    def _classify_segment(
+        self, mask: np.ndarray[Any, Any], bbox: list[int]
+    ) -> ObjectType:
         """Classify segment into object type.
 
         Args:
@@ -287,7 +304,9 @@ class SAM3Processor(SemanticProcessor):
 
         return ObjectType.UNKNOWN
 
-    def _extract_text_from_region(self, image: np.ndarray[Any, Any], bbox: list[int]) -> str | None:
+    def _extract_text_from_region(
+        self, image: np.ndarray[Any, Any], bbox: list[int]
+    ) -> str | None:
         """Extract OCR text from bounding box region.
 
         Args:
@@ -379,7 +398,9 @@ class SAM3Processor(SemanticProcessor):
                 if self._check_timeout(start_time):
                     break
 
-                masks, scores, _ = self.predictor.predict(box=np.array(box), multimask_output=False)
+                masks, scores, _ = self.predictor.predict(
+                    box=np.array(box), multimask_output=False
+                )
 
                 if len(masks) > 0:
                     mask_data = {

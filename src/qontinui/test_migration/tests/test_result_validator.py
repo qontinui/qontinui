@@ -157,14 +157,20 @@ class TestResultValidator:
             individual_results=[self.python_result_pass, self.python_result_fail],
         )
 
-        comparisons = self.validator.verify_behavioral_equivalence(java_results, python_results)
+        comparisons = self.validator.verify_behavioral_equivalence(
+            java_results, python_results
+        )
 
         assert len(comparisons) == 2
         assert all(c.comparison_type == ComparisonType.BEHAVIOR for c in comparisons)
 
         # Find specific test comparisons
-        calc_comparison = next(c for c in comparisons if c.test_name == "testCalculation")
-        div_comparison = next(c for c in comparisons if c.test_name == "testDivisionByZero")
+        calc_comparison = next(
+            c for c in comparisons if c.test_name == "testCalculation"
+        )
+        div_comparison = next(
+            c for c in comparisons if c.test_name == "testDivisionByZero"
+        )
 
         assert calc_comparison.validation_result == ValidationResult.EQUIVALENT
         assert div_comparison.comparison_type == ComparisonType.BEHAVIOR
@@ -189,7 +195,9 @@ class TestResultValidator:
             individual_results=[self.python_result_pass],
         )
 
-        metrics = self.validator.collect_performance_metrics(java_results, python_results)
+        metrics = self.validator.collect_performance_metrics(
+            java_results, python_results
+        )
 
         assert "testCalculation" in metrics
         calc_metrics = metrics["testCalculation"]
@@ -233,12 +241,16 @@ class TestResultValidator:
             individual_results=[python_only_result],
         )
 
-        comparisons = self.validator.verify_behavioral_equivalence(java_results, python_results)
+        comparisons = self.validator.verify_behavioral_equivalence(
+            java_results, python_results
+        )
 
         assert len(comparisons) == 2
 
         java_only_comp = next(c for c in comparisons if c.test_name == "testJavaOnly")
-        python_only_comp = next(c for c in comparisons if c.test_name == "testPythonOnly")
+        python_only_comp = next(
+            c for c in comparisons if c.test_name == "testPythonOnly"
+        )
 
         assert java_only_comp.validation_result == ValidationResult.DIFFERENT
         assert "exists only in Java suite" in java_only_comp.differences[0]
@@ -390,7 +402,10 @@ class TestPerformanceMetrics:
     def test_performance_delta_calculation(self):
         """Test performance delta percentage calculation."""
         metrics = PerformanceMetrics(
-            java_execution_time=1.0, python_execution_time=1.5, time_difference=0.5, time_ratio=1.5
+            java_execution_time=1.0,
+            python_execution_time=1.5,
+            time_difference=0.5,
+            time_ratio=1.5,
         )
 
         assert metrics.performance_delta_percent == 50.0
@@ -398,7 +413,10 @@ class TestPerformanceMetrics:
     def test_performance_delta_zero_java_time(self):
         """Test performance delta when Java time is zero."""
         metrics = PerformanceMetrics(
-            java_execution_time=0.0, python_execution_time=1.0, time_difference=1.0, time_ratio=0.0
+            java_execution_time=0.0,
+            python_execution_time=1.0,
+            time_difference=1.0,
+            time_ratio=0.0,
         )
 
         assert metrics.performance_delta_percent == 0.0
@@ -406,7 +424,10 @@ class TestPerformanceMetrics:
     def test_performance_improvement(self):
         """Test performance delta for improved Python performance."""
         metrics = PerformanceMetrics(
-            java_execution_time=2.0, python_execution_time=1.0, time_difference=-1.0, time_ratio=0.5
+            java_execution_time=2.0,
+            python_execution_time=1.0,
+            time_difference=-1.0,
+            time_ratio=0.5,
         )
 
         assert metrics.performance_delta_percent == -50.0

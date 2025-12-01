@@ -97,12 +97,16 @@ class TypeCoercer:
                 raise ValueError(f"Cannot coerce {type(value).__name__} to object")
 
             else:
-                logger.warning(f"Unknown target type '{target_type}', returning value as-is")
+                logger.warning(
+                    f"Unknown target type '{target_type}', returning value as-is"
+                )
                 return value
 
         except json.JSONDecodeError as e:
             logger.error(f"JSON parsing failed during type coercion: {e}")
-            raise ValueError(f"Failed to parse JSON while coercing to {target_type}: {e}") from e
+            raise ValueError(
+                f"Failed to parse JSON while coercing to {target_type}: {e}"
+            ) from e
         except (ValueError, TypeError) as e:
             logger.error(f"Type coercion failed: {e}")
             raise ValueError(f"Failed to coerce value to {target_type}: {e}") from e

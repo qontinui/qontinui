@@ -155,13 +155,19 @@ class TestProcessRepetitionIntegration:
 
         # Verify
         assert result is True
-        assert execution_count["count"] == 4, "Should execute 4 times (1 initial + 3 repeats)"
+        assert (
+            execution_count["count"] == 4
+        ), "Should execute 4 times (1 initial + 3 repeats)"
 
     def test_until_success_stops_early(self):
         """Test until_success mode stops on first success."""
         # Create a process that fails first 2 times, then succeeds
         test_process = Process(
-            id="test_process", name="Test Process", description="Test", type="sequence", actions=[]
+            id="test_process",
+            name="Test Process",
+            description="Test",
+            type="sequence",
+            actions=[],
         )
 
         self.config.processes.append(test_process)
@@ -202,13 +208,19 @@ class TestProcessRepetitionIntegration:
 
         # Verify
         assert result is True
-        assert execution_count["count"] == 3, "Should stop after 3rd attempt (first success)"
+        assert (
+            execution_count["count"] == 3
+        ), "Should stop after 3rd attempt (first success)"
 
     def test_until_success_reaches_max_repeats(self):
         """Test until_success mode uses all attempts if never succeeds."""
         # Create a process that always fails
         test_process = Process(
-            id="test_process", name="Test Process", description="Test", type="sequence", actions=[]
+            id="test_process",
+            name="Test Process",
+            description="Test",
+            type="sequence",
+            actions=[],
         )
 
         self.config.processes.append(test_process)
@@ -248,13 +260,19 @@ class TestProcessRepetitionIntegration:
 
         # Verify
         assert result is False
-        assert execution_count["count"] == 6, "Should try 6 times (1 initial + 5 repeats)"
+        assert (
+            execution_count["count"] == 6
+        ), "Should try 6 times (1 initial + 5 repeats)"
 
     def test_fixed_count_success_if_any_succeed(self):
         """Test fixed count mode succeeds if at least one run succeeds."""
         # Create a process
         test_process = Process(
-            id="test_process", name="Test Process", description="Test", type="sequence", actions=[]
+            id="test_process",
+            name="Test Process",
+            description="Test",
+            type="sequence",
+            actions=[],
         )
 
         self.config.processes.append(test_process)
@@ -354,7 +372,9 @@ class TestProcessRepetitionIntegration:
 
         # Verify
         assert result is True
-        assert execution_count["count"] == 3, "Should execute 3 times (1 initial + 2 repeats)"
+        assert (
+            execution_count["count"] == 3
+        ), "Should execute 3 times (1 initial + 2 repeats)"
 
 
 def main():
@@ -371,8 +391,14 @@ def main():
         ("No repetition executes once", test_suite.test_no_repetition_executes_once),
         ("Fixed count repetition", test_suite.test_fixed_count_repetition),
         ("Until success stops early", test_suite.test_until_success_stops_early),
-        ("Until success reaches max repeats", test_suite.test_until_success_reaches_max_repeats),
-        ("Fixed count success if any succeed", test_suite.test_fixed_count_success_if_any_succeed),
+        (
+            "Until success reaches max repeats",
+            test_suite.test_until_success_reaches_max_repeats,
+        ),
+        (
+            "Fixed count success if any succeed",
+            test_suite.test_fixed_count_success_if_any_succeed,
+        ),
         ("JSON config parsing", test_suite.test_json_config_parsing),
     ]
 

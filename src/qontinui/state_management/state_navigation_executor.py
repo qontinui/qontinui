@@ -121,44 +121,57 @@ class StateNavigationExecutor:
         logger.info(f"Navigating to states: {target_state_ids}, execute={execute}")
 
         # Emit starting event
-        self.event_emitter.emit_navigation_start(target_state_ids, execute, emit_event_callback)
+        self.event_emitter.emit_navigation_start(
+            target_state_ids, execute, emit_event_callback
+        )
 
         try:
             # Execute pathfinding navigation
             nav_context = self._execute_navigation(target_state_ids, execute)
 
             if not nav_context:
-                return self._handle_navigation_not_found(target_state_ids, emit_event_callback)
+                return self._handle_navigation_not_found(
+                    target_state_ids, emit_event_callback
+                )
 
             # Build result from navigation context
             result = self._build_result(target_state_ids, nav_context)
 
             # Emit completion events and log
-            self.event_emitter.emit_navigation_complete(result, nav_context, emit_event_callback)
+            self.event_emitter.emit_navigation_complete(
+                result, nav_context, emit_event_callback
+            )
             self._log_result(result, nav_context)
 
             return result
 
         except StateException as e:
             logger.error(f"State error navigating to states {target_state_ids}: {e}")
-            self.event_emitter.emit_navigation_failed(target_state_ids, str(e), emit_event_callback)
+            self.event_emitter.emit_navigation_failed(
+                target_state_ids, str(e), emit_event_callback
+            )
             return NavigationResult(
                 success=False, target_state_ids=target_state_ids, error_message=str(e)
             )
 
         except Exception as e:
             logger.error(
-                f"Unexpected error navigating to states {target_state_ids}: {e}", exc_info=True
+                f"Unexpected error navigating to states {target_state_ids}: {e}",
+                exc_info=True,
             )
             error_msg = f"Unexpected error: {e}"
             self.event_emitter.emit_navigation_failed(
                 target_state_ids, error_msg, emit_event_callback
             )
             return NavigationResult(
-                success=False, target_state_ids=target_state_ids, error_message=error_msg
+                success=False,
+                target_state_ids=target_state_ids,
+                error_message=error_msg,
             )
 
-    def _execute_navigation(self, target_state_ids: list[int], execute: bool) -> Any | None:
+    def _execute_navigation(
+        self, target_state_ids: list[int], execute: bool
+    ) -> Any | None:
         """Execute pathfinding navigation to target states.
 
         Args:
@@ -168,7 +181,9 @@ class StateNavigationExecutor:
         Returns:
             Navigation context if path found, None otherwise
         """
-        return self.navigator.navigate_to_states(target_state_ids=target_state_ids, execute=execute)
+        return self.navigator.navigate_to_states(
+            target_state_ids=target_state_ids, execute=execute
+        )
 
     def _handle_navigation_not_found(
         self,
@@ -186,14 +201,18 @@ class StateNavigationExecutor:
         """
         error_msg = f"No path found to states: {target_state_ids}"
         logger.warning(error_msg)
-        self.event_emitter.emit_navigation_failed(target_state_ids, error_msg, emit_event_callback)
+        self.event_emitter.emit_navigation_failed(
+            target_state_ids, error_msg, emit_event_callback
+        )
         return NavigationResult(
             success=False,
             target_state_ids=target_state_ids,
             error_message=error_msg,
         )
 
-    def _build_result(self, target_state_ids: list[int], nav_context: Any) -> NavigationResult:
+    def _build_result(
+        self, target_state_ids: list[int], nav_context: Any
+    ) -> NavigationResult:
         """Build navigation result from navigation context.
 
         Args:

@@ -52,7 +52,9 @@ class QualityThresholds:
 class QualityGateChecker:
     """Checks quality metrics against defined thresholds."""
 
-    def __init__(self, reports_dir: Path, thresholds: QualityThresholds, verbose: bool = False):
+    def __init__(
+        self, reports_dir: Path, thresholds: QualityThresholds, verbose: bool = False
+    ):
         self.reports_dir = reports_dir
         self.thresholds = thresholds
         self.verbose = verbose
@@ -213,7 +215,9 @@ class QualityGateChecker:
 
         if self.verbose and not passed:
             print("\n❌ Type Coverage Check Failed:")
-            print(f"   Coverage: {coverage:.1f}% (minimum: {self.thresholds.min_type_coverage}%)")
+            print(
+                f"   Coverage: {coverage:.1f}% (minimum: {self.thresholds.min_type_coverage}%)"
+            )
             total_funcs = data.get("overall_coverage", {}).get("total_functions", 0)
             with_hints = data.get("overall_coverage", {}).get("functions_with_hints", 0)
             print(f"   {with_hints}/{total_funcs} functions have type hints")
@@ -231,7 +235,9 @@ class QualityGateChecker:
             data = json.load(f)
 
         race_conditions = data.get("race_conditions", [])
-        critical_races = [rc for rc in race_conditions if rc.get("severity") == "critical"]
+        critical_races = [
+            rc for rc in race_conditions if rc.get("severity") == "critical"
+        ]
         critical_count = len(critical_races)
         total_count = len(race_conditions)
 

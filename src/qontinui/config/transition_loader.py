@@ -28,7 +28,9 @@ from qontinui.model.transition.enhanced_state_transition import (
 logger = logging.getLogger(__name__)
 
 
-def load_transitions_from_config(config: dict[str, Any], state_service: StateService) -> bool:
+def load_transitions_from_config(
+    config: dict[str, Any], state_service: StateService
+) -> bool:
     """Load all transitions from configuration and link them to states.
 
     This function is the main entry point for Phase 3 of the state loading process.
@@ -85,13 +87,17 @@ def load_transitions_from_config(config: dict[str, Any], state_service: StateSer
             logger.error(f"Unexpected error loading transition: {e}", exc_info=True)
             error_count += 1
 
-    logger.info(f"Transition loading complete: {success_count} succeeded, {error_count} failed")
+    logger.info(
+        f"Transition loading complete: {success_count} succeeded, {error_count} failed"
+    )
 
     # Return True only if all transitions loaded successfully
     return error_count == 0
 
 
-def _load_single_transition(transition_def: dict[str, Any], state_service: StateService) -> bool:
+def _load_single_transition(
+    transition_def: dict[str, Any], state_service: StateService
+) -> bool:
     """Load a single transition from its definition.
 
     Args:
@@ -105,7 +111,9 @@ def _load_single_transition(transition_def: dict[str, Any], state_service: State
     transition_type = transition_def.get("type", "OutgoingTransition")
 
     # Validate required fields
-    if not _validate_transition_definition(transition_def, transition_id, transition_type):
+    if not _validate_transition_definition(
+        transition_def, transition_id, transition_type
+    ):
         return False
 
     # IncomingTransition types don't require a fromState - they represent
@@ -115,11 +123,15 @@ def _load_single_transition(transition_def: dict[str, Any], state_service: State
         to_state_id = transition_def["toState"]
         to_state = state_service.get_state_by_name(to_state_id)
         if to_state is None:
-            logger.error(f"Transition '{transition_id}': toState '{to_state_id}' not found")
+            logger.error(
+                f"Transition '{transition_id}': toState '{to_state_id}' not found"
+            )
             return False
 
         # Create the transition object (no fromState for incoming)
-        transition = _create_transition_object(transition_def, None, to_state.id, state_service)
+        transition = _create_transition_object(
+            transition_def, None, to_state.id, state_service
+        )
         if transition is None:
             return False
 
@@ -141,7 +153,9 @@ def _load_single_transition(transition_def: dict[str, Any], state_service: State
     from_state_id = transition_def["fromState"]
     from_state = state_service.get_state_by_name(from_state_id)
     if from_state is None:
-        logger.error(f"Transition '{transition_id}': fromState '{from_state_id}' not found")
+        logger.error(
+            f"Transition '{transition_id}': fromState '{from_state_id}' not found"
+        )
         return False
 
     # Look up toState
@@ -349,7 +363,9 @@ def _link_workflows_to_transition(
     # Check for inline workflows (workflows defined inline in the transition)
     inline_workflows = transition_def.get("inlineWorkflows", [])
     if not isinstance(inline_workflows, list):
-        logger.warning(f"Transition '{transition_id}': 'inlineWorkflows' field is not a list")
+        logger.warning(
+            f"Transition '{transition_id}': 'inlineWorkflows' field is not a list"
+        )
         inline_workflows = []
 
     if len(workflows) == 0 and len(inline_workflows) == 0:
@@ -369,7 +385,9 @@ def _link_workflows_to_transition(
 
         # Store workflow ID in transition for later execution
         transition.workflow_ids.append(workflow_id)
-        logger.debug(f"Transition '{transition_id}': linked to workflow '{workflow_id}'")
+        logger.debug(
+            f"Transition '{transition_id}': linked to workflow '{workflow_id}'"
+        )
         linked_count += 1
 
     # Register and link inline workflows
@@ -381,7 +399,9 @@ def _link_workflows_to_transition(
             continue
 
         # Get or generate an ID for the inline workflow
-        inline_workflow_id = inline_workflow_def.get("id", f"{transition_id}_inline_{idx}")
+        inline_workflow_id = inline_workflow_def.get(
+            "id", f"{transition_id}_inline_{idx}"
+        )
         inline_workflow_name = inline_workflow_def.get("name", inline_workflow_id)
 
         # Register the inline workflow directly in the registry
@@ -400,13 +420,17 @@ def _link_workflows_to_transition(
 
             # Register the workflow in the registry with name
             # The registry signature is: register_workflow(id, actions, name)
-            registry.register_workflow(inline_workflow_id, actions, inline_workflow_name)
+            registry.register_workflow(
+                inline_workflow_id, actions, inline_workflow_name
+            )
 
             # Also store the full workflow definition in the registry for graph execution
             # Check if this is a graph workflow
             if inline_workflow_def.get("format") == "graph":
                 # Store the full workflow definition for graph-based execution
-                registry.register_workflow_definition(inline_workflow_id, inline_workflow_def)
+                registry.register_workflow_definition(
+                    inline_workflow_id, inline_workflow_def
+                )
                 logger.debug(
                     f"Transition '{transition_id}': registered graph workflow '{inline_workflow_name}' with {len(actions)} actions and connections"
                 )
@@ -455,7 +479,8 @@ def get_transition_statistics(state_service: StateService) -> dict[str, Any]:
         "total_transitions": total_transitions,
         "total_states": len(state_service.get_all_states()),
         "states_with_transitions": states_with_transitions,
-        "states_without_transitions": len(state_service.get_all_states()) - states_with_transitions,
+        "states_without_transitions": len(state_service.get_all_states())
+        - states_with_transitions,
         "max_transitions_per_state": max_transitions_per_state,
         "avg_transitions_per_state": (
             total_transitions / len(state_service.get_all_states())
@@ -541,7 +566,9 @@ def validate_transition_graph(state_service: StateService) -> list[str]:
             states_without_outgoing.append(state.name)
 
     if states_without_outgoing:
-        issues.append(f"States with no outgoing transitions: {', '.join(states_without_outgoing)}")
+        issues.append(
+            f"States with no outgoing transitions: {', '.join(states_without_outgoing)}"
+        )
 
     # Check for unreachable states (states with no incoming transitions)
     all_target_states = set()

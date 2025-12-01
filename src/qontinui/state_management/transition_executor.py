@@ -93,7 +93,9 @@ class TransitionExecutor:
         self.event_emitter = event_emitter
 
     def execute_transition(
-        self, transition_id: str, emit_event_callback: Callable[[str, dict], None] | None = None
+        self,
+        transition_id: str,
+        emit_event_callback: Callable[[str, dict], None] | None = None,
     ) -> TransitionExecutionResult:
         """Execute a transition by ID.
 
@@ -123,7 +125,9 @@ class TransitionExecutor:
             # Validate transition exists
             transition = self.validator.validate_transition(transition_id)
             if not transition:
-                return self._handle_transition_not_found(transition_id, emit_event_callback)
+                return self._handle_transition_not_found(
+                    transition_id, emit_event_callback
+                )
 
             # Prepare execution context
             context = self._prepare_context(transition_id)
@@ -142,17 +146,22 @@ class TransitionExecutor:
 
         except StateException as e:
             logger.error(f"State error executing transition '{transition_id}': {e}")
-            self.event_emitter.emit_transition_failed(transition_id, str(e), emit_event_callback)
+            self.event_emitter.emit_transition_failed(
+                transition_id, str(e), emit_event_callback
+            )
             return TransitionExecutionResult(
                 success=False, transition_id=transition_id, error_message=str(e)
             )
 
         except Exception as e:
             logger.error(
-                f"Unexpected error executing transition '{transition_id}': {e}", exc_info=True
+                f"Unexpected error executing transition '{transition_id}': {e}",
+                exc_info=True,
             )
             error_msg = f"Unexpected error: {e}"
-            self.event_emitter.emit_transition_failed(transition_id, error_msg, emit_event_callback)
+            self.event_emitter.emit_transition_failed(
+                transition_id, error_msg, emit_event_callback
+            )
             return TransitionExecutionResult(
                 success=False, transition_id=transition_id, error_message=error_msg
             )
@@ -180,7 +189,11 @@ class TransitionExecutor:
         return cast(bool, self.transition_executor.execute_transition(transition))
 
     def _build_result(
-        self, transition_id: str, transition: Any, context: dict[str, Any], success: bool
+        self,
+        transition_id: str,
+        transition: Any,
+        context: dict[str, Any],
+        success: bool,
     ) -> TransitionExecutionResult:
         """Build result object from transition execution.
 
@@ -209,7 +222,9 @@ class TransitionExecutor:
         )
 
     def _handle_transition_not_found(
-        self, transition_id: str, emit_event_callback: Callable[[str, dict], None] | None
+        self,
+        transition_id: str,
+        emit_event_callback: Callable[[str, dict], None] | None,
     ) -> TransitionExecutionResult:
         """Handle case where transition is not found.
 
@@ -221,7 +236,9 @@ class TransitionExecutor:
             Failed TransitionExecutionResult
         """
         error_msg = f"Transition '{transition_id}' not found in configuration"
-        self.event_emitter.emit_transition_failed(transition_id, error_msg, emit_event_callback)
+        self.event_emitter.emit_transition_failed(
+            transition_id, error_msg, emit_event_callback
+        )
         return TransitionExecutionResult(success=False, error_message=error_msg)
 
     def _log_result(self, result: TransitionExecutionResult) -> None:

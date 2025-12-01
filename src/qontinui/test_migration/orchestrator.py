@@ -61,15 +61,14 @@ else:
             TestResult,
             TestResults,
         )
+        from discovery.classifier import TestClassifier
+        from discovery.scanner import BrobotTestScanner
         from execution.hybrid_test_translator import HybridTestTranslator
         from execution.pytest_runner import PytestRunner
         from validation.coverage_tracker import CoverageTracker
         from validation.reporting import DiagnosticReporterImpl
         from validation.result_validator import ResultValidator
         from validation.test_failure_analyzer import TestFailureAnalyzer
-
-        from discovery.classifier import TestClassifier
-        from discovery.scanner import BrobotTestScanner
 
 
 class TestMigrationOrchestrator(MigrationOrchestrator):
@@ -164,7 +163,9 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             self.migration_state["migrated_tests"] = successful_migrations
             self.migration_state["failed_migrations"] = failed_migrations
 
-            self.logger.info(f"Successfully migrated {len(successful_migrations)} tests")
+            self.logger.info(
+                f"Successfully migrated {len(successful_migrations)} tests"
+            )
             if failed_migrations:
                 self.logger.warning(f"Failed to migrate {len(failed_migrations)} tests")
 
@@ -176,7 +177,9 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
 
             # Phase 4: Analysis and Reporting
             self.logger.info("Phase 4: Analyzing results and generating reports")
-            final_results = self._analyze_and_report(execution_results, migration_results)
+            final_results = self._analyze_and_report(
+                execution_results, migration_results
+            )
 
             self.logger.info("Migration process completed")
             return final_results
@@ -215,7 +218,9 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             self.logger.error(f"Validation failed: {str(e)}")
             return self._create_error_results(str(e))
 
-    def recover_from_failure(self, failed_test: str, error_info: dict[str, Any]) -> bool:
+    def recover_from_failure(
+        self, failed_test: str, error_info: dict[str, Any]
+    ) -> bool:
         """
         Attempt to recover from a migration failure.
 
@@ -290,7 +295,9 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             self.logger.error(f"Test discovery failed: {str(e)}")
             raise
 
-    def _migrate_tests(self, test_files: list[TestFile], target_path: Path) -> list[dict[str, Any]]:
+    def _migrate_tests(
+        self, test_files: list[TestFile], target_path: Path
+    ) -> list[dict[str, Any]]:
         """Migrate test files to Python equivalents."""
         migration_results = []
 
@@ -321,7 +328,9 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
                     }
                 )
 
-                self.logger.debug(f"Successfully migrated: {test_file.path} -> {target_file}")
+                self.logger.debug(
+                    f"Successfully migrated: {test_file.path} -> {target_file}"
+                )
 
             except Exception as e:
                 error_msg = f"Failed to migrate {test_file.path}: {str(e)}"
@@ -356,7 +365,9 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             results = self.runner.run_test_suite(target_path)
 
             # Update coverage tracking
-            self.coverage_tracker.update_coverage(test_name="test_suite", coverage_data=results)
+            self.coverage_tracker.update_coverage(
+                test_name="test_suite", coverage_data=results
+            )
 
             return results
 
@@ -445,7 +456,9 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
             "successful_migrations": len(successful_migrations),
             "failed_migrations": len(failed_migrations),
             "migration_success_rate": (
-                len(successful_migrations) / len(migration_results) if migration_results else 0
+                len(successful_migrations) / len(migration_results)
+                if migration_results
+                else 0
             ),
             "total_tests_executed": execution_results.total_tests,
             "tests_passed": execution_results.passed_tests,
@@ -462,7 +475,9 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
         """Apply automated fixes based on failure analysis."""
         # This is a placeholder for automated fix application
         # In practice, this would implement specific fix strategies
-        self.logger.info(f"Automated fix application not yet implemented for {failed_test}")
+        self.logger.info(
+            f"Automated fix application not yet implemented for {failed_test}"
+        )
         return False
 
     def _create_empty_results(self, message: str) -> TestResults:
@@ -503,7 +518,9 @@ class TestMigrationOrchestrator(MigrationOrchestrator):
 
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
             handler.setFormatter(formatter)
             logger.addHandler(handler)
 

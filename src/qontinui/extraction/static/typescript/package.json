@@ -1,0 +1,11 @@
+{
+  "name": "qontinui-ts-parser",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "parser.js",
+  "dependencies": {
+    "typescript": "^5.0.0",
+    "@babel/parser": "^7.23.0",
+    "@babel/traverse": "^7.23.0"
+  }
+}

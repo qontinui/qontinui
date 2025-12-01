@@ -21,7 +21,9 @@ def main():
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
     parser.add_argument(
-        "--dry-run", action="store_true", help="Validate configuration without executing"
+        "--dry-run",
+        action="store_true",
+        help="Validate configuration without executing",
     )
 
     args = parser.parse_args()
