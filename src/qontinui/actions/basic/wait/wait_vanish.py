@@ -36,7 +36,9 @@ class WaitVanish(ActionInterface):
         """
         return "VANISH"
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, matches: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Perform vanish wait.
 
         Args:

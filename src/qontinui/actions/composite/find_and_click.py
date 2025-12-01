@@ -83,7 +83,9 @@ class FindAndClickOptionsBuilder(ActionConfigBuilder):
             self.find_options = PatternFindOptions()
             self.click_options = ClickOptionsBuilder().build()
 
-    def set_find_options(self, options: PatternFindOptions) -> "FindAndClickOptionsBuilder":
+    def set_find_options(
+        self, options: PatternFindOptions
+    ) -> "FindAndClickOptionsBuilder":
         """Set find options.
 
         Args:
@@ -177,7 +179,9 @@ class FindAndClick(ActionInterface):
         """
         return ActionType.FIND_AND_CLICK  # type: ignore[no-any-return, attr-defined]
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, matches: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Find element and click on it.
 
         Executes:

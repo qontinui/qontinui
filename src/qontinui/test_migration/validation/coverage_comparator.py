@@ -47,7 +47,9 @@ class CoverageComparator:
         # Load metadata
         metadata = data.get("metadata", {})
         if "tracking_start_time" in metadata:
-            tracking_start_time_holder[0] = datetime.fromisoformat(metadata["tracking_start_time"])
+            tracking_start_time_holder[0] = datetime.fromisoformat(
+                metadata["tracking_start_time"]
+            )
 
         # Load mappings
         self.test_mappings.clear()
@@ -105,13 +107,17 @@ class CoverageComparator:
         matching_mapping = self._find_matching_mapping(test_name)
 
         if not matching_mapping:
-            logger.warning(f"No mapping found for test '{test_name}' - creating metadata entry")
+            logger.warning(
+                f"No mapping found for test '{test_name}' - creating metadata entry"
+            )
 
         # Process coverage data based on type
         if isinstance(coverage_data, dict):
             self._update_coverage_from_dict(test_name, coverage_data, matching_mapping)
         elif isinstance(coverage_data, int | float):
-            self._update_coverage_from_percentage(test_name, coverage_data, matching_mapping)
+            self._update_coverage_from_percentage(
+                test_name, coverage_data, matching_mapping
+            )
         elif hasattr(coverage_data, "test_name"):
             # TestResult object
             self._update_coverage_from_test_result(coverage_data, matching_mapping)
@@ -128,7 +134,10 @@ class CoverageComparator:
             if mapping.python_class_name == test_name:
                 return mapping
             # Check if test name matches any method mapping
-            if test_name in mapping.test_methods or test_name in mapping.test_methods.values():
+            if (
+                test_name in mapping.test_methods
+                or test_name in mapping.test_methods.values()
+            ):
                 return mapping
         return None
 
@@ -199,4 +208,6 @@ class CoverageComparator:
                 if mapping.migration_status == MigrationStatus.COMPLETED:
                     # Regression - mark as in progress for investigation
                     mapping.migration_status = MigrationStatus.IN_PROGRESS
-                    mapping.migration_notes += f"\nRegression detected: {test_result.error_message}"
+                    mapping.migration_notes += (
+                        f"\nRegression detected: {test_result.error_message}"
+                    )

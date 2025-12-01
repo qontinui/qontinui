@@ -86,7 +86,9 @@ class ForEachStatement(Statement):
             statements = [Statement.from_dict(stmt) for stmt in data["statements"]]
 
         return cls(
-            variable_name=data.get("variableName", ""), collection=collection, statements=statements
+            variable_name=data.get("variableName", ""),
+            collection=collection,
+            statements=statements,
         )
 
     def to_dict(self) -> dict[str, Any]:

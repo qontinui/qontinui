@@ -78,7 +78,9 @@ class TransitionDetector:
         return transitions
 
     def _calculate_transition_confidence(
-        self, prev_screenshot: np.ndarray[Any, Any], current_screenshot: np.ndarray[Any, Any]
+        self,
+        prev_screenshot: np.ndarray[Any, Any],
+        current_screenshot: np.ndarray[Any, Any],
     ) -> float:
         """
         Calculate confidence score for a transition based on visual difference.
@@ -95,7 +97,9 @@ class TransitionDetector:
             return 0.5  # Medium confidence if shapes differ
 
         # Calculate pixel-wise difference
-        diff = np.abs(current_screenshot.astype(np.float32) - prev_screenshot.astype(np.float32))
+        diff = np.abs(
+            current_screenshot.astype(np.float32) - prev_screenshot.astype(np.float32)
+        )
         diff_magnitude = np.mean(diff)
 
         # Normalize to 0-1 range (assuming 0-255 pixel values)

@@ -169,7 +169,9 @@ class PathConfigurationStrategy(DiagnosticStrategy):
             return
 
         logger.info("\n=== Path Configuration ===")
-        logger.info(f"Image Path: {results['image_path']} (valid: {results['image_path_valid']})")
+        logger.info(
+            f"Image Path: {results['image_path']} (valid: {results['image_path_valid']})"
+        )
         if not results["image_path_valid"]:
             logger.info(f"  Reason: {results['image_path_reason']}")
 

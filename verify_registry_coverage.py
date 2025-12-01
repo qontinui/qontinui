@@ -101,7 +101,9 @@ def main():
     print("=" * 80)
     print(f"Total expected: {len(expected_action_types)}")
     print(f"Total registered: {len(registered_types)}")
-    print(f"Coverage: {coverage_count}/{len(expected_action_types)} ({coverage_percent:.1f}%)")
+    print(
+        f"Coverage: {coverage_count}/{len(expected_action_types)} ({coverage_percent:.1f}%)"
+    )
     print()
 
     # Check for missing action types

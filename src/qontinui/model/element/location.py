@@ -145,7 +145,10 @@ class Location:
         # Fixed positioning - always use absolute
         if self.fixed:
             return Location(
-                x=self.x + self.offset_x, y=self.y + self.offset_y, name=self.name, fixed=True
+                x=self.x + self.offset_x,
+                y=self.y + self.offset_y,
+                name=self.name,
+                fixed=True,
             )
 
         # Relative positioning - calculate from region
@@ -162,7 +165,10 @@ class Location:
 
         # Default to absolute coordinates
         return Location(
-            x=self.x + self.offset_x, y=self.y + self.offset_y, name=self.name, fixed=self.fixed
+            x=self.x + self.offset_x,
+            y=self.y + self.offset_y,
+            name=self.name,
+            fixed=self.fixed,
         )
 
     def is_defined_with_region(self) -> bool:

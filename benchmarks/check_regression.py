@@ -23,7 +23,9 @@ def load_results(file_path: Path) -> dict[str, Any]:
         return json.load(f)
 
 
-def compare_results(baseline: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
+def compare_results(
+    baseline: dict[str, Any], current: dict[str, Any]
+) -> dict[str, Any]:
     """Compare current results against baseline.
 
     Args:

@@ -63,7 +63,9 @@ def main():
     )
 
     result = executor.execute_loop(search_loop)
-    print(f"\nResult: Checked {result['iterations_completed']}/{len(items_to_search)} items")
+    print(
+        f"\nResult: Checked {result['iterations_completed']}/{len(items_to_search)} items"
+    )
     print(f"Stopped early: {result['stopped_early']}")
     if result.get("break_message"):
         print(f"Break reason: {result['break_message']}")
@@ -101,7 +103,9 @@ def main():
 
         return {"success": True}
 
-    executor = ControlFlowExecutor(action_executor=validation_executor, variables={"items": items})
+    executor = ControlFlowExecutor(
+        action_executor=validation_executor, variables={"items": items}
+    )
 
     process_loop = Action(
         id="process-loop",
@@ -110,7 +114,10 @@ def main():
             "loopType": "FOREACH",
             "collection": {"type": "variable", "variableName": "items"},
             "iteratorVariable": "item",
-            "actions": ["validate-item", "process-item"],  # process-item skipped if invalid
+            "actions": [
+                "validate-item",
+                "process-item",
+            ],  # process-item skipped if invalid
         },
     )
 
@@ -138,7 +145,9 @@ def main():
 
         elif action_id == "check-threshold":
             if variables["sum"] >= variables["threshold"]:
-                print(f"  *** Threshold reached ({variables['threshold']}) - breaking ***")
+                print(
+                    f"  *** Threshold reached ({variables['threshold']}) - breaking ***"
+                )
                 raise BreakLoop(f"Sum reached threshold: {variables['sum']}")
 
         return {"success": True}
@@ -210,7 +219,12 @@ def main():
     print("=" * 70)
 
     executor = ControlFlowExecutor(
-        variables={"attempts": 0, "max_attempts": 3, "success": False, "retry_errors": []}
+        variables={
+            "attempts": 0,
+            "max_attempts": 3,
+            "success": False,
+            "retry_errors": [],
+        }
     )
 
     def retry_executor(action_id: str, variables: dict) -> dict:

@@ -77,7 +77,9 @@ class OutputFormatter:
                         "path": str(test_file.path),
                         "type": test_file.test_type.value,
                         "package": test_file.package,
-                        "dependencies": [dep.java_import for dep in test_file.dependencies],
+                        "dependencies": [
+                            dep.java_import for dep in test_file.dependencies
+                        ],
                     }
                     for test_file in discovered_tests
                 ],

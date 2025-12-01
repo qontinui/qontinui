@@ -70,7 +70,9 @@ class ColorClusterAnalyzer:
         total_pixels = len(pixels)
 
         # Apply k-means clustering
-        kmeans = KMeans(n_clusters=n_clusters, random_state=self.random_state, n_init=10)
+        kmeans = KMeans(
+            n_clusters=n_clusters, random_state=self.random_state, n_init=10
+        )
         labels = kmeans.fit_predict(pixels)
 
         # Build clusters
@@ -96,7 +98,9 @@ class ColorClusterAnalyzer:
 
         return clusters
 
-    def find_dominant_colors(self, image: np.ndarray[Any, Any], top_n: int = 3) -> list[RGB]:
+    def find_dominant_colors(
+        self, image: np.ndarray[Any, Any], top_n: int = 3
+    ) -> list[RGB]:
         """Find the most dominant colors in an image.
 
         Args:

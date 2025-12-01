@@ -51,7 +51,9 @@ def test_load_bdo_config():
     # Verify specific states exist
     state_names = {state.name for state in states}
     expected_states = {"Main", "Processing", "Inventory"}
-    assert expected_states.issubset(state_names), f"Missing states. Found: {state_names}"
+    assert expected_states.issubset(
+        state_names
+    ), f"Missing states. Found: {state_names}"
 
     # Verify initial state was activated
     assert navigation_api._state_memory is not None, "StateMemory was not initialized"
@@ -65,11 +67,15 @@ def test_load_bdo_config():
     assert main_state.id in active_states, "Main state should be activated"
 
     # Verify navigator was initialized
-    assert navigation_api._navigator is not None, "PathfindingNavigator was not initialized"
+    assert (
+        navigation_api._navigator is not None
+    ), "PathfindingNavigator was not initialized"
 
     # Verify states were registered with multistate adapter
     adapter = navigation_api._navigator.multistate_adapter
-    assert len(adapter.state_mappings) > 0, "No states registered with multistate adapter"
+    assert (
+        len(adapter.state_mappings) > 0
+    ), "No states registered with multistate adapter"
 
     # Verify Processing state can be looked up
     processing_state = navigation_api._state_service.get_state_by_name("Processing")
@@ -129,7 +135,9 @@ def test_transition_mapping():
     adapter = navigation_api._navigator.multistate_adapter
 
     # Verify transitions are registered in the mappings
-    assert len(adapter.transition_mappings) > 0, "No transitions registered in adapter mappings"
+    assert (
+        len(adapter.transition_mappings) > 0
+    ), "No transitions registered in adapter mappings"
 
     # Get the Main state and check it has transitions
     main_state = navigation_api._state_service.get_state_by_name("Main")

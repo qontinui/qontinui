@@ -110,7 +110,10 @@ def setup_logging(
         level = "CRITICAL"  # Set to highest level to minimize overhead
 
     logging.basicConfig(
-        format="%(message)s", level=getattr(logging, level.upper()), handlers=handlers, force=True
+        format="%(message)s",
+        level=getattr(logging, level.upper()),
+        handlers=handlers,
+        force=True,
     )
 
 
@@ -139,7 +142,9 @@ def _ensure_logging_initialized() -> None:
     try:
         settings = get_settings()
         if hasattr(settings, "log_path") and hasattr(settings, "debug_mode"):
-            log_file = settings.log_path / f"qontinui_{datetime.now().strftime('%Y%m%d')}.log"
+            log_file = (
+                settings.log_path / f"qontinui_{datetime.now().strftime('%Y%m%d')}.log"
+            )
             setup_logging(
                 level="DEBUG" if settings.debug_mode else "INFO",
                 log_file=log_file,
@@ -203,7 +208,9 @@ class ActionLogger:
         """
         self.logger = base_logger or get_logger(__name__)
 
-    def log_action_start(self, action_type: str, target: Any, **kwargs) -> dict[str, Any]:
+    def log_action_start(
+        self, action_type: str, target: Any, **kwargs
+    ) -> dict[str, Any]:
         """Log action start.
 
         Args:
@@ -292,7 +299,12 @@ class StateLogger:
             success: Whether transition succeeded
             **kwargs: Additional context
         """
-        log_data = {"from_state": from_state, "to_state": to_state, "success": success, **kwargs}
+        log_data = {
+            "from_state": from_state,
+            "to_state": to_state,
+            "success": success,
+            **kwargs,
+        }
 
         if trigger:
             log_data["trigger"] = trigger
@@ -314,7 +326,11 @@ class StateLogger:
             **kwargs: Additional context
         """
         self.logger.info(
-            "state_activated", state=state, confidence=confidence, method=method, **kwargs
+            "state_activated",
+            state=state,
+            confidence=confidence,
+            method=method,
+            **kwargs,
         )
 
 
@@ -344,9 +360,13 @@ class PerformanceLogger:
         self.metrics[operation].append(duration)
 
         # Log
-        self.logger.debug("performance_timing", operation=operation, duration=duration, **kwargs)
+        self.logger.debug(
+            "performance_timing", operation=operation, duration=duration, **kwargs
+        )
 
-    def log_resource_usage(self, cpu_percent: float, memory_mb: float, **kwargs) -> None:
+    def log_resource_usage(
+        self, cpu_percent: float, memory_mb: float, **kwargs
+    ) -> None:
         """Log resource usage.
 
         Args:
@@ -354,7 +374,9 @@ class PerformanceLogger:
             memory_mb: Memory usage in MB
             **kwargs: Additional context
         """
-        self.logger.debug("resource_usage", cpu_percent=cpu_percent, memory_mb=memory_mb, **kwargs)
+        self.logger.debug(
+            "resource_usage", cpu_percent=cpu_percent, memory_mb=memory_mb, **kwargs
+        )
 
     def get_stats(self, operation: str | None = None) -> dict[str, Any]:
         """Get performance statistics.

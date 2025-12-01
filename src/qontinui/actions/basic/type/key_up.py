@@ -41,7 +41,9 @@ class KeyUp(ActionInterface):
         """
         return ActionType.KEY_UP
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, matches: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Release keyboard keys.
 
         Processing behavior:
@@ -84,7 +86,11 @@ class KeyUp(ActionInterface):
         if object_collections and object_collections[0].state_strings:
             strings = object_collections[0].state_strings
             for i, state_string in enumerate(strings):
-                key = state_string.string if hasattr(state_string, "string") else str(state_string)
+                key = (
+                    state_string.string
+                    if hasattr(state_string, "string")
+                    else str(state_string)
+                )
                 controller.key_up(key)
                 logger.debug(f"Key up: {key}")
 

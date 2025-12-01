@@ -82,7 +82,12 @@ def simple_graph_workflow():
                 "config": {"target": {"type": "image", "imageId": "img1"}},
                 "position": [100, 100],
             },
-            {"id": "action2", "type": "TYPE", "config": {"text": "hello"}, "position": [100, 200]},
+            {
+                "id": "action2",
+                "type": "TYPE",
+                "config": {"text": "hello"},
+                "position": [100, 200],
+            },
             {
                 "id": "action3",
                 "type": "FIND",
@@ -140,8 +145,12 @@ def branching_graph_workflow():
                 "true": [[{"action": "action_true", "type": "true", "index": 0}]],
                 "false": [[{"action": "action_false", "type": "false", "index": 0}]],
             },
-            "action_true": {"main": [[{"action": "merge", "type": "main", "index": 0}]]},
-            "action_false": {"main": [[{"action": "merge", "type": "main", "index": 0}]]},
+            "action_true": {
+                "main": [[{"action": "merge", "type": "main", "index": 0}]]
+            },
+            "action_false": {
+                "main": [[{"action": "merge", "type": "main", "index": 0}]]
+            },
         },
     }
 
@@ -171,7 +180,12 @@ def workflow_with_cycle():
                 },
                 "position": [100, 200],
             },
-            {"id": "action3", "type": "TYPE", "config": {"text": "test"}, "position": [100, 300]},
+            {
+                "id": "action3",
+                "type": "TYPE",
+                "config": {"text": "test"},
+                "position": [100, 300],
+            },
         ],
         "connections": {
             "action1": {"main": [[{"action": "action2", "type": "main", "index": 0}]]},
@@ -479,7 +493,12 @@ def test_detect_orphan_action():
                 "config": {"target": {"type": "image", "imageId": "img1"}},
                 "position": [100, 100],
             },
-            {"id": "action2", "type": "TYPE", "config": {"text": "test"}, "position": [200, 100]},
+            {
+                "id": "action2",
+                "type": "TYPE",
+                "config": {"text": "test"},
+                "position": [200, 100],
+            },
             {
                 "id": "orphan",
                 "type": "FIND",
@@ -487,7 +506,9 @@ def test_detect_orphan_action():
                 "position": [300, 100],
             },
         ],
-        "connections": {"action1": {"main": [[{"action": "action2", "type": "main", "index": 0}]]}},
+        "connections": {
+            "action1": {"main": [[{"action": "action2", "type": "main", "index": 0}]]}
+        },
     }
 
     workflow = Workflow.model_validate(workflow_dict)
@@ -511,7 +532,12 @@ def test_orphan_warning_in_validation():
                 "config": {"target": {"type": "image", "imageId": "img1"}},
                 "position": [100, 100],
             },
-            {"id": "orphan", "type": "TYPE", "config": {"text": "test"}, "position": [200, 100]},
+            {
+                "id": "orphan",
+                "type": "TYPE",
+                "config": {"text": "test"},
+                "position": [200, 100],
+            },
         ],
         "connections": {},
     }
@@ -568,7 +594,10 @@ def test_get_action_output_count():
     switch_action = Action(
         id="a3",
         type="SWITCH",
-        config={"expression": "value", "cases": [{"value": 1}, {"value": 2}, {"value": 3}]},
+        config={
+            "expression": "value",
+            "cases": [{"value": 1}, {"value": 2}, {"value": 3}],
+        },
     )
     assert get_action_output_count(switch_action) == 4  # 3 cases + 1 default
 
@@ -576,7 +605,11 @@ def test_get_action_output_count():
 def test_get_action_connection_types():
     """Test getting valid connection types for actions."""
     click_types = get_action_connection_types(
-        Action(id="a1", type="CLICK", config={"target": {"type": "image", "imageId": "img1"}})
+        Action(
+            id="a1",
+            type="CLICK",
+            config={"target": {"type": "image", "imageId": "img1"}},
+        )
     )
     assert "main" in click_types
     assert "error" in click_types
@@ -775,7 +808,12 @@ def test_action_with_position():
 
 def test_empty_workflow():
     """Test workflow with no actions."""
-    workflow_dict = {"id": "empty-wf", "name": "Empty", "version": "1.0.0", "actions": []}
+    workflow_dict = {
+        "id": "empty-wf",
+        "name": "Empty",
+        "version": "1.0.0",
+        "actions": [],
+    }
 
     workflow = Workflow.model_validate(workflow_dict)
     assert len(workflow.actions) == 0

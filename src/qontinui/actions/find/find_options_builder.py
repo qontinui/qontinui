@@ -180,7 +180,9 @@ def _cascade_timeout(ctx: CascadeContext, explicit: float | None) -> float:
     return get_defaults().find.default_timeout
 
 
-def _cascade_search_region(ctx: CascadeContext, explicit: Region | None) -> Region | None:
+def _cascade_search_region(
+    ctx: CascadeContext, explicit: Region | None
+) -> Region | None:
     """Cascade search region.
 
     Priority:
@@ -246,10 +248,16 @@ def _cascade_find_all(ctx: CascadeContext, explicit: bool | None) -> bool:
     # Priority 2: Infer from SearchOptions max/min matches
     if ctx.search_options:
         # If max_matches > 1, we need to find multiple
-        if ctx.search_options.max_matches is not None and ctx.search_options.max_matches > 1:
+        if (
+            ctx.search_options.max_matches is not None
+            and ctx.search_options.max_matches > 1
+        ):
             return True
         # If min_matches > 1, we need to find multiple
-        if ctx.search_options.min_matches is not None and ctx.search_options.min_matches > 1:
+        if (
+            ctx.search_options.min_matches is not None
+            and ctx.search_options.min_matches > 1
+        ):
             return True
         # If max_matches_to_act_on > 1, find multiple
         if (

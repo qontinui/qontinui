@@ -224,7 +224,9 @@ class StateExecutionAPI:
         )
 
     def execute_transition(
-        self, transition_id: str, emit_event_callback: Callable[[str, dict], None] | None = None
+        self,
+        transition_id: str,
+        emit_event_callback: Callable[[str, dict], None] | None = None,
     ) -> TransitionExecutionResult:
         """Execute a transition by ID.
 

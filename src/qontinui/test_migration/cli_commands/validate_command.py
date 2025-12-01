@@ -19,7 +19,9 @@ class ValidateCommand(BaseCommand):
     def add_arguments(self, parser: ArgumentParser) -> None:
         """Add validate command arguments."""
         parser.add_argument(
-            "test_directory", type=Path, help="Directory containing migrated Python tests"
+            "test_directory",
+            type=Path,
+            help="Directory containing migrated Python tests",
         )
 
         parser.add_argument(
@@ -29,7 +31,9 @@ class ValidateCommand(BaseCommand):
             help="Output format for results (default: text)",
         )
 
-        parser.add_argument("--report-file", type=Path, help="Save validation report to file")
+        parser.add_argument(
+            "--report-file", type=Path, help="Save validation report to file"
+        )
 
     def execute(self, args: Namespace) -> CommandResult:
         """Execute the validate command."""

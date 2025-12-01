@@ -2,8 +2,13 @@
 
 import pytest
 
-from qontinui.runner.dsl.expressions.binary_operation_expression import BinaryOperationExpression
-from qontinui.runner.dsl.expressions.builder_expression import BuilderExpression, BuilderMethodCall
+from qontinui.runner.dsl.expressions.binary_operation_expression import (
+    BinaryOperationExpression,
+)
+from qontinui.runner.dsl.expressions.builder_expression import (
+    BuilderExpression,
+    BuilderMethodCall,
+)
 from qontinui.runner.dsl.expressions.literal_expression import LiteralExpression
 from qontinui.runner.dsl.expressions.method_call_expression import MethodCallExpression
 from qontinui.runner.dsl.expressions.variable_expression import VariableExpression
@@ -200,13 +205,17 @@ def complex_nested_if():
                 then_statements=[
                     AssignmentStatement(
                         variable_name="result",
-                        value=LiteralExpression(value_type="string", value="x>10 and y<5"),
+                        value=LiteralExpression(
+                            value_type="string", value="x>10 and y<5"
+                        ),
                     )
                 ],
                 else_statements=[
                     AssignmentStatement(
                         variable_name="result",
-                        value=LiteralExpression(value_type="string", value="x>10 and y>=5"),
+                        value=LiteralExpression(
+                            value_type="string", value="x>10 and y>=5"
+                        ),
                     )
                 ],
             )
@@ -258,14 +267,22 @@ def sample_json_if_stmt():
             {
                 "statementType": "assignment",
                 "variableName": "result",
-                "value": {"expressionType": "literal", "valueType": "string", "value": "positive"},
+                "value": {
+                    "expressionType": "literal",
+                    "valueType": "string",
+                    "value": "positive",
+                },
             }
         ],
         "elseStatements": [
             {
                 "statementType": "assignment",
                 "variableName": "result",
-                "value": {"expressionType": "literal", "valueType": "string", "value": "negative"},
+                "value": {
+                    "expressionType": "literal",
+                    "valueType": "string",
+                    "value": "negative",
+                },
             }
         ],
     }

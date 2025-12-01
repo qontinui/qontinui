@@ -96,7 +96,9 @@ class FixSuggestionEngine:
         """
         return self._formatter.apply_simple_fixes(suggestions, python_file_path)
 
-    def recognize_common_patterns(self, error_message: str, stack_trace: str) -> list[str]:
+    def recognize_common_patterns(
+        self, error_message: str, stack_trace: str
+    ) -> list[str]:
         """
         Recognize common migration issue patterns from error messages and stack traces.
 

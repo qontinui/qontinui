@@ -55,7 +55,9 @@ class ExecutionState:
     def mark_failed(self, action_id: str, error: Any):
         """Mark action as failed."""
         self.action_states[action_id] = TraversalState.FAILED
-        self.errors.append({"action_id": action_id, "error": str(error), "timestamp": time.time()})
+        self.errors.append(
+            {"action_id": action_id, "error": str(error), "timestamp": time.time()}
+        )
         logger.error(f"Action '{action_id}' state: FAILED - {error}")
 
     def mark_skipped(self, action_id: str, reason: str):
@@ -80,10 +82,18 @@ class ExecutionState:
 
     def get_summary(self) -> dict[str, Any]:
         """Get execution summary."""
-        completed = sum(1 for s in self.action_states.values() if s == TraversalState.COMPLETED)
-        failed = sum(1 for s in self.action_states.values() if s == TraversalState.FAILED)
-        skipped = sum(1 for s in self.action_states.values() if s == TraversalState.SKIPPED)
-        pending = sum(1 for s in self.action_states.values() if s == TraversalState.PENDING)
+        completed = sum(
+            1 for s in self.action_states.values() if s == TraversalState.COMPLETED
+        )
+        failed = sum(
+            1 for s in self.action_states.values() if s == TraversalState.FAILED
+        )
+        skipped = sum(
+            1 for s in self.action_states.values() if s == TraversalState.SKIPPED
+        )
+        pending = sum(
+            1 for s in self.action_states.values() if s == TraversalState.PENDING
+        )
 
         return {
             "workflow_id": self.workflow.id,
@@ -231,7 +241,9 @@ class GraphExecutor:
             "results": self.execution_state.action_results,
         }
 
-    def _initialize_context(self, initial_context: dict[str, Any] | None) -> dict[str, Any]:
+    def _initialize_context(
+        self, initial_context: dict[str, Any] | None
+    ) -> dict[str, Any]:
         """Initialize execution context from workflow variables and initial context.
 
         Args:
@@ -278,7 +290,9 @@ class GraphExecutor:
             action_id, from_action_id = execution_queue.popleft()
 
             # Skip if already executed
-            if self.execution_state is not None and self.execution_state.is_completed(action_id):
+            if self.execution_state is not None and self.execution_state.is_completed(
+                action_id
+            ):
                 logger.debug(f"Skipping '{action_id}' - already executed")
                 continue
 
@@ -368,7 +382,9 @@ class GraphExecutor:
                 "action_id": action.id,
                 "action_type": action.type,
                 "context": (
-                    self.execution_state.context.copy() if self.execution_state is not None else {}
+                    self.execution_state.context.copy()
+                    if self.execution_state is not None
+                    else {}
                 ),
             }
 
@@ -378,7 +394,9 @@ class GraphExecutor:
                     if self.execution_state is not None:
                         hook.after_action(action, self.execution_state.context, result)
                 except Exception as e:
-                    logger.warning(f"Hook {type(hook).__name__}.after_action failed: {e}")
+                    logger.warning(
+                        f"Hook {type(hook).__name__}.after_action failed: {e}"
+                    )
 
             return result
 
@@ -389,7 +407,9 @@ class GraphExecutor:
                     if self.execution_state is not None:
                         hook.on_error(action, self.execution_state.context, e)
                 except Exception as hook_error:
-                    logger.warning(f"Hook {type(hook).__name__}.on_error failed: {hook_error}")
+                    logger.warning(
+                        f"Hook {type(hook).__name__}.on_error failed: {hook_error}"
+                    )
 
             raise
 
@@ -406,7 +426,9 @@ class GraphExecutor:
             List of (action_id, input_index) tuples for next actions
         """
         # Use router to determine next actions
-        context = self.execution_state.context if self.execution_state is not None else {}
+        context = (
+            self.execution_state.context if self.execution_state is not None else {}
+        )
         routing_decision = self.router.route(action, result, context)  # type: ignore[arg-type]
 
         logger.debug(
@@ -427,16 +449,22 @@ class GraphExecutor:
 
         total = len(self.workflow.actions)
         completed = sum(
-            1 for s in self.execution_state.action_states.values() if s == TraversalState.COMPLETED
+            1
+            for s in self.execution_state.action_states.values()
+            if s == TraversalState.COMPLETED
         )
         failed = sum(
-            1 for s in self.execution_state.action_states.values() if s == TraversalState.FAILED
+            1
+            for s in self.execution_state.action_states.values()
+            if s == TraversalState.FAILED
         )
 
         progress_percent = (completed / total * 100) if total > 0 else 0
 
         return {
-            "status": "executing" if self.execution_state.end_time is None else "completed",
+            "status": (
+                "executing" if self.execution_state.end_time is None else "completed"
+            ),
             "total_actions": total,
             "completed": completed,
             "failed": failed,

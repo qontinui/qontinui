@@ -19,11 +19,15 @@ class TestAssertionConverter:
         assert result == "assert condition"
 
         # assertTrue with message
-        result = self.converter.convert_assertion('assertTrue(condition, "Error message")')
+        result = self.converter.convert_assertion(
+            'assertTrue(condition, "Error message")'
+        )
         assert result == 'assert condition, "Error message"'
 
         # assertTrue with complex condition
-        result = self.converter.convert_assertion("assertTrue(user.isValid() && user.isActive())")
+        result = self.converter.convert_assertion(
+            "assertTrue(user.isValid() && user.isActive())"
+        )
         assert result == "assert user.isValid() && user.isActive()"
 
     def test_assert_false_conversion(self):
@@ -33,7 +37,9 @@ class TestAssertionConverter:
         assert result == "assert not condition"
 
         # assertFalse with message
-        result = self.converter.convert_assertion('assertFalse(condition, "Should be false")')
+        result = self.converter.convert_assertion(
+            'assertFalse(condition, "Should be false")'
+        )
         assert result == 'assert not condition, "Should be false"'
 
     def test_assert_equals_conversion(self):
@@ -43,7 +49,9 @@ class TestAssertionConverter:
         assert result == "assert actual == expected"
 
         # assertEquals with message
-        result = self.converter.convert_assertion('assertEquals(5, result, "Values should match")')
+        result = self.converter.convert_assertion(
+            'assertEquals(5, result, "Values should match")'
+        )
         assert result == 'assert result == 5, "Values should match"'
 
         # assertEquals with string values
@@ -65,7 +73,9 @@ class TestAssertionConverter:
         result = self.converter.convert_assertion("assertNull(value)")
         assert result == "assert value is None"
 
-        result = self.converter.convert_assertion('assertNull(result, "Should be null")')
+        result = self.converter.convert_assertion(
+            'assertNull(result, "Should be null")'
+        )
         assert result == 'assert result is None, "Should be null"'
 
     def test_assert_not_null_conversion(self):
@@ -73,7 +83,9 @@ class TestAssertionConverter:
         result = self.converter.convert_assertion("assertNotNull(value)")
         assert result == "assert value is not None"
 
-        result = self.converter.convert_assertion('assertNotNull(user, "User should exist")')
+        result = self.converter.convert_assertion(
+            'assertNotNull(user, "User should exist")'
+        )
         assert result == 'assert user is not None, "User should exist"'
 
     def test_assert_same_conversion(self):
@@ -93,7 +105,9 @@ class TestAssertionConverter:
 
     def test_assert_array_equals_conversion(self):
         """Test assertArrayEquals conversion."""
-        result = self.converter.convert_assertion("assertArrayEquals(expectedArray, actualArray)")
+        result = self.converter.convert_assertion(
+            "assertArrayEquals(expectedArray, actualArray)"
+        )
         assert result == "assert list(actualArray) == list(expectedArray)"
 
         result = self.converter.convert_assertion(
@@ -118,10 +132,14 @@ class TestAssertionConverter:
 
     def test_assert_does_not_throw_conversion(self):
         """Test assertDoesNotThrow conversion."""
-        result = self.converter.convert_assertion("assertDoesNotThrow(() -> method.call())")
+        result = self.converter.convert_assertion(
+            "assertDoesNotThrow(() -> method.call())"
+        )
         assert result == "method.call()"
 
-        result = self.converter.convert_assertion("assertDoesNotThrow(service::safeMethod)")
+        result = self.converter.convert_assertion(
+            "assertDoesNotThrow(service::safeMethod)"
+        )
         assert result == "service.safeMethod"
 
     def test_fail_conversion(self):
@@ -135,7 +153,9 @@ class TestAssertionConverter:
     def test_hamcrest_assert_that_conversion(self):
         """Test assertThat with Hamcrest matchers."""
         # is(equalTo(value))
-        result = self.converter.convert_assertion("assertThat(actual, is(equalTo(expected)))")
+        result = self.converter.convert_assertion(
+            "assertThat(actual, is(equalTo(expected)))"
+        )
         assert result == "assert actual == expected"
 
         # is(value)
@@ -143,7 +163,9 @@ class TestAssertionConverter:
         assert result == "assert result == 5"
 
         # equalTo(value)
-        result = self.converter.convert_assertion("assertThat(name, equalTo(expectedName))")
+        result = self.converter.convert_assertion(
+            "assertThat(name, equalTo(expectedName))"
+        )
         assert result == "assert name == expectedName"
 
         # nullValue()
@@ -163,15 +185,21 @@ class TestAssertionConverter:
         assert result == "assert len(collection) == 0"
 
         # containsString(str)
-        result = self.converter.convert_assertion('assertThat(text, containsString("hello"))')
+        result = self.converter.convert_assertion(
+            'assertThat(text, containsString("hello"))'
+        )
         assert result == 'assert "hello" in text'
 
         # startsWith(str)
-        result = self.converter.convert_assertion('assertThat(text, startsWith("prefix"))')
+        result = self.converter.convert_assertion(
+            'assertThat(text, startsWith("prefix"))'
+        )
         assert result == 'assert text.startswith("prefix")'
 
         # endsWith(str)
-        result = self.converter.convert_assertion('assertThat(text, endsWith("suffix"))')
+        result = self.converter.convert_assertion(
+            'assertThat(text, endsWith("suffix"))'
+        )
         assert result == 'assert text.endswith("suffix")'
 
         # greaterThan(value)
@@ -183,11 +211,15 @@ class TestAssertionConverter:
         assert result == "assert number < 100"
 
         # instanceOf(Class.class)
-        result = self.converter.convert_assertion("assertThat(obj, instanceOf(String.class))")
+        result = self.converter.convert_assertion(
+            "assertThat(obj, instanceOf(String.class))"
+        )
         assert result == "assert isinstance(obj, String)"
 
         # not(matcher)
-        result = self.converter.convert_assertion("assertThat(value, not(equalTo(unwanted)))")
+        result = self.converter.convert_assertion(
+            "assertThat(value, not(equalTo(unwanted)))"
+        )
         assert result == "assert not (value == unwanted)"
 
     def test_parameter_extraction(self):
@@ -216,7 +248,9 @@ class TestAssertionConverter:
     def test_parameter_splitting(self):
         """Test parameter splitting with complex expressions."""
         # Nested method calls
-        params = self.converter._split_parameters("service.getValue(), result.getActual()")
+        params = self.converter._split_parameters(
+            "service.getValue(), result.getActual()"
+        )
         assert params == ["service.getValue()", "result.getActual()"]
 
         # String parameters with commas
@@ -224,7 +258,9 @@ class TestAssertionConverter:
         assert params == ['"Hello, world"', '"Another, string"']
 
         # Nested parentheses
-        params = self.converter._split_parameters("method(param1, param2), otherMethod()")
+        params = self.converter._split_parameters(
+            "method(param1, param2), otherMethod()"
+        )
         assert params == ["method(param1, param2)", "otherMethod()"]
 
     def test_string_literal_detection(self):
@@ -258,7 +294,11 @@ class TestAssertionConverter:
 
         converted = self.converter.convert_multiple_assertions(assertions)
 
-        expected = ["assert condition1", "assert actual == expected", "assert result is not None"]
+        expected = [
+            "assert condition1",
+            "assert actual == expected",
+            "assert result is not None",
+        ]
 
         assert converted == expected
 
@@ -287,7 +327,9 @@ class TestAssertionConverter:
         custom_assertions = self.converter.extract_custom_assertion_methods(test_code)
         assert "assertUserIsValid" in custom_assertions
         assert "assertCustomCondition" in custom_assertions
-        assert "assertTrue" not in custom_assertions  # Standard assertion should not be included
+        assert (
+            "assertTrue" not in custom_assertions
+        )  # Standard assertion should not be included
 
     def test_custom_assertion_conversion(self):
         """Test conversion of custom assertion method calls."""
@@ -303,8 +345,14 @@ class TestAssertionConverter:
 
     def test_camel_to_snake_conversion(self):
         """Test camelCase to snake_case conversion."""
-        assert self.converter._camel_to_snake("assertUserIsValid") == "assert_user_is_valid"
-        assert self.converter._camel_to_snake("assertCustomCondition") == "assert_custom_condition"
+        assert (
+            self.converter._camel_to_snake("assertUserIsValid")
+            == "assert_user_is_valid"
+        )
+        assert (
+            self.converter._camel_to_snake("assertCustomCondition")
+            == "assert_custom_condition"
+        )
         assert self.converter._camel_to_snake("simpleAssert") == "simple_assert"
 
     def test_semicolon_removal(self):
@@ -318,7 +366,9 @@ class TestAssertionConverter:
     def test_complex_assertion_scenarios(self):
         """Test complex real-world assertion scenarios."""
         # Assertion with method chaining
-        result = self.converter.convert_assertion("assertTrue(user.getProfile().isActive())")
+        result = self.converter.convert_assertion(
+            "assertTrue(user.getProfile().isActive())"
+        )
         assert result == "assert user.getProfile().isActive()"
 
         # Assertion with boolean operations
@@ -331,9 +381,13 @@ class TestAssertionConverter:
         result = self.converter.convert_assertion(
             "assertEquals(service.getExpectedValue(), processor.calculateResult())"
         )
-        assert result == "assert processor.calculateResult() == service.getExpectedValue()"
+        assert (
+            result == "assert processor.calculateResult() == service.getExpectedValue()"
+        )
 
         # Complex Hamcrest matcher
-        result = self.converter.convert_assertion("assertThat(users, hasSize(greaterThan(0)))")
+        result = self.converter.convert_assertion(
+            "assertThat(users, hasSize(greaterThan(0)))"
+        )
         # This would need more complex parsing, for now it falls back to basic conversion
         assert "assert" in result

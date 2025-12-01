@@ -42,7 +42,9 @@ class TestStateBuilderBasic:
         Returns:
             Initialized StateBuilder with default parameters
         """
-        return StateBuilder(consistency_threshold=0.9, min_image_area=100, min_region_area=500)
+        return StateBuilder(
+            consistency_threshold=0.9, min_image_area=100, min_region_area=500
+        )
 
     def test_builder_initialization(self, builder):
         """Test that builder initializes properly.
@@ -112,7 +114,9 @@ class TestStateBuilderBasic:
         screenshot, _ = create_login_form_screenshot()
         screenshots = [screenshot] * 2
 
-        state = builder.build_state_from_screenshots(screenshots, state_name="explicit_login_state")
+        state = builder.build_state_from_screenshots(
+            screenshots, state_name="explicit_login_state"
+        )
 
         assert state.name == "explicit_login_state"
 
@@ -256,7 +260,12 @@ class TestStateImagesIdentification:
             # Different elements each time
             elements = [
                 ElementSpec(
-                    "button", x=100 + i * 50, y=50 + i * 20, width=80, height=40, text=f"Button{i}"
+                    "button",
+                    x=100 + i * 50,
+                    y=50 + i * 20,
+                    width=80,
+                    height=40,
+                    text=f"Button{i}",
                 )
             ]
             img = generator.generate(width=600, height=400, elements=elements)
@@ -293,7 +302,9 @@ class TestStateImagesIdentification:
             img = generator.generate(width=500, height=400, elements=elements)
             screenshots.append(img)
 
-        regions = builder._detect_consistent_regions(screenshots, threshold=0.7, min_area=1000)
+        regions = builder._detect_consistent_regions(
+            screenshots, threshold=0.7, min_area=1000
+        )
 
         assert isinstance(regions, list)
 
@@ -306,7 +317,9 @@ class TestStateImagesIdentification:
         """
         # Create identical screenshots
         elements = [
-            ElementSpec("rectangle", x=50, y=50, width=100, height=100, color=(150, 150, 150))
+            ElementSpec(
+                "rectangle", x=50, y=50, width=100, height=100, color=(150, 150, 150)
+            )
         ]
 
         screenshots = []
@@ -625,7 +638,9 @@ class TestWithTransitions:
             TransitionInfo(before_screenshot=blank, after_screenshot=screenshot)
         ] * 12  # Need 10+ for boundary detection
 
-        state = builder.build_state_from_screenshots(screenshots, transitions_to_state=transitions)
+        state = builder.build_state_from_screenshots(
+            screenshots, transitions_to_state=transitions
+        )
 
         assert state is not None
         # May or may not have usable_area depending on detector availability
@@ -668,7 +683,9 @@ class TestWithTransitions:
         screenshots = [screenshot] * 2
 
         blank = np.zeros((600, 800, 3), dtype=np.uint8)
-        transitions_to = [TransitionInfo(before_screenshot=blank, after_screenshot=screenshot)] * 12
+        transitions_to = [
+            TransitionInfo(before_screenshot=blank, after_screenshot=screenshot)
+        ] * 12
 
         transitions_from = [
             TransitionInfo(
@@ -841,7 +858,9 @@ class TestIntegration:
         Verifies:
             - Building with same screenshots produces similar states
         """
-        screenshot = np.random.RandomState(42).randint(0, 255, (400, 600, 3), dtype=np.uint8)
+        screenshot = np.random.RandomState(42).randint(
+            0, 255, (400, 600, 3), dtype=np.uint8
+        )
         screenshots = [screenshot] * 2
 
         state1 = builder.build_state_from_screenshots(screenshots.copy())

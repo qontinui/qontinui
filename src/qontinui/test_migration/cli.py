@@ -114,13 +114,19 @@ Examples:
         subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
         # Add each command's arguments
-        migrate_parser = subparsers.add_parser("migrate", help="Migrate Java tests to Python")
+        migrate_parser = subparsers.add_parser(
+            "migrate", help="Migrate Java tests to Python"
+        )
         self.commands["migrate"].add_arguments(migrate_parser)
 
-        validate_parser = subparsers.add_parser("validate", help="Validate migrated tests")
+        validate_parser = subparsers.add_parser(
+            "validate", help="Validate migrated tests"
+        )
         self.commands["validate"].add_arguments(validate_parser)
 
-        report_parser = subparsers.add_parser("report", help="Generate migration reports")
+        report_parser = subparsers.add_parser(
+            "report", help="Generate migration reports"
+        )
         self.commands["report"].add_arguments(report_parser)
 
         config_parser = subparsers.add_parser("config", help="Manage configuration")

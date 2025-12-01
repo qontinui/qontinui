@@ -101,7 +101,9 @@ class OCRTextDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions)
+            if all_regions
+            else 0.0
         )
 
         return RegionAnalysisResult(
@@ -182,7 +184,9 @@ class OCRTextDetector(BaseRegionAnalyzer):
 
         return regions
 
-    def _merge_nearby_regions(self, regions: list[DetectedRegion]) -> list[DetectedRegion]:
+    def _merge_nearby_regions(
+        self, regions: list[DetectedRegion]
+    ) -> list[DetectedRegion]:
         """Merge nearby text regions into larger blocks."""
         if not regions:
             return regions

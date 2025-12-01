@@ -57,7 +57,9 @@ class TestConditionEvaluatorSafety:
         evaluator = ConditionEvaluator(context)
 
         # Trying to use __import__ should fail due to empty builtins
-        config = ConditionConfig(type="expression", expression="__import__('os').system('ls')")
+        config = ConditionConfig(
+            type="expression", expression="__import__('os').system('ls')"
+        )
 
         with pytest.raises(ValueError, match="Invalid expression"):
             evaluator.evaluate_condition(config)
@@ -91,7 +93,9 @@ class TestConditionEvaluatorErrorHandling:
         context = ExecutionContext({"x": "string", "y": 5})
         evaluator = ConditionEvaluator(context)
 
-        config = ConditionConfig(type="expression", expression="x + y")  # Can't add string and int
+        config = ConditionConfig(
+            type="expression", expression="x + y"
+        )  # Can't add string and int
 
         with pytest.raises(ValueError, match="Invalid expression"):
             evaluator.evaluate_condition(config)
@@ -132,7 +136,10 @@ class TestConditionTypes:
 
         for operator, expected_value, expected_result in operators_tests:
             config = ConditionConfig(
-                type="variable", variable_name="x", operator=operator, expected_value=expected_value
+                type="variable",
+                variable_name="x",
+                operator=operator,
+                expected_value=expected_value,
             )
             result = evaluator.evaluate_condition(config)
             assert (
@@ -146,13 +153,19 @@ class TestConditionTypes:
 
         # String contains
         config = ConditionConfig(
-            type="variable", variable_name="text", operator="contains", expected_value="world"
+            type="variable",
+            variable_name="text",
+            operator="contains",
+            expected_value="world",
         )
         assert evaluator.evaluate_condition(config) is True
 
         # List contains
         config = ConditionConfig(
-            type="variable", variable_name="items", operator="contains", expected_value=2
+            type="variable",
+            variable_name="items",
+            operator="contains",
+            expected_value=2,
         )
         assert evaluator.evaluate_condition(config) is True
 
@@ -162,7 +175,10 @@ class TestConditionTypes:
         evaluator = ConditionEvaluator(context)
 
         config = ConditionConfig(
-            type="variable", variable_name="text", operator="matches", expected_value=r"hello\d+"
+            type="variable",
+            variable_name="text",
+            operator="matches",
+            expected_value=r"hello\d+",
         )
         assert evaluator.evaluate_condition(config) is True
 
@@ -176,7 +192,10 @@ class TestVariableAccess:
         evaluator = ConditionEvaluator(context)
 
         config = ConditionConfig(
-            type="variable", variable_name="nonexistent", operator="==", expected_value=None
+            type="variable",
+            variable_name="nonexistent",
+            operator="==",
+            expected_value=None,
         )
         # Should not raise, should treat as None
         result = evaluator.evaluate_condition(config)
@@ -217,7 +236,9 @@ class TestSecurityDocumentation:
 
         assert docstring is not None
         assert "DO NOT use this with" in docstring
-        assert any(word in docstring.lower() for word in ["user", "untrusted", "external"])
+        assert any(
+            word in docstring.lower() for word in ["user", "untrusted", "external"]
+        )
 
     def test_mitigations_documented(self):
         """Test that security mitigations are documented."""
@@ -225,7 +246,10 @@ class TestSecurityDocumentation:
 
         assert docstring is not None
         assert "__builtins__" in docstring
-        assert any(word in docstring.lower() for word in ["prevent", "restricted", "mitigation"])
+        assert any(
+            word in docstring.lower()
+            for word in ["prevent", "restricted", "mitigation"]
+        )
 
     def test_security_docs_referenced(self):
         """Test that security documentation is referenced."""

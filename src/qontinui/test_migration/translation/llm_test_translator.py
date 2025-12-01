@@ -68,7 +68,9 @@ class LLMTestTranslator(TestTranslator):
         result = self.translate_with_detailed_result(test_file)
         return result.translated_code
 
-    def translate_with_detailed_result(self, test_file: TestFile) -> LLMTranslationResult:
+    def translate_with_detailed_result(
+        self, test_file: TestFile
+    ) -> LLMTranslationResult:
         """
         Translate test file and return detailed results with metadata.
 
@@ -179,7 +181,9 @@ class LLMTestTranslator(TestTranslator):
         response = self._call_llm(prompt)
         return self._parse_enhancement_response(response)
 
-    def validate_translation(self, python_code: str, original_test: TestFile) -> dict[str, Any]:
+    def validate_translation(
+        self, python_code: str, original_test: TestFile
+    ) -> dict[str, Any]:
         """
         Use LLM to validate a Python translation against the original Java test.
 
@@ -427,7 +431,9 @@ class TestExample:
     """LLM translated method."""
     assert True'''
 
-    def _parse_llm_response(self, response: str, test_file: TestFile) -> LLMTranslationResult:
+    def _parse_llm_response(
+        self, response: str, test_file: TestFile
+    ) -> LLMTranslationResult:
         """Parse LLM response into structured result."""
         try:
             # Try to parse as JSON first

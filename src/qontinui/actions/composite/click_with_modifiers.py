@@ -113,7 +113,9 @@ class ClickWithModifiers:
         Returns:
             True if successful
         """
-        key_down = KeyDown(KeyDownOptionsBuilder().add_key("CTRL").add_key("SHIFT").build())
+        key_down = KeyDown(
+            KeyDownOptionsBuilder().add_key("CTRL").add_key("SHIFT").build()
+        )
         click = Click(options or ClickOptionsBuilder().build())
         key_up = KeyUp(KeyUpOptionsBuilder().add_key("SHIFT").add_key("CTRL").build())
 
@@ -249,7 +251,9 @@ class FluentClickWithModifiers:
         return cast(bool, result)
 
 
-def modified_click(target: Any, options: ClickOptions | None = None) -> FluentClickWithModifiers:
+def modified_click(
+    target: Any, options: ClickOptions | None = None
+) -> FluentClickWithModifiers:
     """Create a fluent builder for modifier+click combinations.
 
     Example usage:

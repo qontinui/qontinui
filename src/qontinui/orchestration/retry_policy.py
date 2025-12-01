@@ -117,7 +117,9 @@ class RetryPolicy:
             RetryPolicy with fixed backoff
         """
         return cls(
-            max_retries=max_retries, base_delay=delay, backoff_strategy=BackoffStrategy.FIXED
+            max_retries=max_retries,
+            base_delay=delay,
+            backoff_strategy=BackoffStrategy.FIXED,
         )
 
     @classmethod

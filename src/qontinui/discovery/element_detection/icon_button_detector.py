@@ -70,7 +70,8 @@ class IconButtonDetector(BaseAnalyzer):
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect icon buttons in screenshots"""
         logger.info(
-            f"Running icon button detection on " f"{len(input_data.screenshots)} screenshots"
+            f"Running icon button detection on "
+            f"{len(input_data.screenshots)} screenshots"
         )
 
         params = {**self.get_default_parameters(), **input_data.parameters}
@@ -364,7 +365,9 @@ class IconButtonDetector(BaseAnalyzer):
         while matches:
             current = matches.pop(0)
             keep.append(current)
-            matches = [m for m in matches if not self._boxes_overlap(current, m, iou_threshold)]
+            matches = [
+                m for m in matches if not self._boxes_overlap(current, m, iou_threshold)
+            ]
 
         return keep
 
@@ -404,7 +407,9 @@ class IconButtonDetector(BaseAnalyzer):
         edges = cv2.Canny(img_gray, 50, 150)
 
         # Find contours
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)

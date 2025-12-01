@@ -408,7 +408,9 @@ class ActionFailedData:
 
 
 # Type aliases for convenience
-EventDataType = MatchAttemptedData | ActionStartedData | ActionCompletedData | ActionFailedData
+EventDataType = (
+    MatchAttemptedData | ActionStartedData | ActionCompletedData | ActionFailedData
+)
 
 __all__ = [
     "EventData",

@@ -21,9 +21,13 @@ from qontinui.model.transition.enhanced_state_transition import (
 )
 
 if TYPE_CHECKING:
-    from qontinui.state_management.enhanced_active_state_set import EnhancedActiveStateSet
+    from qontinui.state_management.enhanced_active_state_set import (
+        EnhancedActiveStateSet,
+    )
     from qontinui.state_management.state_memory import StateMemory
-    from qontinui.state_management.state_visibility_manager import StateVisibilityManager
+    from qontinui.state_management.state_visibility_manager import (
+        StateVisibilityManager,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +129,8 @@ class TransitionExecutor:
                 for state_id, result in incoming_results.items():
                     if not result.successful:
                         logger.warning(
-                            f"Incoming transition failed for state {state_id}: " f"{result.errors}"
+                            f"Incoming transition failed for state {state_id}: "
+                            f"{result.errors}"
                         )
 
             # Phase 5: Update state visibility
@@ -280,13 +285,17 @@ class TransitionExecutor:
         incoming_map = self.joint_table.get_incoming_transitions(activated_states)
 
         for state_id, transitions in incoming_map.items():
-            logger.debug(f"State {state_id} has {len(transitions)} incoming transitions")
+            logger.debug(
+                f"State {state_id} has {len(transitions)} incoming transitions"
+            )
 
             # Execute first valid incoming transition
             for transition in transitions:
                 # Create context for incoming execution
                 context = TransitionContext(
-                    current_states={state_id}, target_states={state_id}, exit_states=set()
+                    current_states={state_id},
+                    target_states={state_id},
+                    exit_states=set(),
                 )
 
                 # Try to execute
@@ -295,19 +304,25 @@ class TransitionExecutor:
                     results[state_id] = result
 
                     if result.successful:
-                        logger.debug(f"Incoming transition succeeded for state {state_id}")
+                        logger.debug(
+                            f"Incoming transition succeeded for state {state_id}"
+                        )
                         break  # Only execute first successful incoming
                     else:
                         logger.warning(
-                            f"Incoming transition failed for state {state_id}: " f"{result.errors}"
+                            f"Incoming transition failed for state {state_id}: "
+                            f"{result.errors}"
                         )
                 else:
-                    logger.debug(f"Incoming transition cannot execute for state {state_id}")
+                    logger.debug(
+                        f"Incoming transition cannot execute for state {state_id}"
+                    )
 
             # If no incoming transition executed, create a default result
             if state_id not in results:
                 results[state_id] = TransitionResult(
-                    successful=True, metadata={"note": "No incoming transition executed"}
+                    successful=True,
+                    metadata={"note": "No incoming transition executed"},
                 )
 
         return results

@@ -74,7 +74,9 @@ class BasicDescriptionGenerator(DescriptionGenerator):
         else:
             return "unidentified element"
 
-    def batch_generate(self, image: np.ndarray[Any, Any], regions: list[Any]) -> list[str]:
+    def batch_generate(
+        self, image: np.ndarray[Any, Any], regions: list[Any]
+    ) -> list[str]:
         """Generate descriptions for multiple regions.
 
         Args:
@@ -264,7 +266,9 @@ class BasicDescriptionGenerator(DescriptionGenerator):
 
         return colors[0] if colors else "colored"
 
-    def _describe_position(self, bbox: tuple[Any, ...], image_shape: tuple[Any, ...]) -> list[str]:
+    def _describe_position(
+        self, bbox: tuple[Any, ...], image_shape: tuple[Any, ...]
+    ) -> list[str]:
         """Describe position in image.
 
         Args:

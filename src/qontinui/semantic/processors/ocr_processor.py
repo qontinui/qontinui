@@ -103,12 +103,16 @@ class OCRProcessor(SemanticProcessor):
         if self.engine == "tesseract":
             self._process_with_tesseract(gray, scene)
         elif self.engine == "easyocr":
-            self._process_with_easyocr(screenshot, scene)  # EasyOCR works better with color
+            self._process_with_easyocr(
+                screenshot, scene
+            )  # EasyOCR works better with color
 
         self._record_processing_time(start_time)
         return scene
 
-    def _process_with_tesseract(self, image: np.ndarray[Any, Any], scene: SemanticScene) -> None:
+    def _process_with_tesseract(
+        self, image: np.ndarray[Any, Any], scene: SemanticScene
+    ) -> None:
         """Process image using Tesseract OCR.
 
         Args:
@@ -157,7 +161,9 @@ class OCRProcessor(SemanticProcessor):
 
             scene.add_object(obj)
 
-    def _process_with_easyocr(self, image: np.ndarray[Any, Any], scene: SemanticScene) -> None:
+    def _process_with_easyocr(
+        self, image: np.ndarray[Any, Any], scene: SemanticScene
+    ) -> None:
         """Process image using EasyOCR.
 
         Args:
@@ -187,10 +193,14 @@ class OCRProcessor(SemanticProcessor):
             # Create pixel location from polygon or rectangle
             if len(bbox) == 4:
                 # Use polygon if 4 points provided
-                location = PixelLocation.from_polygon([(int(p[0]), int(p[1])) for p in bbox])
+                location = PixelLocation.from_polygon(
+                    [(int(p[0]), int(p[1])) for p in bbox]
+                )
             else:
                 # Fall back to rectangle
-                location = PixelLocation.from_rectangle(x_min, y_min, x_max - x_min, y_max - y_min)
+                location = PixelLocation.from_rectangle(
+                    x_min, y_min, x_max - x_min, y_max - y_min
+                )
 
             # Create semantic object
             obj = SemanticObject(
@@ -206,7 +216,9 @@ class OCRProcessor(SemanticProcessor):
 
             scene.add_object(obj)
 
-    def _classify_text_object(self, obj: SemanticObject, text: str, height: int) -> None:
+    def _classify_text_object(
+        self, obj: SemanticObject, text: str, height: int
+    ) -> None:
         """Classify text object based on content and appearance.
 
         Args:

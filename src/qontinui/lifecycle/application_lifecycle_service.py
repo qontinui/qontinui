@@ -178,7 +178,10 @@ class ApplicationLifecycleService:
                 "active_states": len(state_memory.get_active_state_list()),
             }
         except Exception as e:
-            health_status["components"]["state_management"] = {"status": "error", "error": str(e)}
+            health_status["components"]["state_management"] = {
+                "status": "error",
+                "error": str(e),
+            }
             health_status["status"] = "degraded"
 
         logger.debug(f"Health check result: {health_status['status']}")

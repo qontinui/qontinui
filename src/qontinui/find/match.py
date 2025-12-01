@@ -37,7 +37,9 @@ class Match:
         self.similarity = self.match_object.score
         self.pattern = self.match_object.search_image
         # state_object_data is stored in metadata, not as direct attribute
-        self.state_object_data = getattr(self.match_object.metadata, "state_object_data", None)
+        self.state_object_data = getattr(
+            self.match_object.metadata, "state_object_data", None
+        )
 
     @property
     def center(self) -> Location:
@@ -154,7 +156,10 @@ class Match:
 
         from ..actions import Action
         from ..actions.basic.click.click_options import ClickOptionsBuilder
-        from ..actions.basic.mouse.mouse_press_options import MouseButton, MousePressOptions
+        from ..actions.basic.mouse.mouse_press_options import (
+            MouseButton,
+            MousePressOptions,
+        )
         from ..actions.object_collection import ObjectCollectionBuilder
         from ..model.element import Location
 
@@ -265,7 +270,9 @@ class Match:
         # Implementation depends on platform
         result = ActionResult()  # type: ignore[call-arg]
         object.__setattr__(result, "success", True)
-        object.__setattr__(result, "defined_regions", tuple([self.region] if self.region else []))
+        object.__setattr__(
+            result, "defined_regions", tuple([self.region] if self.region else [])
+        )
         object.__setattr__(result, "duration", timedelta(seconds=duration))
         return result
 

@@ -12,7 +12,9 @@ class MouseConfig(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    move_delay: float = Field(default=0.5, ge=0, description="Delay for mouse movement in seconds")
+    move_delay: float = Field(
+        default=0.5, ge=0, description="Delay for mouse movement in seconds"
+    )
     pause_before_down: float = Field(
         default=0.0, ge=0, description="Pause before mouse down in seconds"
     )
@@ -22,11 +24,15 @@ class MouseConfig(BaseModel):
     pause_before_up: float = Field(
         default=0.0, ge=0, description="Pause before mouse up in seconds"
     )
-    pause_after_up: float = Field(default=0.0, ge=0, description="Pause after mouse up in seconds")
+    pause_after_up: float = Field(
+        default=0.0, ge=0, description="Pause after mouse up in seconds"
+    )
     click_delay: float = Field(
         default=0.0, ge=0, description="Delay between clicks in double-click"
     )
-    drag_delay: float = Field(default=0.5, ge=0, description="Delay during drag operations")
+    drag_delay: float = Field(
+        default=0.5, ge=0, description="Delay during drag operations"
+    )
 
 
 class SikuliConfig(BaseModel):
@@ -35,13 +41,21 @@ class SikuliConfig(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     highlight: bool = Field(default=False, description="Enable SikuliX highlighting")
-    highlight_duration: int = Field(default=2, ge=0, description="Highlight duration in seconds")
-    auto_wait_timeout: float = Field(default=0.0, ge=0, description="Auto wait timeout in seconds")
+    highlight_duration: int = Field(
+        default=2, ge=0, description="Highlight duration in seconds"
+    )
+    auto_wait_timeout: float = Field(
+        default=0.0, ge=0, description="Auto wait timeout in seconds"
+    )
     delay_before_mouse_down: float = Field(
         default=0.0, ge=0, description="Delay before mouse down in seconds"
     )
-    delay_after_drag: float = Field(default=0.0, ge=0, description="Delay after drag in seconds")
-    move_mouse_delay: float = Field(default=0.5, ge=0, description="Move mouse delay in seconds")
+    delay_after_drag: float = Field(
+        default=0.0, ge=0, description="Delay after drag in seconds"
+    )
+    move_mouse_delay: float = Field(
+        default=0.5, ge=0, description="Move mouse delay in seconds"
+    )
 
 
 class InputProperties(BaseModel):

@@ -53,7 +53,9 @@ class TestSpringTestAdapter:
 
         assert "import pytest" in config["imports"]
         assert "from unittest.mock import Mock, patch" in config["imports"]
-        assert any("SpringBootTest equivalent setup" in line for line in config["setup_code"])
+        assert any(
+            "SpringBootTest equivalent setup" in line for line in config["setup_code"]
+        )
 
     def test_handle_mock_bean_annotation(self):
         """Test handling of @MockBean annotation."""
@@ -162,7 +164,9 @@ class TestSpringTestAdapter:
         self.adapter._handle_transactional(annotation, config, "method", method)
 
         assert "import pytest" in config["imports"]
-        assert any("transaction_for_testTransactional" in line for line in config["fixtures"])
+        assert any(
+            "transaction_for_testTransactional" in line for line in config["fixtures"]
+        )
 
     def test_handle_dirties_context_annotation(self):
         """Test handling of @DirtiesContext annotation."""
@@ -186,7 +190,9 @@ class TestSpringTestAdapter:
         """Test extraction of annotation parameters."""
         annotation = "@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = TestConfig.class)"
 
-        web_env = self.adapter._extract_annotation_parameter(annotation, "webEnvironment")
+        web_env = self.adapter._extract_annotation_parameter(
+            annotation, "webEnvironment"
+        )
         classes = self.adapter._extract_annotation_parameter(annotation, "classes")
 
         assert web_env == "SpringBootTest.WebEnvironment.RANDOM_PORT"
@@ -236,7 +242,9 @@ class TestSpringTestAdapter:
                 "dataRepository": "DataRepository",
             }
 
-            injection_setup = self.adapter.create_dependency_injection_setup(self.test_file)
+            injection_setup = self.adapter.create_dependency_injection_setup(
+                self.test_file
+            )
 
             assert "fixtures" in injection_setup
             assert "setup_methods" in injection_setup
@@ -318,7 +326,9 @@ class TestDependencyContainer:
         def service_factory():
             return Mock()
 
-        self.container.register_component("UserService", service_factory, singleton=False)
+        self.container.register_component(
+            "UserService", service_factory, singleton=False
+        )
 
         service1 = self.container.get_component("UserService")
         service2 = self.container.get_component("UserService")
@@ -338,7 +348,9 @@ class TestDependencyContainer:
 
     def test_get_unregistered_component_raises_error(self):
         """Test that getting unregistered component raises ValueError."""
-        with pytest.raises(ValueError, match="Component 'UnknownService' not registered"):
+        with pytest.raises(
+            ValueError, match="Component 'UnknownService' not registered"
+        ):
             self.container.get_component("UnknownService")
 
     def test_register_non_callable_non_singleton(self):

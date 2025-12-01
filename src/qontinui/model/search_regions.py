@@ -48,7 +48,8 @@ class SearchRegions:
                 self.fixed_region = None
             elif isinstance(other, SearchRegions):
                 self.regions = [
-                    Region(x=r.x, y=r.y, width=r.width, height=r.height) for r in other.regions
+                    Region(x=r.x, y=r.y, width=r.width, height=r.height)
+                    for r in other.regions
                 ]
                 self.fixed_region = (
                     Region(

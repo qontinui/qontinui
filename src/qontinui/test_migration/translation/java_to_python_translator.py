@@ -153,7 +153,10 @@ class JavaToPythonTranslator(TestTranslator):
                     imports.add(python_import)
 
         # Add mock imports if needed
-        if any(mock.mock_type in ["brobot_mock", "spring_mock"] for mock in test_file.mock_usage):
+        if any(
+            mock.mock_type in ["brobot_mock", "spring_mock"]
+            for mock in test_file.mock_usage
+        ):
             imports.add("from unittest.mock import Mock, patch, MagicMock")
 
         return sorted(imports)
@@ -228,7 +231,9 @@ class JavaToPythonTranslator(TestTranslator):
                     lines.append(f"@pytest.mark.timeout({timeout_s})")
 
             if "expected" in test_annotation:
-                expected_match = re.search(r"expected\s*=\s*(\w+\.class)", test_annotation)
+                expected_match = re.search(
+                    r"expected\s*=\s*(\w+\.class)", test_annotation
+                )
                 if expected_match:
                     exception_class = expected_match.group(1).replace(".class", "")
                     lines.append(f"@pytest.mark.raises({exception_class})")
@@ -254,7 +259,9 @@ class JavaToPythonTranslator(TestTranslator):
         lines = method_code.strip().split("\n")
         for line in lines:
             line = line.strip()
-            if ("public" in line or "private" in line or "protected" in line) and "(" in line:
+            if (
+                "public" in line or "private" in line or "protected" in line
+            ) and "(" in line:
                 return line
         return None
 

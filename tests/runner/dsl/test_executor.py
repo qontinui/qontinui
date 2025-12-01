@@ -16,7 +16,9 @@ from qontinui.runner.dsl.executor.flow_control import (
     ExecutionError,
     ReturnException,
 )
-from qontinui.runner.dsl.expressions.binary_operation_expression import BinaryOperationExpression
+from qontinui.runner.dsl.expressions.binary_operation_expression import (
+    BinaryOperationExpression,
+)
 from qontinui.runner.dsl.expressions.literal_expression import LiteralExpression
 from qontinui.runner.dsl.expressions.variable_expression import VariableExpression
 from qontinui.runner.dsl.statements.assignment_statement import AssignmentStatement
@@ -72,7 +74,9 @@ class SimpleStatementExecutor:
             # For testing, we just log method calls
             pass
         else:
-            raise ExecutionError(f"Unknown statement type: {stmt_type}", statement_type=stmt_type)
+            raise ExecutionError(
+                f"Unknown statement type: {stmt_type}", statement_type=stmt_type
+            )
 
     def execute_statements(self, statements):
         """Execute a list of statements.
@@ -387,7 +391,9 @@ class TestIfStatementExecution:
                     then_statements=[
                         AssignmentStatement(
                             variable_name="result",
-                            value=LiteralExpression(value_type="string", value="x>10 and y<5"),
+                            value=LiteralExpression(
+                                value_type="string", value="x>10 and y<5"
+                            ),
                         )
                     ],
                 )
@@ -456,7 +462,9 @@ class TestForEachExecution:
 
     def test_nested_loops(self):
         """Test nested forEach loops."""
-        executor = SimpleStatementExecutor({"outer": [1, 2], "inner": [10, 20], "sum": 0})
+        executor = SimpleStatementExecutor(
+            {"outer": [1, 2], "inner": [10, 20], "sum": 0}
+        )
         stmt = ForEachStatement(
             variable_name="i",
             collection=VariableExpression(name="outer"),
@@ -546,14 +554,18 @@ class TestReturnExecution:
                 ),
                 then_statements=[
                     ReturnStatement(
-                        value=LiteralExpression(value_type="string", value="early return")
+                        value=LiteralExpression(
+                            value_type="string", value="early return"
+                        )
                     )
                 ],
             ),
             # This should not execute
             AssignmentStatement(
                 variable_name="result",
-                value=LiteralExpression(value_type="string", value="should not execute"),
+                value=LiteralExpression(
+                    value_type="string", value="should not execute"
+                ),
             ),
         ]
 
@@ -608,7 +620,9 @@ class TestComplexExecutionScenarios:
 
     def test_loop_with_nested_if(self):
         """Test loop containing nested if statements."""
-        executor = SimpleStatementExecutor({"items": [1, 2, 3, 4, 5], "even_sum": 0, "odd_sum": 0})
+        executor = SimpleStatementExecutor(
+            {"items": [1, 2, 3, 4, 5], "even_sum": 0, "odd_sum": 0}
+        )
         stmt = ForEachStatement(
             variable_name="item",
             collection=VariableExpression(name="items"),

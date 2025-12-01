@@ -73,14 +73,18 @@ class FindWrapper:
             with open(debug_log, "a", encoding="utf-8") as f:
                 ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(f"[{ts}] FindWrapper.find() ENTRY\n")
-                f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
+                f.write(
+                    f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n"
+                )
         except Exception:
             pass
 
         logger.debug(
             f"[FIND_DEBUG] FindWrapper.find() ENTRY - pattern.id={pattern.id}, pattern.name={pattern.name}"
         )
-        logger.debug(f"[FIND_DEBUG] Pattern pixel_data is None: {pattern.pixel_data is None}")
+        logger.debug(
+            f"[FIND_DEBUG] Pattern pixel_data is None: {pattern.pixel_data is None}"
+        )
 
         settings = FrameworkSettings.get_instance()
         is_mock = settings.core.mock
@@ -114,7 +118,9 @@ class FindWrapper:
         try:
             with open(debug_log, "a", encoding="utf-8") as f:
                 ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}]   FindWrapper.find() returning - found={result.found}\n")
+                f.write(
+                    f"[{ts}]   FindWrapper.find() returning - found={result.found}\n"
+                )
         except Exception:
             pass
 

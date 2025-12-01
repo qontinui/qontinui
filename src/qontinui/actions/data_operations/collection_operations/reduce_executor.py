@@ -34,7 +34,9 @@ class ReduceExecutor:
         5
     """
 
-    def __init__(self, variable_context: VariableContext, evaluator: SafeEvaluator) -> None:
+    def __init__(
+        self, variable_context: VariableContext, evaluator: SafeEvaluator
+    ) -> None:
         """Initialize the reduce executor.
 
         Args:
@@ -87,7 +89,9 @@ class ReduceExecutor:
             logger.debug("Empty collection, returning initial value or default")
             return initial_value if initial_value is not None else 0
 
-        logger.debug(f"Reducing collection of {len(collection)} items (operation={operation})")
+        logger.debug(
+            f"Reducing collection of {len(collection)} items (operation={operation})"
+        )
 
         if operation == "sum":
             result = self._reduce_sum(collection, initial_value)

@@ -46,7 +46,9 @@ class DataOperationsExecutorAdapter(ActionExecutorBase):
 
         # Wrap the existing DataOperationsExecutor using the variable context
         # from the ExecutionContext
-        self._wrapped_executor = DataOperationsExecutor(variable_context=context.variable_context)
+        self._wrapped_executor = DataOperationsExecutor(
+            variable_context=context.variable_context
+        )
 
         logger.debug("Initialized DataOperationsExecutorAdapter")
 
@@ -104,12 +106,15 @@ class DataOperationsExecutorAdapter(ActionExecutorBase):
             elif action_type == "FILTER":
                 result = self._wrapped_executor.execute_filter(action, context)
             elif action_type == "STRING_OPERATION":
-                result = self._wrapped_executor.execute_string_operation(action, context)
+                result = self._wrapped_executor.execute_string_operation(
+                    action, context
+                )
             elif action_type == "MATH_OPERATION":
                 result = self._wrapped_executor.execute_math_operation(action, context)
             else:
                 raise ActionExecutionError(
-                    action_type=action_type, reason=f"Unsupported action type: {action_type}"
+                    action_type=action_type,
+                    reason=f"Unsupported action type: {action_type}",
                 )
 
             # Check result and emit appropriate events

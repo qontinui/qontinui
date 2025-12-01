@@ -109,7 +109,9 @@ class TestFixSuggestionEngine:
         assert len(suggestions) > 0
 
         # Should have annotation fix suggestion
-        annotation_fixes = [s for s in suggestions if s.fix_type == FixType.ANNOTATION_FIX]
+        annotation_fixes = [
+            s for s in suggestions if s.fix_type == FixType.ANNOTATION_FIX
+        ]
         assert len(annotation_fixes) > 0
 
         test_fix = annotation_fixes[0]
@@ -135,7 +137,9 @@ class TestFixSuggestionEngine:
         assert len(suggestions) > 0
 
         # Should have assertion fix suggestion
-        assertion_fixes = [s for s in suggestions if s.fix_type == FixType.ASSERTION_FIX]
+        assertion_fixes = [
+            s for s in suggestions if s.fix_type == FixType.ASSERTION_FIX
+        ]
         assert len(assertion_fixes) > 0
 
         assertion_fix = assertion_fixes[0]
@@ -161,7 +165,9 @@ class TestFixSuggestionEngine:
         assert len(suggestions) > 0
 
         # Should have annotation fix suggestion
-        annotation_fixes = [s for s in suggestions if s.fix_type == FixType.ANNOTATION_FIX]
+        annotation_fixes = [
+            s for s in suggestions if s.fix_type == FixType.ANNOTATION_FIX
+        ]
         assert len(annotation_fixes) > 0
 
         spring_fix = annotation_fixes[0]
@@ -310,13 +316,15 @@ def testMethod():
         """Test recognition of common migration patterns."""
         # Test Brobot import pattern
         brobot_patterns = self.engine.recognize_common_patterns(
-            "ModuleNotFoundError: No module named 'brobot'", "from brobot.library import Action"
+            "ModuleNotFoundError: No module named 'brobot'",
+            "from brobot.library import Action",
         )
         assert "brobot_import_error" in brobot_patterns
 
         # Test Java import pattern
         java_patterns = self.engine.recognize_common_patterns(
-            "ImportError: cannot import name 'java.util.List'", "from java.util import List"
+            "ImportError: cannot import name 'java.util.List'",
+            "from java.util import List",
         )
         assert "java_import_error" in java_patterns
 
@@ -388,7 +396,9 @@ def testMethod():
         assert "qontinui.model.state.State" in self.engine._map_brobot_to_qontinui(
             "brobot.library.State"
         )
-        assert "qontinui.find.Find" in self.engine._map_brobot_to_qontinui("brobot.library.Find")
+        assert "qontinui.find.Find" in self.engine._map_brobot_to_qontinui(
+            "brobot.library.Find"
+        )
 
         # Test unknown mapping (should use fallback)
         unknown_mapping = self.engine._map_brobot_to_qontinui("brobot.library.Unknown")
@@ -397,7 +407,9 @@ def testMethod():
 
     def test_can_apply_fix_safely(self):
         """Test safe fix application checking."""
-        content = "import org.junit.Test\n@Test\ndef testMethod():\n    assertEquals(a, b)"
+        content = (
+            "import org.junit.Test\n@Test\ndef testMethod():\n    assertEquals(a, b)"
+        )
 
         # Simple fix with high confidence - should be safe
         safe_fix = FixSuggestion(
@@ -554,7 +566,11 @@ def testMethod():
             is_migration_issue=True,
             is_code_issue=False,
             confidence=0.5,
-            diagnostic_info={"error_message": "", "stack_trace": "", "test_name": "test_empty"},
+            diagnostic_info={
+                "error_message": "",
+                "stack_trace": "",
+                "test_name": "test_empty",
+            },
         )
 
         suggestions = self.engine.suggest_fixes(failure_analysis)
@@ -566,7 +582,8 @@ def testMethod():
     def test_case_insensitive_pattern_matching(self):
         """Test that pattern matching is case insensitive."""
         patterns = self.engine.recognize_common_patterns(
-            "MODULENOTFOUNDERROR: No module named 'BROBOT'", "FROM BROBOT.LIBRARY IMPORT ACTION"
+            "MODULENOTFOUNDERROR: No module named 'BROBOT'",
+            "FROM BROBOT.LIBRARY IMPORT ACTION",
         )
 
         # Should still match despite different case

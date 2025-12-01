@@ -14,7 +14,10 @@ from typing import Any
 
 from ..actions.action_result import ActionResultBuilder
 from ..config.models.action import Action
-from ..config.models.code_actions import CodeBlockActionConfig, CustomFunctionActionConfig
+from ..config.models.code_actions import (
+    CodeBlockActionConfig,
+    CustomFunctionActionConfig,
+)
 from ..util.common.file_loader import PythonFileLoader
 from .base import ActionExecutorBase
 from .registry import register_executor
@@ -55,14 +58,18 @@ class CodeExecutor(ActionExecutorBase):
             elif action.type == "CUSTOM_FUNCTION":
                 return self._execute_custom_function(action, typed_config)
             else:
-                self._emit_action_failure(action, f"Unsupported code action type: {action.type}")
+                self._emit_action_failure(
+                    action, f"Unsupported code action type: {action.type}"
+                )
                 return False
 
         except Exception as e:
             self._emit_action_failure(action, f"Code execution failed: {str(e)}")
             return False
 
-    def _execute_code_block(self, action: Action, config: CodeBlockActionConfig) -> bool:
+    def _execute_code_block(
+        self, action: Action, config: CodeBlockActionConfig
+    ) -> bool:
         """Execute Python code block (inline or from file).
 
         Args:
@@ -177,10 +184,16 @@ class CodeExecutor(ActionExecutorBase):
             if config.inputs:
                 for key, value in config.inputs.items():
                     # Resolve variable references
-                    if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+                    if (
+                        isinstance(value, str)
+                        and value.startswith("${")
+                        and value.endswith("}")
+                    ):
                         var_name = value[2:-1]
                         if self.context.variable_context:
-                            input_kwargs[key] = self.context.variable_context.get(var_name)
+                            input_kwargs[key] = self.context.variable_context.get(
+                                var_name
+                            )
                     else:
                         input_kwargs[key] = value
 
@@ -237,7 +250,9 @@ class CodeExecutor(ActionExecutorBase):
         # Fall back to current directory
         return current
 
-    def _execute_custom_function(self, action: Action, config: CustomFunctionActionConfig) -> bool:
+    def _execute_custom_function(
+        self, action: Action, config: CustomFunctionActionConfig
+    ) -> bool:
         """Execute pre-registered custom function.
 
         Args:
@@ -281,7 +296,9 @@ class CodeExecutor(ActionExecutorBase):
             action_result = (
                 ActionResultBuilder()
                 .with_success(True)
-                .add_text(f"Custom function '{config.function_name}' executed successfully")
+                .add_text(
+                    f"Custom function '{config.function_name}' executed successfully"
+                )
                 .build()
             )
             self.context.update_last_action_result(action_result)
@@ -334,7 +351,9 @@ class CodeExecutor(ActionExecutorBase):
         # Get previous result
         previous_result = None
         if self.context.last_action_result:
-            previous_result = self._serialize_action_result(self.context.last_action_result)
+            previous_result = self._serialize_action_result(
+                self.context.last_action_result
+            )
 
         return FunctionContext(
             variables=variables,
@@ -354,7 +373,11 @@ class CodeExecutor(ActionExecutorBase):
         """
         resolved = {}
         for key, value in inputs.items():
-            if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+            if (
+                isinstance(value, str)
+                and value.startswith("${")
+                and value.endswith("}")
+            ):
                 var_name = value[2:-1]
                 if self.context.variable_context:
                     resolved[key] = self.context.variable_context.get(var_name)
@@ -458,8 +481,12 @@ class CodeExecutor(ActionExecutorBase):
             if hasattr(self.context.variable_context, "get_all"):
                 # Enhanced context: provide all three tiers
                 context["variables"] = self.context.variable_context.get_all()
-                context["execution_vars"] = self.context.variable_context.get_all("execution")
-                context["workflow_vars"] = self.context.variable_context.get_all("workflow")
+                context["execution_vars"] = self.context.variable_context.get_all(
+                    "execution"
+                )
+                context["workflow_vars"] = self.context.variable_context.get_all(
+                    "workflow"
+                )
                 context["global_vars"] = self.context.variable_context.get_all("global")
             else:
                 # Old context: backward compatibility
@@ -487,7 +514,11 @@ class CodeExecutor(ActionExecutorBase):
         if config.inputs:
             for key, value in config.inputs.items():
                 # Resolve variable references (e.g., "${varName}")
-                if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+                if (
+                    isinstance(value, str)
+                    and value.startswith("${")
+                    and value.endswith("}")
+                ):
                     var_name = value[2:-1]
                     context[key] = context["variables"].get(var_name)
                 else:
@@ -528,7 +559,11 @@ class CodeExecutor(ActionExecutorBase):
         }
 
     def _execute_with_timeout(
-        self, code: str, context: dict[str, Any], timeout: int, enable_imports: bool = True
+        self,
+        code: str,
+        context: dict[str, Any],
+        timeout: int,
+        enable_imports: bool = True,
     ) -> dict[str, Any]:
         """Execute code with timeout protection and import resolution.
 
@@ -546,7 +581,9 @@ class CodeExecutor(ActionExecutorBase):
         # Restricted builtins (remove dangerous functions)
         # Note: __import__ is allowed to enable module imports (including project files)
         # Import validation should be done via allowed_imports config field
-        builtins_dict = __builtins__ if isinstance(__builtins__, dict) else __builtins__.__dict__
+        builtins_dict = (
+            __builtins__ if isinstance(__builtins__, dict) else __builtins__.__dict__
+        )
         restricted_builtins = {
             k: v
             for k, v in builtins_dict.items()
@@ -725,7 +762,10 @@ class CodeExecutor(ActionExecutorBase):
         # Sync changes back to context
         # 1. Update existing and add new variables
         for key, value in modified_workflow_vars.items():
-            if key not in original_workflow_vars or original_workflow_vars[key] != value:
+            if (
+                key not in original_workflow_vars
+                or original_workflow_vars[key] != value
+            ):
                 self.context.variable_context.set(key, value, scope="workflow")
                 logger.debug(f"Synced workflow variable '{key}' from code execution")
 
@@ -735,4 +775,6 @@ class CodeExecutor(ActionExecutorBase):
                 self.context.variable_context.delete(key, scope="workflow")
                 logger.debug(f"Deleted workflow variable '{key}' (removed in code)")
 
-        logger.debug(f"Synced {len(modified_workflow_vars)} workflow variables from code execution")
+        logger.debug(
+            f"Synced {len(modified_workflow_vars)} workflow variables from code execution"
+        )

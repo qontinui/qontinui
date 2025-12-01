@@ -254,7 +254,9 @@ class StateStore:
 
         return self._lifecycle.deactivate(name)
 
-    def add_transition(self, from_state: str, to_state: str, transition: StateTransition) -> bool:
+    def add_transition(
+        self, from_state: str, to_state: str, transition: StateTransition
+    ) -> bool:
         """Add a transition between states.
 
         Args:
@@ -266,7 +268,9 @@ class StateStore:
             True if added successfully
         """
         if not self._repository.contains(from_state):
-            logger.error(f"Cannot add transition: source state '{from_state}' not found")
+            logger.error(
+                f"Cannot add transition: source state '{from_state}' not found"
+            )
             return False
         if not self._repository.contains(to_state):
             logger.error(f"Cannot add transition: target state '{to_state}' not found")

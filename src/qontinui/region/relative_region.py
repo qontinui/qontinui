@@ -126,7 +126,9 @@ class RelativeRegion:
 
         for i in range(num_columns):
             x = reference.x + i * (column_width + gap)
-            columns.append(Region(x=x, y=reference.y, width=column_width, height=reference.height))
+            columns.append(
+                Region(x=x, y=reference.y, width=column_width, height=reference.height)
+            )
 
         return columns
 
@@ -149,12 +151,16 @@ class RelativeRegion:
 
         for i in range(num_rows):
             y = reference.y + i * (row_height + gap)
-            rows.append(Region(x=reference.x, y=y, width=reference.width, height=row_height))
+            rows.append(
+                Region(x=reference.x, y=y, width=reference.width, height=row_height)
+            )
 
         return rows
 
     @staticmethod
-    def align_horizontal(regions: list[Region], gap: int = 0, y: int | None = None) -> list[Region]:
+    def align_horizontal(
+        regions: list[Region], gap: int = 0, y: int | None = None
+    ) -> list[Region]:
         """Align regions horizontally.
 
         Args:
@@ -175,7 +181,11 @@ class RelativeRegion:
         for region in regions:
             aligned.append(
                 Region(
-                    x=current_x, y=y_pos, width=region.width, height=region.height, name=region.name
+                    x=current_x,
+                    y=y_pos,
+                    width=region.width,
+                    height=region.height,
+                    name=region.name,
                 )
             )
             current_x += region.width + gap
@@ -183,7 +193,9 @@ class RelativeRegion:
         return aligned
 
     @staticmethod
-    def align_vertical(regions: list[Region], gap: int = 0, x: int | None = None) -> list[Region]:
+    def align_vertical(
+        regions: list[Region], gap: int = 0, x: int | None = None
+    ) -> list[Region]:
         """Align regions vertically.
 
         Args:
@@ -204,7 +216,11 @@ class RelativeRegion:
         for region in regions:
             aligned.append(
                 Region(
-                    x=x_pos, y=current_y, width=region.width, height=region.height, name=region.name
+                    x=x_pos,
+                    y=current_y,
+                    width=region.width,
+                    height=region.height,
+                    name=region.name,
                 )
             )
             current_y += region.height + gap

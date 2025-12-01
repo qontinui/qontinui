@@ -316,7 +316,10 @@ class SemanticObject:
                 "width": self.get_bounding_box().width,
                 "height": self.get_bounding_box().height,
             },
-            "centroid": {"x": self.location.get_centroid().x, "y": self.location.get_centroid().y},
+            "centroid": {
+                "x": self.location.get_centroid().x,
+                "y": self.location.get_centroid().y,
+            },
             "area": self.location.get_area(),
             "attributes": self.attributes,
             "ocr_text": self.ocr_text,

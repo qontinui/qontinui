@@ -70,7 +70,9 @@ def generate_config(num_workflows: int, num_actions: int) -> dict[str, Any]:
     return config
 
 
-def benchmark_export(config_size: str, num_workflows: int, num_actions: int) -> dict[str, Any]:
+def benchmark_export(
+    config_size: str, num_workflows: int, num_actions: int
+) -> dict[str, Any]:
     """Benchmark configuration export performance.
 
     Args:
@@ -156,7 +158,9 @@ def benchmark_export(config_size: str, num_workflows: int, num_actions: int) -> 
     return results
 
 
-def benchmark_import(config_size: str, num_workflows: int, num_actions: int) -> dict[str, Any]:
+def benchmark_import(
+    config_size: str, num_workflows: int, num_actions: int
+) -> dict[str, Any]:
     """Benchmark configuration import performance.
 
     Args:
@@ -243,7 +247,9 @@ def benchmark_import(config_size: str, num_workflows: int, num_actions: int) -> 
     return results
 
 
-def benchmark_roundtrip(config_size: str, num_workflows: int, num_actions: int) -> dict[str, Any]:
+def benchmark_roundtrip(
+    config_size: str, num_workflows: int, num_actions: int
+) -> dict[str, Any]:
     """Benchmark export then import round-trip.
 
     Args:

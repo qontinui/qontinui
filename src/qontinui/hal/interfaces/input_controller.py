@@ -128,7 +128,10 @@ class IInputController(ABC):
 
     @abstractmethod
     def mouse_down(
-        self, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
+        self,
+        x: int | None = None,
+        y: int | None = None,
+        button: MouseButton = MouseButton.LEFT,
     ) -> bool:
         """Press and hold mouse button.
 
@@ -144,7 +147,10 @@ class IInputController(ABC):
 
     @abstractmethod
     def mouse_up(
-        self, x: int | None = None, y: int | None = None, button: MouseButton = MouseButton.LEFT
+        self,
+        x: int | None = None,
+        y: int | None = None,
+        button: MouseButton = MouseButton.LEFT,
     ) -> bool:
         """Release mouse button.
 
@@ -184,7 +190,9 @@ class IInputController(ABC):
         pass
 
     @abstractmethod
-    def mouse_scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
+    def mouse_scroll(
+        self, clicks: int, x: int | None = None, y: int | None = None
+    ) -> bool:
         """Scroll mouse wheel.
 
         Args:
@@ -221,7 +229,9 @@ class IInputController(ABC):
         pass
 
     @abstractmethod
-    def double_click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
+    def double_click_at(
+        self, x: int, y: int, button: MouseButton = MouseButton.LEFT
+    ) -> bool:
         """Double click at specific coordinates.
 
         Args:
@@ -283,7 +293,9 @@ class IInputController(ABC):
     # Keyboard operations
 
     @abstractmethod
-    def key_press(self, key: str | Key, presses: int = 1, interval: float = 0.0) -> bool:
+    def key_press(
+        self, key: str | Key, presses: int = 1, interval: float = 0.0
+    ) -> bool:
         """Press key (down and up).
 
         Args:

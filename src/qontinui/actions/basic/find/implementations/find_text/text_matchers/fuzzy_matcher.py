@@ -13,7 +13,10 @@ class FuzzyMatcher(BaseMatcher):
     """
 
     def __init__(
-        self, case_sensitive: bool = False, ignore_whitespace: bool = False, threshold: float = 0.8
+        self,
+        case_sensitive: bool = False,
+        ignore_whitespace: bool = False,
+        threshold: float = 0.8,
     ) -> None:
         """Initialize fuzzy matcher.
 

@@ -109,12 +109,18 @@ class BoundingBox:
 
     def intersects(self, other: "BoundingBox") -> bool:
         return not (
-            self.x2 <= other.x or other.x2 <= self.x or self.y2 <= other.y or other.y2 <= self.y
+            self.x2 <= other.x
+            or other.x2 <= self.x
+            or self.y2 <= other.y
+            or other.y2 <= self.y
         )
 
     def contains(self, other: "BoundingBox") -> bool:
         return (
-            self.x <= other.x and self.y <= other.y and self.x2 >= other.x2 and self.y2 >= other.y2
+            self.x <= other.x
+            and self.y <= other.y
+            and self.x2 >= other.x2
+            and self.y2 >= other.y2
         )
 
 
@@ -278,7 +284,9 @@ class ExtractedTransition:
 
     # State changes
     causes_appear: list[str] = field(default_factory=list)  # State IDs that appear
-    causes_disappear: list[str] = field(default_factory=list)  # State IDs that disappear
+    causes_disappear: list[str] = field(
+        default_factory=list
+    )  # State IDs that disappear
 
     # Action details
     action_value: str | None = None  # For type actions, the text typed
@@ -376,7 +384,9 @@ class ExtractionResult:
             "page_extractions": [p.to_dict() for p in self.page_extractions],
             "screenshot_ids": self.screenshot_ids,
             "started_at": self.started_at.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
             "config": self.config,
             "metadata": self.metadata,
         }
@@ -391,9 +401,13 @@ class ExtractionResult:
             config=data.get("config", {}),
             metadata=data.get("metadata", {}),
         )
-        result.elements = [ExtractedElement.from_dict(e) for e in data.get("elements", [])]
+        result.elements = [
+            ExtractedElement.from_dict(e) for e in data.get("elements", [])
+        ]
         result.states = [ExtractedState.from_dict(s) for s in data.get("states", [])]
-        result.transitions = [ExtractedTransition.from_dict(t) for t in data.get("transitions", [])]
+        result.transitions = [
+            ExtractedTransition.from_dict(t) for t in data.get("transitions", [])
+        ]
         if data.get("started_at"):
             result.started_at = datetime.fromisoformat(data["started_at"])
         if data.get("completed_at"):

@@ -43,7 +43,9 @@ class CoverageTracker:
             python_target_dir: Directory containing Python test files
         """
         self.collector = CoverageCollector(java_source_dir, python_target_dir)
-        self.stats = CoverageStats(self.collector.test_mappings, self.collector.tracking_start_time)
+        self.stats = CoverageStats(
+            self.collector.test_mappings, self.collector.tracking_start_time
+        )
         self.analyzer = CoverageAnalyzer(self.collector.test_mappings, self.stats)
         self.reporter = CoverageReporter(
             java_source_dir,
@@ -54,7 +56,9 @@ class CoverageTracker:
         self.comparator = CoverageComparator(self.collector.test_mappings)
 
     def register_java_test(
-        self, test_file: TestFile, test_category: TestCategory = TestCategory.UNIT_SIMPLE
+        self,
+        test_file: TestFile,
+        test_category: TestCategory = TestCategory.UNIT_SIMPLE,
     ) -> None:
         """Register a Java test file for tracking."""
         self.collector.register_java_test(test_file, test_category)
@@ -63,7 +67,9 @@ class CoverageTracker:
         self, python_test_path: Path, java_test_path: Path, python_class_name: str
     ) -> None:
         """Register a Python test file as migrated from Java."""
-        self.collector.register_python_test(python_test_path, java_test_path, python_class_name)
+        self.collector.register_python_test(
+            python_test_path, java_test_path, python_class_name
+        )
 
     def update_migration_status(
         self, java_test_path: Path, status: MigrationStatus, notes: str = ""

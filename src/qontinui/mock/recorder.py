@@ -114,7 +114,9 @@ class SnapshotRecorder:
         pattern_id: str,
         pattern_name: str,
         matches: list[Match],
-        screenshot: Any | None,  # Image.Image type hint causes issues if PIL not installed
+        screenshot: (
+            Any | None
+        ),  # Image.Image type hint causes issues if PIL not installed
         active_states: set[str],
         duration_ms: float,
     ):
@@ -227,7 +229,10 @@ class SnapshotRecorder:
         # Save with appropriate format
         if self.config.compression == "jpg":
             screenshot.save(
-                str(filepath), format="JPEG", quality=self.config.compression_quality, optimize=True
+                str(filepath),
+                format="JPEG",
+                quality=self.config.compression_quality,
+                optimize=True,
             )
         else:
             screenshot.save(str(filepath), format="PNG", optimize=True)
@@ -337,7 +342,9 @@ class SnapshotRecorder:
 
     def _save_metadata(self):
         """Save run metadata to disk."""
-        duration = (self.end_time - self.start_time).total_seconds() if self.end_time else None
+        duration = (
+            (self.end_time - self.start_time).total_seconds() if self.end_time else None
+        )
 
         metadata = {
             "run_id": self.run_id,

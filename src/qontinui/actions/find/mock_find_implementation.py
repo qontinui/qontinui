@@ -69,7 +69,8 @@ class MockFindImplementation:
         """Get matches from pattern's ActionHistory."""
         # Get random snapshot from history
         snapshot = pattern.match_history.get_random_snapshot(  # type: ignore[attr-defined]
-            active_states=set(), action_type="FIND"  # TODO: integrate with state management
+            active_states=set(),
+            action_type="FIND",  # TODO: integrate with state management
         )
 
         if snapshot and snapshot.matches:
@@ -119,7 +120,9 @@ class MockFindImplementation:
 
         # Execute synchronously in mock mode (fast anyway)
         # But wrap in asyncio.to_thread to simulate async behavior
-        tasks = [asyncio.to_thread(self.execute, pattern, options) for pattern in patterns]
+        tasks = [
+            asyncio.to_thread(self.execute, pattern, options) for pattern in patterns
+        ]
 
         results = await asyncio.gather(*tasks)
         return results

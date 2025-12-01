@@ -79,7 +79,9 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
 
         return grid_regions
 
-    def _compute_lbp(self, gray: np.ndarray, radius: int = 3, n_points: int = 24) -> np.ndarray:
+    def _compute_lbp(
+        self, gray: np.ndarray, radius: int = 3, n_points: int = 24
+    ) -> np.ndarray:
         """
         Compute Local Binary Pattern
 
@@ -213,7 +215,10 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
 
             # Add similar windows
             for j in range(n):
-                if j not in visited and similarity[i, j] > params["texture_similarity_threshold"]:
+                if (
+                    j not in visited
+                    and similarity[i, j] > params["texture_similarity_threshold"]
+                ):
                     cluster.append(texture_map[j])
                     visited.add(j)
 
@@ -237,7 +242,9 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
 
             # Use DBSCAN to find spatially contiguous groups
             window_size = params["window_size"]
-            clustering = DBSCAN(eps=window_size * 1.5, min_samples=params["min_grid_rows"])
+            clustering = DBSCAN(
+                eps=window_size * 1.5, min_samples=params["min_grid_rows"]
+            )
             labels = clustering.fit_predict(positions)
 
             # Process each spatial cluster
@@ -245,10 +252,17 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
                 if label == -1:  # noise
                     continue
 
-                cluster_windows = [cluster[i] for i in range(len(cluster)) if labels[i] == label]
+                cluster_windows = [
+                    cluster[i] for i in range(len(cluster)) if labels[i] == label
+                ]
 
-                if len(cluster_windows) >= params["min_grid_rows"] * params["min_grid_cols"]:
-                    grid_region = self._extract_grid_from_windows(cluster_windows, params)
+                if (
+                    len(cluster_windows)
+                    >= params["min_grid_rows"] * params["min_grid_cols"]
+                ):
+                    grid_region = self._extract_grid_from_windows(
+                        cluster_windows, params
+                    )
                     if grid_region:
                         grid_regions.append(grid_region)
 
@@ -268,12 +282,19 @@ class TextureUniformityDetector(BaseRegionAnalyzer):
         x_positions = sorted({x for x, y in positions})
         y_positions = sorted({y for x, y in positions})
 
-        if len(x_positions) < params["min_grid_cols"] or len(y_positions) < params["min_grid_rows"]:
+        if (
+            len(x_positions) < params["min_grid_cols"]
+            or len(y_positions) < params["min_grid_rows"]
+        ):
             return None
 
         # Calculate spacing
-        x_diffs = [x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)]
-        y_diffs = [y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)]
+        x_diffs = [
+            x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)
+        ]
+        y_diffs = [
+            y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)
+        ]
 
         if not x_diffs or not y_diffs:
             return None

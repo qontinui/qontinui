@@ -15,7 +15,12 @@ class TestMigrationConfig:
     DEFAULT_JAVA_TEST_PATTERNS = ["*Test.java", "*Tests.java", "Test*.java"]
 
     # Default exclude patterns
-    DEFAULT_EXCLUDE_PATTERNS = ["*/target/*", "*/build/*", "*/.git/*", "*/node_modules/*"]
+    DEFAULT_EXCLUDE_PATTERNS = [
+        "*/target/*",
+        "*/build/*",
+        "*/.git/*",
+        "*/node_modules/*",
+    ]
 
     # Default dependency mappings
     DEFAULT_DEPENDENCY_MAPPINGS = {

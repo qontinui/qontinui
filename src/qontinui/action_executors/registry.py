@@ -11,7 +11,9 @@ from .base import ActionExecutorBase, ExecutionContext
 _executor_registry: dict[str, type[ActionExecutorBase]] = {}
 
 
-def register_executor(executor_class: type[ActionExecutorBase]) -> type[ActionExecutorBase]:
+def register_executor(
+    executor_class: type[ActionExecutorBase],
+) -> type[ActionExecutorBase]:
     """Register an executor class for its supported action types.
 
     This can be used as a decorator on executor classes:
@@ -85,7 +87,8 @@ def create_executor(action_type: str, context: ExecutionContext) -> ActionExecut
 
     if executor_class is None:
         raise ActionExecutionError(
-            action_type=action_type, reason=f"No executor registered for action type: {action_type}"
+            action_type=action_type,
+            reason=f"No executor registered for action type: {action_type}",
         )
 
     return executor_class(context)

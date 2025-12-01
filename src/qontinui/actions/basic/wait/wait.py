@@ -154,7 +154,9 @@ class Wait(ActionInterface):
         # Future enhancement: Add ActionType.WAIT, ActionType.WAIT_CONDITION, etc. to ActionType enum
         return ActionType.VANISH
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, matches: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the wait action using the Qontinui framework pattern.
 
         Args:

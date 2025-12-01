@@ -12,7 +12,14 @@ from threading import Thread
 from typing import Any, TypedDict, cast
 
 import psutil
-from prometheus_client import REGISTRY, Counter, Gauge, Histogram, Summary, generate_latest
+from prometheus_client import (
+    REGISTRY,
+    Counter,
+    Gauge,
+    Histogram,
+    Summary,
+    generate_latest,
+)
 from prometheus_client import start_http_server as prometheus_start_server
 
 from ..config import get_settings
@@ -32,7 +39,9 @@ class HealthCheckInfo(TypedDict):
 
 # Action metrics
 action_counter = Counter(
-    "qontinui_actions_total", "Total number of actions executed", ["action_type", "status"]
+    "qontinui_actions_total",
+    "Total number of actions executed",
+    ["action_type", "status"],
 )
 
 action_duration = Histogram(
@@ -64,7 +73,9 @@ active_states = Gauge("qontinui_active_states", "Number of currently active stat
 
 # Matching metrics
 match_attempts = Counter(
-    "qontinui_match_attempts_total", "Total number of matching attempts", ["match_type", "success"]
+    "qontinui_match_attempts_total",
+    "Total number of matching attempts",
+    ["match_type", "success"],
 )
 
 match_accuracy = Histogram(
@@ -95,7 +106,9 @@ storage_operations = Counter(
     ["operation", "storage_type", "status"],
 )
 
-storage_size = Gauge("qontinui_storage_size_bytes", "Storage size in bytes", ["storage_type"])
+storage_size = Gauge(
+    "qontinui_storage_size_bytes", "Storage size in bytes", ["storage_type"]
+)
 
 # Error metrics
 error_counter = Counter(
@@ -142,7 +155,9 @@ class MetricsCollector:
         try:
             prometheus_start_server(port)
             logger.info(
-                "metrics_server_started", port=port, endpoint=f"http://localhost:{port}/metrics"
+                "metrics_server_started",
+                port=port,
+                endpoint=f"http://localhost:{port}/metrics",
             )
         except Exception as e:
             logger.error("metrics_server_failed", error=str(e))
@@ -211,7 +226,11 @@ class MetricsCollector:
     # State metrics methods
 
     def record_transition(
-        self, from_state: str, to_state: str, success: bool = True, duration: float | None = None
+        self,
+        from_state: str,
+        to_state: str,
+        success: bool = True,
+        duration: float | None = None,
     ) -> None:
         """Record state transition.
 
@@ -284,7 +303,9 @@ class MetricsCollector:
 
     # Error metrics methods
 
-    def record_error(self, error_type: str, component: str, error: Exception | None = None) -> None:
+    def record_error(
+        self, error_type: str, component: str, error: Exception | None = None
+    ) -> None:
         """Record error occurrence.
 
         Args:
@@ -317,7 +338,11 @@ class MetricsCollector:
     # Custom metrics
 
     def register_custom_metric(
-        self, name: str, metric_type: str, description: str, labels: list[str] | None = None
+        self,
+        name: str,
+        metric_type: str,
+        description: str,
+        labels: list[str] | None = None,
     ) -> Any:
         """Register custom metric.
 

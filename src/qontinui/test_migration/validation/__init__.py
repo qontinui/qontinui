@@ -2,7 +2,11 @@
 Test validation and diagnostic components.
 """
 
-from .behavior_comparator import BehaviorComparatorImpl, ComparisonResult, TestIsolationConfig
+from .behavior_comparator import (
+    BehaviorComparatorImpl,
+    ComparisonResult,
+    TestIsolationConfig,
+)
 from .coverage_models import (
     CoverageMetrics,
     MigrationProgress,

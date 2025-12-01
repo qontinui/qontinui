@@ -151,7 +151,9 @@ class StateStructureExporter:
             "text_content": element.text_content,
             "semantic_role": element.semantic_role,
             "aria_label": element.aria_label,
-            "attributes": {k: v for k, v in element.attributes.items() if v is not None},
+            "attributes": {
+                k: v for k, v in element.attributes.items() if v is not None
+            },
         }
 
     def _copy_screenshots(

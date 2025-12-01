@@ -275,8 +275,12 @@ class OpenCVMatcher(IPatternMatcher):
                 return []
 
             # Extract descriptors
-            desc1 = np.array([f.descriptor for f in features1 if f.descriptor is not None])
-            desc2 = np.array([f.descriptor for f in features2 if f.descriptor is not None])
+            desc1 = np.array(
+                [f.descriptor for f in features1 if f.descriptor is not None]
+            )
+            desc2 = np.array(
+                [f.descriptor for f in features2 if f.descriptor is not None]
+            )
 
             if desc1.size == 0 or desc2.size == 0:
                 return []
@@ -299,7 +303,9 @@ class OpenCVMatcher(IPatternMatcher):
                 f2 = features2[match.trainIdx]
                 matched_pairs.append((f1, f2))
 
-            logger.debug("features_matched", count=len(matched_pairs), threshold=threshold)
+            logger.debug(
+                "features_matched", count=len(matched_pairs), threshold=threshold
+            )
 
             return matched_pairs
 
@@ -348,7 +354,9 @@ class OpenCVMatcher(IPatternMatcher):
                 resized_needle = cv2.resize(gray_needle, (new_width, new_height))
 
                 # Match template
-                result = cv2.matchTemplate(gray_haystack, resized_needle, cv2.TM_CCOEFF_NORMED)
+                result = cv2.matchTemplate(
+                    gray_haystack, resized_needle, cv2.TM_CCOEFF_NORMED
+                )
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
                 if max_val >= confidence and max_val > best_confidence:
@@ -395,10 +403,14 @@ class OpenCVMatcher(IPatternMatcher):
             cv2_img = self._pil_to_cv2(image2)
 
             # Calculate histograms
-            hist1 = cv2.calcHist([cv1], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+            hist1 = cv2.calcHist(
+                [cv1], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256]
+            )
             hist1 = cv2.normalize(hist1, hist1).flatten()
 
-            hist2 = cv2.calcHist([cv2_img], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+            hist2 = cv2.calcHist(
+                [cv2_img], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256]
+            )
             hist2 = cv2.normalize(hist2, hist2).flatten()
 
             # Compare histograms

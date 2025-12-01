@@ -195,14 +195,23 @@ class BaseStateTypeTest:
         # Create elements based on state type
         if self.state_type == "login":
             elements = [
-                ElementSpec("input", x=300, y=200, width=200, height=35, text="username"),
-                ElementSpec("input", x=300, y=250, width=200, height=35, text="password"),
+                ElementSpec(
+                    "input", x=300, y=200, width=200, height=35, text="username"
+                ),
+                ElementSpec(
+                    "input", x=300, y=250, width=200, height=35, text="password"
+                ),
                 ElementSpec("button", x=350, y=310, width=100, height=40, text="Login"),
             ]
         elif self.state_type == "menu":
             elements = [
                 ElementSpec(
-                    "button", x=100, y=100 + i * 60, width=200, height=40, text=f"Option {i+1}"
+                    "button",
+                    x=100,
+                    y=100 + i * 60,
+                    width=200,
+                    height=40,
+                    text=f"Option {i+1}",
                 )
                 for i in range(5)
             ]
@@ -222,7 +231,9 @@ class BaseStateTypeTest:
                 ElementSpec("button", x=540, y=410, width=80, height=35, text="Cancel"),
             ]
         else:
-            elements = [ElementSpec("button", x=100, y=100, width=120, height=40, text="Action")]
+            elements = [
+                ElementSpec("button", x=100, y=100, width=120, height=40, text="Action")
+            ]
 
         screenshot = generator.generate(width=800, height=600, elements=elements)
 
@@ -296,7 +307,12 @@ class StateTransitionTest:
             height=600,
             elements=[
                 ElementSpec(
-                    "button", x=100, y=100 + i * 60, width=200, height=40, text=f"Option {i}"
+                    "button",
+                    x=100,
+                    y=100 + i * 60,
+                    width=200,
+                    height=40,
+                    text=f"Option {i}",
                 )
                 for i in range(4)
             ],
@@ -323,8 +339,12 @@ class StateTransitionTest:
             ElementSpec("input", x=100, y=200, width=200, height=35),
         ]
 
-        screenshot1 = generator.generate(width=800, height=600, elements=elements, noise_level=0.01)
-        screenshot2 = generator.generate(width=800, height=600, elements=elements, noise_level=0.01)
+        screenshot1 = generator.generate(
+            width=800, height=600, elements=elements, noise_level=0.01
+        )
+        screenshot2 = generator.generate(
+            width=800, height=600, elements=elements, noise_level=0.01
+        )
 
         if hasattr(detector, "detect_states"):
             states1 = detector.detect_states(screenshot1)
@@ -639,7 +659,9 @@ def group_states_by_type(states: list[Any]) -> dict[str, list[Any]]:
 
 
 def validate_state_transition(
-    from_state: Any, to_state: Any, valid_transitions: dict[str, list[str]] | None = None
+    from_state: Any,
+    to_state: Any,
+    valid_transitions: dict[str, list[str]] | None = None,
 ) -> bool:
     """
     Validate if a state transition is valid.

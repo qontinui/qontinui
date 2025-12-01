@@ -63,7 +63,9 @@ class FilterCondition(BaseModel):
     type: Literal["expression", "property", "custom"]
     expression: str | None = None
     property: str | None = None
-    operator: Literal["==", "!=", ">", "<", ">=", "<=", "contains", "matches"] | None = None
+    operator: (
+        Literal["==", "!=", ">", "<", ">=", "<=", "contains", "matches"] | None
+    ) = None
     value: Any | None = None
     custom_function: str | None = Field(None, alias="customFunction")
 
@@ -150,7 +152,16 @@ class MathOperationActionConfig(BaseModel):
     """MATH_OPERATION action configuration."""
 
     operation: Literal[
-        "ADD", "SUBTRACT", "MULTIPLY", "DIVIDE", "MODULO", "POWER", "SQRT", "ABS", "ROUND", "CUSTOM"
+        "ADD",
+        "SUBTRACT",
+        "MULTIPLY",
+        "DIVIDE",
+        "MODULO",
+        "POWER",
+        "SQRT",
+        "ABS",
+        "ROUND",
+        "CUSTOM",
     ]
     operands: list[int | float | dict[str, str]]
     custom_expression: str | None = Field(None, alias="customExpression")

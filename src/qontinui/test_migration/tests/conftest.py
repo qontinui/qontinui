@@ -101,7 +101,9 @@ def sample_test_file(temp_dir: Path) -> TestFile:
         ],
         setup_methods=[
             TestMethod(
-                name="setUp", annotations=["@BeforeEach"], body="sampleClass = new SampleClass();"
+                name="setUp",
+                annotations=["@BeforeEach"],
+                body="sampleClass = new SampleClass();",
             )
         ],
     )

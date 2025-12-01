@@ -75,7 +75,10 @@ def is_outgoing_transition(method: Any) -> bool:
     Returns:
         True if method is decorated with @outgoing_transition
     """
-    return hasattr(method, "_qontinui_outgoing_transition") and method._qontinui_outgoing_transition
+    return (
+        hasattr(method, "_qontinui_outgoing_transition")
+        and method._qontinui_outgoing_transition
+    )
 
 
 def get_outgoing_transition_metadata(method: Any) -> dict[str, Any] | None:

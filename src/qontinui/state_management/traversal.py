@@ -51,7 +51,10 @@ class StateTraversal:
         self.cost_function: Callable[..., Any] | None = None
 
     def find_path(
-        self, start: str, goal: str, strategy: TraversalStrategy = TraversalStrategy.SHORTEST_PATH
+        self,
+        start: str,
+        goal: str,
+        strategy: TraversalStrategy = TraversalStrategy.SHORTEST_PATH,
     ) -> TraversalResult | None:
         """Find a path from start to goal state.
 
@@ -125,12 +128,17 @@ class StateTraversal:
                         cost=len(final_transitions),
                         visited_states=visited | {goal},
                         success=True,
-                        metadata={"strategy": "breadth_first", "nodes_explored": len(visited)},
+                        metadata={
+                            "strategy": "breadth_first",
+                            "nodes_explored": len(visited),
+                        },
                     )
 
                 if next_state not in visited:
                     visited.add(next_state)
-                    queue.append((next_state, path + [current], transitions + [transition]))
+                    queue.append(
+                        (next_state, path + [current], transitions + [transition])
+                    )
 
         return TraversalResult(
             path=[],
@@ -141,7 +149,9 @@ class StateTraversal:
             metadata={"strategy": "breadth_first", "nodes_explored": len(visited)},
         )
 
-    def _dfs_search(self, start: str, goal: str, max_depth: int = 100) -> TraversalResult | None:
+    def _dfs_search(
+        self, start: str, goal: str, max_depth: int = 100
+    ) -> TraversalResult | None:
         """Depth-first search for finding path.
 
         Args:
@@ -170,7 +180,10 @@ class StateTraversal:
                     cost=len(transitions),
                     visited_states=visited,
                     success=True,
-                    metadata={"strategy": "depth_first", "nodes_explored": len(visited)},
+                    metadata={
+                        "strategy": "depth_first",
+                        "nodes_explored": len(visited),
+                    },
                 )
 
             state = self.state_graph.get_state(current)
@@ -181,7 +194,12 @@ class StateTraversal:
                 next_state = transition.to_state
                 if next_state not in visited:
                     stack.append(
-                        (next_state, path + [current], transitions + [transition], depth + 1)
+                        (
+                            next_state,
+                            path + [current],
+                            transitions + [transition],
+                            depth + 1,
+                        )
                     )
 
         return TraversalResult(
@@ -206,7 +224,9 @@ class StateTraversal:
         import heapq
 
         # Priority queue: (cost, state, path, transitions)
-        pq: list[tuple[float, str, list[str], list[Transition]]] = [(0, start, [start], [])]
+        pq: list[tuple[float, str, list[str], list[Transition]]] = [
+            (0, start, [start], [])
+        ]
         visited = set()
         costs: dict[str, float] = {start: 0.0}
 
@@ -242,7 +262,13 @@ class StateTraversal:
                 if next_state not in costs or new_cost < costs[next_state]:
                     costs[next_state] = float(new_cost)
                     heapq.heappush(
-                        pq, (new_cost, next_state, path + [next_state], transitions + [transition])
+                        pq,
+                        (
+                            new_cost,
+                            next_state,
+                            path + [next_state],
+                            transitions + [transition],
+                        ),
                     )
 
         return TraversalResult(
@@ -403,7 +429,10 @@ class StateTraversal:
                     cost=len(transitions),
                     visited_states=global_visited | {goal},
                     success=True,
-                    metadata={"strategy": "exploratory", "nodes_explored": len(global_visited)},
+                    metadata={
+                        "strategy": "exploratory",
+                        "nodes_explored": len(global_visited),
+                    },
                 )
 
             global_visited.add(current)
@@ -416,7 +445,10 @@ class StateTraversal:
             # Sort transitions by novelty (prefer unvisited states)
             sorted_transitions = sorted(
                 state.transitions,
-                key=lambda t: (t.to_state in local_visited, t.to_state in global_visited),
+                key=lambda t: (
+                    t.to_state in local_visited,
+                    t.to_state in global_visited,
+                ),
             )
 
             for transition in sorted_transitions:

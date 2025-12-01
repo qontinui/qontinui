@@ -48,7 +48,9 @@ class BuilderExpression(Expression):
     """Sequence of method calls to configure and build the object."""
 
     def __init__(
-        self, builder_type: str = "", method_calls: list["BuilderMethodCall"] | None = None
+        self,
+        builder_type: str = "",
+        method_calls: list["BuilderMethodCall"] | None = None,
     ) -> None:
         """Initialize builder expression.
 
@@ -72,7 +74,9 @@ class BuilderExpression(Expression):
         """
         method_calls = []
         if "methodCalls" in data:
-            method_calls = [BuilderMethodCall.from_dict(mc) for mc in data["methodCalls"]]
+            method_calls = [
+                BuilderMethodCall.from_dict(mc) for mc in data["methodCalls"]
+            ]
 
         return cls(builder_type=data.get("builderType", ""), method_calls=method_calls)
 

@@ -10,7 +10,10 @@ src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
 # Import directly from module to avoid cv2 dependency
-from qontinui.orchestration.retry_policy import BackoffStrategy, RetryPolicy  # noqa: E402
+from qontinui.orchestration.retry_policy import (  # noqa: E402
+    BackoffStrategy,
+    RetryPolicy,
+)
 
 
 class TestRetryPolicy:
@@ -208,7 +211,9 @@ class TestRetryPolicyFactoryMethods:
 
     def test_with_exponential_backoff_factory(self):
         """Test with_exponential_backoff factory method."""
-        policy = RetryPolicy.with_exponential_backoff(max_retries=5, base_delay=1.0, max_delay=20.0)
+        policy = RetryPolicy.with_exponential_backoff(
+            max_retries=5, base_delay=1.0, max_delay=20.0
+        )
 
         assert policy.max_retries == 5
         assert policy.base_delay == 1.0
@@ -217,7 +222,9 @@ class TestRetryPolicyFactoryMethods:
 
     def test_with_linear_backoff_factory(self):
         """Test with_linear_backoff factory method."""
-        policy = RetryPolicy.with_linear_backoff(max_retries=4, base_delay=0.5, max_delay=15.0)
+        policy = RetryPolicy.with_linear_backoff(
+            max_retries=4, base_delay=0.5, max_delay=15.0
+        )
 
         assert policy.max_retries == 4
         assert policy.base_delay == 0.5

@@ -127,7 +127,10 @@ class Position:
 
     @classmethod
     def from_name(
-        cls, position_name: PositionName, add_percent_w: float = 0.0, add_percent_h: float = 0.0
+        cls,
+        position_name: PositionName,
+        add_percent_w: float = 0.0,
+        add_percent_h: float = 0.0,
     ) -> "Position":
         """Create Position from named position with optional offset.
 
@@ -141,7 +144,8 @@ class Position:
         """
         coords = Positions.get_coordinates(position_name)
         return cls(
-            percent_w=coords.get_key() + add_percent_w, percent_h=coords.get_value() + add_percent_h
+            percent_w=coords.get_key() + add_percent_w,
+            percent_h=coords.get_value() + add_percent_h,
         )
 
     def add_percent_w(self, add_w: float) -> None:

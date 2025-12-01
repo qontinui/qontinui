@@ -17,7 +17,10 @@ class QontinuiException(Exception):
     """
 
     def __init__(
-        self, message: str, error_code: str | None = None, context: dict[str, Any] | None = None
+        self,
+        message: str,
+        error_code: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         """Initialize the exception.
 

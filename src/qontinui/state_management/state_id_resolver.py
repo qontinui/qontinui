@@ -29,7 +29,9 @@ class StateIdResolver:
     developer productivity and runtime performance.
     """
 
-    def __init__(self, all_states_in_project_service: Optional["StateService"] = None) -> None:
+    def __init__(
+        self, all_states_in_project_service: Optional["StateService"] = None
+    ) -> None:
         """Initialize StateIdResolver.
 
         Args:
@@ -88,17 +90,23 @@ class StateIdResolver:
             return
 
         # Convert the parent state name to ID
-        state_id = self.all_states_in_project_service.get_state_id(state_transitions.state_name)
+        state_id = self.all_states_in_project_service.get_state_id(
+            state_transitions.state_name
+        )
         if state_transitions.state_id is None and state_id is not None:
             state_transitions.state_id = state_id  # type: ignore[assignment]
 
         # Process each transition
         for transition in state_transitions.get_transitions():
             # Check if this is a CodeStateTransition (has activate_names)
-            if hasattr(transition, "activate_names") and hasattr(transition, "activate"):
+            if hasattr(transition, "activate_names") and hasattr(
+                transition, "activate"
+            ):
                 for state_to_activate in transition.activate_names:
-                    state_to_activate_id = self.all_states_in_project_service.get_state_id(
-                        state_to_activate
+                    state_to_activate_id = (
+                        self.all_states_in_project_service.get_state_id(
+                            state_to_activate
+                        )
                     )
                     if state_to_activate_id is not None:
                         transition.activate.append(state_to_activate_id)

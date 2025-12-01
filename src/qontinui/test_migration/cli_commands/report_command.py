@@ -21,7 +21,9 @@ class ReportCommand(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         """Add report command arguments."""
-        parser.add_argument("test_directory", type=Path, help="Directory containing migrated tests")
+        parser.add_argument(
+            "test_directory", type=Path, help="Directory containing migrated tests"
+        )
 
         parser.add_argument(
             "--format",
@@ -33,11 +35,15 @@ class ReportCommand(BaseCommand):
         parser.add_argument("--output", type=Path, help="Output file for the report")
 
         parser.add_argument(
-            "--include-coverage", action="store_true", help="Include test coverage information"
+            "--include-coverage",
+            action="store_true",
+            help="Include test coverage information",
         )
 
         parser.add_argument(
-            "--include-diagnostics", action="store_true", help="Include diagnostic information"
+            "--include-diagnostics",
+            action="store_true",
+            help="Include diagnostic information",
         )
 
         parser.add_argument("--template", type=Path, help="Custom report template file")
@@ -66,10 +72,15 @@ class ReportCommand(BaseCommand):
 
             # Save report
             self.dashboard.save_report(
-                report_data, output_file, format_type=args.format, template_file=args.template
+                report_data,
+                output_file,
+                format_type=args.format,
+                template_file=args.template,
             )
 
             return CommandResult(exit_code=0, message=f"Report saved to: {output_file}")
 
         except Exception as e:
-            return CommandResult(exit_code=1, message=f"Report generation failed: {str(e)}")
+            return CommandResult(
+                exit_code=1, message=f"Report generation failed: {str(e)}"
+            )

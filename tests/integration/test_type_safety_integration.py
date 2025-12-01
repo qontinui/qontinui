@@ -146,7 +146,9 @@ class TestTypeChecking:
             pytest.skip("mypy not available")
 
     @pytest.mark.skipif(
-        subprocess.run([sys.executable, "-m", "mypy", "--version"], capture_output=True).returncode
+        subprocess.run(
+            [sys.executable, "-m", "mypy", "--version"], capture_output=True
+        ).returncode
         != 0,
         reason="mypy not installed",
     )
@@ -182,13 +184,17 @@ class TestTypeChecking:
         assert error_count < 5, f"Too many type errors: {error_count}\n{result.stdout}"
 
     @pytest.mark.skipif(
-        subprocess.run([sys.executable, "-m", "mypy", "--version"], capture_output=True).returncode
+        subprocess.run(
+            [sys.executable, "-m", "mypy", "--version"], capture_output=True
+        ).returncode
         != 0,
         reason="mypy not installed",
     )
     def test_mypy_check_state_registry(self):
         """Run mypy on StateRegistry to verify type safety."""
-        src_path = Path(__file__).parent.parent.parent / "src" / "qontinui" / "annotations"
+        src_path = (
+            Path(__file__).parent.parent.parent / "src" / "qontinui" / "annotations"
+        )
         registry_file = src_path / "state_registry.py"
 
         if not registry_file.exists():
@@ -329,7 +335,9 @@ class TestTypeAnnotationCoverage:
         import inspect
 
         # Check ActionResult
-        for name, method in inspect.getmembers(ActionResult, predicate=inspect.isfunction):
+        for name, method in inspect.getmembers(
+            ActionResult, predicate=inspect.isfunction
+        ):
             if not name.startswith("_"):
                 # Public method should have annotations
                 sig = inspect.signature(method)
@@ -346,7 +354,9 @@ class TestTypeAnnotationCoverage:
         from qontinui.actions import result_builders
 
         # Check builder functions
-        for name, func in inspect.getmembers(result_builders, predicate=inspect.isfunction):
+        for name, func in inspect.getmembers(
+            result_builders, predicate=inspect.isfunction
+        ):
             if not name.startswith("_"):
                 sig = inspect.signature(func)
                 # Should have return annotation

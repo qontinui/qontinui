@@ -11,7 +11,9 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 # Add multistate to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../../multistate/src"))
+sys.path.insert(
+    0, os.path.join(os.path.dirname(__file__), "../../../../multistate/src")
+)
 
 from multistate.core.state import State as MultiState  # noqa: E402
 from multistate.dynamics.hidden_states import HiddenStateManager  # noqa: E402
@@ -105,7 +107,9 @@ class MultiStateAdapter:
 
         # Create mapping (only if qontinui_state has a valid ID)
         if qontinui_state.id is None:
-            raise ValueError(f"Cannot register state '{qontinui_state.name}' without an ID")
+            raise ValueError(
+                f"Cannot register state '{qontinui_state.name}' without an ID"
+            )
 
         mapping = StateMapping(
             qontinui_id=qontinui_state.id,
@@ -123,7 +127,9 @@ class MultiStateAdapter:
 
         return multistate
 
-    def register_qontinui_transition(self, transition: StateTransition) -> MultiTransition:
+    def register_qontinui_transition(
+        self, transition: StateTransition
+    ) -> MultiTransition:
         """Register a Qontinui transition in MultiState framework.
 
         Args:
@@ -273,11 +279,15 @@ class MultiStateAdapter:
         for multi_transition in path.transitions_sequence:
             # Extract the ID from the MultiState Transition object
             multi_transition_id = (
-                multi_transition.id if hasattr(multi_transition, "id") else str(multi_transition)
+                multi_transition.id
+                if hasattr(multi_transition, "id")
+                else str(multi_transition)
             )
 
             if multi_transition_id in self.transition_mappings:
-                qontinui_transitions.append(self.transition_mappings[multi_transition_id])
+                qontinui_transitions.append(
+                    self.transition_mappings[multi_transition_id]
+                )
             else:
                 logger.warning(
                     f"Transition '{multi_transition_id}' not found in mappings. Available: {list(self.transition_mappings.keys())}"

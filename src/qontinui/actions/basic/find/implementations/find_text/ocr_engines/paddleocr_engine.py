@@ -41,7 +41,11 @@ class PaddleOCREngine(BaseOCREngine):
             return False
 
     def extract_text(
-        self, image: np.ndarray, region: Region, language: str, confidence_threshold: float
+        self,
+        image: np.ndarray,
+        region: Region,
+        language: str,
+        confidence_threshold: float,
     ) -> list[OCRResult]:
         """Extract text using PaddleOCR.
 
@@ -94,7 +98,9 @@ class PaddleOCREngine(BaseOCREngine):
 
                     text_region = Region(int(x), int(y), int(w), int(h))
 
-                    result = OCRResult(text=text, confidence=confidence, region=text_region)
+                    result = OCRResult(
+                        text=text, confidence=confidence, region=text_region
+                    )
                     ocr_results.append(result)
 
             return ocr_results

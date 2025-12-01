@@ -13,7 +13,10 @@ from unittest.mock import Mock
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from qontinui.navigation.hybrid_path_finder import HybridPathFinder, PathStrategy  # noqa: E402
+from qontinui.navigation.hybrid_path_finder import (  # noqa: E402
+    HybridPathFinder,
+    PathStrategy,
+)
 
 
 class TestHybridPathFinderThreading:
@@ -196,7 +199,10 @@ class TestHybridPathFinderThreading:
             try:
                 for i in range(iterations):
                     # Each thread uses unique keys
-                    key = (frozenset({thread_id, i}), frozenset({thread_id + 100, i + 100}))
+                    key = (
+                        frozenset({thread_id, i}),
+                        frozenset({thread_id + 100, i + 100}),
+                    )
                     value = f"path_{thread_id}_{i}"
 
                     # Write to cache
@@ -248,7 +254,9 @@ class TestHybridPathFinderThreading:
                         # Read string representation (accesses cache size)
                         str_repr = str(finder)
                         if "HybridPathFinder" not in str_repr:
-                            errors.append(f"Thread {thread_id}: Invalid string representation")
+                            errors.append(
+                                f"Thread {thread_id}: Invalid string representation"
+                            )
             except Exception as e:
                 errors.append(f"Thread {thread_id}: {e}")
 
@@ -271,7 +279,11 @@ class TestHybridPathFinderThreading:
         num_threads = 10
         iterations = 50
         errors = []
-        strategies = [PathStrategy.SHORTEST, PathStrategy.OPTIMAL, PathStrategy.MOST_RELIABLE]
+        strategies = [
+            PathStrategy.SHORTEST,
+            PathStrategy.OPTIMAL,
+            PathStrategy.MOST_RELIABLE,
+        ]
 
         def worker(thread_id: int):
             try:
@@ -319,7 +331,9 @@ class TestHybridPathFinderThreading:
                         with finder._lock:
                             size = len(finder._path_cache)
                             if size < 0:
-                                errors.append(f"Thread {thread_id}: Negative cache size")
+                                errors.append(
+                                    f"Thread {thread_id}: Negative cache size"
+                                )
                     else:
                         # Clear
                         if i % 9 == 2:

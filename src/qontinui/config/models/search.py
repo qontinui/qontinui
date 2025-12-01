@@ -27,7 +27,10 @@ class PatternOptions(BaseModel):
 
     match_method: (
         Literal[
-            "CORRELATION", "CORRELATION_NORMED", "SQUARED_DIFFERENCE", "SQUARED_DIFFERENCE_NORMED"
+            "CORRELATION",
+            "CORRELATION_NORMED",
+            "SQUARED_DIFFERENCE",
+            "SQUARED_DIFFERENCE_NORMED",
         ]
         | None
     ) = Field(None, alias="matchMethod")
@@ -47,7 +50,9 @@ class PatternOptions(BaseModel):
     edge_threshold2: float | None = Field(None, alias="edgeThreshold2")
     non_max_suppression: bool | None = Field(None, alias="nonMaxSuppression")
     nms_threshold: float | None = Field(None, alias="nmsThreshold")
-    min_distance_between_matches: float | None = Field(None, alias="minDistanceBetweenMatches")
+    min_distance_between_matches: float | None = Field(
+        None, alias="minDistanceBetweenMatches"
+    )
 
     model_config = {"populate_by_name": True}
 
@@ -96,7 +101,8 @@ class TextSearchOptions(BaseModel):
     whitelist_chars: str | None = Field(None, alias="whitelistChars")
     blacklist_chars: str | None = Field(None, alias="blacklistChars")
     match_type: (
-        Literal["EXACT", "CONTAINS", "STARTS_WITH", "ENDS_WITH", "REGEX", "FUZZY"] | None
+        Literal["EXACT", "CONTAINS", "STARTS_WITH", "ENDS_WITH", "REGEX", "FUZZY"]
+        | None
     ) = Field(None, alias="matchType")
     case_sensitive: bool | None = Field(None, alias="caseSensitive")
     ignore_whitespace: bool | None = Field(None, alias="ignoreWhitespace")

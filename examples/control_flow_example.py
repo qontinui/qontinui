@@ -227,7 +227,9 @@ def main():
 
     result = executor.execute_loop(safe_loop_action)
     print("\nRequested iterations: 1,000,000")
-    print(f"Actual iterations: {result['iterations_completed']} (capped by maxIterations)")
+    print(
+        f"Actual iterations: {result['iterations_completed']} (capped by maxIterations)"
+    )
     print(f"Success: {result['success']}")
 
     # ========================================================================
@@ -244,7 +246,9 @@ def main():
         for inner_i in range(2):
             print(f"    Inner iteration {inner_i}")
 
-    print("\nNote: Actual nested loops would use action references to inner loop actions")
+    print(
+        "\nNote: Actual nested loops would use action references to inner loop actions"
+    )
 
     # ========================================================================
     # Summary

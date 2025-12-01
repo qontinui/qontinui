@@ -51,7 +51,9 @@ class ElementMatcher:
             print(f"Failed to initialize FAISS: {e}")
             self.use_faiss = False
 
-    def add_elements(self, embeddings: np.ndarray[Any, Any], metadata: list[dict[str, Any]]):
+    def add_elements(
+        self, embeddings: np.ndarray[Any, Any], metadata: list[dict[str, Any]]
+    ):
         """Add elements to the search index.
 
         Args:
@@ -173,7 +175,9 @@ class ElementMatcher:
 
         return results
 
-    def _normalize_embeddings(self, embeddings: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
+    def _normalize_embeddings(
+        self, embeddings: np.ndarray[Any, Any]
+    ) -> np.ndarray[Any, Any]:
         """Normalize embeddings for cosine similarity.
 
         Args:

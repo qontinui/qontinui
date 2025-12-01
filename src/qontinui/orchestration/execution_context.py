@@ -293,7 +293,9 @@ class ExecutionContext:
             Protected by lock for concurrent action tracking.
         """
         with self._lock:
-            state = ActionState(action_index=index, action_name=name, start_time=time.time())
+            state = ActionState(
+                action_index=index, action_name=name, start_time=time.time()
+            )
             self._action_states.append(state)
             self._statistics.total_actions += 1
             return state

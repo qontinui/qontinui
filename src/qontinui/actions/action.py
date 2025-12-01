@@ -115,7 +115,9 @@ class Action:
                     action_config, ActionResultBuilder().build(), object_collections
                 )
             else:
-                print("Warning: Action chain executor not available for chained actions")
+                print(
+                    "Warning: Action chain executor not available for chained actions"
+                )
                 return ActionResultBuilder().build()
 
         # Single action execution
@@ -185,7 +187,9 @@ class Action:
         # If we have StateImages, we need to chain Find -> Click
         if state_images:
             # First, find the images
-            image_collection = ObjectCollectionBuilder().with_images(*state_images).build()
+            image_collection = (
+                ObjectCollectionBuilder().with_images(*state_images).build()
+            )
             find_config = PatternFindOptionsBuilder().build()
             find_result = self.perform(find_config, image_collection)
 
@@ -238,7 +242,9 @@ class Action:
         # return self.perform(config, collection)
         return ActionResultBuilder().build()  # Placeholder
 
-    def execute(self, action_func: Callable[[], Any], target: Any | None = None) -> ActionResult:
+    def execute(
+        self, action_func: Callable[[], Any], target: Any | None = None
+    ) -> ActionResult:
         """Execute a primitive action function with lifecycle management.
 
         Used by primitive actions (mouse, keyboard) to wrap their operations

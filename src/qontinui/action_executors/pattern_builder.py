@@ -57,7 +57,9 @@ class PatternBuilder:
         if mask_data:
             mask = self._decode_mask(mask_data, pixel_data.shape)
             if mask is None:
-                logger.warning(f"Failed to decode mask for {image_id}, using default mask")
+                logger.warning(
+                    f"Failed to decode mask for {image_id}, using default mask"
+                )
                 mask = np.ones(pixel_data.shape[:2], dtype=np.uint8) * 255
         else:
             # Default: full white mask (all pixels considered)
@@ -148,7 +150,9 @@ class PatternBuilder:
                     f"({expected_height}, {expected_width})"
                 )
 
-            logger.debug(f"Decoded mask: shape={mask_array.shape}, dtype={mask_array.dtype}")
+            logger.debug(
+                f"Decoded mask: shape={mask_array.shape}, dtype={mask_array.dtype}"
+            )
             return mask_array
 
         except Exception as e:

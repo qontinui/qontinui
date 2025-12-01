@@ -52,7 +52,9 @@ class IntegrationTestRunner:
             print(f"❌ FAILED: {name}")
             print(f"   Error: {e}")
             self.failed_tests += 1
-            self.test_results.append({"name": name, "status": "FAILED", "error": str(e)})
+            self.test_results.append(
+                {"name": name, "status": "FAILED", "error": str(e)}
+            )
         except Exception as e:
             print(f"❌ ERROR: {name}")
             print(f"   Error: {e}")
@@ -183,7 +185,9 @@ def test_json_import_and_validation():
     print(f"SORT config type: {type(sort_config).__name__}")
 
     # Verify typed config properties
-    assert isinstance(set_var_config, SetVariableActionConfig), "Should be SetVariableActionConfig"
+    assert isinstance(
+        set_var_config, SetVariableActionConfig
+    ), "Should be SetVariableActionConfig"
     assert set_var_config.variable_name == "total", "Variable name should be 'total'"
 
     assert isinstance(sort_config, SortActionConfig), "Should be SortActionConfig"
@@ -318,7 +322,9 @@ def test_variable_operations():
 
     print(f"    Result: {result}")
     assert result["success"], "SET_VARIABLE should succeed"
-    assert executor.variable_context.get("score") == 100, "Variable should be set to 100"
+    assert (
+        executor.variable_context.get("score") == 100
+    ), "Variable should be set to 100"
 
     # SET_VARIABLE with expression
     print("\n  Setting variable 'total' from expression 'score * 2'...")
@@ -340,7 +346,9 @@ def test_variable_operations():
 
     # GET_VARIABLE
     print("\n  Getting variable 'score'...")
-    get_action = Action(id="get-1", type="GET_VARIABLE", config={"variableName": "score"})
+    get_action = Action(
+        id="get-1", type="GET_VARIABLE", config={"variableName": "score"}
+    )
 
     result = executor.execute_get_variable(get_action, context)
 
@@ -425,7 +433,12 @@ def test_filter_operation():
         type="FILTER",
         config={
             "variableName": "items",
-            "condition": {"type": "property", "property": "price", "operator": ">", "value": 100},
+            "condition": {
+                "type": "property",
+                "property": "price",
+                "operator": ">",
+                "value": 100,
+            },
             "outputVariable": "expensive_items",
         },
     )
@@ -484,7 +497,10 @@ def test_complex_workflow():
         type="FILTER",
         config={
             "variableName": "items",
-            "condition": {"type": "expression", "expression": "item['value'] > threshold"},
+            "condition": {
+                "type": "expression",
+                "expression": "item['value'] > threshold",
+            },
             "outputVariable": "filtered_items",
         },
     )
@@ -513,7 +529,9 @@ def test_complex_workflow():
 
     sort_result = data_executor.execute_sort(sort_action, {})
     sorted_items = sort_result["sorted_collection"]
-    print(f"    Sorted items: {[(item['name'], item['value']) for item in sorted_items]}")
+    print(
+        f"    Sorted items: {[(item['name'], item['value']) for item in sorted_items]}"
+    )
     executed_steps.append("sort")
 
     # Step 4: Store result
@@ -617,7 +635,9 @@ def test_json_roundtrip():
     print(f"  Created {len(original_actions)} actions")
 
     # Export to JSON
-    json_str = json.dumps([action.model_dump() for action in original_actions], indent=2)
+    json_str = json.dumps(
+        [action.model_dump() for action in original_actions], indent=2
+    )
     print(f"  Exported to JSON ({len(json_str)} bytes)")
 
     # Import from JSON
@@ -627,7 +647,9 @@ def test_json_roundtrip():
     # Verify match
     assert len(imported_actions) == len(original_actions), "Should have same count"
 
-    for i, (original, imported) in enumerate(zip(original_actions, imported_actions, strict=False)):
+    for i, (original, imported) in enumerate(
+        zip(original_actions, imported_actions, strict=False)
+    ):
         assert imported.id == original.id, f"Action {i} ID should match"
         assert imported.type == original.type, f"Action {i} type should match"
 
@@ -653,7 +675,9 @@ def main():
     runner = IntegrationTestRunner()
 
     # Run all tests
-    runner.run_test("Action Creation and Serialization", test_action_creation_and_serialization)
+    runner.run_test(
+        "Action Creation and Serialization", test_action_creation_and_serialization
+    )
     runner.run_test("JSON Import and Validation", test_json_import_and_validation)
     runner.run_test("LOOP Execution", test_loop_execution)
     runner.run_test("IF/ELSE Execution", test_if_else_execution)

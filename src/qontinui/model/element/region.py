@@ -443,7 +443,9 @@ class Region:
 
     def __repr__(self) -> str:
         """Detailed representation."""
-        return f"Region(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
+        return (
+            f"Region(x={self.x}, y={self.y}, width={self.width}, height={self.height})"
+        )
 
     def __eq__(self, other) -> bool:
         """Check equality."""

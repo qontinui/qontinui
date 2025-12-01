@@ -68,7 +68,9 @@ class VariableExecutor:
         self.coercer = coercer
         logger.debug("Initialized VariableExecutor")
 
-    def execute_set_variable(self, action: Action, context: dict[str, Any]) -> dict[str, Any]:
+    def execute_set_variable(
+        self, action: Action, context: dict[str, Any]
+    ) -> dict[str, Any]:
         """Execute SET_VARIABLE action.
 
         Sets a variable from various sources:
@@ -131,7 +133,9 @@ class VariableExecutor:
                 "type": type(value).__name__,
             }
 
-            logger.info(f"Successfully set variable '{config.variable_name}' in {scope} scope")
+            logger.info(
+                f"Successfully set variable '{config.variable_name}' in {scope} scope"
+            )
             return result
 
         except (ValueError, NotImplementedError) as e:
@@ -142,7 +146,9 @@ class VariableExecutor:
                 "variable_name": getattr(config, "variable_name", "unknown"),
             }
 
-    def execute_get_variable(self, action: Action, context: dict[str, Any]) -> dict[str, Any]:
+    def execute_get_variable(
+        self, action: Action, context: dict[str, Any]
+    ) -> dict[str, Any]:
         """Execute GET_VARIABLE action.
 
         Retrieves a variable value from any scope (local -> process -> global)
@@ -179,13 +185,17 @@ class VariableExecutor:
             logger.info(f"Getting variable '{config.variable_name}'")
 
             # Get variable value with optional default
-            value = self.variable_context.get(config.variable_name, config.default_value)
+            value = self.variable_context.get(
+                config.variable_name, config.default_value
+            )
 
             # Store in output variable if specified
             if config.output_variable:
                 self.variable_context.set(config.output_variable, value)
                 context[config.output_variable] = value
-                logger.debug(f"Stored value in output variable '{config.output_variable}'")
+                logger.debug(
+                    f"Stored value in output variable '{config.output_variable}'"
+                )
 
             result = {
                 "success": True,
@@ -256,11 +266,15 @@ class VariableExecutor:
         Raises:
             ValueError: If expression is missing or evaluation fails
         """
-        expression = config.value_source.expression if config.value_source is not None else None
+        expression = (
+            config.value_source.expression if config.value_source is not None else None
+        )
         if not expression:
             raise ValueError("Expression source requires 'expression' field")
 
-        value = self.evaluator.safe_eval(expression, self.variable_context.get_all_variables())
+        value = self.evaluator.safe_eval(
+            expression, self.variable_context.get_all_variables()
+        )
         logger.debug(f"Evaluated expression to: {value}")
         return value
 
@@ -297,7 +311,8 @@ class VariableExecutor:
             NotImplementedError: Always (feature not yet implemented)
         """
         raise NotImplementedError(
-            "OCR value source not yet implemented. " "Requires integration with OCR engine."
+            "OCR value source not yet implemented. "
+            "Requires integration with OCR engine."
         )
 
     def _get_value_from_target(self, config: SetVariableActionConfig) -> Any:
@@ -315,5 +330,6 @@ class VariableExecutor:
             NotImplementedError: Always (feature not yet implemented)
         """
         raise NotImplementedError(
-            "Target value source not yet implemented. " "Requires integration with find operations."
+            "Target value source not yet implemented. "
+            "Requires integration with find operations."
         )

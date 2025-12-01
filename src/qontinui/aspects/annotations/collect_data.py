@@ -203,7 +203,9 @@ def get_collect_data_config(obj: Any) -> dict[str, Any] | None:
 
 
 def get_collected_data(
-    method_name: str | None = None, tags: list[str] | None = None, successful_only: bool = False
+    method_name: str | None = None,
+    tags: list[str] | None = None,
+    successful_only: bool = False,
 ) -> list[CollectedData]:
     """Get collected data with optional filtering.
 

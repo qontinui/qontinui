@@ -6,7 +6,10 @@ import pytest
 
 from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import RegistryFrozenError, StateRegistry
-from qontinui.state_exceptions import StateAlreadyExistsException, StateNotFoundException
+from qontinui.state_exceptions import (
+    StateAlreadyExistsException,
+    StateNotFoundException,
+)
 
 
 class TestStateRegistryThreading:
@@ -107,7 +110,9 @@ class TestStateRegistryThreading:
         # Verify: all threads should get the same ID
         assert len(collected_ids) == num_threads
         unique_ids = set(collected_ids)
-        assert len(unique_ids) == 1, f"Expected 1 unique ID, got {len(unique_ids)}: {unique_ids}"
+        assert (
+            len(unique_ids) == 1
+        ), f"Expected 1 unique ID, got {len(unique_ids)}: {unique_ids}"
 
         # Verify: state is only registered once
         assert len(registry.states) == 1
@@ -153,7 +158,9 @@ class TestStateRegistryThreading:
 
         # Verify: all assigned IDs are in the correct range
         all_ids = set(registry.state_ids.values())
-        assert all_ids == set(range(1, expected_count + 1)), "State IDs are not in expected range"
+        assert all_ids == set(
+            range(1, expected_count + 1)
+        ), "State IDs are not in expected range"
 
     def test_concurrent_state_registration_with_groups(self):
         """Test that group registration is thread-safe.
@@ -407,7 +414,9 @@ class TestStateRegistryThreading:
                     pass
 
         # Start threads
-        register_threads = [threading.Thread(target=register_continuously) for _ in range(3)]
+        register_threads = [
+            threading.Thread(target=register_continuously) for _ in range(3)
+        ]
         clear_thread = threading.Thread(target=clear_periodically)
 
         for t in register_threads:

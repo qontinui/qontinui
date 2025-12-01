@@ -21,7 +21,12 @@ class StorageReadException(StorageException):
         super().__init__(
             f"Failed to read '{key}' from {storage_type}: {reason}",
             error_code="STORAGE_READ_FAILED",
-            context={"key": key, "storage_type": storage_type, "reason": reason, **kwargs},
+            context={
+                "key": key,
+                "storage_type": storage_type,
+                "reason": reason,
+                **kwargs,
+            },
         )
 
 
@@ -33,7 +38,12 @@ class StorageWriteException(StorageException):
         super().__init__(
             f"Failed to write '{key}' to {storage_type}: {reason}",
             error_code="STORAGE_WRITE_FAILED",
-            context={"key": key, "storage_type": storage_type, "reason": reason, **kwargs},
+            context={
+                "key": key,
+                "storage_type": storage_type,
+                "reason": reason,
+                **kwargs,
+            },
         )
 
 

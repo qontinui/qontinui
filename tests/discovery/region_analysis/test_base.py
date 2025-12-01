@@ -191,7 +191,14 @@ class BaseRegionAnalyzerTest(ABC):
             width=800,
             height=600,
             elements=[
-                ElementSpec("rectangle", x=100, y=100, width=200, height=200, color=(240, 240, 240))
+                ElementSpec(
+                    "rectangle",
+                    x=100,
+                    y=100,
+                    width=200,
+                    height=200,
+                    color=(240, 240, 240),
+                )
             ],
         )
 
@@ -348,7 +355,14 @@ class BaseRegionTypeTest:
             width=800,
             height=600,
             elements=[
-                ElementSpec("rectangle", x=100, y=100, width=200, height=200, color=(240, 240, 240))
+                ElementSpec(
+                    "rectangle",
+                    x=100,
+                    y=100,
+                    width=200,
+                    height=200,
+                    color=(240, 240, 240),
+                )
             ],
         )
 
@@ -548,7 +562,9 @@ class RegionPerformanceTest:
             screenshot = generator.generate(
                 width=1024,
                 height=768,
-                elements=[ElementSpec("rectangle", x=100, y=100, width=400, height=300)],
+                elements=[
+                    ElementSpec("rectangle", x=100, y=100, width=400, height=300)
+                ],
             )
 
         times = []
@@ -616,7 +632,9 @@ def calculate_region_overlap(
 
 
 def is_region_contained(
-    inner: tuple[int, int, int, int], outer: tuple[int, int, int, int], tolerance: int = 5
+    inner: tuple[int, int, int, int],
+    outer: tuple[int, int, int, int],
+    tolerance: int = 5,
 ) -> bool:
     """
     Check if one region is contained within another.
@@ -646,7 +664,9 @@ def is_region_contained(
 
 
 def are_regions_adjacent(
-    region1: tuple[int, int, int, int], region2: tuple[int, int, int, int], tolerance: int = 10
+    region1: tuple[int, int, int, int],
+    region2: tuple[int, int, int, int],
+    tolerance: int = 10,
 ) -> bool:
     """
     Check if two regions are adjacent (touching or very close).
@@ -682,7 +702,9 @@ def are_regions_adjacent(
     return False
 
 
-def assert_region_valid(region: tuple[int, int, int, int], max_width: int, max_height: int):
+def assert_region_valid(
+    region: tuple[int, int, int, int], max_width: int, max_height: int
+):
     """
     Assert that a region is valid.
 

@@ -183,7 +183,8 @@ class ProcessingHints:
             ProcessingHints configured for inventory
         """
         return cls(
-            expected_object_types=["icon", "text", "button", "list_item"], context="game_inventory"
+            expected_object_types=["icon", "text", "button", "list_item"],
+            context="game_inventory",
         )
 
     @classmethod
@@ -194,7 +195,8 @@ class ProcessingHints:
             ProcessingHints configured for web content
         """
         return cls(
-            expected_object_types=["text", "link", "button", "image", "heading"], context="web_page"
+            expected_object_types=["text", "link", "button", "image", "heading"],
+            context="web_page",
         )
 
     @classmethod
@@ -217,7 +219,8 @@ class ProcessingHints:
             ProcessingHints configured for dialogs
         """
         return cls(
-            expected_object_types=["button", "text", "checkbox", "radio_button"], context="dialog"
+            expected_object_types=["button", "text", "checkbox", "radio_button"],
+            context="dialog",
         )
 
 
@@ -297,7 +300,9 @@ class SemanticProcessor(ABC):
         """
         self._max_processing_time = milliseconds
 
-    def process_region(self, screenshot: np.ndarray[Any, Any], roi: Region) -> SemanticScene:
+    def process_region(
+        self, screenshot: np.ndarray[Any, Any], roi: Region
+    ) -> SemanticScene:
         """Process specific region of screenshot.
 
         Default implementation crops and processes the region.
@@ -342,7 +347,8 @@ class SemanticProcessor(ABC):
             # Apply hints to configuration if relevant
             if hints.quick_mode:
                 self._config = ProcessorConfig(
-                    min_confidence=self._config.min_confidence * 1.2,  # Higher threshold
+                    min_confidence=self._config.min_confidence
+                    * 1.2,  # Higher threshold
                     max_objects=min(self._config.max_objects, 50),  # Fewer objects
                 )
 

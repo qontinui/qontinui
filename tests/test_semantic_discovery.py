@@ -115,11 +115,13 @@ class TestSemanticObject(unittest.TestCase):
     def test_spatial_relationships(self):
         """Test spatial relationship methods."""
         obj1 = SemanticObject(
-            location=PixelLocation.from_rectangle(10, 10, 50, 30), description="Top object"
+            location=PixelLocation.from_rectangle(10, 10, 50, 30),
+            description="Top object",
         )
 
         obj2 = SemanticObject(
-            location=PixelLocation.from_rectangle(10, 50, 50, 30), description="Bottom object"
+            location=PixelLocation.from_rectangle(10, 50, 50, 30),
+            description="Bottom object",
         )
 
         self.assertTrue(obj1.is_above(obj2))
@@ -146,7 +148,8 @@ class TestSemanticObject(unittest.TestCase):
         )
 
         obj2 = SemanticObject(
-            location=PixelLocation.from_rectangle(30, 40, 10, 10), description="Object 2"
+            location=PixelLocation.from_rectangle(30, 40, 10, 10),
+            description="Object 2",
         )
 
         # Distance between centers (5,5) and (35,45)
@@ -183,19 +186,22 @@ class TestSemanticScene(unittest.TestCase):
 
         scene.add_object(
             SemanticObject(
-                location=PixelLocation.from_rectangle(0, 0, 10, 10), description="Submit button"
+                location=PixelLocation.from_rectangle(0, 0, 10, 10),
+                description="Submit button",
             )
         )
 
         scene.add_object(
             SemanticObject(
-                location=PixelLocation.from_rectangle(20, 0, 10, 10), description="Cancel button"
+                location=PixelLocation.from_rectangle(20, 0, 10, 10),
+                description="Cancel button",
             )
         )
 
         scene.add_object(
             SemanticObject(
-                location=PixelLocation.from_rectangle(40, 0, 10, 10), description="Text field"
+                location=PixelLocation.from_rectangle(40, 0, 10, 10),
+                description="Text field",
             )
         )
 
@@ -247,13 +253,15 @@ class TestSemanticScene(unittest.TestCase):
 
         scene.add_object(
             SemanticObject(
-                location=PixelLocation.from_rectangle(10, 10, 20, 20), description="Inside"
+                location=PixelLocation.from_rectangle(10, 10, 20, 20),
+                description="Inside",
             )
         )
 
         scene.add_object(
             SemanticObject(
-                location=PixelLocation.from_rectangle(100, 100, 20, 20), description="Outside"
+                location=PixelLocation.from_rectangle(100, 100, 20, 20),
+                description="Outside",
             )
         )
 

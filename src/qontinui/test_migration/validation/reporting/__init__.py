@@ -6,7 +6,11 @@ from .comprehensive_analyzer import ComprehensiveAnalyzer
 from .diagnostic_reporter_impl import DiagnosticReporterImpl
 from .error_analyzer import ErrorAnalyzer
 from .report_data_collector import ReportDataCollector
-from .report_formatter import ReportFormatter, ReportFormatterFactory, TextReportFormatter
+from .report_formatter import (
+    ReportFormatter,
+    ReportFormatterFactory,
+    TextReportFormatter,
+)
 from .report_models import (
     AssertionDifference,
     DependencyDifference,

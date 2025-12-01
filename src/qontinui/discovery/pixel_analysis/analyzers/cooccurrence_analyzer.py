@@ -30,17 +30,23 @@ class CooccurrenceAnalyzer:
 
         # Build co-occurrence matrix
         n = len(state_images)
-        cooccurrence: np.ndarray[tuple[int, int], np.dtype[np.float64]] = np.zeros((n, n))
+        cooccurrence: np.ndarray[tuple[int, int], np.dtype[np.float64]] = np.zeros(
+            (n, n)
+        )
 
         for i in range(n):
             for j in range(i, n):
                 # Count screenshots where both appear
-                common = set(state_images[i].screenshot_ids) & set(state_images[j].screenshot_ids)
+                common = set(state_images[i].screenshot_ids) & set(
+                    state_images[j].screenshot_ids
+                )
                 cooccurrence[i, j] = len(common)
                 cooccurrence[j, i] = len(common)
 
         # Normalize by total screenshots
-        cooccurrence = (cooccurrence / len(screenshots)).astype(np.float64).reshape((n, n))
+        cooccurrence = (
+            (cooccurrence / len(screenshots)).astype(np.float64).reshape((n, n))
+        )
 
         # Group StateImages that ALWAYS appear together (when one appears, all appear)
         grouped = []
@@ -76,7 +82,9 @@ class CooccurrenceAnalyzer:
             state_image_ids = [state_images[idx].id for idx in group_indices]
 
             # Find screenshots where ALL state images appear together (intersection)
-            screenshot_sets = [set(state_images[idx].screenshot_ids) for idx in group_indices]
+            screenshot_sets = [
+                set(state_images[idx].screenshot_ids) for idx in group_indices
+            ]
             # Since we grouped images that appear in exactly the same screenshots,
             # all sets should be identical, so intersection equals any individual set
             if screenshot_sets:

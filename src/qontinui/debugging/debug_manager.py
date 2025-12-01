@@ -256,10 +256,14 @@ class DebugManager:
 
                 # Check breakpoints
                 ctx_dict = context.to_dict()
-                should_break, triggered = self._breakpoint_manager.check_breakpoint(ctx_dict)
+                should_break, triggered = self._breakpoint_manager.check_breakpoint(
+                    ctx_dict
+                )
 
                 if should_break and triggered:
-                    logger.info(f"Breakpoint hit: {', '.join(bp.type.value for bp in triggered)}")
+                    logger.info(
+                        f"Breakpoint hit: {', '.join(bp.type.value for bp in triggered)}"
+                    )
                     session.pause()
 
             # Record action start
@@ -328,7 +332,9 @@ class DebugManager:
                 )
 
                 match_count = (
-                    len(context.result.match_list) if hasattr(context.result, "match_list") else 0
+                    len(context.result.match_list)
+                    if hasattr(context.result, "match_list")
+                    else 0
                 )
 
                 self._execution_recorder.record_action_complete(
@@ -392,7 +398,9 @@ class DebugManager:
             return {
                 "enabled": self._enabled,
                 "sessions": len(self._sessions),
-                "active_session": self._active_session_id[:8] if self._active_session_id else None,
+                "active_session": (
+                    self._active_session_id[:8] if self._active_session_id else None
+                ),
                 "breakpoints": self._breakpoint_manager.get_statistics(),
                 "execution": self._execution_recorder.get_statistics(),
             }

@@ -230,7 +230,9 @@ class StateBuilder:
 
         # 1. Generate state name
         if state_name is None:
-            state_name = self._generate_state_name(screenshot_sequence, transitions_to_state)
+            state_name = self._generate_state_name(
+                screenshot_sequence, transitions_to_state
+            )
 
         # 2. Identify StateImages (persistent visual elements)
         state_images = self._identify_state_images(screenshot_sequence)
@@ -351,7 +353,9 @@ class StateBuilder:
             # Create Pattern from image data
             import numpy as np
 
-            mask = np.ones(img_data.shape[:2], dtype=np.uint8) * 255  # Default full mask
+            mask = (
+                np.ones(img_data.shape[:2], dtype=np.uint8) * 255
+            )  # Default full mask
             pattern = Pattern(id=name, name=name, pixel_data=img_data, mask=mask)  # type: ignore[call-arg]
             pattern._image_data = img_data  # type: ignore[attr-defined]  # Store raw data
 
@@ -404,7 +408,9 @@ class StateBuilder:
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
         # Find contours
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -414,7 +420,9 @@ class StateBuilder:
                 continue
 
             # Check if this region is consistent across all screenshots
-            consistency_score = self._check_region_consistency(screenshots, (x, y, w, h))
+            consistency_score = self._check_region_consistency(
+                screenshots, (x, y, w, h)
+            )
 
             if consistency_score >= threshold:
                 regions.append(
@@ -505,7 +513,9 @@ class StateBuilder:
 
         return "element"
 
-    def _identify_state_regions(self, screenshots: list[np.ndarray]) -> list[StateRegion]:
+    def _identify_state_regions(
+        self, screenshots: list[np.ndarray]
+    ) -> list[StateRegion]:
         """Identify StateRegions - functional areas like panels, grids, or lists.
 
         StateRegions represent interactive or significant areas within a state.
@@ -552,7 +562,9 @@ class StateBuilder:
 
         return regions
 
-    def _generate_region_name(self, region_info: dict[str, Any], screenshot: np.ndarray) -> str:
+    def _generate_region_name(
+        self, region_info: dict[str, Any], screenshot: np.ndarray
+    ) -> str:
         """Generate name for a region.
 
         Tries OCR first, falls back to type + position.
@@ -611,7 +623,9 @@ class StateBuilder:
 
         for target_state, trans_list in by_target.items():
             # Extract click points
-            click_points = [t.click_point for t in trans_list if t.click_point is not None]
+            click_points = [
+                t.click_point for t in trans_list if t.click_point is not None
+            ]
 
             if not click_points:
                 continue
@@ -625,7 +639,9 @@ class StateBuilder:
 
             # Create Location and StateLocation
             loc = Location(x=int(centroid[0]), y=int(centroid[1]))
-            state_location = StateLocation(location=loc, name=f"click_to_{target_state}")
+            state_location = StateLocation(
+                location=loc, name=f"click_to_{target_state}"
+            )
             state_location.metadata["target_state"] = target_state
             state_location.metadata["confidence"] = float(consistency)
             state_location.metadata["sample_size"] = len(click_points)
@@ -712,7 +728,9 @@ class FallbackElementIdentifier:
 
         # Find contours
         edges = cv2.Canny(gray, 50, 150)
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)

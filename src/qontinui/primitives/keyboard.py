@@ -147,7 +147,9 @@ class TypeText(Action):
     """
 
     def __init__(
-        self, config: TypeOptions | None = None, pure_actions: "PureActions | None" = None
+        self,
+        config: TypeOptions | None = None,
+        pure_actions: "PureActions | None" = None,
     ) -> None:
         """Initialize with optional TypeOptions and PureActions.
 

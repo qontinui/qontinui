@@ -46,7 +46,9 @@ class FindTextOrchestrator:
     # OCR cache
     _ocr_cache: dict[str, list[OCRResult]] = field(default_factory=dict)
 
-    def find(self, object_collection: ObjectCollection, options: TextFindOptions) -> list[Match]:
+    def find(
+        self, object_collection: ObjectCollection, options: TextFindOptions
+    ) -> list[Match]:
         """Find text using OCR and matching.
 
         Args:
@@ -94,7 +96,10 @@ class FindTextOrchestrator:
 
                 # Perform OCR
                 results = ocr_engine.extract_text(
-                    processed_image, region, options.language, options.confidence_threshold
+                    processed_image,
+                    region,
+                    options.language,
+                    options.confidence_threshold,
                 )
                 ocr_results.extend(results)
 
@@ -105,7 +110,9 @@ class FindTextOrchestrator:
         # Match text against OCR results
         matches = []
         for search_text in search_texts:
-            text_matches = self._match_text(search_text, ocr_results, text_matcher, options)
+            text_matches = self._match_text(
+                search_text, ocr_results, text_matcher, options
+            )
             matches.extend(text_matches)
 
             # Early termination for FIRST search
@@ -234,7 +241,9 @@ class FindTextOrchestrator:
             return RegexMatcher(case_sensitive, ignore_whitespace)
 
         elif options.match_type == TextMatchType.FUZZY:
-            return FuzzyMatcher(case_sensitive, ignore_whitespace, options.fuzzy_threshold)
+            return FuzzyMatcher(
+                case_sensitive, ignore_whitespace, options.fuzzy_threshold
+            )
 
         # Default to contains matcher
         return ContainsMatcher(case_sensitive, ignore_whitespace)

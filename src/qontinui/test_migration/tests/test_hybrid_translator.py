@@ -5,7 +5,12 @@ Unit tests for HybridTestTranslator.
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from qontinui.test_migration.core.models import MockUsage, TestFile, TestMethod, TestType
+from qontinui.test_migration.core.models import (
+    MockUsage,
+    TestFile,
+    TestMethod,
+    TestType,
+)
 from qontinui.test_migration.execution.hybrid_test_translator import (
     HybridTestTranslator,
     TranslationResult,
@@ -95,7 +100,9 @@ class TestHybridTestTranslator:
         """Test utility translation failure handling."""
         mock_time.side_effect = [0.0, 0.1]
 
-        test_file = TestFile(path=Path("test.java"), test_type=TestType.UNIT, class_name="Test")
+        test_file = TestFile(
+            path=Path("test.java"), test_type=TestType.UNIT, class_name="Test"
+        )
 
         # Mock utility translator to fail
         with patch.object(
@@ -116,7 +123,9 @@ class TestHybridTestTranslator:
         mock_time.side_effect = [0.0, 0.2]
 
         test_file = TestFile(
-            path=Path("ExampleTest.java"), test_type=TestType.UNIT, class_name="ExampleTest"
+            path=Path("ExampleTest.java"),
+            test_type=TestType.UNIT,
+            class_name="ExampleTest",
         )
 
         result = self.translator._try_llm_translation(test_file)
@@ -144,23 +153,33 @@ class TestSimple:
         assert True
 """
 
-        confidence = self.translator._calculate_utility_confidence(test_file, content, [])
+        confidence = self.translator._calculate_utility_confidence(
+            test_file, content, []
+        )
         assert confidence > 0.5
 
     def test_calculate_utility_confidence_with_errors(self):
         """Test confidence calculation with errors."""
-        test_file = TestFile(path=Path("test.java"), test_type=TestType.UNIT, class_name="Test")
+        test_file = TestFile(
+            path=Path("test.java"), test_type=TestType.UNIT, class_name="Test"
+        )
 
-        confidence = self.translator._calculate_utility_confidence(test_file, "", ["error"])
+        confidence = self.translator._calculate_utility_confidence(
+            test_file, "", ["error"]
+        )
         assert confidence == 0.0
 
     def test_calculate_utility_confidence_complex(self):
         """Test confidence calculation for complex test."""
         # Create complex test with many methods and mocks
         methods = [
-            TestMethod(name=f"testMethod{i}", body="// complex logic\n" * 20) for i in range(15)
+            TestMethod(name=f"testMethod{i}", body="// complex logic\n" * 20)
+            for i in range(15)
         ]
-        mocks = [MockUsage(mock_type="spring_mock", mock_class=f"Service{i}") for i in range(5)]
+        mocks = [
+            MockUsage(mock_type="spring_mock", mock_class=f"Service{i}")
+            for i in range(5)
+        ]
 
         test_file = TestFile(
             path=Path("ComplexTest.java"),
@@ -171,7 +190,9 @@ class TestSimple:
         )
 
         content = "import pytest\nclass TestComplex: pass"
-        confidence = self.translator._calculate_utility_confidence(test_file, content, [])
+        confidence = self.translator._calculate_utility_confidence(
+            test_file, content, []
+        )
         assert confidence < 0.8  # Should be lower for complex test
 
     def test_translate_test_file_utility_success(self):
@@ -193,9 +214,13 @@ class TestSimple:
         """Test LLM fallback when utility confidence is low."""
         # Create a complex test that should trigger LLM fallback
         methods = [
-            TestMethod(name=f"testMethod{i}", body="// complex logic\n" * 25) for i in range(12)
+            TestMethod(name=f"testMethod{i}", body="// complex logic\n" * 25)
+            for i in range(12)
         ]
-        mocks = [MockUsage(mock_type="spring_mock", mock_class=f"Service{i}") for i in range(6)]
+        mocks = [
+            MockUsage(mock_type="spring_mock", mock_class=f"Service{i}")
+            for i in range(6)
+        ]
 
         test_file = TestFile(
             path=Path("ComplexTest.java"),
@@ -274,12 +299,19 @@ class TestSimple:
         )
 
         llm_result = TranslationResult(
-            content="poor llm result", method="llm", confidence=0.5, errors=["some error"]
+            content="poor llm result",
+            method="llm",
+            confidence=0.5,
+            errors=["some error"],
         )
 
-        test_file = TestFile(path=Path("test.java"), test_type=TestType.UNIT, class_name="Test")
+        test_file = TestFile(
+            path=Path("test.java"), test_type=TestType.UNIT, class_name="Test"
+        )
 
-        result = self.translator._create_hybrid_translation(utility_result, llm_result, test_file)
+        result = self.translator._create_hybrid_translation(
+            utility_result, llm_result, test_file
+        )
 
         assert result.content == "good utility result"
         assert result.confidence == 0.9
@@ -287,16 +319,23 @@ class TestSimple:
     def test_create_hybrid_translation_llm_better(self):
         """Test hybrid translation when LLM result is better."""
         utility_result = TranslationResult(
-            content="poor utility result", method="utility", confidence=0.3, errors=["error"]
+            content="poor utility result",
+            method="utility",
+            confidence=0.3,
+            errors=["error"],
         )
 
         llm_result = TranslationResult(
             content="good llm result", method="llm", confidence=0.8, errors=[]
         )
 
-        test_file = TestFile(path=Path("test.java"), test_type=TestType.UNIT, class_name="Test")
+        test_file = TestFile(
+            path=Path("test.java"), test_type=TestType.UNIT, class_name="Test"
+        )
 
-        result = self.translator._create_hybrid_translation(utility_result, llm_result, test_file)
+        result = self.translator._create_hybrid_translation(
+            utility_result, llm_result, test_file
+        )
 
         assert result.content == "good llm result"
         assert result.confidence == 0.8
@@ -318,7 +357,9 @@ class TestSimple:
             test_methods=[TestMethod(name="testMethod")],
         )
 
-        result = self.translator._create_hybrid_translation(utility_result, llm_result, test_file)
+        result = self.translator._create_hybrid_translation(
+            utility_result, llm_result, test_file
+        )
 
         assert result.method == "hybrid_fallback"
         assert result.confidence == 0.3
@@ -392,7 +433,9 @@ class TestSimple:
     def test_reset_stats(self):
         """Test resetting translation statistics."""
         # Perform a translation to generate stats
-        test_file = TestFile(path=Path("test.java"), test_type=TestType.UNIT, class_name="Test")
+        test_file = TestFile(
+            path=Path("test.java"), test_type=TestType.UNIT, class_name="Test"
+        )
         self.translator.translate_test_file(test_file)
 
         # Verify stats exist
@@ -413,14 +456,18 @@ class TestSimple:
     def test_translation_with_exception_handling(self):
         """Test that exceptions are handled gracefully."""
         test_file = TestFile(
-            path=Path("ProblematicTest.java"), test_type=TestType.UNIT, class_name="ProblematicTest"
+            path=Path("ProblematicTest.java"),
+            test_type=TestType.UNIT,
+            class_name="ProblematicTest",
         )
 
         # Mock both translators to fail
         with patch.object(
             self.translator.utility_translator, "generate_python_test_file"
         ) as mock_utility:
-            with patch.object(self.translator.llm_translator, "translate_test_file") as mock_llm:
+            with patch.object(
+                self.translator.llm_translator, "translate_test_file"
+            ) as mock_llm:
                 mock_utility.side_effect = Exception("Utility failed")
                 mock_llm.side_effect = Exception("LLM failed")
 

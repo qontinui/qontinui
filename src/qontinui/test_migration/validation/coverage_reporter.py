@@ -55,7 +55,9 @@ class CoverageReporter:
                 {
                     "java_test_path": str(mapping.java_test_path),
                     "python_test_path": (
-                        str(mapping.python_test_path) if mapping.python_test_path else None
+                        str(mapping.python_test_path)
+                        if mapping.python_test_path
+                        else None
                     ),
                     "java_class_name": mapping.java_class_name,
                     "python_class_name": mapping.python_class_name,
@@ -63,7 +65,9 @@ class CoverageReporter:
                     "test_category": mapping.test_category.value,
                     "migration_status": mapping.migration_status.value,
                     "migration_date": (
-                        mapping.migration_date.isoformat() if mapping.migration_date else None
+                        mapping.migration_date.isoformat()
+                        if mapping.migration_date
+                        else None
                     ),
                     "migration_notes": mapping.migration_notes,
                     "test_methods": mapping.test_methods,
@@ -76,7 +80,9 @@ class CoverageReporter:
         with open(output_path, "w") as f:
             json.dump(mapping_data, f, indent=2)
 
-    def export_progress_report(self, output_path: Path, summary: MigrationSummary) -> None:
+    def export_progress_report(
+        self, output_path: Path, summary: MigrationSummary
+    ) -> None:
         """
         Export migration progress report to JSON file.
 
@@ -107,17 +113,21 @@ class CoverageReporter:
                 "orphaned_python_tests": summary.coverage_metrics.orphaned_python_tests,
             },
             "category_breakdown": {
-                category.value: count for category, count in summary.category_breakdown.items()
+                category.value: count
+                for category, count in summary.category_breakdown.items()
             },
             "status_breakdown": {
-                status.value: count for status, count in summary.status_breakdown.items()
+                status.value: count
+                for status, count in summary.status_breakdown.items()
             },
             "recent_migrations": [
                 {
                     "java_class": mapping.java_class_name,
                     "python_class": mapping.python_class_name,
                     "migration_date": (
-                        mapping.migration_date.isoformat() if mapping.migration_date else None
+                        mapping.migration_date.isoformat()
+                        if mapping.migration_date
+                        else None
                     ),
                     "test_category": mapping.test_category.value,
                 }

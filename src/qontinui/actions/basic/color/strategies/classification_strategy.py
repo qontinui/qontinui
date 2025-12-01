@@ -90,7 +90,9 @@ class ClassificationStrategy(BaseColorStrategy):
 
         for y in range(h):
             for x in range(w):
-                pixel_hsv = HSV(scene_hsv[y, x, 0], scene_hsv[y, x, 1], scene_hsv[y, x, 2])
+                pixel_hsv = HSV(
+                    scene_hsv[y, x, 0], scene_hsv[y, x, 1], scene_hsv[y, x, 2]
+                )
 
                 # Find best matching class
                 best_class = -1
@@ -99,7 +101,9 @@ class ClassificationStrategy(BaseColorStrategy):
                 for class_id, profile in class_profiles.items():
                     if profile.matches(pixel_hsv):
                         # Calculate score based on distance from mean
-                        score = self._profile_calculator.calculate_score(pixel_hsv, profile)
+                        score = self._profile_calculator.calculate_score(
+                            pixel_hsv, profile
+                        )
                         if score > best_score:
                             best_score = score
                             best_class = class_id

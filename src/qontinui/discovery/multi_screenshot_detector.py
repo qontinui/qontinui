@@ -132,7 +132,9 @@ class MultiScreenshotDetector(ABC):
             return np.ones(screenshots[0].shape[:2], dtype=np.float32)
 
         # Convert all to grayscale for comparison
-        gray_screenshots = [MultiScreenshotDetector._to_grayscale(img) for img in screenshots]
+        gray_screenshots = [
+            MultiScreenshotDetector._to_grayscale(img) for img in screenshots
+        ]
 
         # Initialize consistency map
         height, width = gray_screenshots[0].shape
@@ -180,7 +182,9 @@ class MultiScreenshotDetector(ABC):
             raise ValueError("Empty screenshot list provided")
 
         # Convert all to grayscale
-        gray_screenshots = [MultiScreenshotDetector._to_grayscale(img) for img in screenshots]
+        gray_screenshots = [
+            MultiScreenshotDetector._to_grayscale(img) for img in screenshots
+        ]
 
         # Stack into 3D array: (num_screenshots, height, width)
         screenshot_stack = np.stack(gray_screenshots, axis=0).astype(np.float32)
@@ -284,7 +288,9 @@ class MultiScreenshotDetector(ABC):
 
     @staticmethod
     def compute_transition_diff(
-        before: np.ndarray[Any, Any], after: np.ndarray[Any, Any], threshold: float = 30.0
+        before: np.ndarray[Any, Any],
+        after: np.ndarray[Any, Any],
+        threshold: float = 30.0,
     ) -> np.ndarray[Any, Any]:
         """Compute difference mask between two screenshots.
 
@@ -346,7 +352,9 @@ class MultiScreenshotDetector(ABC):
             return {}
 
         # Convert all to grayscale for comparison
-        gray_screenshots = [MultiScreenshotDetector._to_grayscale(img) for img in screenshots]
+        gray_screenshots = [
+            MultiScreenshotDetector._to_grayscale(img) for img in screenshots
+        ]
 
         groups: dict[int, list[int]] = {}
         assigned = [False] * len(screenshots)

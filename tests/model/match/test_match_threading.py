@@ -63,7 +63,9 @@ class TestMatchMetadataThreading:
                     count = metadata.times_acted_on
                     # Should always be non-negative
                     if count < 0:
-                        read_errors.append(f"Reader {reader_id}: Negative count {count}")
+                        read_errors.append(
+                            f"Reader {reader_id}: Negative count {count}"
+                        )
                     time.sleep(0.001)
             except Exception as e:
                 read_errors.append(f"Reader {reader_id}: {e}")
@@ -338,7 +340,9 @@ class TestMatchThreading:
 
                     # Check that region has valid coordinates (not corrupted)
                     if r is None:
-                        errors.append(f"Thread {thread_id} iteration {i}: Got None region")
+                        errors.append(
+                            f"Thread {thread_id} iteration {i}: Got None region"
+                        )
                     elif r.x < 0 or r.y < 0:
                         errors.append(
                             f"Thread {thread_id} iteration {i}: "

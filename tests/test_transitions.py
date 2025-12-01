@@ -171,7 +171,9 @@ def basic_workflow() -> Workflow:
 
 
 @pytest.fixture
-def multi_state_config(basic_states: list[State], basic_workflow: Workflow) -> QontinuiConfig:
+def multi_state_config(
+    basic_states: list[State], basic_workflow: Workflow
+) -> QontinuiConfig:
     """Create config with multiple states and transitions."""
     transitions = [
         # OutgoingTransition with multi-state activation
@@ -223,7 +225,9 @@ def multi_state_config(basic_states: list[State], basic_workflow: Workflow) -> Q
 
 
 @pytest.fixture
-def empty_activate_config(basic_states: list[State], basic_workflow: Workflow) -> QontinuiConfig:
+def empty_activate_config(
+    basic_states: list[State], basic_workflow: Workflow
+) -> QontinuiConfig:
     """Config with empty activate_states list."""
     transitions = [
         OutgoingTransition(
@@ -258,7 +262,9 @@ def state_graph_simple() -> StateGraph:
     # Add states
     for state_name in ["Main", "Processing", "Inventory", "Settings", "Final"]:
         state = StateGraphState(
-            name=state_name, elements=[], metadata={"description": f"{state_name} state"}
+            name=state_name,
+            elements=[],
+            metadata={"description": f"{state_name} state"},
         )
         graph.add_state(state)
 
@@ -317,7 +323,9 @@ def state_graph_complex() -> StateGraph:
     states = ["S1", "S2", "S3", "S4", "S5", "S6", "Goal"]
     for state_name in states:
         state = StateGraphState(
-            name=state_name, elements=[], metadata={"description": f"State {state_name}"}
+            name=state_name,
+            elements=[],
+            metadata={"description": f"State {state_name}"},
         )
         graph.add_state(state)
 
@@ -406,7 +414,9 @@ def test_outgoing_transition_stays_visible_true(multi_state_config: QontinuiConf
     assert "state_final" in executor.active_states
 
 
-def test_outgoing_transition_deactivate_states(basic_states: list[State], basic_workflow: Workflow):
+def test_outgoing_transition_deactivate_states(
+    basic_states: list[State], basic_workflow: Workflow
+):
     """Test OutgoingTransition explicitly deactivates states."""
     transitions = [
         OutgoingTransition(
@@ -491,7 +501,9 @@ def test_incoming_transition_success(multi_state_config: QontinuiConfig):
     assert executor.action_executor.execute_action.called
 
 
-def test_incoming_transition_failure_prevents_activation(multi_state_config: QontinuiConfig):
+def test_incoming_transition_failure_prevents_activation(
+    multi_state_config: QontinuiConfig,
+):
     """Test failed IncomingTransition prevents state activation."""
     executor = StateExecutor(multi_state_config)
     executor.initialize()
@@ -653,7 +665,9 @@ def test_empty_activate_states_only_to_state(empty_activate_config: QontinuiConf
     assert "state_settings" not in executor.active_states
 
 
-def test_no_to_state_only_activate_states(basic_states: list[State], basic_workflow: Workflow):
+def test_no_to_state_only_activate_states(
+    basic_states: list[State], basic_workflow: Workflow
+):
     """Test OutgoingTransition with no to_state, only activate_states."""
     transitions = [
         OutgoingTransition(
@@ -799,13 +813,28 @@ def test_duplicate_transition_prevention():
         graph.add_state(state)
 
     graph.add_transition(
-        Transition(from_state="A", to_state="B", action_type=TransitionType.CLICK, probability=1.0)
+        Transition(
+            from_state="A",
+            to_state="B",
+            action_type=TransitionType.CLICK,
+            probability=1.0,
+        )
     )
     graph.add_transition(
-        Transition(from_state="B", to_state="C", action_type=TransitionType.CLICK, probability=1.0)
+        Transition(
+            from_state="B",
+            to_state="C",
+            action_type=TransitionType.CLICK,
+            probability=1.0,
+        )
     )
     graph.add_transition(
-        Transition(from_state="C", to_state="B", action_type=TransitionType.CLICK, probability=1.0)
+        Transition(
+            from_state="C",
+            to_state="B",
+            action_type=TransitionType.CLICK,
+            probability=1.0,
+        )
     )
 
     traversal = StateTraversal(graph)
@@ -1163,7 +1192,9 @@ def test_pathfinding_with_invalid_states(state_graph_simple: StateGraph):
     traversal = StateTraversal(state_graph_simple)
 
     # Invalid start state
-    result = traversal.find_path("InvalidStart", "Final", TraversalStrategy.BREADTH_FIRST)
+    result = traversal.find_path(
+        "InvalidStart", "Final", TraversalStrategy.BREADTH_FIRST
+    )
     assert result is None
 
     # Invalid goal state

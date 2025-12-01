@@ -158,7 +158,9 @@ class AssertionConverter:
         for char in params_str:
             if quote_char:
                 current_param += char
-                if char == quote_char and (not current_param.endswith("\\" + quote_char)):
+                if char == quote_char and (
+                    not current_param.endswith("\\" + quote_char)
+                ):
                     quote_char = None
             elif char in ['"', "'"]:
                 quote_char = char
@@ -232,7 +234,9 @@ class AssertionConverter:
 
     def _convert_assert_not_equals(self, assertion_line: str) -> str:
         """Convert assertNotEquals to pytest assertion."""
-        params, message = self._extract_assertion_params(assertion_line, "assertNotEquals")
+        params, message = self._extract_assertion_params(
+            assertion_line, "assertNotEquals"
+        )
 
         if len(params) < 2:
             return assertion_line
@@ -261,7 +265,9 @@ class AssertionConverter:
 
     def _convert_assert_not_null(self, assertion_line: str) -> str:
         """Convert assertNotNull to pytest assertion."""
-        params, message = self._extract_assertion_params(assertion_line, "assertNotNull")
+        params, message = self._extract_assertion_params(
+            assertion_line, "assertNotNull"
+        )
 
         if not params:
             return assertion_line
@@ -290,7 +296,9 @@ class AssertionConverter:
 
     def _convert_assert_not_same(self, assertion_line: str) -> str:
         """Convert assertNotSame to pytest assertion."""
-        params, message = self._extract_assertion_params(assertion_line, "assertNotSame")
+        params, message = self._extract_assertion_params(
+            assertion_line, "assertNotSame"
+        )
 
         if len(params) < 2:
             return assertion_line
@@ -425,7 +433,9 @@ class AssertionConverter:
 
     def _convert_assert_does_not_throw(self, assertion_line: str) -> str:
         """Convert assertDoesNotThrow to simple execution."""
-        params, message = self._extract_assertion_params(assertion_line, "assertDoesNotThrow")
+        params, message = self._extract_assertion_params(
+            assertion_line, "assertDoesNotThrow"
+        )
 
         if not params:
             return assertion_line
@@ -441,7 +451,9 @@ class AssertionConverter:
 
     def _convert_assert_array_equals(self, assertion_line: str) -> str:
         """Convert assertArrayEquals to pytest assertion."""
-        params, message = self._extract_assertion_params(assertion_line, "assertArrayEquals")
+        params, message = self._extract_assertion_params(
+            assertion_line, "assertArrayEquals"
+        )
 
         if len(params) < 2:
             return assertion_line
@@ -456,7 +468,9 @@ class AssertionConverter:
 
     def _convert_assert_iterable_equals(self, assertion_line: str) -> str:
         """Convert assertIterableEquals to pytest assertion."""
-        params, message = self._extract_assertion_params(assertion_line, "assertIterableEquals")
+        params, message = self._extract_assertion_params(
+            assertion_line, "assertIterableEquals"
+        )
 
         if len(params) < 2:
             return assertion_line
@@ -471,7 +485,9 @@ class AssertionConverter:
 
     def _convert_assert_lines_match(self, assertion_line: str) -> str:
         """Convert assertLinesMatch to pytest assertion."""
-        params, message = self._extract_assertion_params(assertion_line, "assertLinesMatch")
+        params, message = self._extract_assertion_params(
+            assertion_line, "assertLinesMatch"
+        )
 
         if len(params) < 2:
             return assertion_line
@@ -483,13 +499,13 @@ class AssertionConverter:
         if message:
             return f"assert {actual_lines} == {expected_lines}, {message}  # TODO: Implement line matching logic"
         else:
-            return (
-                f"assert {actual_lines} == {expected_lines}  # TODO: Implement line matching logic"
-            )
+            return f"assert {actual_lines} == {expected_lines}  # TODO: Implement line matching logic"
 
     def _convert_assert_timeout(self, assertion_line: str) -> str:
         """Convert assertTimeout to pytest timeout."""
-        params, message = self._extract_assertion_params(assertion_line, "assertTimeout")
+        params, message = self._extract_assertion_params(
+            assertion_line, "assertTimeout"
+        )
 
         if len(params) < 2:
             return assertion_line
@@ -548,7 +564,9 @@ class AssertionConverter:
         custom_assertions = []
 
         # Look for methods that start with 'assert' but aren't standard JUnit
-        method_pattern = r"(?:private|protected|public)?\s*(?:static)?\s*void\s+(assert\w+)\s*\("
+        method_pattern = (
+            r"(?:private|protected|public)?\s*(?:static)?\s*void\s+(assert\w+)\s*\("
+        )
         matches = re.findall(method_pattern, test_code)
 
         for method_name in matches:

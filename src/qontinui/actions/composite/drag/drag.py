@@ -3,12 +3,19 @@
 Implements drag-and-drop functionality using action chaining.
 """
 
-from ...action_chain_options import ActionChainOptions, ActionChainOptionsBuilder, ChainingStrategy
+from ...action_chain_options import (
+    ActionChainOptions,
+    ActionChainOptionsBuilder,
+    ChainingStrategy,
+)
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
 from ...action_type import ActionType
-from ...basic.find.pattern_find_options import PatternFindOptions, PatternFindOptionsBuilder
+from ...basic.find.pattern_find_options import (
+    PatternFindOptions,
+    PatternFindOptionsBuilder,
+)
 from ...basic.mouse.mouse_down_options import MouseDownOptions, MouseDownOptionsBuilder
 from ...basic.mouse.mouse_move_options import MouseMoveOptions, MouseMoveOptionsBuilder
 from ...basic.mouse.mouse_press_options import MousePressOptions
@@ -61,7 +68,9 @@ class Drag(ActionInterface):
         """
         return ActionType.DRAG
 
-    def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, action_result: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the drag operation using action chaining.
 
         Creates a chain of actions that:
@@ -97,7 +106,9 @@ class Drag(ActionInterface):
         target_collection = object_collections[1]
 
         # Build the action chain using fluent API
-        chain_options = self._build_action_chain(drag_options, source_collection, target_collection)
+        chain_options = self._build_action_chain(
+            drag_options, source_collection, target_collection
+        )
 
         # Execute the chain
         chain_result = self.action_chain_executor.execute_chain(
@@ -139,7 +150,9 @@ class Drag(ActionInterface):
         )
 
         # Step 4: Mouse down
-        mouse_down_options = self._create_mouse_down_options(drag_options.get_mouse_down_options())
+        mouse_down_options = self._create_mouse_down_options(
+            drag_options.get_mouse_down_options()
+        )
 
         # Step 5: Move to target
         move_to_target_options = self._create_move_options(
@@ -147,7 +160,9 @@ class Drag(ActionInterface):
         )
 
         # Step 6: Mouse up
-        mouse_up_options = self._create_mouse_up_options(drag_options.get_mouse_up_options())
+        mouse_up_options = self._create_mouse_up_options(
+            drag_options.get_mouse_up_options()
+        )
 
         # Build the chain using fluent API
         chain_options = (
@@ -200,7 +215,9 @@ class Drag(ActionInterface):
         # Create default move options
         return MouseMoveOptionsBuilder().build()
 
-    def _create_mouse_down_options(self, base_options: MousePressOptions) -> MouseDownOptions:
+    def _create_mouse_down_options(
+        self, base_options: MousePressOptions
+    ) -> MouseDownOptions:
         """Create mouse down options.
 
         Args:
@@ -216,7 +233,9 @@ class Drag(ActionInterface):
         # Create default mouse down options
         return MouseDownOptionsBuilder().build()
 
-    def _create_mouse_up_options(self, base_options: MousePressOptions) -> MouseUpOptions:
+    def _create_mouse_up_options(
+        self, base_options: MousePressOptions
+    ) -> MouseUpOptions:
         """Create mouse up options.
 
         Args:

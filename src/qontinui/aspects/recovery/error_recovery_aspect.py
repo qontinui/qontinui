@@ -184,7 +184,9 @@ class DefaultRecoveryHandler(RecoveryHandler):
         Raises:
             The original exception
         """
-        logger.error(f"Unrecoverable error in {context.get('method', 'unknown')}: {exception}")
+        logger.error(
+            f"Unrecoverable error in {context.get('method', 'unknown')}: {exception}"
+        )
         raise
 
 
@@ -201,7 +203,9 @@ class ErrorRecoveryAspect:
     - Error rate tracking
     """
 
-    def __init__(self, enabled: bool = True, default_policy: RetryPolicy | None = None) -> None:
+    def __init__(
+        self, enabled: bool = True, default_policy: RetryPolicy | None = None
+    ) -> None:
         """Initialize the aspect.
 
         Args:
@@ -225,7 +229,9 @@ class ErrorRecoveryAspect:
         self._circuit_breakers: dict[str, CircuitBreaker] = {}
 
     def with_recovery(
-        self, policy: RetryPolicy | None = None, fallback: Callable[..., Any] | None = None
+        self,
+        policy: RetryPolicy | None = None,
+        fallback: Callable[..., Any] | None = None,
     ) -> Callable[..., Any]:
         """Decorator to add error recovery to a method.
 
@@ -250,7 +256,9 @@ class ErrorRecoveryAspect:
                     return func(*args, **kwargs)
 
                 # Get applicable policy
-                retry_policy = policy or self._method_policies.get(method_name, self.default_policy)
+                retry_policy = policy or self._method_policies.get(
+                    method_name, self.default_policy
+                )
 
                 # Check circuit breaker
                 if method_name in self._circuit_breakers:
@@ -303,7 +311,9 @@ class ErrorRecoveryAspect:
                         last_exception = e
 
                         # Update error count
-                        self._error_counts[method_name] = self._error_counts.get(method_name, 0) + 1
+                        self._error_counts[method_name] = (
+                            self._error_counts.get(method_name, 0) + 1
+                        )
 
                         # Check if should retry
                         if not retry_policy.should_retry(e):
@@ -356,7 +366,9 @@ class ErrorRecoveryAspect:
                                     AttributeError,
                                 ) as fallback_error:
                                     # Fallback failed, will re-raise original exception below
-                                    logger.error(f"Fallback also failed: {fallback_error}")
+                                    logger.error(
+                                        f"Fallback also failed: {fallback_error}"
+                                    )
 
                             # Re-raise original exception
                             raise
@@ -383,7 +395,10 @@ class ErrorRecoveryAspect:
         self._handlers.insert(0, handler)  # Insert at beginning for priority
 
     def enable_circuit_breaker(
-        self, method_name: str, failure_threshold: int = 5, reset_timeout_seconds: int = 60
+        self,
+        method_name: str,
+        failure_threshold: int = 5,
+        reset_timeout_seconds: int = 60,
     ) -> None:
         """Enable circuit breaker for a method.
 
@@ -404,7 +419,9 @@ class ErrorRecoveryAspect:
         """
         stats = {}
 
-        for method in set(self._error_counts.keys()) | set(self._recovery_counts.keys()):
+        for method in set(self._error_counts.keys()) | set(
+            self._recovery_counts.keys()
+        ):
             stats[method] = {
                 "errors": self._error_counts.get(method, 0),
                 "recoveries": self._recovery_counts.get(method, 0),

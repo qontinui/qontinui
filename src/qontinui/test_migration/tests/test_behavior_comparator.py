@@ -19,7 +19,9 @@ class TestBehaviorComparator:
     def setup_method(self):
         """Set up test fixtures."""
         self.comparator = BehaviorComparatorImpl()
-        self.isolation_config = TestIsolationConfig(timeout_seconds=10, use_separate_processes=True)
+        self.isolation_config = TestIsolationConfig(
+            timeout_seconds=10, use_separate_processes=True
+        )
 
     def test_initialization(self):
         """Test that comparator initializes properly."""
@@ -162,7 +164,9 @@ class TestBehaviorComparator:
     def test_execute_java_test_mock(self):
         """Test Java test execution (mocked implementation)."""
         java_test = TestFile(
-            path=Path("TestExample.java"), test_type=TestType.UNIT, class_name="TestExample"
+            path=Path("TestExample.java"),
+            test_type=TestType.UNIT,
+            class_name="TestExample",
         )
 
         result = self.comparator._execute_java_test(java_test)
@@ -174,7 +178,9 @@ class TestBehaviorComparator:
     def test_compare_behavior_with_mocked_execution(self):
         """Test behavior comparison with mocked test execution."""
         java_test = TestFile(
-            path=Path("TestExample.java"), test_type=TestType.UNIT, class_name="TestExample"
+            path=Path("TestExample.java"),
+            test_type=TestType.UNIT,
+            class_name="TestExample",
         )
         python_test = Path("test_example.py")
 
@@ -208,7 +214,9 @@ class TestBehaviorComparator:
     def test_compare_behavior_detailed_success(self):
         """Test detailed behavior comparison with successful tests."""
         java_test = TestFile(
-            path=Path("TestExample.java"), test_type=TestType.UNIT, class_name="TestExample"
+            path=Path("TestExample.java"),
+            test_type=TestType.UNIT,
+            class_name="TestExample",
         )
         python_test = Path("test_example.py")
 
@@ -245,7 +253,9 @@ class TestBehaviorComparator:
     def test_compare_behavior_detailed_output_mismatch(self):
         """Test detailed behavior comparison with output mismatch."""
         java_test = TestFile(
-            path=Path("TestExample.java"), test_type=TestType.UNIT, class_name="TestExample"
+            path=Path("TestExample.java"),
+            test_type=TestType.UNIT,
+            class_name="TestExample",
         )
         python_test = Path("test_example.py")
 
@@ -283,7 +293,9 @@ class TestBehaviorComparator:
     def test_compare_behavior_detailed_status_mismatch(self):
         """Test detailed behavior comparison with pass/fail status mismatch."""
         java_test = TestFile(
-            path=Path("TestExample.java"), test_type=TestType.UNIT, class_name="TestExample"
+            path=Path("TestExample.java"),
+            test_type=TestType.UNIT,
+            class_name="TestExample",
         )
         python_test = Path("test_example.py")
 
@@ -411,8 +423,12 @@ AssertionError"""
 
     def test_compare_error_messages(self):
         """Test error message comparison."""
-        error1 = 'File "test.py", line 10, in test_function\nAssertionError: Test failed'
-        error2 = 'File "other.py", line 15, in other_function\nAssertionError: Test failed'
+        error1 = (
+            'File "test.py", line 10, in test_function\nAssertionError: Test failed'
+        )
+        error2 = (
+            'File "other.py", line 15, in other_function\nAssertionError: Test failed'
+        )
 
         similarity = self.comparator._compare_error_messages(error1, error2)
 
@@ -481,7 +497,9 @@ AssertionError"""
     def test_test_isolation_config_dataclass(self):
         """Test TestIsolationConfig dataclass."""
         config = TestIsolationConfig(
-            use_separate_processes=False, timeout_seconds=60, working_directory=Path("/tmp")
+            use_separate_processes=False,
+            timeout_seconds=60,
+            working_directory=Path("/tmp"),
         )
 
         assert config.use_separate_processes is False

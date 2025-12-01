@@ -47,9 +47,13 @@ class MouseDownOptionsBuilder(ActionConfigBuilder):
         if original:
             self.press_options = original.press_options
         else:
-            self.press_options = MousePressOptions.builder().set_button(MouseButton.LEFT).build()
+            self.press_options = (
+                MousePressOptions.builder().set_button(MouseButton.LEFT).build()
+            )
 
-    def set_press_options(self, press_options: MousePressOptions) -> "MouseDownOptionsBuilder":
+    def set_press_options(
+        self, press_options: MousePressOptions
+    ) -> "MouseDownOptionsBuilder":
         """Set the mouse press options.
 
         Args:

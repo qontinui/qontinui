@@ -13,7 +13,12 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, cast
 
-from .schedule_config import CheckMode, ExecutionRecord, ScheduleConfig, StateCheckResult
+from .schedule_config import (
+    CheckMode,
+    ExecutionRecord,
+    ScheduleConfig,
+    StateCheckResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +149,9 @@ class StateAwareScheduler:
                             break
 
                     # Perform state check (async)
-                    state_check_result = asyncio.run(self._perform_state_check_async(schedule))
+                    state_check_result = asyncio.run(
+                        self._perform_state_check_async(schedule)
+                    )
                     record.state_checks.append(state_check_result)
 
                     if not state_check_result.check_passed:
@@ -167,7 +174,9 @@ class StateAwareScheduler:
                     try:
                         success = task()
                         if not success:
-                            logger.warning(f"Task for schedule '{schedule.name}' returned False")
+                            logger.warning(
+                                f"Task for schedule '{schedule.name}' returned False"
+                            )
                             record.status = "failed"
                             record.error_message = "Task returned False"
                             record.end_time = datetime.now()
@@ -190,7 +199,9 @@ class StateAwareScheduler:
                         break
 
             except Exception as e:
-                logger.error(f"Unexpected error in scheduled task '{schedule.name}': {e}")
+                logger.error(
+                    f"Unexpected error in scheduled task '{schedule.name}': {e}"
+                )
                 record.status = "failed"
                 record.error_message = f"Unexpected error: {e}"
                 record.end_time = datetime.now()
@@ -209,7 +220,9 @@ class StateAwareScheduler:
 
         return future
 
-    async def _perform_state_check_async(self, schedule: ScheduleConfig) -> StateCheckResult:
+    async def _perform_state_check_async(
+        self, schedule: ScheduleConfig
+    ) -> StateCheckResult:
         """Async version of state checking with parallel state detection.
 
         Uses parallel state detection for significantly faster checks when
@@ -236,7 +249,9 @@ class StateAwareScheduler:
         else:
             # Only check states that are currently inactive (CHECK_INACTIVE_ONLY)
             states_to_check = [
-                state for state in schedule.required_states if state not in active_state_set
+                state
+                for state in schedule.required_states
+                if state not in active_state_set
             ]
             logger.debug(
                 f"Checking only inactive states: {states_to_check} (active states: {active_states})"
@@ -244,7 +259,9 @@ class StateAwareScheduler:
 
         # If all required states are already active and we're in CHECK_INACTIVE_ONLY mode
         if not states_to_check and schedule.check_mode == CheckMode.CHECK_INACTIVE_ONLY:
-            logger.debug("All required states are already active, skipping state detection")
+            logger.debug(
+                "All required states are already active, skipping state detection"
+            )
             return StateCheckResult(
                 timestamp=timestamp,
                 required_states=schedule.required_states,
@@ -258,7 +275,9 @@ class StateAwareScheduler:
         all_required_states_active = True
         if states_to_check and self.state_detector:
             # Use parallel async state detection
-            found_states = await self.state_detector.find_states_parallel_async(states_to_check)
+            found_states = await self.state_detector.find_states_parallel_async(
+                states_to_check
+            )
 
             # Check if all required states were found
             for state_name in states_to_check:
@@ -279,7 +298,9 @@ class StateAwareScheduler:
         )
         if forbidden_states_active:
             forbidden_found = [
-                state for state in schedule.forbidden_states if state in active_state_set
+                state
+                for state in schedule.forbidden_states
+                if state in active_state_set
             ]
             logger.warning(f"Forbidden states are active: {forbidden_found}")
             return StateCheckResult(
@@ -347,7 +368,9 @@ class StateAwareScheduler:
             return cast(list[str], self.state_memory.get_active_state_names())
         return []
 
-    def get_execution_records(self, schedule_id: str | None = None) -> list[ExecutionRecord]:
+    def get_execution_records(
+        self, schedule_id: str | None = None
+    ) -> list[ExecutionRecord]:
         """Get execution records.
 
         Args:

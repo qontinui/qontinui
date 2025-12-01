@@ -23,7 +23,10 @@ class RegionExtractor:
 
     @staticmethod
     def extract_from_mask(
-        mask: np.ndarray[Any, Any], min_size: int = 0, default_score: float = 0.8, name: str = ""
+        mask: np.ndarray[Any, Any],
+        min_size: int = 0,
+        default_score: float = 0.8,
+        name: str = "",
     ) -> list[Match]:
         """Extract regions from a binary mask.
 
@@ -47,7 +50,9 @@ class RegionExtractor:
             x, y, w, h = cv2.boundingRect(contour)
             if w >= min_size and h >= min_size:
                 region = Region(x, y, w, h)
-                match = Match(score=default_score, target=Location(region=region), name=name)
+                match = Match(
+                    score=default_score, target=Location(region=region), name=name
+                )
                 matches.append(match)
 
         return matches
@@ -77,7 +82,9 @@ class RegionExtractor:
         )
 
     @staticmethod
-    def filter_by_area(matches: list[Match], min_area: int = 1, max_area: int = -1) -> list[Match]:
+    def filter_by_area(
+        matches: list[Match], min_area: int = 1, max_area: int = -1
+    ) -> list[Match]:
         """Filter matches by area constraints.
 
         Args:

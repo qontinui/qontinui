@@ -63,7 +63,9 @@ def get_manager() -> ExecutionManager:
 router = APIRouter(prefix="/api", tags=["history"])
 
 
-@router.get("/workflow/{workflow_id}/history", response_model=list[ExecutionRecordResponse])
+@router.get(
+    "/workflow/{workflow_id}/history", response_model=list[ExecutionRecordResponse]
+)
 async def get_workflow_history(
     workflow_id: str,
     limit: int | None = Query(None, ge=1, le=1000),
@@ -80,7 +82,9 @@ async def get_workflow_history(
         List of execution records
     """
     try:
-        history = await manager.get_execution_history(workflow_id=workflow_id, limit=limit)
+        history = await manager.get_execution_history(
+            workflow_id=workflow_id, limit=limit
+        )
         return [ExecutionRecordResponse(**record) for record in history]
 
     except Exception as e:

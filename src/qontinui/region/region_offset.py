@@ -69,7 +69,9 @@ class RegionOffset:
         Returns:
             Negated offset
         """
-        return RegionOffset(x=-self.x, y=-self.y, width=-self.width, height=-self.height)
+        return RegionOffset(
+            x=-self.x, y=-self.y, width=-self.width, height=-self.height
+        )
 
     def __mul__(self, factor: float) -> "RegionOffset":
         """Scale the offset.

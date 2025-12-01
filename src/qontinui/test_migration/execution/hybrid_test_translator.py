@@ -114,12 +114,16 @@ class HybridTestTranslator(TestTranslator):
                 utility_result.success
                 and utility_result.confidence >= self.utility_confidence_threshold
             ):
-                self.logger.info(f"Utility translation successful for {test_file.class_name}")
+                self.logger.info(
+                    f"Utility translation successful for {test_file.class_name}"
+                )
                 self.stats["utility_success"] += 1
 
                 # Optional: LLM validation of utility result
                 if self.enable_llm_validation:
-                    validated_result = self._validate_with_llm(utility_result, test_file)
+                    validated_result = self._validate_with_llm(
+                        utility_result, test_file
+                    )
                     if validated_result:
                         return validated_result.content
 
@@ -131,20 +135,29 @@ class HybridTestTranslator(TestTranslator):
             )
             llm_result = self._try_llm_translation(test_file)
 
-            if llm_result.success and llm_result.confidence >= self.llm_confidence_threshold:
-                self.logger.info(f"LLM translation successful for {test_file.class_name}")
+            if (
+                llm_result.success
+                and llm_result.confidence >= self.llm_confidence_threshold
+            ):
+                self.logger.info(
+                    f"LLM translation successful for {test_file.class_name}"
+                )
                 self.stats["llm_fallback"] += 1
                 return llm_result.content
 
             # Phase 4: Hybrid approach - combine both results
             self.logger.info(f"Using hybrid approach for {test_file.class_name}")
-            hybrid_result = self._create_hybrid_translation(utility_result, llm_result, test_file)
+            hybrid_result = self._create_hybrid_translation(
+                utility_result, llm_result, test_file
+            )
             self.stats["hybrid_success"] += 1
 
             return hybrid_result.content
 
         except Exception as e:
-            self.logger.error(f"Translation failed for {test_file.class_name}: {str(e)}")
+            self.logger.error(
+                f"Translation failed for {test_file.class_name}: {str(e)}"
+            )
             # Return best effort result
             return self._create_fallback_translation(test_file)
 
@@ -168,7 +181,11 @@ class HybridTestTranslator(TestTranslator):
             utility_result = self.utility_translator.translate_test_method(method_code)
 
             # Simple validation - check if it looks reasonable
-            if utility_result and "def test_" in utility_result and "assert" in utility_result:
+            if (
+                utility_result
+                and "def test_" in utility_result
+                and "assert" in utility_result
+            ):
                 return utility_result
         except Exception as e:
             self.logger.debug(f"Utility method translation failed: {e}")
@@ -178,7 +195,9 @@ class HybridTestTranslator(TestTranslator):
             return self.llm_translator.translate_test_method(method_code)
         except Exception as e:
             self.logger.error(f"LLM method translation failed: {e}")
-            return f"# TODO: Failed to translate method\n# Original: {method_code}\npass"
+            return (
+                f"# TODO: Failed to translate method\n# Original: {method_code}\npass"
+            )
 
     def translate_assertions(self, assertion_code: str) -> str:
         """
@@ -274,10 +293,17 @@ class HybridTestTranslator(TestTranslator):
         # Reduce confidence for complex patterns that utility might miss
         complexity_factors = [
             (len(test_file.test_methods) > 10, 0.1),  # Many methods
-            (test_file.mock_usage and len(test_file.mock_usage) > 3, 0.2),  # Complex mocking
+            (
+                test_file.mock_usage and len(test_file.mock_usage) > 3,
+                0.2,
+            ),  # Complex mocking
             (test_file.test_type == TestType.INTEGRATION, 0.1),  # Integration tests
             (
-                any(len(m.body.split("\n")) > 15 for m in test_file.test_methods if m.body),
+                any(
+                    len(m.body.split("\n")) > 15
+                    for m in test_file.test_methods
+                    if m.body
+                ),
                 0.2,
             ),  # Long methods
         ]
@@ -337,7 +363,9 @@ If improvements are needed, provide the corrected Python code.
             # Extract improved code
             improved_code = self.llm_translator._extract_python_code(response)
             if improved_code and improved_code != utility_result.content:
-                errors = self.llm_translator.validate_translation(improved_code, test_file)
+                errors = self.llm_translator.validate_translation(
+                    improved_code, test_file
+                )
                 if not errors:
                     return TranslationResult(
                         content=improved_code,
@@ -353,7 +381,10 @@ If improvements are needed, provide the corrected Python code.
         return None
 
     def _create_hybrid_translation(
-        self, utility_result: TranslationResult, llm_result: TranslationResult, test_file: TestFile
+        self,
+        utility_result: TranslationResult,
+        llm_result: TranslationResult,
+        test_file: TestFile,
     ) -> TranslationResult:
         """Create a hybrid translation combining both approaches."""
 
@@ -371,7 +402,8 @@ If improvements are needed, provide the corrected Python code.
                 method="hybrid_fallback",
                 confidence=0.3,
                 errors=["Both utility and LLM translation failed"],
-                execution_time=utility_result.execution_time + llm_result.execution_time,
+                execution_time=utility_result.execution_time
+                + llm_result.execution_time,
             )
 
         # Both succeeded - use the result with higher confidence
