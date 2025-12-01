@@ -6,6 +6,7 @@ detected elements and regions.
 
 from dataclasses import dataclass, field
 
+import cv2
 import numpy as np
 
 
@@ -337,6 +338,68 @@ class FeatureIdentifier:
         Returns:
             True if element is visually distinctive
         """
-        # TODO: Implement visual distinctiveness check
-        # Could analyze color, texture, shape uniqueness
-        return False
+        x, y, w, h = element.bounds
+
+        # Validate bounds
+        screen_height, screen_width = screenshot.shape[:2]
+        if x < 0 or y < 0 or x + w > screen_width or y + h > screen_height:
+            return False
+
+        if w <= 0 or h <= 0:
+            return False
+
+        # Extract element region
+        element_region = screenshot[y : y + h, x : x + w]
+
+        if element_region.size == 0:
+            return False
+
+        # Analyze color distinctiveness
+        mean_color = np.mean(element_region, axis=(0, 1))
+        std_color = np.std(element_region, axis=(0, 1))
+
+        # High color variance suggests visual complexity
+        color_variance = np.mean(std_color)
+        is_color_distinctive = color_variance > 30
+
+        # Analyze texture using Laplacian variance (edge content)
+        gray = cv2.cvtColor(element_region, cv2.COLOR_BGR2GRAY)
+        laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+        texture_variance = laplacian.var()
+
+        # High texture variance suggests distinctive patterns
+        is_texture_distinctive = texture_variance > 100
+
+        # Analyze shape using contours
+        edges = cv2.Canny(gray, 50, 150)
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Multiple distinct contours suggest complex shape
+        is_shape_distinctive = len(contours) > 3
+
+        # Check color uniqueness by comparing to surrounding area
+        padding = 10
+        y_start = max(0, y - padding)
+        y_end = min(screen_height, y + h + padding)
+        x_start = max(0, x - padding)
+        x_end = min(screen_width, x + w + padding)
+
+        surrounding = screenshot[y_start:y_end, x_start:x_end]
+        if surrounding.size > element_region.size:
+            surrounding_mean = np.mean(surrounding, axis=(0, 1))
+            color_difference = np.linalg.norm(mean_color - surrounding_mean)
+            is_color_unique = color_difference > 50
+        else:
+            is_color_unique = False
+
+        # Element is distinctive if it meets multiple criteria
+        distinctive_score = sum(
+            [
+                is_color_distinctive,
+                is_texture_distinctive,
+                is_shape_distinctive,
+                is_color_unique,
+            ]
+        )
+
+        return distinctive_score >= 2
