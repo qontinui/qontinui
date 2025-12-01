@@ -60,9 +60,9 @@ def extract_app_routes(app_dir: Path) -> list["RouteDefinition"]:
     Returns:
         List of route definitions
     """
-    from qontinui.extraction.models.static import RouteDefinition
+    from qontinui.extraction.models.static import RouteDefinition, RouteType
 
-    routes = []
+    routes: list[RouteDefinition] = []
 
     if not app_dir.exists():
         return routes
@@ -77,18 +77,26 @@ def extract_app_routes(app_dir: Path) -> list["RouteDefinition"]:
                     parse_dynamic_segments(file_path, app_dir)
                 )
 
+                # Map special file names to RouteType
+                if special_file == "layout":
+                    route_type = RouteType.LAYOUT
+                else:
+                    route_type = RouteType.PAGE
+
                 route = RouteDefinition(
+                    id=f"app_{special_file}_{route_path.replace('/', '_')}",
                     path=route_path,
                     file_path=file_path,
-                    method="GET",
-                    dynamic_segments=dynamic_segments,
-                    is_catch_all=is_catch_all,
-                    is_optional_catch_all=is_optional_catch_all,
-                    route_type=special_file,
-                    is_server_component=True,  # Default in App Router
+                    route_type=route_type,
                     metadata={
                         "router": "app",
                         "relative_path": str(file_path.relative_to(app_dir)),
+                        "special_file": special_file,
+                        "method": "GET",
+                        "dynamic_segments": dynamic_segments,
+                        "is_catch_all": is_catch_all,
+                        "is_optional_catch_all": is_optional_catch_all,
+                        "is_server_component": True,  # Default in App Router
                     },
                 )
                 routes.append(route)
@@ -112,9 +120,9 @@ def extract_server_components(
     Returns:
         List of server component definitions
     """
-    from qontinui.extraction.models.static import ComponentDefinition
+    from qontinui.extraction.models.static import ComponentDefinition, ComponentType
 
-    components = []
+    components: list[ComponentDefinition] = []
 
     if not app_dir.exists():
         return components
@@ -135,13 +143,17 @@ def extract_server_components(
                         component_name = f"{parent.name}_{component_name}"
 
                 component = ComponentDefinition(
+                    id=f"server_{component_name}_{file_path.parent.name}",
                     name=component_name,
                     file_path=file_path,
-                    is_default_export=True,
-                    is_server_component=True,
+                    line_number=1,  # Server components start at line 1
+                    component_type=ComponentType.SERVER,
+                    framework="nextjs",
                     metadata={
                         "router": "app",
                         "type": "server_component",
+                        "is_default_export": True,
+                        "is_server_component": True,
                     },
                 )
                 components.append(component)
@@ -162,8 +174,9 @@ def extract_server_actions(parse_results: dict) -> list["APICallDefinition"]:
     Returns:
         List of server action definitions
     """
+    from qontinui.extraction.models.static import APICallDefinition
 
-    actions = []
+    actions: list[APICallDefinition] = []
 
     # Placeholder - real implementation would:
     # 1. Look for 'use server' directive at top of file

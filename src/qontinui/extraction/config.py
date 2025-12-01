@@ -123,6 +123,9 @@ class RuntimeConfig:
 class StaticConfig:
     """Configuration for static analysis."""
 
+    # Source paths
+    source_root: Path  # Required: Root directory of source code
+
     # File filtering
     include_patterns: list[str] = field(
         default_factory=lambda: [

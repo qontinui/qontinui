@@ -41,9 +41,9 @@ def extract_pages_routes(pages_dir: Path) -> list["RouteDefinition"]:
     Returns:
         List of route definitions
     """
-    from qontinui.extraction.models.static import RouteDefinition
+    from qontinui.extraction.models.static import RouteDefinition, RouteType
 
-    routes = []
+    routes: list[RouteDefinition] = []
 
     if not pages_dir.exists():
         return routes
@@ -63,18 +63,19 @@ def extract_pages_routes(pages_dir: Path) -> list["RouteDefinition"]:
             is_catch_all = bool(CATCH_ALL_PATTERN.search(file_path.stem))
 
             route = RouteDefinition(
+                id=f"pages_{route_path.replace('/', '_')}",
                 path=route_path,
                 file_path=file_path,
-                method="GET" if not is_api_route else "ALL",
-                dynamic_segments=dynamic_segments,
-                is_catch_all=is_catch_all,
-                is_optional_catch_all=False,
-                route_type="api" if is_api_route else "page",
-                is_server_component=False,  # Pages Router uses client-side rendering
+                route_type=RouteType.API if is_api_route else RouteType.PAGE,
                 metadata={
                     "router": "pages",
                     "is_api": is_api_route,
                     "relative_path": str(file_path.relative_to(pages_dir)),
+                    "method": "GET" if not is_api_route else "ALL",
+                    "dynamic_segments": dynamic_segments,
+                    "is_catch_all": is_catch_all,
+                    "is_optional_catch_all": False,
+                    "is_server_component": False,  # Pages Router uses client-side rendering
                 },
             )
             routes.append(route)
@@ -100,8 +101,9 @@ def extract_get_server_side_props(parse_results: dict) -> list["APICallDefinitio
     Returns:
         List of API call definitions for getServerSideProps
     """
+    from qontinui.extraction.models.static import APICallDefinition
 
-    calls = []
+    calls: list[APICallDefinition] = []
 
     # Placeholder - real implementation would:
     # 1. Look for exported function named "getServerSideProps"
@@ -123,8 +125,9 @@ def extract_get_static_props(parse_results: dict) -> list["APICallDefinition"]:
     Returns:
         List of API call definitions for getStaticProps
     """
+    from qontinui.extraction.models.static import APICallDefinition
 
-    calls = []
+    calls: list[APICallDefinition] = []
 
     # Placeholder - real implementation would:
     # 1. Look for exported function named "getStaticProps"
@@ -144,9 +147,9 @@ def extract_api_routes(api_dir: Path) -> list["RouteDefinition"]:
     Returns:
         List of API route definitions
     """
-    from qontinui.extraction.models.static import RouteDefinition
+    from qontinui.extraction.models.static import RouteDefinition, RouteType
 
-    routes = []
+    routes: list[RouteDefinition] = []
 
     if not api_dir.exists():
         return routes
@@ -158,18 +161,19 @@ def extract_api_routes(api_dir: Path) -> list["RouteDefinition"]:
             is_catch_all = bool(CATCH_ALL_PATTERN.search(file_path.stem))
 
             route = RouteDefinition(
+                id=f"api_{route_path.replace('/', '_')}",
                 path=route_path,
                 file_path=file_path,
-                method="ALL",  # API routes can handle multiple methods
-                dynamic_segments=dynamic_segments,
-                is_catch_all=is_catch_all,
-                is_optional_catch_all=False,
-                route_type="api",
-                is_server_component=False,
+                route_type=RouteType.API,
                 metadata={
                     "router": "pages",
                     "is_api": True,
                     "relative_path": str(file_path.relative_to(api_dir.parent)),
+                    "method": "ALL",  # API routes can handle multiple methods
+                    "dynamic_segments": dynamic_segments,
+                    "is_catch_all": is_catch_all,
+                    "is_optional_catch_all": False,
+                    "is_server_component": False,
                 },
             )
             routes.append(route)

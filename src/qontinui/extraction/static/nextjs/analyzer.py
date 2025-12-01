@@ -14,12 +14,12 @@ from typing import TYPE_CHECKING
 from qontinui.extraction.static.react.analyzer import ReactStaticAnalyzer
 
 if TYPE_CHECKING:
+    from qontinui.extraction.config import FrameworkType, StaticConfig
     from qontinui.extraction.models.static import (
         APICallDefinition,
         ComponentDefinition,
         RouteDefinition,
         StaticAnalysisResult,
-        StaticConfig,
     )
 
 
@@ -88,7 +88,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
             app_dir = config.source_root / "app"
             if app_dir.exists():
                 # Parse results would come from actual AST parsing
-                parse_results = {}  # Placeholder
+                parse_results: dict[str, str] = {}  # Placeholder
                 server_components = extract_server_components(app_dir, parse_results)
                 self._server_components.extend(server_components)
                 self._components.extend(server_components)
@@ -133,14 +133,14 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
         self._state_variables.extend(pathname_state)
         self._state_variables.extend(params_state)
 
-        # Update result
+        # Update result with new data
         result.routes = self._routes
         result.components = self._components
         result.state_variables = self._state_variables
         result.api_calls = self._api_calls
-        result.metadata["router_type"] = self._router_type
-        result.metadata["server_components_count"] = len(self._server_components)
-        result.metadata["server_actions_count"] = len(self._server_actions)
+
+        # Note: metadata fields would be added here if StaticAnalysisResult supported them
+        # For now, the router type and counts are implicit from the result data
 
         return result
 
@@ -195,8 +195,8 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
         return "unknown"
 
     @classmethod
-    def supports_framework(cls, framework) -> bool:
+    def supports_framework(cls, framework: "FrameworkType") -> bool:
         """Check if this analyzer supports Next.js."""
         from qontinui.extraction.config import FrameworkType
 
-        return framework == FrameworkType.NEXT_JS
+        return bool(framework == FrameworkType.NEXT_JS)
