@@ -681,13 +681,44 @@ class ExtractionOrchestrator:
         Register built-in implementations.
 
         This will register default analyzers, extractors, and matchers
-        as they are implemented. Currently empty.
+        as they are implemented.
         """
-        # TODO: Register built-in implementations as they are created
-        # Example:
-        # from .static.react_analyzer import ReactAnalyzer
-        # self.register_static_analyzer(FrameworkType.REACT, ReactAnalyzer)
-        #
-        # from .runtime.web_extractor import WebRuntimeExtractor
-        # self.register_runtime_extractor(WebRuntimeExtractor)
-        pass
+        # Register static analyzers
+        try:
+            from .static.react.analyzer import ReactStaticAnalyzer
+
+            self.register_static_analyzer(FrameworkType.REACT, ReactStaticAnalyzer)
+        except ImportError:
+            logger.warning("ReactStaticAnalyzer not available")
+
+        try:
+            from .static.nextjs.analyzer import NextJSStaticAnalyzer
+
+            self.register_static_analyzer(FrameworkType.NEXTJS, NextJSStaticAnalyzer)
+        except ImportError:
+            logger.warning("NextJSStaticAnalyzer not available")
+
+        # Register runtime extractors
+        try:
+            from .runtime.playwright.extractor import PlaywrightExtractor
+
+            self.register_runtime_extractor(PlaywrightExtractor)
+        except ImportError:
+            logger.warning("PlaywrightExtractor not available")
+
+        try:
+            from .runtime.tauri.extractor import TauriExtractor
+
+            self.register_runtime_extractor(TauriExtractor)
+        except ImportError:
+            logger.warning("TauriExtractor not available")
+
+        # Register state matchers
+        try:
+            from .matching.matcher import DefaultStateMatcher
+
+            # DefaultStateMatcher works for all frameworks
+            for framework in [FrameworkType.REACT, FrameworkType.NEXTJS]:
+                self.register_matcher(framework, DefaultStateMatcher)
+        except ImportError:
+            logger.warning("DefaultStateMatcher not available")
