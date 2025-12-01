@@ -10,7 +10,7 @@ This module provides functions to extract state variables from React hooks inclu
 
 from pathlib import Path
 
-from qontinui.extraction.static.models import StateVariable
+from qontinui.extraction.models import StateVariable, StateScope, StateSourceType
 
 
 def extract_use_state(
@@ -63,13 +63,18 @@ def extract_use_state(
 
                 state_vars.append(
                     StateVariable(
+                        id=f"{file_path}:{component_name}:{state_name}",
                         name=state_name,
-                        setter_name=setter_name,
-                        hook_type="useState",
-                        initial_value=initial_value,
-                        component=component_name,
                         file_path=file_path,
-                        metadata={"line": decl.get("line", 0)},
+                        line_number=decl.get("line", 0),
+                        initial_value=initial_value,
+                        source_type=StateSourceType.HOOK,
+                        source_name="useState",
+                        scope=StateScope.LOCAL,
+                        metadata={
+                            "component": component_name,
+                            "setter_name": setter_name,
+                        },
                     )
                 )
 
@@ -122,13 +127,18 @@ def extract_use_reducer(
 
                 state_vars.append(
                     StateVariable(
+                        id=f"{file_path}:{component_name}:{state_name}",
                         name=state_name,
-                        setter_name=dispatch_name,
-                        hook_type="useReducer",
-                        initial_value=initial_value,
-                        component=component_name,
                         file_path=file_path,
-                        metadata={"line": decl.get("line", 0)},
+                        line_number=decl.get("line", 0),
+                        initial_value=initial_value,
+                        source_type=StateSourceType.HOOK,
+                        source_name="useReducer",
+                        scope=StateScope.LOCAL,
+                        metadata={
+                            "component": component_name,
+                            "dispatch_name": dispatch_name,
+                        },
                     )
                 )
 
@@ -176,12 +186,15 @@ def extract_use_context(
             state_name = pattern.get("name", "")
             state_vars.append(
                 StateVariable(
+                    id=f"{file_path}:{component_name}:{state_name}",
                     name=state_name,
-                    hook_type="useContext",
-                    component=component_name,
                     file_path=file_path,
+                    line_number=decl.get("line", 0),
+                    source_type=StateSourceType.CONTEXT,
+                    source_name=context_name,
+                    scope=StateScope.CONTEXT,
                     metadata={
-                        "line": decl.get("line", 0),
+                        "component": component_name,
                         "context": context_name,
                     },
                 )
@@ -193,12 +206,15 @@ def extract_use_context(
                 state_name = prop.get("key", {}).get("name", "")
                 state_vars.append(
                     StateVariable(
+                        id=f"{file_path}:{component_name}:{state_name}",
                         name=state_name,
-                        hook_type="useContext",
-                        component=component_name,
                         file_path=file_path,
+                        line_number=decl.get("line", 0),
+                        source_type=StateSourceType.CONTEXT,
+                        source_name=context_name,
+                        scope=StateScope.CONTEXT,
                         metadata={
-                            "line": decl.get("line", 0),
+                            "component": component_name,
                             "context": context_name,
                         },
                     )
@@ -262,12 +278,15 @@ def extract_custom_hooks(
             state_name = pattern.get("name", "")
             state_vars.append(
                 StateVariable(
+                    id=f"{file_path}:{component_name}:{state_name}",
                     name=state_name,
-                    hook_type=hook_name,
-                    component=component_name,
                     file_path=file_path,
+                    line_number=decl.get("line", 0),
+                    source_type=StateSourceType.HOOK,
+                    source_name=hook_name,
+                    scope=StateScope.LOCAL,
                     metadata={
-                        "line": decl.get("line", 0),
+                        "component": component_name,
                         "library": library,
                     },
                 )
@@ -279,12 +298,15 @@ def extract_custom_hooks(
                 state_name = prop.get("key", {}).get("name", "")
                 state_vars.append(
                     StateVariable(
+                        id=f"{file_path}:{component_name}:{state_name}",
                         name=state_name,
-                        hook_type=hook_name,
-                        component=component_name,
                         file_path=file_path,
+                        line_number=decl.get("line", 0),
+                        source_type=StateSourceType.HOOK,
+                        source_name=hook_name,
+                        scope=StateScope.LOCAL,
                         metadata={
-                            "line": decl.get("line", 0),
+                            "component": component_name,
                             "library": library,
                         },
                     )
@@ -297,12 +319,15 @@ def extract_custom_hooks(
                     state_name = elem.get("name", "")
                     state_vars.append(
                         StateVariable(
+                            id=f"{file_path}:{component_name}:{state_name}:{i}",
                             name=state_name,
-                            hook_type=hook_name,
-                            component=component_name,
                             file_path=file_path,
+                            line_number=decl.get("line", 0),
+                            source_type=StateSourceType.HOOK,
+                            source_name=hook_name,
+                            scope=StateScope.LOCAL,
                             metadata={
-                                "line": decl.get("line", 0),
+                                "component": component_name,
                                 "library": library,
                                 "position": i,
                             },

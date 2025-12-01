@@ -14,6 +14,7 @@ import time
 import uuid
 from pathlib import Path
 
+from ..config.models.base_types import FrameworkType as ConfigFrameworkType
 from .models.base import (
     ConfigError,
     CorrelatedState,
@@ -455,6 +456,9 @@ class ExtractionOrchestrator:
                 "Static analysis cannot be performed."
             )
 
+        if not config.target.project_path:
+            raise RuntimeError("Project path is required for static analysis")
+
         start_time = time.time()
         try:
             result = await analyzer.analyze(config.target.project_path)
@@ -687,14 +691,14 @@ class ExtractionOrchestrator:
         try:
             from .static.react.analyzer import ReactStaticAnalyzer
 
-            self.register_static_analyzer(FrameworkType.REACT, ReactStaticAnalyzer)
+            self.register_static_analyzer(FrameworkType.REACT, ReactStaticAnalyzer)  # type: ignore[arg-type]
         except ImportError:
             logger.warning("ReactStaticAnalyzer not available")
 
         try:
             from .static.nextjs.analyzer import NextJSStaticAnalyzer
 
-            self.register_static_analyzer(FrameworkType.NEXTJS, NextJSStaticAnalyzer)
+            self.register_static_analyzer(ConfigFrameworkType.NEXT_JS, NextJSStaticAnalyzer)  # type: ignore[arg-type]
         except ImportError:
             logger.warning("NextJSStaticAnalyzer not available")
 
@@ -702,14 +706,14 @@ class ExtractionOrchestrator:
         try:
             from .runtime.playwright.extractor import PlaywrightExtractor
 
-            self.register_runtime_extractor(PlaywrightExtractor)
+            self.register_runtime_extractor(PlaywrightExtractor)  # type: ignore[arg-type]
         except ImportError:
             logger.warning("PlaywrightExtractor not available")
 
         try:
             from .runtime.tauri.extractor import TauriExtractor
 
-            self.register_runtime_extractor(TauriExtractor)
+            self.register_runtime_extractor(TauriExtractor)  # type: ignore[arg-type]
         except ImportError:
             logger.warning("TauriExtractor not available")
 
@@ -718,7 +722,7 @@ class ExtractionOrchestrator:
             from .matching.matcher import DefaultStateMatcher
 
             # DefaultStateMatcher works for all frameworks
-            for framework in [FrameworkType.REACT, FrameworkType.NEXTJS]:
-                self.register_matcher(framework, DefaultStateMatcher)
+            for framework in [FrameworkType.REACT, ConfigFrameworkType.NEXT_JS]:
+                self.register_matcher(framework, DefaultStateMatcher)  # type: ignore[arg-type]
         except ImportError:
             logger.warning("DefaultStateMatcher not available")

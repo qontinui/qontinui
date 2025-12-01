@@ -9,7 +9,7 @@ This module provides functions to extract event handlers and trace their effects
 
 from pathlib import Path
 
-from qontinui.extraction.static.models import EventHandler, StateVariable
+from qontinui.extraction.models import EventHandler, StateVariable
 
 
 def extract_event_handlers(
@@ -65,16 +65,17 @@ def extract_event_handlers(
 
             handlers.append(
                 EventHandler(
-                    name=handler_info.get("name", "inline"),
-                    event_type=event_type,
-                    component=component_name,
+                    id=f"{file_path}:{component_name}:{handler_info.get('name', 'inline')}",
                     file_path=file_path,
-                    attached_to=attr.get("element", ""),
-                    state_mutations=state_mutations,
-                    api_calls=api_calls,
-                    navigations=navigations,
                     line_number=attr.get("line", 0),
+                    handler_name=handler_info.get("name", "inline"),
+                    event_type=event_type,
+                    trigger_element=attr.get("element", ""),
+                    state_changes=state_mutations,
+                    navigation=navigations[0] if navigations else None,
+                    api_calls=api_calls,
                     metadata={
+                        "component": component_name,
                         "attribute": attr_name,
                         "inline": handler_info.get("inline", False),
                     },
@@ -96,15 +97,18 @@ def extract_event_handlers(
 
             handlers.append(
                 EventHandler(
-                    name=func_name,
-                    event_type=event_type,
-                    component=component_name,
+                    id=f"{file_path}:{component_name}:{func_name}",
                     file_path=file_path,
-                    state_mutations=state_mutations,
-                    api_calls=api_calls,
-                    navigations=navigations,
                     line_number=func.get("line", 0),
-                    metadata={"type": "function_declaration"},
+                    handler_name=func_name,
+                    event_type=event_type,
+                    state_changes=state_mutations,
+                    navigation=navigations[0] if navigations else None,
+                    api_calls=api_calls,
+                    metadata={
+                        "component": component_name,
+                        "type": "function_declaration",
+                    },
                 )
             )
 
@@ -126,8 +130,12 @@ def trace_state_changes(
     """
     setters_called: list[str] = []
 
-    # Build a set of all setter names
-    setter_names = {var.setter_name for var in state_variables if var.setter_name}
+    # Build a set of all setter names from metadata
+    setter_names = {
+        var.metadata.get("setter_name")
+        for var in state_variables
+        if var.metadata.get("setter_name")
+    }
 
     # Find all call expressions in the handler
     call_expressions = handler.get("call_expressions", [])
@@ -137,7 +145,11 @@ def trace_state_changes(
         callee_name = _get_callee_name(callee)
 
         if callee_name in setter_names:
-            setters_called.append(callee_name)
+            # Find the state variable ID for this setter
+            for var in state_variables:
+                if var.metadata.get("setter_name") == callee_name:
+                    setters_called.append(var.id)
+                    break
 
     return list(set(setters_called))  # Remove duplicates
 
@@ -258,7 +270,7 @@ def _extract_handler_info(value_node: dict, parse_result: dict) -> dict | None:
             "type": "arrow_function",
             "name": "inline",
             "inline": True,
-            "call_expressions": _extract_calls_from_body(expression.get("body", {})),
+            "call_expressions": _extract_calls_from_body(value_node.get("body", {})),
         }
 
     elif node_type == "function_expression":
@@ -267,7 +279,7 @@ def _extract_handler_info(value_node: dict, parse_result: dict) -> dict | None:
             "type": "function_expression",
             "name": "inline",
             "inline": True,
-            "call_expressions": _extract_calls_from_body(expression.get("body", {})),
+            "call_expressions": _extract_calls_from_body(value_node.get("body", {})),
         }
 
     elif node_type == "identifier":
@@ -353,10 +365,12 @@ def _get_callee_name(callee_node: dict) -> str:
     node_type = callee_node.get("type", "")
 
     if node_type == "identifier":
-        return callee_node.get("name", "")
+        name = callee_node.get("name", "")
+        return str(name) if name is not None else ""
     elif node_type == "member_expression":
         # For member expressions, get the property name
-        return callee_node.get("property", {}).get("name", "")
+        name = callee_node.get("property", {}).get("name", "")
+        return str(name) if name is not None else ""
     else:
         return ""
 

@@ -10,7 +10,7 @@ This module provides functions to extract conditional rendering patterns from JS
 
 from pathlib import Path
 
-from qontinui.extraction.static.models import ConditionalRender
+from qontinui.extraction.models import ConditionalRender, ConditionalPattern
 
 
 def extract_logical_and(
@@ -43,14 +43,15 @@ def extract_logical_and(
 
             conditionals.append(
                 ConditionalRender(
-                    condition=condition,
-                    render_type="logical_and",
-                    component=component_name,
+                    id=f"{file_path}:{component_name}:{expr.get('line', 0)}",
                     file_path=file_path,
-                    true_branch=true_branch,
-                    false_branch="null",
-                    controlling_variables=controlling_vars,
                     line_number=expr.get("line", 0),
+                    condition=condition,
+                    controlling_variables=controlling_vars,
+                    renders_when_true=[true_branch] if true_branch else [],
+                    renders_when_false=[],
+                    pattern_type=ConditionalPattern.AND,
+                    metadata={"component": component_name},
                 )
             )
 
@@ -87,14 +88,15 @@ def extract_ternary(
 
             conditionals.append(
                 ConditionalRender(
-                    condition=condition,
-                    render_type="ternary",
-                    component=component_name,
+                    id=f"{file_path}:{component_name}:{expr.get('line', 0)}",
                     file_path=file_path,
-                    true_branch=true_branch,
-                    false_branch=false_branch,
-                    controlling_variables=controlling_vars,
                     line_number=expr.get("line", 0),
+                    condition=condition,
+                    controlling_variables=controlling_vars,
+                    renders_when_true=[true_branch] if true_branch else [],
+                    renders_when_false=[false_branch] if false_branch else [],
+                    pattern_type=ConditionalPattern.TERNARY,
+                    metadata={"component": component_name},
                 )
             )
 
@@ -136,14 +138,15 @@ def extract_early_returns(
 
             conditionals.append(
                 ConditionalRender(
-                    condition=condition,
-                    render_type="early_return",
-                    component=component_name,
+                    id=f"{file_path}:{component_name}:{if_stmt.get('line', 0)}",
                     file_path=file_path,
-                    true_branch=true_branch,
-                    false_branch="continue",
-                    controlling_variables=controlling_vars,
                     line_number=if_stmt.get("line", 0),
+                    condition=condition,
+                    controlling_variables=controlling_vars,
+                    renders_when_true=[true_branch] if true_branch else [],
+                    renders_when_false=[],
+                    pattern_type=ConditionalPattern.EARLY_RETURN,
+                    metadata={"component": component_name},
                 )
             )
         elif consequent.get("type") == "block_statement":
@@ -159,14 +162,15 @@ def extract_early_returns(
 
                 conditionals.append(
                     ConditionalRender(
-                        condition=condition,
-                        render_type="early_return",
-                        component=component_name,
+                        id=f"{file_path}:{component_name}:{if_stmt.get('line', 0)}",
                         file_path=file_path,
-                        true_branch=true_branch,
-                        false_branch="continue",
-                        controlling_variables=controlling_vars,
                         line_number=if_stmt.get("line", 0),
+                        condition=condition,
+                        controlling_variables=controlling_vars,
+                        renders_when_true=[true_branch] if true_branch else [],
+                        renders_when_false=[],
+                        pattern_type=ConditionalPattern.EARLY_RETURN,
+                        metadata={"component": component_name},
                     )
                 )
 
@@ -215,15 +219,19 @@ def extract_switch_render(
 
                     conditionals.append(
                         ConditionalRender(
-                            condition=condition,
-                            render_type="switch",
-                            component=component_name,
+                            id=f"{file_path}:{component_name}:{case.get('line', 0)}",
                             file_path=file_path,
-                            true_branch=true_branch,
-                            false_branch="other cases",
-                            controlling_variables=controlling_vars,
                             line_number=case.get("line", 0),
-                            metadata={"discriminant": discriminant, "case": case_value},
+                            condition=condition,
+                            controlling_variables=controlling_vars,
+                            renders_when_true=[true_branch] if true_branch else [],
+                            renders_when_false=[],
+                            pattern_type=ConditionalPattern.SWITCH,
+                            metadata={
+                                "component": component_name,
+                                "discriminant": discriminant,
+                                "case": case_value,
+                            },
                         )
                     )
 
@@ -243,11 +251,12 @@ def _serialize_expression(expr_node: dict) -> str:
     node_type = expr_node.get("type", "")
 
     if node_type == "identifier":
-        return expr_node.get("name", "")
+        name = expr_node.get("name", "")
+        return str(name) if name is not None else ""
     elif node_type == "member_expression":
         obj = _serialize_expression(expr_node.get("object", {}))
         prop = _serialize_expression(expr_node.get("property", {}))
-        return f"{obj}.{prop}"
+        return f"{obj}.{prop}" if obj and prop else ""
     elif node_type == "literal":
         value = expr_node.get("value", "")
         if isinstance(value, str):
@@ -316,11 +325,12 @@ def _get_jsx_element_name(name_node: dict) -> str:
     node_type = name_node.get("type", "")
 
     if node_type == "jsx_identifier":
-        return name_node.get("name", "")
+        name = name_node.get("name", "")
+        return str(name) if name is not None else ""
     elif node_type == "jsx_member_expression":
         obj = _get_jsx_element_name(name_node.get("object", {}))
         prop = _get_jsx_element_name(name_node.get("property", {}))
-        return f"{obj}.{prop}"
+        return f"{obj}.{prop}" if obj and prop else ""
     else:
         return ""
 

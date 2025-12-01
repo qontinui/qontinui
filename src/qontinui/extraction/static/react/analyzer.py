@@ -12,6 +12,7 @@ from qontinui.extraction.config import FrameworkType
 from qontinui.extraction.static.base import StaticAnalyzer
 from qontinui.extraction.static.models import (
     APICallDefinition,
+    APICallType,
     ComponentDefinition,
     ConditionalRender,
     EventHandler,
@@ -98,6 +99,8 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
             self.parser = create_parser()
 
+        assert self.parser is not None  # For type checking
+
         # Find all files to analyze
         source_root = config.source_root
         files_to_analyze = self._find_files(
@@ -126,19 +129,12 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         )
 
         return StaticAnalysisResult(
-            config=config,
-            routes=self._routes,
             components=self._components,
             state_variables=self._state_variables,
-            api_calls=self._api_calls,
             conditional_renders=self._conditional_renders,
+            routes=self._routes,
             event_handlers=self._event_handlers,
-            errors=self._errors,
-            warnings=self._warnings,
-            metadata={
-                "framework": "react",
-                "files_analyzed": len(files_to_analyze),
-            },
+            api_calls=self._api_calls,
         )
 
     async def _analyze_file(self, file_path: Path) -> None:
@@ -149,6 +145,8 @@ class ReactStaticAnalyzer(StaticAnalyzer):
             file_path: Path to the file to analyze
         """
         logger.debug(f"Analyzing {file_path}")
+
+        assert self.parser is not None  # Ensured by analyze() method
 
         # Parse the file
         parse_result = await self.parser.parse_file(str(file_path))
@@ -354,14 +352,20 @@ class ReactStaticAnalyzer(StaticAnalyzer):
                     "mutation",
                 ]
             ):
+                line_num = func.get("line", 0)
                 api_calls.append(
                     APICallDefinition(
-                        name=func_name,
+                        id=f"{file_path.stem}:{line_num}:{func_name}",
                         file_path=file_path,
+                        line_number=line_num,
+                        method="GET",  # Default, could be inferred from name
+                        endpoint="",  # Would need to trace the actual API endpoint
                         call_type=self._infer_api_call_type(func_name),
-                        is_async=func.get("async", False),
-                        parameters=self._extract_parameter_names(func),
-                        metadata={"line": func.get("line", 0)},
+                        metadata={
+                            "name": func_name,
+                            "is_async": func.get("async", False),
+                            "parameters": self._extract_parameter_names(func),
+                        },
                     )
                 )
 
@@ -393,13 +397,15 @@ class ReactStaticAnalyzer(StaticAnalyzer):
             or path_str.endswith("page.js")
         ):
             route_path = self._extract_app_router_path(file_path)
+            from qontinui.extraction.static.models import RouteType
+
             routes.append(
                 RouteDefinition(
+                    id=f"{file_path.stem}:{route_path}",
                     path=route_path,
                     file_path=file_path,
-                    route_type="page",
-                    is_server_component=True,
-                    metadata={"router": "app"},
+                    route_type=RouteType.PAGE,
+                    metadata={"router": "app", "is_server_component": True},
                 )
             )
 
@@ -410,11 +416,14 @@ class ReactStaticAnalyzer(StaticAnalyzer):
             and not path_str.endswith("/_document.tsx")
         ):
             route_path = self._extract_pages_router_path(file_path)
+            from qontinui.extraction.static.models import RouteType
+
             routes.append(
                 RouteDefinition(
+                    id=f"{file_path.stem}:{route_path}",
                     path=route_path,
                     file_path=file_path,
-                    route_type="page",
+                    route_type=RouteType.PAGE,
                     metadata={"router": "pages"},
                 )
             )
@@ -427,7 +436,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         # For now, we'll leave component hierarchies to be built separately
         pass
 
-    def _infer_api_call_type(self, func_name: str) -> str:
+    def _infer_api_call_type(self, func_name: str) -> APICallType:
         """
         Infer API call type from function name.
 
@@ -440,17 +449,15 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         lower_name = func_name.lower()
 
         if "fetch" in lower_name:
-            return "fetch"
-        elif "query" in lower_name:
-            return "query"
-        elif "mutation" in lower_name:
-            return "mutation"
+            return APICallType.FETCH
+        elif "query" in lower_name or "mutation" in lower_name:
+            return APICallType.REACT_QUERY
         elif any(
             method in lower_name for method in ["get", "post", "put", "delete", "patch"]
         ):
-            return "rest"
+            return APICallType.AXIOS
         else:
-            return "unknown"
+            return APICallType.FETCH
 
     def _extract_parameter_names(self, func_node: dict) -> list[str]:
         """

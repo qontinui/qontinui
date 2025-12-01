@@ -193,7 +193,7 @@ class HistoricalDataClient:
             return []
 
         try:
-            params = {
+            params: dict[str, str | int] = {
                 "action_type": action_type,
                 "limit": limit,
             }

@@ -20,7 +20,13 @@ Architecture:
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ...config.models.search import SearchOptions
+from ...config.models.search import (
+    MatchAdjustment,
+    PatternOptions,
+    PollingConfig,
+    SearchOptions,
+    SearchStrategy,
+)
 from ...model.element import Pattern, Region
 
 if TYPE_CHECKING:
@@ -307,8 +313,8 @@ def _cascade_debug(ctx: CascadeContext, explicit: bool | None) -> bool:
 
 
 def _cascade_polling(
-    ctx: CascadeContext, explicit: "PollingConfig | None"
-) -> "PollingConfig | None":
+    ctx: CascadeContext, explicit: PollingConfig | None
+) -> PollingConfig | None:
     """Cascade polling configuration.
 
     Priority:
@@ -346,8 +352,8 @@ def _cascade_polling(
 
 
 def _cascade_pattern_options(
-    ctx: CascadeContext, explicit: "PatternOptions | None"
-) -> "PatternOptions | None":
+    ctx: CascadeContext, explicit: PatternOptions | None
+) -> PatternOptions | None:
     """Cascade pattern matching options.
 
     Priority:
@@ -374,19 +380,19 @@ def _cascade_pattern_options(
 
     # Priority 3: Pattern-level options
     if ctx.pattern and hasattr(ctx.pattern, "pattern_options"):
-        return ctx.pattern.pattern_options  # type: ignore[attr-defined]
+        return ctx.pattern.pattern_options  # type: ignore[attr-defined, no-any-return]
 
     # Priority 4: Project config defaults
     if ctx.project_config and hasattr(ctx.project_config, "pattern_options"):
-        return ctx.project_config.pattern_options  # type: ignore[attr-defined]
+        return ctx.project_config.pattern_options  # type: ignore[attr-defined, no-any-return]
 
     # Priority 5: None (use library defaults in FindAction)
     return None
 
 
 def _cascade_match_adjustment(
-    ctx: CascadeContext, explicit: "MatchAdjustment | None"
-) -> "MatchAdjustment | None":
+    ctx: CascadeContext, explicit: MatchAdjustment | None
+) -> MatchAdjustment | None:
     """Cascade match adjustment configuration.
 
     Priority:
@@ -412,15 +418,15 @@ def _cascade_match_adjustment(
 
     # Priority 3: Pattern-level adjustment
     if ctx.pattern and hasattr(ctx.pattern, "match_adjustment"):
-        return ctx.pattern.match_adjustment  # type: ignore[attr-defined]
+        return ctx.pattern.match_adjustment  # type: ignore[attr-defined, no-any-return]
 
     # Priority 4: No adjustment by default
     return None
 
 
 def _cascade_search_strategy(
-    ctx: CascadeContext, explicit: "SearchStrategy | None"
-) -> "SearchStrategy":
+    ctx: CascadeContext, explicit: SearchStrategy | None
+) -> SearchStrategy:
     """Cascade search strategy configuration.
 
     Priority:
@@ -448,10 +454,10 @@ def _cascade_search_strategy(
 
     # Priority 3: Project config default
     if ctx.project_config and hasattr(ctx.project_config, "search_strategy"):
-        return ctx.project_config.search_strategy  # type: ignore[attr-defined]
+        return ctx.project_config.search_strategy  # type: ignore[attr-defined, no-any-return]
 
     # Priority 4: Library default
-    return SearchStrategy.SINGLE_REGION
+    return SearchStrategy.FIRST
 
 
 # NOTE: These cascade functions are ready to use. To integrate them:
