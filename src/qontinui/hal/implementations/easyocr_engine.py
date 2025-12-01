@@ -77,9 +77,7 @@ class EasyOCREngine(IOCREngine):
             reader = easyocr.Reader(languages, gpu=self.use_gpu, verbose=False)
             self._readers[cache_key] = reader
 
-            logger.debug(
-                "easyocr_reader_created", languages=languages, gpu=self.use_gpu
-            )
+            logger.debug("easyocr_reader_created", languages=languages, gpu=self.use_gpu)
 
             return reader
 
@@ -103,9 +101,7 @@ class EasyOCREngine(IOCREngine):
             image = image.convert("RGB")
         return np.array(image)
 
-    def extract_text(
-        self, image: Image.Image, languages: list[str] | None = None
-    ) -> str:
+    def extract_text(self, image: Image.Image, languages: list[str] | None = None) -> str:
         """Extract all text from image.
 
         Args:
@@ -179,9 +175,7 @@ class EasyOCREngine(IOCREngine):
                     )
                     regions.append(region)
 
-            logger.debug(
-                "text_regions_found", count=len(regions), min_confidence=min_confidence
-            )
+            logger.debug("text_regions_found", count=len(regions), min_confidence=min_confidence)
 
             return regions
 
@@ -222,9 +216,7 @@ class EasyOCREngine(IOCREngine):
                 # Check for partial match with similarity
                 similarity = difflib.SequenceMatcher(None, target, region_text).ratio()
                 if similarity >= confidence:
-                    return TextMatch(
-                        text=region.text, region=region, similarity=similarity
-                    )
+                    return TextMatch(text=region.text, region=region, similarity=similarity)
 
             logger.debug("text_not_found", target=text, regions_checked=len(regions))
 
@@ -263,19 +255,13 @@ class EasyOCREngine(IOCREngine):
 
                 # Check for exact match
                 if target == region_text:
-                    matches.append(
-                        TextMatch(text=region.text, region=region, similarity=1.0)
-                    )
+                    matches.append(TextMatch(text=region.text, region=region, similarity=1.0))
                 else:
                     # Check for partial match with similarity
-                    similarity = difflib.SequenceMatcher(
-                        None, target, region_text
-                    ).ratio()
+                    similarity = difflib.SequenceMatcher(None, target, region_text).ratio()
                     if similarity >= confidence:
                         matches.append(
-                            TextMatch(
-                                text=region.text, region=region, similarity=similarity
-                            )
+                            TextMatch(text=region.text, region=region, similarity=similarity)
                         )
 
             # Sort by similarity
@@ -392,15 +378,11 @@ class EasyOCREngine(IOCREngine):
                 if len(np_image.shape) == 2:
                     np_image = cv2.fastNlMeansDenoising(np_image, h=10)
                 else:
-                    np_image = cv2.fastNlMeansDenoisingColored(
-                        np_image, h=10, hColor=10
-                    )
+                    np_image = cv2.fastNlMeansDenoisingColored(np_image, h=10, hColor=10)
 
             # Apply thresholding
             if threshold and len(np_image.shape) == 2:
-                _, np_image = cv2.threshold(
-                    np_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-                )
+                _, np_image = cv2.threshold(np_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
             # Convert back to PIL
             if len(np_image.shape) == 2:

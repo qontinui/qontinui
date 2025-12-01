@@ -404,9 +404,7 @@ class ElementIdentifier:
                 # Analyze characteristics
                 if self._has_title_bar_characteristics(region):
                     # Look for actual width (might not span full screen)
-                    actual_bounds = self._find_actual_title_bar_bounds(
-                        screenshot, y, bar_height
-                    )
+                    actual_bounds = self._find_actual_title_bar_bounds(screenshot, y, bar_height)
 
                     if actual_bounds:
                         x, y_pos, w, h = actual_bounds
@@ -483,9 +481,7 @@ class ElementIdentifier:
             properties["relative_x"] = state_image.x / screen_width
             properties["relative_y"] = state_image.y / screen_height
             properties["in_top_region"] = state_image.y < screen_height * 0.15
-            properties["in_corner"] = self._is_in_corner(
-                state_image, screen_width, screen_height
-            )
+            properties["in_corner"] = self._is_in_corner(state_image, screen_width, screen_height)
 
         return properties
 
@@ -530,9 +526,7 @@ class ElementIdentifier:
 
         return features
 
-    def _is_window_control(
-        self, state_image: StateImage, properties: dict[str, Any]
-    ) -> bool:
+    def _is_window_control(self, state_image: StateImage, properties: dict[str, Any]) -> bool:
         """Check if element appears to be a window control button.
 
         Args:
@@ -580,9 +574,7 @@ class ElementIdentifier:
 
         # Button-like aspect ratio
         if not (
-            self.button_aspect_ratio_range[0]
-            <= aspect_ratio
-            <= self.button_aspect_ratio_range[1]
+            self.button_aspect_ratio_range[0] <= aspect_ratio <= self.button_aspect_ratio_range[1]
         ):
             return False
 
@@ -649,9 +641,7 @@ class ElementIdentifier:
         # Should have clear edges (border) but not too complex
         return 0.1 <= edge_density <= 0.5  # type: ignore[no-any-return]
 
-    def _is_likely_logo(
-        self, state_image: StateImage, properties: dict[str, Any]
-    ) -> bool:
+    def _is_likely_logo(self, state_image: StateImage, properties: dict[str, Any]) -> bool:
         """Check if element is likely a logo.
 
         Args:
@@ -680,9 +670,7 @@ class ElementIdentifier:
 
         return True
 
-    def _is_in_corner(
-        self, state_image: StateImage, screen_width: int, screen_height: int
-    ) -> bool:
+    def _is_in_corner(self, state_image: StateImage, screen_width: int, screen_height: int) -> bool:
         """Check if element is in a screen corner.
 
         Args:
@@ -702,9 +690,7 @@ class ElementIdentifier:
 
         return (x_left or x_right) and (y_top or y_bottom)
 
-    def _cluster_parallel_lines(
-        self, lines: list[tuple], tolerance: int = 10
-    ) -> list[list[tuple]]:
+    def _cluster_parallel_lines(self, lines: list[tuple], tolerance: int = 10) -> list[list[tuple]]:
         """Cluster parallel lines that are close together.
 
         Args:
@@ -772,10 +758,7 @@ class ElementIdentifier:
         cell_height = height / rows if rows > 0 else 0
 
         # Cells should be reasonable size
-        if (
-            cell_width < self.grid_cell_min_size
-            or cell_height < self.grid_cell_min_size
-        ):
+        if cell_width < self.grid_cell_min_size or cell_height < self.grid_cell_min_size:
             return None
 
         properties = {
@@ -794,9 +777,7 @@ class ElementIdentifier:
             sub_elements=[],
         )
 
-    def _calculate_grid_regularity(
-        self, h_lines: list[tuple], v_lines: list[tuple]
-    ) -> float:
+    def _calculate_grid_regularity(self, h_lines: list[tuple], v_lines: list[tuple]) -> float:
         """Calculate how regular/uniform a grid pattern is.
 
         Args:
@@ -807,12 +788,8 @@ class ElementIdentifier:
             Regularity score (0.0 to 1.0)
         """
         # Check spacing consistency
-        h_spacings = [
-            h_lines[i + 1][0] - h_lines[i][0] for i in range(len(h_lines) - 1)
-        ]
-        v_spacings = [
-            v_lines[i + 1][0] - v_lines[i][0] for i in range(len(v_lines) - 1)
-        ]
+        h_spacings = [h_lines[i + 1][0] - h_lines[i][0] for i in range(len(h_lines) - 1)]
+        v_spacings = [v_lines[i + 1][0] - v_lines[i][0] for i in range(len(v_lines) - 1)]
 
         if not h_spacings or not v_spacings:
             return 0.0
@@ -1107,9 +1084,7 @@ class ElementIdentifier:
         # Calculate distance between centers
         center1 = (x1 + w1 / 2, y1 + h1 / 2)
         center2 = (x2 + w2 / 2, y2 + h2 / 2)
-        distance = np.sqrt(
-            (center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2
-        )
+        distance = np.sqrt((center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2)
 
         properties = {}
         relationship = "none"

@@ -849,9 +849,7 @@ class QontinuiDSLParser:
         """
         lines = []
         lines.append("# Generated from Qontinui DSL")
-        lines.append(
-            "from qontinui import QontinuiStateManager, State, Element, Transition"
-        )
+        lines.append("from qontinui import QontinuiStateManager, State, Element, Transition")
         lines.append("")
 
         # Generate state definitions

@@ -156,9 +156,7 @@ class IntegrationTestEnvironment:
 
         return wiring_config
 
-    def configure_database_environment(
-        self, database_config: DatabaseConfiguration
-    ) -> list[str]:
+    def configure_database_environment(self, database_config: DatabaseConfiguration) -> list[str]:
         """
         Configure database environment for integration tests.
 
@@ -218,9 +216,7 @@ class IntegrationTestEnvironment:
 
         return setup_code
 
-    def create_multi_component_test_scenario(
-        self, test_file: TestFile
-    ) -> dict[str, list[str]]:
+    def create_multi_component_test_scenario(self, test_file: TestFile) -> dict[str, list[str]]:
         """
         Create integration tests for multi-component scenarios.
 
@@ -322,9 +318,7 @@ class IntegrationTestEnvironment:
                     .replace("service", "")
                     .replace("repository", ""),
                     component_type=mock_usage.mock_class,
-                    mock_type=(
-                        "mock" if mock_usage.mock_type == "spring_mock" else "real"
-                    ),
+                    mock_type=("mock" if mock_usage.mock_type == "spring_mock" else "real"),
                 )
                 components.append(component)
 
@@ -347,9 +341,7 @@ class IntegrationTestEnvironment:
 
         return components
 
-    def _generate_component_fixture(
-        self, component: ComponentConfiguration
-    ) -> list[str]:
+    def _generate_component_fixture(self, component: ComponentConfiguration) -> list[str]:
         """Generate pytest fixture for a component."""
         fixture_code = []
 
@@ -446,9 +438,7 @@ class IntegrationTestEnvironment:
 
         return setup_code
 
-    def _setup_message_queue_mock(
-        self, service: ExternalServiceConfiguration
-    ) -> list[str]:
+    def _setup_message_queue_mock(self, service: ExternalServiceConfiguration) -> list[str]:
         """Set up message queue mocking."""
         return [
             "@pytest.fixture",
@@ -459,9 +449,7 @@ class IntegrationTestEnvironment:
             "    return mock_queue",
         ]
 
-    def _setup_file_system_mock(
-        self, service: ExternalServiceConfiguration
-    ) -> list[str]:
+    def _setup_file_system_mock(self, service: ExternalServiceConfiguration) -> list[str]:
         """Set up file system mocking."""
         return [
             "@pytest.fixture",
@@ -550,9 +538,7 @@ class IntegrationTestGenerator:
         lines = []
 
         # Add file header
-        lines.extend(
-            ['"""', f"Integration tests migrated from {test_file.path}", '"""', ""]
-        )
+        lines.extend(['"""', f"Integration tests migrated from {test_file.path}", '"""', ""])
 
         # Add imports
         imports = {
@@ -588,9 +574,7 @@ class IntegrationTestGenerator:
 
         # Generate external service mocking if configured
         if external_services:
-            service_setup = self.environment.configure_external_service_mocking(
-                external_services
-            )
+            service_setup = self.environment.configure_external_service_mocking(external_services)
             lines.extend(service_setup)
             lines.append("")
 
@@ -599,9 +583,7 @@ class IntegrationTestGenerator:
         lines.append("")
 
         # Generate multi-component test scenarios
-        scenario_config = self.environment.create_multi_component_test_scenario(
-            test_file
-        )
+        scenario_config = self.environment.create_multi_component_test_scenario(test_file)
         lines.extend(scenario_config["fixtures"])
         lines.append("")
         lines.extend(scenario_config["helper_methods"])

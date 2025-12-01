@@ -176,13 +176,9 @@ class AsyncIfOptimizer:
             conditions.append((action.id, action.config.condition))
 
         # Execute all conditions in parallel
-        results = await self.condition_evaluator.evaluate_multiple_image_exists_async(
-            conditions
-        )
+        results = await self.condition_evaluator.evaluate_multiple_image_exists_async(conditions)
 
-        logger.info(
-            f"Batch execution complete: {sum(results.values())} conditions true"
-        )
+        logger.info(f"Batch execution complete: {sum(results.values())} conditions true")
         return results
 
 
@@ -217,8 +213,6 @@ async def execute_if_image_exists_batch(
             conditions.append((action.id, action.config.condition))
 
     # Execute in parallel
-    results = await optimizer.condition_evaluator.evaluate_multiple_image_exists_async(
-        conditions
-    )
+    results = await optimizer.condition_evaluator.evaluate_multiple_image_exists_async(conditions)
 
     return results

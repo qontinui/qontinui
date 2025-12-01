@@ -93,9 +93,7 @@ class RegionBuilder:
         self._height = height
         return self
 
-    def with_dimensions(
-        self, x: int, y: int, width: int, height: int
-    ) -> "RegionBuilder":
+    def with_dimensions(self, x: int, y: int, width: int, height: int) -> "RegionBuilder":
         """Set complete dimensions.
 
         Args:
@@ -283,9 +281,7 @@ class RegionBuilder:
         if "right" in anchor.value:
             x -= self._width
         elif (
-            "center" in anchor.value
-            and "left" not in anchor.value
-            and "right" not in anchor.value
+            "center" in anchor.value and "left" not in anchor.value and "right" not in anchor.value
         ):
             x -= self._width // 2
 

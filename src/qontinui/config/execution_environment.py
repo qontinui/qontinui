@@ -301,8 +301,7 @@ class ExecutionEnvironment:
                     with open(indicator) as f:
                         content = f.read().lower()
                         if any(
-                            vm in content
-                            for vm in ["vmware", "virtualbox", "qemu", "kvm", "xen"]
+                            vm in content for vm in ["vmware", "virtualbox", "qemu", "kvm", "xen"]
                         ):
                             return True
                 except (OSError, PermissionError):

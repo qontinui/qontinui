@@ -130,9 +130,7 @@ class StateScheduler:
             return
 
         self._running = True
-        self._executor_thread = threading.Thread(
-            target=self._execution_loop, daemon=True
-        )
+        self._executor_thread = threading.Thread(target=self._execution_loop, daemon=True)
         self._executor_thread.start()
         logger.info("Scheduler started")
 

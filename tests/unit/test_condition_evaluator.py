@@ -52,9 +52,7 @@ class TestEvaluateImageExistsCondition:
             # Assert
             assert result is True
             mock_get_image.assert_called_once_with("test_button")
-            mock_state_image_class.assert_called_once_with(
-                image=mock_image, name="test_button"
-            )
+            mock_state_image_class.assert_called_once_with(image=mock_image, name="test_button")
             mock_state_image.exists.assert_called_once()
 
     def test_image_exists_with_valid_image_id_not_found(self):
@@ -92,9 +90,7 @@ class TestEvaluateImageExistsCondition:
             # Assert
             assert result is False
             mock_get_image.assert_called_once_with("missing_button")
-            mock_state_image_class.assert_called_once_with(
-                image=mock_image, name="missing_button"
-            )
+            mock_state_image_class.assert_called_once_with(image=mock_image, name="missing_button")
             mock_state_image.exists.assert_called_once()
 
     def test_image_exists_with_missing_image_id_raises_error(self):
@@ -226,9 +222,7 @@ class TestEvaluateImageExistsCondition:
             # Assert
             assert result is True
             # Verify StateImage was created with correct parameters
-            mock_state_image_class.assert_called_once_with(
-                image=mock_image, name="complex_button"
-            )
+            mock_state_image_class.assert_called_once_with(image=mock_image, name="complex_button")
 
     def test_image_exists_state_image_creation_parameters(self):
         """Test that StateImage is created with correct parameters.
@@ -309,9 +303,7 @@ class TestEvaluateImageExistsCondition:
 
         context = ExecutionContext({})
         evaluator = ConditionEvaluator(context)
-        condition = ConditionConfig(
-            type="image_exists", image_id="missing_from_registry"
-        )
+        condition = ConditionConfig(type="image_exists", image_id="missing_from_registry")
 
         with patch("qontinui.registry.get_image") as mock_get_image:
             mock_get_image.return_value = None

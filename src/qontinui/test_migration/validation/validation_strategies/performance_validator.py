@@ -34,8 +34,7 @@ class PerformanceMetrics:
         if self.java_execution_time == 0:
             return 0.0
         return (
-            (self.python_execution_time - self.java_execution_time)
-            / self.java_execution_time
+            (self.python_execution_time - self.java_execution_time) / self.java_execution_time
         ) * 100
 
 
@@ -105,9 +104,7 @@ class PerformanceValidator:
         if abs(metrics.performance_delta_percent) <= self.performance_tolerance_percent:
             return "equivalent", differences, metrics
 
-        differences.append(
-            f"Performance difference: {metrics.performance_delta_percent:.1f}%"
-        )
+        differences.append(f"Performance difference: {metrics.performance_delta_percent:.1f}%")
         return "different", differences, metrics
 
     def is_within_tolerance(self, metrics: PerformanceMetrics) -> bool:
@@ -120,9 +117,7 @@ class PerformanceValidator:
         Returns:
             True if performance difference is within tolerance
         """
-        return (
-            abs(metrics.performance_delta_percent) <= self.performance_tolerance_percent
-        )
+        return abs(metrics.performance_delta_percent) <= self.performance_tolerance_percent
 
     def get_performance_summary(self, metrics: PerformanceMetrics) -> dict[str, float]:
         """

@@ -75,9 +75,7 @@ class TestActionResultPerformance:
         def add_matches(thread_id: int):
             try:
                 for i in range(matches_per_thread):
-                    match = MockMatch(
-                        thread_id * 1000 + i, i, f"concurrent_{thread_id}_{i}"
-                    )
+                    match = MockMatch(thread_id * 1000 + i, i, f"concurrent_{thread_id}_{i}")
                     result_concurrent.add(match)
             except Exception as e:
                 with lock:
@@ -85,9 +83,7 @@ class TestActionResultPerformance:
 
         start_concurrent = time.time()
 
-        threads = [
-            threading.Thread(target=add_matches, args=(i,)) for i in range(num_threads)
-        ]
+        threads = [threading.Thread(target=add_matches, args=(i,)) for i in range(num_threads)]
         for t in threads:
             t.start()
         for t in threads:
@@ -200,10 +196,7 @@ class TestStateRegistryPerformance:
 
         start_concurrent = time.time()
 
-        threads = [
-            threading.Thread(target=register_states, args=(i,))
-            for i in range(num_threads)
-        ]
+        threads = [threading.Thread(target=register_states, args=(i,)) for i in range(num_threads)]
         for t in threads:
             t.start()
         for t in threads:
@@ -394,9 +387,7 @@ class TestScalabilityBenchmarks:
             start_time = time.time()
 
             threads = [
-                threading.Thread(
-                    target=add_matches, args=(i, result, matches_per_thread)
-                )
+                threading.Thread(target=add_matches, args=(i, result, matches_per_thread))
                 for i in range(num_threads)
             ]
             for t in threads:

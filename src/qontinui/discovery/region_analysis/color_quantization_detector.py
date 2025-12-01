@@ -88,9 +88,7 @@ class ColorQuantizationDetector(BaseRegionAnalyzer):
         pixels = image.reshape(-1, 3).astype(np.float32)
 
         # Apply K-means
-        kmeans = KMeans(
-            n_clusters=params["n_colors"], random_state=42, n_init=10, max_iter=100
-        )
+        kmeans = KMeans(n_clusters=params["n_colors"], random_state=42, n_init=10, max_iter=100)
         labels = kmeans.fit_predict(pixels)
 
         # Reconstruct quantized image
@@ -101,9 +99,7 @@ class ColorQuantizationDetector(BaseRegionAnalyzer):
 
         return quantized, labels
 
-    def _find_color_regions(
-        self, labels: np.ndarray, params: dict[str, Any]
-    ) -> list[np.ndarray]:
+    def _find_color_regions(self, labels: np.ndarray, params: dict[str, Any]) -> list[np.ndarray]:
         """
         Find contiguous regions for each color cluster
 
@@ -123,9 +119,7 @@ class ColorQuantizationDetector(BaseRegionAnalyzer):
             mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
             # Find contiguous regions
-            contours, _ = cv2.findContours(
-                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             for contour in contours:
                 area = cv2.contourArea(contour)
@@ -175,9 +169,7 @@ class ColorQuantizationDetector(BaseRegionAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         rectangles = []
 
@@ -230,19 +222,12 @@ class ColorQuantizationDetector(BaseRegionAnalyzer):
         y_positions = sorted({r["y"] for r in rectangles})
 
         # Check if we have enough positions for a grid
-        if (
-            len(x_positions) < params["min_grid_cols"]
-            or len(y_positions) < params["min_grid_rows"]
-        ):
+        if len(x_positions) < params["min_grid_cols"] or len(y_positions) < params["min_grid_rows"]:
             return None
 
         # Calculate spacing
-        x_diffs = [
-            x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)
-        ]
-        y_diffs = [
-            y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)
-        ]
+        x_diffs = [x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)]
+        y_diffs = [y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)]
 
         if not x_diffs or not y_diffs:
             return None

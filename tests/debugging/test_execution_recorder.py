@@ -69,9 +69,7 @@ class TestExecutionRecorder:
                 action_type="Click",
                 action_description=f"Action {i}",
             )
-            self.recorder.record_action_complete(
-                record=record, success=True, duration_ms=100.0
-            )
+            self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         history = self.recorder.get_history()
         assert len(history) == 5
@@ -92,9 +90,7 @@ class TestExecutionRecorder:
                 action_description=f"Action {i}",
                 session_id="session_1",
             )
-            self.recorder.record_action_complete(
-                record=record, success=True, duration_ms=100.0
-            )
+            self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         for i in range(2):
             record = self.recorder.record_action_start(
@@ -103,9 +99,7 @@ class TestExecutionRecorder:
                 action_description=f"Action {i}",
                 session_id="session_2",
             )
-            self.recorder.record_action_complete(
-                record=record, success=False, duration_ms=50.0
-            )
+            self.recorder.record_action_complete(record=record, success=False, duration_ms=50.0)
 
         # Filter by session
         history = self.recorder.get_history(session_id="session_1")
@@ -132,9 +126,7 @@ class TestExecutionRecorder:
         record = self.recorder.record_action_start(
             action_id="specific_action", action_type="Click", action_description="Test"
         )
-        self.recorder.record_action_complete(
-            record=record, success=True, duration_ms=100.0
-        )
+        self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         retrieved = self.recorder.get_record("specific_action")
         assert retrieved is not None
@@ -153,9 +145,7 @@ class TestExecutionRecorder:
                 action_description=f"Action {i}",
                 session_id="session_1",
             )
-            self.recorder.record_action_complete(
-                record=record, success=True, duration_ms=100.0
-            )
+            self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         # Clear all
         count = self.recorder.clear_history()
@@ -172,9 +162,7 @@ class TestExecutionRecorder:
                 action_description="Test",
                 session_id="session_1",
             )
-            self.recorder.record_action_complete(
-                record=record, success=True, duration_ms=100.0
-            )
+            self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         for i in range(2):
             record = self.recorder.record_action_start(
@@ -183,9 +171,7 @@ class TestExecutionRecorder:
                 action_description="Test",
                 session_id="session_2",
             )
-            self.recorder.record_action_complete(
-                record=record, success=True, duration_ms=100.0
-            )
+            self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         # Clear only session_1
         count = self.recorder.clear_history(session_id="session_1")
@@ -205,17 +191,13 @@ class TestExecutionRecorder:
                 action_description=f"Action {i}",
                 session_id="test_session",
             )
-            self.recorder.record_action_complete(
-                record=record, success=True, duration_ms=100.0
-            )
+            self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             temp_path = f.name
 
         try:
-            self.recorder.export_history(
-                temp_path, session_id="test_session", format="json"
-            )
+            self.recorder.export_history(temp_path, session_id="test_session", format="json")
 
             # Verify file contents
             with open(temp_path) as f:
@@ -242,9 +224,7 @@ class TestExecutionRecorder:
         record1 = self.recorder.record_action_start(
             action_id="action_1", action_type="Click", action_description="Click button"
         )
-        self.recorder.record_action_complete(
-            record=record1, success=True, duration_ms=150.5
-        )
+        self.recorder.record_action_complete(record=record1, success=True, duration_ms=150.5)
 
         record2 = self.recorder.record_action_start(
             action_id="action_2", action_type="Find", action_description="Find element"
@@ -288,17 +268,13 @@ class TestExecutionRecorder:
             record = self.recorder.record_action_start(
                 action_id=f"success_{i}", action_type="Click", action_description="Test"
             )
-            self.recorder.record_action_complete(
-                record=record, success=True, duration_ms=100.0
-            )
+            self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         for i in range(2):
             record = self.recorder.record_action_start(
                 action_id=f"fail_{i}", action_type="Find", action_description="Test"
             )
-            self.recorder.record_action_complete(
-                record=record, success=False, duration_ms=50.0
-            )
+            self.recorder.record_action_complete(record=record, success=False, duration_ms=50.0)
 
         stats = self.recorder.get_statistics()
 
@@ -339,9 +315,7 @@ class TestExecutionRecorder:
             record = recorder.record_action_start(
                 action_id=f"action_{i}", action_type="Click", action_description="Test"
             )
-            recorder.record_action_complete(
-                record=record, success=True, duration_ms=100.0
-            )
+            recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         # Should only keep last 10
         history = recorder.get_history()
@@ -356,9 +330,7 @@ class TestExecutionRecorder:
         record = self.recorder.record_action_start(
             action_id="action_1", action_type="Click", action_description="Test"
         )
-        self.recorder.record_action_complete(
-            record=record, success=True, duration_ms=100.0
-        )
+        self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         # Should not be recorded
         history = self.recorder.get_history()
@@ -371,9 +343,7 @@ class TestExecutionRecorder:
             record = self.recorder.record_action_start(
                 action_id=f"action_{i}", action_type="Click", action_description="Test"
             )
-            self.recorder.record_action_complete(
-                record=record, success=True, duration_ms=100.0
-            )
+            self.recorder.record_action_complete(record=record, success=True, duration_ms=100.0)
 
         repr_str = repr(self.recorder)
         assert "ExecutionRecorder" in repr_str

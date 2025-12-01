@@ -112,9 +112,7 @@ def test_if_statement():
 
     executor.execute(if_stmt)
     assert executor.get_variable("result") == "big"
-    print(
-        f"✓ x = {executor.get_variable('x')}, result = {executor.get_variable('result')}"
-    )
+    print(f"✓ x = {executor.get_variable('x')}, result = {executor.get_variable('result')}")
 
 
 def test_foreach_loop():
@@ -159,9 +157,7 @@ def test_foreach_loop():
 
     executor.execute(foreach_stmt)
     assert executor.get_variable("sum") == 15
-    print(
-        f"✓ Sum of {executor.get_variable('numbers')} = {executor.get_variable('sum')}"
-    )
+    print(f"✓ Sum of {executor.get_variable('numbers')} = {executor.get_variable('sum')}")
 
 
 def test_nested_scopes():
@@ -314,9 +310,7 @@ def test_execution_context():
     context.set_variable("x", 15)  # Shadow outer x
     assert context.get_variable("x") == 15
     assert context.get_variable("y") == 20
-    print(
-        f"✓ Inner scope: x = {context.get_variable('x')}, y = {context.get_variable('y')}"
-    )
+    print(f"✓ Inner scope: x = {context.get_variable('x')}, y = {context.get_variable('y')}")
 
     # Pop scope
     context.pop_scope()

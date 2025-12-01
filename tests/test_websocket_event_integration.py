@@ -75,9 +75,7 @@ class TestWebSocketEventIntegration:
 
         # Verify timestamp is a float (Unix epoch)
         timestamp = event_data["timestamp"]
-        assert isinstance(
-            timestamp, float
-        ), f"Timestamp should be float, got {type(timestamp)}"
+        assert isinstance(timestamp, float), f"Timestamp should be float, got {type(timestamp)}"
 
         # Verify timestamp is within reasonable bounds (between time_before and time_after)
         assert (
@@ -108,9 +106,7 @@ class TestWebSocketEventIntegration:
 
         # Collect events
         events_received = []
-        register_callback(
-            EventType.MATCH_ATTEMPTED, lambda e: events_received.append(e)
-        )
+        register_callback(EventType.MATCH_ATTEMPTED, lambda e: events_received.append(e))
 
         # Execute find with debug visuals enabled
         Find(test_image).similarity(0.80).screenshot(screenshot).execute()
@@ -121,22 +117,16 @@ class TestWebSocketEventIntegration:
         event_data = events_received[0].data
 
         # Check for debug visual (may be visual_debug_image or debug_visual_base64)
-        has_debug_visual = (
-            "debug_visual_base64" in event_data or "visual_debug_image" in event_data
-        )
+        has_debug_visual = "debug_visual_base64" in event_data or "visual_debug_image" in event_data
 
         # Note: Debug visual may not always be present, but if it is, verify format
         if has_debug_visual:
             debug_visual = event_data.get("debug_visual_base64") or event_data.get(
                 "visual_debug_image"
             )
-            assert isinstance(
-                debug_visual, str
-            ), "Debug visual should be a base64 string"
+            assert isinstance(debug_visual, str), "Debug visual should be a base64 string"
             assert len(debug_visual) > 0, "Debug visual should not be empty"
-            print(
-                f"✓ MATCH_ATTEMPTED event has debug_visual_base64 ({len(debug_visual)} chars)"
-            )
+            print(f"✓ MATCH_ATTEMPTED event has debug_visual_base64 ({len(debug_visual)} chars)")
         else:
             print("⚠ Debug visual not present in event (may be expected)")
 
@@ -185,17 +175,11 @@ class TestWebSocketEventIntegration:
 
         assert "timestamp" in event_data, "Event should include timestamp field"
         timestamp = event_data["timestamp"]
-        assert isinstance(
-            timestamp, float
-        ), f"Timestamp should be float, got {type(timestamp)}"
-        assert (
-            time_before <= timestamp <= time_after
-        ), "Timestamp should be within execution window"
+        assert isinstance(timestamp, float), f"Timestamp should be float, got {type(timestamp)}"
+        assert time_before <= timestamp <= time_after, "Timestamp should be within execution window"
 
         assert "length" in event_data, "Event should include length field"
-        assert event_data["length"] == len(
-            "test@example.com"
-        ), "Length should match text length"
+        assert event_data["length"] == len("test@example.com"), "Length should match text length"
 
         assert "action_id" in event_data, "Event should include action_id field"
         assert event_data["action_id"] == "test_type_action", "Action ID should match"
@@ -241,12 +225,8 @@ class TestWebSocketEventIntegration:
 
         assert "timestamp" in event_data, "Event should include timestamp field"
         timestamp = event_data["timestamp"]
-        assert isinstance(
-            timestamp, float
-        ), f"Timestamp should be float, got {type(timestamp)}"
-        assert (
-            time_before <= timestamp <= time_after
-        ), "Timestamp should be within execution window"
+        assert isinstance(timestamp, float), f"Timestamp should be float, got {type(timestamp)}"
+        assert time_before <= timestamp <= time_after, "Timestamp should be within execution window"
 
         assert "click_type" in event_data, "Event should include click_type field"
         assert event_data["click_type"] in [
@@ -314,25 +294,17 @@ class TestWebSocketEventIntegration:
         time_after = time.time()
 
         # Find ACTION_COMPLETED event (emitted as "action_execution")
-        action_events = [
-            e for e in emitted_events if e["event_name"] == "action_execution"
-        ]
+        action_events = [e for e in emitted_events if e["event_name"] == "action_execution"]
 
         assert len(action_events) > 0, "ACTION_COMPLETED event should be emitted"
 
         # Check the event data
         event_data = action_events[0]["data"]
 
-        assert (
-            "timestamp" in event_data
-        ), "Event should include timestamp in data payload"
+        assert "timestamp" in event_data, "Event should include timestamp in data payload"
         timestamp = event_data["timestamp"]
-        assert isinstance(
-            timestamp, float
-        ), f"Timestamp should be float, got {type(timestamp)}"
-        assert (
-            time_before <= timestamp <= time_after
-        ), "Timestamp should be within execution window"
+        assert isinstance(timestamp, float), f"Timestamp should be float, got {type(timestamp)}"
+        assert time_before <= timestamp <= time_after, "Timestamp should be within execution window"
 
         assert "action_type" in event_data, "Event should include action_type"
         assert event_data["action_type"] == "CLICK", "Action type should be CLICK"
@@ -356,9 +328,7 @@ class TestWebSocketEventIntegration:
         register_callback(EventType.MOUSE_CLICKED, collect_all_events)
 
         # Execute various actions
-        test_image = Image.from_numpy(
-            np.zeros((30, 30, 3), dtype=np.uint8), name="precision-test"
-        )
+        test_image = Image.from_numpy(np.zeros((30, 30, 3), dtype=np.uint8), name="precision-test")
         screenshot = Image.from_numpy(np.zeros((100, 100, 3), dtype=np.uint8))
         Find(test_image).screenshot(screenshot).execute()
 
@@ -372,9 +342,7 @@ class TestWebSocketEventIntegration:
                 assert timestamp != int(
                     timestamp
                 ), f"Timestamp should have millisecond precision, got {timestamp}"
-                print(
-                    f"✓ {event.type} timestamp has millisecond precision: {timestamp}"
-                )
+                print(f"✓ {event.type} timestamp has millisecond precision: {timestamp}")
 
 
 if __name__ == "__main__":

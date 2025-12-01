@@ -155,9 +155,7 @@ class TestProcessRepetitionIntegration:
 
         # Verify
         assert result is True
-        assert (
-            execution_count["count"] == 4
-        ), "Should execute 4 times (1 initial + 3 repeats)"
+        assert execution_count["count"] == 4, "Should execute 4 times (1 initial + 3 repeats)"
 
     def test_until_success_stops_early(self):
         """Test until_success mode stops on first success."""
@@ -208,9 +206,7 @@ class TestProcessRepetitionIntegration:
 
         # Verify
         assert result is True
-        assert (
-            execution_count["count"] == 3
-        ), "Should stop after 3rd attempt (first success)"
+        assert execution_count["count"] == 3, "Should stop after 3rd attempt (first success)"
 
     def test_until_success_reaches_max_repeats(self):
         """Test until_success mode uses all attempts if never succeeds."""
@@ -260,9 +256,7 @@ class TestProcessRepetitionIntegration:
 
         # Verify
         assert result is False
-        assert (
-            execution_count["count"] == 6
-        ), "Should try 6 times (1 initial + 5 repeats)"
+        assert execution_count["count"] == 6, "Should try 6 times (1 initial + 5 repeats)"
 
     def test_fixed_count_success_if_any_succeed(self):
         """Test fixed count mode succeeds if at least one run succeeds."""
@@ -372,9 +366,7 @@ class TestProcessRepetitionIntegration:
 
         # Verify
         assert result is True
-        assert (
-            execution_count["count"] == 3
-        ), "Should execute 3 times (1 initial + 2 repeats)"
+        assert execution_count["count"] == 3, "Should execute 3 times (1 initial + 2 repeats)"
 
 
 def main():

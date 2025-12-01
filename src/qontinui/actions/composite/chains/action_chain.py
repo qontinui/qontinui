@@ -143,9 +143,7 @@ class ActionChain(ActionInterface):
         # Default to FIND as a generic action type
         return ActionType.FIND
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the action chain using the Qontinui framework pattern.
 
         Args:
@@ -162,9 +160,7 @@ class ActionChain(ActionInterface):
         for record in self._mode.execution_history:
             matches.add_execution_record(record)  # type: ignore[arg-type, attr-defined]
 
-    def add(
-        self, action: ActionInterface, target: Any | None = None, **kwargs
-    ) -> "ActionChain":
+    def add(self, action: ActionInterface, target: Any | None = None, **kwargs) -> "ActionChain":
         """Add action to chain.
 
         Args:

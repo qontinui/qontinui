@@ -57,9 +57,7 @@ class MatchMetadata:
     source_image_id: str | None = None
     """ID of the source image that was used to find this match."""
 
-    _lock: threading.RLock = field(
-        default_factory=threading.RLock, repr=False, compare=False
-    )
+    _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
     """Lock for thread-safe access."""
 
     def increment_times_acted_on(self) -> None:
@@ -130,9 +128,7 @@ class Match:
     """Metadata about when and how this match was found."""
 
     # Thread safety
-    _lock: threading.RLock = field(
-        default_factory=threading.RLock, repr=False, compare=False
-    )
+    _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
     """Lock for thread-safe access."""
 
     def __post_init__(self):
@@ -596,9 +592,7 @@ class MatchBuilder:
         self.anchors = anchors
         return self
 
-    def set_state_object_data(
-        self, state_object_data: StateObjectMetadata
-    ) -> MatchBuilder:
+    def set_state_object_data(self, state_object_data: StateObjectMetadata) -> MatchBuilder:
         """Set state object data.
 
         Args:

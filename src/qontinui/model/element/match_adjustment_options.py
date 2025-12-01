@@ -242,9 +242,7 @@ class MatchAdjustmentOptions:
             parts.append(f"target_pos={self.target_position}")
         if self.target_offset:
             parts.append(f"target_offset={self.target_offset}")
-        return (
-            f"MatchAdjustmentOptions({', '.join(parts) if parts else 'no adjustments'})"
-        )
+        return f"MatchAdjustmentOptions({', '.join(parts) if parts else 'no adjustments'})"
 
     def __repr__(self) -> str:
         """Developer representation."""

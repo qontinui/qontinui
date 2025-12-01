@@ -45,9 +45,7 @@ class PureActionsScreenshotProvider(ScreenshotProvider):
         try:
             if region is not None:
                 # Capture specific region
-                image = self.screen.capture_region(
-                    region.x, region.y, region.width, region.height
-                )
+                image = self.screen.capture_region(region.x, region.y, region.width, region.height)
             else:
                 # Capture entire screen
                 image = self.screen.capture_screen()

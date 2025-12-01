@@ -99,9 +99,7 @@ class MockImageFinder:
         return frame_count / elapsed if elapsed > 0 else 0
 
 
-def benchmark_image_finding(
-    scenario: str, will_find: bool, timeout: float = 3.0
-) -> dict[str, Any]:
+def benchmark_image_finding(scenario: str, will_find: bool, timeout: float = 3.0) -> dict[str, Any]:
     """Benchmark image finding performance.
 
     Args:
@@ -356,9 +354,7 @@ def run_all_benchmarks() -> list[dict[str, Any]]:
                 f"{result['grade']:<15}"
             )
         elif "fps" in result:
-            print(
-                f"{'pattern_matching_fps':<20} {result['fps']:<15.1f} {result['grade']:<15}"
-            )
+            print(f"{'pattern_matching_fps':<20} {result['fps']:<15.1f} {result['grade']:<15}")
 
     return results
 

@@ -105,9 +105,7 @@ class TestJavaToPythonTranslator:
         assert result == "assert not(condition)"
 
         # assertEquals
-        result = self.translator._basic_assertion_translation(
-            "assertEquals(expected, actual)"
-        )
+        result = self.translator._basic_assertion_translation("assertEquals(expected, actual)")
         assert result == "assert(expected, actual)"
 
     def test_java_line_translation(self):

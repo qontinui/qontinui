@@ -50,9 +50,7 @@ class StateMemoryUpdater:
         """
         self.state_memory = state_memory
         # Create a default StateManager if none provided
-        self.state_manager = (
-            state_manager if state_manager is not None else StateManager()
-        )
+        self.state_manager = state_manager if state_manager is not None else StateManager()
         self.auto_activation_enabled = auto_activation_enabled
         self.activation_confidence_threshold = activation_confidence_threshold
 
@@ -210,9 +208,7 @@ class StateMemoryUpdater:
             "timestamp": time.time(),
             "state_name": state_name,
             "match_confidence": match.confidence if match else None,
-            "match_location": (
-                (match.x, match.y) if match and hasattr(match, "x") else None
-            ),
+            "match_location": ((match.x, match.y) if match and hasattr(match, "x") else None),
         }
 
         self._activation_history.append(activation_record)
@@ -289,9 +285,8 @@ class StateMemoryUpdater:
         # Deactivate states without matches
         deactivated_states = set()
         for state_name in states_to_check:
-            if (
-                state_name not in states_with_matches
-                and self.state_memory.is_state_active(state_name)
+            if state_name not in states_with_matches and self.state_memory.is_state_active(
+                state_name
             ):
                 logger.debug(f"Deactivating state '{state_name}' - no matches found")
                 # Get state ID for deactivation
@@ -300,9 +295,7 @@ class StateMemoryUpdater:
                     self.state_memory.remove_active_state(state.id)
                     deactivated_states.add(state_name)
                 else:
-                    logger.warning(
-                        f"Could not deactivate state '{state_name}' - no valid ID"
-                    )
+                    logger.warning(f"Could not deactivate state '{state_name}' - no valid ID")
 
         if deactivated_states:
             logger.info(

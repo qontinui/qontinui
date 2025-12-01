@@ -145,12 +145,8 @@ def branching_graph_workflow():
                 "true": [[{"action": "action_true", "type": "true", "index": 0}]],
                 "false": [[{"action": "action_false", "type": "false", "index": 0}]],
             },
-            "action_true": {
-                "main": [[{"action": "merge", "type": "main", "index": 0}]]
-            },
-            "action_false": {
-                "main": [[{"action": "merge", "type": "main", "index": 0}]]
-            },
+            "action_true": {"main": [[{"action": "merge", "type": "main", "index": 0}]]},
+            "action_false": {"main": [[{"action": "merge", "type": "main", "index": 0}]]},
         },
     }
 
@@ -506,9 +502,7 @@ def test_detect_orphan_action():
                 "position": [300, 100],
             },
         ],
-        "connections": {
-            "action1": {"main": [[{"action": "action2", "type": "main", "index": 0}]]}
-        },
+        "connections": {"action1": {"main": [[{"action": "action2", "type": "main", "index": 0}]]}},
     }
 
     workflow = Workflow.model_validate(workflow_dict)

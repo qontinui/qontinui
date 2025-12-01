@@ -127,9 +127,7 @@ def monitored(
     return decorator
 
 
-def _decorate_function(
-    func: Callable[..., Any], config: MonitoredConfig
-) -> Callable[..., Any]:
+def _decorate_function(func: Callable[..., Any], config: MonitoredConfig) -> Callable[..., Any]:
     """Decorate a function with monitoring.
 
     Args:
@@ -199,9 +197,7 @@ def _decorate_function(
 
         except Exception as e:
             elapsed_ms = (time.time() - start_time) * 1000
-            logger.error(
-                f"{operation_name} failed after {elapsed_ms:.2f}ms", exc_info=e
-            )
+            logger.error(f"{operation_name} failed after {elapsed_ms:.2f}ms", exc_info=e)
             raise
 
     # Store config on the wrapper

@@ -49,9 +49,7 @@ class LoggingHook(ExecutionHook):
         if self.log_context:
             self.logger.debug(f"Context: {context}")
 
-    def after_action(
-        self, action: Action, context: dict[str, Any], result: dict[str, Any]
-    ):
+    def after_action(self, action: Action, context: dict[str, Any], result: dict[str, Any]):
         """Log after successful execution."""
         success = result.get("success", False)
         msg = f"Action '{action.id}' completed: {'SUCCESS' if success else 'FAILED'}"
@@ -63,6 +61,4 @@ class LoggingHook(ExecutionHook):
 
     def on_error(self, action: Action, context: dict[str, Any], error: Exception):
         """Log execution error."""
-        self.logger.error(
-            f"Action '{action.id}' raised exception: {type(error).__name__}: {error}"
-        )
+        self.logger.error(f"Action '{action.id}' raised exception: {type(error).__name__}: {error}")

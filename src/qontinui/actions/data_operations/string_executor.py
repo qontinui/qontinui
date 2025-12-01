@@ -155,9 +155,7 @@ class StringExecutor:
         logger.debug(f"CONCAT: Combined {len(additional_strings) + 1} strings")
         return result
 
-    def substring(
-        self, input_str: str, parameters: dict[str, Any] | None = None
-    ) -> str:
+    def substring(self, input_str: str, parameters: dict[str, Any] | None = None) -> str:
         """Extract substring from input string.
 
         Args:
@@ -217,9 +215,7 @@ class StringExecutor:
         logger.debug(f"REPLACE: Replaced '{search}' with '{replacement}'")
         return result
 
-    def split(
-        self, input_str: str, parameters: dict[str, Any] | None = None
-    ) -> list[str]:
+    def split(self, input_str: str, parameters: dict[str, Any] | None = None) -> list[str]:
         """Split string into a list of substrings.
 
         Args:
@@ -240,9 +236,7 @@ class StringExecutor:
             delimiter = str(parameters["delimiter"])
 
         result = input_str.split(delimiter)
-        logger.debug(
-            f"SPLIT: Split into {len(result)} parts using delimiter '{delimiter}'"
-        )
+        logger.debug(f"SPLIT: Split into {len(result)} parts using delimiter '{delimiter}'")
         return result
 
     def trim(self, input_str: str) -> str:
@@ -340,9 +334,7 @@ class StringExecutor:
                     "group_dict": match_obj.groupdict(),
                 }
             )
-            logger.debug(
-                f"MATCH: Pattern matched with {len(match_obj.groups())} groups"
-            )
+            logger.debug(f"MATCH: Pattern matched with {len(match_obj.groups())} groups")
         else:
             result = json.dumps({"matched": False})
             logger.debug("MATCH: Pattern did not match")

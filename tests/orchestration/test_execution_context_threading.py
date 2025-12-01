@@ -74,9 +74,7 @@ class TestExecutionContextThreading:
                     # Verify counter exists and is non-negative
                     counter = variables.get("counter", -1)
                     if counter < 0:
-                        read_errors.append(
-                            f"Reader {reader_id}: Invalid counter {counter}"
-                        )
+                        read_errors.append(f"Reader {reader_id}: Invalid counter {counter}")
                     time.sleep(0.001)
             except Exception as e:
                 read_errors.append(f"Reader {reader_id}: {e}")
@@ -123,9 +121,7 @@ class TestExecutionContextThreading:
             try:
                 for i in range(actions_per_thread):
                     action_index = thread_id * actions_per_thread + i
-                    state = context.start_action(
-                        action_index, f"action_{thread_id}_{i}"
-                    )
+                    state = context.start_action(action_index, f"action_{thread_id}_{i}")
                     # Simulate some work
                     time.sleep(0.001)
                     # Complete action
@@ -175,9 +171,7 @@ class TestExecutionContextThreading:
                         _ = context.get_variable(f"thread_{thread_id}")
                     elif i % 4 == 1:
                         # Action operations
-                        state = context.start_action(
-                            thread_id * iterations + i, f"action_{i}"
-                        )
+                        state = context.start_action(thread_id * iterations + i, f"action_{i}")
                         context.complete_action(state, success=True)
                     elif i % 4 == 2:
                         # Metadata operations
@@ -329,9 +323,7 @@ class TestExecutionContextThreading:
             try:
                 for i in range(iterations):
                     # Concurrent substitutions
-                    result = context.substitute_variables(
-                        "Hello ${name}, count is ${count}"
-                    )
+                    result = context.substitute_variables("Hello ${name}, count is ${count}")
                     if result != "Hello test, count is 42":
                         errors.append(
                             f"Thread {thread_id}: Unexpected substitution result: {result}"

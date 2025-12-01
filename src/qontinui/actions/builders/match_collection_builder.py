@@ -50,9 +50,7 @@ class MatchCollectionBuilder:
         self.matches = matches
         return self
 
-    def with_match_objects_as_regions(
-        self, *matches: "Match"
-    ) -> "MatchCollectionBuilder":
+    def with_match_objects_as_regions(self, *matches: "Match") -> "MatchCollectionBuilder":
         """Add match objects as regions.
 
         Args:
@@ -70,9 +68,7 @@ class MatchCollectionBuilder:
                 self.state_regions_from_matches.append(state_region)
         return self
 
-    def with_match_objects_as_state_images(
-        self, *matches: "Match"
-    ) -> "MatchCollectionBuilder":
+    def with_match_objects_as_state_images(self, *matches: "Match") -> "MatchCollectionBuilder":
         """Add match objects as state images.
 
         Args:

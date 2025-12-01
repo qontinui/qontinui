@@ -74,9 +74,7 @@ class MigrationReportingDashboard:
             report_data["coverage"] = self._generate_coverage_report(test_directory)
 
         if include_diagnostics:
-            report_data["diagnostics"] = self._generate_diagnostic_report(
-                test_directory
-            )
+            report_data["diagnostics"] = self._generate_diagnostic_report(test_directory)
 
         return report_data
 

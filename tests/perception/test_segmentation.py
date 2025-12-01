@@ -93,9 +93,7 @@ class TestScreenSegmenter:
         """Test text region detection."""
         # Add some text-like regions
         img = sample_image.copy()
-        cv2.rectangle(
-            img, (50, 450), (300, 470), (0, 0, 0), -1
-        )  # Text-like aspect ratio
+        cv2.rectangle(img, (50, 450), (300, 470), (0, 0, 0), -1)  # Text-like aspect ratio
 
         text_regions = segmenter.detect_text_regions(img)
 

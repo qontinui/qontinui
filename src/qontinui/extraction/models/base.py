@@ -105,19 +105,13 @@ class BoundingBox:
     def intersects(self, other: "BoundingBox") -> bool:
         """Check if this box intersects with another."""
         return not (
-            self.x2 <= other.x
-            or other.x2 <= self.x
-            or self.y2 <= other.y
-            or other.y2 <= self.y
+            self.x2 <= other.x or other.x2 <= self.x or self.y2 <= other.y or other.y2 <= self.y
         )
 
     def contains(self, other: "BoundingBox") -> bool:
         """Check if this box completely contains another."""
         return (
-            self.x <= other.x
-            and self.y <= other.y
-            and self.x2 >= other.x2
-            and self.y2 >= other.y2
+            self.x <= other.x and self.y <= other.y and self.x2 >= other.x2 and self.y2 >= other.y2
         )
 
     def intersection_area(self, other: "BoundingBox") -> int:
@@ -201,9 +195,7 @@ class Screenshot:
             id=data["id"],
             path=Path(data["path"]),
             viewport=viewport,
-            thumbnail_path=(
-                Path(data["thumbnail_path"]) if data.get("thumbnail_path") else None
-            ),
+            thumbnail_path=(Path(data["thumbnail_path"]) if data.get("thumbnail_path") else None),
             timestamp=data.get("timestamp", ""),
             metadata=data.get("metadata", {}),
         )
@@ -239,9 +231,7 @@ class ExtractionTarget:
 
         elif mode == ExtractionMode.BLACK_BOX:
             if not (self.url or self.executable_path or self.app_id):
-                raise ConfigError(
-                    "BLACK_BOX mode requires url, executable_path, or app_id"
-                )
+                raise ConfigError("BLACK_BOX mode requires url, executable_path, or app_id")
 
         elif mode == ExtractionMode.WHITE_BOX:
             if not self.project_path:
@@ -279,9 +269,7 @@ class ExtractionConfig:
     include_node_modules: bool = False
 
     # White-box settings
-    correlation_threshold: float = (
-        0.8  # Similarity threshold for matching static/runtime
-    )
+    correlation_threshold: float = 0.8  # Similarity threshold for matching static/runtime
     require_correlation: bool = True  # Fail if correlation is low
 
     # Performance
@@ -465,9 +453,7 @@ class ExtractionResult:
                 for t in self.transitions
             ],
             "started_at": self.started_at.isoformat(),
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
+            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
             "errors": self.errors,
             "warnings": self.warnings,
         }

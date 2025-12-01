@@ -69,9 +69,7 @@ class TestEventReporting:
 
         def collect_event(event: Event):
             """Collect events for verification."""
-            print(
-                f"[TEST] Event received: type={event.type}, data keys={list(event.data.keys())}"
-            )
+            print(f"[TEST] Event received: type={event.type}, data keys={list(event.data.keys())}")
             print(f"[TEST] Event data: {event.data}")
             events_received.append(event)
 
@@ -84,9 +82,7 @@ class TestEventReporting:
         # Execute find operation with high threshold (should fail to match)
         print("[TEST] Starting Find operation...")
         results = Find(test_image).similarity(0.90).screenshot(screenshot).execute()
-        print(
-            f"[TEST] Find completed, matches: {len(results.matches) if results.matches else 0}"
-        )
+        print(f"[TEST] Find completed, matches: {len(results.matches) if results.matches else 0}")
 
         # ASSERTION 1: Event should be emitted
         assert len(events_received) > 0, (
@@ -142,9 +138,7 @@ class TestEventReporting:
             confidence, int | float
         ), f"Confidence should be numeric, got {type(confidence)}"
         # Confidence should be between -1 and 1 for correlation coefficient
-        assert (
-            -1.0 <= confidence <= 1.0
-        ), f"Confidence should be between -1 and 1, got {confidence}"
+        assert -1.0 <= confidence <= 1.0, f"Confidence should be between -1 and 1, got {confidence}"
 
         # ASSERTION 6: Threshold should be correct
         threshold = event_data["similarity_threshold"]
@@ -195,9 +189,7 @@ class TestEventReporting:
 
         # Confidence should be very high (close to 1.0 for exact match)
         confidence = event_data["best_match_confidence"]
-        assert (
-            confidence > 0.95
-        ), f"Confidence for exact match should be > 0.95, got {confidence}"
+        assert confidence > 0.95, f"Confidence for exact match should be > 0.95, got {confidence}"
 
         # threshold_passed should be True
         assert (

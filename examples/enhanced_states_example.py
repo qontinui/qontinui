@@ -307,9 +307,7 @@ def demonstrate_registry():
     from qontinui.navigation.hybrid_path_finder import HybridPathFinder, PathStrategy
 
     # Create pathfinder
-    pathfinder = HybridPathFinder(
-        joint_table=registry.joint_table, strategy=PathStrategy.OPTIMAL
-    )
+    pathfinder = HybridPathFinder(joint_table=registry.joint_table, strategy=PathStrategy.OPTIMAL)
 
     # Find path from Login to complete Workspace (all 4 components)
     login_id = registry.get_state_id("Login")
@@ -339,9 +337,7 @@ def demonstrate_registry():
 
     # Create executor
     active_states = EnhancedActiveStateSet()
-    executor = TransitionExecutor(
-        joint_table=registry.joint_table, active_states=active_states
-    )
+    executor = TransitionExecutor(joint_table=registry.joint_table, active_states=active_states)
 
     # Simulate workspace opening
     print("\nSimulating workspace opening...")

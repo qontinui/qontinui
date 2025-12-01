@@ -457,9 +457,7 @@ class TestCompleteStatePipeline:
 class TestOCRNamingIntegration:
     """Test OCR-based naming integration in the pipeline."""
 
-    @patch(
-        "qontinui.discovery.state_construction.state_builder.StateBuilder.name_generator"
-    )
+    @patch("qontinui.discovery.state_construction.state_builder.StateBuilder.name_generator")
     def test_state_name_generation_with_ocr(self, mock_name_gen, synthetic_screenshots):
         """Test that OCR name generator is used for state naming."""
         # Setup mock name generator
@@ -476,12 +474,8 @@ class TestOCRNamingIntegration:
         assert isinstance(state.name, str)
         assert len(state.name) > 0
 
-    @patch(
-        "qontinui.discovery.state_construction.state_builder.StateBuilder.name_generator"
-    )
-    def test_element_name_generation_with_ocr(
-        self, mock_name_gen, synthetic_screenshots
-    ):
+    @patch("qontinui.discovery.state_construction.state_builder.StateBuilder.name_generator")
+    def test_element_name_generation_with_ocr(self, mock_name_gen, synthetic_screenshots):
         """Test that element names are generated using OCR."""
         mock_name_gen.generate_name_from_image.return_value = "start_button"
 
@@ -511,9 +505,7 @@ class TestOCRNamingIntegration:
 class TestElementIdentificationIntegration:
     """Test element identification integration in the pipeline."""
 
-    @patch(
-        "qontinui.discovery.state_construction.state_builder.StateBuilder.element_identifier"
-    )
+    @patch("qontinui.discovery.state_construction.state_builder.StateBuilder.element_identifier")
     def test_region_identification(self, mock_identifier, synthetic_screenshots):
         """Test that element identifier detects regions."""
         # Mock region detection
@@ -583,9 +575,7 @@ class TestTransitionInfoProcessing:
         assert trans.target_state_name is None
         assert trans.timestamp is None
 
-    def test_click_point_clustering(
-        self, transition_info_with_clicks, synthetic_screenshots
-    ):
+    def test_click_point_clustering(self, transition_info_with_clicks, synthetic_screenshots):
         """Test that click points are clustered into StateLocations."""
         builder = StateBuilder()
         _, transitions_from = transition_info_with_clicks
@@ -696,9 +686,7 @@ class TestStateObjectProperties:
     def test_state_string_representation(self, synthetic_screenshots):
         """Test State string representation."""
         builder = StateBuilder()
-        state = builder.build_state_from_screenshots(
-            synthetic_screenshots, state_name="test_repr"
-        )
+        state = builder.build_state_from_screenshots(synthetic_screenshots, state_name="test_repr")
 
         state_str = str(state)
         assert "test_repr" in state_str
@@ -772,9 +760,7 @@ def test_integration_suite_summary():
     print("\nKey Features:")
     print("  - Synthetic screenshot generation for reproducible testing")
     print("  - Synthetic transition pair generation")
-    print(
-        "  - Complete pipeline testing (DifferentialConsistency -> StateBuilder -> State)"
-    )
+    print("  - Complete pipeline testing (DifferentialConsistency -> StateBuilder -> State)")
     print("  - OCR naming integration testing (with mocks)")
     print("  - Element identification integration testing")
     print("  - State object completeness verification")

@@ -186,9 +186,7 @@ class CLIPDescriptionGenerator(DescriptionGenerator):
             print(f"CLIP generation failed: {e}")
             return "unknown object"
 
-    def batch_generate(
-        self, image: np.ndarray[Any, Any], regions: list[Any]
-    ) -> list[str]:
+    def batch_generate(self, image: np.ndarray[Any, Any], regions: list[Any]) -> list[str]:
         """Generate descriptions for multiple regions.
 
         Args:

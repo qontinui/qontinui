@@ -110,9 +110,7 @@ class CompositeElementDetector(ElementDetector):
             all_elements.extend(elements)
 
         # Filter by confidence
-        filtered = [
-            e for e in all_elements if e.confidence >= self.confidence_threshold
-        ]
+        filtered = [e for e in all_elements if e.confidence >= self.confidence_threshold]
 
         # Apply non-maximum suppression to remove overlaps
         final_elements = self._non_maximum_suppression(filtered)
@@ -139,9 +137,7 @@ class CompositeElementDetector(ElementDetector):
         """
         self.detectors.append(detector)
 
-    def _non_maximum_suppression(
-        self, elements: list[DetectedElement]
-    ) -> list[DetectedElement]:
+    def _non_maximum_suppression(self, elements: list[DetectedElement]) -> list[DetectedElement]:
         """Apply non-maximum suppression to remove overlapping detections.
 
         Args:
@@ -298,9 +294,7 @@ class FeatureDetector(ElementDetector):
 
         return elements
 
-    def _cluster_features(
-        self, keypoints: list, image_shape: tuple[int, int]
-    ) -> list[dict]:
+    def _cluster_features(self, keypoints: list, image_shape: tuple[int, int]) -> list[dict]:
         """Cluster nearby features into potential element regions.
 
         Args:
@@ -330,9 +324,7 @@ class FeatureDetector(ElementDetector):
 
             for j, other_pt in enumerate(points):
                 if j != i and j not in visited:
-                    dist = np.sqrt(
-                        (pt[0] - other_pt[0]) ** 2 + (pt[1] - other_pt[1]) ** 2
-                    )
+                    dist = np.sqrt((pt[0] - other_pt[0]) ** 2 + (pt[1] - other_pt[1]) ** 2)
                     if dist < self.cluster_distance:
                         cluster_points.append(other_pt)
                         cluster_indices.append(j)
@@ -479,9 +471,7 @@ class OCRDetector(ElementDetector):
 
             # Crop the element image
             x, y, w, h = region.bounds
-            element_image = (
-                screenshot[y : y + h, x : x + w] if h > 0 and w > 0 else None
-            )
+            element_image = screenshot[y : y + h, x : x + w] if h > 0 and w > 0 else None
 
             elements.append(
                 DetectedElement(

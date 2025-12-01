@@ -243,9 +243,7 @@ class MaskGenerator:
 
         return mask, metadata
 
-    def _spectral_residual_saliency(
-        self, image: np.ndarray[Any, Any]
-    ) -> np.ndarray[Any, Any]:
+    def _spectral_residual_saliency(self, image: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
         """
         Compute saliency using spectral residual method.
         """
@@ -272,12 +270,8 @@ class MaskGenerator:
         saliency = np.abs(img_back) ** 2
 
         # Smooth and normalize
-        saliency = cv2.GaussianBlur(saliency.astype(np.float32), (11, 11), 2.5).astype(
-            np.float32
-        )
-        saliency = (saliency - saliency.min()) / (
-            saliency.max() - saliency.min() + 1e-7
-        )
+        saliency = cv2.GaussianBlur(saliency.astype(np.float32), (11, 11), 2.5).astype(np.float32)
+        saliency = (saliency - saliency.min()) / (saliency.max() - saliency.min() + 1e-7)
 
         return cast(np.ndarray[Any, Any], saliency)
 
@@ -293,10 +287,7 @@ class MaskGenerator:
         sigma_y, sigma_x = h / 3, w / 3
 
         mask = np.exp(
-            -(
-                (x - center_x) ** 2 / (2 * sigma_x**2)
-                + (y - center_y) ** 2 / (2 * sigma_y**2)
-            )
+            -((x - center_x) ** 2 / (2 * sigma_x**2) + (y - center_y) ** 2 / (2 * sigma_y**2))
         )
 
         return cast(np.ndarray[Any, Any], mask.astype(np.float32))

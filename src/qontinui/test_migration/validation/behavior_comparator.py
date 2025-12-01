@@ -115,9 +115,7 @@ class BehaviorComparatorImpl(BehaviorComparator):
             # TypeError: Invalid test file types or parameters
             return False
 
-    def compare_behavior_detailed(
-        self, java_test: TestFile, python_test: Path
-    ) -> ComparisonResult:
+    def compare_behavior_detailed(self, java_test: TestFile, python_test: Path) -> ComparisonResult:
         """
         Perform detailed behavior comparison with comprehensive analysis.
 
@@ -170,9 +168,7 @@ class BehaviorComparatorImpl(BehaviorComparator):
                 java_output = self._execute_java_component(java_component, test_input)
 
                 # Execute Python component
-                python_output = self._execute_python_component(
-                    python_component, test_input
-                )
+                python_output = self._execute_python_component(python_component, test_input)
 
                 # Compare outputs
                 match = self.compare_outputs(java_output, python_output)
@@ -326,9 +322,7 @@ class BehaviorComparatorImpl(BehaviorComparator):
 
         # Compare outputs if both tests passed
         if java_result.passed and python_result.passed:
-            output_match = self.compare_outputs(
-                java_result.output, python_result.output
-            )
+            output_match = self.compare_outputs(java_result.output, python_result.output)
             if not output_match:
                 differences.append("Test outputs differ")
                 differences.extend(
@@ -464,18 +458,14 @@ class BehaviorComparatorImpl(BehaviorComparator):
 
         return diff[:20]  # Limit diff size
 
-    def _extract_component_differences(
-        self, results: list[dict[str, Any]]
-    ) -> list[str]:
+    def _extract_component_differences(self, results: list[dict[str, Any]]) -> list[str]:
         """Extract differences from component comparison results."""
         differences = []
 
         for i, result in enumerate(results):
             if not result.get("match", False):
                 if "error" in result:
-                    differences.append(
-                        f"Input {i}: Execution error - {result['error']}"
-                    )
+                    differences.append(f"Input {i}: Execution error - {result['error']}")
                 else:
                     differences.append(
                         f"Input {i}: Output mismatch - "

@@ -276,9 +276,7 @@ class SemanticScene:
         return {
             "timestamp": self.timestamp.isoformat(),
             "object_count": self._store.count(),
-            "object_types": {
-                k.value: v for k, v in self.get_object_type_count().items()
-            },
+            "object_types": {k.value: v for k, v in self.get_object_type_count().items()},
             "objects": [obj.to_dict() for obj in self.objects],
             "metadata": self.metadata,
         }

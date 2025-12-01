@@ -46,9 +46,7 @@ class TestLLMTestTranslator:
         """Test that translation without client raises error."""
         translator = LLMTestTranslator()
 
-        test_file = TestFile(
-            path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test"
-        )
+        test_file = TestFile(path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test")
 
         with pytest.raises(ValueError, match="LLM client not configured"):
             translator.translate_test_file(test_file)
@@ -176,9 +174,7 @@ class TestExample:
 
     def test_extract_java_code_with_original_content(self):
         """Test extracting Java code when original content is available."""
-        test_file = TestFile(
-            path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test"
-        )
+        test_file = TestFile(path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test")
 
         # Add original content
         test_file.original_content = "public class Test { @Test public void test() {} }"
@@ -219,9 +215,7 @@ class TestExample:
             }
         )
 
-        test_file = TestFile(
-            path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test"
-        )
+        test_file = TestFile(path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test")
 
         result = self.translator._parse_llm_response(json_response, test_file)
 
@@ -242,9 +236,7 @@ class TestExample:
         assert True
 """
 
-        test_file = TestFile(
-            path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test"
-        )
+        test_file = TestFile(path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test")
 
         result = self.translator._parse_llm_response(raw_response, test_file)
 
@@ -343,9 +335,7 @@ This translation preserves the test intent.
 
     def test_translation_with_integration_test(self):
         """Test translation of integration test."""
-        test_method = TestMethod(
-            name="testIntegration", body="// Integration test logic"
-        )
+        test_method = TestMethod(name="testIntegration", body="// Integration test logic")
 
         test_file = TestFile(
             path=Path("UserServiceIntegrationTest.java"),
@@ -365,9 +355,7 @@ This translation preserves the test intent.
         mock_json_loads.side_effect = json.JSONDecodeError("Invalid JSON", "", 0)
 
         invalid_response = "This is not valid JSON"
-        test_file = TestFile(
-            path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test"
-        )
+        test_file = TestFile(path=Path("Test.java"), test_type=TestType.UNIT, class_name="Test")
 
         result = self.translator._parse_llm_response(invalid_response, test_file)
 

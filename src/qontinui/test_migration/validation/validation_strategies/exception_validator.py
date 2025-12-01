@@ -25,9 +25,7 @@ class ExceptionValidator:
     and similarity scoring for error cases.
     """
 
-    def __init__(
-        self, ignore_whitespace: bool = True, ignore_case: bool = False
-    ) -> None:
+    def __init__(self, ignore_whitespace: bool = True, ignore_case: bool = False) -> None:
         """
         Initialize the exception validator.
 
@@ -122,9 +120,7 @@ class ExceptionValidator:
             return 1.0
 
         # Count matching characters at same positions
-        matches = sum(
-            1 for i in range(min(len(error1), len(error2))) if error1[i] == error2[i]
-        )
+        matches = sum(1 for i in range(min(len(error1), len(error2))) if error1[i] == error2[i])
 
         return matches / max_len
 

@@ -54,14 +54,10 @@ class ExtractionOrchestrator:
             framework: The framework this analyzer supports
             analyzer_class: The analyzer class (not an instance)
         """
-        logger.info(
-            f"Registering static analyzer for {framework.value}: {analyzer_class.__name__}"
-        )
+        logger.info(f"Registering static analyzer for {framework.value}: {analyzer_class.__name__}")
         self.static_analyzers[framework] = analyzer_class
 
-    def register_runtime_extractor(
-        self, extractor_class: type[RuntimeExtractor]
-    ) -> None:
+    def register_runtime_extractor(self, extractor_class: type[RuntimeExtractor]) -> None:
         """
         Register a runtime extractor.
 
@@ -71,9 +67,7 @@ class ExtractionOrchestrator:
         logger.info(f"Registering runtime extractor: {extractor_class.__name__}")
         self.runtime_extractors.append(extractor_class)
 
-    def register_matcher(
-        self, framework: FrameworkType, matcher_class: type[StateMatcher]
-    ) -> None:
+    def register_matcher(self, framework: FrameworkType, matcher_class: type[StateMatcher]) -> None:
         """
         Register a state matcher for a framework.
 
@@ -81,9 +75,7 @@ class ExtractionOrchestrator:
             framework: The framework this matcher supports
             matcher_class: The matcher class (not an instance)
         """
-        logger.info(
-            f"Registering state matcher for {framework.value}: {matcher_class.__name__}"
-        )
+        logger.info(f"Registering state matcher for {framework.value}: {matcher_class.__name__}")
         self.matchers[framework] = matcher_class
 
     async def extract(self, config: ExtractionConfig) -> ExtractionResult:
@@ -127,9 +119,7 @@ class ExtractionOrchestrator:
             # Phase 1: Static Analysis (STATIC_ONLY or WHITE_BOX)
             if config.mode in (ExtractionMode.STATIC_ONLY, ExtractionMode.WHITE_BOX):
                 logger.info("Starting static analysis phase...")
-                result.static_analysis = await self._run_static_analysis(
-                    config, framework
-                )
+                result.static_analysis = await self._run_static_analysis(config, framework)
 
                 if result.static_analysis.errors:
                     logger.warning(
@@ -155,9 +145,7 @@ class ExtractionOrchestrator:
                     logger.info("Starting correlation phase...")
                     await self._correlate_results(config, result)
                 else:
-                    error_msg = (
-                        "WHITE_BOX mode requires both static and runtime results"
-                    )
+                    error_msg = "WHITE_BOX mode requires both static and runtime results"
                     logger.error(error_msg)
                     result.errors.append(error_msg)
 
@@ -165,9 +153,7 @@ class ExtractionOrchestrator:
             elif config.mode == ExtractionMode.STATIC_ONLY and result.static_analysis:
                 logger.info("Converting static analysis to preliminary states...")
                 result.states = self._states_from_static(result.static_analysis)
-                result.transitions = self._transitions_from_static(
-                    result.static_analysis
-                )
+                result.transitions = self._transitions_from_static(result.static_analysis)
 
             # Handle BLACK_BOX mode - use runtime results directly
             elif config.mode == ExtractionMode.BLACK_BOX and result.runtime_extraction:
@@ -212,16 +198,10 @@ class ExtractionOrchestrator:
         # Additional orchestrator-specific validation
         if config.mode in (ExtractionMode.STATIC_ONLY, ExtractionMode.WHITE_BOX):
             if not config.target.project_path:
-                raise ConfigError(
-                    f"{config.mode.value} mode requires target.project_path"
-                )
+                raise ConfigError(f"{config.mode.value} mode requires target.project_path")
 
         if config.mode in (ExtractionMode.BLACK_BOX, ExtractionMode.WHITE_BOX):
-            if not (
-                config.target.url
-                or config.target.executable_path
-                or config.target.app_id
-            ):
+            if not (config.target.url or config.target.executable_path or config.target.app_id):
                 raise ConfigError(
                     f"{config.mode.value} mode requires target.url, executable_path, or app_id"
                 )
@@ -244,9 +224,7 @@ class ExtractionOrchestrator:
         """
         # If framework is explicitly specified, use it
         if target.framework:
-            logger.info(
-                f"Using explicitly specified framework: {target.framework.value}"
-            )
+            logger.info(f"Using explicitly specified framework: {target.framework.value}")
             return target.framework
 
         # Otherwise, auto-detect from project files
@@ -255,9 +233,7 @@ class ExtractionOrchestrator:
             if target.url:
                 logger.info("No project path, assuming generic web application")
                 return FrameworkType.WEB
-            logger.warning(
-                "Cannot detect framework without project_path or framework hint"
-            )
+            logger.warning("Cannot detect framework without project_path or framework hint")
             return FrameworkType.UNKNOWN
 
         project_path = target.project_path
@@ -388,9 +364,7 @@ class ExtractionOrchestrator:
         logger.warning(f"No static analyzer available for {framework.value}")
         return None
 
-    def _get_runtime_extractor(
-        self, target: ExtractionTarget
-    ) -> RuntimeExtractor | None:
+    def _get_runtime_extractor(self, target: ExtractionTarget) -> RuntimeExtractor | None:
         """
         Get appropriate runtime extractor for target.
 
@@ -476,9 +450,7 @@ class ExtractionOrchestrator:
             result.analysis_duration_ms = (time.time() - start_time) * 1000
             return result
 
-    async def _run_runtime_extraction(
-        self, config: ExtractionConfig
-    ) -> RuntimeExtractionResult:
+    async def _run_runtime_extraction(self, config: ExtractionConfig) -> RuntimeExtractionResult:
         """
         Run the runtime extraction phase.
 
@@ -515,9 +487,7 @@ class ExtractionOrchestrator:
             result.extraction_duration_ms = (time.time() - start_time) * 1000
             return result
 
-    async def _correlate_results(
-        self, config: ExtractionConfig, result: ExtractionResult
-    ) -> None:
+    async def _correlate_results(self, config: ExtractionConfig, result: ExtractionResult) -> None:
         """
         Correlate static and runtime results (WHITE_BOX mode).
 
@@ -570,9 +540,7 @@ class ExtractionOrchestrator:
                     result.warnings.append(warning)
 
                     if config.require_correlation:
-                        error = (
-                            "Correlation threshold not met and require_correlation=True"
-                        )
+                        error = "Correlation threshold not met and require_correlation=True"
                         logger.error(error)
                         result.errors.append(error)
 
@@ -588,9 +556,7 @@ class ExtractionOrchestrator:
             result.states = self._states_from_static(result.static_analysis)
             result.transitions = self._transitions_from_static(result.static_analysis)
 
-    def _states_from_static(
-        self, static: StaticAnalysisResult
-    ) -> list[CorrelatedState]:
+    def _states_from_static(self, static: StaticAnalysisResult) -> list[CorrelatedState]:
         """
         Convert static analysis to preliminary states.
 
@@ -634,9 +600,7 @@ class ExtractionOrchestrator:
         logger.info(f"Created {len(states)} preliminary states from static analysis")
         return states
 
-    def _transitions_from_static(
-        self, static: StaticAnalysisResult
-    ) -> list[InferredTransition]:
+    def _transitions_from_static(self, static: StaticAnalysisResult) -> list[InferredTransition]:
         """
         Extract transitions from static analysis.
 

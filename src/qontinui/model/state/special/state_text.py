@@ -387,11 +387,7 @@ class StateText:
             True if valid
         """
         # Must have at least one way to identify state
-        return (
-            bool(self._text_patterns)
-            or bool(self._required_texts)
-            or bool(self._state_strings)
-        )
+        return bool(self._text_patterns) or bool(self._required_texts) or bool(self._state_strings)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.

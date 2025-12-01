@@ -75,8 +75,7 @@ class InputFieldDetector(BaseAnalyzer):
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect input fields in screenshots"""
         logger.info(
-            f"Running input field detection on "
-            f"{len(input_data.screenshots)} screenshots"
+            f"Running input field detection on " f"{len(input_data.screenshots)} screenshots"
         )
 
         params = {**self.get_default_parameters(), **input_data.parameters}
@@ -90,9 +89,7 @@ class InputFieldDetector(BaseAnalyzer):
         for screenshot_idx, (img_color, img_gray) in enumerate(
             zip(images_color, images_gray, strict=False)
         ):
-            elements = await self._analyze_screenshot(
-                img_color, img_gray, screenshot_idx, params
-            )
+            elements = await self._analyze_screenshot(img_color, img_gray, screenshot_idx, params)
             all_elements.extend(elements)
 
         logger.info(f"Detected {len(all_elements)} input fields")
@@ -143,9 +140,7 @@ class InputFieldDetector(BaseAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -160,9 +155,7 @@ class InputFieldDetector(BaseAnalyzer):
             aspect_ratio = w / h if h > 0 else 0
 
             # Check aspect ratio - input fields are horizontally elongated
-            if not (
-                params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]
-            ):
+            if not (params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]):
                 continue
 
             # Extract region for analysis
@@ -179,9 +172,7 @@ class InputFieldDetector(BaseAnalyzer):
             has_light_bg = mean_brightness >= params["light_bg_threshold"]
 
             # Calculate confidence based on multiple factors
-            confidence = self._calculate_confidence(
-                aspect_ratio, w, h, has_light_bg, params
-            )
+            confidence = self._calculate_confidence(aspect_ratio, w, h, has_light_bg, params)
 
             # Only add if confidence is reasonable
             if confidence < 0.4:
@@ -189,9 +180,7 @@ class InputFieldDetector(BaseAnalyzer):
 
             elements.append(
                 DetectedElement(
-                    bounding_box=BoundingBox(
-                        x=int(x), y=int(y), width=int(w), height=int(h)
-                    ),
+                    bounding_box=BoundingBox(x=int(x), y=int(y), width=int(w), height=int(h)),
                     confidence=confidence,
                     label="Input Field",
                     element_type="input",

@@ -70,10 +70,7 @@ class MenuBarDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect menu bars in screenshots"""
-        logger.info(
-            f"Running menu bar detection on "
-            f"{len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running menu bar detection on " f"{len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -86,9 +83,7 @@ class MenuBarDetector(BaseAnalyzer):
         for screenshot_idx, (img_color, img_gray) in enumerate(
             zip(images_color, images_gray, strict=False)
         ):
-            elements = await self._analyze_screenshot(
-                img_color, img_gray, screenshot_idx, params
-            )
+            elements = await self._analyze_screenshot(img_color, img_gray, screenshot_idx, params)
             all_elements.extend(elements)
 
         logger.info(f"Detected {len(all_elements)} menu bars")
@@ -138,9 +133,7 @@ class MenuBarDetector(BaseAnalyzer):
         top_region = img_gray[:top_region_h, :]
 
         # Apply edge detection
-        edges = cv2.Canny(
-            top_region, params["edge_threshold_low"], params["edge_threshold_high"]
-        )
+        edges = cv2.Canny(top_region, params["edge_threshold_low"], params["edge_threshold_high"])
 
         # Find horizontal projections (sum edges across width)
         horizontal_projection = np.sum(edges, axis=1)
@@ -160,9 +153,7 @@ class MenuBarDetector(BaseAnalyzer):
             menu_height = y_end - y_start
 
             # Check height constraints
-            if not (
-                params["min_menu_height"] <= menu_height <= params["max_menu_height"]
-            ):
+            if not (params["min_menu_height"] <= menu_height <= params["max_menu_height"]):
                 continue
 
             # Menu bars typically span most of the width
@@ -219,9 +210,7 @@ class MenuBarDetector(BaseAnalyzer):
 
         return elements
 
-    def _group_consecutive_rows(
-        self, rows: np.ndarray, params: dict[str, Any]
-    ) -> list[tuple]:
+    def _group_consecutive_rows(self, rows: np.ndarray, params: dict[str, Any]) -> list[tuple]:
         """Group consecutive row indices into regions"""
         if len(rows) == 0:
             return []

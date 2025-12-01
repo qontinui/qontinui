@@ -96,9 +96,7 @@ class ButtonFusionDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Perform multi-strategy fusion detection"""
-        logger.info(
-            f"Running fusion detection on {len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running fusion detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -112,9 +110,7 @@ class ButtonFusionDetector(BaseAnalyzer):
             all_elements.extend(elements)
 
         # Calculate overall confidence based on agreement
-        avg_confidence = (
-            np.mean([e.confidence for e in all_elements]) if all_elements else 0.0
-        )
+        avg_confidence = np.mean([e.confidence for e in all_elements]) if all_elements else 0.0
 
         logger.info(
             f"Found {len(all_elements)} button candidates with "
@@ -190,9 +186,7 @@ class ButtonFusionDetector(BaseAnalyzer):
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             # Get bounding rectangle
@@ -204,9 +198,7 @@ class ButtonFusionDetector(BaseAnalyzer):
             # Filter by size and aspect ratio
             if not (params["min_area"] <= area <= params["max_area"]):
                 continue
-            if not (
-                params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]
-            ):
+            if not (params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]):
                 continue
 
             # Calculate rectangularity (how close to perfect rectangle)
@@ -269,9 +261,7 @@ class ButtonFusionDetector(BaseAnalyzer):
             # Higher confidence for text in expected size range
             confidence = 0.7 if (200 <= area <= 2000) else 0.5
 
-            regions.append(
-                (BoundingBox(x=x_pad, y=y_pad, width=w_pad, height=h_pad), confidence)
-            )
+            regions.append((BoundingBox(x=x_pad, y=y_pad, width=w_pad, height=h_pad), confidence))
 
         return regions
 
@@ -292,21 +282,15 @@ class ButtonFusionDetector(BaseAnalyzer):
         value = hsv[:, :, 2]
 
         # Buttons are typically saturated and not too dark/bright
-        color_mask = (
-            (saturation > params["min_saturation"]) & (value > 50) & (value < 240)
-        )
+        color_mask = (saturation > params["min_saturation"]) & (value > 50) & (value < 240)
 
         # Clean mask
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        color_mask = cv2.morphologyEx(
-            color_mask.astype(np.uint8), cv2.MORPH_CLOSE, kernel
-        )
+        color_mask = cv2.morphologyEx(color_mask.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
         color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_OPEN, kernel)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -410,9 +394,7 @@ class ButtonFusionDetector(BaseAnalyzer):
                 DetectedElement(
                     bounding_box=candidate["bbox"],  # type: ignore[arg-type]
                     confidence=final_confidence,
-                    label=(
-                        "Button (Fused)" if is_high_confidence else "Button Candidate"
-                    ),
+                    label=("Button (Fused)" if is_high_confidence else "Button Candidate"),
                     element_type="button",
                     screenshot_index=screenshot_idx,
                     metadata={
@@ -427,8 +409,6 @@ class ButtonFusionDetector(BaseAnalyzer):
 
         return elements
 
-    def _boxes_overlap(
-        self, box1: BoundingBox, box2: BoundingBox, threshold: float = 0.3
-    ) -> bool:
+    def _boxes_overlap(self, box1: BoundingBox, box2: BoundingBox, threshold: float = 0.3) -> bool:
         """Check if two bounding boxes overlap significantly"""
         return box1.iou(box2) >= threshold

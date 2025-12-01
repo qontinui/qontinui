@@ -40,9 +40,7 @@ class FindColor:
         """Initialize the orchestrator."""
         self._orchestrator = FindColorOrchestrator()
 
-    def find(
-        self, matches: ActionResult, object_collections: list[ObjectCollection]
-    ) -> None:
+    def find(self, matches: ActionResult, object_collections: list[ObjectCollection]) -> None:
         """Find matches based on color.
 
         Delegates to orchestrator for strategy selection and execution.

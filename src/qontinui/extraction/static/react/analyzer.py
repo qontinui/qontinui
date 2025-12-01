@@ -155,9 +155,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         function_components = comp_module.extract_function_components(
             parse_result.to_dict(), file_path
         )
-        class_components = comp_module.extract_class_components(
-            parse_result.to_dict(), file_path
-        )
+        class_components = comp_module.extract_class_components(parse_result.to_dict(), file_path)
 
         all_components = function_components + class_components
         self._components.extend(all_components)
@@ -235,9 +233,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         # Remove duplicates
         return list(set(files))
 
-    def _get_component_parse_result(
-        self, parse_result: dict, component_name: str
-    ) -> dict:
+    def _get_component_parse_result(self, parse_result: dict, component_name: str) -> dict:
         """
         Get parse result scoped to a specific component.
 
@@ -270,9 +266,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         state_vars: list[StateVariable] = []
 
         # Extract from different hook types
-        state_vars.extend(
-            hook_module.extract_use_state(component_parse, component_name, file_path)
-        )
+        state_vars.extend(hook_module.extract_use_state(component_parse, component_name, file_path))
         state_vars.extend(
             hook_module.extract_use_reducer(component_parse, component_name, file_path)
         )
@@ -305,9 +299,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         conditionals.extend(
             jsx_module.extract_logical_and(component_parse, component_name, file_path)
         )
-        conditionals.extend(
-            jsx_module.extract_ternary(component_parse, component_name, file_path)
-        )
+        conditionals.extend(jsx_module.extract_ternary(component_parse, component_name, file_path))
         conditionals.extend(
             jsx_module.extract_early_returns(component_parse, component_name, file_path)
         )
@@ -317,9 +309,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
         return conditionals
 
-    def _extract_api_calls(
-        self, parse_result: dict, file_path: Path
-    ) -> list[APICallDefinition]:
+    def _extract_api_calls(self, parse_result: dict, file_path: Path) -> list[APICallDefinition]:
         """
         Extract API calls from the file.
 
@@ -371,9 +361,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
         return api_calls
 
-    def _extract_routes(
-        self, file_path: Path, parse_result: dict
-    ) -> list[RouteDefinition]:
+    def _extract_routes(self, file_path: Path, parse_result: dict) -> list[RouteDefinition]:
         """
         Extract route definitions (Next.js App Router, Pages Router, etc.).
 
@@ -452,9 +440,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
             return APICallType.FETCH
         elif "query" in lower_name or "mutation" in lower_name:
             return APICallType.REACT_QUERY
-        elif any(
-            method in lower_name for method in ["get", "post", "put", "delete", "patch"]
-        ):
+        elif any(method in lower_name for method in ["get", "post", "put", "delete", "patch"]):
             return APICallType.AXIOS
         else:
             return APICallType.FETCH

@@ -52,9 +52,7 @@ class RoutingContext:
         self.current_path: list[PathSegment] = []
         self.visited_actions: set[str] = set()
         self.action_visit_count: dict[str, int] = defaultdict(int)
-        self.output_usage: dict[str, dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        self.output_usage: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
         self.start_time: datetime = datetime.now()
         self.end_time: datetime | None = None
 
@@ -139,10 +137,7 @@ class RoutingContext:
         Returns:
             List of tuples (action_id, entry_output, exit_output)
         """
-        return [
-            (seg.action_id, seg.entry_output, seg.exit_output)
-            for seg in self.current_path
-        ]
+        return [(seg.action_id, seg.entry_output, seg.exit_output) for seg in self.current_path]
 
     def was_action_visited(self, action_id: str) -> bool:
         """
@@ -228,9 +223,7 @@ class RoutingContext:
         decisions = []
 
         for record in self.records:
-            if record.output_type in ["true", "false"] or record.output_type.startswith(
-                "case_"
-            ):
+            if record.output_type in ["true", "false"] or record.output_type.startswith("case_"):
                 decisions.append((record.from_action, record.output_type))
 
         return decisions

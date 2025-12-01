@@ -19,9 +19,7 @@ class TestBehaviorComparator:
     def setup_method(self):
         """Set up test fixtures."""
         self.comparator = BehaviorComparatorImpl()
-        self.isolation_config = TestIsolationConfig(
-            timeout_seconds=10, use_separate_processes=True
-        )
+        self.isolation_config = TestIsolationConfig(timeout_seconds=10, use_separate_processes=True)
 
     def test_initialization(self):
         """Test that comparator initializes properly."""
@@ -423,12 +421,8 @@ AssertionError"""
 
     def test_compare_error_messages(self):
         """Test error message comparison."""
-        error1 = (
-            'File "test.py", line 10, in test_function\nAssertionError: Test failed'
-        )
-        error2 = (
-            'File "other.py", line 15, in other_function\nAssertionError: Test failed'
-        )
+        error1 = 'File "test.py", line 10, in test_function\nAssertionError: Test failed'
+        error2 = 'File "other.py", line 15, in other_function\nAssertionError: Test failed'
 
         similarity = self.comparator._compare_error_messages(error1, error2)
 

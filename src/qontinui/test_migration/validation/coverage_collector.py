@@ -145,8 +145,7 @@ class CoverageCollector:
         return [
             mapping
             for mapping in self.test_mappings.values()
-            if mapping.migration_status
-            in [MigrationStatus.NOT_STARTED, MigrationStatus.FAILED]
+            if mapping.migration_status in [MigrationStatus.NOT_STARTED, MigrationStatus.FAILED]
         ]
 
     def _get_mapping_key(self, java_test_path: Path) -> str:

@@ -82,10 +82,7 @@ class HoughGridDetector(BaseRegionAnalyzer):
         # Separate horizontal and vertical lines
         h_lines, v_lines = self._separate_lines(lines, params)
 
-        if (
-            len(h_lines) < params["min_grid_rows"] + 1
-            or len(v_lines) < params["min_grid_cols"] + 1
-        ):
+        if len(h_lines) < params["min_grid_rows"] + 1 or len(v_lines) < params["min_grid_cols"] + 1:
             return []
 
         # Find uniform spacing in lines
@@ -255,9 +252,7 @@ class HoughGridDetector(BaseRegionAnalyzer):
                         spacings.append(actual_spacing)
 
             if len(group) >= 3:  # At least 3 lines (2 cells)
-                groups.append(
-                    {"lines": group, "spacing": np.mean(spacings) if spacings else 0}
-                )
+                groups.append({"lines": group, "spacing": np.mean(spacings) if spacings else 0})
 
         # Return best group (most lines)
         if groups:

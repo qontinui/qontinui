@@ -138,9 +138,7 @@ class HybridTestTranslator(TestTranslator):
             cache_key = self._generate_cache_key(test_file, strategy)
             if cache_key in self.translation_cache:
                 cached_result = self.translation_cache[cache_key]
-                self.logger.debug(
-                    f"Using cached translation for {test_file.class_name}"
-                )
+                self.logger.debug(f"Using cached translation for {test_file.class_name}")
                 return cast(TranslationResult, cached_result)
 
         # Determine optimal strategy based on test complexity
@@ -162,9 +160,7 @@ class HybridTestTranslator(TestTranslator):
 
         except Exception as e:
             self.stats["failures"] += 1
-            self.logger.error(
-                f"Translation failed for {test_file.class_name}: {str(e)}"
-            )
+            self.logger.error(f"Translation failed for {test_file.class_name}: {str(e)}")
 
             return TranslationResult(
                 translated_code="# Translation failed\npass",
@@ -195,9 +191,7 @@ class HybridTestTranslator(TestTranslator):
             if self.llm_translator:
                 return self.llm_translator.translate_test_method(method_code)
             else:
-                raise TranslationException(
-                    "Both utility and LLM translation failed"
-                ) from e
+                raise TranslationException("Both utility and LLM translation failed") from e
 
     def translate_assertions(self, assertion_code: str) -> str:
         """
@@ -211,9 +205,7 @@ class HybridTestTranslator(TestTranslator):
         """
         # Try utility first for assertions
         try:
-            return cast(
-                str, self.utility_translator.translate_assertions(assertion_code)
-            )
+            return cast(str, self.utility_translator.translate_assertions(assertion_code))
         except Exception as e:
             if self.llm_translator:
                 return self.llm_translator.translate_assertions(assertion_code)
@@ -236,13 +228,8 @@ class HybridTestTranslator(TestTranslator):
             Optimal strategy to use
         """
         # If LLM not available, force utility-only
-        if (
-            not self.llm_translator
-            and requested_strategy != TranslationStrategy.UTILITY_ONLY
-        ):
-            self.logger.warning(
-                "LLM not available, falling back to utility-only strategy"
-            )
+        if not self.llm_translator and requested_strategy != TranslationStrategy.UTILITY_ONLY:
+            self.logger.warning("LLM not available, falling back to utility-only strategy")
             return TranslationStrategy.UTILITY_ONLY
 
         # Analyze test complexity
@@ -293,8 +280,7 @@ class HybridTestTranslator(TestTranslator):
 
             # Complex assertions
             if any(
-                keyword in method.body
-                for keyword in ["when(", "verify(", "thenReturn", "doThrow"]
+                keyword in method.body for keyword in ["when(", "verify(", "thenReturn", "doThrow"]
             ):
                 score += 0.2
 
@@ -331,9 +317,7 @@ class HybridTestTranslator(TestTranslator):
         """Translate using only utility-based translator."""
         try:
             translated_code = self.utility_translator.translate_test_file(test_file)
-            validation_errors = self.utility_translator.validate_generated_file(
-                translated_code
-            )
+            validation_errors = self.utility_translator.validate_generated_file(translated_code)
 
             return TranslationResult(
                 translated_code=translated_code,
@@ -420,9 +404,7 @@ class HybridTestTranslator(TestTranslator):
                     llm_result.strategy_used = TranslationStrategy.HYBRID_LLM_FIRST
                     return llm_result
                 else:
-                    warnings.append(
-                        "LLM translation had low confidence, trying utility"
-                    )
+                    warnings.append("LLM translation had low confidence, trying utility")
 
             except Exception as e:
                 warnings.append(f"LLM translation failed: {str(e)}")
@@ -440,18 +422,14 @@ class HybridTestTranslator(TestTranslator):
 
         raise TranslationException(f"Both LLM and utility translation failed: {errors}")
 
-    def _translate_utility_with_llm_validation(
-        self, test_file: TestFile
-    ) -> TranslationResult:
+    def _translate_utility_with_llm_validation(self, test_file: TestFile) -> TranslationResult:
         """Translate with utility then validate and enhance with LLM."""
         # Get utility translation
         utility_result = self._translate_utility_only(test_file)
 
         # If no LLM available, return utility result
         if not self.llm_translator:
-            utility_result.strategy_used = (
-                TranslationStrategy.UTILITY_WITH_LLM_VALIDATION
-            )
+            utility_result.strategy_used = TranslationStrategy.UTILITY_WITH_LLM_VALIDATION
             utility_result.warnings = ["LLM validation not available"]
             return utility_result
 
@@ -475,16 +453,12 @@ class HybridTestTranslator(TestTranslator):
 
         except Exception as e:
             # Return utility result with warning if LLM enhancement fails
-            utility_result.strategy_used = (
-                TranslationStrategy.UTILITY_WITH_LLM_VALIDATION
-            )
+            utility_result.strategy_used = TranslationStrategy.UTILITY_WITH_LLM_VALIDATION
             utility_result.llm_attempted = True
             utility_result.warnings = [f"LLM enhancement failed: {str(e)}"]
             return utility_result
 
-    def _generate_cache_key(
-        self, test_file: TestFile, strategy: TranslationStrategy
-    ) -> str:
+    def _generate_cache_key(self, test_file: TestFile, strategy: TranslationStrategy) -> str:
         """Generate cache key for translation result."""
         import hashlib
 

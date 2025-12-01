@@ -32,9 +32,7 @@ class MockInput(IInputController):
 
     def _record_action(self, action_type: str, **kwargs) -> None:
         """Record action for history tracking."""
-        self._action_history.append(
-            {"type": action_type, "timestamp": datetime.now(), **kwargs}
-        )
+        self._action_history.append({"type": action_type, "timestamp": datetime.now(), **kwargs})
 
     # Mouse operations
 
@@ -69,12 +67,8 @@ class MockInput(IInputController):
         if x is not None and y is not None:
             self._mouse_position = MousePosition(x=x, y=y)
 
-        logger.debug(
-            f"[MOCK] Mouse click {button.value} at ({pos_x}, {pos_y}) x{clicks}"
-        )
-        self._record_action(
-            "mouse_click", x=pos_x, y=pos_y, button=button.value, clicks=clicks
-        )
+        logger.debug(f"[MOCK] Mouse click {button.value} at ({pos_x}, {pos_y}) x{clicks}")
+        self._record_action("mouse_click", x=pos_x, y=pos_y, button=button.value, clicks=clicks)
         return True
 
     def mouse_down(
@@ -121,9 +115,7 @@ class MockInput(IInputController):
         duration: float = 0.5,
     ) -> bool:
         """Mock drag mouse from start to end position (instant)."""
-        logger.debug(
-            f"[MOCK] Mouse drag from ({start_x}, {start_y}) to ({end_x}, {end_y})"
-        )
+        logger.debug(f"[MOCK] Mouse drag from ({start_x}, {start_y}) to ({end_x}, {end_y})")
         self._mouse_position = MousePosition(x=end_x, y=end_y)
         self._record_action(
             "mouse_drag",
@@ -136,9 +128,7 @@ class MockInput(IInputController):
         )
         return True
 
-    def mouse_scroll(
-        self, clicks: int, x: int | None = None, y: int | None = None
-    ) -> bool:
+    def mouse_scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
         """Mock scroll mouse wheel (instant)."""
         pos_x = x if x is not None else self._mouse_position.x
         pos_y = y if y is not None else self._mouse_position.y
@@ -155,9 +145,7 @@ class MockInput(IInputController):
         """Mock click at specific coordinates (instant)."""
         return self.mouse_click(x=x, y=y, button=button, clicks=1)
 
-    def double_click_at(
-        self, x: int, y: int, button: MouseButton = MouseButton.LEFT
-    ) -> bool:
+    def double_click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
         """Mock double click at specific coordinates (instant)."""
         return self.mouse_click(x=x, y=y, button=button, clicks=2)
 
@@ -177,9 +165,7 @@ class MockInput(IInputController):
 
     # Keyboard operations
 
-    def key_press(
-        self, key: str | Key, presses: int = 1, interval: float = 0.0
-    ) -> bool:
+    def key_press(self, key: str | Key, presses: int = 1, interval: float = 0.0) -> bool:
         """Mock press key (instant)."""
         key_str = key.value if isinstance(key, Key) else key
         logger.debug(f"[MOCK] Key press '{key_str}' x{presses}")

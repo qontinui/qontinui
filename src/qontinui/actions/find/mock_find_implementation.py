@@ -120,9 +120,7 @@ class MockFindImplementation:
 
         # Execute synchronously in mock mode (fast anyway)
         # But wrap in asyncio.to_thread to simulate async behavior
-        tasks = [
-            asyncio.to_thread(self.execute, pattern, options) for pattern in patterns
-        ]
+        tasks = [asyncio.to_thread(self.execute, pattern, options) for pattern in patterns]
 
         results = await asyncio.gather(*tasks)
         return results

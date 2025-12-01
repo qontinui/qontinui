@@ -82,9 +82,7 @@ def example_get_variable():
 
     # Example 1: Get existing variable
     print("1. Getting existing variable:")
-    action = Action(
-        id="get_username", type="GET_VARIABLE", config={"variableName": "username"}
-    )
+    action = Action(id="get_username", type="GET_VARIABLE", config={"variableName": "username"})
     result = executor.execute_get_variable(action, context)
     print(f"   Result: {result}")
 
@@ -276,9 +274,7 @@ def example_filter():
     result = executor.execute_filter(action, context)
     filtered_items = result["filtered_collection"]
     print(f"   Filtered count: {len(filtered_items)}")
-    print(
-        f"   Items: {[(item['name'], item['price'], item['level']) for item in filtered_items]}"
-    )
+    print(f"   Items: {[(item['name'], item['price'], item['level']) for item in filtered_items]}")
 
 
 def example_variable_scopes():

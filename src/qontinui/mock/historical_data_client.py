@@ -162,9 +162,7 @@ class HistoricalDataClient:
                     return HistoricalMatchData.from_api_response(data)
                 return None
 
-            logger.warning(
-                f"Historical data API returned {response.status_code}: {response.text}"
-            )
+            logger.warning(f"Historical data API returned {response.status_code}: {response.text}")
             return None
 
         except httpx.RequestError as e:
@@ -209,9 +207,7 @@ class HistoricalDataClient:
                 data = response.json()
                 return [HistoricalMatchData.from_api_response(item) for item in data]
 
-            logger.warning(
-                f"Historical data API returned {response.status_code}: {response.text}"
-            )
+            logger.warning(f"Historical data API returned {response.status_code}: {response.text}")
             return []
 
         except httpx.RequestError as e:
@@ -244,9 +240,7 @@ class HistoricalDataClient:
             if response.status_code == 200:
                 return cast(bytes, response.content)
 
-            logger.warning(
-                f"Frame API returned {response.status_code}: {response.text}"
-            )
+            logger.warning(f"Frame API returned {response.status_code}: {response.text}")
             return None
 
         except httpx.RequestError as e:
@@ -277,9 +271,7 @@ class HistoricalDataClient:
             if response.status_code == 200:
                 return cast(list[dict[Any, Any]], response.json())
 
-            logger.warning(
-                f"Playback API returned {response.status_code}: {response.text}"
-            )
+            logger.warning(f"Playback API returned {response.status_code}: {response.text}")
             return []
 
         except httpx.RequestError as e:

@@ -192,9 +192,7 @@ class BrobotConverter:
 
         return state
 
-    def _segment_to_element(
-        self, segment: dict[str, Any], state_name: str, index: int
-    ) -> Element:
+    def _segment_to_element(self, segment: dict[str, Any], state_name: str, index: int) -> Element:
         """Convert a segment to an Element.
 
         Args:
@@ -231,9 +229,7 @@ class BrobotConverter:
                 "segment_index": index,
                 "area": segment.get("area", 0),
             },
-            confidence=(
-                segment.get("predicted_iou", 1.0) if "predicted_iou" in segment else 0.8
-            ),
+            confidence=(segment.get("predicted_iou", 1.0) if "predicted_iou" in segment else 0.8),
         )
 
         return element
@@ -360,24 +356,16 @@ class BrobotConverter:
                     converted = self._convert_pattern_data(pattern_data)
 
                     # Save converted pattern
-                    output_path = (
-                        self.output_dir
-                        / "configs"
-                        / f"pattern_{pattern_file.stem}.json"
-                    )
+                    output_path = self.output_dir / "configs" / f"pattern_{pattern_file.stem}.json"
                     with open(output_path, "w") as f:
                         json.dump(converted, f, indent=2)
 
                     logger.debug(f"Converted pattern: {pattern_file}")
                 else:
-                    self.report.warnings.append(
-                        f"Unsupported pattern format: {pattern_file}"
-                    )
+                    self.report.warnings.append(f"Unsupported pattern format: {pattern_file}")
             except Exception as e:
                 logger.error(f"Failed to convert pattern {pattern_file}: {e}")
-                self.report.warnings.append(
-                    f"Failed to convert pattern: {pattern_file}"
-                )
+                self.report.warnings.append(f"Failed to convert pattern: {pattern_file}")
 
     def _convert_pattern_data(self, pattern_data: dict[str, Any]) -> dict[str, Any]:
         """Convert Brobot pattern data to Qontinui format.
@@ -452,10 +440,7 @@ class BrobotConverter:
         # This is simplified - actual Brobot configs would have specific format
         if "transitions" in config_data:
             for trans_data in config_data["transitions"]:
-                if (
-                    trans_data.get("from") in state_names
-                    and trans_data.get("to") in state_names
-                ):
+                if trans_data.get("from") in state_names and trans_data.get("to") in state_names:
                     transition = Transition(
                         from_state=trans_data["from"],
                         to_state=trans_data["to"],
@@ -547,26 +532,18 @@ def main():
     """CLI entry point for Brobot converter."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Convert Brobot assets to Qontinui format"
-    )
+    parser = argparse.ArgumentParser(description="Convert Brobot assets to Qontinui format")
     parser.add_argument("input_dir", help="Input directory containing Brobot assets")
     parser.add_argument("output_dir", help="Output directory for Qontinui assets")
-    parser.add_argument(
-        "--use-sam", action="store_true", help="Use SAM for segmentation"
-    )
-    parser.add_argument(
-        "--use-clip", action="store_true", help="Use CLIP for vectorization"
-    )
+    parser.add_argument("--use-sam", action="store_true", help="Use SAM for segmentation")
+    parser.add_argument("--use-clip", action="store_true", help="Use CLIP for vectorization")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 
     args = parser.parse_args()
 
     # Configure logging
     level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(
-        level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Run converter
     converter = BrobotConverter(

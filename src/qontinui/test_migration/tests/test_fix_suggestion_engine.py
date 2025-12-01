@@ -109,9 +109,7 @@ class TestFixSuggestionEngine:
         assert len(suggestions) > 0
 
         # Should have annotation fix suggestion
-        annotation_fixes = [
-            s for s in suggestions if s.fix_type == FixType.ANNOTATION_FIX
-        ]
+        annotation_fixes = [s for s in suggestions if s.fix_type == FixType.ANNOTATION_FIX]
         assert len(annotation_fixes) > 0
 
         test_fix = annotation_fixes[0]
@@ -137,9 +135,7 @@ class TestFixSuggestionEngine:
         assert len(suggestions) > 0
 
         # Should have assertion fix suggestion
-        assertion_fixes = [
-            s for s in suggestions if s.fix_type == FixType.ASSERTION_FIX
-        ]
+        assertion_fixes = [s for s in suggestions if s.fix_type == FixType.ASSERTION_FIX]
         assert len(assertion_fixes) > 0
 
         assertion_fix = assertion_fixes[0]
@@ -165,9 +161,7 @@ class TestFixSuggestionEngine:
         assert len(suggestions) > 0
 
         # Should have annotation fix suggestion
-        annotation_fixes = [
-            s for s in suggestions if s.fix_type == FixType.ANNOTATION_FIX
-        ]
+        annotation_fixes = [s for s in suggestions if s.fix_type == FixType.ANNOTATION_FIX]
         assert len(annotation_fixes) > 0
 
         spring_fix = annotation_fixes[0]
@@ -396,9 +390,7 @@ def testMethod():
         assert "qontinui.model.state.State" in self.engine._map_brobot_to_qontinui(
             "brobot.library.State"
         )
-        assert "qontinui.find.Find" in self.engine._map_brobot_to_qontinui(
-            "brobot.library.Find"
-        )
+        assert "qontinui.find.Find" in self.engine._map_brobot_to_qontinui("brobot.library.Find")
 
         # Test unknown mapping (should use fallback)
         unknown_mapping = self.engine._map_brobot_to_qontinui("brobot.library.Unknown")
@@ -407,9 +399,7 @@ def testMethod():
 
     def test_can_apply_fix_safely(self):
         """Test safe fix application checking."""
-        content = (
-            "import org.junit.Test\n@Test\ndef testMethod():\n    assertEquals(a, b)"
-        )
+        content = "import org.junit.Test\n@Test\ndef testMethod():\n    assertEquals(a, b)"
 
         # Simple fix with high confidence - should be safe
         safe_fix = FixSuggestion(

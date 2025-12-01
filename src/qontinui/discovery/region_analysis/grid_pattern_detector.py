@@ -78,9 +78,7 @@ class GridPatternDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -117,9 +115,7 @@ class GridPatternDetector(BaseRegionAnalyzer):
             return []
 
         # Locate grid regions
-        regions = self._locate_grids(
-            analysis_img, gray, grid_info, params, screenshot_index
-        )
+        regions = self._locate_grids(analysis_img, gray, grid_info, params, screenshot_index)
 
         return regions
 
@@ -158,9 +154,7 @@ class GridPatternDetector(BaseRegionAnalyzer):
 
         # Find local maxima
         local_max = maximum_filter(autocorr_masked, size=10)
-        peaks = (autocorr_masked == local_max) & (
-            autocorr_masked > params["autocorr_threshold"]
-        )
+        peaks = (autocorr_masked == local_max) & (autocorr_masked > params["autocorr_threshold"])
 
         # Get peak coordinates
         peak_coords = np.argwhere(peaks)

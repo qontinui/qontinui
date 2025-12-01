@@ -98,13 +98,9 @@ class MathExecutor:
         resolved_operands = self._resolve_operands(operands)
 
         # Perform the operation
-        result = self._perform_operation(
-            operation, resolved_operands, custom_expression
-        )
+        result = self._perform_operation(operation, resolved_operands, custom_expression)
 
-        logger.debug(
-            f"Math operation {operation} executed: {resolved_operands} -> {result}"
-        )
+        logger.debug(f"Math operation {operation} executed: {resolved_operands} -> {result}")
         return result
 
     def _resolve_operands(self, operands: list[Any]) -> list[float]:
@@ -138,24 +134,18 @@ class MathExecutor:
                     # Variable reference
                     var_name = operand.get("variableName")
                     if not var_name:
-                        raise ValueError(
-                            f"Operand {i}: Variable reference missing 'variableName'"
-                        )
+                        raise ValueError(f"Operand {i}: Variable reference missing 'variableName'")
 
                     value = self.variable_context.get(var_name)
                     if value is None:
-                        raise ValueError(
-                            f"Operand {i}: Variable '{var_name}' not found"
-                        )
+                        raise ValueError(f"Operand {i}: Variable '{var_name}' not found")
 
                     resolved.append(float(value))
                 else:
                     # Try to convert to float
                     resolved.append(float(operand))
             except (ValueError, TypeError) as e:
-                raise ValueError(
-                    f"Operand {i}: Cannot convert to number: {operand}"
-                ) from e
+                raise ValueError(f"Operand {i}: Cannot convert to number: {operand}") from e
 
         return resolved
 

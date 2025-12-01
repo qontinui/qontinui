@@ -49,9 +49,7 @@ class AnnotatedStateBuilder:
             A fully constructed State object ready for registration
         """
         state_class = state_instance.__class__
-        state_name = state_metadata.get("name", "") or self._derive_state_name(
-            state_class
-        )
+        state_name = state_metadata.get("name", "") or self._derive_state_name(state_class)
 
         logger.debug(f"Building state '{state_name}' from class {state_class.__name__}")
 
@@ -94,9 +92,7 @@ class AnnotatedStateBuilder:
 
         return cast(State, state)
 
-    def _set_owner_state_for_components(
-        self, components: StateComponents, state: State
-    ) -> None:
+    def _set_owner_state_for_components(self, components: StateComponents, state: State) -> None:
         """Set the owner state for all components.
 
         This ensures that all StateObjects know which state they belong to,
@@ -108,9 +104,7 @@ class AnnotatedStateBuilder:
         """
         # Set owner state for all StateImages
         for state_image in components.state_images:
-            previous_owner = (
-                state_image.owner_state_name if state_image.owner_state else None
-            )
+            previous_owner = state_image.owner_state_name if state_image.owner_state else None
             state_image.owner_state_name = state.name  # type: ignore[misc]
             logger.info(
                 f"Set owner state '{state.name}' for StateImage '{state_image.name}' "
@@ -120,9 +114,7 @@ class AnnotatedStateBuilder:
         # Set owner state for all StateStrings
         for state_string in components.state_strings:
             state_string.owner_state = state
-            logger.debug(
-                f"Set owner state '{state.name}' for StateString '{state_string.name}'"
-            )
+            logger.debug(f"Set owner state '{state.name}' for StateString '{state_string.name}'")
 
         # Set owner state for all StateObjects (handle specific types)
         for state_object in components.state_objects:

@@ -80,9 +80,7 @@ class ButtonShadowDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Perform shadow-based button detection"""
-        logger.info(
-            f"Running button shadow detection on {len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running button shadow detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -95,14 +93,10 @@ class ButtonShadowDetector(BaseAnalyzer):
         for screenshot_idx, (img_gray, img_color) in enumerate(
             zip(images_gray, images_color, strict=False)
         ):
-            elements = await self._analyze_screenshot(
-                img_gray, img_color, screenshot_idx, params
-            )
+            elements = await self._analyze_screenshot(img_gray, img_color, screenshot_idx, params)
             all_elements.extend(elements)
 
-        logger.info(
-            f"Detected {len(all_elements)} button candidates using shadow analysis"
-        )
+        logger.info(f"Detected {len(all_elements)} button candidates using shadow analysis")
 
         return AnalysisResult(
             analyzer_type=self.analysis_type,
@@ -130,9 +124,7 @@ class ButtonShadowDetector(BaseAnalyzer):
         images = []
         for data in screenshot_data:
             img = Image.open(BytesIO(data)).convert("RGB")
-            images.append(
-                cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR)
-            )
+            images.append(cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR))
         return images
 
     async def _analyze_screenshot(
@@ -214,9 +206,7 @@ class ButtonShadowDetector(BaseAnalyzer):
         shadow_mask = cv2.morphologyEx(shadow_mask, cv2.MORPH_CLOSE, kernel)
 
         # Find contours in shadow mask
-        contours, _ = cv2.findContours(
-            shadow_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(shadow_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             # Get shadow bounding box
@@ -254,23 +244,14 @@ class ButtonShadowDetector(BaseAnalyzer):
                 button_brightness = np.mean(button_region)
                 shadow_brightness = np.mean(shadow_region)
 
-                if (
-                    button_brightness
-                    > shadow_brightness + params["shadow_threshold"] * 0.5
-                ):
+                if button_brightness > shadow_brightness + params["shadow_threshold"] * 0.5:
                     # Check size constraints
-                    if not (
-                        params["min_button_width"] <= sw <= params["max_button_width"]
-                    ):
+                    if not (params["min_button_width"] <= sw <= params["max_button_width"]):
                         continue
-                    if not (
-                        params["min_button_height"] <= sh <= params["max_button_height"]
-                    ):
+                    if not (params["min_button_height"] <= sh <= params["max_button_height"]):
                         continue
 
-                    bbox = BoundingBox(
-                        x=int(bx), y=int(by), width=int(sw), height=int(sh)
-                    )
+                    bbox = BoundingBox(x=int(bx), y=int(by), width=int(sw), height=int(sh))
                     shadow_info = {
                         "type": "drop_shadow",
                         "shadow_offset_x": offset_x,
@@ -308,9 +289,7 @@ class ButtonShadowDetector(BaseAnalyzer):
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 3))
         gradient_mask = cv2.morphologyEx(gradient_mask, cv2.MORPH_CLOSE, kernel)
 
-        contours, _ = cv2.findContours(
-            gradient_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(gradient_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -369,9 +348,7 @@ class ButtonShadowDetector(BaseAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -479,9 +456,7 @@ class ButtonShadowDetector(BaseAnalyzer):
             for i, (existing_bbox, existing_info) in enumerate(merged):
                 if bbox.iou(existing_bbox) > 0.5:
                     # Merge - keep the one with more evidence
-                    existing_types = existing_info.get(
-                        "detection_types", [existing_info["type"]]
-                    )
+                    existing_types = existing_info.get("detection_types", [existing_info["type"]])
                     new_types = existing_types + [info["type"]]
 
                     # Use average bounding box
@@ -517,9 +492,7 @@ class ButtonShadowDetector(BaseAnalyzer):
 
         return merged
 
-    def _calculate_confidence(
-        self, shadow_info: dict[str, Any], params: dict[str, Any]
-    ) -> float:
+    def _calculate_confidence(self, shadow_info: dict[str, Any], params: dict[str, Any]) -> float:
         """
         Calculate confidence score for shadow-based button detection
 

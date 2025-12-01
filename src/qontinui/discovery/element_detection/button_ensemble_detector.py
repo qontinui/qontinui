@@ -84,9 +84,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Perform ensemble detection"""
-        logger.info(
-            f"Running ensemble detection on {len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running ensemble detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -99,13 +97,9 @@ class ButtonEnsembleDetector(BaseAnalyzer):
             elements = await self._analyze_screenshot(img, screenshot_idx, params)
             all_elements.extend(elements)
 
-        avg_confidence = (
-            np.mean([e.confidence for e in all_elements]) if all_elements else 0.0
-        )
+        avg_confidence = np.mean([e.confidence for e in all_elements]) if all_elements else 0.0
 
-        logger.info(
-            f"Found {len(all_elements)} buttons with avg confidence {avg_confidence:.2f}"
-        )
+        logger.info(f"Found {len(all_elements)} buttons with avg confidence {avg_confidence:.2f}")
 
         return AnalysisResult(
             analyzer_type=self.analysis_type,
@@ -143,9 +137,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
         # Run each specialist detector
         if params["enable_flat_detector"]:
             flat_detections = self._detect_flat_buttons(img, params)
-            all_detections.extend(
-                [(bbox, conf, "flat") for bbox, conf in flat_detections]
-            )
+            all_detections.extend([(bbox, conf, "flat") for bbox, conf in flat_detections])
 
         if params["enable_3d_detector"]:
             d3_detections = self._detect_3d_buttons(img, params)
@@ -153,19 +145,13 @@ class ButtonEnsembleDetector(BaseAnalyzer):
 
         if params["enable_icon_detector"]:
             icon_detections = self._detect_icon_buttons(img, params)
-            all_detections.extend(
-                [(bbox, conf, "icon") for bbox, conf in icon_detections]
-            )
+            all_detections.extend([(bbox, conf, "icon") for bbox, conf in icon_detections])
 
         if params["enable_text_link_detector"]:
             text_detections = self._detect_text_link_buttons(img, params)
-            all_detections.extend(
-                [(bbox, conf, "text_link") for bbox, conf in text_detections]
-            )
+            all_detections.extend([(bbox, conf, "text_link") for bbox, conf in text_detections])
 
-        logger.info(
-            f"Screenshot {screenshot_idx}: {len(all_detections)} raw detections"
-        )
+        logger.info(f"Screenshot {screenshot_idx}: {len(all_detections)} raw detections")
 
         # Apply non-maximum suppression
         final_detections = self._apply_nms(all_detections, params)
@@ -279,9 +265,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -315,8 +299,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
 
             if shadow_region.size > 0:
                 shadow_darkness = (
-                    np.mean(shadow_region)
-                    < np.mean(region) - params["shadow_detection_threshold"]
+                    np.mean(shadow_region) < np.mean(region) - params["shadow_detection_threshold"]
                 )
             else:
                 shadow_darkness = False
@@ -354,9 +337,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
         edges = cv2.Canny(gray, 50, 150)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         min_size, max_size = params["icon_size_range"]
 
@@ -490,9 +471,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
 
             # Remove overlapping detections
             detections = [
-                det
-                for det in detections
-                if det[0].iou(best[0]) < params["nms_iou_threshold"]
+                det for det in detections if det[0].iou(best[0]) < params["nms_iou_threshold"]
             ]
 
         return keep

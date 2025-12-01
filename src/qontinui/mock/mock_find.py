@@ -24,9 +24,7 @@ from ..model.match import Match
 logger = logging.getLogger(__name__)
 
 # Flag to enable API-based historical data fetching
-USE_API_HISTORICAL_DATA = (
-    os.getenv("QONTINUI_USE_API_HISTORICAL_DATA", "true").lower() == "true"
-)
+USE_API_HISTORICAL_DATA = os.getenv("QONTINUI_USE_API_HISTORICAL_DATA", "true").lower() == "true"
 
 
 class MockFind:
@@ -47,9 +45,7 @@ class MockFind:
         """Initialize MockFind."""
         self.state_management = MockStateManagement()
 
-    def find(
-        self, pattern: Pattern, search_region: Region | None = None
-    ) -> ActionResult:
+    def find(self, pattern: Pattern, search_region: Region | None = None) -> ActionResult:
         """Simulate finding a pattern using its ActionHistory.
 
         The lookup order is:
@@ -77,9 +73,7 @@ class MockFind:
 
         if snapshot:
             # Use historical data from local ActionHistory
-            logger.debug(
-                f"Using local historical snapshot with {len(snapshot.match_list)} matches"
-            )
+            logger.debug(f"Using local historical snapshot with {len(snapshot.match_list)} matches")
             return self._create_result_from_snapshot(snapshot)
 
         # 2. Try to get historical data from API
@@ -136,9 +130,7 @@ class MockFind:
             if snapshot.text:
                 result.add_text_result(snapshot.text)  # type: ignore[attr-defined]
 
-            logger.debug(
-                f"Created successful result with {len(snapshot.match_list)} matches"
-            )
+            logger.debug(f"Created successful result with {len(snapshot.match_list)} matches")
         else:
             builder.with_success(False)
             result = builder.build()
@@ -233,10 +225,7 @@ class MockFind:
         """
         # Check if pattern's owner state is active
         if hasattr(pattern, "owner_state_name") and pattern.owner_state_name:
-            if (
-                pattern.owner_state_name not in active_states
-                and pattern.owner_state_name != "NULL"
-            ):
+            if pattern.owner_state_name not in active_states and pattern.owner_state_name != "NULL":
                 # Pattern's state is not active
                 result = ActionResultBuilder().with_success(False).build()
                 logger.debug(f"Pattern's state '{pattern.owner_state_name}' not active")
@@ -246,8 +235,7 @@ class MockFind:
         probability = 1.0  # Default to always found
         if pattern.owner_state_name and pattern.owner_state_name != "NULL":
             probability = (
-                self.state_management.get_state_probability(pattern.owner_state_name)
-                / 100.0
+                self.state_management.get_state_probability(pattern.owner_state_name) / 100.0
             )
 
         if random.random() < probability:
@@ -262,9 +250,7 @@ class MockFind:
 
         return result
 
-    def _create_mock_match(
-        self, pattern: Pattern, search_region: Region | None
-    ) -> Match:
+    def _create_mock_match(self, pattern: Pattern, search_region: Region | None) -> Match:
         """Create a mock Match object.
 
         Args:
@@ -295,9 +281,7 @@ class MockFind:
 
         return match
 
-    def find_all(
-        self, pattern: Pattern, search_region: Region | None = None
-    ) -> list[Match]:
+    def find_all(self, pattern: Pattern, search_region: Region | None = None) -> list[Match]:
         """Find all occurrences of a pattern.
 
         Args:

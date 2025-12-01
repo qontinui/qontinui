@@ -38,12 +38,10 @@ class StabilityMapCreator:
         # For RGB images, check if all channels are stable
         if len(pixel_variance.shape) == 3:
             # All channels must be below threshold
-            stability_map = np.all(
-                pixel_variance < self.config.variance_threshold, axis=2
-            ).astype(np.uint8)
-        else:
-            stability_map = (pixel_variance < self.config.variance_threshold).astype(
+            stability_map = np.all(pixel_variance < self.config.variance_threshold, axis=2).astype(
                 np.uint8
             )
+        else:
+            stability_map = (pixel_variance < self.config.variance_threshold).astype(np.uint8)
 
         return cast(np.ndarray[Any, Any], stability_map)

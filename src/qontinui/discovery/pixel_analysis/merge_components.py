@@ -121,9 +121,7 @@ def merge_nearby_components(
         sizes = [(r["width"], r["height"]) for r in merged_regions]
         densities = [r["mask_density"] for r in merged_regions]
         logger.info(f"Region sizes range: {min(sizes)} to {max(sizes)}")
-        logger.info(
-            f"Mask densities range: {min(densities):.2f} to {max(densities):.2f}"
-        )
+        logger.info(f"Mask densities range: {min(densities):.2f} to {max(densities):.2f}")
 
     return merged_regions
 
@@ -198,9 +196,7 @@ def test_merge_parameters(
 
     for gap in gap_values:
         for min_pix in min_pixel_values:
-            regions = merge_nearby_components(
-                stability_map, max_gap=gap, min_pixels=min_pix
-            )
+            regions = merge_nearby_components(stability_map, max_gap=gap, min_pixels=min_pix)
 
             key = f"gap_{gap}_minpix_{min_pix}"
             results[key] = {

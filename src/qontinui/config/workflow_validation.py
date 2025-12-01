@@ -34,9 +34,7 @@ class ValidationResult(BaseModel):
     ):
         """Add an error to the validation result."""
         self.errors.append(
-            ValidationError(
-                type=error_type, message=message, action_id=action_id, details=details
-            )
+            ValidationError(type=error_type, message=message, action_id=action_id, details=details)
         )
         self.valid = False
 

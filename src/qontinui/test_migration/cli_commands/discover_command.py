@@ -19,9 +19,7 @@ class DiscoverCommand(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         """Add discover command arguments."""
-        parser.add_argument(
-            "source", type=Path, help="Source directory containing Java tests"
-        )
+        parser.add_argument("source", type=Path, help="Source directory containing Java tests")
 
         parser.add_argument(
             "--output-format",
@@ -30,9 +28,7 @@ class DiscoverCommand(BaseCommand):
             help="Output format for results (default: text)",
         )
 
-        parser.add_argument(
-            "--output-file", type=Path, help="Save discovery results to file"
-        )
+        parser.add_argument("--output-file", type=Path, help="Save discovery results to file")
 
     def execute(self, args: Namespace) -> CommandResult:
         """Execute the discover command."""
@@ -54,15 +50,11 @@ class DiscoverCommand(BaseCommand):
             discovered_tests = orchestrator.discover_tests(args.source)
 
             # Display results
-            OutputFormatter.display_discovery_results(
-                discovered_tests, args.output_format
-            )
+            OutputFormatter.display_discovery_results(discovered_tests, args.output_format)
 
             # Save results if requested
             if args.output_file:
-                OutputFormatter.save_discovery_results(
-                    discovered_tests, args.output_file
-                )
+                OutputFormatter.save_discovery_results(discovered_tests, args.output_file)
                 print(f"\nResults saved to: {args.output_file}")
 
             return CommandResult(exit_code=0)

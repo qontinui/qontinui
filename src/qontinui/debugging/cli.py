@@ -64,9 +64,7 @@ class DebugCLI(cmd.Cmd):
                 print(f"Debug Sessions ({len(sessions)}):")
                 for session in sessions:
                     active = " (active)" if session == self.current_session else ""
-                    print(
-                        f"  {session.id[:8]} - {session.name} [{session.state.value}]{active}"
-                    )
+                    print(f"  {session.id[:8]} - {session.name} [{session.state.value}]{active}")
 
         elif args[0] == "create":
             name = " ".join(args[1:]) if len(args) > 1 else ""

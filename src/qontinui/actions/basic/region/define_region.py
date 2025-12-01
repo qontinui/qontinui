@@ -23,9 +23,7 @@ logger = logging.getLogger(__name__)
 class DefineWithWindow:
     """Define region as focused window bounds."""
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define region as active window.
 
         Args:
@@ -51,9 +49,7 @@ class DefineWithMatch:
 
     find: Find
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define region relative to matches.
 
         Args:
@@ -133,9 +129,7 @@ class DefineInsideAnchors:
 
     find: Find
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define smallest region containing all anchors.
 
         Args:
@@ -178,9 +172,7 @@ class DefineOutsideAnchors:
 
     find: Find
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define largest region containing all anchors.
 
         Args:
@@ -199,14 +191,8 @@ class DefineOutsideAnchors:
         padding = 50  # Default padding
         min_x = min(m.region.x for m in matches.matches if m.region) - padding
         min_y = min(m.region.y for m in matches.matches if m.region) - padding
-        max_x = (
-            max(m.region.x + m.region.width for m in matches.matches if m.region)
-            + padding
-        )
-        max_y = (
-            max(m.region.y + m.region.height for m in matches.matches if m.region)
-            + padding
-        )
+        max_x = max(m.region.x + m.region.width for m in matches.matches if m.region) + padding
+        max_y = max(m.region.y + m.region.height for m in matches.matches if m.region) + padding
 
         # Clamp to screen bounds
         min_x = max(0, min_x)
@@ -238,9 +224,7 @@ class DefineIncludingMatches:
 
     find: Find
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define region including all matches.
 
         Args:
@@ -322,9 +306,7 @@ class DefineRegion(ActionInterface):
         """
         return "DEFINE"
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Perform region definition.
 
         Args:

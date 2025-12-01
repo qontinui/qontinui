@@ -67,9 +67,7 @@ class ImageCollectionBuilder:
                 self.state_images.append(item.in_null_state())
         return self
 
-    def with_all_state_images(
-        self, state: Optional["State"]
-    ) -> "ImageCollectionBuilder":
+    def with_all_state_images(self, state: Optional["State"]) -> "ImageCollectionBuilder":
         """Add all state images from a state.
 
         Args:
@@ -82,9 +80,7 @@ class ImageCollectionBuilder:
             self.state_images.extend(state.get_state_images())
         return self
 
-    def with_non_shared_images(
-        self, state: Optional["State"]
-    ) -> "ImageCollectionBuilder":
+    def with_non_shared_images(self, state: Optional["State"]) -> "ImageCollectionBuilder":
         """Add non-shared state images from a state.
 
         Args:

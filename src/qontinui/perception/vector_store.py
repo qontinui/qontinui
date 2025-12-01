@@ -126,9 +126,7 @@ class VectorStore:
                     if self.metric == "L2"
                     else faiss.IndexFlatIP(self.dimension)
                 )
-                index = faiss.IndexIVFFlat(
-                    quantizer, self.dimension, self.nlist, metric_type
-                )
+                index = faiss.IndexIVFFlat(quantizer, self.dimension, self.nlist, metric_type)
 
             elif self.index_type == "HNSW":
                 index = faiss.IndexHNSWFlat(self.dimension, 32, metric_type)
@@ -187,9 +185,7 @@ class VectorStore:
             if metadata is None:
                 metadata = [VectorMetadata(id=id_) for id_ in ids]
             elif len(metadata) != n_vectors:
-                raise ValueError(
-                    f"Metadata count mismatch: {len(metadata)} != {n_vectors}"
-                )
+                raise ValueError(f"Metadata count mismatch: {len(metadata)} != {n_vectors}")
 
             # Train index if needed (for IVF)
             if self.index_type == "IVF" and not self.index.is_trained:
@@ -221,9 +217,7 @@ class VectorStore:
         query_vectors: np.ndarray[Any, Any],
         k: int = 5,
         threshold: float | None = None,
-    ) -> tuple[
-        np.ndarray[Any, Any], np.ndarray[Any, Any], list[list[VectorMetadata | None]]
-    ]:
+    ) -> tuple[np.ndarray[Any, Any], np.ndarray[Any, Any], list[list[VectorMetadata | None]]]:
         """Search for similar vectors.
 
         Args:
@@ -306,18 +300,14 @@ class VectorStore:
             mask = indices[0] != faiss_idx
             distances = distances[0][mask][:k]
             metadata_filtered = [
-                m
-                for i, m in zip(indices[0], metadata[0], strict=False)
-                if i != faiss_idx
+                m for i, m in zip(indices[0], metadata[0], strict=False) if i != faiss_idx
             ][:k]
         else:
             distances = distances[0]
             metadata_filtered = metadata[0]
 
         # Filter out None values from metadata to match return type
-        metadata_final: list[VectorMetadata] = [
-            m for m in metadata_filtered if m is not None
-        ]
+        metadata_final: list[VectorMetadata] = [m for m in metadata_filtered if m is not None]
 
         return distances, metadata_final
 
@@ -472,9 +462,7 @@ class VectorStore:
                     self.dimension = config.get("dimension", self.dimension)
                     self.index_type = config.get("index_type", self.index_type)
 
-            logger.info(
-                "vector_store_loaded", path=str(path), vectors=self.index.ntotal
-            )
+            logger.info("vector_store_loaded", path=str(path), vectors=self.index.ntotal)
 
         except Exception as e:
             raise StorageReadException(
@@ -500,9 +488,7 @@ class VectorStore:
             "dimension": self.dimension,
             "index_type": self.index_type,
             "metric": self.metric,
-            "is_trained": (
-                self.index.is_trained if hasattr(self.index, "is_trained") else True
-            ),
+            "is_trained": (self.index.is_trained if hasattr(self.index, "is_trained") else True),
             "gpu": self.use_gpu,
             "metadata_count": len(self.metadata),
         }
@@ -512,9 +498,7 @@ class VectorStore:
             state_counts: dict[str, int] = {}
             for meta in self.metadata.values():
                 if meta.state_name:
-                    state_counts[meta.state_name] = (
-                        state_counts.get(meta.state_name, 0) + 1
-                    )
+                    state_counts[meta.state_name] = state_counts.get(meta.state_name, 0) + 1
             stats["state_distribution"] = state_counts
 
         return stats

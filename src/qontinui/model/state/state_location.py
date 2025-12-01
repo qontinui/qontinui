@@ -150,6 +150,4 @@ class StateLocation:
     def __str__(self) -> str:
         """String representation."""
         state_name = self.owner_state.name if self.owner_state else "None"
-        return (
-            f"StateLocation('{self.name}' at {self.location} in state '{state_name}')"
-        )
+        return f"StateLocation('{self.name}' at {self.location} in state '{state_name}')"

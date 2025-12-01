@@ -158,9 +158,7 @@ class StableRegionExtractor:
         data_bytes = pixel_data.tobytes()
         return hashlib.sha256(data_bytes).hexdigest()
 
-    def _decompose_complex_regions(
-        self, regions: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+    def _decompose_complex_regions(self, regions: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Decompose complex regions into rectangles.
 
@@ -193,9 +191,7 @@ class StableRegionExtractor:
                 # Keep region as-is
                 decomposed_regions.append(region)
 
-        logger.info(
-            f"Decomposition: {len(regions)} regions -> {len(decomposed_regions)} regions"
-        )
+        logger.info(f"Decomposition: {len(regions)} regions -> {len(decomposed_regions)} regions")
         return decomposed_regions
 
     def _should_decompose_region(self, region: dict[str, Any]) -> bool:
@@ -234,9 +230,7 @@ class StableRegionExtractor:
 
         return False
 
-    def _decompose_into_rectangles(
-        self, region: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def _decompose_into_rectangles(self, region: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Decompose a complex region into simpler rectangles.
 
@@ -258,9 +252,7 @@ class StableRegionExtractor:
 
         try:
             # Find contours in the mask
-            contours, _ = cv2.findContours(
-                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             sub_regions = []
             for contour in contours:

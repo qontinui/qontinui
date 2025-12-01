@@ -57,9 +57,7 @@ class ExecutionEventBus:
         self.max_events = max_events_per_execution
         self._lock = asyncio.Lock()
 
-        logger.info(
-            f"ExecutionEventBus initialized (max_events={max_events_per_execution})"
-        )
+        logger.info(f"ExecutionEventBus initialized (max_events={max_events_per_execution})")
 
     async def subscribe(
         self,

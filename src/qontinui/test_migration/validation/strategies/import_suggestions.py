@@ -15,9 +15,7 @@ class ImportSuggestionStrategy:
     def __init__(self) -> None:
         """Initialize the import suggestion strategy."""
         self._java_to_python_mappings = self._initialize_java_to_python_mappings()
-        self._brobot_to_qontinui_mappings = (
-            self._initialize_brobot_to_qontinui_mappings()
-        )
+        self._brobot_to_qontinui_mappings = self._initialize_brobot_to_qontinui_mappings()
 
     def _initialize_java_to_python_mappings(self) -> dict[str, str]:
         """Initialize Java to Python import mappings."""

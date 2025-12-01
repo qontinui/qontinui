@@ -63,9 +63,7 @@ class ComprehensiveAnalyzer:
             java_import = java_dep.java_import
 
             # Check if there's a known mapping
-            python_equivalent = self._data_collector.get_java_to_python_mapping(
-                java_import
-            )
+            python_equivalent = self._data_collector.get_java_to_python_mapping(java_import)
 
             if python_equivalent:
                 # Check if the Python equivalent is actually imported
@@ -111,16 +109,10 @@ class ComprehensiveAnalyzer:
         python_content = python_test_path.read_text(encoding="utf-8")
 
         # Check for annotation differences
-        for method in (
-            java_test.test_methods
-            + java_test.setup_methods
-            + java_test.teardown_methods
-        ):
+        for method in java_test.test_methods + java_test.setup_methods + java_test.teardown_methods:
             for annotation in method.annotations:
                 java_annotation = annotation.strip("@")
-                python_equivalent = self._data_collector.get_annotation_mapping(
-                    java_annotation
-                )
+                python_equivalent = self._data_collector.get_annotation_mapping(java_annotation)
 
                 if python_equivalent:
                     # Check if Python equivalent exists in the migrated test
@@ -146,14 +138,10 @@ class ComprehensiveAnalyzer:
 
         # Check for setup method differences
         java_setup_methods = [m.name for m in java_test.setup_methods]
-        python_setup_methods = self._data_collector.extract_python_setup_methods(
-            python_content
-        )
+        python_setup_methods = self._data_collector.extract_python_setup_methods(python_content)
 
         for java_setup in java_setup_methods:
-            if not any(
-                python_setup in python_content for python_setup in python_setup_methods
-            ):
+            if not any(python_setup in python_content for python_setup in python_setup_methods):
                 differences.append(
                     SetupDifference(
                         setup_type="method",
@@ -185,13 +173,9 @@ class ComprehensiveAnalyzer:
         report_id = f"{java_test.class_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         # Detect all types of differences
-        dependency_diffs = self.detect_dependency_differences(
-            java_test, python_test_path
-        )
+        dependency_diffs = self.detect_dependency_differences(java_test, python_test_path)
         setup_diffs = self.detect_setup_differences(java_test, python_test_path)
-        assertion_diffs = self._error_analyzer.compare_assertion_logic(
-            java_test, python_test_path
-        )
+        assertion_diffs = self._error_analyzer.compare_assertion_logic(java_test, python_test_path)
 
         # Calculate migration completeness
         completeness = self._calculate_migration_completeness(
@@ -283,20 +267,14 @@ class ComprehensiveAnalyzer:
 
         # Assertion confidence
         if assertion_diffs:
-            assert_confidence = sum(a.confidence for a in assertion_diffs) / len(
-                assertion_diffs
-            )
+            assert_confidence = sum(a.confidence for a in assertion_diffs) / len(assertion_diffs)
             confidence_scores.append(assert_confidence)
 
         # Failure analysis confidence
         if failure_analysis:
             confidence_scores.append(failure_analysis.confidence)
 
-        return (
-            sum(confidence_scores) / len(confidence_scores)
-            if confidence_scores
-            else 0.5
-        )
+        return sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.5
 
     def _generate_recommendations(
         self,
@@ -311,9 +289,7 @@ class ComprehensiveAnalyzer:
         # Dependency recommendations
         missing_deps = [d for d in dependency_diffs if d.missing_in_python]
         if missing_deps:
-            recommendations.append(
-                f"Add {len(missing_deps)} missing Python dependencies"
-            )
+            recommendations.append(f"Add {len(missing_deps)} missing Python dependencies")
 
         manual_deps = [d for d in dependency_diffs if d.requires_manual_mapping]
         if manual_deps:
@@ -322,16 +298,12 @@ class ComprehensiveAnalyzer:
         # Setup recommendations
         missing_setup = [s for s in setup_diffs if s.migration_status == "missing"]
         if missing_setup:
-            recommendations.append(
-                f"Implement {len(missing_setup)} missing setup methods"
-            )
+            recommendations.append(f"Implement {len(missing_setup)} missing setup methods")
 
         # Assertion recommendations
         low_confidence_assertions = [a for a in assertion_diffs if a.confidence < 0.7]
         if low_confidence_assertions:
-            recommendations.append(
-                f"Review {len(low_confidence_assertions)} assertion migrations"
-            )
+            recommendations.append(f"Review {len(low_confidence_assertions)} assertion migrations")
 
         # Failure analysis recommendations
         if failure_analysis and failure_analysis.suggested_fixes:

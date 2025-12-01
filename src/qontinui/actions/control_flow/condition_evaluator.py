@@ -110,9 +110,7 @@ class ConditionEvaluator:
 
         var_name = condition.variable_name
         if not self.context.has_variable(var_name):
-            logger.warning(
-                "Variable '%s' not found in context, treating as None", var_name
-            )
+            logger.warning("Variable '%s' not found in context, treating as None", var_name)
             var_value = None
         else:
             var_value = self.context.get_variable(var_name)
@@ -231,18 +229,14 @@ class ConditionEvaluator:
 
         metadata = registry.get_image_metadata(condition.image_id)
         if metadata is None:
-            error_msg = (
-                f"Image metadata for '{condition.image_id}' not found in registry"
-            )
+            error_msg = f"Image metadata for '{condition.image_id}' not found in registry"
             logger.error(error_msg)
             raise ValueError(error_msg)
 
         # Get file path from metadata
         file_path = metadata.get("file_path")
         if not file_path:
-            error_msg = (
-                f"Image file_path for '{condition.image_id}' not found in metadata"
-            )
+            error_msg = f"Image file_path for '{condition.image_id}' not found in metadata"
             logger.error(error_msg)
             raise ValueError(error_msg)
 
@@ -320,9 +314,7 @@ class ConditionEvaluator:
 
         for action_id, condition in conditions:
             if not condition.image_id:
-                raise ValueError(
-                    f"Image condition requires 'image_id' (action_id={action_id})"
-                )
+                raise ValueError(f"Image condition requires 'image_id' (action_id={action_id})")
 
             image_ids.append(condition.image_id)
             action_ids.append(action_id)
@@ -336,18 +328,14 @@ class ConditionEvaluator:
 
             metadata = registry.get_image_metadata(condition.image_id)
             if metadata is None:
-                error_msg = (
-                    f"Image metadata for '{condition.image_id}' not found in registry"
-                )
+                error_msg = f"Image metadata for '{condition.image_id}' not found in registry"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 
             # Get file path from metadata
             file_path = metadata.get("file_path")
             if not file_path:
-                error_msg = (
-                    f"Image file_path for '{condition.image_id}' not found in metadata"
-                )
+                error_msg = f"Image file_path for '{condition.image_id}' not found in metadata"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 

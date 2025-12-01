@@ -45,9 +45,7 @@ def simple_linear_workflow():
                 id="action1",
                 type="CLICK",
                 name="Action 1",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}},
                 position=(0, 0),
             ),
             Action(
@@ -67,12 +65,8 @@ def simple_linear_workflow():
         ],
         connections=Connections(
             root={
-                "action1": {
-                    "main": [[Connection(action="action2", type="main", index=0)]]
-                },
-                "action2": {
-                    "main": [[Connection(action="action3", type="main", index=0)]]
-                },
+                "action1": {"main": [[Connection(action="action2", type="main", index=0)]]},
+                "action2": {"main": [[Connection(action="action3", type="main", index=0)]]},
             }
         ),
     )
@@ -106,17 +100,13 @@ def branching_workflow():
             Action(
                 id="action_true",
                 type="CLICK",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 100, "y": 0}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 100, "y": 0}}},
                 position=(200, 50),
             ),
             Action(
                 id="action_false",
                 type="CLICK",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 0, "y": 100}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 0, "y": 100}}},
                 position=(200, -50),
             ),
             Action(id="end", type="SCREENSHOT", config={}, position=(300, 0)),
@@ -126,16 +116,10 @@ def branching_workflow():
                 "start": {"main": [[Connection(action="check", type="main", index=0)]]},
                 "check": {
                     "true": [[Connection(action="action_true", type="true", index=0)]],
-                    "false": [
-                        [Connection(action="action_false", type="false", index=0)]
-                    ],
+                    "false": [[Connection(action="action_false", type="false", index=0)]],
                 },
-                "action_true": {
-                    "main": [[Connection(action="end", type="main", index=0)]]
-                },
-                "action_false": {
-                    "main": [[Connection(action="end", type="main", index=0)]]
-                },
+                "action_true": {"main": [[Connection(action="end", type="main", index=0)]]},
+                "action_false": {"main": [[Connection(action="end", type="main", index=0)]]},
             }
         ),
     )
@@ -198,18 +182,12 @@ def cycle_workflow():
             Action(
                 id="action1",
                 type="CLICK",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}},
                 position=(0, 0),
             )
         ],
         connections=Connections(
-            root={
-                "action1": {
-                    "main": [[Connection(action="action1", type="main", index=0)]]
-                }
-            }
+            root={"action1": {"main": [[Connection(action="action1", type="main", index=0)]]}}
         ),
     )
 
@@ -226,9 +204,7 @@ def orphaned_workflow():
             Action(
                 id="action1",
                 type="CLICK",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}},
                 position=(0, 0),
             ),
             Action(
@@ -240,11 +216,7 @@ def orphaned_workflow():
             Action(id="orphan", type="SCREENSHOT", config={}, position=(200, 100)),
         ],
         connections=Connections(
-            root={
-                "action1": {
-                    "main": [[Connection(action="action2", type="main", index=0)]]
-                }
-            }
+            root={"action1": {"main": [[Connection(action="action2", type="main", index=0)]]}}
         ),
     )
 
@@ -261,9 +233,7 @@ def parallel_outputs_workflow():
             Action(
                 id="start",
                 type="CLICK",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}},
                 position=(0, 0),
             ),
             Action(id="parallel1", type="SCREENSHOT", config={}, position=(100, 50)),
@@ -283,12 +253,8 @@ def parallel_outputs_workflow():
                         [Connection(action="parallel2", type="main", index=0)],
                     ]
                 },
-                "parallel1": {
-                    "main": [[Connection(action="end", type="main", index=0)]]
-                },
-                "parallel2": {
-                    "main": [[Connection(action="end", type="main", index=0)]]
-                },
+                "parallel1": {"main": [[Connection(action="end", type="main", index=0)]]},
+                "parallel2": {"main": [[Connection(action="end", type="main", index=0)]]},
             }
         ),
     )
@@ -365,9 +331,7 @@ def test_connection_resolver_invalid_output():
             Action(
                 id="action1",
                 type="CLICK",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}},
                 position=(0, 0),
             )
         ],
@@ -606,9 +570,7 @@ def test_graph_traverser_no_entry_points():
             Action(
                 id="action1",
                 type="CLICK",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}},
                 position=(0, 0),
             ),
             Action(
@@ -620,12 +582,8 @@ def test_graph_traverser_no_entry_points():
         ],
         connections=Connections(
             root={
-                "action1": {
-                    "main": [[Connection(action="action2", type="main", index=0)]]
-                },
-                "action2": {
-                    "main": [[Connection(action="action1", type="main", index=0)]]
-                },
+                "action1": {"main": [[Connection(action="action2", type="main", index=0)]]},
+                "action2": {"main": [[Connection(action="action1", type="main", index=0)]]},
             }
         ),
     )
@@ -671,9 +629,7 @@ def test_graph_traverser_iteration_limit():
         # Always continue loop
         return {"success": True, "should_continue": True}
 
-    traverser = GraphTraverser(
-        workflow, action_executor=mock_loop_executor, max_iterations=10
-    )
+    traverser = GraphTraverser(workflow, action_executor=mock_loop_executor, max_iterations=10)
 
     with pytest.raises(InfiniteLoopError, match="Iteration limit"):
         traverser.traverse()
@@ -690,22 +646,14 @@ def test_graph_traverser_error_handling():
             Action(
                 id="action1",
                 type="CLICK",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}},
                 position=(0, 0),
             ),
-            Action(
-                id="error_handler", type="SCREENSHOT", config={}, position=(100, 100)
-            ),
+            Action(id="error_handler", type="SCREENSHOT", config={}, position=(100, 100)),
         ],
         connections=Connections(
             root={
-                "action1": {
-                    "error": [
-                        [Connection(action="error_handler", type="error", index=0)]
-                    ]
-                }
+                "action1": {"error": [[Connection(action="error_handler", type="error", index=0)]]}
             }
         ),
     )
@@ -772,15 +720,11 @@ def test_graph_traverser_context_propagation(simple_linear_workflow):
     """Test context propagation through workflow"""
     executed_contexts = []
 
-    def context_tracking_executor(
-        action: Action, context: dict[str, Any]
-    ) -> dict[str, Any]:
+    def context_tracking_executor(action: Action, context: dict[str, Any]) -> dict[str, Any]:
         executed_contexts.append(context.copy())
         return {"success": True, f"result_{action.id}": f"value_{action.id}"}
 
-    traverser = GraphTraverser(
-        simple_linear_workflow, action_executor=context_tracking_executor
-    )
+    traverser = GraphTraverser(simple_linear_workflow, action_executor=context_tracking_executor)
 
     _result = traverser.traverse(context={"initial": "value"})
 
@@ -801,9 +745,7 @@ def test_graph_traverser_with_variables():
             Action(
                 id="action1",
                 type="CLICK",
-                config={
-                    "target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}
-                },
+                config={"target": {"type": "coordinates", "coordinates": {"x": 0, "y": 0}}},
                 position=(0, 0),
             )
         ],
@@ -817,9 +759,7 @@ def test_graph_traverser_with_variables():
 
     context_received = []
 
-    def var_checking_executor(
-        action: Action, context: dict[str, Any]
-    ) -> dict[str, Any]:
+    def var_checking_executor(action: Action, context: dict[str, Any]) -> dict[str, Any]:
         context_received.append(context.copy())
         return {"success": True}
 
@@ -832,9 +772,7 @@ def test_graph_traverser_with_variables():
     assert context_received[0]["global_var"] == "global_value"
 
 
-def test_graph_traverser_start_from_specific_action(
-    simple_linear_workflow, mock_executor
-):
+def test_graph_traverser_start_from_specific_action(simple_linear_workflow, mock_executor):
     """Test starting execution from a specific action"""
     traverser = GraphTraverser(simple_linear_workflow, action_executor=mock_executor)
 
@@ -907,21 +845,13 @@ def test_complex_workflow_integration():
                     "loop": [[Connection(action="increment", type="loop", index=0)]],
                     "main": [[Connection(action="check", type="main", index=0)]],
                 },
-                "increment": {
-                    "main": [[Connection(action="loop", type="main", index=0)]]
-                },
+                "increment": {"main": [[Connection(action="loop", type="main", index=0)]]},
                 "check": {
                     "true": [[Connection(action="action_true", type="true", index=0)]],
-                    "false": [
-                        [Connection(action="action_false", type="false", index=0)]
-                    ],
+                    "false": [[Connection(action="action_false", type="false", index=0)]],
                 },
-                "action_true": {
-                    "main": [[Connection(action="end", type="main", index=0)]]
-                },
-                "action_false": {
-                    "main": [[Connection(action="end", type="main", index=0)]]
-                },
+                "action_true": {"main": [[Connection(action="end", type="main", index=0)]]},
+                "action_false": {"main": [[Connection(action="end", type="main", index=0)]]},
             }
         ),
     )

@@ -57,9 +57,7 @@ class SearchRegionDependencyInitializer:
 
         This method collects all state objects and registers their dependencies.
         """
-        logger.info(
-            "SearchRegionDependencyInitializer: Starting dependency registration"
-        )
+        logger.info("SearchRegionDependencyInitializer: Starting dependency registration")
 
         if not self.state_store or not self.dynamic_region_resolver:
             logger.warning("Cannot initialize dependencies: missing store or resolver")
@@ -68,9 +66,7 @@ class SearchRegionDependencyInitializer:
         if TYPE_CHECKING:
             pass
 
-        all_objects: list[Any] = (
-            []
-        )  # Will contain StateImages, StateLocations, and StateRegions
+        all_objects: list[Any] = []  # Will contain StateImages, StateLocations, and StateRegions
 
         # Collect all state objects from all states
         for state in self.state_store.get_all_states():
@@ -79,9 +75,7 @@ class SearchRegionDependencyInitializer:
             all_objects.extend(state.state_locations)
             all_objects.extend(state.state_regions)
 
-        logger.info(
-            f"Found {len(all_objects)} state objects to process for dependencies"
-        )
+        logger.info(f"Found {len(all_objects)} state objects to process for dependencies")
 
         # Register dependencies with the resolver
         self.dynamic_region_resolver.register_dependencies(all_objects)

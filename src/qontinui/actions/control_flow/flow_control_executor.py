@@ -112,9 +112,7 @@ class FlowControlExecutor:
             should_break = self.condition_evaluator.evaluate_condition(config.condition)
 
             if not should_break:
-                logger.debug(
-                    "BREAK condition not met for action %s, continuing loop", action.id
-                )
+                logger.debug("BREAK condition not met for action %s, continuing loop", action.id)
                 return
 
             logger.info("BREAK condition met for action %s, breaking loop", action.id)
@@ -174,9 +172,7 @@ class FlowControlExecutor:
         # Check condition if present
         if config.condition:
             logger.debug("Evaluating CONTINUE condition for action %s", action.id)
-            should_continue = self.condition_evaluator.evaluate_condition(
-                config.condition
-            )
+            should_continue = self.condition_evaluator.evaluate_condition(config.condition)
 
             if not should_continue:
                 logger.debug(

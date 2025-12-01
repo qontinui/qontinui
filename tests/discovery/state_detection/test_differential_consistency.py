@@ -252,9 +252,7 @@ class TestRegionExtraction:
         consistency_map = np.zeros((200, 200), dtype=np.float32)
         consistency_map[:, :] = 0.3  # Low consistency everywhere
 
-        regions = detector._extract_regions(
-            consistency_map, threshold=0.7, min_area=100
-        )
+        regions = detector._extract_regions(consistency_map, threshold=0.7, min_area=100)
 
         assert len(regions) == 0
 
@@ -410,15 +408,9 @@ class TestDynamicBackgrounds:
                     color=(240, 240, 240),
                     border_color=(100, 100, 100),
                 ),
-                ElementSpec(
-                    "button", x=160, y=70, width=80, height=30, text="Option 1"
-                ),
-                ElementSpec(
-                    "button", x=160, y=110, width=80, height=30, text="Option 2"
-                ),
-                ElementSpec(
-                    "button", x=160, y=150, width=80, height=30, text="Option 3"
-                ),
+                ElementSpec("button", x=160, y=70, width=80, height=30, text="Option 1"),
+                ElementSpec("button", x=160, y=110, width=80, height=30, text="Option 2"),
+                ElementSpec("button", x=160, y=150, width=80, height=30, text="Option 3"),
             ]
             after = generator.generate(
                 width=400,
@@ -639,9 +631,7 @@ class TestVisualization:
             )
         ]
 
-        vis = detector.visualize_consistency(
-            consistency_map, regions, screenshot, show_scores=True
-        )
+        vis = detector.visualize_consistency(consistency_map, regions, screenshot, show_scores=True)
 
         assert vis.shape == (200, 300, 3)
         assert vis.dtype == np.uint8
@@ -699,9 +689,7 @@ class TestDetectMultiMethod:
             img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
             screenshots.append(img)
 
-        result = detector.detect_multi(
-            screenshots, consistency_threshold=0.5, min_region_area=100
-        )
+        result = detector.detect_multi(screenshots, consistency_threshold=0.5, min_region_area=100)
 
         assert isinstance(result, dict)
         # Should have entries for indices 1-11 (after screenshots)

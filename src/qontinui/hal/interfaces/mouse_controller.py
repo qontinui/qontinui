@@ -144,9 +144,7 @@ class IMouseController(ABC):
         pass
 
     @abstractmethod
-    def mouse_scroll(
-        self, clicks: int, x: int | None = None, y: int | None = None
-    ) -> bool:
+    def mouse_scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
         """Scroll mouse wheel.
 
         Args:
@@ -183,9 +181,7 @@ class IMouseController(ABC):
         pass
 
     @abstractmethod
-    def double_click_at(
-        self, x: int, y: int, button: MouseButton = MouseButton.LEFT
-    ) -> bool:
+    def double_click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
         """Double click at specific coordinates.
 
         Args:

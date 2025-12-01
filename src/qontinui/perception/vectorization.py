@@ -43,9 +43,7 @@ class ObjectVectorizer:
         except Exception as e:
             print(f"Failed to initialize CLIP model: {e}")
 
-    def vectorize_element(
-        self, element_image: np.ndarray[Any, Any]
-    ) -> np.ndarray[Any, Any]:
+    def vectorize_element(self, element_image: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
         """Generate embedding vector for a UI element.
 
         Args:
@@ -59,9 +57,7 @@ class ObjectVectorizer:
         else:
             return self._vectorize_fallback(element_image)
 
-    def _vectorize_with_clip(
-        self, element_image: np.ndarray[Any, Any]
-    ) -> np.ndarray[Any, Any]:
+    def _vectorize_with_clip(self, element_image: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
         """Vectorize using CLIP model.
 
         Args:
@@ -100,9 +96,7 @@ class ObjectVectorizer:
 
         return embedding
 
-    def _vectorize_fallback(
-        self, element_image: np.ndarray[Any, Any]
-    ) -> np.ndarray[Any, Any]:
+    def _vectorize_fallback(self, element_image: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
         """Fallback vectorization using traditional computer vision features.
 
         Args:
@@ -131,9 +125,7 @@ class ObjectVectorizer:
 
         return np.array(features, dtype=np.float32)
 
-    def _extract_color_histogram(
-        self, image: np.ndarray[Any, Any], bins: int = 32
-    ) -> list[float]:
+    def _extract_color_histogram(self, image: np.ndarray[Any, Any], bins: int = 32) -> list[float]:
         """Extract color histogram features.
 
         Args:
@@ -232,9 +224,7 @@ class ObjectVectorizer:
 
         return cast(list[float], features)
 
-    def vectorize_batch(
-        self, images: list[np.ndarray[Any, Any]]
-    ) -> np.ndarray[Any, Any]:
+    def vectorize_batch(self, images: list[np.ndarray[Any, Any]]) -> np.ndarray[Any, Any]:
         """Vectorize a batch of images.
 
         Args:

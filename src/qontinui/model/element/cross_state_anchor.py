@@ -149,9 +149,7 @@ class CrossStateAnchor:
 
         # If we have a base location, apply anchor offset
         if base_location:
-            return Location(
-                base_location.x + anchor.offset_x, base_location.y + anchor.offset_y
-            )
+            return Location(base_location.x + anchor.offset_x, base_location.y + anchor.offset_y)
 
         # Otherwise return anchor's absolute position if available
         pos = anchor.get_position()
@@ -273,9 +271,7 @@ class CrossStateAnchorBuilder:
         """Initialize builder."""
         self._anchor = CrossStateAnchor()
 
-    def with_state_anchor(
-        self, state_name: str, anchor: Anchor
-    ) -> "CrossStateAnchorBuilder":
+    def with_state_anchor(self, state_name: str, anchor: Anchor) -> "CrossStateAnchorBuilder":
         """Add a state anchor.
 
         Args:
@@ -288,9 +284,7 @@ class CrossStateAnchorBuilder:
         self._anchor.add_anchor(state_name, anchor)
         return self
 
-    def with_state_anchors(
-        self, anchors: dict[str, Anchor]
-    ) -> "CrossStateAnchorBuilder":
+    def with_state_anchors(self, anchors: dict[str, Anchor]) -> "CrossStateAnchorBuilder":
         """Add multiple state anchors.
 
         Args:

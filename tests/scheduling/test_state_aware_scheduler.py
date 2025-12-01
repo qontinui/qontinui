@@ -55,9 +55,7 @@ class TestStateAwareScheduler:
     def test_register_schedule(self):
         """Test registering a schedule."""
         scheduler = StateAwareScheduler()
-        schedule = ScheduleConfig(
-            id="test-1", name="Test Schedule", process_id="process-1"
-        )
+        schedule = ScheduleConfig(id="test-1", name="Test Schedule", process_id="process-1")
 
         scheduler.register_schedule(schedule)
 
@@ -69,9 +67,7 @@ class TestStateAwareScheduler:
     def test_unregister_schedule(self):
         """Test unregistering a schedule."""
         scheduler = StateAwareScheduler()
-        schedule = ScheduleConfig(
-            id="test-1", name="Test Schedule", process_id="process-1"
-        )
+        schedule = ScheduleConfig(id="test-1", name="Test Schedule", process_id="process-1")
 
         scheduler.register_schedule(schedule)
         assert "test-1" in scheduler._schedules
@@ -84,9 +80,7 @@ class TestStateAwareScheduler:
         """Test state check when all required states are active."""
         state_memory = MockStateMemory(active_states=["state1", "state2"])
         state_detector = MockStateDetector()
-        scheduler = StateAwareScheduler(
-            state_detector=state_detector, state_memory=state_memory
-        )
+        scheduler = StateAwareScheduler(state_detector=state_detector, state_memory=state_memory)
 
         schedule = ScheduleConfig(
             id="test-1",
@@ -107,9 +101,7 @@ class TestStateAwareScheduler:
         """Test state check with inactive states."""
         state_memory = MockStateMemory(active_states=["state1"])
         state_detector = MockStateDetector(find_results={"state2": True})
-        scheduler = StateAwareScheduler(
-            state_detector=state_detector, state_memory=state_memory
-        )
+        scheduler = StateAwareScheduler(state_detector=state_detector, state_memory=state_memory)
 
         schedule = ScheduleConfig(
             id="test-1",
@@ -131,9 +123,7 @@ class TestStateAwareScheduler:
         """Test state check with forbidden states present."""
         state_memory = MockStateMemory(active_states=["state1", "error"])
         state_detector = MockStateDetector()
-        scheduler = StateAwareScheduler(
-            state_detector=state_detector, state_memory=state_memory
-        )
+        scheduler = StateAwareScheduler(state_detector=state_detector, state_memory=state_memory)
 
         schedule = ScheduleConfig(
             id="test-1",
@@ -156,9 +146,7 @@ class TestStateAwareScheduler:
             find_results={"state1": False}, rebuild_results=["state1"]
         )
         state_detector.state_memory = state_memory
-        scheduler = StateAwareScheduler(
-            state_detector=state_detector, state_memory=state_memory
-        )
+        scheduler = StateAwareScheduler(state_detector=state_detector, state_memory=state_memory)
 
         schedule = ScheduleConfig(
             id="test-1",
@@ -176,12 +164,8 @@ class TestStateAwareScheduler:
     def test_state_check_check_all_mode(self):
         """Test CHECK_ALL mode checks all states."""
         state_memory = MockStateMemory(active_states=["state1", "state2"])
-        state_detector = MockStateDetector(
-            find_results={"state1": True, "state2": True}
-        )
-        scheduler = StateAwareScheduler(
-            state_detector=state_detector, state_memory=state_memory
-        )
+        state_detector = MockStateDetector(find_results={"state1": True, "state2": True})
+        scheduler = StateAwareScheduler(state_detector=state_detector, state_memory=state_memory)
 
         schedule = ScheduleConfig(
             id="test-1",
@@ -201,9 +185,7 @@ class TestStateAwareScheduler:
         """Test schedule execution respects iteration limits."""
         state_memory = MockStateMemory(active_states=["state1"])
         state_detector = MockStateDetector()
-        scheduler = StateAwareScheduler(
-            state_detector=state_detector, state_memory=state_memory
-        )
+        scheduler = StateAwareScheduler(state_detector=state_detector, state_memory=state_memory)
 
         execution_count = 0
 
@@ -240,9 +222,7 @@ class TestStateAwareScheduler:
         """Test schedule handles state check failures."""
         state_memory = MockStateMemory(active_states=[])
         state_detector = MockStateDetector()
-        scheduler = StateAwareScheduler(
-            state_detector=state_detector, state_memory=state_memory
-        )
+        scheduler = StateAwareScheduler(state_detector=state_detector, state_memory=state_memory)
 
         task_executed = False
 
@@ -364,9 +344,7 @@ class TestStateAwareScheduler:
         """Test getting scheduler statistics."""
         state_memory = MockStateMemory(active_states=["state1", "state2"])
         state_detector = MockStateDetector()
-        scheduler = StateAwareScheduler(
-            state_detector=state_detector, state_memory=state_memory
-        )
+        scheduler = StateAwareScheduler(state_detector=state_detector, state_memory=state_memory)
 
         schedule = ScheduleConfig(id="test-1", name="Test", process_id="process-1")
         scheduler.register_schedule(schedule)

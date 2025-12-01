@@ -40,9 +40,7 @@ class BaseDetector(ABC):
         self.name = name
 
     @abstractmethod
-    def detect(
-        self, image: np.ndarray[Any, Any], **params: Any
-    ) -> list[dict[str, Any]]:
+    def detect(self, image: np.ndarray[Any, Any], **params: Any) -> list[dict[str, Any]]:
         """Detect elements or regions in a single image.
 
         This is the main detection method that must be implemented by all
@@ -124,9 +122,7 @@ class BaseDetector(ABC):
         boxes_xyxy = [(x, y, x + w, y + h) for x, y, w, h in boxes]
 
         # Sort by area (largest first) to prioritize larger boxes
-        boxes_with_area = [
-            (box, (box[2] - box[0]) * (box[3] - box[1])) for box in boxes_xyxy
-        ]
+        boxes_with_area = [(box, (box[2] - box[0]) * (box[3] - box[1])) for box in boxes_xyxy]
         boxes_with_area.sort(key=lambda x: x[1], reverse=True)
         sorted_boxes = [box for box, _ in boxes_with_area]
 
@@ -268,9 +264,7 @@ class BaseDetector(ABC):
         return filtered
 
     @staticmethod
-    def _calculate_iou(
-        box1: tuple[int, int, int, int], box2: tuple[int, int, int, int]
-    ) -> float:
+    def _calculate_iou(box1: tuple[int, int, int, int], box2: tuple[int, int, int, int]) -> float:
         """Calculate Intersection over Union (IoU) for two boxes.
 
         Args:

@@ -241,9 +241,7 @@ class RegionDetector:
             },
         )
 
-    async def _generate_selector(
-        self, element: ElementHandle, properties: dict[str, Any]
-    ) -> str:
+    async def _generate_selector(self, element: ElementHandle, properties: dict[str, Any]) -> str:
         """Generate a CSS selector for the region."""
         try:
             selector = await element.evaluate(
@@ -293,9 +291,7 @@ class RegionDetector:
         except Exception:
             return cast(str, properties.get("tagName", "div"))
 
-    def _filter_overlapping(
-        self, regions: list[DetectedRegion]
-    ) -> list[DetectedRegion]:
+    def _filter_overlapping(self, regions: list[DetectedRegion]) -> list[DetectedRegion]:
         """Remove smaller regions that are fully contained in larger ones."""
         if len(regions) <= 1:
             return regions
@@ -309,11 +305,8 @@ class RegionDetector:
             for existing in filtered:
                 if existing.bbox.contains(region.bbox):
                     # Only filter if same type or existing is more important
-                    if (
-                        region.region_type == existing.region_type
-                        or self._is_more_important(
-                            existing.region_type, region.region_type
-                        )
+                    if region.region_type == existing.region_type or self._is_more_important(
+                        existing.region_type, region.region_type
                     ):
                         is_contained = True
                         break

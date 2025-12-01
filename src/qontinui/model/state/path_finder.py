@@ -87,9 +87,7 @@ class PathFinder:
         """
         return self._find_shortest_path(start, end)
 
-    def find_all_paths(
-        self, start: State, end: State, max_paths: int = 10
-    ) -> list[Path]:
+    def find_all_paths(self, start: State, end: State, max_paths: int = 10) -> list[Path]:
         """Find all paths between states.
 
         Args:
@@ -104,9 +102,7 @@ class PathFinder:
         visited: set[str] = set()
         current_path = Path()
 
-        self._find_all_paths_recursive(
-            start, end, visited, current_path, paths, max_paths
-        )
+        self._find_all_paths_recursive(start, end, visited, current_path, paths, max_paths)
 
         return paths[:max_paths]
 
@@ -219,9 +215,7 @@ class PathFinder:
                 new_path = Path()
                 for i, state in enumerate(current_path.states):
                     trans = (
-                        current_path.transitions[i]
-                        if i < len(current_path.transitions)
-                        else None
+                        current_path.transitions[i] if i < len(current_path.transitions) else None
                     )
                     new_path.add_state(state, trans)
                 new_path.add_state(next_state, transition)
@@ -370,11 +364,7 @@ class PathFinder:
                         # Add the completing transition
                         cycle = Path()
                         for i, s in enumerate(path.states):
-                            trans = (
-                                path.transitions[i]
-                                if i < len(path.transitions)
-                                else None
-                            )
+                            trans = path.transitions[i] if i < len(path.transitions) else None
                             cycle.add_state(s, trans)
                         cycle.add_state(state, transition)
                         cycles.append(cycle)

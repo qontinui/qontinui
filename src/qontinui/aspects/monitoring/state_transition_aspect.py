@@ -191,9 +191,7 @@ class StateTransitionAspect:
                 duration_ms = (time.time() - start_time) * 1000
 
                 # Record transition result
-                self._record_transition_result(
-                    from_state, to_state, success, duration_ms
-                )
+                self._record_transition_result(from_state, to_state, success, duration_ms)
 
         return wrapper
 
@@ -399,9 +397,7 @@ class StateTransitionAspect:
         # Add nodes with visit counts
         for state_name, node in self._state_graph.items():
             label = f"{state_name}\\nvisits: {node.visit_count}"
-            color = (
-                "green" if node.is_initial else "red" if node.is_terminal else "black"
-            )
+            color = "green" if node.is_initial else "red" if node.is_terminal else "black"
             lines.append(f'  "{state_name}" [label="{label}", color={color}];')
 
         # Add edges with success rates
@@ -414,17 +410,14 @@ class StateTransitionAspect:
                     else "red" if stats.success_rate < 50 else "orange"
                 )
                 lines.append(
-                    f'  "{from_state}" -> "{to_state}" '
-                    f'[label="{label}", color={color}];'
+                    f'  "{from_state}" -> "{to_state}" ' f'[label="{label}", color={color}];'
                 )
 
         lines.append("}")
 
         return "\\n".join(lines)
 
-    def get_navigation_patterns(
-        self, min_length: int = 3
-    ) -> dict[tuple[str, ...], int]:
+    def get_navigation_patterns(self, min_length: int = 3) -> dict[tuple[str, ...], int]:
         """Find common navigation patterns.
 
         Args:

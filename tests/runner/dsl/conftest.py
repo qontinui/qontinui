@@ -205,17 +205,13 @@ def complex_nested_if():
                 then_statements=[
                     AssignmentStatement(
                         variable_name="result",
-                        value=LiteralExpression(
-                            value_type="string", value="x>10 and y<5"
-                        ),
+                        value=LiteralExpression(value_type="string", value="x>10 and y<5"),
                     )
                 ],
                 else_statements=[
                     AssignmentStatement(
                         variable_name="result",
-                        value=LiteralExpression(
-                            value_type="string", value="x>10 and y>=5"
-                        ),
+                        value=LiteralExpression(value_type="string", value="x>10 and y>=5"),
                     )
                 ],
             )

@@ -124,15 +124,11 @@ class BrobotMockAnalyzer(MockAnalyzer):
 
         # Extract from mock setup code if available
         if "setup_code" in mock_usage.configuration:
-            self._extract_from_setup_code(
-                gui_model, mock_usage.configuration["setup_code"]
-            )
+            self._extract_from_setup_code(gui_model, mock_usage.configuration["setup_code"])
 
         return gui_model
 
-    def _find_annotation_mocks(
-        self, content: str, test_file: TestFile
-    ) -> list[MockUsage]:
+    def _find_annotation_mocks(self, content: str, test_file: TestFile) -> list[MockUsage]:
         """Find mocks declared using annotations."""
         mock_usages = []
 
@@ -160,9 +156,7 @@ class BrobotMockAnalyzer(MockAnalyzer):
 
         return mock_usages
 
-    def _find_programmatic_mocks(
-        self, content: str, test_file: TestFile
-    ) -> list[MockUsage]:
+    def _find_programmatic_mocks(self, content: str, test_file: TestFile) -> list[MockUsage]:
         """Find mocks created programmatically."""
         mock_usages = []
 
@@ -188,9 +182,7 @@ class BrobotMockAnalyzer(MockAnalyzer):
 
         return mock_usages
 
-    def _find_brobot_specific_mocks(
-        self, content: str, test_file: TestFile
-    ) -> list[MockUsage]:
+    def _find_brobot_specific_mocks(self, content: str, test_file: TestFile) -> list[MockUsage]:
         """Find Brobot-specific mock patterns."""
         mock_usages = []
 
@@ -254,9 +246,7 @@ class BrobotMockAnalyzer(MockAnalyzer):
     def _extract_from_setup_code(self, gui_model: GuiModel, setup_code: str):
         """Extract GUI model details from setup code."""
         # Extract elements
-        element_matches = re.finditer(
-            r'\.element\(\s*"([^"]+)"\s*,\s*([^)]+)\)', setup_code
-        )
+        element_matches = re.finditer(r'\.element\(\s*"([^"]+)"\s*,\s*([^)]+)\)', setup_code)
         for match in element_matches:
             element_name = match.group(1)
             element_config = match.group(2)
@@ -270,9 +260,7 @@ class BrobotMockAnalyzer(MockAnalyzer):
                 gui_model.actions.append(action_name)
 
         # Extract state properties
-        state_matches = re.finditer(
-            r'\.state\(\s*"([^"]+)"\s*,\s*([^)]+)\)', setup_code
-        )
+        state_matches = re.finditer(r'\.state\(\s*"([^"]+)"\s*,\s*([^)]+)\)', setup_code)
         for match in state_matches:
             state_name = match.group(1)
             state_config = match.group(2)

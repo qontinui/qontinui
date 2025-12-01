@@ -73,8 +73,8 @@ def extract_app_routes(app_dir: Path) -> list["RouteDefinition"]:
             pattern = f"**/{special_file}.{extension}"
             for file_path in app_dir.glob(pattern):
                 route_path = parse_route_path(file_path, app_dir)
-                dynamic_segments, is_catch_all, is_optional_catch_all = (
-                    parse_dynamic_segments(file_path, app_dir)
+                dynamic_segments, is_catch_all, is_optional_catch_all = parse_dynamic_segments(
+                    file_path, app_dir
                 )
 
                 # Map special file names to RouteType
@@ -104,9 +104,7 @@ def extract_app_routes(app_dir: Path) -> list["RouteDefinition"]:
     return routes
 
 
-def extract_server_components(
-    app_dir: Path, parse_results: dict
-) -> list["ComponentDefinition"]:
+def extract_server_components(app_dir: Path, parse_results: dict) -> list["ComponentDefinition"]:
     """
     Identify server components (default in app/).
 
@@ -230,9 +228,7 @@ def parse_route_path(file_path: Path, app_dir: Path) -> str:
     return route_path
 
 
-def parse_dynamic_segments(
-    file_path: Path, app_dir: Path
-) -> tuple[list[str], bool, bool]:
+def parse_dynamic_segments(file_path: Path, app_dir: Path) -> tuple[list[str], bool, bool]:
     """
     Parse dynamic segments from file path.
 

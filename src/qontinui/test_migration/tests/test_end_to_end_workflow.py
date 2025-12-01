@@ -589,9 +589,7 @@ public class ProblematicTest {
                 "stack_trace": "Mock stack trace",
             }
 
-            recovery_result = orchestrator.recover_from_failure(
-                "ProblematicTest", error_info
-            )
+            recovery_result = orchestrator.recover_from_failure("ProblematicTest", error_info)
 
             # Current implementation returns False, but the mechanism is tested
             assert isinstance(recovery_result, bool)

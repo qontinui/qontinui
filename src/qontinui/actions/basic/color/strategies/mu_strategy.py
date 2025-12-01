@@ -56,9 +56,7 @@ class MUStrategy(BaseColorStrategy):
             profile = self._profile_calculator.calculate(target)
 
             # Find regions matching profile
-            profile_matches = self._find_profile_regions(
-                scene, profile, options.get_diameter()
-            )
+            profile_matches = self._find_profile_regions(scene, profile, options.get_diameter())
             matches.extend(profile_matches)
 
         return matches
@@ -80,6 +78,4 @@ class MUStrategy(BaseColorStrategy):
         mask = ColorMatcher.create_profile_mask(scene, profile)
 
         # Extract regions from mask
-        return RegionExtractor.extract_from_mask(
-            mask, min_size=min_size, default_score=0.8
-        )
+        return RegionExtractor.extract_from_mask(mask, min_size=min_size, default_score=0.8)

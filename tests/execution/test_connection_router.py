@@ -127,9 +127,7 @@ def switch_connections():
                 "case_0": [[Connection(action="case0_action", type="case_0", index=0)]],
                 "case_1": [[Connection(action="case1_action", type="case_1", index=0)]],
                 "case_2": [[Connection(action="case2_action", type="case_2", index=0)]],
-                "default": [
-                    [Connection(action="default_action", type="default", index=0)]
-                ],
+                "default": [[Connection(action="default_action", type="default", index=0)]],
             }
         }
     )
@@ -336,16 +334,12 @@ class TestOutputResolver:
     def test_validate_result_structure_if(self, output_resolver, if_action):
         """Test result structure validation for IF."""
         valid_result = {"success": True, "condition_result": True}
-        is_valid, error = output_resolver.validate_result_structure(
-            if_action, valid_result
-        )
+        is_valid, error = output_resolver.validate_result_structure(if_action, valid_result)
         assert is_valid is True
         assert error is None
 
         invalid_result = {"success": True}
-        is_valid, error = output_resolver.validate_result_structure(
-            if_action, invalid_result
-        )
+        is_valid, error = output_resolver.validate_result_structure(if_action, invalid_result)
         assert is_valid is False
         assert "condition_result" in error
 
@@ -517,9 +511,7 @@ class TestConnectionRouter:
         )
 
         router = ConnectionRouter()
-        unreachable = router.find_unreachable_actions(
-            ["a1"], ["a1", "a2", "a3"], connections
-        )
+        unreachable = router.find_unreachable_actions(["a1"], ["a1", "a2", "a3"], connections)
 
         assert "a3" in unreachable
         assert "a1" not in unreachable
@@ -700,16 +692,12 @@ class TestConnectionRouterIntegration:
             ],
             connections=Connections(
                 root={
-                    "start": {
-                        "main": [[Connection(action="if1", type="main", index=0)]]
-                    },
+                    "start": {"main": [[Connection(action="if1", type="main", index=0)]]},
                     "if1": {
                         "true": [[Connection(action="loop1", type="true", index=0)]],
                         "false": [[Connection(action="end", type="false", index=0)]],
                     },
-                    "loop1": {
-                        "main": [[Connection(action="end", type="main", index=0)]]
-                    },
+                    "loop1": {"main": [[Connection(action="end", type="main", index=0)]]},
                 }
             ),
         )
@@ -719,9 +707,7 @@ class TestConnectionRouterIntegration:
 
         # Route through start
         start_action = workflow.actions[0]
-        next_actions = router.route(
-            start_action, {"success": True}, workflow.connections
-        )
+        next_actions = router.route(start_action, {"success": True}, workflow.connections)
         assert next_actions[0][0] == "if1"
 
         # Route through IF (true branch)

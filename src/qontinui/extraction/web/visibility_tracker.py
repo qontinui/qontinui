@@ -329,8 +329,7 @@ class VisibilityTracker:
                     {
                         "snapshot_index": i,
                         "trigger_action": self.snapshots[i].trigger_action,
-                        "url_change": self.snapshots[i].url
-                        != self.snapshots[i - 1].url,
+                        "url_change": self.snapshots[i].url != self.snapshots[i - 1].url,
                         "appeared_elements": appeared,
                         "disappeared_elements": disappeared,
                     }

@@ -67,9 +67,7 @@ class TestPerformance:
         elapsed_ms = (time.time() - start) * 1000
         overhead_per_call = elapsed_ms / iterations
 
-        print(
-            f"\nEnabled (no breakpoints) overhead: {overhead_per_call:.4f}ms per call"
-        )
+        print(f"\nEnabled (no breakpoints) overhead: {overhead_per_call:.4f}ms per call")
         # Should be minimal (< 1ms) even when enabled
         assert overhead_per_call < 1.0
 
@@ -120,9 +118,7 @@ class TestPerformance:
                 action_type="Click",
                 action_description="Test action",
             )
-            recorder.record_action_complete(
-                record=record, success=True, duration_ms=10.0
-            )
+            recorder.record_action_complete(record=record, success=True, duration_ms=10.0)
 
         elapsed_ms = (time.time() - start) * 1000
         overhead_per_action = elapsed_ms / iterations
@@ -178,9 +174,7 @@ class TestPerformance:
         elapsed_ms = (time.time() - start) * 1000
         overhead_per_check = elapsed_ms / iterations
 
-        print(
-            f"\nBreakpoint check (200 breakpoints): {overhead_per_check:.4f}ms per check"
-        )
+        print(f"\nBreakpoint check (200 breakpoints): {overhead_per_check:.4f}ms per check")
         # Even with 200 breakpoints, should be fast (< 1ms)
         assert overhead_per_check < 1.0
 

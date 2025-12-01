@@ -10,7 +10,7 @@ This module provides functions to extract state variables from React hooks inclu
 
 from pathlib import Path
 
-from qontinui.extraction.models import StateVariable, StateScope, StateSourceType
+from qontinui.extraction.models import StateScope, StateSourceType, StateVariable
 
 
 def extract_use_state(

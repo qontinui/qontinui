@@ -58,9 +58,7 @@ class ElementBoundaryFinder:
 
         # Validate click is within image
         if not (0 <= click_x < width and 0 <= click_y < height):
-            logger.warning(
-                f"Click location ({click_x}, {click_y}) outside image bounds"
-            )
+            logger.warning(f"Click location ({click_x}, {click_y}) outside image bounds")
             return []
 
         candidates: list[InferredBoundingBox] = []
@@ -71,9 +69,7 @@ class ElementBoundaryFinder:
                 continue
 
             try:
-                strategy_candidates = self._apply_strategy(
-                    screenshot, click_location, strategy
-                )
+                strategy_candidates = self._apply_strategy(screenshot, click_location, strategy)
                 candidates.extend(strategy_candidates)
             except Exception as e:
                 logger.warning(f"Strategy {strategy.value} failed: {e}")
@@ -140,9 +136,7 @@ class ElementBoundaryFinder:
             edges = cv2.dilate(edges, kernel, iterations=1)
 
             # Find contours
-            contours, hierarchy = cv2.findContours(
-                edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-            )
+            contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
             for _i, contour in enumerate(contours):
                 # Check if click point is inside contour
@@ -184,9 +178,7 @@ class ElementBoundaryFinder:
                 # Prefer smaller, well-defined contours containing the click
                 size_penalty = min(1.0, 10000 / bbox_area) if bbox_area > 0 else 0
 
-                confidence = (
-                    0.3 + rectangularity * 0.3 + dist_score * 0.2 + size_penalty * 0.2
-                )
+                confidence = 0.3 + rectangularity * 0.3 + dist_score * 0.2 + size_penalty * 0.2
 
                 # Generate mask if enabled
                 mask = None
@@ -272,9 +264,7 @@ class ElementBoundaryFinder:
 
         confidence = 0.4 + edge_density * 0.4
 
-        pixel_data = screenshot[
-            bbox_y : bbox_y + bbox_h, bbox_x : bbox_x + bbox_w
-        ].copy()
+        pixel_data = screenshot[bbox_y : bbox_y + bbox_h, bbox_x : bbox_x + bbox_w].copy()
 
         return [
             InferredBoundingBox(
@@ -316,9 +306,7 @@ class ElementBoundaryFinder:
         # Create mask of similar colors
         if len(roi.shape) == 3:
             diff = np.abs(roi.astype(np.int32) - ref_color)
-            color_mask = np.all(diff < self.config.color_tolerance, axis=2).astype(
-                np.uint8
-            )
+            color_mask = np.all(diff < self.config.color_tolerance, axis=2).astype(np.uint8)
         else:
             diff = np.abs(roi.astype(np.int32) - ref_color[0])
             color_mask = (diff < self.config.color_tolerance).astype(np.uint8)
@@ -329,9 +317,7 @@ class ElementBoundaryFinder:
         color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_OPEN, kernel)
 
         # Find contours in the color mask
-        contours, _ = cv2.findContours(
-            color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         candidates = []
         local_click = (click_x - x1, click_y - y1)
@@ -500,9 +486,7 @@ class ElementBoundaryFinder:
         grad_roi = grad_binary[y1:y2, x1:x2]
 
         # Find contours in gradient
-        contours, _ = cv2.findContours(
-            grad_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(grad_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         candidates = []
         local_click = (click_x - x1, click_y - y1)

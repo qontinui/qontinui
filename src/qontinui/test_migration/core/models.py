@@ -174,7 +174,5 @@ class MigrationConfig:
     diagnostic_level: str = "detailed"
     parallel_execution: bool = True
     comparison_mode: str = "behavioral"  # "behavioral", "output", "both"
-    java_test_patterns: list[str] = field(
-        default_factory=lambda: ["*Test.java", "*Tests.java"]
-    )
+    java_test_patterns: list[str] = field(default_factory=lambda: ["*Test.java", "*Tests.java"])
     exclude_patterns: list[str] = field(default_factory=list)

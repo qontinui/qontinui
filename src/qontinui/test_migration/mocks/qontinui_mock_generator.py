@@ -187,9 +187,7 @@ class GuiSimulator:
 
     def _generate_annotation_mock(self, mock_usage: MockUsage) -> str:
         """Generate mock from annotation-based Brobot mock."""
-        qontinui_class = self.mock_class_mapping.get(
-            mock_usage.mock_class, "QontinuiMock"
-        )
+        qontinui_class = self.mock_class_mapping.get(mock_usage.mock_class, "QontinuiMock")
         field_name = mock_usage.configuration.get("field_name", "mock_object")
 
         return f"""
@@ -204,9 +202,7 @@ def {field_name}():
 
     def _generate_programmatic_mock(self, mock_usage: MockUsage) -> str:
         """Generate programmatic mock creation."""
-        qontinui_class = self.mock_class_mapping.get(
-            mock_usage.mock_class, "QontinuiMock"
-        )
+        qontinui_class = self.mock_class_mapping.get(mock_usage.mock_class, "QontinuiMock")
         variable_name = mock_usage.configuration.get("variable_name", "mock_object")
 
         return f"""
@@ -285,9 +281,7 @@ gui_model_mock = GuiModelMock()"""
 
         # Add specific elements and actions
         for element_name, element_config in elements.items():
-            mock_code += (
-                f"\ngui_model_mock.add_element('{element_name}', {element_config})"
-            )
+            mock_code += f"\ngui_model_mock.add_element('{element_name}', {element_config})"
 
         for action_name in actions:
             qontinui_action = self.action_mapping.get(action_name, action_name)
@@ -325,9 +319,7 @@ def qontinui_test_environment():
 
     def _generate_generic_mock(self, mock_usage: MockUsage) -> str:
         """Generate generic mock for unknown types."""
-        qontinui_class = self.mock_class_mapping.get(
-            mock_usage.mock_class, "QontinuiMock"
-        )
+        qontinui_class = self.mock_class_mapping.get(mock_usage.mock_class, "QontinuiMock")
 
         return f"""
 # Generic Qontinui mock for {mock_usage.mock_class}
@@ -345,9 +337,7 @@ mock_state = MockState("{gui_model.model_name}")"""
 
         # Add elements to state
         for element_name, element_config in gui_model.elements.items():
-            setup_code += (
-                f"\nmock_state.add_element('{element_name}', {element_config})"
-            )
+            setup_code += f"\nmock_state.add_element('{element_name}', {element_config})"
 
         # Set state properties
         for prop_name, prop_value in gui_model.state_properties.items():
@@ -542,9 +532,7 @@ def integrated_mock_environment():
         # Add individual mocks to the environment
         for i, mock_usage in enumerate(mock_usages):
             mock_name = f"mock_{i}_{mock_usage.mock_class.lower()}"
-            qontinui_class = self.mock_class_mapping.get(
-                mock_usage.mock_class, "QontinuiMock"
-            )
+            qontinui_class = self.mock_class_mapping.get(mock_usage.mock_class, "QontinuiMock")
 
             setup_code += f"""
 

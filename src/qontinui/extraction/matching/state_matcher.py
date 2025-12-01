@@ -43,14 +43,11 @@ class StateVariableMatcher:
         relevant_conditionals = [
             cond
             for cond in conditional_renders
-            if state_var.id in cond.controlling_variables
-            or state_var.name in cond.condition
+            if state_var.id in cond.controlling_variables or state_var.name in cond.condition
         ]
 
         if not relevant_conditionals:
-            logger.debug(
-                f"No conditional renders found for state variable: {state_var.name}"
-            )
+            logger.debug(f"No conditional renders found for state variable: {state_var.name}")
             return evidence
 
         # For each conditional, try to correlate with runtime states
@@ -77,9 +74,7 @@ class StateVariableMatcher:
         matches: list[tuple[str, DetectedRegion]] = []
 
         # Get all components rendered by this conditional
-        all_components = (
-            conditional.renders_when_true + conditional.renders_when_false
-        )
+        all_components = conditional.renders_when_true + conditional.renders_when_false
 
         for component_name in all_components:
             for region in regions:
@@ -111,9 +106,7 @@ class StateVariableMatcher:
         for runtime_state in runtime_states:
             # Check if any conditionally-rendered components appear in this state
             for component_name in conditional.renders_when_true:
-                similarity = self._find_component_in_state(
-                    component_name, runtime_state
-                )
+                similarity = self._find_component_in_state(component_name, runtime_state)
                 if similarity > 0.6:
                     evidence.append(
                         MatchingEvidence(
@@ -131,9 +124,7 @@ class StateVariableMatcher:
                     )
 
             for component_name in conditional.renders_when_false:
-                similarity = self._find_component_in_state(
-                    component_name, runtime_state
-                )
+                similarity = self._find_component_in_state(component_name, runtime_state)
                 if similarity > 0.6:
                     evidence.append(
                         MatchingEvidence(
@@ -152,9 +143,7 @@ class StateVariableMatcher:
 
         return evidence
 
-    def _component_matches_region(
-        self, component_name: str, region: DetectedRegion
-    ) -> bool:
+    def _component_matches_region(self, component_name: str, region: DetectedRegion) -> bool:
         """Check if a component name matches a detected region.
 
         Args:
@@ -223,18 +212,12 @@ class StateVariableMatcher:
             # Check test ID
             test_id = element.attributes.get("data-testid")
             if test_id:
-                if (
-                    component_lower in test_id.lower()
-                    or component_kebab in test_id.lower()
-                ):
+                if component_lower in test_id.lower() or component_kebab in test_id.lower():
                     best_similarity = max(best_similarity, 0.9)
 
             # Check class names
             for class_name in element.class_names:
-                if (
-                    component_lower in class_name.lower()
-                    or component_kebab in class_name.lower()
-                ):
+                if component_lower in class_name.lower() or component_kebab in class_name.lower():
                     best_similarity = max(best_similarity, 0.8)
 
             # Check aria label

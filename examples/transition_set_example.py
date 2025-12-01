@@ -53,18 +53,14 @@ class HomeTransitions:
         self.island_state = IslandState()
         self.action = Action()
 
-    @from_transition(
-        from_state=WorldState, priority=1, description="Navigate from World to Home"
-    )
+    @from_transition(from_state=WorldState, priority=1, description="Navigate from World to Home")
     def from_world(self) -> bool:
         """Navigate from World state back to Home."""
         logger.info("Navigating from World to Home")
         # Click the back button in World state
         return self.action.click(self.world_state.back_button).is_success()
 
-    @from_transition(
-        from_state=IslandState, priority=1, description="Navigate from Island to Home"
-    )
+    @from_transition(from_state=IslandState, priority=1, description="Navigate from Island to Home")
     def from_island(self) -> bool:
         """Navigate from Island state back to Home."""
         logger.info("Navigating from Island to Home")
@@ -78,9 +74,7 @@ class HomeTransitions:
 
         # Check for presence of home-specific elements
         found_world_button = self.action.find(self.home_state.world_button).is_success()
-        found_search_button = self.action.find(
-            self.home_state.search_button
-        ).is_success()
+        found_search_button = self.action.find(self.home_state.search_button).is_success()
 
         if found_world_button or found_search_button:
             logger.info("Successfully confirmed Home state is active")
@@ -100,9 +94,7 @@ class WorldTransitions:
         self.island_state = IslandState()
         self.action = Action()
 
-    @from_transition(
-        from_state=HomeState, priority=1, description="Navigate from Home to World"
-    )
+    @from_transition(from_state=HomeState, priority=1, description="Navigate from Home to World")
     def from_home(self) -> bool:
         """Navigate from Home state to World."""
         logger.info("Navigating from Home to World")
@@ -141,9 +133,7 @@ class IslandTransitions:
         self.island_state = IslandState()
         self.action = Action()
 
-    @from_transition(
-        from_state=WorldState, priority=1, description="Navigate from World to Island"
-    )
+    @from_transition(from_state=WorldState, priority=1, description="Navigate from World to Island")
     def from_world(self) -> bool:
         """Navigate from World state to Island."""
         logger.info("Navigating from World to Island")
@@ -182,14 +172,10 @@ if __name__ == "__main__":
     """
 
     print("Transition set example loaded successfully!")
-    print(
-        "This example shows how to use the Brobot-style transition decorators in Qontinui."
-    )
+    print("This example shows how to use the Brobot-style transition decorators in Qontinui.")
     print("\nKey concepts:")
     print("- @transition_set: Groups all transitions for a target state")
     print("- @from_transition: Defines navigation FROM a source state")
     print("- @to_transition: Verifies arrival at the target state")
     print("\nThe to_transition is automatically executed after any from_transition.")
-    print(
-        "This ensures consistent state verification regardless of the navigation path."
-    )
+    print("This ensures consistent state verification regardless of the navigation path.")

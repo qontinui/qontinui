@@ -55,9 +55,7 @@ class DebugHook(ExecutionHook):
             self.paused = True
             self._pause_and_wait_for_continue(action, context)
 
-    def after_action(
-        self, action: Action, context: dict[str, Any], result: dict[str, Any]
-    ):
+    def after_action(self, action: Action, context: dict[str, Any], result: dict[str, Any]):
         """Record action execution in debug system."""
         if not self.debug_manager:
             return
@@ -119,9 +117,7 @@ class VariableTrackingHook(ExecutionHook):
         """Capture variable state before action."""
         self._capture_variables(action.id, "before", context)
 
-    def after_action(
-        self, action: Action, context: dict[str, Any], result: dict[str, Any]
-    ):
+    def after_action(self, action: Action, context: dict[str, Any], result: dict[str, Any]):
         """Capture variable state after action."""
         self._capture_variables(action.id, "after", context)
 
@@ -138,11 +134,7 @@ class VariableTrackingHook(ExecutionHook):
             context: Current context
         """
         if self.tracked_variables:
-            snapshot = {
-                var: context.get(var)
-                for var in self.tracked_variables
-                if var in context
-            }
+            snapshot = {var: context.get(var) for var in self.tracked_variables if var in context}
         else:
             snapshot = context.copy()
 
@@ -155,9 +147,7 @@ class VariableTrackingHook(ExecutionHook):
             }
         )
 
-    def get_variable_history(
-        self, variable_name: str | None = None
-    ) -> list[dict[str, Any]]:
+    def get_variable_history(self, variable_name: str | None = None) -> list[dict[str, Any]]:
         """Get variable change history.
 
         Args:
@@ -167,11 +157,7 @@ class VariableTrackingHook(ExecutionHook):
             List of variable history entries
         """
         if variable_name:
-            return [
-                entry
-                for entry in self.variable_history
-                if variable_name in entry["variables"]
-            ]
+            return [entry for entry in self.variable_history if variable_name in entry["variables"]]
         return self.variable_history
 
     def get_variable_changes(self, variable_name: str) -> list[dict[str, Any]]:

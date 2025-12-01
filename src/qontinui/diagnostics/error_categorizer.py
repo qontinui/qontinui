@@ -89,9 +89,7 @@ class ErrorCategorizer:
         return issues
 
     @staticmethod
-    def categorize_performance_issues(
-        performance: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def categorize_performance_issues(performance: dict[str, Any]) -> list[dict[str, Any]]:
         """Categorize performance-related issues.
 
         Args:
@@ -130,9 +128,7 @@ class ErrorCategorizer:
         return issues
 
     @staticmethod
-    def categorize_directory_issues(
-        directories: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def categorize_directory_issues(directories: dict[str, Any]) -> list[dict[str, Any]]:
         """Categorize directory structure issues.
 
         Args:
@@ -188,7 +184,9 @@ class FixSuggester:
 
         if category == ErrorCategory.PERFORMANCE_ISSUE:
             value = issue.get("value", 0)
-            return f"High average load time ({value:.1f}ms) - consider image optimization or caching"
+            return (
+                f"High average load time ({value:.1f}ms) - consider image optimization or caching"
+            )
 
         if category == ErrorCategory.LOAD_FAILURE:
             value = issue.get("value", 0)
@@ -200,9 +198,7 @@ class FixSuggester:
         return "Check diagnostic results and address issues"
 
     @staticmethod
-    def generate_all_suggestions(
-        categorized_issues: dict[str, list[dict[str, Any]]]
-    ) -> list[str]:
+    def generate_all_suggestions(categorized_issues: dict[str, list[dict[str, Any]]]) -> list[str]:
         """Generate all fix suggestions from categorized issues.
 
         Args:

@@ -17,9 +17,7 @@ class IllustrationConfig(BaseModel):
     show_drag: bool = Field(default=True, description="Illustrate drag actions")
     show_type: bool = Field(default=True, description="Illustrate type actions")
     show_find: bool = Field(default=True, description="Illustrate find operations")
-    highlight_color: str = Field(
-        default="red", description="Color for highlighting elements"
-    )
+    highlight_color: str = Field(default="red", description="Color for highlighting elements")
     highlight_thickness: int = Field(
         default=3, ge=1, le=10, description="Highlight border thickness"
     )
@@ -34,29 +32,21 @@ class HighlightConfig(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     # Global settings
-    enabled: bool = Field(
-        default=True, description="Global highlighting enable/disable"
-    )
+    enabled: bool = Field(default=True, description="Global highlighting enable/disable")
     auto_highlight_finds: bool = Field(
         default=True, description="Automatically highlight successful finds"
     )
 
     # Find highlighting
-    find_color: str = Field(
-        default="#00FF00", description="Color for highlighting found images"
-    )
+    find_color: str = Field(default="#00FF00", description="Color for highlighting found images")
     find_duration: float = Field(
         default=2.0, ge=0, description="Duration to show highlight (seconds)"
     )
-    find_border_width: int = Field(
-        default=3, ge=1, le=10, description="Border width in pixels"
-    )
+    find_border_width: int = Field(default=3, ge=1, le=10, description="Border width in pixels")
 
     # Click highlighting
     click_enabled: bool = Field(default=True, description="Enable click highlighting")
-    click_color: str = Field(
-        default="#FFFF00", description="Color for click highlights"
-    )
+    click_color: str = Field(default="#FFFF00", description="Color for click highlights")
     click_duration: float = Field(default=0.5, ge=0, description="Duration (seconds)")
     click_radius: int = Field(
         default=20, ge=5, le=100, description="Radius of click indicator circle"
@@ -73,9 +63,7 @@ class MonitorConfig(BaseModel):
         ge=-1,
         description="Monitor index to use for automation (0=primary, 1=secondary, -1=primary)",
     )
-    multi_monitor_enabled: bool = Field(
-        default=False, description="Enable multi-monitor support"
-    )
+    multi_monitor_enabled: bool = Field(default=False, description="Enable multi-monitor support")
     search_all_monitors: bool = Field(
         default=False, description="Search across all monitors when finding elements"
     )
@@ -116,9 +104,7 @@ class CaptureConfig(BaseModel):
         pattern="^(AUTO|ROBOT|FFMPEG|JAVACV_FFMPEG|SIKULIX|MSS)$",
         description="Capture provider to use",
     )
-    prefer_physical: bool = Field(
-        default=True, description="Prefer physical resolution captures"
-    )
+    prefer_physical: bool = Field(default=True, description="Prefer physical resolution captures")
     fallback_enabled: bool = Field(
         default=True,
         description="Enable fallback to other providers if preferred fails",
@@ -127,9 +113,7 @@ class CaptureConfig(BaseModel):
         default=["MSS", "ROBOT"],
         description="Fallback chain priority for capture providers",
     )
-    enable_logging: bool = Field(
-        default=False, description="Enable capture operation logging"
-    )
+    enable_logging: bool = Field(default=False, description="Enable capture operation logging")
     auto_retry: bool = Field(default=True, description="Auto-retry failed captures")
     retry_count: int = Field(
         default=3,
@@ -161,9 +145,7 @@ class DisplayProperties(BaseModel):
     monitor: MonitorConfig = Field(
         default_factory=MonitorConfig, description="Monitor configuration settings"
     )
-    dpi: DpiConfig = Field(
-        default_factory=DpiConfig, description="DPI and scaling configuration"
-    )
+    dpi: DpiConfig = Field(default_factory=DpiConfig, description="DPI and scaling configuration")
     capture: CaptureConfig = Field(
         default_factory=CaptureConfig,
         description="Screen capture provider configuration",

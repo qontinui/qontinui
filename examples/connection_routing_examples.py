@@ -61,21 +61,13 @@ def example_if_routing():
         ],
         connections=Connections(
             root={
-                "start": {
-                    "main": [[Connection(action="if_check", type="main", index=0)]]
-                },
+                "start": {"main": [[Connection(action="if_check", type="main", index=0)]]},
                 "if_check": {
                     "true": [[Connection(action="process_data", type="true", index=0)]],
-                    "false": [
-                        [Connection(action="skip_processing", type="false", index=0)]
-                    ],
+                    "false": [[Connection(action="skip_processing", type="false", index=0)]],
                 },
-                "process_data": {
-                    "main": [[Connection(action="end", type="main", index=0)]]
-                },
-                "skip_processing": {
-                    "main": [[Connection(action="end", type="main", index=0)]]
-                },
+                "process_data": {"main": [[Connection(action="end", type="main", index=0)]]},
+                "skip_processing": {"main": [[Connection(action="end", type="main", index=0)]]},
             }
         ),
     )
@@ -154,9 +146,7 @@ def example_loop_routing():
                     "loop": [[Connection(action="process_item", type="loop", index=0)]],
                     "main": [[Connection(action="end", type="main", index=0)]],
                 },
-                "process_item": {
-                    "main": [[Connection(action="loop", type="main", index=0)]]
-                },
+                "process_item": {"main": [[Connection(action="loop", type="main", index=0)]]},
             }
         ),
     )
@@ -230,37 +220,23 @@ def example_switch_routing():
                 position=(200, 100),
             ),
             Action(id="handle_ready", type="CLICK", config={}, position=(400, 0)),
-            Action(
-                id="handle_error", type="SCREENSHOT", config={}, position=(400, 100)
-            ),
+            Action(id="handle_error", type="SCREENSHOT", config={}, position=(400, 100)),
             Action(
                 id="handle_pending",
                 type="WAIT",
                 config={"waitFor": "time", "duration": 1000},
                 position=(400, 200),
             ),
-            Action(
-                id="handle_unknown", type="SCREENSHOT", config={}, position=(400, 300)
-            ),
+            Action(id="handle_unknown", type="SCREENSHOT", config={}, position=(400, 300)),
         ],
         connections=Connections(
             root={
-                "start": {
-                    "main": [[Connection(action="switch", type="main", index=0)]]
-                },
+                "start": {"main": [[Connection(action="switch", type="main", index=0)]]},
                 "switch": {
-                    "case_0": [
-                        [Connection(action="handle_ready", type="case_0", index=0)]
-                    ],
-                    "case_1": [
-                        [Connection(action="handle_error", type="case_1", index=0)]
-                    ],
-                    "case_2": [
-                        [Connection(action="handle_pending", type="case_2", index=0)]
-                    ],
-                    "default": [
-                        [Connection(action="handle_unknown", type="default", index=0)]
-                    ],
+                    "case_0": [[Connection(action="handle_ready", type="case_0", index=0)]],
+                    "case_1": [[Connection(action="handle_error", type="case_1", index=0)]],
+                    "case_2": [[Connection(action="handle_pending", type="case_2", index=0)]],
+                    "default": [[Connection(action="handle_unknown", type="default", index=0)]],
                 },
             }
         ),
@@ -327,22 +303,14 @@ def example_try_catch_routing():
                 config={"variableName": "success", "value": True},
                 position=(400, 50),
             ),
-            Action(
-                id="error_handler", type="SCREENSHOT", config={}, position=(400, 150)
-            ),
+            Action(id="error_handler", type="SCREENSHOT", config={}, position=(400, 150)),
         ],
         connections=Connections(
             root={
-                "start": {
-                    "main": [[Connection(action="try_catch", type="main", index=0)]]
-                },
+                "start": {"main": [[Connection(action="try_catch", type="main", index=0)]]},
                 "try_catch": {
-                    "main": [
-                        [Connection(action="success_handler", type="main", index=0)]
-                    ],
-                    "error": [
-                        [Connection(action="error_handler", type="error", index=0)]
-                    ],
+                    "main": [[Connection(action="success_handler", type="main", index=0)]],
+                    "error": [[Connection(action="error_handler", type="error", index=0)]],
                 },
             }
         ),
@@ -355,9 +323,7 @@ def example_try_catch_routing():
     print("Success: No exception")
     result_success = {"success": True}
     next_actions = router.route(try_catch_action, result_success, workflow.connections)
-    print(
-        f"  Output: {router.get_action_output_type(try_catch_action, result_success)}"
-    )
+    print(f"  Output: {router.get_action_output_type(try_catch_action, result_success)}")
     print(f"  Next: {[aid for aid, _, _ in next_actions]}")
 
     # Error case
@@ -421,19 +387,13 @@ def example_complex_workflow():
         ],
         connections=Connections(
             root={
-                "start": {
-                    "main": [
-                        [Connection(action="check_condition", type="main", index=0)]
-                    ]
-                },
+                "start": {"main": [[Connection(action="check_condition", type="main", index=0)]]},
                 "check_condition": {
                     "true": [[Connection(action="process_loop", type="true", index=0)]],
                     "false": [[Connection(action="end", type="false", index=0)]],
                 },
                 "process_loop": {
-                    "main": [
-                        [Connection(action="route_by_status", type="main", index=0)]
-                    ]
+                    "main": [[Connection(action="route_by_status", type="main", index=0)]]
                 },
                 "route_by_status": {
                     "case_0": [[Connection(action="end", type="case_0", index=0)]],
@@ -517,12 +477,8 @@ def example_routing_analysis():
                 },
                 position=(200, 0),
             ),
-            Action(
-                id="branch_a", type="TYPE", config={"text": "A"}, position=(400, -100)
-            ),
-            Action(
-                id="branch_b", type="TYPE", config={"text": "B"}, position=(400, 100)
-            ),
+            Action(id="branch_a", type="TYPE", config={"text": "A"}, position=(400, -100)),
+            Action(id="branch_b", type="TYPE", config={"text": "B"}, position=(400, 100)),
             Action(id="merge", type="SCREENSHOT", config={}, position=(600, 0)),
         ],
         connections=Connections(
@@ -532,12 +488,8 @@ def example_routing_analysis():
                     "true": [[Connection(action="branch_a", type="true", index=0)]],
                     "false": [[Connection(action="branch_b", type="false", index=0)]],
                 },
-                "branch_a": {
-                    "main": [[Connection(action="merge", type="main", index=0)]]
-                },
-                "branch_b": {
-                    "main": [[Connection(action="merge", type="main", index=0)]]
-                },
+                "branch_a": {"main": [[Connection(action="merge", type="main", index=0)]]},
+                "branch_b": {"main": [[Connection(action="merge", type="main", index=0)]]},
             }
         ),
     )
@@ -562,9 +514,7 @@ def example_routing_analysis():
             print(f"    <- {source} ({output_type})")
 
     # Find execution paths
-    paths = router.get_execution_paths(
-        "start", "merge", workflow.connections, max_paths=10
-    )
+    paths = router.get_execution_paths("start", "merge", workflow.connections, max_paths=10)
     print("\nAll execution paths from start to merge:")
     for i, path in enumerate(paths, 1):
         print(f"  Path {i}: {' -> '.join(path)}")

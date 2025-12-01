@@ -51,9 +51,7 @@ class ActionHistory:
                 return snapshot
         return None
 
-    def get_snapshots_by_action_type(
-        self, action_type: ActionType
-    ) -> list[ActionSnapshot]:
+    def get_snapshots_by_action_type(self, action_type: ActionType) -> list[ActionSnapshot]:
         """Get all snapshots of a specific action type."""
         return [s for s in self.snapshots if s.action_type == action_type]
 
@@ -107,9 +105,7 @@ class ActionHistory:
 
         # Try overlapping active states
         overlap_matches = [
-            s
-            for s in candidates
-            if any(state in active_states for state in s.active_states)
+            s for s in candidates if any(state in active_states for state in s.active_states)
         ]
 
         if overlap_matches:
@@ -118,14 +114,10 @@ class ActionHistory:
         # Fall back to any matching action type
         return random.choice(candidates)
 
-    def get_transitions_from_screenshot(
-        self, screenshot_id: str
-    ) -> list[ActionSnapshot]:
+    def get_transitions_from_screenshot(self, screenshot_id: str) -> list[ActionSnapshot]:
         """Get all snapshots that transition from a specific screenshot."""
         return [
-            s
-            for s in self.snapshots
-            if s.screenshot_id == screenshot_id and s.next_screenshot_id
+            s for s in self.snapshots if s.screenshot_id == screenshot_id and s.next_screenshot_id
         ]
 
     def get_transitions_to_screenshot(self, screenshot_id: str) -> list[ActionSnapshot]:
@@ -149,9 +141,7 @@ class ActionHistory:
         """Convert to dictionary for serialization."""
         return {
             "snapshots": [s.to_dict() for s in self.snapshots],
-            "last_updated": (
-                self.last_updated.isoformat() if self.last_updated else None
-            ),
+            "last_updated": (self.last_updated.isoformat() if self.last_updated else None),
         }
 
     @classmethod

@@ -186,9 +186,7 @@ class HALFactory:
         )
 
     @classmethod
-    def get_keyboard_controller(
-        cls, config: HALConfig | None = None
-    ) -> IKeyboardController:
+    def get_keyboard_controller(cls, config: HALConfig | None = None) -> IKeyboardController:
         """Get keyboard controller implementation.
 
         Args:
@@ -210,25 +208,15 @@ class HALFactory:
 
                     from .implementations.keyboard_operations import KeyboardOperations
 
-                    cls._instances[cache_key] = KeyboardOperations(
-                        keyboard.Controller()
-                    )
+                    cls._instances[cache_key] = KeyboardOperations(keyboard.Controller())
                 elif backend == "pyautogui":
-                    raise NotImplementedError(
-                        "PyAutoGUI keyboard backend not yet implemented"
-                    )
+                    raise NotImplementedError("PyAutoGUI keyboard backend not yet implemented")
                 elif backend == "selenium":
-                    raise NotImplementedError(
-                        "Selenium keyboard backend not yet implemented"
-                    )
+                    raise NotImplementedError("Selenium keyboard backend not yet implemented")
                 elif backend == "native":
-                    cls._instances[cache_key] = cls._get_native_keyboard_controller(
-                        config
-                    )
+                    cls._instances[cache_key] = cls._get_native_keyboard_controller(config)
                 else:
-                    raise ValueError(
-                        f"Unsupported keyboard controller backend: {backend}"
-                    )
+                    raise ValueError(f"Unsupported keyboard controller backend: {backend}")
 
             instance: IKeyboardController = cls._instances[cache_key]
             return instance
@@ -258,13 +246,9 @@ class HALFactory:
 
                     cls._instances[cache_key] = MouseOperations(mouse.Controller())
                 elif backend == "pyautogui":
-                    raise NotImplementedError(
-                        "PyAutoGUI mouse backend not yet implemented"
-                    )
+                    raise NotImplementedError("PyAutoGUI mouse backend not yet implemented")
                 elif backend == "selenium":
-                    raise NotImplementedError(
-                        "Selenium mouse backend not yet implemented"
-                    )
+                    raise NotImplementedError("Selenium mouse backend not yet implemented")
                 elif backend == "native":
                     cls._instances[cache_key] = cls._get_native_mouse_controller(config)
                 else:
@@ -312,9 +296,7 @@ class HALFactory:
         return instance
 
     @classmethod
-    def get_platform_specific(
-        cls, config: HALConfig | None = None
-    ) -> IPlatformSpecific:
+    def get_platform_specific(cls, config: HALConfig | None = None) -> IPlatformSpecific:
         """Get platform-specific implementation.
 
         Args:

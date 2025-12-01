@@ -300,9 +300,7 @@ class SemanticProcessor(ABC):
         """
         self._max_processing_time = milliseconds
 
-    def process_region(
-        self, screenshot: np.ndarray[Any, Any], roi: Region
-    ) -> SemanticScene:
+    def process_region(self, screenshot: np.ndarray[Any, Any], roi: Region) -> SemanticScene:
         """Process specific region of screenshot.
 
         Default implementation crops and processes the region.
@@ -347,8 +345,7 @@ class SemanticProcessor(ABC):
             # Apply hints to configuration if relevant
             if hints.quick_mode:
                 self._config = ProcessorConfig(
-                    min_confidence=self._config.min_confidence
-                    * 1.2,  # Higher threshold
+                    min_confidence=self._config.min_confidence * 1.2,  # Higher threshold
                     max_objects=min(self._config.max_objects, 50),  # Fewer objects
                 )
 

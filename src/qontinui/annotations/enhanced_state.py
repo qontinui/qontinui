@@ -245,9 +245,7 @@ def get_state_name(obj: Any) -> str | None:
     return metadata.name if metadata else None
 
 
-def get_initial_states_for_profile(
-    states: list[Any], profile: str = "default"
-) -> list[Any]:
+def get_initial_states_for_profile(states: list[Any], profile: str = "default") -> list[Any]:
     """Get initial states for a specific profile.
 
     Args:

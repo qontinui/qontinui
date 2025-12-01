@@ -176,9 +176,7 @@ class TestScreenshotLoading:
         # Create additional files that shouldn't match
         (temp_screenshot_dir / "not_a_screenshot.txt").write_text("ignored")
 
-        screenshots = self._load_screenshots_from_dir(
-            temp_screenshot_dir, pattern="screen_*.png"
-        )
+        screenshots = self._load_screenshots_from_dir(temp_screenshot_dir, pattern="screen_*.png")
 
         # Should only load .png files matching pattern
         assert len(screenshots) == 5
@@ -449,9 +447,7 @@ class TestStateSerialization:
         for state_img in state.state_images:
             img_dict = {
                 "name": state_img.name,
-                "metadata": (
-                    state_img.metadata.copy() if hasattr(state_img, "metadata") else {}
-                ),
+                "metadata": (state_img.metadata.copy() if hasattr(state_img, "metadata") else {}),
             }
             state_dict["state_images"].append(img_dict)
 
@@ -461,9 +457,7 @@ class TestStateSerialization:
             reg_dict = {
                 "name": state_reg.name,
                 "bounds": {"x": reg.x, "y": reg.y, "w": reg.w, "h": reg.h},
-                "metadata": (
-                    state_reg.metadata.copy() if hasattr(state_reg, "metadata") else {}
-                ),
+                "metadata": (state_reg.metadata.copy() if hasattr(state_reg, "metadata") else {}),
             }
             state_dict["state_regions"].append(reg_dict)
 
@@ -473,9 +467,7 @@ class TestStateSerialization:
             loc_dict = {
                 "name": state_loc.name,
                 "location": {"x": loc.x, "y": loc.y},
-                "metadata": (
-                    state_loc.metadata.copy() if hasattr(state_loc, "metadata") else {}
-                ),
+                "metadata": (state_loc.metadata.copy() if hasattr(state_loc, "metadata") else {}),
             }
             state_dict["state_locations"].append(loc_dict)
 
@@ -543,9 +535,7 @@ class TestRunnerIntegrationPoints:
         output = {
             "status": "success",
             "detected_states": [self._serialize_state(sample_state)],
-            "transitions": [
-                {"from": "test_state", "to": "settings", "confidence": 0.85}
-            ],
+            "transitions": [{"from": "test_state", "to": "settings", "confidence": 0.85}],
             "metadata": {
                 "total_screenshots": 100,
                 "total_transitions": 15,
@@ -683,9 +673,7 @@ class TestDataFlowIntegration:
         state = State(name="flow_test_state", description="State from data flow test")
         return state
 
-    def _serialize_output(
-        self, state: State, transitions: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+    def _serialize_output(self, state: State, transitions: list[dict[str, Any]]) -> dict[str, Any]:
         """Serialize output."""
         return {
             "state": {"name": state.name, "description": state.description},

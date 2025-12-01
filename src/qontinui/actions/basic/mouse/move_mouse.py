@@ -77,9 +77,7 @@ class MoveMouse(ActionInterface):
         """
         return ActionType.MOVE
 
-    def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Move mouse to locations specified in object collections.
 
         Args:

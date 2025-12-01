@@ -83,9 +83,7 @@ class ObjectCollectionBuilder:
         self.images.with_patterns(*patterns)
         return self
 
-    def with_all_state_images(
-        self, state: Optional["State"]
-    ) -> "ObjectCollectionBuilder":
+    def with_all_state_images(self, state: Optional["State"]) -> "ObjectCollectionBuilder":
         """Add all state images from a state.
 
         Args:
@@ -97,9 +95,7 @@ class ObjectCollectionBuilder:
         self.images.with_all_state_images(state)
         return self
 
-    def with_non_shared_images(
-        self, state: Optional["State"]
-    ) -> "ObjectCollectionBuilder":
+    def with_non_shared_images(self, state: Optional["State"]) -> "ObjectCollectionBuilder":
         """Add non-shared state images from a state.
 
         Args:
@@ -125,9 +121,7 @@ class ObjectCollectionBuilder:
         self.regions.with_locations(*locations)
         return self
 
-    def set_locations(
-        self, locations: list["StateLocation"]
-    ) -> "ObjectCollectionBuilder":
+    def set_locations(self, locations: list["StateLocation"]) -> "ObjectCollectionBuilder":
         """Set locations list.
 
         Args:
@@ -163,9 +157,7 @@ class ObjectCollectionBuilder:
         self.regions.set_regions(regions)
         return self
 
-    def with_grid_subregions(
-        self, rows: int, columns: int, *regions
-    ) -> "ObjectCollectionBuilder":
+    def with_grid_subregions(self, rows: int, columns: int, *regions) -> "ObjectCollectionBuilder":
         """Add grid subregions from regions.
 
         Args:
@@ -205,9 +197,7 @@ class ObjectCollectionBuilder:
         self.matches.set_matches(matches)
         return self
 
-    def with_match_objects_as_regions(
-        self, *matches: "Match"
-    ) -> "ObjectCollectionBuilder":
+    def with_match_objects_as_regions(self, *matches: "Match") -> "ObjectCollectionBuilder":
         """Add match objects as regions.
 
         Args:
@@ -219,9 +209,7 @@ class ObjectCollectionBuilder:
         self.matches.with_match_objects_as_regions(*matches)
         return self
 
-    def with_match_objects_as_state_images(
-        self, *matches: "Match"
-    ) -> "ObjectCollectionBuilder":
+    def with_match_objects_as_state_images(self, *matches: "Match") -> "ObjectCollectionBuilder":
         """Add match objects as state images.
 
         Args:

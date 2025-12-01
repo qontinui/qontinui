@@ -40,9 +40,7 @@ class TestBreakpointManager:
         def condition(ctx):
             return ctx.get("match_count", 0) > 5
 
-        bp_id = self.manager.add_conditional_breakpoint(
-            condition, condition_str="match_count > 5"
-        )
+        bp_id = self.manager.add_conditional_breakpoint(condition, condition_str="match_count > 5")
 
         bp = self.manager.get_breakpoint(bp_id)
         assert bp is not None
@@ -137,17 +135,13 @@ class TestBreakpointManager:
         self.manager.add_action_breakpoint("action_123")
 
         # Should trigger
-        should_break, triggered = self.manager.check_breakpoint(
-            {"action_id": "action_123"}
-        )
+        should_break, triggered = self.manager.check_breakpoint({"action_id": "action_123"})
         assert should_break is True
         assert len(triggered) == 1
         assert triggered[0].hit_count == 1
 
         # Should not trigger
-        should_break, triggered = self.manager.check_breakpoint(
-            {"action_id": "other_action"}
-        )
+        should_break, triggered = self.manager.check_breakpoint({"action_id": "other_action"})
         assert should_break is False
         assert len(triggered) == 0
 
@@ -156,9 +150,7 @@ class TestBreakpointManager:
         self.manager.add_type_breakpoint("Click")
 
         # Should trigger
-        should_break, triggered = self.manager.check_breakpoint(
-            {"action_type": "Click"}
-        )
+        should_break, triggered = self.manager.check_breakpoint({"action_type": "Click"})
         assert should_break is True
         assert len(triggered) == 1
 
@@ -199,9 +191,7 @@ class TestBreakpointManager:
         bp_id = self.manager.add_action_breakpoint("action_1")
         self.manager.disable_breakpoint(bp_id)
 
-        should_break, triggered = self.manager.check_breakpoint(
-            {"action_id": "action_1"}
-        )
+        should_break, triggered = self.manager.check_breakpoint({"action_id": "action_1"})
         assert should_break is False
         assert len(triggered) == 0
 

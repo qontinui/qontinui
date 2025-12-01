@@ -15,9 +15,7 @@ class QontinuiSettings(BaseSettings):
     """Main configuration settings for Qontinui framework."""
 
     # Core settings
-    timeout: float = Field(
-        30.0, description="Default timeout in seconds for operations"
-    )
+    timeout: float = Field(30.0, description="Default timeout in seconds for operations")
     retry_count: int = Field(3, description="Number of retries for failed operations")
     retry_delay: float = Field(1.0, description="Delay between retries in seconds")
     debug_mode: bool = Field(False, description="Enable debug logging and features")
@@ -38,9 +36,7 @@ class QontinuiSettings(BaseSettings):
     vector_db_type: Literal["faiss", "qdrant"] = Field(
         "faiss", description="Vector database backend"
     )
-    vector_index_path: Path = Field(
-        Path("./vectors"), description="Path to store vector indices"
-    )
+    vector_index_path: Path = Field(Path("./vectors"), description="Path to store vector indices")
     vector_dimension: int = Field(512, description="Dimension of vector embeddings")
 
     # Screen settings
@@ -51,9 +47,7 @@ class QontinuiSettings(BaseSettings):
 
     # RAG settings
     rag_enabled: bool = Field(True, description="Enable RAG-based state recognition")
-    semantic_weight: float = Field(
-        0.6, ge=0.0, le=1.0, description="Weight for semantic matching"
-    )
+    semantic_weight: float = Field(0.6, ge=0.0, le=1.0, description="Weight for semantic matching")
     deterministic_weight: float = Field(
         0.4, ge=0.0, le=1.0, description="Weight for deterministic matching"
     )
@@ -65,18 +59,12 @@ class QontinuiSettings(BaseSettings):
     action_delay: float = Field(0.0, description="Default delay between actions")
     mouse_move_duration: float = Field(0.5, description="Duration for mouse movements")
     typing_delay: float = Field(0.05, description="Delay between key presses")
-    safe_mode: bool = Field(
-        True, description="Enable safety checks before destructive actions"
-    )
+    safe_mode: bool = Field(True, description="Enable safety checks before destructive actions")
 
     # State management settings
     state_cache_size: int = Field(100, description="Maximum number of states to cache")
-    state_transition_timeout: float = Field(
-        60.0, description="Timeout for state transitions"
-    )
-    auto_discover_states: bool = Field(
-        False, description="Enable automatic state discovery"
-    )
+    state_transition_timeout: float = Field(60.0, description="Timeout for state transitions")
+    auto_discover_states: bool = Field(False, description="Enable automatic state discovery")
 
     # Performance settings
     parallel_actions: bool = Field(True, description="Enable parallel action execution")
@@ -92,9 +80,7 @@ class QontinuiSettings(BaseSettings):
     # Monitoring settings
     metrics_enabled: bool = Field(True, description="Enable metrics collection")
     metrics_port: int = Field(8000, description="Port for metrics endpoint")
-    health_check_interval: float = Field(
-        30.0, description="Interval for health checks in seconds"
-    )
+    health_check_interval: float = Field(30.0, description="Interval for health checks in seconds")
 
     class Config:
         """Pydantic configuration."""
@@ -108,9 +94,7 @@ class QontinuiSettings(BaseSettings):
         """Validate that semantic and deterministic weights sum to 1.0."""
         total = self.semantic_weight + self.deterministic_weight
         if abs(total - 1.0) > 0.001:  # Allow small floating point errors
-            raise ValueError(
-                f"Semantic and deterministic weights must sum to 1.0, got {total}"
-            )
+            raise ValueError(f"Semantic and deterministic weights must sum to 1.0, got {total}")
 
     def model_post_init(self, __context) -> None:
         """Post-initialization validation."""

@@ -63,9 +63,7 @@ def main():
     )
 
     result = executor.execute_loop(search_loop)
-    print(
-        f"\nResult: Checked {result['iterations_completed']}/{len(items_to_search)} items"
-    )
+    print(f"\nResult: Checked {result['iterations_completed']}/{len(items_to_search)} items")
     print(f"Stopped early: {result['stopped_early']}")
     if result.get("break_message"):
         print(f"Break reason: {result['break_message']}")
@@ -103,9 +101,7 @@ def main():
 
         return {"success": True}
 
-    executor = ControlFlowExecutor(
-        action_executor=validation_executor, variables={"items": items}
-    )
+    executor = ControlFlowExecutor(action_executor=validation_executor, variables={"items": items})
 
     process_loop = Action(
         id="process-loop",
@@ -145,9 +141,7 @@ def main():
 
         elif action_id == "check-threshold":
             if variables["sum"] >= variables["threshold"]:
-                print(
-                    f"  *** Threshold reached ({variables['threshold']}) - breaking ***"
-                )
+                print(f"  *** Threshold reached ({variables['threshold']}) - breaking ***")
                 raise BreakLoop(f"Sum reached threshold: {variables['sum']}")
 
         return {"success": True}

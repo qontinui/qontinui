@@ -79,9 +79,7 @@ class ExecutionPauseController:
         self._pause_points: dict[str, PausePoint] = {}
         self._global_pause_enabled = True
         self._step_mode = False
-        self._conditional_pause_handlers: list[
-            Callable[[str, dict[str, Any]], bool]
-        ] = []
+        self._conditional_pause_handlers: list[Callable[[str, dict[str, Any]], bool]] = []
         self._lock = threading.RLock()
 
         # Pre-defined pause points
@@ -103,9 +101,7 @@ class ExecutionPauseController:
         for name, description in default_points:
             self.register_pause_point(name, description, enabled=False)
 
-    def register_pause_point(
-        self, name: str, description: str = "", enabled: bool = True
-    ) -> None:
+    def register_pause_point(self, name: str, description: str = "", enabled: bool = True) -> None:
         """Register a new pause point.
 
         Args:
@@ -195,9 +191,7 @@ class ExecutionPauseController:
             else:
                 logger.info("Step mode disabled")
 
-    def check_pause_point(
-        self, name: str, context: dict[str, Any] | None = None
-    ) -> None:
+    def check_pause_point(self, name: str, context: dict[str, Any] | None = None) -> None:
         """Check if execution should pause at this point.
 
         Args:
@@ -269,9 +263,7 @@ class ExecutionPauseController:
             if self._step_mode:
                 logger.debug("Step mode - ready for next step")
 
-    def add_conditional_pause_handler(
-        self, handler: Callable[[str, dict[str, Any]], bool]
-    ) -> None:
+    def add_conditional_pause_handler(self, handler: Callable[[str, dict[str, Any]], bool]) -> None:
         """Add a conditional pause handler.
 
         Handler receives pause point name and context, returns True to pause.

@@ -52,9 +52,7 @@ class TestFindStateImageActionConfigSchema:
 
     def test_single_image_id(self):
         """Test single image ID in list format."""
-        config = FindStateImageActionConfig(
-            stateId="state-1", imageIds=["stateimage-123"]
-        )
+        config = FindStateImageActionConfig(stateId="state-1", imageIds=["stateimage-123"])
         assert config.image_ids == ["stateimage-123"]
         assert config.state_id == "state-1"
 

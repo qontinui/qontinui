@@ -33,9 +33,7 @@ class Highlight(ActionInterface):
         """
         self.find = find
 
-    def perform(
-        self, action_result: ActionResult, *object_collections: ObjectCollection
-    ) -> None:
+    def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the highlight operation.
 
         Finds target regions and displays visual highlights around them.
@@ -54,9 +52,7 @@ class Highlight(ActionInterface):
         regions = self._find_regions_to_highlight(action_result, object_collections)
         if not regions:
             object.__setattr__(action_result, "success", False)
-            object.__setattr__(
-                action_result, "output_text", "No regions found to highlight"
-            )
+            object.__setattr__(action_result, "output_text", "No regions found to highlight")
             return
 
         # Perform highlighting

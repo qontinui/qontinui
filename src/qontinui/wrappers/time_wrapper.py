@@ -141,9 +141,7 @@ class TimeWrapper(BaseWrapper):
         """
         if self.is_mock_mode():
             logger.debug(f"TimeWrapper.wait_until (MOCK): timeout={timeout}s")
-            return cast(
-                bool, self.mock_time.wait_until(condition, timeout, poll_interval)
-            )
+            return cast(bool, self.mock_time.wait_until(condition, timeout, poll_interval))
         else:
             logger.debug(f"TimeWrapper.wait_until (REAL): timeout={timeout}s")
             return self._wait_until_real(condition, timeout, poll_interval)

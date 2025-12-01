@@ -190,15 +190,10 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
 
         # Use edge-based template
         template = np.zeros((template_size_y, template_size_x), dtype=np.uint8)
-        cv2.rectangle(
-            template, (2, 2), (template_size_x - 3, template_size_y - 3), 255, 2
-        )
+        cv2.rectangle(template, (2, 2), (template_size_x - 3, template_size_y - 3), 255, 2)
 
         # Template matching
-        if (
-            edge_img.shape[0] >= template_size_y
-            and edge_img.shape[1] >= template_size_x
-        ):
+        if edge_img.shape[0] >= template_size_y and edge_img.shape[1] >= template_size_x:
             result = cv2.matchTemplate(edge_img, template, cv2.TM_CCOEFF_NORMED)
             threshold = 0.3
 
@@ -243,10 +238,7 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
             expected_x = x_min + grid_x * spacing_x
             expected_y = y_min + grid_y * spacing_y
 
-            if (
-                abs(x - expected_x) < spacing_x * 0.3
-                and abs(y - expected_y) < spacing_y * 0.3
-            ):
+            if abs(x - expected_x) < spacing_x * 0.3 and abs(y - expected_y) < spacing_y * 0.3:
                 if (grid_x, grid_y) not in grid_positions:
                     grid_positions[(grid_x, grid_y)] = (x, y)
 

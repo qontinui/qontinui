@@ -238,11 +238,7 @@ class HSV:
         sat_diff = abs(self.saturation - other.saturation)
         val_diff = abs(self.value - other.value)
 
-        return (
-            hue_diff <= hue_tolerance
-            and sat_diff <= sat_tolerance
-            and val_diff <= val_tolerance
-        )
+        return hue_diff <= hue_tolerance and sat_diff <= sat_tolerance and val_diff <= val_tolerance
 
     def __str__(self) -> str:
         """String representation."""
@@ -311,9 +307,7 @@ class ColorRange:
             in_hue_range = self.min_hsv.hue <= color.hue <= self.max_hsv.hue
         else:
             # Range wraps around 360
-            in_hue_range = (
-                color.hue >= self.min_hsv.hue or color.hue <= self.max_hsv.hue
-            )
+            in_hue_range = color.hue >= self.min_hsv.hue or color.hue <= self.max_hsv.hue
 
         return (
             in_hue_range
@@ -346,9 +340,7 @@ class ColorRange:
         )
 
     @classmethod
-    def from_center_hsv(
-        cls, center: HSV, hue_tol: int, sat_tol: int, val_tol: int
-    ) -> "ColorRange":
+    def from_center_hsv(cls, center: HSV, hue_tol: int, sat_tol: int, val_tol: int) -> "ColorRange":
         """Create range from center HSV with tolerances.
 
         Args:

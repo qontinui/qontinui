@@ -113,9 +113,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -181,9 +179,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
                 bounding_box=BoundingBox(x, y, w, h),
                 confidence=confidence,
                 region_type=RegionType.TITLE_BAR,
-                label=(
-                    title_text if title_text else f"title_bar_{len(detected_regions)}"
-                ),
+                label=(title_text if title_text else f"title_bar_{len(detected_regions)}"),
                 screenshot_index=screenshot_index,
                 metadata=metadata,
             )
@@ -211,9 +207,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
 
         return detected_regions
 
-    def _find_horizontal_bars(
-        self, gray: np.ndarray
-    ) -> list[tuple[int, int, int, int]]:
+    def _find_horizontal_bars(self, gray: np.ndarray) -> list[tuple[int, int, int, int]]:
         """Find horizontal bar-like regions that could be title bars."""
         candidates = []
 
@@ -225,9 +219,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
         horizontal = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            horizontal, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(horizontal, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -248,9 +240,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
 
         return candidates
 
-    def _has_content_below(
-        self, gray: np.ndarray, x: int, y: int, w: int, h: int
-    ) -> bool:
+    def _has_content_below(self, gray: np.ndarray, x: int, y: int, w: int, h: int) -> bool:
         """Check if there's significant content below the potential title bar."""
         # Sample region below
         below_y = y + h
@@ -259,9 +249,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
         if below_height < 20:
             return False
 
-        below_region = gray[
-            below_y : below_y + below_height, x : min(x + w, gray.shape[1])
-        ]
+        below_region = gray[below_y : below_y + below_height, x : min(x + w, gray.shape[1])]
 
         # Check if there's variation (content) in the region below
         std_dev = np.std(below_region)
@@ -316,9 +304,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
             return None
 
         # Extract search region
-        search_region = gray[
-            search_y : search_y + search_h, search_x : search_x + search_w
-        ]
+        search_region = gray[search_y : search_y + search_h, search_x : search_x + search_w]
 
         # Look for X-pattern or high contrast square region
         # Method 1: Template matching for X pattern
@@ -335,9 +321,7 @@ class WindowTitleBarDetector(BaseRegionAnalyzer):
 
         # Method 2: Look for square regions with high edge density (borders)
         edges = cv2.Canny(search_region, 50, 150)
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)

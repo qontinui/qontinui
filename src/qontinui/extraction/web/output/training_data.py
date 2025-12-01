@@ -139,9 +139,7 @@ class TrainingDataExporter:
                     {
                         "id": annotation_id,
                         "image_id": image_id,
-                        "category_id": self.ELEMENT_CATEGORY_IDS.get(
-                            element.element_type, 20
-                        ),
+                        "category_id": self.ELEMENT_CATEGORY_IDS.get(element.element_type, 20),
                         "bbox": [bbox.x, bbox.y, bbox.width, bbox.height],
                         "area": bbox.area,
                         "iscrowd": 0,
@@ -163,9 +161,7 @@ class TrainingDataExporter:
                         {
                             "id": annotation_id,
                             "image_id": image_id,
-                            "category_id": self.STATE_CATEGORY_IDS.get(
-                                state.state_type, 117
-                            ),
+                            "category_id": self.STATE_CATEGORY_IDS.get(state.state_type, 117),
                             "bbox": [bbox.x, bbox.y, bbox.width, bbox.height],
                             "area": bbox.area,
                             "iscrowd": 0,
@@ -377,9 +373,7 @@ class TrainingDataExporter:
             classes.extend([st.value for st in StateType])
         return classes
 
-    def _group_by_screenshot(
-        self, result: ExtractionResult
-    ) -> dict[str, dict[str, Any]]:
+    def _group_by_screenshot(self, result: ExtractionResult) -> dict[str, dict[str, Any]]:
         """Group elements and states by their screenshot ID."""
         grouped: dict[str, dict[str, Any]] = {}
 

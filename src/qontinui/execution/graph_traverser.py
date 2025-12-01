@@ -96,9 +96,7 @@ class GraphTraverser:
 
         # Entry points are actions NOT in the target set
         entry_points = [
-            action.id
-            for action in self.workflow.actions
-            if action.id not in target_actions
+            action.id for action in self.workflow.actions if action.id not in target_actions
         ]
 
         logger.info(f"Found {len(entry_points)} entry points: {entry_points}")
@@ -118,9 +116,7 @@ class GraphTraverser:
 
         # Exit points are actions NOT in the source set
         exit_points = [
-            action.id
-            for action in self.workflow.actions
-            if action.id not in source_actions
+            action.id for action in self.workflow.actions if action.id not in source_actions
         ]
 
         logger.info(f"Found {len(exit_points)} exit points: {exit_points}")
@@ -149,16 +145,12 @@ class GraphTraverser:
             for connection in conn_list:
                 # Check if target action exists
                 if connection.action not in self.action_map:
-                    logger.warning(
-                        f"Target action '{connection.action}' not found in workflow"
-                    )
+                    logger.warning(f"Target action '{connection.action}' not found in workflow")
                     continue
 
                 # Skip if already executed in this path (cycle detection)
                 if execution_path and connection.action in execution_path.visited:
-                    logger.debug(
-                        f"Skipping action '{connection.action}' - already visited in path"
-                    )
+                    logger.debug(f"Skipping action '{connection.action}' - already visited in path")
                     continue
 
                 next_actions.append((connection.action, connection.index))
@@ -263,8 +255,7 @@ class GraphTraverser:
         orphaned = [
             action.id
             for action in self.workflow.actions
-            if action.id not in actions_with_incoming
-            and action.id not in actions_with_outgoing
+            if action.id not in actions_with_incoming and action.id not in actions_with_outgoing
         ]
 
         if orphaned:
@@ -286,9 +277,7 @@ class GraphTraverser:
         """
         cycles = self.detect_cycles()
         if cycles:
-            raise ValueError(
-                f"Cannot compute topological order: graph contains cycles: {cycles}"
-            )
+            raise ValueError(f"Cannot compute topological order: graph contains cycles: {cycles}")
 
         # Kahn's algorithm
         in_degree = {action.id: 0 for action in self.workflow.actions}
@@ -332,9 +321,7 @@ class GraphTraverser:
         """
         depths = {action.id: -1 for action in self.workflow.actions}
 
-        def calculate_depth(
-            action_id: str, current_depth: int, visited: set[str]
-        ) -> int:
+        def calculate_depth(action_id: str, current_depth: int, visited: set[str]) -> int:
             """Recursively calculate depth."""
             if action_id in visited:
                 return depths[action_id]
@@ -410,9 +397,7 @@ class GraphTraverser:
         # Check for cycles (warning only)
         cycles = self.detect_cycles()
         if cycles:
-            logger.warning(
-                f"Workflow contains {len(cycles)} cycle(s) - may cause infinite loops"
-            )
+            logger.warning(f"Workflow contains {len(cycles)} cycle(s) - may cause infinite loops")
 
         is_valid = len(errors) == 0
         if is_valid:
