@@ -302,10 +302,159 @@ def _cascade_debug(ctx: CascadeContext, explicit: bool | None) -> bool:
     return False
 
 
-# TODO: Implement cascade for advanced options not yet in FindOptions:
-# - polling (PollingConfig) -> needs retry logic in FindAction
-# - pattern_options (PatternOptions) -> needs Pattern class expansion
-# - match_adjustment (MatchAdjustment) -> needs post-processing in FindAction
-# - search_strategy (SearchStrategy) -> needs multi-region search logic
-#
-# These will require expanding FindOptions or implementing separate processors.
+# Advanced cascade functions for options not yet in FindOptions.
+# These are ready to use when FindOptions is expanded to include these fields.
+
+
+def _cascade_polling(
+    ctx: CascadeContext, explicit: "PollingConfig | None"
+) -> "PollingConfig | None":
+    """Cascade polling configuration.
+
+    Priority:
+    1. Explicit parameter
+    2. SearchOptions.polling
+    3. Project config polling defaults
+    4. None (no polling)
+
+    Args:
+        ctx: Cascade context
+        explicit: Explicit override
+
+    Returns:
+        PollingConfig or None
+    """
+    from ...config.models.search import PollingConfig
+
+    # Priority 1: Explicit override
+    if explicit is not None:
+        return explicit
+
+    # Priority 2: SearchOptions from JSON config
+    if ctx.search_options and ctx.search_options.polling is not None:
+        return ctx.search_options.polling
+
+    # Priority 3: Project config defaults
+    if ctx.project_config and hasattr(ctx.project_config, "polling_interval"):
+        return PollingConfig(
+            interval=ctx.project_config.polling_interval,
+            max_attempts=getattr(ctx.project_config, "max_polling_attempts", None),
+        )
+
+    # Priority 4: No polling by default
+    return None
+
+
+def _cascade_pattern_options(
+    ctx: CascadeContext, explicit: "PatternOptions | None"
+) -> "PatternOptions | None":
+    """Cascade pattern matching options.
+
+    Priority:
+    1. Explicit parameter
+    2. SearchOptions.pattern
+    3. Pattern-level pattern options
+    4. Project config pattern defaults
+    5. None (use library defaults)
+
+    Args:
+        ctx: Cascade context
+        explicit: Explicit override
+
+    Returns:
+        PatternOptions or None
+    """
+    # Priority 1: Explicit override
+    if explicit is not None:
+        return explicit
+
+    # Priority 2: SearchOptions from JSON config
+    if ctx.search_options and ctx.search_options.pattern is not None:
+        return ctx.search_options.pattern
+
+    # Priority 3: Pattern-level options
+    if ctx.pattern and hasattr(ctx.pattern, "pattern_options"):
+        return ctx.pattern.pattern_options  # type: ignore[attr-defined]
+
+    # Priority 4: Project config defaults
+    if ctx.project_config and hasattr(ctx.project_config, "pattern_options"):
+        return ctx.project_config.pattern_options  # type: ignore[attr-defined]
+
+    # Priority 5: None (use library defaults in FindAction)
+    return None
+
+
+def _cascade_match_adjustment(
+    ctx: CascadeContext, explicit: "MatchAdjustment | None"
+) -> "MatchAdjustment | None":
+    """Cascade match adjustment configuration.
+
+    Priority:
+    1. Explicit parameter
+    2. SearchOptions.adjustment
+    3. Pattern-level adjustment
+    4. None (no adjustment)
+
+    Args:
+        ctx: Cascade context
+        explicit: Explicit override
+
+    Returns:
+        MatchAdjustment or None
+    """
+    # Priority 1: Explicit override
+    if explicit is not None:
+        return explicit
+
+    # Priority 2: SearchOptions from JSON config
+    if ctx.search_options and ctx.search_options.adjustment is not None:
+        return ctx.search_options.adjustment
+
+    # Priority 3: Pattern-level adjustment
+    if ctx.pattern and hasattr(ctx.pattern, "match_adjustment"):
+        return ctx.pattern.match_adjustment  # type: ignore[attr-defined]
+
+    # Priority 4: No adjustment by default
+    return None
+
+
+def _cascade_search_strategy(
+    ctx: CascadeContext, explicit: "SearchStrategy | None"
+) -> "SearchStrategy":
+    """Cascade search strategy configuration.
+
+    Priority:
+    1. Explicit parameter
+    2. SearchOptions.strategy
+    3. Project config default strategy
+    4. Library default (SINGLE_REGION)
+
+    Args:
+        ctx: Cascade context
+        explicit: Explicit override
+
+    Returns:
+        SearchStrategy enum value
+    """
+    from ...config.models.base_types import SearchStrategy
+
+    # Priority 1: Explicit override
+    if explicit is not None:
+        return explicit
+
+    # Priority 2: SearchOptions from JSON config
+    if ctx.search_options and ctx.search_options.strategy is not None:
+        return ctx.search_options.strategy
+
+    # Priority 3: Project config default
+    if ctx.project_config and hasattr(ctx.project_config, "search_strategy"):
+        return ctx.project_config.search_strategy  # type: ignore[attr-defined]
+
+    # Priority 4: Library default
+    return SearchStrategy.SINGLE_REGION
+
+
+# NOTE: These cascade functions are ready to use. To integrate them:
+# 1. Expand FindOptions dataclass to include these fields
+# 2. Update build_find_options() to call these cascade functions
+# 3. Implement the corresponding logic in FindAction to use these options
