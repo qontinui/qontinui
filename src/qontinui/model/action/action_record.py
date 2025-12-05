@@ -3,7 +3,6 @@
 Records match results and context at a specific point in time.
 """
 
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field

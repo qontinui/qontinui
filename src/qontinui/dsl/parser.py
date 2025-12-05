@@ -1,6 +1,5 @@
 """DSL parser for Qontinui automation scripts."""
 
-
 import logging
 from dataclasses import dataclass
 from typing import Any, cast

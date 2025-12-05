@@ -16,7 +16,6 @@ Example:
     >>> register_callback(EventType.MATCH_ATTEMPTED, on_match)
 """
 
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field

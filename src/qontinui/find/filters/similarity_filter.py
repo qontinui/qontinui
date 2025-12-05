@@ -4,7 +4,6 @@ Filters matches based on their similarity score, keeping only those
 that meet or exceed the minimum threshold.
 """
 
-
 from ..match import Match
 from .match_filter import MatchFilter
 

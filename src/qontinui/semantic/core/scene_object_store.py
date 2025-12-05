@@ -1,6 +1,5 @@
 """SceneObjectStore - Manages storage and indexing of semantic objects."""
 
-
 from dataclasses import dataclass, field
 
 from .semantic_object import ObjectType, SemanticObject

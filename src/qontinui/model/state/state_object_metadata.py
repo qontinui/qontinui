@@ -3,7 +3,6 @@
 Lightweight reference to StateObject instances.
 """
 
-
 from __future__ import annotations
 
 from dataclasses import dataclass

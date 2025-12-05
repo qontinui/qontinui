@@ -1,6 +1,5 @@
 """OCR-based semantic processor for text detection."""
 
-
 import time
 from typing import Any
 

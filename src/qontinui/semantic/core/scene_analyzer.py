@@ -1,6 +1,5 @@
 """SceneAnalyzer - Performs analysis operations on semantic scenes."""
 
-
 from typing import Any, cast
 
 import numpy as np

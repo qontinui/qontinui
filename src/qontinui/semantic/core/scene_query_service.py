@@ -1,6 +1,5 @@
 """SceneQueryService - Handles all query operations on semantic scenes."""
 
-
 import re
 
 from ...model.element.region import Region

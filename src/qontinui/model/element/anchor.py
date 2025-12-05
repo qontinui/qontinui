@@ -4,7 +4,6 @@ Anchors enable flexible positioning by defining named reference points
 that can be used to position elements relative to each other.
 """
 
-
 from __future__ import annotations
 
 from dataclasses import dataclass

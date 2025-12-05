@@ -3,7 +3,6 @@
 Handles spatial relationships between regions.
 """
 
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

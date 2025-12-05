@@ -3,7 +3,6 @@
 Handles region modifications like growing, shrinking, offsetting, and splitting.
 """
 
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

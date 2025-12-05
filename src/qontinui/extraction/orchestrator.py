@@ -553,8 +553,9 @@ class ExtractionOrchestrator:
             # Count page components vs widgets if available
             page_count = 0
             widget_count = 0
-            if (hasattr(analyzer_result, "count_page_components")
-                and hasattr(analyzer_result, "count_widget_components")):
+            if hasattr(analyzer_result, "count_page_components") and hasattr(
+                analyzer_result, "count_widget_components"
+            ):
                 page_count = analyzer_result.count_page_components()
                 widget_count = analyzer_result.count_widget_components()
                 logger.info(

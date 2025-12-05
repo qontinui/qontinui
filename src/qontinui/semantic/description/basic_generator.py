@@ -1,6 +1,5 @@
 """Basic description generator using visual features."""
 
-
 from typing import Any
 
 import cv2
