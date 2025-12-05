@@ -63,6 +63,14 @@ from .actions import (
     TypeOptions,
     WaitOptions,
 )
+
+# Checkpointing System
+from .checkpointing import (
+    CheckpointData,
+    CheckpointService,
+    CheckpointTrigger,
+    TextRegionData,
+)
 from .discovery import (
     DifferentialConsistencyDetector,
     ElementIdentifier,
@@ -153,6 +161,11 @@ __all__ = [
     "Transition",
     "StateGraph",
     "StateTraversal",
+    # Checkpointing System
+    "CheckpointService",
+    "CheckpointData",
+    "CheckpointTrigger",
+    "TextRegionData",
     # Discovery System
     "discovery",
     "DifferentialConsistencyDetector",

@@ -1,0 +1,1720 @@
+{
+  "extraction_id": "6ced903f",
+  "tech_stack": "tauri-typescript",
+  "states": [
+    {
+      "id": "state_main_8c69cf",
+      "name": "main",
+      "state_type": "page",
+      "route_path": null,
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "controlling_variable": null,
+      "controlling_value": null,
+      "state_images": [
+        {
+          "id": "elem_26eb2438",
+          "name": "Configuration_Collapse",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.w-full",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_bb3c23",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_26eb2438_normal.png",
+              "pixel_hash": "c29f4e9fa9021a66b96e2d6999a9b0f0",
+              "bbox": {
+                "x": 49,
+                "y": 207,
+                "width": 507,
+                "height": 44
+              },
+              "captured_at": "2025-12-02T22:30:08.308197"
+            },
+            {
+              "id": "pattern_e39fb8",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_26eb2438_hover.png",
+              "pixel_hash": "a55c620f50a45533c07f30abe9874c77",
+              "bbox": {
+                "x": 49,
+                "y": 207,
+                "width": 507,
+                "height": 44
+              },
+              "captured_at": "2025-12-02T22:30:08.311585"
+            }
+          ],
+          "search_region": {
+            "x": 49,
+            "y": 207,
+            "width": 507,
+            "height": 44
+          },
+          "text_content": "Configuration Collapse",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_cd253ca2",
+          "name": "Load_Configuration",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.w-full",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_55623c",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_cd253ca2_normal.png",
+              "pixel_hash": "ef69f20260d541b2b4285ff7c34e8412",
+              "bbox": {
+                "x": 49,
+                "y": 251,
+                "width": 507,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.315219"
+            },
+            {
+              "id": "pattern_720428",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_cd253ca2_hover.png",
+              "pixel_hash": "7f143d0f878340a8a3acbb9e234a6717",
+              "bbox": {
+                "x": 49,
+                "y": 251,
+                "width": 507,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.318896"
+            }
+          ],
+          "search_region": {
+            "x": 49,
+            "y": 251,
+            "width": 507,
+            "height": 40
+          },
+          "text_content": "Load Configuration",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_dfbe850d",
+          "name": "Load_Last_Config",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.w-full",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_3008ed",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_dfbe850d_normal.png",
+              "pixel_hash": "d05450218ef8ca50a53f75650ef239df",
+              "bbox": {
+                "x": 49,
+                "y": 307,
+                "width": 507,
+                "height": 42
+              },
+              "captured_at": "2025-12-02T22:30:08.322231"
+            },
+            {
+              "id": "pattern_a5f96e",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_dfbe850d_hover.png",
+              "pixel_hash": "ba8565636d57fb9f416ccb4ab1c96bd0",
+              "bbox": {
+                "x": 49,
+                "y": 307,
+                "width": 507,
+                "height": 42
+              },
+              "captured_at": "2025-12-02T22:30:08.325841"
+            }
+          ],
+          "search_region": {
+            "x": 49,
+            "y": 307,
+            "width": 507,
+            "height": 42
+          },
+          "text_content": "Load Last Config",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_29ce5ddc",
+          "name": "Execution_Control_Collapse",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.w-full",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_049063",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_29ce5ddc_normal.png",
+              "pixel_hash": "fa455c793fd4438cbf945d386eb862b6",
+              "bbox": {
+                "x": 629,
+                "y": 207,
+                "width": 507,
+                "height": 44
+              },
+              "captured_at": "2025-12-02T22:30:08.329288"
+            },
+            {
+              "id": "pattern_79ca67",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_29ce5ddc_hover.png",
+              "pixel_hash": "0aacada11ac8230279a4b0f4fa3b804a",
+              "bbox": {
+                "x": 629,
+                "y": 207,
+                "width": 507,
+                "height": 44
+              },
+              "captured_at": "2025-12-02T22:30:08.333789"
+            }
+          ],
+          "search_region": {
+            "x": 629,
+            "y": 207,
+            "width": 507,
+            "height": 44
+          },
+          "text_content": "Execution Control Collapse",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_ea1c5602",
+          "name": "Select_Workflow",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.w-full",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_4cf603",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_ea1c5602_normal.png",
+              "pixel_hash": "a881cef7dc5081bc6e928bd5784913f6",
+              "bbox": {
+                "x": 629,
+                "y": 251,
+                "width": 507,
+                "height": 42
+              },
+              "captured_at": "2025-12-02T22:30:08.337387"
+            },
+            {
+              "id": "pattern_f950c0",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_ea1c5602_hover.png",
+              "pixel_hash": "25efdf814174924ec229caefbdbd58ae",
+              "bbox": {
+                "x": 629,
+                "y": 251,
+                "width": 507,
+                "height": 42
+              },
+              "captured_at": "2025-12-02T22:30:08.340822"
+            }
+          ],
+          "search_region": {
+            "x": 629,
+            "y": 251,
+            "width": 507,
+            "height": 42
+          },
+          "text_content": "Select Workflow",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_7f20c386",
+          "name": "Monitor_0",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.w-full",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_514317",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_7f20c386_normal.png",
+              "pixel_hash": "009d5d6fee840fec2072ffcc239aa31f",
+              "bbox": {
+                "x": 629,
+                "y": 309,
+                "width": 507,
+                "height": 42
+              },
+              "captured_at": "2025-12-02T22:30:08.344391"
+            },
+            {
+              "id": "pattern_683148",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_7f20c386_hover.png",
+              "pixel_hash": "76af6d1d646c35bbc44415e6dfeaba15",
+              "bbox": {
+                "x": 629,
+                "y": 309,
+                "width": 507,
+                "height": 42
+              },
+              "captured_at": "2025-12-02T22:30:08.347843"
+            }
+          ],
+          "search_region": {
+            "x": 629,
+            "y": 309,
+            "width": 507,
+            "height": 42
+          },
+          "text_content": "Monitor 0",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_39e36b0a",
+          "name": "Start",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.flex-1",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_f97879",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_39e36b0a_normal.png",
+              "pixel_hash": "131859d34e7e7944e7f549277ecf6da9",
+              "bbox": {
+                "x": 629,
+                "y": 403,
+                "width": 249,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.351254"
+            },
+            {
+              "id": "pattern_808bf8",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_39e36b0a_hover.png",
+              "pixel_hash": "2b5085d133df3f55d910c450c744de79",
+              "bbox": {
+                "x": 629,
+                "y": 403,
+                "width": 249,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.354599"
+            }
+          ],
+          "search_region": {
+            "x": 629,
+            "y": 403,
+            "width": 249,
+            "height": 40
+          },
+          "text_content": "Start",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_479c3d0b",
+          "name": "Stop",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.flex-1",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_1aec60",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_479c3d0b_normal.png",
+              "pixel_hash": "a78ee2f147894361690e4d3016434e50",
+              "bbox": {
+                "x": 886,
+                "y": 403,
+                "width": 249,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.358380"
+            },
+            {
+              "id": "pattern_06e1c5",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_479c3d0b_hover.png",
+              "pixel_hash": "960c8e728ef5377a013ee82c00df38aa",
+              "bbox": {
+                "x": 886,
+                "y": 403,
+                "width": 249,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.362429"
+            }
+          ],
+          "search_region": {
+            "x": 886,
+            "y": 403,
+            "width": 249,
+            "height": 40
+          },
+          "text_content": "Stop",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_46b58188",
+          "name": "General",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.px-4",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_804ef8",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_46b58188_normal.png",
+              "pixel_hash": "bb101eefa35c48f947176c3eb18bd14c",
+              "bbox": {
+                "x": 29,
+                "y": 497,
+                "width": 119,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.366609"
+            }
+          ],
+          "search_region": {
+            "x": 29,
+            "y": 497,
+            "width": 119,
+            "height": 40
+          },
+          "text_content": "General",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_18d1d25f",
+          "name": "Image_Recognition",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.px-4",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_dd9b9d",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_18d1d25f_normal.png",
+              "pixel_hash": "99312d47e326273d1e3be4d91606a038",
+              "bbox": {
+                "x": 152,
+                "y": 497,
+                "width": 205,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.370234"
+            },
+            {
+              "id": "pattern_879340",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_18d1d25f_hover.png",
+              "pixel_hash": "d35798d5d4cd678e3afc3cbf7c8a574f",
+              "bbox": {
+                "x": 152,
+                "y": 497,
+                "width": 205,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.374173"
+            }
+          ],
+          "search_region": {
+            "x": 152,
+            "y": 497,
+            "width": 205,
+            "height": 40
+          },
+          "text_content": "Image Recognition",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_35b26ed3",
+          "name": "Actions",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.px-4",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_36dd00",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_35b26ed3_normal.png",
+              "pixel_hash": "4cf2623b987140169553eac0bcf75580",
+              "bbox": {
+                "x": 361,
+                "y": 497,
+                "width": 114,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.378015"
+            },
+            {
+              "id": "pattern_0ed1c1",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_35b26ed3_hover.png",
+              "pixel_hash": "f97a6bcb063947fad95570e072432ddd",
+              "bbox": {
+                "x": 361,
+                "y": 497,
+                "width": 114,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.382366"
+            }
+          ],
+          "search_region": {
+            "x": 361,
+            "y": 497,
+            "width": 114,
+            "height": 40
+          },
+          "text_content": "Actions",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_ca697c02",
+          "name": "Settings",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.px-4",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_402902",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_ca697c02_normal.png",
+              "pixel_hash": "a9ea700c34bf77152845a6a0cdadac58",
+              "bbox": {
+                "x": 479,
+                "y": 497,
+                "width": 122,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.386200"
+            },
+            {
+              "id": "pattern_9cfa6e",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_ca697c02_hover.png",
+              "pixel_hash": "2ca96c033d0658754284400afb4f0df3",
+              "bbox": {
+                "x": 479,
+                "y": 497,
+                "width": 122,
+                "height": 40
+              },
+              "captured_at": "2025-12-02T22:30:08.389684"
+            }
+          ],
+          "search_region": {
+            "x": 479,
+            "y": 497,
+            "width": 122,
+            "height": 40
+          },
+          "text_content": "Settings",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_478fd0f0",
+          "name": "Filter logs by level",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.p-2",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_c36326",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_478fd0f0_normal.png",
+              "pixel_hash": "4837149ccdbb40511967dffacba09cfa",
+              "bbox": {
+                "x": 980,
+                "y": 501,
+                "width": 32,
+                "height": 32
+              },
+              "captured_at": "2025-12-02T22:30:08.393167"
+            },
+            {
+              "id": "pattern_08dfbc",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_478fd0f0_hover.png",
+              "pixel_hash": "246c361f1e796ca93142e88bcbb86038",
+              "bbox": {
+                "x": 980,
+                "y": 501,
+                "width": 32,
+                "height": 32
+              },
+              "captured_at": "2025-12-02T22:30:08.396449"
+            }
+          ],
+          "search_region": {
+            "x": 980,
+            "y": 501,
+            "width": 32,
+            "height": 32
+          },
+          "text_content": "",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_88326d78",
+          "name": "Clear logs",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.p-2",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_8f8962",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_88326d78_normal.png",
+              "pixel_hash": "df193a91476c31a30b509d609ab3c05d",
+              "bbox": {
+                "x": 1020,
+                "y": 501,
+                "width": 32,
+                "height": 32
+              },
+              "captured_at": "2025-12-02T22:30:08.400194"
+            },
+            {
+              "id": "pattern_fea4d3",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_88326d78_hover.png",
+              "pixel_hash": "172b5a611812ffbc7a8309a36d21d5ab",
+              "bbox": {
+                "x": 1020,
+                "y": 501,
+                "width": 32,
+                "height": 32
+              },
+              "captured_at": "2025-12-02T22:30:08.403496"
+            }
+          ],
+          "search_region": {
+            "x": 1020,
+            "y": 501,
+            "width": 32,
+            "height": 32
+          },
+          "text_content": "",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_798cb69c",
+          "name": "Clear all logs (General, Image, and Actions)",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.p-2",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_112bb6",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_798cb69c_normal.png",
+              "pixel_hash": "475deb078fe01883ec2e45c502e25046",
+              "bbox": {
+                "x": 1060,
+                "y": 501,
+                "width": 44,
+                "height": 32
+              },
+              "captured_at": "2025-12-02T22:30:08.406880"
+            },
+            {
+              "id": "pattern_23559f",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_798cb69c_hover.png",
+              "pixel_hash": "6fa58eaa970386da9ab6a504a37b696e",
+              "bbox": {
+                "x": 1060,
+                "y": 501,
+                "width": 44,
+                "height": 32
+              },
+              "captured_at": "2025-12-02T22:30:08.410198"
+            }
+          ],
+          "search_region": {
+            "x": 1060,
+            "y": 501,
+            "width": 44,
+            "height": 32
+          },
+          "text_content": "",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_f82bff25",
+          "name": "Copy to clipboard",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button.p-2",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_31716c",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_f82bff25_normal.png",
+              "pixel_hash": "1437e65a2af25cfa8d35be4696868be3",
+              "bbox": {
+                "x": 1112,
+                "y": 501,
+                "width": 32,
+                "height": 32
+              },
+              "captured_at": "2025-12-02T22:30:08.413773"
+            },
+            {
+              "id": "pattern_80e1ed",
+              "name": "hover",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_f82bff25_hover.png",
+              "pixel_hash": "a1b5b52832e25a990ee26fd675f89a2c",
+              "bbox": {
+                "x": 1112,
+                "y": 501,
+                "width": 32,
+                "height": 32
+              },
+              "captured_at": "2025-12-02T22:30:08.417253"
+            }
+          ],
+          "search_region": {
+            "x": 1112,
+            "y": 501,
+            "width": 32,
+            "height": 32
+          },
+          "text_content": "",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "elem_3bb37e73",
+          "name": "on",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "input.rounded",
+          "element_type": "input",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_3c23b7",
+              "name": "normal",
+              "pixel_data_path": "tauri_test_output/raw_pixels/elem_3bb37e73_normal.png",
+              "pixel_hash": "bfa7bde6274ad548c3b9332cca1f0dba",
+              "bbox": {
+                "x": 629,
+                "y": 370,
+                "width": 13,
+                "height": 13
+              },
+              "captured_at": "2025-12-02T22:30:08.420681"
+            }
+          ],
+          "search_region": {
+            "x": 629,
+            "y": 370,
+            "width": 13,
+            "height": 13
+          },
+          "text_content": "on",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        }
+      ],
+      "screenshot_path": "tauri_test_output/screenshots/0001_main_page.png",
+      "viewport": [
+        1200,
+        750
+      ],
+      "parent_state_id": null,
+      "child_state_ids": [],
+      "url": "http://172.27.64.1:1420",
+      "confidence": 1.0,
+      "metadata": {}
+    }
+  ],
+  "state_images": [
+    {
+      "id": "elem_26eb2438",
+      "name": "Configuration_Collapse",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.w-full",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_bb3c23",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_26eb2438_normal.png",
+          "pixel_hash": "c29f4e9fa9021a66b96e2d6999a9b0f0",
+          "bbox": {
+            "x": 49,
+            "y": 207,
+            "width": 507,
+            "height": 44
+          },
+          "captured_at": "2025-12-02T22:30:08.308197"
+        },
+        {
+          "id": "pattern_e39fb8",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_26eb2438_hover.png",
+          "pixel_hash": "a55c620f50a45533c07f30abe9874c77",
+          "bbox": {
+            "x": 49,
+            "y": 207,
+            "width": 507,
+            "height": 44
+          },
+          "captured_at": "2025-12-02T22:30:08.311585"
+        }
+      ],
+      "search_region": {
+        "x": 49,
+        "y": 207,
+        "width": 507,
+        "height": 44
+      },
+      "text_content": "Configuration Collapse",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_cd253ca2",
+      "name": "Load_Configuration",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.w-full",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_55623c",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_cd253ca2_normal.png",
+          "pixel_hash": "ef69f20260d541b2b4285ff7c34e8412",
+          "bbox": {
+            "x": 49,
+            "y": 251,
+            "width": 507,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.315219"
+        },
+        {
+          "id": "pattern_720428",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_cd253ca2_hover.png",
+          "pixel_hash": "7f143d0f878340a8a3acbb9e234a6717",
+          "bbox": {
+            "x": 49,
+            "y": 251,
+            "width": 507,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.318896"
+        }
+      ],
+      "search_region": {
+        "x": 49,
+        "y": 251,
+        "width": 507,
+        "height": 40
+      },
+      "text_content": "Load Configuration",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_dfbe850d",
+      "name": "Load_Last_Config",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.w-full",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_3008ed",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_dfbe850d_normal.png",
+          "pixel_hash": "d05450218ef8ca50a53f75650ef239df",
+          "bbox": {
+            "x": 49,
+            "y": 307,
+            "width": 507,
+            "height": 42
+          },
+          "captured_at": "2025-12-02T22:30:08.322231"
+        },
+        {
+          "id": "pattern_a5f96e",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_dfbe850d_hover.png",
+          "pixel_hash": "ba8565636d57fb9f416ccb4ab1c96bd0",
+          "bbox": {
+            "x": 49,
+            "y": 307,
+            "width": 507,
+            "height": 42
+          },
+          "captured_at": "2025-12-02T22:30:08.325841"
+        }
+      ],
+      "search_region": {
+        "x": 49,
+        "y": 307,
+        "width": 507,
+        "height": 42
+      },
+      "text_content": "Load Last Config",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_29ce5ddc",
+      "name": "Execution_Control_Collapse",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.w-full",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_049063",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_29ce5ddc_normal.png",
+          "pixel_hash": "fa455c793fd4438cbf945d386eb862b6",
+          "bbox": {
+            "x": 629,
+            "y": 207,
+            "width": 507,
+            "height": 44
+          },
+          "captured_at": "2025-12-02T22:30:08.329288"
+        },
+        {
+          "id": "pattern_79ca67",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_29ce5ddc_hover.png",
+          "pixel_hash": "0aacada11ac8230279a4b0f4fa3b804a",
+          "bbox": {
+            "x": 629,
+            "y": 207,
+            "width": 507,
+            "height": 44
+          },
+          "captured_at": "2025-12-02T22:30:08.333789"
+        }
+      ],
+      "search_region": {
+        "x": 629,
+        "y": 207,
+        "width": 507,
+        "height": 44
+      },
+      "text_content": "Execution Control Collapse",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_ea1c5602",
+      "name": "Select_Workflow",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.w-full",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_4cf603",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_ea1c5602_normal.png",
+          "pixel_hash": "a881cef7dc5081bc6e928bd5784913f6",
+          "bbox": {
+            "x": 629,
+            "y": 251,
+            "width": 507,
+            "height": 42
+          },
+          "captured_at": "2025-12-02T22:30:08.337387"
+        },
+        {
+          "id": "pattern_f950c0",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_ea1c5602_hover.png",
+          "pixel_hash": "25efdf814174924ec229caefbdbd58ae",
+          "bbox": {
+            "x": 629,
+            "y": 251,
+            "width": 507,
+            "height": 42
+          },
+          "captured_at": "2025-12-02T22:30:08.340822"
+        }
+      ],
+      "search_region": {
+        "x": 629,
+        "y": 251,
+        "width": 507,
+        "height": 42
+      },
+      "text_content": "Select Workflow",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_7f20c386",
+      "name": "Monitor_0",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.w-full",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_514317",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_7f20c386_normal.png",
+          "pixel_hash": "009d5d6fee840fec2072ffcc239aa31f",
+          "bbox": {
+            "x": 629,
+            "y": 309,
+            "width": 507,
+            "height": 42
+          },
+          "captured_at": "2025-12-02T22:30:08.344391"
+        },
+        {
+          "id": "pattern_683148",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_7f20c386_hover.png",
+          "pixel_hash": "76af6d1d646c35bbc44415e6dfeaba15",
+          "bbox": {
+            "x": 629,
+            "y": 309,
+            "width": 507,
+            "height": 42
+          },
+          "captured_at": "2025-12-02T22:30:08.347843"
+        }
+      ],
+      "search_region": {
+        "x": 629,
+        "y": 309,
+        "width": 507,
+        "height": 42
+      },
+      "text_content": "Monitor 0",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_39e36b0a",
+      "name": "Start",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.flex-1",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_f97879",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_39e36b0a_normal.png",
+          "pixel_hash": "131859d34e7e7944e7f549277ecf6da9",
+          "bbox": {
+            "x": 629,
+            "y": 403,
+            "width": 249,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.351254"
+        },
+        {
+          "id": "pattern_808bf8",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_39e36b0a_hover.png",
+          "pixel_hash": "2b5085d133df3f55d910c450c744de79",
+          "bbox": {
+            "x": 629,
+            "y": 403,
+            "width": 249,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.354599"
+        }
+      ],
+      "search_region": {
+        "x": 629,
+        "y": 403,
+        "width": 249,
+        "height": 40
+      },
+      "text_content": "Start",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_479c3d0b",
+      "name": "Stop",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.flex-1",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_1aec60",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_479c3d0b_normal.png",
+          "pixel_hash": "a78ee2f147894361690e4d3016434e50",
+          "bbox": {
+            "x": 886,
+            "y": 403,
+            "width": 249,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.358380"
+        },
+        {
+          "id": "pattern_06e1c5",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_479c3d0b_hover.png",
+          "pixel_hash": "960c8e728ef5377a013ee82c00df38aa",
+          "bbox": {
+            "x": 886,
+            "y": 403,
+            "width": 249,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.362429"
+        }
+      ],
+      "search_region": {
+        "x": 886,
+        "y": 403,
+        "width": 249,
+        "height": 40
+      },
+      "text_content": "Stop",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_46b58188",
+      "name": "General",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.px-4",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_804ef8",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_46b58188_normal.png",
+          "pixel_hash": "bb101eefa35c48f947176c3eb18bd14c",
+          "bbox": {
+            "x": 29,
+            "y": 497,
+            "width": 119,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.366609"
+        }
+      ],
+      "search_region": {
+        "x": 29,
+        "y": 497,
+        "width": 119,
+        "height": 40
+      },
+      "text_content": "General",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_18d1d25f",
+      "name": "Image_Recognition",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.px-4",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_dd9b9d",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_18d1d25f_normal.png",
+          "pixel_hash": "99312d47e326273d1e3be4d91606a038",
+          "bbox": {
+            "x": 152,
+            "y": 497,
+            "width": 205,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.370234"
+        },
+        {
+          "id": "pattern_879340",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_18d1d25f_hover.png",
+          "pixel_hash": "d35798d5d4cd678e3afc3cbf7c8a574f",
+          "bbox": {
+            "x": 152,
+            "y": 497,
+            "width": 205,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.374173"
+        }
+      ],
+      "search_region": {
+        "x": 152,
+        "y": 497,
+        "width": 205,
+        "height": 40
+      },
+      "text_content": "Image Recognition",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_35b26ed3",
+      "name": "Actions",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.px-4",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_36dd00",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_35b26ed3_normal.png",
+          "pixel_hash": "4cf2623b987140169553eac0bcf75580",
+          "bbox": {
+            "x": 361,
+            "y": 497,
+            "width": 114,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.378015"
+        },
+        {
+          "id": "pattern_0ed1c1",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_35b26ed3_hover.png",
+          "pixel_hash": "f97a6bcb063947fad95570e072432ddd",
+          "bbox": {
+            "x": 361,
+            "y": 497,
+            "width": 114,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.382366"
+        }
+      ],
+      "search_region": {
+        "x": 361,
+        "y": 497,
+        "width": 114,
+        "height": 40
+      },
+      "text_content": "Actions",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_ca697c02",
+      "name": "Settings",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.px-4",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_402902",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_ca697c02_normal.png",
+          "pixel_hash": "a9ea700c34bf77152845a6a0cdadac58",
+          "bbox": {
+            "x": 479,
+            "y": 497,
+            "width": 122,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.386200"
+        },
+        {
+          "id": "pattern_9cfa6e",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_ca697c02_hover.png",
+          "pixel_hash": "2ca96c033d0658754284400afb4f0df3",
+          "bbox": {
+            "x": 479,
+            "y": 497,
+            "width": 122,
+            "height": 40
+          },
+          "captured_at": "2025-12-02T22:30:08.389684"
+        }
+      ],
+      "search_region": {
+        "x": 479,
+        "y": 497,
+        "width": 122,
+        "height": 40
+      },
+      "text_content": "Settings",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_478fd0f0",
+      "name": "Filter logs by level",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.p-2",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_c36326",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_478fd0f0_normal.png",
+          "pixel_hash": "4837149ccdbb40511967dffacba09cfa",
+          "bbox": {
+            "x": 980,
+            "y": 501,
+            "width": 32,
+            "height": 32
+          },
+          "captured_at": "2025-12-02T22:30:08.393167"
+        },
+        {
+          "id": "pattern_08dfbc",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_478fd0f0_hover.png",
+          "pixel_hash": "246c361f1e796ca93142e88bcbb86038",
+          "bbox": {
+            "x": 980,
+            "y": 501,
+            "width": 32,
+            "height": 32
+          },
+          "captured_at": "2025-12-02T22:30:08.396449"
+        }
+      ],
+      "search_region": {
+        "x": 980,
+        "y": 501,
+        "width": 32,
+        "height": 32
+      },
+      "text_content": "",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_88326d78",
+      "name": "Clear logs",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.p-2",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_8f8962",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_88326d78_normal.png",
+          "pixel_hash": "df193a91476c31a30b509d609ab3c05d",
+          "bbox": {
+            "x": 1020,
+            "y": 501,
+            "width": 32,
+            "height": 32
+          },
+          "captured_at": "2025-12-02T22:30:08.400194"
+        },
+        {
+          "id": "pattern_fea4d3",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_88326d78_hover.png",
+          "pixel_hash": "172b5a611812ffbc7a8309a36d21d5ab",
+          "bbox": {
+            "x": 1020,
+            "y": 501,
+            "width": 32,
+            "height": 32
+          },
+          "captured_at": "2025-12-02T22:30:08.403496"
+        }
+      ],
+      "search_region": {
+        "x": 1020,
+        "y": 501,
+        "width": 32,
+        "height": 32
+      },
+      "text_content": "",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_798cb69c",
+      "name": "Clear all logs (General, Image, and Actions)",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.p-2",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_112bb6",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_798cb69c_normal.png",
+          "pixel_hash": "475deb078fe01883ec2e45c502e25046",
+          "bbox": {
+            "x": 1060,
+            "y": 501,
+            "width": 44,
+            "height": 32
+          },
+          "captured_at": "2025-12-02T22:30:08.406880"
+        },
+        {
+          "id": "pattern_23559f",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_798cb69c_hover.png",
+          "pixel_hash": "6fa58eaa970386da9ab6a504a37b696e",
+          "bbox": {
+            "x": 1060,
+            "y": 501,
+            "width": 44,
+            "height": 32
+          },
+          "captured_at": "2025-12-02T22:30:08.410198"
+        }
+      ],
+      "search_region": {
+        "x": 1060,
+        "y": 501,
+        "width": 44,
+        "height": 32
+      },
+      "text_content": "",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_f82bff25",
+      "name": "Copy to clipboard",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button.p-2",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_31716c",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_f82bff25_normal.png",
+          "pixel_hash": "1437e65a2af25cfa8d35be4696868be3",
+          "bbox": {
+            "x": 1112,
+            "y": 501,
+            "width": 32,
+            "height": 32
+          },
+          "captured_at": "2025-12-02T22:30:08.413773"
+        },
+        {
+          "id": "pattern_80e1ed",
+          "name": "hover",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_f82bff25_hover.png",
+          "pixel_hash": "a1b5b52832e25a990ee26fd675f89a2c",
+          "bbox": {
+            "x": 1112,
+            "y": 501,
+            "width": 32,
+            "height": 32
+          },
+          "captured_at": "2025-12-02T22:30:08.417253"
+        }
+      ],
+      "search_region": {
+        "x": 1112,
+        "y": 501,
+        "width": 32,
+        "height": 32
+      },
+      "text_content": "",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "elem_3bb37e73",
+      "name": "on",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "input.rounded",
+      "element_type": "input",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_3c23b7",
+          "name": "normal",
+          "pixel_data_path": "tauri_test_output/raw_pixels/elem_3bb37e73_normal.png",
+          "pixel_hash": "bfa7bde6274ad548c3b9332cca1f0dba",
+          "bbox": {
+            "x": 629,
+            "y": 370,
+            "width": 13,
+            "height": 13
+          },
+          "captured_at": "2025-12-02T22:30:08.420681"
+        }
+      ],
+      "search_region": {
+        "x": 629,
+        "y": 370,
+        "width": 13,
+        "height": 13
+      },
+      "text_content": "on",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    }
+  ],
+  "transitions": [],
+  "screenshots_dir": "tauri_test_output/screenshots",
+  "started_at": "2025-12-02T22:30:08.304702",
+  "completed_at": "2025-12-02T22:30:08.420695",
+  "errors": [],
+  "warnings": [],
+  "metadata": {}
+}

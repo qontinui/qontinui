@@ -33,6 +33,13 @@ from .graph_traversal import (
 )
 from .output_resolver import OutputResolver, OutputTypeValidator
 from .routing_context import PathSegment, RouteRecord, RoutingContext
+from .success_criteria import (
+    SuccessCriteria,
+    SuccessCriteriaEvaluator,
+    SuccessCriteriaType,
+    WorkflowResult,
+    evaluate_workflow_success,
+)
 from .variable_utils import (
     create_variable_snapshot,
     filter_variables_by_prefix,
@@ -89,4 +96,10 @@ __all__ = [
     "sanitize_for_persistence",
     "create_variable_snapshot",
     "restore_variable_snapshot",
+    # Success criteria
+    "SuccessCriteria",
+    "SuccessCriteriaType",
+    "SuccessCriteriaEvaluator",
+    "WorkflowResult",
+    "evaluate_workflow_success",
 ]

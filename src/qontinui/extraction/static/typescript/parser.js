@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { parse as babelParse } from '@babel/parser';
 import traverse from '@babel/traverse';
 import ts from 'typescript';
@@ -72,19 +72,38 @@ class TypeScriptParser {
         imports: [],
         exports: [],
         jsx_elements: [],
+        navigation_links: [],  // Links that navigate between routes/states
       };
 
       // Track scope for better context
       const scopeStack = [];
       let currentComponent = null;
 
+      // Store 'this' reference for use inside visitor callbacks
+      const self = this;
+
+      // Track navigation-related imports (Link from next/link, useRouter, etc.)
+      const navigationImports = new Set();
+
       traverse.default(ast, {
         // Extract imports
         ImportDeclaration(path) {
+          const source = path.node.source.value;
+
+          // Track navigation-related imports
+          if (source === 'next/link' || source === 'next/navigation' || source === 'react-router-dom') {
+            path.node.specifiers.forEach(spec => {
+              const localName = spec.local.name;
+              if (localName === 'Link' || localName === 'useRouter' || localName === 'useNavigate') {
+                navigationImports.add(localName);
+              }
+            });
+          }
+
           if (!extractTypes.includes('imports')) return;
 
           const importInfo = {
-            source: path.node.source.value,
+            source,
             specifiers: path.node.specifiers.map(spec => {
               if (spec.type === 'ImportDefaultSpecifier') {
                 return { type: 'default', name: spec.local.name };
@@ -94,7 +113,7 @@ class TypeScriptParser {
                 return {
                   type: 'named',
                   name: spec.local.name,
-                  imported: spec.imported.name,
+                  imported: spec.imported?.name || spec.local.name,
                 };
               }
             }),
@@ -144,7 +163,7 @@ class TypeScriptParser {
         FunctionDeclaration(path) {
           if (!extractTypes.includes('components')) return;
 
-          const component = this.extractFunctionComponent(path);
+          const component = self.extractFunctionComponent(path);
           if (component) {
             fileResult.components.push(component);
             currentComponent = component;
@@ -156,7 +175,7 @@ class TypeScriptParser {
 
           // Check if this is assigned to a variable (component declaration)
           if (path.parent.type === 'VariableDeclarator') {
-            const component = this.extractArrowComponent(path);
+            const component = self.extractArrowComponent(path);
             if (component) {
               fileResult.components.push(component);
               currentComponent = component;
@@ -168,7 +187,7 @@ class TypeScriptParser {
         ClassDeclaration(path) {
           if (!extractTypes.includes('components')) return;
 
-          const component = this.extractClassComponent(path);
+          const component = self.extractClassComponent(path);
           if (component) {
             fileResult.components.push(component);
             currentComponent = component;
@@ -177,14 +196,14 @@ class TypeScriptParser {
 
         // Extract React hooks (useState, useReducer, useContext, etc.)
         CallExpression(path) {
-          const calleeName = this.getCalleeName(path.node.callee);
+          const calleeName = self.getCalleeName(path.node.callee);
 
           // Extract state hooks
           if (extractTypes.includes('state')) {
             if (calleeName === 'useState' || calleeName === 'useReducer' ||
                 calleeName === 'useContext' || calleeName === 'useRef' ||
                 calleeName === 'useMemo' || calleeName === 'useCallback') {
-              const stateVar = this.extractHook(path, calleeName);
+              const stateVar = self.extractHook(path, calleeName);
               if (stateVar) {
                 fileResult.state_variables.push(stateVar);
               }
@@ -198,7 +217,7 @@ class TypeScriptParser {
                 path.parentPath.parent.type === 'JSXAttribute') {
               const attrName = path.parentPath.parent.name.name;
               if (attrName && attrName.startsWith('on')) {
-                const handler = this.extractEventHandler(path, attrName);
+                const handler = self.extractEventHandler(path, attrName);
                 if (handler) {
                   fileResult.event_handlers.push(handler);
                 }
@@ -213,9 +232,35 @@ class TypeScriptParser {
 
           // Extract JSX hierarchy for component analysis
           if (extractTypes.includes('components')) {
-            const element = this.extractJSXElement(path);
+            const element = self.extractJSXElement(path);
             if (element) {
               fileResult.jsx_elements.push(element);
+
+              // Check if this is a navigation element (Link, a with href)
+              const elementName = element.name;
+              if (elementName === 'Link' && navigationImports.has('Link')) {
+                // This is a Next.js or React Router Link
+                const hrefProp = element.props.find(p => p.name === 'href');
+                if (hrefProp && typeof hrefProp.value === 'string' && hrefProp.value.startsWith('/')) {
+                  fileResult.navigation_links.push({
+                    type: 'link',
+                    target: hrefProp.value,
+                    line: element.line,
+                    component: currentComponent?.name || null,
+                  });
+                }
+              } else if (elementName === 'a') {
+                // Check for anchor tags with internal hrefs
+                const hrefProp = element.props.find(p => p.name === 'href');
+                if (hrefProp && typeof hrefProp.value === 'string' && hrefProp.value.startsWith('/')) {
+                  fileResult.navigation_links.push({
+                    type: 'anchor',
+                    target: hrefProp.value,
+                    line: element.line,
+                    component: currentComponent?.name || null,
+                  });
+                }
+              }
             }
           }
         },
@@ -224,12 +269,12 @@ class TypeScriptParser {
           if (!extractTypes.includes('conditionals')) return;
 
           // Detect {condition && <Component />} pattern
-          if (path.node.operator === '&&' && this.isJSXExpression(path.node.right)) {
+          if (path.node.operator === '&&' && self.isJSXExpression(path.node.right)) {
             const conditional = {
-              condition: this.getConditionString(path.node.left),
+              condition: self.getConditionString(path.node.left),
               line: path.node.loc?.start.line || 0,
               pattern: 'AND',
-              renders: this.getRenderedComponents(path.node.right),
+              renders: self.getRenderedComponents(path.node.right),
             };
             fileResult.conditional_renders.push(conditional);
           }
@@ -239,14 +284,14 @@ class TypeScriptParser {
           if (!extractTypes.includes('conditionals')) return;
 
           // Detect ternary operator: condition ? <A /> : <B />
-          if (this.isJSXExpression(path.node.consequent) ||
-              this.isJSXExpression(path.node.alternate)) {
+          if (self.isJSXExpression(path.node.consequent) ||
+              self.isJSXExpression(path.node.alternate)) {
             const conditional = {
-              condition: this.getConditionString(path.node.test),
+              condition: self.getConditionString(path.node.test),
               line: path.node.loc?.start.line || 0,
               pattern: 'TERNARY',
-              renders_true: this.getRenderedComponents(path.node.consequent),
-              renders_false: this.getRenderedComponents(path.node.alternate),
+              renders_true: self.getRenderedComponents(path.node.consequent),
+              renders_false: self.getRenderedComponents(path.node.alternate),
             };
             fileResult.conditional_renders.push(conditional);
           }
@@ -257,12 +302,12 @@ class TypeScriptParser {
 
           // Detect early returns: if (condition) return <Component />
           if (path.node.consequent.type === 'ReturnStatement' &&
-              this.isJSXExpression(path.node.consequent.argument)) {
+              self.isJSXExpression(path.node.consequent.argument)) {
             const conditional = {
-              condition: this.getConditionString(path.node.test),
+              condition: self.getConditionString(path.node.test),
               line: path.node.loc?.start.line || 0,
               pattern: 'EARLY_RETURN',
-              renders: this.getRenderedComponents(path.node.consequent.argument),
+              renders: self.getRenderedComponents(path.node.consequent.argument),
             };
             fileResult.conditional_renders.push(conditional);
           }
@@ -293,9 +338,10 @@ class TypeScriptParser {
 
     // Check if it returns JSX
     let returnsJSX = false;
+    const self = this;
     path.traverse({
       ReturnStatement(returnPath) {
-        if (this.isJSXExpression(returnPath.node.argument)) {
+        if (self.isJSXExpression(returnPath.node.argument)) {
           returnsJSX = true;
           returnPath.stop();
         }
@@ -325,6 +371,7 @@ class TypeScriptParser {
     if (!name) return null;
 
     let returnsJSX = false;
+    const self = this;
 
     // Check direct JSX return
     if (this.isJSXExpression(path.node.body)) {
@@ -333,7 +380,7 @@ class TypeScriptParser {
       // Check for JSX in return statements
       path.traverse({
         ReturnStatement(returnPath) {
-          if (this.isJSXExpression(returnPath.node.argument)) {
+          if (self.isJSXExpression(returnPath.node.argument)) {
             returnsJSX = true;
             returnPath.stop();
           }
@@ -430,6 +477,7 @@ class TypeScriptParser {
       line: path.node.loc?.start.line || 0,
       state_changes: [],
     };
+    const self = this;
 
     // Try to get handler name
     if (path.node.type === 'Identifier') {
@@ -441,7 +489,7 @@ class TypeScriptParser {
       // Look for state setter calls inside the handler
       path.traverse({
         CallExpression(callPath) {
-          const calleeName = this.getCalleeName(callPath.node.callee);
+          const calleeName = self.getCalleeName(callPath.node.callee);
           if (calleeName && calleeName.startsWith('set')) {
             handler.state_changes.push(calleeName);
           }
@@ -508,11 +556,12 @@ class TypeScriptParser {
    */
   extractChildComponents(path) {
     const children = new Set();
+    const self = this;
 
     path.traverse({
       JSXElement(jsxPath) {
-        const name = this.getJSXElementName(jsxPath.node.openingElement.name);
-        if (name && this.isCapitalized(name)) {
+        const name = self.getJSXElementName(jsxPath.node.openingElement.name);
+        if (name && self.isCapitalized(name)) {
           children.add(name);
         }
       },
@@ -685,8 +734,14 @@ async function main() {
     const parser = new TypeScriptParser();
     const results = parser.parse(config);
 
-    // Output results to stdout
-    console.log(JSON.stringify(results, null, 2));
+    // Output results - to file if specified, otherwise stdout
+    const output = JSON.stringify(results);
+    if (config.outputFile) {
+      writeFileSync(config.outputFile, output, 'utf-8');
+      console.log('OK');  // Signal success
+    } else {
+      console.log(output);
+    }
     process.exit(0);
   } catch (error) {
     console.error(`Fatal error: ${error.message}`, { file: 'stderr' });

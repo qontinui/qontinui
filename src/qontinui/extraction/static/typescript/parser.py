@@ -8,6 +8,7 @@ Node.js and Babel to analyze TypeScript and JavaScript source code.
 import asyncio
 import json
 import subprocess
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -97,6 +98,16 @@ class JSXElementInfo:
 
 
 @dataclass
+class NavigationLinkInfo:
+    """Information about a navigation link."""
+
+    type: str  # 'link' or 'anchor'
+    target: str  # The href destination
+    line: int
+    component: str | None = None  # The component containing this link
+
+
+@dataclass
 class FileParseResult:
     """Result of parsing a single file."""
 
@@ -107,7 +118,28 @@ class FileParseResult:
     imports: list[ImportInfo] = field(default_factory=list)
     exports: list[ExportInfo] = field(default_factory=list)
     jsx_elements: list[JSXElementInfo] = field(default_factory=list)
+    navigation_links: list[NavigationLinkInfo] = field(default_factory=list)
     error: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for downstream processing."""
+        from dataclasses import asdict
+
+        return {
+            "components": [asdict(c) for c in self.components],
+            "state_variables": [asdict(s) for s in self.state_variables],
+            "conditional_renders": [asdict(c) for c in self.conditional_renders],
+            "event_handlers": [asdict(h) for h in self.event_handlers],
+            "imports": [asdict(i) for i in self.imports],
+            "exports": [asdict(e) for e in self.exports],
+            "jsx_elements": [asdict(j) for j in self.jsx_elements],
+            "navigation_links": [asdict(n) for n in self.navigation_links],
+            "function_declarations": [
+                {"name": c.name, "line": c.line, "async": False, "parameters": []}
+                for c in self.components
+            ],
+            "error": self.error,
+        }
 
 
 @dataclass
@@ -167,12 +199,17 @@ class TypeScriptParser:
         if extract is None:
             extract = ["components", "state", "conditionals", "handlers", "imports"]
 
-        config = {
-            "files": [str(f.resolve()) for f in files],
-            "extract": extract,
-        }
+        # Use a temporary file to avoid stdout buffer limits
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as output_file:
+            output_path = output_file.name
 
         try:
+            config = {
+                "files": [str(f.resolve()) for f in files],
+                "extract": extract,
+                "outputFile": output_path,
+            }
+
             # Run the Node.js parser
             process = await asyncio.create_subprocess_exec(
                 self.node_path,
@@ -192,9 +229,9 @@ class TypeScriptParser:
                     f"Parser failed with exit code {process.returncode}: {error_msg}"
                 )
 
-            # Parse the output
-            output = stdout.decode("utf-8")
-            result_data = json.loads(output)
+            # Read results from the output file
+            with open(output_path, encoding="utf-8") as f:
+                result_data = json.load(f)
 
             return self._convert_to_dataclasses(result_data)
 
@@ -202,6 +239,12 @@ class TypeScriptParser:
             raise RuntimeError(f"Failed to run Node.js parser: {e}")
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Failed to parse parser output: {e}")
+        finally:
+            # Clean up the temporary file
+            try:
+                Path(output_path).unlink()
+            except Exception:
+                pass
 
     async def parse_directory(
         self,
@@ -296,6 +339,44 @@ class TypeScriptParser:
             ParseResult containing extracted information from all matching files
         """
         return asyncio.run(self.parse_directory(directory, patterns, exclude, extract))
+
+    async def parse_file(
+        self,
+        file_path: str,
+        extract: list[str] | None = None,
+    ) -> FileParseResult:
+        """
+        Parse a single TypeScript/JavaScript file.
+
+        Args:
+            file_path: Path to the file to parse
+            extract: List of what to extract (see parse_files)
+
+        Returns:
+            FileParseResult containing extracted information from the file
+        """
+        path = Path(file_path)
+        result = await self.parse_files([path], extract)
+
+        # Return the FileParseResult for this file, or an empty one if not found
+        return result.files.get(str(path.resolve()), FileParseResult())
+
+    def parse_file_sync(
+        self,
+        file_path: str,
+        extract: list[str] | None = None,
+    ) -> FileParseResult:
+        """
+        Synchronous version of parse_file.
+
+        Args:
+            file_path: Path to the file to parse
+            extract: List of what to extract (see parse_files)
+
+        Returns:
+            FileParseResult containing extracted information from the file
+        """
+        return asyncio.run(self.parse_file(file_path, extract))
 
     def _convert_to_dataclasses(self, result_data: dict) -> ParseResult:
         """
@@ -397,6 +478,17 @@ class TypeScriptParser:
                 for j in file_data.get("jsx_elements", [])
             ]
 
+            # Convert navigation links
+            navigation_links = [
+                NavigationLinkInfo(
+                    type=n["type"],
+                    target=n["target"],
+                    line=n["line"],
+                    component=n.get("component"),
+                )
+                for n in file_data.get("navigation_links", [])
+            ]
+
             files[file_path] = FileParseResult(
                 components=components,
                 state_variables=state_variables,
@@ -405,6 +497,7 @@ class TypeScriptParser:
                 imports=imports,
                 exports=exports,
                 jsx_elements=jsx_elements,
+                navigation_links=navigation_links,
                 error=file_data.get("error"),
             )
 

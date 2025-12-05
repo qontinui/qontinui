@@ -1,0 +1,878 @@
+{
+  "extraction_id": "a243cf55",
+  "tech_stack": "nextjs-mock",
+  "states": [
+    {
+      "id": "state_main_9f45f6",
+      "name": "main",
+      "state_type": "page",
+      "route_path": null,
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "controlling_variable": null,
+      "controlling_value": null,
+      "state_images": [
+        {
+          "id": "img_38b40f32",
+          "name": "Primary_Button",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button#primaryBtn",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_a5d9b2",
+              "name": "normal",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_38b40f32_normal.png",
+              "pixel_hash": "056ccbb5bb6f4d075c66a2a361531e46",
+              "bbox": {
+                "x": 80,
+                "y": 180,
+                "width": 120,
+                "height": 40
+              },
+              "captured_at": "2025-12-01T20:19:11.139058"
+            },
+            {
+              "id": "pattern_29d45e",
+              "name": "hover",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_38b40f32_hover.png",
+              "pixel_hash": "55578cb74db249db418fd1eb2e042d0b",
+              "bbox": {
+                "x": 80,
+                "y": 180,
+                "width": 120,
+                "height": 40
+              },
+              "captured_at": "2025-12-01T20:19:11.144022"
+            }
+          ],
+          "search_region": {
+            "x": 80,
+            "y": 180,
+            "width": 120,
+            "height": 40
+          },
+          "text_content": "Primary Action",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "img_f5ffb0c0",
+          "name": "Secondary_Button",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button#secondaryBtn",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_e7f608",
+              "name": "normal",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_f5ffb0c0_normal.png",
+              "pixel_hash": "15f851336e09ed65c8536b3023299256",
+              "bbox": {
+                "x": 210,
+                "y": 180,
+                "width": 110,
+                "height": 40
+              },
+              "captured_at": "2025-12-01T20:19:11.153317"
+            },
+            {
+              "id": "pattern_2b61da",
+              "name": "hover",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_f5ffb0c0_hover.png",
+              "pixel_hash": "81e6063ba99c121c52740efef1bdb63c",
+              "bbox": {
+                "x": 210,
+                "y": 180,
+                "width": 110,
+                "height": 40
+              },
+              "captured_at": "2025-12-01T20:19:11.158445"
+            }
+          ],
+          "search_region": {
+            "x": 210,
+            "y": 180,
+            "width": 110,
+            "height": 40
+          },
+          "text_content": "Secondary",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "img_f83cfd17",
+          "name": "Submit_Button",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button#submitBtn",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_f06892",
+              "name": "normal",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_f83cfd17_normal.png",
+              "pixel_hash": "97303a947b9a9c32ebe63059567ad865",
+              "bbox": {
+                "x": 330,
+                "y": 180,
+                "width": 80,
+                "height": 40
+              },
+              "captured_at": "2025-12-01T20:19:11.163081"
+            },
+            {
+              "id": "pattern_e8fa72",
+              "name": "hover",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_f83cfd17_hover.png",
+              "pixel_hash": "2013c37dc610e84b3304f1ac6c891aef",
+              "bbox": {
+                "x": 330,
+                "y": 180,
+                "width": 80,
+                "height": 40
+              },
+              "captured_at": "2025-12-01T20:19:11.167840"
+            }
+          ],
+          "search_region": {
+            "x": 330,
+            "y": 180,
+            "width": 80,
+            "height": 40
+          },
+          "text_content": "Submit",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "img_aa2a56b3",
+          "name": "Name_Input",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "input#nameInput",
+          "element_type": "input",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_ee9136",
+              "name": "normal",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_aa2a56b3_normal.png",
+              "pixel_hash": "49daab1eb36fd30ac2b15c0ca7e3517a",
+              "bbox": {
+                "x": 80,
+                "y": 240,
+                "width": 200,
+                "height": 36
+              },
+              "captured_at": "2025-12-01T20:19:11.174614"
+            },
+            {
+              "id": "pattern_c89bde",
+              "name": "focus",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_aa2a56b3_focus.png",
+              "pixel_hash": "27a238f9182580150f456698bfde5cca",
+              "bbox": {
+                "x": 80,
+                "y": 240,
+                "width": 200,
+                "height": 36
+              },
+              "captured_at": "2025-12-01T20:19:11.179425"
+            }
+          ],
+          "search_region": {
+            "x": 80,
+            "y": 240,
+            "width": 200,
+            "height": 36
+          },
+          "text_content": "Enter your name",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "img_a4652773",
+          "name": "Email_Input",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "input#emailInput",
+          "element_type": "input",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_fa2bad",
+              "name": "normal",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_a4652773_normal.png",
+              "pixel_hash": "7ca9b15ef15b9cea5c4c8dae636b3fcd",
+              "bbox": {
+                "x": 290,
+                "y": 240,
+                "width": 200,
+                "height": 36
+              },
+              "captured_at": "2025-12-01T20:19:11.184418"
+            },
+            {
+              "id": "pattern_29e418",
+              "name": "focus",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_a4652773_focus.png",
+              "pixel_hash": "34c0f9dbe195d320527387f5512e4fcf",
+              "bbox": {
+                "x": 290,
+                "y": 240,
+                "width": 200,
+                "height": 36
+              },
+              "captured_at": "2025-12-01T20:19:11.189553"
+            }
+          ],
+          "search_region": {
+            "x": 290,
+            "y": 240,
+            "width": 200,
+            "height": 36
+          },
+          "text_content": "Enter your email",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "img_94061f64",
+          "name": "Home_Link",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "a[href='#home']",
+          "element_type": "link",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_014bd3",
+              "name": "normal",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_94061f64_normal.png",
+              "pixel_hash": "4dc6c83ea2812cc3f5a7e5081a90559d",
+              "bbox": {
+                "x": 80,
+                "y": 40,
+                "width": 50,
+                "height": 20
+              },
+              "captured_at": "2025-12-01T20:19:11.193384"
+            }
+          ],
+          "search_region": {
+            "x": 80,
+            "y": 40,
+            "width": 50,
+            "height": 20
+          },
+          "text_content": "Home",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "img_409737e8",
+          "name": "About_Link",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "a[href='#about']",
+          "element_type": "link",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_0d4903",
+              "name": "normal",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_409737e8_normal.png",
+              "pixel_hash": "7cdb8089b35d97bc78cc2a8066fd3c1e",
+              "bbox": {
+                "x": 140,
+                "y": 40,
+                "width": 50,
+                "height": 20
+              },
+              "captured_at": "2025-12-01T20:19:11.201582"
+            }
+          ],
+          "search_region": {
+            "x": 140,
+            "y": 40,
+            "width": 50,
+            "height": 20
+          },
+          "text_content": "About",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "img_7ef28c6f",
+          "name": "Contact_Link",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "a[href='#contact']",
+          "element_type": "link",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_a4ebfa",
+              "name": "normal",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_7ef28c6f_normal.png",
+              "pixel_hash": "5285adc1b165e3ad54530de5bbdb64f4",
+              "bbox": {
+                "x": 200,
+                "y": 40,
+                "width": 60,
+                "height": 20
+              },
+              "captured_at": "2025-12-01T20:19:11.205953"
+            }
+          ],
+          "search_region": {
+            "x": 200,
+            "y": 40,
+            "width": 60,
+            "height": 20
+          },
+          "text_content": "Contact",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        },
+        {
+          "id": "img_fe8c9701",
+          "name": "Card_Button",
+          "component_name": null,
+          "source_file": null,
+          "source_line": null,
+          "selector": "button#cardBtn",
+          "element_type": "button",
+          "is_interactive": true,
+          "patterns": [
+            {
+              "id": "pattern_48d73d",
+              "name": "normal",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_fe8c9701_normal.png",
+              "pixel_hash": "e6c4c07011b55c6bfbcdb52fe0d3490d",
+              "bbox": {
+                "x": 100,
+                "y": 350,
+                "width": 100,
+                "height": 36
+              },
+              "captured_at": "2025-12-01T20:19:11.210946"
+            },
+            {
+              "id": "pattern_b3b3f0",
+              "name": "hover",
+              "pixel_data_path": "hybrid_test_output/raw_pixels/img_fe8c9701_hover.png",
+              "pixel_hash": "eacb9ce3b06820778da5a51b45863375",
+              "bbox": {
+                "x": 100,
+                "y": 350,
+                "width": 100,
+                "height": 36
+              },
+              "captured_at": "2025-12-01T20:19:11.216056"
+            }
+          ],
+          "search_region": {
+            "x": 100,
+            "y": 350,
+            "width": 100,
+            "height": 36
+          },
+          "text_content": "Learn More",
+          "has_dynamic_text": false,
+          "aria_label": null,
+          "semantic_role": null,
+          "stability_score": 1.0,
+          "confidence": 1.0,
+          "metadata": {}
+        }
+      ],
+      "screenshot_path": "hybrid_test_output/screenshots/0001_full_page.png",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "parent_state_id": null,
+      "child_state_ids": [],
+      "url": "file:///test_page.html",
+      "confidence": 1.0,
+      "metadata": {}
+    }
+  ],
+  "state_images": [
+    {
+      "id": "img_38b40f32",
+      "name": "Primary_Button",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button#primaryBtn",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_a5d9b2",
+          "name": "normal",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_38b40f32_normal.png",
+          "pixel_hash": "056ccbb5bb6f4d075c66a2a361531e46",
+          "bbox": {
+            "x": 80,
+            "y": 180,
+            "width": 120,
+            "height": 40
+          },
+          "captured_at": "2025-12-01T20:19:11.139058"
+        },
+        {
+          "id": "pattern_29d45e",
+          "name": "hover",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_38b40f32_hover.png",
+          "pixel_hash": "55578cb74db249db418fd1eb2e042d0b",
+          "bbox": {
+            "x": 80,
+            "y": 180,
+            "width": 120,
+            "height": 40
+          },
+          "captured_at": "2025-12-01T20:19:11.144022"
+        }
+      ],
+      "search_region": {
+        "x": 80,
+        "y": 180,
+        "width": 120,
+        "height": 40
+      },
+      "text_content": "Primary Action",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "img_f5ffb0c0",
+      "name": "Secondary_Button",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button#secondaryBtn",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_e7f608",
+          "name": "normal",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_f5ffb0c0_normal.png",
+          "pixel_hash": "15f851336e09ed65c8536b3023299256",
+          "bbox": {
+            "x": 210,
+            "y": 180,
+            "width": 110,
+            "height": 40
+          },
+          "captured_at": "2025-12-01T20:19:11.153317"
+        },
+        {
+          "id": "pattern_2b61da",
+          "name": "hover",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_f5ffb0c0_hover.png",
+          "pixel_hash": "81e6063ba99c121c52740efef1bdb63c",
+          "bbox": {
+            "x": 210,
+            "y": 180,
+            "width": 110,
+            "height": 40
+          },
+          "captured_at": "2025-12-01T20:19:11.158445"
+        }
+      ],
+      "search_region": {
+        "x": 210,
+        "y": 180,
+        "width": 110,
+        "height": 40
+      },
+      "text_content": "Secondary",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "img_f83cfd17",
+      "name": "Submit_Button",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button#submitBtn",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_f06892",
+          "name": "normal",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_f83cfd17_normal.png",
+          "pixel_hash": "97303a947b9a9c32ebe63059567ad865",
+          "bbox": {
+            "x": 330,
+            "y": 180,
+            "width": 80,
+            "height": 40
+          },
+          "captured_at": "2025-12-01T20:19:11.163081"
+        },
+        {
+          "id": "pattern_e8fa72",
+          "name": "hover",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_f83cfd17_hover.png",
+          "pixel_hash": "2013c37dc610e84b3304f1ac6c891aef",
+          "bbox": {
+            "x": 330,
+            "y": 180,
+            "width": 80,
+            "height": 40
+          },
+          "captured_at": "2025-12-01T20:19:11.167840"
+        }
+      ],
+      "search_region": {
+        "x": 330,
+        "y": 180,
+        "width": 80,
+        "height": 40
+      },
+      "text_content": "Submit",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "img_aa2a56b3",
+      "name": "Name_Input",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "input#nameInput",
+      "element_type": "input",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_ee9136",
+          "name": "normal",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_aa2a56b3_normal.png",
+          "pixel_hash": "49daab1eb36fd30ac2b15c0ca7e3517a",
+          "bbox": {
+            "x": 80,
+            "y": 240,
+            "width": 200,
+            "height": 36
+          },
+          "captured_at": "2025-12-01T20:19:11.174614"
+        },
+        {
+          "id": "pattern_c89bde",
+          "name": "focus",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_aa2a56b3_focus.png",
+          "pixel_hash": "27a238f9182580150f456698bfde5cca",
+          "bbox": {
+            "x": 80,
+            "y": 240,
+            "width": 200,
+            "height": 36
+          },
+          "captured_at": "2025-12-01T20:19:11.179425"
+        }
+      ],
+      "search_region": {
+        "x": 80,
+        "y": 240,
+        "width": 200,
+        "height": 36
+      },
+      "text_content": "Enter your name",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "img_a4652773",
+      "name": "Email_Input",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "input#emailInput",
+      "element_type": "input",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_fa2bad",
+          "name": "normal",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_a4652773_normal.png",
+          "pixel_hash": "7ca9b15ef15b9cea5c4c8dae636b3fcd",
+          "bbox": {
+            "x": 290,
+            "y": 240,
+            "width": 200,
+            "height": 36
+          },
+          "captured_at": "2025-12-01T20:19:11.184418"
+        },
+        {
+          "id": "pattern_29e418",
+          "name": "focus",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_a4652773_focus.png",
+          "pixel_hash": "34c0f9dbe195d320527387f5512e4fcf",
+          "bbox": {
+            "x": 290,
+            "y": 240,
+            "width": 200,
+            "height": 36
+          },
+          "captured_at": "2025-12-01T20:19:11.189553"
+        }
+      ],
+      "search_region": {
+        "x": 290,
+        "y": 240,
+        "width": 200,
+        "height": 36
+      },
+      "text_content": "Enter your email",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "img_94061f64",
+      "name": "Home_Link",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "a[href='#home']",
+      "element_type": "link",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_014bd3",
+          "name": "normal",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_94061f64_normal.png",
+          "pixel_hash": "4dc6c83ea2812cc3f5a7e5081a90559d",
+          "bbox": {
+            "x": 80,
+            "y": 40,
+            "width": 50,
+            "height": 20
+          },
+          "captured_at": "2025-12-01T20:19:11.193384"
+        }
+      ],
+      "search_region": {
+        "x": 80,
+        "y": 40,
+        "width": 50,
+        "height": 20
+      },
+      "text_content": "Home",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "img_409737e8",
+      "name": "About_Link",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "a[href='#about']",
+      "element_type": "link",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_0d4903",
+          "name": "normal",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_409737e8_normal.png",
+          "pixel_hash": "7cdb8089b35d97bc78cc2a8066fd3c1e",
+          "bbox": {
+            "x": 140,
+            "y": 40,
+            "width": 50,
+            "height": 20
+          },
+          "captured_at": "2025-12-01T20:19:11.201582"
+        }
+      ],
+      "search_region": {
+        "x": 140,
+        "y": 40,
+        "width": 50,
+        "height": 20
+      },
+      "text_content": "About",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "img_7ef28c6f",
+      "name": "Contact_Link",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "a[href='#contact']",
+      "element_type": "link",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_a4ebfa",
+          "name": "normal",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_7ef28c6f_normal.png",
+          "pixel_hash": "5285adc1b165e3ad54530de5bbdb64f4",
+          "bbox": {
+            "x": 200,
+            "y": 40,
+            "width": 60,
+            "height": 20
+          },
+          "captured_at": "2025-12-01T20:19:11.205953"
+        }
+      ],
+      "search_region": {
+        "x": 200,
+        "y": 40,
+        "width": 60,
+        "height": 20
+      },
+      "text_content": "Contact",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "img_fe8c9701",
+      "name": "Card_Button",
+      "component_name": null,
+      "source_file": null,
+      "source_line": null,
+      "selector": "button#cardBtn",
+      "element_type": "button",
+      "is_interactive": true,
+      "patterns": [
+        {
+          "id": "pattern_48d73d",
+          "name": "normal",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_fe8c9701_normal.png",
+          "pixel_hash": "e6c4c07011b55c6bfbcdb52fe0d3490d",
+          "bbox": {
+            "x": 100,
+            "y": 350,
+            "width": 100,
+            "height": 36
+          },
+          "captured_at": "2025-12-01T20:19:11.210946"
+        },
+        {
+          "id": "pattern_b3b3f0",
+          "name": "hover",
+          "pixel_data_path": "hybrid_test_output/raw_pixels/img_fe8c9701_hover.png",
+          "pixel_hash": "eacb9ce3b06820778da5a51b45863375",
+          "bbox": {
+            "x": 100,
+            "y": 350,
+            "width": 100,
+            "height": 36
+          },
+          "captured_at": "2025-12-01T20:19:11.216056"
+        }
+      ],
+      "search_region": {
+        "x": 100,
+        "y": 350,
+        "width": 100,
+        "height": 36
+      },
+      "text_content": "Learn More",
+      "has_dynamic_text": false,
+      "aria_label": null,
+      "semantic_role": null,
+      "stability_score": 1.0,
+      "confidence": 1.0,
+      "metadata": {}
+    }
+  ],
+  "transitions": [],
+  "screenshots_dir": "hybrid_test_output/screenshots",
+  "started_at": "2025-12-01T20:19:11.131799",
+  "completed_at": "2025-12-01T20:19:11.216228",
+  "errors": [],
+  "warnings": [],
+  "metadata": {}
+}

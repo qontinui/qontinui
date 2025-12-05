@@ -8,9 +8,10 @@ analyzers in the static/ directory.
 # Re-export for backwards compatibility
 # Import StaticConfig from the config module
 from qontinui.extraction.config import StaticConfig
-from qontinui.extraction.models.static import (
+from qontinui.extraction.models.static import (  # New hint models for state discovery
     APICallDefinition,
     APICallType,
+    ComponentCategory,
     ComponentDefinition,
     ComponentType,
     ConditionalPattern,
@@ -20,14 +21,19 @@ from qontinui.extraction.models.static import (
     RouteParam,
     RouteType,
     SearchParam,
+    StateHint,
+    StateImageHint,
     StateScope,
     StateSourceType,
     StateVariable,
     StaticAnalysisResult,
+    TransitionHint,
+    VisibilityState,
 )
 
 __all__ = [
     # Enums
+    "ComponentCategory",
     "ComponentType",
     "StateSourceType",
     "StateScope",
@@ -44,6 +50,11 @@ __all__ = [
     "EventHandler",
     "APICallDefinition",
     "StaticAnalysisResult",
+    "VisibilityState",
+    # Hint models (for guiding runtime state discovery)
+    "StateHint",
+    "StateImageHint",
+    "TransitionHint",
     # Config
     "StaticConfig",
 ]
