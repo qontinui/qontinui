@@ -3,7 +3,6 @@
 Runtime tracker of currently active states.
 """
 
-from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field

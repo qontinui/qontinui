@@ -4,7 +4,6 @@ Manages metrics related to state usage, including visit counts,
 existence probability, and stochastic testing modifiers.
 """
 
-from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime

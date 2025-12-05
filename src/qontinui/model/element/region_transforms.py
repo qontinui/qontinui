@@ -3,7 +3,6 @@
 Handles region modifications like growing, shrinking, offsetting, and splitting.
 """
 
-from __future__ import annotations
 
 from typing import TYPE_CHECKING
 

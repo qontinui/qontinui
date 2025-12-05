@@ -3,6 +3,7 @@
 Represents a method call statement in the DSL.
 """
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

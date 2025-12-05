@@ -3,6 +3,7 @@
 Container for multiple state transitions.
 """
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

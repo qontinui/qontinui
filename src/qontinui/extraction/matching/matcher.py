@@ -94,11 +94,11 @@ class DefaultStateMatcher:
         )
 
         # Create a mock session with the capture
-        from ..models.base import ExtractionTarget
+        from ..runtime.types import ExtractionTarget as RuntimeExtractionTarget, RuntimeType
 
         session = RuntimeExtractionSession(
             session_id="correlation_session",
-            target=ExtractionTarget(),
+            target=RuntimeExtractionTarget(runtime_type=RuntimeType.WEB),
             storage_dir=Path.cwd() / ".qontinui" / "correlation",
             captures=[capture],
         )

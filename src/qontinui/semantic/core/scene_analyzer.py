@@ -1,6 +1,5 @@
 """SceneAnalyzer - Performs analysis operations on semantic scenes."""
 
-from __future__ import annotations
 
 from typing import Any, cast
 

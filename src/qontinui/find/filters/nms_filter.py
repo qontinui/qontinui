@@ -4,7 +4,6 @@ Implements NMS algorithm to eliminate redundant matches that overlap
 significantly with higher-scoring matches.
 """
 
-from __future__ import annotations
 
 from ..match import Match
 from .match_filter import MatchFilter

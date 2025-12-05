@@ -1,5 +1,6 @@
 """SemanticObject - Represents a semantically identified object."""
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

@@ -3,6 +3,7 @@
 Text clues for faster state searching.
 """
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

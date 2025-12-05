@@ -555,4 +555,5 @@ class HybridExtractor:
 
         # Create extractor and run extraction
         extractor = extractor_class()
-        return await extractor.extract(config)
+        result: HybridExtractionResult = await extractor.extract(config)
+        return result

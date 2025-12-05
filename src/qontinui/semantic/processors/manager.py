@@ -1,6 +1,5 @@
 """ProcessorManager - Orchestrates multiple semantic processors."""
 
-from __future__ import annotations
 
 import concurrent.futures
 from enum import Enum

@@ -91,7 +91,21 @@ class TechStackRegistry:
         Returns:
             List of tech stack names
         """
-        return [e.tech_stack_name for e in self._extractors]
+        # tech_stack_name is a property, so we need to instantiate to access it
+        names: list[str] = []
+        for extractor_class in self._extractors:
+            try:
+                # Try to get as class attribute first (if subclass defines it as such)
+                attr = getattr(extractor_class, 'tech_stack_name', None)
+                if isinstance(attr, str):
+                    names.append(attr)
+                else:
+                    # It's a property, need to instantiate
+                    instance = extractor_class()
+                    names.append(instance.tech_stack_name)
+            except Exception:
+                names.append(extractor_class.__name__)
+        return names
 
     def get_all_extractors(self) -> list[type["TechStackExtractor"]]:
         """

@@ -3,6 +3,7 @@
 Represents a distinct configuration of the GUI in the model-based automation framework.
 """
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

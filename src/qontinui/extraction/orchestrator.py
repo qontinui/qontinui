@@ -13,6 +13,7 @@ import logging
 import time
 import uuid
 from pathlib import Path
+from typing import Any
 
 from .config import FrameworkType as ConfigFrameworkType
 from .models.base import (
@@ -449,11 +450,9 @@ class ExtractionOrchestrator:
 
         start_time = time.time()
         try:
-            # Create StaticConfig from project path
-            from .config import StaticConfig
-
-            static_config = StaticConfig(source_root=config.target.project_path)
-            analyzer_result = await analyzer.analyze(static_config)
+            # Pass the project path directly to analyzer.analyze()
+            # StaticAnalyzer.analyze() expects a Path, not a StaticConfig
+            analyzer_result = await analyzer.analyze(config.target.project_path)
 
             # Convert analyzer result to orchestrator's StaticAnalysisResult format
             # The analyzers return models.static.StaticAnalysisResult
@@ -554,7 +553,8 @@ class ExtractionOrchestrator:
             # Count page components vs widgets if available
             page_count = 0
             widget_count = 0
-            if hasattr(analyzer_result, "count_page_components"):
+            if (hasattr(analyzer_result, "count_page_components")
+                and hasattr(analyzer_result, "count_widget_components")):
                 page_count = analyzer_result.count_page_components()
                 widget_count = analyzer_result.count_widget_components()
                 logger.info(
@@ -820,7 +820,7 @@ class ExtractionOrchestrator:
         visibility_states = getattr(static, "visibility_states", [])
 
         # Group visibility states by parent component and controlling variable
-        state_groups = {}
+        state_groups: dict[tuple[Any, Any], list[Any]] = {}
         for vis_state in visibility_states:
             key = (vis_state.parent_component, vis_state.controlling_variable)
             if key not in state_groups:

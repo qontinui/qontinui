@@ -1,5 +1,6 @@
 """Base interfaces for semantic processors."""
 
+
 from __future__ import annotations
 
 import time

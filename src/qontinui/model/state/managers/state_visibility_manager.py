@@ -4,7 +4,6 @@ Manages which states can be hidden by this state and tracks currently
 hidden states, supporting the state hierarchy and occlusion model.
 """
 
-from __future__ import annotations
 
 from dataclasses import dataclass, field
 
