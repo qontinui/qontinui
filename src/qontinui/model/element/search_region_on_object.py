@@ -3,6 +3,7 @@
 Configuration for deriving search regions from another state object's match.
 """
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass

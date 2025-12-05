@@ -1,6 +1,5 @@
 """SceneQueryService - Handles all query operations on semantic scenes."""
 
-from __future__ import annotations
 
 import re
 

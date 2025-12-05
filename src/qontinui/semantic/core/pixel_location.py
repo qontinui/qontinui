@@ -1,5 +1,6 @@
 """PixelLocation - Represents complex shapes using pixel-level precision."""
 
+
 from __future__ import annotations
 
 import math

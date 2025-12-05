@@ -1,6 +1,5 @@
 """DSL parser for Qontinui automation scripts."""
 
-from __future__ import annotations
 
 import logging
 from dataclasses import dataclass

@@ -12,7 +12,6 @@ This integration test suite covers:
 6. State object completeness verification
 """
 
-from __future__ import annotations
 
 from unittest.mock import patch
 

@@ -4,7 +4,6 @@ Handles the collection and management of visual and interactive elements
 that define and identify a state.
 """
 
-from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING

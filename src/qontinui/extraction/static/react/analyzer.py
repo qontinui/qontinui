@@ -5,6 +5,8 @@ Main analyzer class for extracting UI structure and state from React codebases.
 Supports: React, Next.js, Remix, Tauri (React), Electron (React)
 """
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 
@@ -26,7 +28,7 @@ from qontinui.extraction.static.models import (
     TransitionHint,
     VisibilityState,
 )
-from qontinui.extraction.static.typescript import TypeScriptParser
+from qontinui.extraction.static.typescript import FileParseResult, TypeScriptParser
 
 from . import components as comp_module
 from . import handlers as handler_module

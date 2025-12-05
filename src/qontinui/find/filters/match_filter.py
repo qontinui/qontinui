@@ -4,7 +4,6 @@ Provides abstract base class for implementing match filtering strategies.
 Each filter should have a single, focused responsibility.
 """
 
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
 

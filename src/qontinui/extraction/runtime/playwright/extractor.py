@@ -81,11 +81,14 @@ class PlaywrightExtractor(RuntimeExtractor):
 
             # Set cookies if provided
             if target.auth_cookies:
+                from playwright._impl._api_structures import SetCookieParam
+                from typing import cast
+
                 cookies = [
                     {"name": name, "value": value, "url": target.url}
                     for name, value in target.auth_cookies.items()
                 ]
-                await self.context.add_cookies(cookies)
+                await self.context.add_cookies(cast(list[SetCookieParam], cookies))
 
             # Create page
             self.page = await self.context.new_page()

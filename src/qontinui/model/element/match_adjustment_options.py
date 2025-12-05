@@ -3,6 +3,7 @@
 Configuration for adjusting the position and dimensions of found matches.
 """
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass

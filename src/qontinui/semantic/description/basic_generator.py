@@ -1,6 +1,5 @@
 """Basic description generator using visual features."""
 
-from __future__ import annotations
 
 from typing import Any
 

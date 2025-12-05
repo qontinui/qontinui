@@ -196,7 +196,7 @@ class ExtractionConfig:
 
     # Sub-configurations
     runtime: RuntimeConfig = field(default_factory=RuntimeConfig)
-    static: StaticConfig = field(default_factory=StaticConfig)
+    static: StaticConfig = field(default_factory=lambda: StaticConfig(source_root=Path(".")))
     output: OutputConfig = field(default_factory=OutputConfig)
 
     # Metadata

@@ -5,7 +5,6 @@ to execute complete find operations. Uses dependency injection for
 testability and flexibility.
 """
 
-from __future__ import annotations
 
 from typing import Any
 

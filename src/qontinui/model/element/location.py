@@ -3,6 +3,7 @@
 Represents a point on the screen in the framework.
 """
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -6,6 +6,7 @@ This class has been refactored to delegate responsibilities to focused component
 - SceneAnalyzer: Analysis operations
 """
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

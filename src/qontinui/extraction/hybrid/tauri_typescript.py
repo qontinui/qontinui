@@ -588,7 +588,8 @@ class TauriTypeScriptExtractor(TechStackExtractor):
         """
         )
 
-        return selectors
+        selectors_result: list[dict[str, Any]] = selectors  # type: ignore[assignment]
+        return selectors_result
 
     async def _find_modal_triggers(self) -> list[dict[str, str]]:
         """Find elements that might open modals/dialogs."""
@@ -625,7 +626,8 @@ class TauriTypeScriptExtractor(TechStackExtractor):
         """
         )
 
-        return triggers
+        triggers_result: list[dict[str, str]] = triggers  # type: ignore[assignment]
+        return triggers_result
 
     async def _try_close_modal(self) -> None:
         """Try common patterns to close a modal."""

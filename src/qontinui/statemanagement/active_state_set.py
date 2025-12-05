@@ -3,6 +3,7 @@
 Lightweight enum-based state tracking for building state collections.
 """
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

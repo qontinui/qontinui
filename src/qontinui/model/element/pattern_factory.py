@@ -4,7 +4,6 @@ This module contains all factory methods for Pattern creation,
 separated from the Pattern class to follow the Single Responsibility Principle.
 """
 
-from __future__ import annotations
 
 import hashlib
 from datetime import datetime
