@@ -5,7 +5,6 @@ to execute complete find operations. Uses dependency injection for
 testability and flexibility.
 """
 
-
 from typing import Any
 
 from ..model.element import Pattern, Region

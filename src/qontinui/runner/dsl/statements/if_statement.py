@@ -3,7 +3,6 @@
 Represents an if statement in the DSL.
 """
 
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field

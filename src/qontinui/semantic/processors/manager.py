@@ -1,6 +1,5 @@
 """ProcessorManager - Orchestrates multiple semantic processors."""
 
-
 import concurrent.futures
 from enum import Enum
 from typing import Any

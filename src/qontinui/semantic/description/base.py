@@ -1,6 +1,5 @@
 """Base interface for description generators."""
 
-
 from abc import ABC, abstractmethod
 from typing import Any
 

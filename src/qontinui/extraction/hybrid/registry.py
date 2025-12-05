@@ -96,7 +96,7 @@ class TechStackRegistry:
         for extractor_class in self._extractors:
             try:
                 # Try to get as class attribute first (if subclass defines it as such)
-                attr = getattr(extractor_class, 'tech_stack_name', None)
+                attr = getattr(extractor_class, "tech_stack_name", None)
                 if isinstance(attr, str):
                     names.append(attr)
                 else:

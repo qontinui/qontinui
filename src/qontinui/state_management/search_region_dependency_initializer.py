@@ -3,7 +3,6 @@
 Initializes search region dependencies when states are loaded.
 """
 
-
 from __future__ import annotations
 
 import logging

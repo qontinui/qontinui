@@ -1,6 +1,5 @@
 """CLIP-based description generator."""
 
-
 from typing import Any, cast
 
 import numpy as np

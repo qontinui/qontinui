@@ -3,7 +3,6 @@
 Runtime tracker of currently active states.
 """
 
-
 import logging
 from dataclasses import dataclass, field
 from enum import IntEnum

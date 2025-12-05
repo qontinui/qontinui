@@ -4,7 +4,6 @@ Provides abstract base class for implementing match filtering strategies.
 Each filter should have a single, focused responsibility.
 """
 
-
 from abc import ABC, abstractmethod
 
 from ..match import Match

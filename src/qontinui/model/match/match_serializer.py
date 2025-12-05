@@ -3,7 +3,6 @@
 Provides methods for converting Match objects to other formats.
 """
 
-
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:

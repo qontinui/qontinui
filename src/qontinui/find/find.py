@@ -3,7 +3,6 @@
 Base class for all find operations with builder pattern.
 """
 
-
 from __future__ import annotations
 
 import time

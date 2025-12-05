@@ -13,7 +13,6 @@ The loader handles:
 - Error handling for missing images or malformed config
 """
 
-
 import logging
 from typing import Any
 

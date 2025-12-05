@@ -3,7 +3,6 @@
 Provides image manipulation and extraction utilities for Match objects.
 """
 
-
 from typing import TYPE_CHECKING, Any
 
 import numpy as np

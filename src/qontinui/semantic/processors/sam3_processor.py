@@ -1,6 +1,5 @@
 """SAM3 processor for semantic segmentation."""
 
-
 import time
 from typing import Any
 

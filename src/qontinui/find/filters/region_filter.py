@@ -4,7 +4,6 @@ Filters matches based on whether they fall within specified search regions.
 Supports multiple regions with containment checking based on match center point.
 """
 
-
 from ...model.element import Region
 from ...model.search_regions import SearchRegions
 from ..match import Match

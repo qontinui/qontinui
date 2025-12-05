@@ -4,7 +4,6 @@ This module provides factory methods to start building automation sequences
 using a fluent, chainable interface.
 """
 
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

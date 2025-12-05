@@ -7,7 +7,6 @@ Thread Safety:
     All mutable state is protected by RLock.
 """
 
-
 from __future__ import annotations
 
 import threading
