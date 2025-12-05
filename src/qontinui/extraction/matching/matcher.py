@@ -36,6 +36,76 @@ class DefaultStateMatcher:
         self.component_matcher = ComponentMatcher()
         self.state_matcher = StateVariableMatcher()
 
+    def supports_framework(self, framework) -> bool:
+        """Check if this matcher supports the given framework.
+
+        The DefaultStateMatcher is framework-agnostic and supports all frameworks.
+
+        Args:
+            framework: The framework type to check.
+
+        Returns:
+            True (this matcher supports all frameworks).
+        """
+        return True
+
+    async def match(
+        self,
+        static: StaticAnalysisResult,
+        runtime,
+        threshold: float = 0.8,
+    ) -> list[CorrelatedState]:
+        """Match static analysis results with runtime observations (orchestrator API).
+
+        This is the main entry point called by the orchestrator. It converts
+        RuntimeExtractionResult to RuntimeExtractionSession and calls correlate().
+
+        Args:
+            static: Results from static code analysis.
+            runtime: RuntimeExtractionResult from runtime extraction.
+            threshold: Minimum correlation score (not used in current implementation).
+
+        Returns:
+            List of correlated states with evidence and confidence scores.
+        """
+        # Convert RuntimeExtractionResult to RuntimeExtractionSession
+        # RuntimeExtractionResult has: elements, states, transitions, screenshots
+        # RuntimeExtractionSession needs: session_id, target, storage_dir, captures
+        # Create a RuntimeStateCapture from the runtime result
+        from datetime import datetime
+        from pathlib import Path
+
+        from ..runtime.types import RuntimeExtractionSession, RuntimeStateCapture
+
+        capture = RuntimeStateCapture(
+            capture_id="runtime_capture_0001",
+            timestamp=datetime.now(),
+            elements=runtime.elements if hasattr(runtime, "elements") else [],
+            states=runtime.states if hasattr(runtime, "states") else [],
+            screenshot_path=(
+                Path(runtime.screenshots[0])
+                if hasattr(runtime, "screenshots") and runtime.screenshots
+                else None
+            ),
+            url="",
+            title="",
+            viewport=(1920, 1080),
+            scroll_position=(0, 0),
+        )
+
+        # Create a mock session with the capture
+        from ..models.base import ExtractionTarget
+
+        session = RuntimeExtractionSession(
+            session_id="correlation_session",
+            target=ExtractionTarget(),
+            storage_dir=Path.cwd() / ".qontinui" / "correlation",
+            captures=[capture],
+        )
+
+        # Call the existing correlate method
+        return self.correlate(static, session)
+
     def correlate(
         self, static: StaticAnalysisResult, runtime: "RuntimeExtractionSession"
     ) -> list[CorrelatedState]:

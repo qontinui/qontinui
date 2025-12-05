@@ -8,7 +8,7 @@ reusing the existing web extraction components.
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 
@@ -623,6 +623,76 @@ class PlaywrightExtractor(RuntimeExtractor):
         if self.session:
             self.session.captures.append(capture)
 
+    async def extract(self, target: "ExtractionTarget", config: Any = None) -> Any:
+        """
+        Extract state from the target application (orchestrator API).
+
+        This is the main entry point called by the orchestrator. It wraps
+        the lower-level extraction methods.
+
+        Args:
+            target: ExtractionTarget specifying what to extract from.
+            config: Optional ExtractionConfig with extraction settings.
+
+        Returns:
+            RuntimeExtractionResult containing all extracted states, elements, etc.
+
+        Raises:
+            RuntimeError: If extraction fails.
+        """
+        import uuid
+        from pathlib import Path
+
+        from ...models.base import RuntimeExtractionResult
+        from ..types import RuntimeExtractionSession
+
+        try:
+            # Create session
+            session_id = str(uuid.uuid4())
+            storage_dir = Path.cwd() / ".qontinui" / "extraction" / session_id
+            storage_dir.mkdir(parents=True, exist_ok=True)
+
+            self.session = RuntimeExtractionSession(
+                session_id=session_id,
+                target=target,
+                storage_dir=storage_dir,
+                captures=[],
+            )
+
+            # Connect to target
+            await self.connect(target)
+
+            # Extract current state
+            capture = await self.extract_current_state()
+
+            # Disconnect
+            await self.disconnect()
+
+            # Convert to RuntimeExtractionResult
+            result = RuntimeExtractionResult(
+                elements=capture.elements,
+                states=capture.states,
+                transitions=[],
+                screenshots=[str(capture.screenshot_path)] if capture.screenshot_path else [],
+                pages_visited=1,
+                extraction_duration_ms=0.0,
+                errors=[],
+            )
+
+            logger.info(
+                f"Extraction complete: {len(result.elements)} elements, "
+                f"{len(result.states)} states"
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Extraction failed: {e}", exc_info=True)
+            # Make sure we disconnect even on error
+            if self.is_connected:
+                await self.disconnect()
+            raise RuntimeError(f"Extraction failed: {e}") from e
+
     @classmethod
     def supports_target(cls, target: "ExtractionTarget") -> bool:
         """
@@ -636,8 +706,17 @@ class PlaywrightExtractor(RuntimeExtractor):
         """
         from ..types import RuntimeType
 
-        return (
-            target.runtime_type == RuntimeType.WEB
-            and target.url is not None
-            and target.url.startswith(("http://", "https://"))
-        )
+        # Check if target has runtime_type (from runtime/types.py ExtractionTarget)
+        if hasattr(target, "runtime_type"):
+            return (
+                target.runtime_type == RuntimeType.WEB
+                and target.url is not None
+                and target.url.startswith(("http://", "https://"))
+            )
+
+        # Also support ExtractionTarget from models/base.py which has url but no runtime_type
+        # If url is set and looks like a web URL, we can handle it
+        if hasattr(target, "url") and target.url is not None:
+            return target.url.startswith(("http://", "https://"))
+
+        return False

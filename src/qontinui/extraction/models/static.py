@@ -22,6 +22,13 @@ class ComponentType(Enum):
     WIDGET = "widget"  # Widget (Flutter)
 
 
+class ComponentCategory(Enum):
+    """Category of component in GUI state machine modeling."""
+
+    STATE = "state"  # Page-level component (navigable screen/view)
+    WIDGET = "widget"  # UI element within a state (button, input, card, etc.)
+
+
 class StateSourceType(Enum):
     """Source/mechanism for state management."""
 
@@ -95,6 +102,9 @@ class ComponentDefinition:
 
     # Routing
     route_path: str | None = None  # If this is a route component
+
+    # Classification for GUI state machine modeling
+    category: ComponentCategory = ComponentCategory.WIDGET  # Default to widget
 
     # Metadata
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -241,15 +251,199 @@ class APICallDefinition:
 
 
 @dataclass
-class StaticAnalysisResult:
-    """Complete result of static code analysis."""
+class VisibilityState:
+    """A visibility-based sub-state within a component/page.
 
+    Represents different UI configurations of the same page based on
+    conditional rendering and visibility toggles (e.g., modals, sidebars, dropdowns).
+    """
+
+    id: str
+    name: str  # e.g., "page_sidebar_open", "page_modal_visible"
+    parent_component: str  # Component ID this sub-state belongs to
+    parent_route: str | None = None  # Route path if applicable
+
+    # Controlling state variable
+    controlling_variable: str | None = None  # StateVariable ID
+    variable_value: Any = None  # Expected value (True/False for booleans)
+
+    # What gets rendered in this state
+    rendered_components: list[str] = field(default_factory=list)  # Component/element names
+    hidden_components: list[str] = field(default_factory=list)  # Components hidden in this state
+
+    # Transitions to/from this state
+    toggle_handlers: list[str] = field(
+        default_factory=list
+    )  # EventHandler IDs that toggle this state
+
+    # Conditional render that defines this state
+    conditional_render_id: str | None = None
+
+    # Metadata
+    file_path: Path | None = None
+    line_number: int = 0
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class StateImageHint:
+    """A hint for a potential StateImage from static analysis.
+
+    StateImages are visual patterns that identify states. Static analysis can identify
+    potential UI elements that may become StateImages during runtime extraction.
+
+    In qontinui, a StateImage is a visual pattern with:
+    - Multiple patterns (variations like normal/hover/clicked)
+    - Search regions (where to look for this pattern on screen)
+    - Pixel data (coordinates, hashes, stability scores)
+
+    Static analysis CANNOT produce actual StateImages (which require screenshots).
+    Instead, it produces hints about UI elements that may become StateImages.
+    """
+
+    id: str
+    name: str  # e.g., "LoginButton", "SubmitForm"
+
+    # Source information
+    component_id: str  # The component this element belongs to
+    file_path: Path
+    line_number: int
+
+    # Element type hint
+    element_type: str  # "button", "input", "icon", "image", "text", etc.
+    jsx_element_name: str  # The JSX element name (e.g., "Button", "Icon", "img")
+
+    # Interaction hints
+    is_interactive: bool = False  # Has onClick, onChange, etc.
+    interaction_type: str | None = None  # "click", "input", "hover", etc.
+
+    # Visibility hints
+    conditionally_rendered: bool = False  # Is this conditionally rendered?
+    controlling_variable: str | None = None  # StateVariable ID if conditional
+
+    # Text content hints (for OCR/text-based StateImages)
+    text_content: str | None = None  # Static text content if available
+    has_dynamic_text: bool = False  # Contains variables/expressions
+
+    # Layout hints (relative, not absolute - actual positions require runtime)
+    parent_element: str | None = None  # Parent element hint
+    css_selector_hint: str | None = None  # CSS selector if determinable
+
+    # Metadata
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class StateHint:
+    """A hint for a potential State from static analysis.
+
+    In qontinui, a State is a visual screen configuration identified by StateImages.
+    States are NOT routes or components - they are specific visual configurations.
+
+    Static analysis identifies:
+    - Routes/pages (each route is potentially a different state)
+    - Conditional renders (modal open vs closed = different states)
+    - Loading states, error boundaries, etc.
+
+    StateHints guide runtime extraction to discover actual states with StateImages.
+    """
+
+    id: str
+    name: str  # Descriptive name like "LoginPage", "Dashboard_ModalOpen"
+
+    # Source
+    source_type: str  # "route", "conditional_render", "loading_state", "error_boundary"
+    file_path: Path | None = None
+    line_number: int = 0
+
+    # Route info (if source_type == "route")
+    route_path: str | None = None
+    route_params: list[str] = field(default_factory=list)
+
+    # Parent relationship (for sub-states)
+    parent_state_hint_id: str | None = None  # e.g., modal state's parent is the page state
+
+    # Conditional info (if source_type == "conditional_render")
+    controlling_variable: str | None = None
+    condition_value: Any = None  # Expected value for this state variant
+
+    # UI element hints that may become StateImages
+    state_image_hints: list[str] = field(default_factory=list)  # StateImageHint IDs
+
+    # Transition hints
+    outgoing_transition_hints: list[str] = field(
+        default_factory=list
+    )  # Element IDs that trigger transitions
+    incoming_from: list[str] = field(default_factory=list)  # StateHint IDs that can navigate here
+
+    # Navigation hint
+    navigation_target: str | None = None  # For states reachable via navigation
+
+    # Metadata
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class TransitionHint:
+    """A hint for a potential transition from static analysis.
+
+    Transitions connect states and are triggered by user actions.
+    Static analysis identifies potential transitions from:
+    - Link/navigation elements
+    - Event handlers that change state
+    - Form submissions
+    """
+
+    # Required fields first
+    id: str
+    trigger_type: str  # "click", "submit", "navigation", "state_change"
+
+    # Optional fields with defaults
+    from_state_hint: str | None = None  # StateHint ID
+    to_state_hint: str | None = None  # StateHint ID
+    trigger_element_hint: str | None = None  # StateImageHint ID
+
+    # Handler info
+    event_handler_id: str | None = None  # EventHandler ID
+    navigation_path: str | None = None  # For Link-based navigation
+
+    # Source
+    file_path: Path | None = None
+    line_number: int = 0
+
+    # Confidence (how certain is this transition from static analysis)
+    confidence: float = 0.5
+
+    # Metadata
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class StaticAnalysisResult:
+    """Complete result of static code analysis.
+
+    NOTE: Static analysis produces HINTS, not final states/StateImages.
+    Actual State and StateImage objects require runtime extraction with screenshots.
+
+    The hints guide runtime extraction to:
+    1. Navigate to potential states (via route hints)
+    2. Trigger state variations (via conditional render hints)
+    3. Identify UI elements as StateImages (via component/element hints)
+    """
+
+    # Raw extracted data
     components: list[ComponentDefinition] = field(default_factory=list)
     state_variables: list[StateVariable] = field(default_factory=list)
     conditional_renders: list[ConditionalRender] = field(default_factory=list)
     routes: list[RouteDefinition] = field(default_factory=list)
     event_handlers: list[EventHandler] = field(default_factory=list)
     api_calls: list[APICallDefinition] = field(default_factory=list)
+    visibility_states: list[VisibilityState] = field(default_factory=list)
+
+    # Hints for runtime extraction (the main output for state discovery)
+    state_hints: list[StateHint] = field(default_factory=list)
+    state_image_hints: list[StateImageHint] = field(default_factory=list)
+    transition_hints: list[TransitionHint] = field(default_factory=list)
 
     # Lookups
     def get_component(self, component_id: str) -> ComponentDefinition | None:
@@ -286,3 +480,20 @@ class StaticAnalysisResult:
             if call.id == call_id:
                 return call
         return None
+
+    # Component classification helpers
+    def get_page_components(self) -> list[ComponentDefinition]:
+        """Get all page-level components (states in GUI state machine)."""
+        return [c for c in self.components if c.category == ComponentCategory.STATE]
+
+    def get_widget_components(self) -> list[ComponentDefinition]:
+        """Get all UI widget components (UI elements within states)."""
+        return [c for c in self.components if c.category == ComponentCategory.WIDGET]
+
+    def count_page_components(self) -> int:
+        """Count page-level components (states)."""
+        return sum(1 for c in self.components if c.category == ComponentCategory.STATE)
+
+    def count_widget_components(self) -> int:
+        """Count UI widget components."""
+        return sum(1 for c in self.components if c.category == ComponentCategory.WIDGET)

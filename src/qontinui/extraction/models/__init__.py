@@ -55,6 +55,7 @@ from .runtime import (
 from .static import (
     APICallDefinition,
     APICallType,
+    ComponentCategory,
     ComponentDefinition,
     ComponentType,
     ConditionalPattern,
@@ -87,6 +88,7 @@ __all__ = [
     # Static
     "APICallDefinition",
     "APICallType",
+    "ComponentCategory",
     "ComponentDefinition",
     "ComponentType",
     "ConditionalPattern",

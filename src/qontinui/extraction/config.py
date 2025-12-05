@@ -17,6 +17,7 @@ class ExtractionMode(Enum):
     BLACK_BOX = "black_box"  # Runtime-only extraction
     WHITE_BOX = "white_box"  # Static + runtime correlation
     STATIC_ONLY = "static_only"  # Static analysis only
+    HYBRID = "hybrid"  # Hybrid extraction with tech stack-specific extractors
 
 
 class FrameworkType(Enum):

@@ -64,6 +64,10 @@ class ExtractionMode(Enum):
     # Both static and runtime - correlate and verify
     WHITE_BOX = "white_box"
 
+    # Hybrid extraction - combined static analysis + runtime with precise bounding boxes
+    # Uses tech stack-specific extractors (e.g., TauriTypeScriptExtractor)
+    HYBRID = "hybrid"
+
 
 class OutputFormat(Enum):
     """Format for extraction output."""

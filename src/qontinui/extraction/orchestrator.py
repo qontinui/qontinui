@@ -14,7 +14,7 @@ import time
 import uuid
 from pathlib import Path
 
-from ..config.models.base_types import FrameworkType as ConfigFrameworkType
+from .config import FrameworkType as ConfigFrameworkType
 from .models.base import (
     ConfigError,
     CorrelatedState,
@@ -115,6 +115,20 @@ class ExtractionOrchestrator:
             framework = await self._detect_framework(config.target)
             result.framework = framework
             logger.info(f"Detected framework: {framework.value}")
+
+            # Phase 0: HYBRID mode uses tech stack-specific extractors
+            if config.mode == ExtractionMode.HYBRID:
+                logger.info("Using hybrid extraction mode...")
+                await self._run_hybrid_extraction(config, result)
+                # Mark completion
+                import datetime
+
+                result.completed_at = datetime.datetime.now()
+                logger.info(
+                    f"Hybrid extraction complete. States: {len(result.states)}, "
+                    f"Transitions: {len(result.transitions)}"
+                )
+                return result
 
             # Phase 1: Static Analysis (STATIC_ONLY or WHITE_BOX)
             if config.mode in (ExtractionMode.STATIC_ONLY, ExtractionMode.WHITE_BOX):
@@ -435,12 +449,125 @@ class ExtractionOrchestrator:
 
         start_time = time.time()
         try:
-            result = await analyzer.analyze(config.target.project_path)
+            # Create StaticConfig from project path
+            from .config import StaticConfig
+
+            static_config = StaticConfig(source_root=config.target.project_path)
+            analyzer_result = await analyzer.analyze(static_config)
+
+            # Convert analyzer result to orchestrator's StaticAnalysisResult format
+            # The analyzers return models.static.StaticAnalysisResult
+            # The orchestrator expects models.base.StaticAnalysisResult
+            result = StaticAnalysisResult(framework=framework)
+
+            # Convert components
+            components = getattr(analyzer_result, "components", [])
+            result.components = [
+                (
+                    {
+                        "id": c.id,
+                        "name": c.name,
+                        "file_path": str(c.file_path),
+                        "line": c.line_number,
+                    }
+                    if hasattr(c, "id")
+                    else c
+                )
+                for c in components
+            ]
+
+            # Convert routes
+            routes = getattr(analyzer_result, "routes", [])
+            result.routes = [
+                {"id": r.id, "path": r.path, "component": r.component} if hasattr(r, "id") else r
+                for r in routes
+            ]
+
+            # Convert state variables to state definitions
+            state_vars = getattr(analyzer_result, "state_variables", [])
+            result.state_definitions = [
+                {"id": s.id, "name": s.name, "type": s.var_type} if hasattr(s, "id") else s
+                for s in state_vars
+            ]
+
+            # Convert event handlers
+            handlers = getattr(analyzer_result, "event_handlers", [])
+            result.event_handlers = [
+                (
+                    {"id": h.id, "event": h.event_type, "handler": h.handler_name}
+                    if hasattr(h, "id")
+                    else h
+                )
+                for h in handlers
+            ]
+
+            # Convert navigation links to navigation flows
+            # Navigation links come from Link elements in JSX
+            if hasattr(analyzer, "get_navigation_links"):
+                nav_links = analyzer.get_navigation_links()
+                # Build route path to state mapping for resolving from/to
+                route_map = {}
+                for r in routes:
+                    path = r.path if hasattr(r, "path") else r.get("path", "")
+                    state_id = f"state_{path.replace('/', '_').strip('_')}" if path else ""
+                    route_map[path] = state_id
+                    # Also store normalized versions
+                    normalized = path.rstrip("/") or "/"
+                    route_map[normalized] = state_id
+
+                for link in nav_links:
+                    target = link.get("target", "")
+                    source_file = link.get("file", "")
+                    # Try to find source state from the file path
+                    from_state = ""
+                    for r in routes:
+                        route_file = str(r.file_path) if hasattr(r, "file_path") else ""
+                        if route_file and source_file and route_file in source_file:
+                            from_path = r.path if hasattr(r, "path") else r.get("path", "")
+                            from_state = route_map.get(from_path, "")
+                            break
+
+                    # Find target state from the href target
+                    to_state = route_map.get(target, "")
+                    # Try normalized version
+                    if not to_state:
+                        normalized_target = target.rstrip("/") or "/"
+                        to_state = route_map.get(normalized_target, "")
+
+                    if to_state:  # Only add if we can resolve the target
+                        result.navigation_flows.append(
+                            {
+                                "from": from_state,
+                                "to": to_state,
+                                "target": target,
+                                "type": link.get("type", "link"),
+                                "source_file": source_file,
+                                "line": link.get("line", 0),
+                            }
+                        )
+
+            # Track file count
+            result.analyzed_files = len(components) if components else 0
+
             result.analysis_duration_ms = (time.time() - start_time) * 1000
-            logger.info(
-                f"Static analysis complete: {result.analyzed_files} files, "
-                f"{len(result.components)} components, {len(result.routes)} routes"
-            )
+
+            # Count page components vs widgets if available
+            page_count = 0
+            widget_count = 0
+            if hasattr(analyzer_result, "count_page_components"):
+                page_count = analyzer_result.count_page_components()
+                widget_count = analyzer_result.count_widget_components()
+                logger.info(
+                    f"Static analysis complete: {result.analyzed_files} files, "
+                    f"{len(result.components)} components ({page_count} page-level states, {widget_count} UI widgets), "
+                    f"{len(result.routes)} routes, {len(result.navigation_flows)} navigation links"
+                )
+            else:
+                logger.info(
+                    f"Static analysis complete: {result.analyzed_files} files, "
+                    f"{len(result.components)} components, {len(result.routes)} routes, "
+                    f"{len(result.navigation_flows)} navigation links"
+                )
             return result
         except Exception as e:
             logger.error(f"Static analysis failed: {e}", exc_info=True)
@@ -560,49 +687,96 @@ class ExtractionOrchestrator:
         """
         Convert static analysis to preliminary states.
 
+        States represent navigable screens/views (routes/pages), NOT individual
+        components. Only page-level components (category=STATE) are converted to states.
+        Widget components (category=WIDGET) are UI elements within states.
+
+        This method now also includes visibility-based sub-states (e.g., modal open/closed,
+        sidebar expanded/collapsed) as distinct states in the state machine.
+
         Args:
             static: Static analysis results
 
         Returns:
-            List of preliminary states
+            List of preliminary states (one per route or page-level component, plus visibility sub-states)
         """
         states: list[CorrelatedState] = []
 
-        # Create states from components
-        for i, component in enumerate(static.components):
+        # Build a map of components by name for lookup
+        component_map = {c.get("name"): c for c in static.components if c.get("name")}
+
+        # Create states from routes - routes ARE states (navigable screens)
+        for i, route in enumerate(static.routes):
+            route_path = route.get("path", f"/route_{i}")
+            route_component = route.get("component")
+
+            # Get component details if available
+            component_info = component_map.get(route_component, {}) if route_component else {}
+
             state = CorrelatedState(
                 id=f"state_{i:04d}",
-                name=component.get("name", f"Component {i}"),
-                confidence=0.7,  # Lower confidence for static-only
-                component_name=component.get("name"),
-                source_file=component.get("file"),
-                line_number=component.get("line"),
-                state_variables=component.get("state_vars", []),
+                name=route_path,  # Use route path as state name
+                confidence=0.8,
+                route_path=route_path,
+                component_name=route_component,
+                source_file=component_info.get("file_path") or route.get("file"),
+                line_number=component_info.get("line"),
+                state_variables=component_info.get("state_vars", []),
                 correlation_method="static_only",
-                metadata=component,
+                metadata={
+                    "route": route,
+                    "component": component_info if component_info else None,
+                },
             )
             states.append(state)
 
-        # Create states from routes
-        for i, route in enumerate(static.routes):
+        # Add visibility-based sub-states as distinct states
+        # These represent different UI configurations of the same page
+        visibility_states = getattr(static, "visibility_states", [])
+        for i, vis_state in enumerate(visibility_states):
+            # Create a CorrelatedState from VisibilityState
             state = CorrelatedState(
-                id=f"route_state_{i:04d}",
-                name=route.get("path", f"Route {i}"),
-                confidence=0.8,  # Higher confidence for routes
-                route_path=route.get("path"),
-                component_name=route.get("component"),
-                source_file=route.get("file"),
-                correlation_method="static_only",
-                metadata=route,
+                id=f"vis_state_{i:04d}",
+                name=vis_state.name,
+                confidence=0.7,  # Slightly lower confidence for inferred sub-states
+                route_path=vis_state.parent_route,
+                component_name=vis_state.parent_component,
+                source_file=str(vis_state.file_path) if vis_state.file_path else None,
+                line_number=vis_state.line_number,
+                state_variables=(
+                    [vis_state.controlling_variable] if vis_state.controlling_variable else []
+                ),
+                correlation_method="visibility_state",
+                metadata={
+                    "visibility_state": True,
+                    "parent_component": vis_state.parent_component,
+                    "controlling_variable": vis_state.controlling_variable,
+                    "variable_value": vis_state.variable_value,
+                    "rendered_components": vis_state.rendered_components,
+                    "hidden_components": vis_state.hidden_components,
+                    "toggle_handlers": vis_state.toggle_handlers,
+                    "conditional_render_id": vis_state.conditional_render_id,
+                },
             )
             states.append(state)
 
-        logger.info(f"Created {len(states)} preliminary states from static analysis")
+        # Note: Widget components (category=WIDGET) are NOT converted to states.
+        # They are UI elements within states. Only page-level components (category=STATE)
+        # that don't have routes should be considered as additional states.
+
+        logger.info(
+            f"Created {len(states)} states: {len(static.routes)} route-based states + "
+            f"{len(visibility_states)} visibility sub-states"
+        )
         return states
 
     def _transitions_from_static(self, static: StaticAnalysisResult) -> list[InferredTransition]:
         """
         Extract transitions from static analysis.
+
+        This now includes:
+        1. Navigation transitions (between routes)
+        2. Visibility state transitions (e.g., opening/closing modals, toggling sidebars)
 
         Args:
             static: Static analysis results
@@ -641,8 +815,171 @@ class ExtractionOrchestrator:
                 )
                 transitions.append(transition)
 
-        logger.info(f"Created {len(transitions)} transitions from static analysis")
+        # Create transitions between visibility states
+        # Each visibility state pair (e.g., modal_closed <-> modal_open) has bidirectional transitions
+        visibility_states = getattr(static, "visibility_states", [])
+
+        # Group visibility states by parent component and controlling variable
+        state_groups = {}
+        for vis_state in visibility_states:
+            key = (vis_state.parent_component, vis_state.controlling_variable)
+            if key not in state_groups:
+                state_groups[key] = []
+            state_groups[key].append(vis_state)
+
+        # Create transitions between states in each group
+        trans_idx = 0
+        for (parent_comp, control_var), states_in_group in state_groups.items():
+            if len(states_in_group) < 2:
+                continue  # Need at least 2 states to have a transition
+
+            # For each state, create transitions to other states via toggle handlers
+            for state in states_in_group:
+                for other_state in states_in_group:
+                    if state.id == other_state.id:
+                        continue
+
+                    # Create transition for each toggle handler
+                    for handler_id in state.toggle_handlers:
+                        transition = InferredTransition(
+                            id=f"vis_trans_{trans_idx:04d}",
+                            from_state_id=f"vis_state_{visibility_states.index(state):04d}",
+                            to_state_id=f"vis_state_{visibility_states.index(other_state):04d}",
+                            trigger_type="toggle",
+                            event_handler=handler_id,
+                            source_location=(
+                                f"{state.file_path}:{state.line_number}" if state.file_path else ""
+                            ),
+                            confidence=0.75,
+                            metadata={
+                                "transition_type": "visibility_toggle",
+                                "controlling_variable": control_var,
+                                "from_value": state.variable_value,
+                                "to_value": other_state.variable_value,
+                            },
+                        )
+                        transitions.append(transition)
+                        trans_idx += 1
+
+        nav_count = sum(
+            1 for t in transitions if t.metadata.get("transition_type") != "visibility_toggle"
+        )
+        vis_count = sum(
+            1 for t in transitions if t.metadata.get("transition_type") == "visibility_toggle"
+        )
+
+        logger.info(
+            f"Created {len(transitions)} transitions: {nav_count} navigation transitions + "
+            f"{vis_count} visibility state transitions"
+        )
         return transitions
+
+    async def _run_hybrid_extraction(
+        self, config: ExtractionConfig, result: ExtractionResult
+    ) -> None:
+        """
+        Run hybrid extraction using tech stack-specific extractors.
+
+        Hybrid extraction combines static code analysis with runtime screenshot
+        capture to produce States, StateImages with precise bounding boxes, and
+        Transitions.
+
+        Args:
+            config: Extraction configuration
+            result: Extraction result to update
+        """
+        if not config.target.project_path:
+            raise RuntimeError("HYBRID mode requires project_path")
+
+        try:
+            from .hybrid import HybridExtractionConfig, HybridExtractor
+
+            # Create hybrid extraction config
+            hybrid_config = HybridExtractionConfig(
+                project_path=config.target.project_path,
+                viewport=(1920, 1080),
+                headless=True,
+                timeout_seconds=config.timeout_seconds,
+            )
+
+            # Run hybrid extraction
+            hybrid_extractor = HybridExtractor()
+            hybrid_result = await hybrid_extractor.extract(
+                config.target.project_path, hybrid_config
+            )
+
+            # Convert hybrid States to CorrelatedState
+            for state in hybrid_result.states:
+                correlated = CorrelatedState(
+                    id=state.id,
+                    name=state.name,
+                    confidence=state.confidence,
+                    route_path=state.route_path,
+                    component_name=state.component_name,
+                    source_file=str(state.source_file) if state.source_file else None,
+                    line_number=state.source_line,
+                    state_variables=(
+                        [state.controlling_variable] if state.controlling_variable else []
+                    ),
+                    correlation_method="hybrid",
+                    metadata={
+                        "state_type": state.state_type.value,
+                        "url": state.url,
+                        "viewport": state.viewport,
+                        "screenshot_path": (
+                            str(state.screenshot_path) if state.screenshot_path else None
+                        ),
+                        "state_images": [img.id for img in state.state_images],
+                    },
+                )
+                result.states.append(correlated)
+
+            # Convert hybrid Transitions to InferredTransition
+            for trans in hybrid_result.transitions:
+                inferred = InferredTransition(
+                    id=trans.id,
+                    from_state_id=trans.from_state_id,
+                    to_state_id=trans.to_state_id,
+                    trigger_type=trans.trigger.value,
+                    event_handler=trans.event_handler_name,
+                    source_location=(
+                        f"{trans.source_file}:{trans.source_line}" if trans.source_file else None
+                    ),
+                    confidence=trans.confidence,
+                    metadata={
+                        "trigger_image_id": trans.trigger_image_id,
+                        "trigger_selector": trans.trigger_selector,
+                        "navigation_path": trans.navigation_path,
+                    },
+                )
+                result.transitions.append(inferred)
+
+            # Store hybrid result in metadata for access to StateImages
+            result.metadata = result.metadata or {}
+            result.metadata["hybrid_result"] = hybrid_result.to_dict()
+            result.metadata["tech_stack"] = hybrid_result.tech_stack
+            result.metadata["screenshots_dir"] = (
+                str(hybrid_result.screenshots_dir) if hybrid_result.screenshots_dir else None
+            )
+
+            # Copy errors and warnings
+            result.errors.extend(hybrid_result.errors)
+            result.warnings.extend(hybrid_result.warnings)
+
+            logger.info(
+                f"Hybrid extraction complete: {len(result.states)} states, "
+                f"{len(result.transitions)} transitions, "
+                f"{len(hybrid_result.state_images)} state images"
+            )
+
+        except ImportError as e:
+            error = f"Hybrid extraction not available: {e}"
+            logger.error(error)
+            result.errors.append(error)
+        except Exception as e:
+            error = f"Hybrid extraction failed: {e}"
+            logger.error(error, exc_info=True)
+            result.errors.append(error)
 
     def _register_defaults(self) -> None:
         """

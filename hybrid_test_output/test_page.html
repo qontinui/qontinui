@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; margin-bottom: 20px; }
+        .button-group { margin: 20px 0; }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        button.secondary { background: #6c757d; }
+        button.secondary:hover { background: #545b62; }
+        input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        input:focus { border-color: #007bff; outline: none; }
+        .nav { margin-bottom: 20px; }
+        .nav a { color: #007bff; margin-right: 15px; text-decoration: none; }
+        .nav a:hover { text-decoration: underline; }
+        .card { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="#home">Home</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+        </div>
+        <h1>Test Application</h1>
+        <div class="button-group">
+            <button id="primaryBtn">Primary Action</button>
+            <button class="secondary" id="secondaryBtn">Secondary Action</button>
+            <button id="submitBtn">Submit</button>
+        </div>
+        <div>
+            <input type="text" placeholder="Enter your name" id="nameInput" />
+            <input type="email" placeholder="Enter your email" id="emailInput" />
+        </div>
+        <div class="card">
+            <h3>Information Card</h3>
+            <p>This is a sample card with some content.</p>
+            <button id="cardBtn">Learn More</button>
+        </div>
+    </div>
+</body>
+</html>

@@ -9,7 +9,7 @@ This module provides functions to extract React components:
 
 from pathlib import Path
 
-from qontinui.extraction.models import ComponentDefinition, ComponentType
+from qontinui.extraction.models import ComponentCategory, ComponentDefinition, ComponentType
 
 
 def extract_function_components(parse_result: dict, file_path: Path) -> list[ComponentDefinition]:
@@ -31,7 +31,40 @@ def extract_function_components(parse_result: dict, file_path: Path) -> list[Com
     """
     components: list[ComponentDefinition] = []
 
-    # Extract from function declarations
+    # First try to use the pre-parsed components from the TypeScript parser
+    # This is the preferred method as it has more accurate component detection
+    parsed_components = parse_result.get("components", [])
+    for comp in parsed_components:
+        comp_type = comp.get("type", "")
+        if comp_type in ("function", "arrow_function"):
+            comp_name = comp.get("name", "")
+            if comp_name:
+                # Extract props from the component data
+                props = [p.get("name", "") for p in comp.get("props", [])]
+
+                components.append(
+                    ComponentDefinition(
+                        id=f"{file_path}:{comp_name}",
+                        name=comp_name,
+                        file_path=file_path,
+                        line_number=comp.get("line", 0),
+                        component_type=ComponentType.FUNCTION,
+                        framework="react",
+                        props={prop: "any" for prop in props if prop},
+                        state_variables_used=[],
+                        child_components=comp.get("children", []),
+                        metadata={
+                            "type": f"{comp_type}_component",
+                            "returns_jsx": comp.get("returns_jsx", True),
+                        },
+                    )
+                )
+
+    # If we found components from the parser, return them
+    if components:
+        return components
+
+    # Fallback: Extract from function declarations (legacy AST-based approach)
     function_declarations = parse_result.get("function_declarations", [])
 
     for func in function_declarations:
@@ -121,6 +154,37 @@ def extract_class_components(parse_result: dict, file_path: Path) -> list[Compon
     """
     components: list[ComponentDefinition] = []
 
+    # First try to use the pre-parsed components from the TypeScript parser
+    parsed_components = parse_result.get("components", [])
+    for comp in parsed_components:
+        if comp.get("type") == "class":
+            comp_name = comp.get("name", "")
+            if comp_name:
+                props = [p.get("name", "") for p in comp.get("props", [])]
+
+                components.append(
+                    ComponentDefinition(
+                        id=f"{file_path}:{comp_name}",
+                        name=comp_name,
+                        file_path=file_path,
+                        line_number=comp.get("line", 0),
+                        component_type=ComponentType.CLASS,
+                        framework="react",
+                        props={prop: "any" for prop in props if prop},
+                        state_variables_used=[],
+                        child_components=comp.get("children", []),
+                        metadata={
+                            "type": "class_component",
+                            "extends": comp.get("extends"),
+                        },
+                    )
+                )
+
+    # If we found components from the parser, return them
+    if components:
+        return components
+
+    # Fallback: Extract from class declarations (legacy AST-based approach)
     class_declarations = parse_result.get("class_declarations", [])
 
     for cls in class_declarations:
@@ -494,3 +558,98 @@ def _get_jsx_name(name_node: dict) -> str:
         return f"{obj}.{prop}" if obj and prop else ""
     else:
         return ""
+
+
+def classify_component(component: ComponentDefinition) -> ComponentCategory:
+    """
+    Classify a component as either a STATE (page-level) or WIDGET (UI element).
+
+    Classification heuristics:
+    1. Page-level components (STATE):
+       - Located in app/*/page.tsx or pages/*.tsx (Next.js routes)
+       - Have names like *Page, *Screen, *View
+       - Are default exports from route files
+       - Have an associated route_path
+
+    2. UI components (WIDGET):
+       - Located in components/ directories
+       - Have names like Button, Card, Input, Nav*, *Icon, *Link
+       - Are reusable UI elements
+       - Don't have associated routes
+
+    Args:
+        component: ComponentDefinition to classify
+
+    Returns:
+        ComponentCategory.STATE or ComponentCategory.WIDGET
+    """
+    file_path_str = str(component.file_path)
+    name = component.name
+
+    # 1. Check if component has an associated route - strong indicator of STATE
+    if component.route_path is not None:
+        return ComponentCategory.STATE
+
+    # 2. Check file path for Next.js route patterns
+    # Next.js App Router: app/*/page.tsx
+    if "/app/" in file_path_str and (
+        file_path_str.endswith("/page.tsx")
+        or file_path_str.endswith("/page.ts")
+        or file_path_str.endswith("/page.jsx")
+        or file_path_str.endswith("/page.js")
+    ):
+        return ComponentCategory.STATE
+
+    # Next.js Pages Router: pages/*.tsx (but not _app, _document, _error)
+    if "/pages/" in file_path_str and not any(
+        special in file_path_str for special in ["/_app.", "/_document.", "/_error."]
+    ):
+        # Exclude components in pages/components or pages/api
+        if "/components/" not in file_path_str and "/api/" not in file_path_str:
+            return ComponentCategory.STATE
+
+    # 3. Check component name patterns for page-level components
+    page_suffixes = ["Page", "Screen", "View", "Route", "Layout"]
+    if any(name.endswith(suffix) for suffix in page_suffixes):
+        # Additional check: not in components directory
+        if "/components/" not in file_path_str:
+            return ComponentCategory.STATE
+
+    # 4. Check if component is in a components directory - strong indicator of WIDGET
+    if "/components/" in file_path_str or "/ui/" in file_path_str:
+        return ComponentCategory.WIDGET
+
+    # 5. Check component name patterns for UI widgets
+    widget_prefixes = ["Button", "Input", "Card", "Modal", "Dialog", "Form", "Nav", "Menu"]
+    widget_suffixes = ["Button", "Input", "Icon", "Link", "Card", "Modal", "Dialog", "Menu"]
+    widget_keywords = ["Header", "Footer", "Sidebar", "Navbar", "Toggle", "Switch", "Slider"]
+
+    if any(name.startswith(prefix) for prefix in widget_prefixes):
+        return ComponentCategory.WIDGET
+    if any(name.endswith(suffix) for suffix in widget_suffixes):
+        return ComponentCategory.WIDGET
+    if any(keyword in name for keyword in widget_keywords):
+        return ComponentCategory.WIDGET
+
+    # 6. Default heuristic: if it's in src/app or src/pages and not explicitly a widget, likely STATE
+    if (
+        "/app/" in file_path_str or "/pages/" in file_path_str
+    ) and "/components/" not in file_path_str:
+        return ComponentCategory.STATE
+
+    # 7. Default to WIDGET (most components are reusable UI elements)
+    return ComponentCategory.WIDGET
+
+
+def classify_components(components: list[ComponentDefinition]) -> None:
+    """
+    Classify all components in place, updating their category field.
+
+    This function mutates the components list by setting the category field
+    on each ComponentDefinition.
+
+    Args:
+        components: List of ComponentDefinition objects to classify
+    """
+    for component in components:
+        component.category = classify_component(component)
