@@ -3,6 +3,8 @@
 Immutable results container for action executions.
 """
 
+from __future__ import annotations
+
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -36,7 +38,7 @@ class ActionResult:
     success: bool
     """Whether the action achieved its intended goal."""
 
-    matches: tuple["Match", ...]
+    matches: tuple[Match, ...]
     """All matches found during action execution. Empty tuple if none."""
 
     times_acted_on: int
@@ -48,10 +50,10 @@ class ActionResult:
     defined_regions: tuple[Region, ...]
     """Regions created or captured by DEFINE actions. Empty tuple if none."""
 
-    movements: tuple["Movement", ...]
+    movements: tuple[Movement, ...]
     """List of movements performed during action execution. Empty tuple if none."""
 
-    execution_history: tuple["ExecutionRecord", ...]
+    execution_history: tuple[ExecutionRecord, ...]
     """Ordered history of action execution steps. Empty tuple if none."""
 
     active_states: frozenset[str]
@@ -75,7 +77,7 @@ class ActionResult:
     end_time: datetime | None = None
     """Timestamp when action execution completed. None if not recorded."""
 
-    action_config: "ActionConfig | None" = None
+    action_config: ActionConfig | None = None
     """Configuration used for this action execution. None if not provided."""
 
     @property
@@ -127,7 +129,7 @@ class ActionResultBuilder:
                  .build())
     """
 
-    def __init__(self, action_config: "ActionConfig | None" = None) -> None:
+    def __init__(self, action_config: ActionConfig | None = None) -> None:
         """Initialize builder with optional configuration.
 
         Args:
@@ -150,7 +152,7 @@ class ActionResultBuilder:
         self._start_time: datetime | None = None
         self._end_time: datetime | None = None
 
-    def with_success(self, success: bool) -> "ActionResultBuilder":
+    def with_success(self, success: bool) -> ActionResultBuilder:
         """Set success status.
 
         Args:
@@ -163,7 +165,7 @@ class ActionResultBuilder:
             self._success = success
         return self
 
-    def add_match(self, match: "Match") -> "ActionResultBuilder":
+    def add_match(self, match: Match) -> ActionResultBuilder:
         """Add a match to the result.
 
         Thread-safe: Can be called from multiple threads.
@@ -183,7 +185,7 @@ class ActionResultBuilder:
                     self._active_states.add(state_data.get_owner_state_name())
         return self
 
-    def set_times_acted_on(self, times: int) -> "ActionResultBuilder":
+    def set_times_acted_on(self, times: int) -> ActionResultBuilder:
         """Set the times acted on counter.
 
         Thread-safe: Can be called from multiple threads.
@@ -202,7 +204,7 @@ class ActionResultBuilder:
                     match.set_times_acted_on(times)
         return self
 
-    def add_text(self, text: str) -> "ActionResultBuilder":
+    def add_text(self, text: str) -> ActionResultBuilder:
         """Add text to the accumulated text.
 
         Thread-safe: Can be called from multiple threads.
@@ -217,7 +219,7 @@ class ActionResultBuilder:
             self._text_parts.append(text)
         return self
 
-    def add_defined_region(self, region: Region) -> "ActionResultBuilder":
+    def add_defined_region(self, region: Region) -> ActionResultBuilder:
         """Add a defined region.
 
         Thread-safe: Can be called from multiple threads.
@@ -232,7 +234,7 @@ class ActionResultBuilder:
             self._defined_regions.append(region)
         return self
 
-    def add_movement(self, movement: "Movement") -> "ActionResultBuilder":
+    def add_movement(self, movement: Movement) -> ActionResultBuilder:
         """Add a movement.
 
         Thread-safe: Can be called from multiple threads.
@@ -247,7 +249,7 @@ class ActionResultBuilder:
             self._movements.append(movement)
         return self
 
-    def add_execution_record(self, record: "ExecutionRecord") -> "ActionResultBuilder":
+    def add_execution_record(self, record: ExecutionRecord) -> ActionResultBuilder:
         """Add an execution record.
 
         Thread-safe: Can be called from multiple threads.
@@ -262,7 +264,7 @@ class ActionResultBuilder:
             self._execution_history.append(record)
         return self
 
-    def with_description(self, description: str) -> "ActionResultBuilder":
+    def with_description(self, description: str) -> ActionResultBuilder:
         """Set action description.
 
         Args:
@@ -275,7 +277,7 @@ class ActionResultBuilder:
             self._action_description = description
         return self
 
-    def with_output_text(self, text: str) -> "ActionResultBuilder":
+    def with_output_text(self, text: str) -> ActionResultBuilder:
         """Set output text.
 
         Args:
@@ -288,7 +290,7 @@ class ActionResultBuilder:
             self._output_text = text
         return self
 
-    def with_selected_text(self, text: str) -> "ActionResultBuilder":
+    def with_selected_text(self, text: str) -> ActionResultBuilder:
         """Set selected text.
 
         Args:
@@ -306,7 +308,7 @@ class ActionResultBuilder:
         start: datetime | None = None,
         end: datetime | None = None,
         duration: timedelta | None = None,
-    ) -> "ActionResultBuilder":
+    ) -> ActionResultBuilder:
         """Set timing information.
 
         Args:

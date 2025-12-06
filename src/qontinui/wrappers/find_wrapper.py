@@ -13,8 +13,10 @@ Architecture:
     └─ if real → HAL Layer → MSSScreenCapture + OpenCVMatcher → Returns List[Match]
 """
 
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from ..model.element.region import Region
 from .base import BaseWrapper
@@ -110,9 +112,9 @@ class FindWrapper(BaseWrapper):
 
     def find(
         self,
-        pattern: "Pattern",
+        pattern: Pattern,
         search_region: Region | None = None,
-    ) -> "ActionResult":
+    ) -> ActionResult:
         """Find a pattern (single match).
 
         Routes to MockFind or HAL based on ExecutionMode.
@@ -139,9 +141,9 @@ class FindWrapper(BaseWrapper):
 
     def find_all(
         self,
-        pattern: "Pattern",
+        pattern: Pattern,
         search_region: Region | None = None,
-    ) -> list["Match"]:
+    ) -> list[Match]:
         """Find all occurrences of a pattern.
 
         Routes to MockFind or HAL based on ExecutionMode.
@@ -167,10 +169,10 @@ class FindWrapper(BaseWrapper):
 
     def wait_for(
         self,
-        pattern: "Pattern",
+        pattern: Pattern,
         timeout: float = 5.0,
         search_region: Region | None = None,
-    ) -> Optional["Match"]:
+    ) -> Match | None:
         """Wait for a pattern to appear.
 
         Routes to MockFind or HAL based on ExecutionMode.
@@ -198,9 +200,9 @@ class FindWrapper(BaseWrapper):
 
     def _find_real(
         self,
-        pattern: "Pattern",
+        pattern: Pattern,
         search_region: Region | None = None,
-    ) -> "ActionResult":
+    ) -> ActionResult:
         """Find pattern using real HAL implementations.
 
         Args:
@@ -311,9 +313,9 @@ class FindWrapper(BaseWrapper):
 
     def _find_all_real(
         self,
-        pattern: "Pattern",
+        pattern: Pattern,
         search_region: Region | None = None,
-    ) -> list["Match"]:
+    ) -> list[Match]:
         """Find all pattern occurrences using real HAL implementations.
 
         Args:
@@ -406,10 +408,10 @@ class FindWrapper(BaseWrapper):
 
     def _wait_for_real(
         self,
-        pattern: "Pattern",
+        pattern: Pattern,
         timeout: float = 5.0,
         search_region: Region | None = None,
-    ) -> Optional["Match"]:
+    ) -> Match | None:
         """Wait for pattern using real HAL implementations.
 
         Args:
@@ -438,8 +440,8 @@ class FindWrapper(BaseWrapper):
 
     def _record_find_action(
         self,
-        pattern: "Pattern",
-        matches: list["Match"],
+        pattern: Pattern,
+        matches: list[Match],
         screenshot,
         duration_ms: float,
     ):

@@ -3,6 +3,8 @@
 Handles StateStrings and text.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,7 +23,7 @@ class StringCollectionBuilder:
         """Initialize builder with empty list."""
         self.state_strings: list[StateString] = []
 
-    def with_strings(self, *strings) -> "StringCollectionBuilder":
+    def with_strings(self, *strings) -> StringCollectionBuilder:
         """Add strings to collection.
 
         Args:
@@ -39,7 +41,7 @@ class StringCollectionBuilder:
                 self.state_strings.append(string)
         return self
 
-    def set_strings(self, strings: list["StateString"]) -> "StringCollectionBuilder":
+    def set_strings(self, strings: list[StateString]) -> StringCollectionBuilder:
         """Set strings list.
 
         Args:
@@ -51,7 +53,7 @@ class StringCollectionBuilder:
         self.state_strings = strings
         return self
 
-    def build(self) -> list["StateString"]:
+    def build(self) -> list[StateString]:
         """Build and return the state strings list.
 
         Returns:

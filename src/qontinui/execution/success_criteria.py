@@ -432,7 +432,7 @@ class SuccessCriteriaEvaluator:
         checkpoints_failed: set[str] = set()
 
         # Process action results for match counts and states
-        for action_id, result in state.action_results.items():
+        for _action_id, result in state.action_results.items():
             # Count matches from result
             if isinstance(result, dict):
                 # Handle dict results (from GraphExecutor)
@@ -443,7 +443,7 @@ class SuccessCriteriaEvaluator:
                 elif "matches" in result:
                     # Fall back to counting matches list
                     matches = result["matches"]
-                    if isinstance(matches, (list, tuple)):
+                    if isinstance(matches, list | tuple):
                         match_count += len(matches)
                     elif isinstance(matches, int):
                         match_count += matches
@@ -451,12 +451,12 @@ class SuccessCriteriaEvaluator:
                 # Track states reached
                 if "active_states" in result:
                     active_states = result["active_states"]
-                    if isinstance(active_states, (set, frozenset, list, tuple)):
+                    if isinstance(active_states, set | frozenset | list | tuple):
                         states_reached.update(active_states)
 
                 if "states_reached" in result:
                     reached = result["states_reached"]
-                    if isinstance(reached, (set, frozenset, list, tuple)):
+                    if isinstance(reached, set | frozenset | list | tuple):
                         states_reached.update(reached)
 
         # Track checkpoint actions (check ALL actions, not just those with results)

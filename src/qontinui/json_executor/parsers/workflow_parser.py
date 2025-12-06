@@ -1,5 +1,7 @@
 """Parses workflows and builds workflow lookup map."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -18,7 +20,7 @@ class WorkflowParser:
         >>> login_workflow = workflow_map["login_wf"]
     """
 
-    def build_workflow_map(self, workflows: list["Workflow"]) -> dict[str, "Workflow"]:
+    def build_workflow_map(self, workflows: list[Workflow]) -> dict[str, Workflow]:
         """Build workflow lookup map from workflow list.
 
         Creates a dictionary mapping workflow IDs to Workflow objects for

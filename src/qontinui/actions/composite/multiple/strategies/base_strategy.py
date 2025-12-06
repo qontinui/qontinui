@@ -1,5 +1,7 @@
 """Base execution strategy for multiple actions."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
@@ -24,8 +26,8 @@ class BaseExecutionStrategy(ABC):
     @abstractmethod
     def execute(
         self,
-        tasks: list["ActionTask"],
-        executor: "TaskExecutor",
+        tasks: list[ActionTask],
+        executor: TaskExecutor,
     ) -> bool:
         """Execute tasks using this strategy.
 

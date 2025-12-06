@@ -7,9 +7,11 @@ Extends Qontinui's StateMemory with:
 - Group state management
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from qontinui.model.transition.enhanced_state_transition import StateTransition
 from qontinui.state_management.state_memory import StateMemory
@@ -43,7 +45,7 @@ class EnhancedStateMemory(StateMemory):
     5. Temporal transition tracking
     """
 
-    def __init__(self, state_service: Optional["StateService"] = None) -> None:
+    def __init__(self, state_service: StateService | None = None) -> None:
         """Initialize enhanced state memory.
 
         Args:

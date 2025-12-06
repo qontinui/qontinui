@@ -3,9 +3,11 @@
 Container for results from find operations with metadata.
 """
 
+from __future__ import annotations
+
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from ..model.element import Pattern, Region
 from .matches import Matches
@@ -59,7 +61,7 @@ class FindResults:
         return self.matches.size()
 
     @property
-    def first_match(self) -> Optional["Match"]:
+    def first_match(self) -> Match | None:
         """Get first match.
 
         Returns:
@@ -68,7 +70,7 @@ class FindResults:
         return self.matches.first
 
     @property
-    def best_match(self) -> Optional["Match"]:
+    def best_match(self) -> Match | None:
         """Get best match by similarity.
 
         Returns:
@@ -76,7 +78,7 @@ class FindResults:
         """
         return self.matches.best
 
-    def get_match(self, index: int = 0) -> Optional["Match"]:
+    def get_match(self, index: int = 0) -> Match | None:
         """Get match at specific index.
 
         Args:
@@ -87,7 +89,7 @@ class FindResults:
         """
         return self.matches.get(index)
 
-    def filter_by_similarity(self, min_similarity: float) -> "FindResults":
+    def filter_by_similarity(self, min_similarity: float) -> FindResults:
         """Filter results by minimum similarity.
 
         Args:
@@ -107,7 +109,7 @@ class FindResults:
             metadata={**self.metadata, "filtered_similarity": min_similarity},
         )
 
-    def filter_by_region(self, region: Region) -> "FindResults":
+    def filter_by_region(self, region: Region) -> FindResults:
         """Filter results by region.
 
         Args:
@@ -127,7 +129,7 @@ class FindResults:
             metadata={**self.metadata, "filtered_region": region},
         )
 
-    def remove_overlapping(self, overlap_threshold: float = 0.5) -> "FindResults":
+    def remove_overlapping(self, overlap_threshold: float = 0.5) -> FindResults:
         """Remove overlapping matches.
 
         Args:
@@ -147,7 +149,7 @@ class FindResults:
             metadata={**self.metadata, "overlap_removed": True},
         )
 
-    def with_pattern(self, pattern: Pattern) -> "FindResults":
+    def with_pattern(self, pattern: Pattern) -> FindResults:
         """Create new results with pattern reference.
 
         Args:
@@ -189,7 +191,7 @@ class FindResults:
         return self.success
 
     @classmethod
-    def empty(cls, pattern: Pattern | None = None) -> "FindResults":
+    def empty(cls, pattern: Pattern | None = None) -> FindResults:
         """Create empty (no matches) results.
 
         Args:

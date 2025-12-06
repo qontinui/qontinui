@@ -3,9 +3,11 @@
 Discovers active states through visual pattern matching in the framework.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from ..actions.action import Action
 from ..actions.object_collection import ObjectCollectionBuilder
@@ -68,7 +70,7 @@ class StateDetector:
 
     def __init__(
         self,
-        all_states_in_project_service: Optional["StateService"] = None,
+        all_states_in_project_service: StateService | None = None,
         state_memory: StateMemory | None = None,
         action: Action | None = None,
         max_concurrent: int = 15,
@@ -510,11 +512,11 @@ class StateService:
     Will be implemented when migrating the navigation package.
     """
 
-    def get_state(self, state_id: int) -> Optional["State"]:
+    def get_state(self, state_id: int) -> State | None:
         """Get state by ID."""
         return None
 
-    def get_state_by_name(self, name: str) -> Optional["State"]:
+    def get_state_by_name(self, name: str) -> State | None:
         """Get state by name."""
         return None
 

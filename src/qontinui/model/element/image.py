@@ -3,6 +3,8 @@
 Physical representation of an image in the framework.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -55,7 +57,7 @@ class Image:
     """Internal PIL Image storage."""
 
     @classmethod
-    def from_file(cls, filename: str | Path) -> "Image":
+    def from_file(cls, filename: str | Path) -> Image:
         """Create Image from file.
 
         Args:
@@ -80,7 +82,7 @@ class Image:
             return cls(name=str(path))
 
     @classmethod
-    def from_pil(cls, pil_image: PILImage.Image, name: str | None = None) -> "Image":
+    def from_pil(cls, pil_image: PILImage.Image, name: str | None = None) -> Image:
         """Create Image from PIL Image.
 
         Args:
@@ -96,7 +98,7 @@ class Image:
         return cls(name=name, _pil_image=pil_image)
 
     @classmethod
-    def from_numpy(cls, numpy_array: np.ndarray[Any, Any], name: str | None = None) -> "Image":
+    def from_numpy(cls, numpy_array: np.ndarray[Any, Any], name: str | None = None) -> Image:
         """Create Image from NumPy array (OpenCV format).
 
         Args:
@@ -112,7 +114,7 @@ class Image:
         return cls(name=name, _pil_image=pil_image)
 
     @classmethod
-    def from_pattern(cls, pattern: "Pattern") -> "Image":
+    def from_pattern(cls, pattern: Pattern) -> Image:
         """Create Image from Pattern.
 
         Args:
@@ -124,7 +126,7 @@ class Image:
         return cls(name=pattern.name, _pil_image=pattern.get_image())
 
     @classmethod
-    def get_empty_image(cls) -> "Image":
+    def get_empty_image(cls) -> Image:
         """Create an empty image.
 
         Returns:
@@ -300,7 +302,7 @@ class Image:
             return None
 
     @classmethod
-    def from_bytes(cls, data: bytes, name: str | None = None) -> "Image":
+    def from_bytes(cls, data: bytes, name: str | None = None) -> Image:
         """Create Image from bytes.
 
         Args:

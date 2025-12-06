@@ -4,7 +4,9 @@ Provides specialized methods for extracting matches, locations, and other
 data from ActionResult instances.
 """
 
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..find.match import Match
@@ -20,7 +22,7 @@ class ResultExtractor:
     """
 
     @staticmethod
-    def get_best_match(result: "ActionResult") -> Optional["Match"]:
+    def get_best_match(result: ActionResult) -> Match | None:
         """Find the match with the highest similarity score.
 
         Args:
@@ -37,7 +39,7 @@ class ResultExtractor:
         )
 
     @staticmethod
-    def get_best_location(result: "ActionResult") -> Optional["Location"]:
+    def get_best_location(result: ActionResult) -> Location | None:
         """Get the target location of the best scoring match.
 
         Args:
@@ -56,7 +58,7 @@ class ResultExtractor:
         return None
 
     @staticmethod
-    def get_match_locations(result: "ActionResult") -> list["Location"]:
+    def get_match_locations(result: ActionResult) -> list[Location]:
         """Get all match target locations.
 
         Args:
@@ -74,7 +76,7 @@ class ResultExtractor:
         return locations
 
     @staticmethod
-    def size(result: "ActionResult") -> int:
+    def size(result: ActionResult) -> int:
         """Get the number of matches found.
 
         Args:
@@ -86,7 +88,7 @@ class ResultExtractor:
         return len(result.matches)
 
     @staticmethod
-    def is_empty(result: "ActionResult") -> bool:
+    def is_empty(result: ActionResult) -> bool:
         """Check if the action found any matches.
 
         Args:
@@ -98,7 +100,7 @@ class ResultExtractor:
         return len(result.matches) == 0
 
     @staticmethod
-    def get_success_symbol(result: "ActionResult") -> str:
+    def get_success_symbol(result: ActionResult) -> str:
         """Get a visual symbol representing action success or failure.
 
         Args:
@@ -110,7 +112,7 @@ class ResultExtractor:
         return "✓" if result.success else "✗"
 
     @staticmethod
-    def get_summary(result: "ActionResult") -> str:
+    def get_summary(result: ActionResult) -> str:
         """Get a summary of the action result.
 
         Args:
@@ -131,7 +133,7 @@ class ResultExtractor:
         return "\n".join(summary)
 
     @staticmethod
-    def print_matches(result: "ActionResult") -> None:
+    def print_matches(result: ActionResult) -> None:
         """Print all matches to standard output.
 
         Args:

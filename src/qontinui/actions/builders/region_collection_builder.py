@@ -3,6 +3,8 @@
 Handles Regions and Locations.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -26,7 +28,7 @@ class RegionCollectionBuilder:
         self.state_locations: list[StateLocation] = []
         self.state_regions: list[StateRegion] = []
 
-    def with_locations(self, *locations) -> "RegionCollectionBuilder":
+    def with_locations(self, *locations) -> RegionCollectionBuilder:
         """Add locations to collection.
 
         Args:
@@ -47,7 +49,7 @@ class RegionCollectionBuilder:
                 self.state_locations.append(location)
         return self
 
-    def set_locations(self, locations: list["StateLocation"]) -> "RegionCollectionBuilder":
+    def set_locations(self, locations: list[StateLocation]) -> RegionCollectionBuilder:
         """Set locations list.
 
         Args:
@@ -59,7 +61,7 @@ class RegionCollectionBuilder:
         self.state_locations = locations
         return self
 
-    def with_regions(self, *regions) -> "RegionCollectionBuilder":
+    def with_regions(self, *regions) -> RegionCollectionBuilder:
         """Add regions to collection.
 
         Args:
@@ -80,7 +82,7 @@ class RegionCollectionBuilder:
                 self.state_regions.append(region)
         return self
 
-    def set_regions(self, regions: list["StateRegion"]) -> "RegionCollectionBuilder":
+    def set_regions(self, regions: list[StateRegion]) -> RegionCollectionBuilder:
         """Set regions list.
 
         Args:
@@ -92,7 +94,7 @@ class RegionCollectionBuilder:
         self.state_regions = regions
         return self
 
-    def with_grid_subregions(self, rows: int, columns: int, *regions) -> "RegionCollectionBuilder":
+    def with_grid_subregions(self, rows: int, columns: int, *regions) -> RegionCollectionBuilder:
         """Add grid subregions from regions.
 
         Args:
@@ -121,7 +123,7 @@ class RegionCollectionBuilder:
                     self.state_regions.append(state_region)
         return self
 
-    def _create_grid_regions(self, region: "Region", rows: int, columns: int) -> list["Region"]:
+    def _create_grid_regions(self, region: Region, rows: int, columns: int) -> list[Region]:
         """Create grid of subregions from a region.
 
         Args:
@@ -147,7 +149,7 @@ class RegionCollectionBuilder:
 
         return grid_regions
 
-    def build(self) -> tuple[list["StateLocation"], list["StateRegion"]]:
+    def build(self) -> tuple[list[StateLocation], list[StateRegion]]:
         """Build and return the locations and regions lists.
 
         Returns:

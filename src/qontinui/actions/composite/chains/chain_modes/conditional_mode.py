@@ -3,6 +3,8 @@
 Executes actions based on conditions.
 """
 
+from __future__ import annotations
+
 import time
 from typing import TYPE_CHECKING
 
@@ -20,7 +22,7 @@ class ConditionalMode(BaseChainMode):
     don't count as failures.
     """
 
-    def execute(self, actions: list["ChainAction"]) -> bool:
+    def execute(self, actions: list[ChainAction]) -> bool:
         """Execute actions based on their conditions.
 
         Args:

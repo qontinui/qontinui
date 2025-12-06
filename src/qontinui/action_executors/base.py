@@ -4,6 +4,8 @@ This module provides the base class and execution context for all specialized
 action executors, replacing the monolithic ActionExecutor god class.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -39,7 +41,7 @@ class ExecutionContext:
     time: Any  # TimeWrapper
 
     # Shared state - stores complete action results
-    last_action_result: "ActionResult | None"
+    last_action_result: ActionResult | None
     variable_context: Any  # VariableContext
     state_executor: Any | None  # StateExecutor
 
@@ -59,7 +61,14 @@ class ExecutionContext:
     # Project configuration
     project_root: Path | None = field(default=None)  # Root directory for code loading
 
-    def update_last_action_result(self, result: "ActionResult") -> None:
+    # Multi-monitor support - tracks monitor offset for coordinate conversion
+    # When automation targets a specific monitor, found coordinates need to be
+    # adjusted to absolute screen coordinates for mouse operations
+    monitor_index: int | None = field(default=None)  # Current target monitor (0-based)
+    monitor_offset_x: int = field(default=0)  # Monitor's left position in virtual screen
+    monitor_offset_y: int = field(default=0)  # Monitor's top position in virtual screen
+
+    def update_last_action_result(self, result: ActionResult) -> None:
         """Store complete action result for subsequent actions to reference.
 
         This method stores the full ActionResult object, preserving all matches

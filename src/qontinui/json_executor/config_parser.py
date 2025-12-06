@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ..config.schema import Workflow
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
@@ -476,6 +476,14 @@ class State(BaseModel):
     incoming_transitions: list["IncomingTransition"] = Field(default_factory=list)
 
     model_config = {"populate_by_name": True}
+
+    @field_validator("position", mode="before")
+    @classmethod
+    def coerce_position_to_int(cls, v: dict) -> dict[str, int]:
+        """Coerce position values to integers (frontend may send floats)."""
+        if isinstance(v, dict):
+            return {k: int(val) for k, val in v.items()}
+        return v
 
 
 class Transition(BaseModel):

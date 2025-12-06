@@ -9,6 +9,8 @@ Handles the new App Router file-system based routing including:
 - Server Components and Server Actions
 """
 
+from __future__ import annotations
+
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -40,7 +42,7 @@ ROUTE_GROUP_PATTERN = re.compile(r"\(([^)]+)\)")
 PARALLEL_ROUTE_PATTERN = re.compile(r"@([^/]+)")
 
 
-def extract_app_routes(app_dir: Path) -> list["RouteDefinition"]:
+def extract_app_routes(app_dir: Path) -> list[RouteDefinition]:
     """
     Extract routes from app/ directory structure.
 
@@ -104,7 +106,7 @@ def extract_app_routes(app_dir: Path) -> list["RouteDefinition"]:
     return routes
 
 
-def extract_server_components(app_dir: Path, parse_results: dict) -> list["ComponentDefinition"]:
+def extract_server_components(app_dir: Path, parse_results: dict) -> list[ComponentDefinition]:
     """
     Identify server components (default in app/).
 
@@ -159,7 +161,7 @@ def extract_server_components(app_dir: Path, parse_results: dict) -> list["Compo
     return components
 
 
-def extract_server_actions(parse_results: dict) -> list["APICallDefinition"]:
+def extract_server_actions(parse_results: dict) -> list[APICallDefinition]:
     """
     Extract 'use server' functions (Server Actions).
 
@@ -172,7 +174,6 @@ def extract_server_actions(parse_results: dict) -> list["APICallDefinition"]:
     Returns:
         List of server action definitions
     """
-    from qontinui.extraction.models.static import APICallDefinition
 
     actions: list[APICallDefinition] = []
 

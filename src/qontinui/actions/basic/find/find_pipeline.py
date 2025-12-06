@@ -3,10 +3,12 @@
 Orchestrates the complete find operation pipeline.
 """
 
+from __future__ import annotations
+
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from .strategy_registry import StrategyRegistry
@@ -31,7 +33,7 @@ class FindPipeline:
     """
 
     # Strategy registry for delegating to implementations
-    strategy_registry: Optional["StrategyRegistry"] = None
+    strategy_registry: StrategyRegistry | None = None
 
     # Pipeline configuration
     enable_preprocessing: bool = True
@@ -346,7 +348,7 @@ class PipelineBuilder:
         """Initialize builder."""
         self._pipeline = FindPipeline()
 
-    def with_registry(self, registry: "StrategyRegistry") -> "PipelineBuilder":
+    def with_registry(self, registry: StrategyRegistry) -> PipelineBuilder:
         """Set strategy registry.
 
         Args:
@@ -358,7 +360,7 @@ class PipelineBuilder:
         self._pipeline.strategy_registry = registry
         return self
 
-    def enable_caching(self) -> "PipelineBuilder":
+    def enable_caching(self) -> PipelineBuilder:
         """Enable result caching.
 
         Returns:
@@ -367,7 +369,7 @@ class PipelineBuilder:
         self._pipeline.enable_caching = True
         return self
 
-    def enable_profiling(self) -> "PipelineBuilder":
+    def enable_profiling(self) -> PipelineBuilder:
         """Enable performance profiling.
 
         Returns:
@@ -376,7 +378,7 @@ class PipelineBuilder:
         self._pipeline.enable_profiling = True
         return self
 
-    def disable_preprocessing(self) -> "PipelineBuilder":
+    def disable_preprocessing(self) -> PipelineBuilder:
         """Disable preprocessing.
 
         Returns:
@@ -385,7 +387,7 @@ class PipelineBuilder:
         self._pipeline.enable_preprocessing = False
         return self
 
-    def disable_postprocessing(self) -> "PipelineBuilder":
+    def disable_postprocessing(self) -> PipelineBuilder:
         """Disable postprocessing.
 
         Returns:

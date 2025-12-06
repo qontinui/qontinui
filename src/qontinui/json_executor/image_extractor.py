@@ -1,5 +1,7 @@
 """Extracts and processes image assets from configuration."""
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -29,7 +31,7 @@ class ImageExtractor:
         >>> logo_image = image_map["logo_img_001"]
     """
 
-    def extract_images(self, config: "QontinuiConfig") -> dict[str, "ImageAsset"]:
+    def extract_images(self, config: QontinuiConfig) -> dict[str, ImageAsset]:
         """Extract all images from configuration and build image_map.
 
         Processes both direct image assets and StateImage patterns to create
@@ -64,8 +66,8 @@ class ImageExtractor:
         return image_map
 
     def _extract_from_state_images(
-        self, states: list["State"], existing_image_map: dict[str, "ImageAsset"]
-    ) -> dict[str, "ImageAsset"]:
+        self, states: list[State], existing_image_map: dict[str, ImageAsset]
+    ) -> dict[str, ImageAsset]:
         """Extract images from StateImage patterns in all states.
 
         Processes each state's identifying images and creates ImageAsset objects
@@ -102,10 +104,10 @@ class ImageExtractor:
 
     def _create_from_pattern(
         self,
-        state_image: "StateImage",
-        pattern: "Pattern",
-        existing_image_map: dict[str, "ImageAsset"],
-    ) -> "ImageAsset | None":
+        state_image: StateImage,
+        pattern: Pattern,
+        existing_image_map: dict[str, ImageAsset],
+    ) -> ImageAsset | None:
         """Create ImageAsset from StateImage pattern data.
 
         Pattern must have image_id referencing an existing image in config.images.

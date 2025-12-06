@@ -3,6 +3,8 @@
 Executes all actions regardless of failures.
 """
 
+from __future__ import annotations
+
 import time
 from typing import TYPE_CHECKING
 
@@ -20,7 +22,7 @@ class ContinueMode(BaseChainMode):
     cleanup operations or when partial success is acceptable.
     """
 
-    def execute(self, actions: list["ChainAction"]) -> bool:
+    def execute(self, actions: list[ChainAction]) -> bool:
         """Execute all actions regardless of individual failures.
 
         Args:

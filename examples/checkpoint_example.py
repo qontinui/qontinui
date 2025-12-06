@@ -40,7 +40,7 @@ def main():
         output_dir=output_dir,
     )
 
-    print(f"Checkpoint service initialized")
+    print("Checkpoint service initialized")
     print(f"Output directory: {service.output_dir}")
     print(f"OCR enabled: {service.has_ocr}\n")
 

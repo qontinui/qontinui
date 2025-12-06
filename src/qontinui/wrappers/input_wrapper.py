@@ -13,8 +13,10 @@ Architecture:
     └─ if real → HAL Layer → PyAutoGUI/pynput → Real input
 """
 
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from .base import BaseWrapper
 
@@ -111,7 +113,7 @@ class MouseWrapper(BaseWrapper):
         self,
         x: int | None = None,
         y: int | None = None,
-        button: Optional["MouseButton"] = None,
+        button: MouseButton | None = None,
         clicks: int = 1,
     ) -> bool:
         """Click mouse button.
@@ -139,7 +141,7 @@ class MouseWrapper(BaseWrapper):
         self,
         x: int | None = None,
         y: int | None = None,
-        button: Optional["MouseButton"] = None,
+        button: MouseButton | None = None,
     ) -> bool:
         """Double click mouse button.
 
@@ -198,7 +200,7 @@ class MouseWrapper(BaseWrapper):
             logger.debug(f"MouseWrapper.scroll (REAL): clicks={clicks}")
             return self.hal_input.scroll(clicks, x, y)  # type: ignore[no-any-return]
 
-    def get_position(self) -> "MousePosition":
+    def get_position(self) -> MousePosition:
         """Get current mouse position.
 
         Returns:

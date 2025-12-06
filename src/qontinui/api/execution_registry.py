@@ -7,6 +7,8 @@ This module provides the ExecutionRegistry class that handles:
 - Adding and removing executions from the registry
 """
 
+from __future__ import annotations
+
 import logging
 import threading
 from typing import TYPE_CHECKING
@@ -32,7 +34,7 @@ class ExecutionRegistry:
 
         logger.debug("ExecutionRegistry initialized")
 
-    def add(self, context: "ExecutionContext") -> None:
+    def add(self, context: ExecutionContext) -> None:
         """Add execution to registry.
 
         Args:
@@ -42,7 +44,7 @@ class ExecutionRegistry:
             self._executions[context.execution_id] = context
             logger.debug(f"Added execution {context.execution_id} to registry")
 
-    def get(self, execution_id: str) -> "ExecutionContext | None":
+    def get(self, execution_id: str) -> ExecutionContext | None:
         """Get execution by ID.
 
         Args:
@@ -54,7 +56,7 @@ class ExecutionRegistry:
         with self._lock:
             return self._executions.get(execution_id)
 
-    def remove(self, execution_id: str) -> "ExecutionContext | None":
+    def remove(self, execution_id: str) -> ExecutionContext | None:
         """Remove and return execution.
 
         Args:
@@ -69,7 +71,7 @@ class ExecutionRegistry:
                 logger.debug(f"Removed execution {execution_id} from registry")
             return context
 
-    def get_all(self) -> list["ExecutionContext"]:
+    def get_all(self) -> list[ExecutionContext]:
         """Get all active executions.
 
         Returns:

@@ -5,6 +5,8 @@ Correlates static analysis results with runtime extraction to build
 a complete state model with confidence scores.
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
 from typing import TYPE_CHECKING
@@ -94,7 +96,8 @@ class DefaultStateMatcher:
         )
 
         # Create a mock session with the capture
-        from ..runtime.types import ExtractionTarget as RuntimeExtractionTarget, RuntimeType
+        from ..runtime.types import ExtractionTarget as RuntimeExtractionTarget
+        from ..runtime.types import RuntimeType
 
         session = RuntimeExtractionSession(
             session_id="correlation_session",
@@ -107,7 +110,7 @@ class DefaultStateMatcher:
         return self.correlate(static, session)
 
     def correlate(
-        self, static: StaticAnalysisResult, runtime: "RuntimeExtractionSession"
+        self, static: StaticAnalysisResult, runtime: RuntimeExtractionSession
     ) -> list[CorrelatedState]:
         """Match static analysis results with runtime observations.
 
@@ -158,7 +161,7 @@ class DefaultStateMatcher:
                 continue
 
             # Find the most likely runtime state for this component
-            runtime_state = self._find_best_runtime_state(component, all_states, evidence)
+            self._find_best_runtime_state(component, all_states, evidence)
 
             # Get state variables for this component (those used by this component)
             component_state_vars = [
@@ -208,7 +211,7 @@ class DefaultStateMatcher:
     async def verify_transitions(
         self,
         transitions: list[InferredTransition],
-        runtime_extractor: "RuntimeExtractor",
+        runtime_extractor: RuntimeExtractor,
     ) -> list[VerifiedTransition]:
         """Verify inferred transitions by executing them at runtime.
 

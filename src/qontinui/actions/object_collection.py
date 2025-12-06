@@ -3,6 +3,8 @@
 Container for GUI elements serving as action targets.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -42,22 +44,22 @@ class ObjectCollection:
     more flexible and reusable.
     """
 
-    state_locations: list["StateLocation"] = field(default_factory=list)
+    state_locations: list[StateLocation] = field(default_factory=list)
     """List of state locations."""
 
-    state_images: list["StateImage"] = field(default_factory=list)
+    state_images: list[StateImage] = field(default_factory=list)
     """List of state images."""
 
-    state_regions: list["StateRegion"] = field(default_factory=list)
+    state_regions: list[StateRegion] = field(default_factory=list)
     """List of state regions."""
 
-    state_strings: list["StateString"] = field(default_factory=list)
+    state_strings: list[StateString] = field(default_factory=list)
     """List of state strings."""
 
-    matches: list["ActionResult"] = field(default_factory=list)
+    matches: list[ActionResult] = field(default_factory=list)
     """List of action results."""
 
-    scenes: list["Scene"] = field(default_factory=list)
+    scenes: list[Scene] = field(default_factory=list)
     """List of scenes."""
 
     def is_empty(self) -> bool:
@@ -147,7 +149,7 @@ class ObjectCollection:
             return obj in self.scenes
         return False
 
-    def equals(self, object_collection: "ObjectCollection") -> bool:
+    def equals(self, object_collection: ObjectCollection) -> bool:
         """Check equality with another ObjectCollection.
 
         Args:

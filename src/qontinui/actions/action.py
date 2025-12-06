@@ -3,8 +3,10 @@
 Entry point for executing GUI automation actions.
 """
 
+from __future__ import annotations
+
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from ..model.state.state_image import StateImage
@@ -45,7 +47,7 @@ class Action:
         self,
         action_execution: ActionExecution | None = None,
         action_service: ActionService | None = None,
-        action_chain_executor: Optional["ActionChainExecutor"] = None,
+        action_chain_executor: ActionChainExecutor | None = None,
     ) -> None:
         """Construct an Action instance with required dependencies.
 
@@ -129,7 +131,7 @@ class Action:
             action, action_description, action_config, object_collections
         )
 
-    def find(self, *state_images: "StateImage") -> ActionResult:
+    def find(self, *state_images: StateImage) -> ActionResult:
         """Perform a Find action with default options on the specified images.
 
         This convenience method simplifies the common case of searching for images

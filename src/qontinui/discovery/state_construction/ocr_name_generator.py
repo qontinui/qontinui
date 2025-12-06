@@ -7,6 +7,8 @@ This module implements Phase 3.2 of the DETECTION_MIGRATION_PLAN, providing
 intelligent naming strategies for automatically detected GUI elements.
 """
 
+from __future__ import annotations
+
 import re
 from typing import TYPE_CHECKING
 

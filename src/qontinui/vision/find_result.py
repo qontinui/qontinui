@@ -5,9 +5,11 @@ supporting filtering, transformation, and analysis operations.
 Follows clean code principles with type hints and comprehensive docstrings.
 """
 
+from __future__ import annotations
+
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from ..model.element import Pattern, Region
 
@@ -33,7 +35,7 @@ class FindResult:
         metadata: Custom metadata dict for extensibility
     """
 
-    matches: list["Match"] = field(default_factory=list)
+    matches: list[Match] = field(default_factory=list)
     pattern: Pattern | None = None
     search_region: Region | None = None
     strategy: str = "template"
@@ -70,7 +72,7 @@ class FindResult:
         return len(self.matches)
 
     @property
-    def first_match(self) -> Optional["Match"]:
+    def first_match(self) -> Match | None:
         """Get first match found.
 
         Returns:
@@ -79,7 +81,7 @@ class FindResult:
         return self.matches[0] if self.matches else None
 
     @property
-    def best_match(self) -> Optional["Match"]:
+    def best_match(self) -> Match | None:
         """Get best match by similarity score.
 
         Returns:
@@ -90,7 +92,7 @@ class FindResult:
         return max(self.matches, key=lambda m: m.similarity)
 
     @property
-    def worst_match(self) -> Optional["Match"]:
+    def worst_match(self) -> Match | None:
         """Get worst match by similarity score.
 
         Returns:
@@ -100,7 +102,7 @@ class FindResult:
             return None
         return min(self.matches, key=lambda m: m.similarity)
 
-    def get_match(self, index: int = 0) -> Optional["Match"]:
+    def get_match(self, index: int = 0) -> Match | None:
         """Get match at specific index.
 
         Args:
@@ -113,7 +115,7 @@ class FindResult:
             return self.matches[index]
         return None
 
-    def filter_by_similarity(self, min_similarity: float) -> "FindResult":
+    def filter_by_similarity(self, min_similarity: float) -> FindResult:
         """Create new result with matches filtered by minimum similarity.
 
         Args:
@@ -140,7 +142,7 @@ class FindResult:
             metadata={**self.metadata, "filtered_by_similarity": min_similarity},
         )
 
-    def filter_by_region(self, region: Region) -> "FindResult":
+    def filter_by_region(self, region: Region) -> FindResult:
         """Create new result with matches filtered by region.
 
         Args:
@@ -169,7 +171,7 @@ class FindResult:
             metadata={**self.metadata, "filtered_by_region": str(region)},
         )
 
-    def filter_by_distance(self, reference_match: "Match", max_distance: float) -> "FindResult":
+    def filter_by_distance(self, reference_match: Match, max_distance: float) -> FindResult:
         """Create new result with matches filtered by distance from reference.
 
         Args:
@@ -199,7 +201,7 @@ class FindResult:
             metadata={**self.metadata, "filtered_by_distance": max_distance},
         )
 
-    def remove_overlapping(self, overlap_threshold: float = 0.5) -> "FindResult":
+    def remove_overlapping(self, overlap_threshold: float = 0.5) -> FindResult:
         """Create new result with overlapping matches removed.
 
         Keeps matches with highest similarity when overlaps detected.
@@ -258,7 +260,7 @@ class FindResult:
             metadata={**self.metadata, "overlap_removed": True},
         )
 
-    def sort_by_similarity(self, descending: bool = True) -> "FindResult":
+    def sort_by_similarity(self, descending: bool = True) -> FindResult:
         """Create new result with matches sorted by similarity.
 
         Args:
@@ -279,7 +281,7 @@ class FindResult:
             metadata={**self.metadata, "sorted_by_similarity": True},
         )
 
-    def sort_by_location(self, horizontal: bool = True) -> "FindResult":
+    def sort_by_location(self, horizontal: bool = True) -> FindResult:
         """Create new result with matches sorted by location.
 
         Args:
@@ -310,7 +312,7 @@ class FindResult:
             metadata={**self.metadata, "sorted_by_location": True},
         )
 
-    def limit(self, max_matches: int) -> "FindResult":
+    def limit(self, max_matches: int) -> FindResult:
         """Create new result limited to specified number of matches.
 
         Args:
@@ -337,7 +339,7 @@ class FindResult:
             metadata={**self.metadata, "limited": max_matches},
         )
 
-    def with_pattern(self, pattern: Pattern) -> "FindResult":
+    def with_pattern(self, pattern: Pattern) -> FindResult:
         """Create new result with pattern reference.
 
         Args:
@@ -357,7 +359,7 @@ class FindResult:
             metadata=self.metadata,
         )
 
-    def with_metadata(self, key: str, value: Any) -> "FindResult":
+    def with_metadata(self, key: str, value: Any) -> FindResult:
         """Create new result with added metadata.
 
         Args:
@@ -440,7 +442,7 @@ class FindResult:
         """
         return len(self.matches)
 
-    def __getitem__(self, index: int) -> Optional["Match"]:
+    def __getitem__(self, index: int) -> Match | None:
         """Get match by index (supports negative indexing).
 
         Args:
@@ -465,7 +467,7 @@ class FindResult:
         return iter(self.matches)
 
     @classmethod
-    def empty(cls, pattern: Pattern | None = None, strategy: str = "template") -> "FindResult":
+    def empty(cls, pattern: Pattern | None = None, strategy: str = "template") -> FindResult:
         """Create empty (no matches) result.
 
         Args:

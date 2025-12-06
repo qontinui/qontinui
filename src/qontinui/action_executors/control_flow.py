@@ -24,6 +24,8 @@ from ..config import (
     ContinueActionConfig,
     IfActionConfig,
     LoopActionConfig,
+    SwitchActionConfig,
+    TryCatchActionConfig,
 )
 from ..exceptions import ActionExecutionError
 from .base import ActionExecutorBase, ExecutionContext
@@ -50,6 +52,8 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
     Supported Actions:
         - LOOP: FOR, WHILE, and FOREACH loops with break/continue support
         - IF: Conditional branching with condition evaluation
+        - SWITCH: Case-based branching with multiple conditions
+        - TRY_CATCH: Error handling with try, catch, and finally blocks
         - BREAK: Exit current loop (raises BreakLoop exception)
         - CONTINUE: Skip to next loop iteration (raises ContinueLoop exception)
 
@@ -104,9 +108,9 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
         """Get list of control flow action types this executor handles.
 
         Returns:
-            List containing: LOOP, IF, BREAK, CONTINUE
+            List containing: LOOP, IF, SWITCH, TRY_CATCH, BREAK, CONTINUE
         """
-        return ["LOOP", "IF", "BREAK", "CONTINUE"]
+        return ["LOOP", "IF", "SWITCH", "TRY_CATCH", "BREAK", "CONTINUE"]
 
     def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute control flow action with validated configuration.
@@ -136,6 +140,10 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
                 return self._execute_loop(action, typed_config)
             elif action_type == "IF":
                 return self._execute_if(action, typed_config)
+            elif action_type == "SWITCH":
+                return self._execute_switch(action, typed_config)
+            elif action_type == "TRY_CATCH":
+                return self._execute_try_catch(action, typed_config)
             elif action_type == "BREAK":
                 return self._execute_break(action, typed_config)
             elif action_type == "CONTINUE":
@@ -260,6 +268,94 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
 
         except Exception as e:
             logger.error(f"IF execution failed: {e}")
+            self._emit_action_failure(action, str(e))
+            return False
+
+    def _execute_switch(self, action: Action, typed_config: SwitchActionConfig) -> bool:
+        """Execute SWITCH action via wrapped executor.
+
+        Args:
+            action: Action model
+            typed_config: Validated SwitchActionConfig
+
+        Returns:
+            True if switch evaluation and branch execution succeeded
+        """
+        logger.info("Executing SWITCH action")
+
+        try:
+            result = self._wrapped_executor.execute_switch(action)
+
+            # Check success
+            if result.get("success"):
+                self._emit_action_success(
+                    action,
+                    {
+                        "expression_value": result.get("expression_value"),
+                        "matched_case": result.get("matched_case"),
+                        "case_index": result.get("case_index"),
+                        "actions_executed": result.get("actions_executed", 0),
+                    },
+                )
+                return True
+            else:
+                self._emit_action_failure(
+                    action,
+                    "SWITCH execution failed",
+                    {
+                        "expression_value": result.get("expression_value"),
+                        "errors": result.get("errors", []),
+                    },
+                )
+                return False
+
+        except Exception as e:
+            logger.error(f"SWITCH execution failed: {e}")
+            self._emit_action_failure(action, str(e))
+            return False
+
+    def _execute_try_catch(self, action: Action, typed_config: TryCatchActionConfig) -> bool:
+        """Execute TRY_CATCH action via wrapped executor.
+
+        Args:
+            action: Action model
+            typed_config: Validated TryCatchActionConfig
+
+        Returns:
+            True if execution succeeded overall
+        """
+        logger.info("Executing TRY_CATCH action")
+
+        try:
+            result = self._wrapped_executor.execute_try_catch(action)
+
+            # Check success
+            if result.get("success"):
+                self._emit_action_success(
+                    action,
+                    {
+                        "branch_taken": result.get("branch_taken"),
+                        "try_actions_executed": result.get("try_actions_executed", 0),
+                        "catch_actions_executed": result.get("catch_actions_executed", 0),
+                        "finally_actions_executed": result.get("finally_actions_executed", 0),
+                        "error_caught": result.get("error_caught"),
+                    },
+                )
+                return True
+            else:
+                self._emit_action_failure(
+                    action,
+                    "TRY_CATCH execution failed",
+                    {
+                        "branch_taken": result.get("branch_taken"),
+                        "error_caught": result.get("error_caught"),
+                        "errors": result.get("errors", []),
+                    },
+                )
+                return False
+
+        except Exception as e:
+            logger.error(f"TRY_CATCH execution failed: {e}")
             self._emit_action_failure(action, str(e))
             return False
 

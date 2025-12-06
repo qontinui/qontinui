@@ -4,6 +4,8 @@ This is the unified Pattern class that combines basic pattern matching
 with advanced mask-based optimization capabilities. Port of Brobot's Pattern class.
 """
 
+from __future__ import annotations
+
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -77,7 +79,7 @@ class Pattern:
     dynamic: bool = False  # Dynamic images cannot be found using pattern matching
 
     # Search regions - Following Brobot's model with SearchRegions object
-    search_regions: "SearchRegions" = field(default_factory=lambda: None)  # type: ignore
+    search_regions: SearchRegions = field(default_factory=lambda: None)  # type: ignore
 
     # Statistics
     match_count: int = 0
@@ -229,7 +231,7 @@ class Pattern:
     @classmethod
     def from_image(
         cls, image: Any, name: str | None = None, pattern_id: str | None = None
-    ) -> "Pattern":
+    ) -> Pattern:
         """Create Pattern from Image (delegates to factory).
 
         Args:
@@ -243,7 +245,7 @@ class Pattern:
         return PatternFactory.from_image(image, name, pattern_id)
 
     @classmethod
-    def from_file(cls, img_path: str, name: str | None = None) -> "Pattern":
+    def from_file(cls, img_path: str, name: str | None = None) -> Pattern:
         """Create Pattern from image file (delegates to factory).
 
         Args:
@@ -347,7 +349,7 @@ class Pattern:
         # 3. Lowest precedence: Application-level default
         return application_default
 
-    def with_similarity(self, threshold: float) -> "Pattern":
+    def with_similarity(self, threshold: float) -> Pattern:
         """Set similarity threshold and return self for chaining.
 
         Args:
@@ -363,7 +365,7 @@ class Pattern:
         self.similarity = threshold
         return self
 
-    def with_search_region(self, region: Any) -> "Pattern":
+    def with_search_region(self, region: Any) -> Pattern:
         """Set search region and return self for chaining.
 
         Args:
@@ -437,7 +439,7 @@ class Pattern:
         return self.search_regions.is_defined(self.fixed)
 
     @classmethod
-    def from_match(cls, match: Any, pattern_id: str | None = None) -> "Pattern":
+    def from_match(cls, match: Any, pattern_id: str | None = None) -> Pattern:
         """Create Pattern from a Match object (delegates to factory).
 
         Args:
@@ -450,7 +452,7 @@ class Pattern:
         return PatternFactory.from_match(match, pattern_id)
 
     @classmethod
-    def from_state_image(cls, state_image: Any, pattern_id: str | None = None) -> "Pattern":
+    def from_state_image(cls, state_image: Any, pattern_id: str | None = None) -> Pattern:
         """Create a Pattern from a StateImage (delegates to factory).
 
         Args:

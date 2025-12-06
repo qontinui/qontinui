@@ -5,6 +5,8 @@ Implements RuntimeExtractor using Playwright for web targets,
 reusing the existing web extraction components.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -54,7 +56,7 @@ class PlaywrightExtractor(RuntimeExtractor):
         self.is_connected = False
         self.session: RuntimeExtractionSession | None = None
 
-    async def connect(self, target: "ExtractionTarget") -> None:
+    async def connect(self, target: ExtractionTarget) -> None:
         """
         Connect to web target via Playwright.
 
@@ -81,8 +83,9 @@ class PlaywrightExtractor(RuntimeExtractor):
 
             # Set cookies if provided
             if target.auth_cookies:
-                from playwright._impl._api_structures import SetCookieParam
                 from typing import cast
+
+                from playwright._impl._api_structures import SetCookieParam
 
                 cookies = [
                     {"name": name, "value": value, "url": target.url}
@@ -129,7 +132,7 @@ class PlaywrightExtractor(RuntimeExtractor):
             await self.playwright.stop()
             self.playwright = None
 
-    async def extract_current_state(self) -> "RuntimeStateCapture":
+    async def extract_current_state(self) -> RuntimeStateCapture:
         """
         Extract current page state.
 
@@ -273,7 +276,7 @@ class PlaywrightExtractor(RuntimeExtractor):
         self,
         regions: list[DetectedRegion],
         elements: list[ExtractedElement],
-    ) -> list["ExtractedState"]:
+    ) -> list[ExtractedState]:
         """Convert detected regions to extracted states."""
         from ...web.models import ExtractedState, StateType
 
@@ -326,7 +329,7 @@ class PlaywrightExtractor(RuntimeExtractor):
 
         return states
 
-    async def capture_screenshot(self, region: BaseBoundingBox | None = None) -> "Screenshot":
+    async def capture_screenshot(self, region: BaseBoundingBox | None = None) -> Screenshot:
         """
         Capture a screenshot of the current state.
 
@@ -546,7 +549,7 @@ class PlaywrightExtractor(RuntimeExtractor):
         action_type: str,
         target_selector: str,
         value: str | None = None,
-    ) -> "RuntimeStateCapture":
+    ) -> RuntimeStateCapture:
         """
         Perform an action on the application and capture the resulting state.
 
@@ -616,7 +619,7 @@ class PlaywrightExtractor(RuntimeExtractor):
         if self.page:
             await self.page.wait_for_timeout(timeout_ms)
 
-    def add_capture(self, capture: "RuntimeStateCapture") -> None:
+    def add_capture(self, capture: RuntimeStateCapture) -> None:
         """
         Add a capture to the current session.
 
@@ -626,7 +629,7 @@ class PlaywrightExtractor(RuntimeExtractor):
         if self.session:
             self.session.captures.append(capture)
 
-    async def extract(self, target: "ExtractionTarget", config: Any = None) -> Any:
+    async def extract(self, target: ExtractionTarget, config: Any = None) -> Any:
         """
         Extract state from the target application (orchestrator API).
 
@@ -697,7 +700,7 @@ class PlaywrightExtractor(RuntimeExtractor):
             raise RuntimeError(f"Extraction failed: {e}") from e
 
     @classmethod
-    def supports_target(cls, target: "ExtractionTarget") -> bool:
+    def supports_target(cls, target: ExtractionTarget) -> bool:
         """
         Check if this extractor can handle the given target.
 

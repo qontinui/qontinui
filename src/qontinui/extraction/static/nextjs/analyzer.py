@@ -8,6 +8,8 @@ Extends ReactStaticAnalyzer with Next.js specific features including:
 - Special Next.js files (layout, loading, error, etc.)
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -37,7 +39,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
         self._server_components: list[ComponentDefinition] = []
         self._server_actions: list[APICallDefinition] = []
 
-    async def analyze(self, config: "StaticConfig") -> "StaticAnalysisResult":
+    async def analyze(self, config: StaticConfig) -> StaticAnalysisResult:
         """
         Analyze Next.js source code.
 
@@ -144,7 +146,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
 
         return result
 
-    def get_routes(self) -> list["RouteDefinition"]:
+    def get_routes(self) -> list[RouteDefinition]:
         """
         Extract routes from pages/ or app/ directories.
 
@@ -195,7 +197,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
         return "unknown"
 
     @classmethod
-    def supports_framework(cls, framework: "FrameworkType") -> bool:
+    def supports_framework(cls, framework: FrameworkType) -> bool:
         """Check if this analyzer supports Next.js."""
         # Support both enum naming conventions (NEXT_JS from config, NEXT from base)
         framework_value = framework.value if hasattr(framework, "value") else str(framework)

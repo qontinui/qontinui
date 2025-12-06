@@ -3,6 +3,8 @@
 Provides geometric operations and location calculations for Match objects.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from ..element.location import Location

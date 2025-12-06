@@ -35,7 +35,7 @@ class TypeScriptAnalysisReport:
             Dict mapping component names to their child components
         """
         hierarchy = {}
-        for file_path, file_result in self.parse_result.files.items():
+        for _file_path, file_result in self.parse_result.files.items():
             for component in file_result.components:
                 hierarchy[component.name] = component.children
         return hierarchy

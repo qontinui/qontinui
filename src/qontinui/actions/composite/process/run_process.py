@@ -3,6 +3,8 @@
 Executes a named workflow (v2.0.0+) or process (v1.0.0 compatibility) with optional repetition control.
 """
 
+from __future__ import annotations
+
 import time
 from typing import TYPE_CHECKING
 
@@ -34,7 +36,7 @@ class RunProcess(ActionInterface):
         workflows. The process_id parameter accepts both workflow and process IDs.
     """
 
-    def __init__(self, config: "QontinuiConfig | None" = None) -> None:
+    def __init__(self, config: QontinuiConfig | None = None) -> None:
         """Initialize RunProcess action.
 
         Args:
@@ -42,7 +44,7 @@ class RunProcess(ActionInterface):
         """
         self.config = config
 
-    def set_config(self, config: "QontinuiConfig") -> None:
+    def set_config(self, config: QontinuiConfig) -> None:
         """Set the configuration after initialization.
 
         Args:
@@ -58,7 +60,7 @@ class RunProcess(ActionInterface):
         """
         return ActionType.RUN_PROCESS
 
-    def perform(self, action_result: ActionResult, *object_collections: "ObjectCollection") -> None:
+    def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the workflow with optional repetition.
 
         Args:
@@ -113,7 +115,7 @@ class RunProcess(ActionInterface):
         else:
             self._execute_fixed_count(workflow, repetition, action_result, object_collections)
 
-    def _get_workflow(self, workflow_id: str) -> "Workflow | Process | None":
+    def _get_workflow(self, workflow_id: str) -> Workflow | Process | None:
         """Get a workflow by ID from the configuration.
 
         Args:
@@ -137,7 +139,7 @@ class RunProcess(ActionInterface):
         return None
 
     def _execute_workflow_once(
-        self, workflow: "Workflow | Process", action_result: ActionResult
+        self, workflow: Workflow | Process, action_result: ActionResult
     ) -> bool:
         """Execute a workflow once.
 
@@ -170,7 +172,7 @@ class RunProcess(ActionInterface):
 
     def _execute_until_success(
         self,
-        workflow: "Workflow | Process",
+        workflow: Workflow | Process,
         repetition,
         action_result: ActionResult,
         object_collections,
@@ -218,7 +220,7 @@ class RunProcess(ActionInterface):
 
     def _execute_fixed_count(
         self,
-        workflow: "Workflow | Process",
+        workflow: Workflow | Process,
         repetition,
         action_result: ActionResult,
         object_collections,

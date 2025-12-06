@@ -3,6 +3,8 @@
 Executes DSL statements with proper flow control and context management.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
 from .execution_context import ExecutionContext
@@ -156,7 +158,7 @@ class StatementExecutor:
             self.execute(statement)
         return None
 
-    def _execute_variable_declaration(self, statement: "VariableDeclarationStatement") -> None:
+    def _execute_variable_declaration(self, statement: VariableDeclarationStatement) -> None:
         """Execute a variable declaration statement.
 
         Declares a new variable in the current scope and optionally initializes
@@ -188,7 +190,7 @@ class StatementExecutor:
 
         self.context.set_variable(statement.variable_name, value)
 
-    def _execute_assignment(self, statement: "AssignmentStatement") -> None:
+    def _execute_assignment(self, statement: AssignmentStatement) -> None:
         """Execute an assignment statement.
 
         Assigns a value to an existing variable. The variable must have been
@@ -231,7 +233,7 @@ class StatementExecutor:
                 statement_type="assignment",
             ) from e
 
-    def _execute_if(self, statement: "IfStatement") -> None:
+    def _execute_if(self, statement: IfStatement) -> None:
         """Execute an if statement.
 
         Evaluates the condition and executes either the then-branch or else-branch
@@ -269,7 +271,7 @@ class StatementExecutor:
             if statement.else_statements:
                 self.execute_statements(statement.else_statements)
 
-    def _execute_for_each(self, statement: "ForEachStatement") -> None:
+    def _execute_for_each(self, statement: ForEachStatement) -> None:
         """Execute a forEach loop statement.
 
         Iterates over a collection, executing the loop body for each element.
@@ -331,7 +333,7 @@ class StatementExecutor:
                 # Always pop scope, even if exception occurred
                 self.context.pop_scope()
 
-    def _execute_return(self, statement: "ReturnStatement") -> None:
+    def _execute_return(self, statement: ReturnStatement) -> None:
         """Execute a return statement.
 
         Evaluates the return value expression (if any) and raises a ReturnException
@@ -362,7 +364,7 @@ class StatementExecutor:
 
         raise ReturnException(value)
 
-    def _execute_method_call(self, statement: "MethodCallStatement") -> Any:
+    def _execute_method_call(self, statement: MethodCallStatement) -> Any:
         """Execute a method call statement.
 
         Calls a method on an object from the external context. The object must

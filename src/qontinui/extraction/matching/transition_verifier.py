@@ -5,6 +5,8 @@ Verifies inferred transitions by executing them at runtime and comparing
 expected vs actual state changes.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
@@ -28,7 +30,7 @@ logger = logging.getLogger(__name__)
 class TransitionVerifier:
     """Verifies inferred transitions by executing them at runtime."""
 
-    def __init__(self, extractor: "RuntimeExtractor"):
+    def __init__(self, extractor: RuntimeExtractor):
         """Initialize the verifier.
 
         Args:

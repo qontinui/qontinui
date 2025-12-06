@@ -332,8 +332,13 @@ class JSONRunner:
     def _configure_monitor(self, monitor_index: int):
         """Configure the monitor manager to use specified monitor.
 
+        Sets up monitor for screen capture and configures coordinate offset
+        for multi-monitor support. When automation runs on a non-primary monitor,
+        coordinates from FIND actions are relative to that monitor's screenshot.
+        This method sets up the offset so mouse operations use absolute screen coordinates.
+
         Args:
-            monitor_index: Index of monitor to use
+            monitor_index: Index of monitor to use (0-based)
         """
         try:
             # Set the primary monitor index for all operations
@@ -345,6 +350,16 @@ class JSONRunner:
                 print(
                     f"Monitor {monitor_index} configured: {monitor_info.width}x{monitor_info.height} at ({monitor_info.x}, {monitor_info.y})"
                 )
+
+                # Set monitor offset in state executor for coordinate conversion
+                # This allows CLICK actions to use absolute screen coordinates
+                # when targeting coordinates from FIND results
+                if self.state_executor:
+                    self.state_executor.set_monitor_offset(
+                        monitor_index=monitor_index,
+                        offset_x=monitor_info.x,
+                        offset_y=monitor_info.y,
+                    )
             else:
                 print(f"Warning: Monitor {monitor_index} not found, using default monitor")
                 self.monitor_manager.primary_monitor_index = 0

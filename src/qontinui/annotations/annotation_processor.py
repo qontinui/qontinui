@@ -3,6 +3,8 @@
 Processes @state and @transition annotations to configure the state machine.
 """
 
+from __future__ import annotations
+
 import inspect
 import logging
 from collections.abc import Callable

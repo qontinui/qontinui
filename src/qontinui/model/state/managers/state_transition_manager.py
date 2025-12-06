@@ -4,6 +4,8 @@ Handles outgoing and incoming transitions, tracking navigation paths
 and state relationships.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 

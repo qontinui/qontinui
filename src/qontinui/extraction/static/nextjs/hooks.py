@@ -8,13 +8,15 @@ Extracts state from Next.js navigation and routing hooks:
 - useParams (App Router)
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from qontinui.extraction.models.static import StateVariable
 
 
-def extract_use_router(parse_results: dict) -> list["StateVariable"]:
+def extract_use_router(parse_results: dict) -> list[StateVariable]:
     """
     Extract useRouter state (pathname, query, isReady).
 
@@ -32,7 +34,6 @@ def extract_use_router(parse_results: dict) -> list["StateVariable"]:
     Returns:
         List of state variables from useRouter
     """
-    from qontinui.extraction.models.static import StateVariable
 
     state_variables: list[StateVariable] = []
 
@@ -57,7 +58,7 @@ def extract_use_router(parse_results: dict) -> list["StateVariable"]:
     return state_variables
 
 
-def extract_use_search_params(parse_results: dict) -> list["StateVariable"]:
+def extract_use_search_params(parse_results: dict) -> list[StateVariable]:
     """
     Extract useSearchParams state.
 
@@ -75,7 +76,6 @@ def extract_use_search_params(parse_results: dict) -> list["StateVariable"]:
     Returns:
         List of state variables from useSearchParams
     """
-    from qontinui.extraction.models.static import StateVariable
 
     state_variables: list[StateVariable] = []
 
@@ -100,7 +100,7 @@ def extract_use_search_params(parse_results: dict) -> list["StateVariable"]:
     return state_variables
 
 
-def extract_use_pathname(parse_results: dict) -> list["StateVariable"]:
+def extract_use_pathname(parse_results: dict) -> list[StateVariable]:
     """
     Extract usePathname state.
 
@@ -117,7 +117,6 @@ def extract_use_pathname(parse_results: dict) -> list["StateVariable"]:
     Returns:
         List of state variables from usePathname
     """
-    from qontinui.extraction.models.static import StateVariable
 
     state_variables: list[StateVariable] = []
 
@@ -142,7 +141,7 @@ def extract_use_pathname(parse_results: dict) -> list["StateVariable"]:
     return state_variables
 
 
-def extract_use_params(parse_results: dict) -> list["StateVariable"]:
+def extract_use_params(parse_results: dict) -> list[StateVariable]:
     """
     Extract useParams state.
 
@@ -160,7 +159,6 @@ def extract_use_params(parse_results: dict) -> list["StateVariable"]:
     Returns:
         List of state variables from useParams
     """
-    from qontinui.extraction.models.static import StateVariable
 
     state_variables: list[StateVariable] = []
 

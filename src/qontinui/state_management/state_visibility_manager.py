@@ -3,8 +3,10 @@
 Manages the conversion of active states to hidden states during transitions.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from .state_memory import StateMemory
 
@@ -75,7 +77,7 @@ class StateVisibilityManager:
 
     def __init__(
         self,
-        all_states_in_project_service: Optional["StateService"] = None,
+        all_states_in_project_service: StateService | None = None,
         state_memory: StateMemory | None = None,
     ) -> None:
         """Initialize StateVisibilityManager.
@@ -135,7 +137,7 @@ class StateService:
     Will be implemented when migrating the navigation package.
     """
 
-    def get_state(self, state_id: int) -> Optional["State"]:
+    def get_state(self, state_id: int) -> State | None:
         """Get state by ID.
 
         Args:

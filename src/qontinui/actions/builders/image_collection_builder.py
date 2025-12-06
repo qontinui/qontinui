@@ -3,7 +3,9 @@
 Handles StateImages and Patterns.
 """
 
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ...model.state import State, StateImage
@@ -22,7 +24,7 @@ class ImageCollectionBuilder:
         """Initialize builder with empty list."""
         self.state_images: list[StateImage] = []
 
-    def with_images(self, *state_images) -> "ImageCollectionBuilder":
+    def with_images(self, *state_images) -> ImageCollectionBuilder:
         """Add state images to collection.
 
         Args:
@@ -38,7 +40,7 @@ class ImageCollectionBuilder:
                 self.state_images.append(item)
         return self
 
-    def set_images(self, state_images: list["StateImage"]) -> "ImageCollectionBuilder":
+    def set_images(self, state_images: list[StateImage]) -> ImageCollectionBuilder:
         """Set state images list.
 
         Args:
@@ -50,7 +52,7 @@ class ImageCollectionBuilder:
         self.state_images = state_images
         return self
 
-    def with_patterns(self, *patterns) -> "ImageCollectionBuilder":
+    def with_patterns(self, *patterns) -> ImageCollectionBuilder:
         """Add patterns as state images.
 
         Args:
@@ -67,7 +69,7 @@ class ImageCollectionBuilder:
                 self.state_images.append(item.in_null_state())
         return self
 
-    def with_all_state_images(self, state: Optional["State"]) -> "ImageCollectionBuilder":
+    def with_all_state_images(self, state: State | None) -> ImageCollectionBuilder:
         """Add all state images from a state.
 
         Args:
@@ -80,7 +82,7 @@ class ImageCollectionBuilder:
             self.state_images.extend(state.get_state_images())
         return self
 
-    def with_non_shared_images(self, state: Optional["State"]) -> "ImageCollectionBuilder":
+    def with_non_shared_images(self, state: State | None) -> ImageCollectionBuilder:
         """Add non-shared state images from a state.
 
         Args:
@@ -95,7 +97,7 @@ class ImageCollectionBuilder:
                     self.state_images.append(state_image)
         return self
 
-    def build(self) -> list["StateImage"]:
+    def build(self) -> list[StateImage]:
         """Build and return the state images list.
 
         Returns:

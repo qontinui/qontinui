@@ -13,8 +13,10 @@ Architecture:
     └─ if real → HAL Layer → MSSScreenCapture → Returns PIL.Image
 """
 
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PIL import Image
 
@@ -122,7 +124,7 @@ class CaptureWrapper(BaseWrapper):
 
     def capture_region(
         self,
-        region: "Region",
+        region: Region,
         monitor: int | None = None,
     ) -> Image.Image:
         """Capture specific region.
@@ -160,7 +162,7 @@ class CaptureWrapper(BaseWrapper):
 
             return screenshot  # type: ignore[no-any-return]
 
-    def get_monitors(self) -> list["Monitor"]:
+    def get_monitors(self) -> list[Monitor]:
         """Get list of available monitors.
 
         Routes to MockCapture or HAL based on ExecutionMode.
@@ -181,7 +183,7 @@ class CaptureWrapper(BaseWrapper):
             logger.debug("CaptureWrapper.get_monitors (REAL)")
             return self.hal_capture.get_monitors()  # type: ignore[no-any-return]
 
-    def get_primary_monitor(self) -> "Monitor":
+    def get_primary_monitor(self) -> Monitor:
         """Get primary monitor.
 
         Routes to MockCapture or HAL based on ExecutionMode.
@@ -255,7 +257,7 @@ class CaptureWrapper(BaseWrapper):
         self,
         filepath: str,
         monitor: int | None = None,
-        region: Optional["Region"] = None,
+        region: Region | None = None,
     ) -> str:
         """Save screenshot to file.
 

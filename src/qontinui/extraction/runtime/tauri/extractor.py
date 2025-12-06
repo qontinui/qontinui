@@ -5,6 +5,8 @@ Extracts UI state from Tauri applications by connecting to their dev server
 and injecting Tauri API mocks to enable browser-based testing.
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -42,7 +44,7 @@ class TauriExtractor(PlaywrightExtractor):
         self.mock_script: str | None = None
         self.tauri_config: dict[str, Any] = {}
 
-    async def connect(self, target: "ExtractionTarget") -> None:
+    async def connect(self, target: ExtractionTarget) -> None:
         """
         Connect to Tauri app via dev server with mocks.
 
@@ -187,7 +189,7 @@ class TauriExtractor(PlaywrightExtractor):
 
         raise TimeoutError(f"Server at {url} did not become ready within {timeout}s")
 
-    def _generate_mock_script(self, target: "ExtractionTarget") -> str:
+    def _generate_mock_script(self, target: ExtractionTarget) -> str:
         """
         Generate Tauri mock script for this target.
 
@@ -213,7 +215,7 @@ class TauriExtractor(PlaywrightExtractor):
         # Generate script
         return generate_mock_script(mocks)
 
-    async def extract_current_state(self) -> "RuntimeStateCapture":
+    async def extract_current_state(self) -> RuntimeStateCapture:
         """
         Extract current state of the Tauri application.
 
@@ -233,7 +235,7 @@ class TauriExtractor(PlaywrightExtractor):
         return await super().extract_current_state()
 
     @classmethod
-    def supports_target(cls, target: "ExtractionTarget") -> bool:
+    def supports_target(cls, target: ExtractionTarget) -> bool:
         """
         Check if this extractor can handle the given target.
 
