@@ -397,4 +397,4 @@ class FeatureIdentifier:
             ]
         )
 
-        return distinctive_score >= 2
+        return bool(distinctive_score >= 2)
