@@ -1,5 +1,7 @@
 """Manages image asset extraction and storage."""
 
+from __future__ import annotations
+
 import logging
 import tempfile
 from pathlib import Path
@@ -37,7 +39,7 @@ class ImageAssetManager:
         """Initialize image asset manager."""
         self.temp_dir: Path | None = None
 
-    def save_images(self, config: "QontinuiConfig") -> None:
+    def save_images(self, config: QontinuiConfig) -> None:
         """Save all images to temporary files for OpenCV usage.
 
         Creates a temporary directory and saves all images from the config's

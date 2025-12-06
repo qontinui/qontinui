@@ -85,6 +85,20 @@ class MouseOperations(IMouseController):
                 # Instant movement
                 self._mouse.position = (x, y)
 
+            # Debug: Verify actual position after move
+            import datetime
+
+            debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
+            try:
+                actual_pos = self._mouse.position
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(
+                        f"[{ts}] HAL mouse_move() target=({x}, {y}), actual_after_move={actual_pos}\n"
+                    )
+            except Exception:
+                pass
+
             logger.debug(f"Mouse moved to ({x}, {y})")
             return True
 
@@ -175,18 +189,55 @@ class MouseOperations(IMouseController):
         Raises:
             InputControlError: If mouse down fails
         """
+        # Debug logging to file for troubleshooting
+        import datetime
+
+        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
+        try:
+            with open(debug_log_path, "a") as f:
+                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                f.write(f"[{ts}] HAL mouse_down() called: x={x}, y={y}, button={button}\n")
+        except Exception:
+            pass
+
         try:
             # Move to position if specified
             if x is not None and y is not None:
                 self.mouse_move(x, y)
 
             pynput_button = self._get_pynput_button(button)
+
+            # Debug: log pynput call
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(
+                        f"[{ts}] HAL mouse_down() calling pynput press with button={pynput_button}\n"
+                    )
+            except Exception:
+                pass
+
             self._mouse.press(pynput_button)
+
+            # Debug: log success
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] HAL mouse_down() pynput press completed successfully\n")
+            except Exception:
+                pass
 
             logger.debug(f"Mouse button {button} pressed")
             return True
 
         except (OSError, RuntimeError, ValueError, TypeError) as e:
+            # Debug: log exception
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] HAL mouse_down() EXCEPTION: {type(e).__name__}: {e}\n")
+            except Exception:
+                pass
             logger.error(f"Mouse down failed: {e}")
             raise InputControlError("mouse_down", str(e)) from e
 
@@ -209,18 +260,55 @@ class MouseOperations(IMouseController):
         Raises:
             InputControlError: If mouse up fails
         """
+        # Debug logging to file for troubleshooting
+        import datetime
+
+        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
+        try:
+            with open(debug_log_path, "a") as f:
+                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                f.write(f"[{ts}] HAL mouse_up() called: x={x}, y={y}, button={button}\n")
+        except Exception:
+            pass
+
         try:
             # Move to position if specified
             if x is not None and y is not None:
                 self.mouse_move(x, y)
 
             pynput_button = self._get_pynput_button(button)
+
+            # Debug: log pynput call
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(
+                        f"[{ts}] HAL mouse_up() calling pynput release with button={pynput_button}\n"
+                    )
+            except Exception:
+                pass
+
             self._mouse.release(pynput_button)
+
+            # Debug: log success
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] HAL mouse_up() pynput release completed successfully\n")
+            except Exception:
+                pass
 
             logger.debug(f"Mouse button {button} released")
             return True
 
         except (OSError, RuntimeError, ValueError, TypeError) as e:
+            # Debug: log exception
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] HAL mouse_up() EXCEPTION: {type(e).__name__}: {e}\n")
+            except Exception:
+                pass
             logger.error(f"Mouse up failed: {e}")
             raise InputControlError("mouse_up", str(e)) from e
 

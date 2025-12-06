@@ -9,6 +9,8 @@ algorithms. These are research implementations and may not have the same
 performance or stability guarantees as the main qontinui detection pipeline.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
@@ -185,7 +187,7 @@ class MultiScreenshotDetector(ABC):
         self.params: dict[str, Any] = {}
 
     @abstractmethod
-    def detect_multi(self, dataset: "MultiScreenshotDataset", **params) -> dict[int, list[BBox]]:
+    def detect_multi(self, dataset: MultiScreenshotDataset, **params) -> dict[int, list[BBox]]:
         """
         Detect GUI elements across multiple screenshots
 

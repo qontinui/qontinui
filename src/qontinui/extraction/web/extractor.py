@@ -185,8 +185,9 @@ class WebExtractor:
 
             # Set cookies if configured
             if self.config.auth_cookies:
-                from playwright._impl._api_structures import SetCookieParam
                 from typing import cast
+
+                from playwright._impl._api_structures import SetCookieParam
 
                 cookies = [
                     {"name": name, "value": value, "url": url}

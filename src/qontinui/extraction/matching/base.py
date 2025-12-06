@@ -5,6 +5,8 @@ This module defines the interface for state matchers that combine information
 from static analysis and runtime extraction to build a complete state model.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any

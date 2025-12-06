@@ -145,7 +145,7 @@ class ComponentMatcher:
 
         component_lower = component.name.lower()
         component_kebab = self._to_kebab_case(component.name)
-        component_snake = self._to_snake_case(component.name)
+        self._to_snake_case(component.name)
 
         for element in elements:
             if not element.class_names:

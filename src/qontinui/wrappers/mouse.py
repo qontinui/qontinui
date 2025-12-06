@@ -4,6 +4,8 @@ Based on Brobot's wrapper pattern - provides stable API that routes
 to mock or live implementation based on execution mode.
 """
 
+from __future__ import annotations
+
 import logging
 import threading
 import time
@@ -40,11 +42,11 @@ class Mouse:
     """
 
     _mock_input = MockInput()
-    _controller: "IInputController | None" = None
+    _controller: IInputController | None = None
     _controller_lock = threading.Lock()
 
     @classmethod
-    def _get_controller(cls) -> "IInputController":
+    def _get_controller(cls) -> IInputController:
         """Lazy initialization of input controller.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -74,12 +76,40 @@ class Mouse:
         """
         is_mock = MockModeManager.is_mock_mode()
 
+        # Debug logging to file for troubleshooting
+        import datetime
+
+        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
+        try:
+            with open(debug_log_path, "a") as f:
+                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                f.write(
+                    f"[{ts}] Mouse.move() called: x={x}, y={y}, duration={duration}, is_mock={is_mock}\n"
+                )
+        except Exception:
+            pass
+
         if is_mock:
             result = cls._mock_input.mouse_move(x, y, duration)
             logger.debug(f"[MOCK] Mouse moved to ({x}, {y})")
         else:
             controller = cls._get_controller()
+            # Debug: log controller info
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(
+                        f"[{ts}] Mouse.move() calling controller.mouse_move(), controller type: {type(controller).__name__}\n"
+                    )
+            except Exception:
+                pass
             result = controller.mouse_move(x, y, duration)
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] Mouse.move() controller.mouse_move() returned: {result}\n")
+            except Exception:
+                pass
             logger.debug(f"[LIVE] Mouse moved to ({x}, {y})")
 
         # Emit event after successful move
@@ -214,11 +244,41 @@ class Mouse:
         Returns:
             True if successful
         """
+        # Debug logging to file for troubleshooting
+        import datetime
+
+        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
+        try:
+            with open(debug_log_path, "a") as f:
+                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                is_mock = MockModeManager.is_mock_mode()
+                f.write(
+                    f"[{ts}] Mouse.down() called: x={x}, y={y}, button={button}, is_mock={is_mock}\n"
+                )
+        except Exception:
+            pass
+
         if MockModeManager.is_mock_mode():
             return cls._mock_input.mouse_down(x, y, button)
         else:
             controller = cls._get_controller()
-            return controller.mouse_down(x, y, button)
+            # Debug: log controller info
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(
+                        f"[{ts}] Mouse.down() calling controller.mouse_down(), controller type: {type(controller).__name__}\n"
+                    )
+            except Exception:
+                pass
+            result = controller.mouse_down(x, y, button)
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] Mouse.down() controller.mouse_down() returned: {result}\n")
+            except Exception:
+                pass
+            return result
 
     @classmethod
     def up(
@@ -237,11 +297,41 @@ class Mouse:
         Returns:
             True if successful
         """
+        # Debug logging to file for troubleshooting
+        import datetime
+
+        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
+        try:
+            with open(debug_log_path, "a") as f:
+                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                is_mock = MockModeManager.is_mock_mode()
+                f.write(
+                    f"[{ts}] Mouse.up() called: x={x}, y={y}, button={button}, is_mock={is_mock}\n"
+                )
+        except Exception:
+            pass
+
         if MockModeManager.is_mock_mode():
             return cls._mock_input.mouse_up(x, y, button)
         else:
             controller = cls._get_controller()
-            return controller.mouse_up(x, y, button)
+            # Debug: log controller info
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(
+                        f"[{ts}] Mouse.up() calling controller.mouse_up(), controller type: {type(controller).__name__}\n"
+                    )
+            except Exception:
+                pass
+            result = controller.mouse_up(x, y, button)
+            try:
+                with open(debug_log_path, "a") as f:
+                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] Mouse.up() controller.mouse_up() returned: {result}\n")
+            except Exception:
+                pass
+            return result
 
     @classmethod
     def drag(

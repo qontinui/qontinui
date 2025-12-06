@@ -416,7 +416,7 @@ class NextJSExtractor(TechStackExtractor):
 
         logger.info(f"Found {len(interactive_selectors)} interactive elements")
 
-        for i, selector_info in enumerate(interactive_selectors[:30]):  # Limit to 30
+        for _i, selector_info in enumerate(interactive_selectors[:30]):  # Limit to 30
             selector = selector_info["selector"]
             try:
                 images = await self.extract_state_images_for_selector(

@@ -17,6 +17,8 @@ Architecture:
 - _cascade_*(): Individual cascade functions for each parameter
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -52,8 +54,8 @@ class CascadeContext:
 
     search_options: SearchOptions | None = None
     pattern: Pattern | None = None
-    state_image: "StateImage | None" = None
-    project_config: "QontinuiSettings | None" = None
+    state_image: StateImage | None = None
+    project_config: QontinuiSettings | None = None
 
 
 def build_find_options(
@@ -192,12 +194,13 @@ def _cascade_search_region(ctx: CascadeContext, explicit: Region | None) -> Regi
     Priority:
     1. explicit parameter
     2. SearchOptions.search_regions[0] (use first if multiple)
-    3. Pattern.search_region
+    3. Pattern.search_regions.get_one_region() (returns fixed or first region)
     4. StateImage._search_region
     5. None (search full screen)
 
     Note: SearchOptions has search_regions (list), FindOptions has search_region (single).
     We take the first region from the list if multiple are provided.
+    Pattern has search_regions (SearchRegions object) which can contain multiple regions.
 
     Args:
         ctx: Cascade context
@@ -217,8 +220,8 @@ def _cascade_search_region(ctx: CascadeContext, explicit: Region | None) -> Regi
             return regions[0]  # type: ignore[return-value]
 
     # Priority 3: Pattern search region
-    if ctx.pattern and ctx.pattern.search_region is not None:  # type: ignore[attr-defined]
-        return ctx.pattern.search_region  # type: ignore[attr-defined,no-any-return]
+    if ctx.pattern and not ctx.pattern.search_regions.is_empty():
+        return ctx.pattern.search_regions.get_one_region()
 
     # Priority 4: StateImage search region
     if ctx.state_image and ctx.state_image._search_region is not None:

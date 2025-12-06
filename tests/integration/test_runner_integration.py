@@ -11,7 +11,6 @@ These tests mock external dependencies (actual runner service) while testing
 the Python side of the integration thoroughly.
 """
 
-
 import json
 from pathlib import Path
 from typing import Any

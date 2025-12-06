@@ -4,6 +4,8 @@ Provides operations for merging matches and data from multiple ActionResult
 instances into a single result.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -19,7 +21,7 @@ class ResultMerger:
     """
 
     @staticmethod
-    def add_match_objects(target: "ActionResult", source: "ActionResult") -> "ActionResult":
+    def add_match_objects(target: ActionResult, source: ActionResult) -> ActionResult:
         """Merge match objects from source into target.
 
         Args:
@@ -66,7 +68,7 @@ class ResultMerger:
         return builder.build()
 
     @staticmethod
-    def add_non_match_results(target: "ActionResult", source: "ActionResult") -> "ActionResult":
+    def add_non_match_results(target: ActionResult, source: ActionResult) -> ActionResult:
         """Merge non-match data from source into target.
 
         This includes text, states, regions, movements, and execution history.
@@ -127,7 +129,7 @@ class ResultMerger:
         return builder.build()
 
     @staticmethod
-    def add_all_results(target: "ActionResult", source: "ActionResult") -> "ActionResult":
+    def add_all_results(target: ActionResult, source: ActionResult) -> ActionResult:
         """Merge all data from source into target.
 
         Combines both match objects and non-match data.

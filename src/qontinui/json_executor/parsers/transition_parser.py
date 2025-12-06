@@ -1,5 +1,7 @@
 """Parses transitions and assigns them to states."""
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -33,7 +35,7 @@ class TransitionParser:
     """
 
     def parse_and_assign_transitions(
-        self, config: "QontinuiConfig", transitions_data: list[dict[str, Any]]
+        self, config: QontinuiConfig, transitions_data: list[dict[str, Any]]
     ) -> None:
         """Parse transitions and assign them to states.
 
@@ -57,7 +59,7 @@ class TransitionParser:
             if isinstance(transition, self._get_incoming_transition_class()):
                 self._assign_incoming_transition(config, transition)
 
-    def _parse_transition(self, data: dict[str, Any]) -> "Transition":
+    def _parse_transition(self, data: dict[str, Any]) -> Transition:
         """Parse transition from dictionary using Pydantic validation.
 
         Infers transition type based on presence of fromState field.
@@ -85,7 +87,7 @@ class TransitionParser:
             return IncomingTransition.model_validate(data)
 
     def _assign_outgoing_transition(
-        self, config: "QontinuiConfig", transition: "OutgoingTransition"
+        self, config: QontinuiConfig, transition: OutgoingTransition
     ) -> None:
         """Assign OutgoingTransition to its from_state.
 
@@ -101,7 +103,7 @@ class TransitionParser:
             )
 
     def _assign_incoming_transition(
-        self, config: "QontinuiConfig", transition: "IncomingTransition"
+        self, config: QontinuiConfig, transition: IncomingTransition
     ) -> None:
         """Assign IncomingTransition to its to_state.
 

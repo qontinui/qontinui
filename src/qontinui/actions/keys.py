@@ -4,6 +4,8 @@ This module provides enums for special keyboard keys that cannot be typed
 directly as strings, similar to SikuliX's Key class.
 """
 
+from __future__ import annotations
+
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -123,7 +125,7 @@ class Key(Enum):
         return self.value
 
     @classmethod
-    def is_modifier(cls, key: "Key") -> bool:
+    def is_modifier(cls, key: Key) -> bool:
         """Check if a key is a modifier key.
 
         Args:
@@ -144,7 +146,7 @@ class Key(Enum):
         return key in modifiers
 
     @classmethod
-    def is_function_key(cls, key: "Key") -> bool:
+    def is_function_key(cls, key: Key) -> bool:
         """Check if a key is a function key (F1-F15).
 
         Args:
@@ -173,7 +175,7 @@ class Key(Enum):
         return key in function_keys
 
     @classmethod
-    def is_navigation_key(cls, key: "Key") -> bool:
+    def is_navigation_key(cls, key: Key) -> bool:
         """Check if a key is a navigation key.
 
         Args:
@@ -195,7 +197,7 @@ class Key(Enum):
         return key in nav_keys
 
     @classmethod
-    def from_string(cls, key_string: str) -> "Key":
+    def from_string(cls, key_string: str) -> Key:
         """Get a Key enum from its string representation.
 
         Args:
@@ -266,22 +268,22 @@ class KeyCombo:
         return "+".join(parts)
 
     @staticmethod
-    def ctrl(key) -> "KeyCombo":
+    def ctrl(key) -> KeyCombo:
         """Create a Ctrl+key combination."""
         return KeyCombo(Key.CTRL, key)
 
     @staticmethod
-    def alt(key) -> "KeyCombo":
+    def alt(key) -> KeyCombo:
         """Create an Alt+key combination."""
         return KeyCombo(Key.ALT, key)
 
     @staticmethod
-    def shift(key) -> "KeyCombo":
+    def shift(key) -> KeyCombo:
         """Create a Shift+key combination."""
         return KeyCombo(Key.SHIFT, key)
 
     @staticmethod
-    def meta(key) -> "KeyCombo":
+    def meta(key) -> KeyCombo:
         """Create a Meta/Win/Cmd+key combination."""
         return KeyCombo(Key.META, key)
 

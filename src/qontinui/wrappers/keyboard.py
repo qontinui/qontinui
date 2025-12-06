@@ -4,6 +4,8 @@ Based on Brobot's wrapper pattern - provides stable API that routes
 to mock or live implementation based on execution mode.
 """
 
+from __future__ import annotations
+
 import logging
 import threading
 from typing import TYPE_CHECKING
@@ -42,10 +44,10 @@ class Keyboard:
     """
 
     _mock_input = MockInput()
-    _controller: "IInputController | None" = None
+    _controller: IInputController | None = None
     _controller_lock = threading.Lock()
 
-    def __init__(self, hal: "HALContainer | None" = None) -> None:
+    def __init__(self, hal: HALContainer | None = None) -> None:
         """Initialize keyboard wrapper with optional HAL container.
 
         Args:
@@ -56,7 +58,7 @@ class Keyboard:
         self._instance_controller = hal.input_controller if hal else None  # type: ignore[attr-defined]
 
     @classmethod
-    def _get_controller(cls) -> "IInputController":
+    def _get_controller(cls) -> IInputController:
         """Lazy initialization of input controller.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -69,7 +71,7 @@ class Keyboard:
                     cls._controller = HALFactory.get_input_controller()
         return cls._controller
 
-    def _get_active_controller(self) -> "IInputController":
+    def _get_active_controller(self) -> IInputController:
         """Get the active controller (instance or class-level)."""
         if self._instance_controller:
             return self._instance_controller  # type: ignore[no-any-return]

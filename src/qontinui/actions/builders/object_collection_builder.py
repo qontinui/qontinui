@@ -3,7 +3,9 @@
 Delegates to specialized builders for different object types.
 """
 
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from .image_collection_builder import ImageCollectionBuilder
 from .match_collection_builder import MatchCollectionBuilder
@@ -47,7 +49,7 @@ class ObjectCollectionBuilder:
 
     # Image-related methods
 
-    def with_images(self, *state_images) -> "ObjectCollectionBuilder":
+    def with_images(self, *state_images) -> ObjectCollectionBuilder:
         """Add state images to collection.
 
         Args:
@@ -59,7 +61,7 @@ class ObjectCollectionBuilder:
         self.images.with_images(*state_images)
         return self
 
-    def set_images(self, state_images: list["StateImage"]) -> "ObjectCollectionBuilder":
+    def set_images(self, state_images: list[StateImage]) -> ObjectCollectionBuilder:
         """Set state images list.
 
         Args:
@@ -71,7 +73,7 @@ class ObjectCollectionBuilder:
         self.images.set_images(state_images)
         return self
 
-    def with_patterns(self, *patterns) -> "ObjectCollectionBuilder":
+    def with_patterns(self, *patterns) -> ObjectCollectionBuilder:
         """Add patterns as state images.
 
         Args:
@@ -83,7 +85,7 @@ class ObjectCollectionBuilder:
         self.images.with_patterns(*patterns)
         return self
 
-    def with_all_state_images(self, state: Optional["State"]) -> "ObjectCollectionBuilder":
+    def with_all_state_images(self, state: State | None) -> ObjectCollectionBuilder:
         """Add all state images from a state.
 
         Args:
@@ -95,7 +97,7 @@ class ObjectCollectionBuilder:
         self.images.with_all_state_images(state)
         return self
 
-    def with_non_shared_images(self, state: Optional["State"]) -> "ObjectCollectionBuilder":
+    def with_non_shared_images(self, state: State | None) -> ObjectCollectionBuilder:
         """Add non-shared state images from a state.
 
         Args:
@@ -109,7 +111,7 @@ class ObjectCollectionBuilder:
 
     # Region-related methods
 
-    def with_locations(self, *locations) -> "ObjectCollectionBuilder":
+    def with_locations(self, *locations) -> ObjectCollectionBuilder:
         """Add locations to collection.
 
         Args:
@@ -121,7 +123,7 @@ class ObjectCollectionBuilder:
         self.regions.with_locations(*locations)
         return self
 
-    def set_locations(self, locations: list["StateLocation"]) -> "ObjectCollectionBuilder":
+    def set_locations(self, locations: list[StateLocation]) -> ObjectCollectionBuilder:
         """Set locations list.
 
         Args:
@@ -133,7 +135,7 @@ class ObjectCollectionBuilder:
         self.regions.set_locations(locations)
         return self
 
-    def with_regions(self, *regions) -> "ObjectCollectionBuilder":
+    def with_regions(self, *regions) -> ObjectCollectionBuilder:
         """Add regions to collection.
 
         Args:
@@ -145,7 +147,7 @@ class ObjectCollectionBuilder:
         self.regions.with_regions(*regions)
         return self
 
-    def set_regions(self, regions: list["StateRegion"]) -> "ObjectCollectionBuilder":
+    def set_regions(self, regions: list[StateRegion]) -> ObjectCollectionBuilder:
         """Set regions list.
 
         Args:
@@ -157,7 +159,7 @@ class ObjectCollectionBuilder:
         self.regions.set_regions(regions)
         return self
 
-    def with_grid_subregions(self, rows: int, columns: int, *regions) -> "ObjectCollectionBuilder":
+    def with_grid_subregions(self, rows: int, columns: int, *regions) -> ObjectCollectionBuilder:
         """Add grid subregions from regions.
 
         Args:
@@ -173,7 +175,7 @@ class ObjectCollectionBuilder:
 
     # Match-related methods
 
-    def with_matches(self, *matches: "ActionResult") -> "ObjectCollectionBuilder":
+    def with_matches(self, *matches: ActionResult) -> ObjectCollectionBuilder:
         """Add matches to collection.
 
         Args:
@@ -185,7 +187,7 @@ class ObjectCollectionBuilder:
         self.matches.with_matches(*matches)
         return self
 
-    def set_matches(self, matches: list["ActionResult"]) -> "ObjectCollectionBuilder":
+    def set_matches(self, matches: list[ActionResult]) -> ObjectCollectionBuilder:
         """Set matches list.
 
         Args:
@@ -197,7 +199,7 @@ class ObjectCollectionBuilder:
         self.matches.set_matches(matches)
         return self
 
-    def with_match_objects_as_regions(self, *matches: "Match") -> "ObjectCollectionBuilder":
+    def with_match_objects_as_regions(self, *matches: Match) -> ObjectCollectionBuilder:
         """Add match objects as regions.
 
         Args:
@@ -209,7 +211,7 @@ class ObjectCollectionBuilder:
         self.matches.with_match_objects_as_regions(*matches)
         return self
 
-    def with_match_objects_as_state_images(self, *matches: "Match") -> "ObjectCollectionBuilder":
+    def with_match_objects_as_state_images(self, *matches: Match) -> ObjectCollectionBuilder:
         """Add match objects as state images.
 
         Args:
@@ -223,7 +225,7 @@ class ObjectCollectionBuilder:
 
     # String-related methods
 
-    def with_strings(self, *strings) -> "ObjectCollectionBuilder":
+    def with_strings(self, *strings) -> ObjectCollectionBuilder:
         """Add strings to collection.
 
         Args:
@@ -235,7 +237,7 @@ class ObjectCollectionBuilder:
         self.strings.with_strings(*strings)
         return self
 
-    def set_strings(self, strings: list["StateString"]) -> "ObjectCollectionBuilder":
+    def set_strings(self, strings: list[StateString]) -> ObjectCollectionBuilder:
         """Set strings list.
 
         Args:
@@ -249,7 +251,7 @@ class ObjectCollectionBuilder:
 
     # Scene-related methods
 
-    def with_scenes(self, *scenes) -> "ObjectCollectionBuilder":
+    def with_scenes(self, *scenes) -> ObjectCollectionBuilder:
         """Add scenes to collection.
 
         Args:
@@ -263,7 +265,7 @@ class ObjectCollectionBuilder:
 
     # Build method
 
-    def build(self) -> "ObjectCollection":
+    def build(self) -> ObjectCollection:
         """Create the ObjectCollection with configured properties.
 
         Combines all sub-builders into a unified ObjectCollection.

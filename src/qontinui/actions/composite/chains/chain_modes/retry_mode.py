@@ -3,6 +3,8 @@
 Executes actions with automatic retry on failure.
 """
 
+from __future__ import annotations
+
 import time
 from typing import TYPE_CHECKING
 
@@ -20,7 +22,7 @@ class RetryMode(BaseChainMode):
     chain fails.
     """
 
-    def execute(self, actions: list["ChainAction"]) -> bool:
+    def execute(self, actions: list[ChainAction]) -> bool:
         """Execute actions with automatic retry on failure.
 
         Args:

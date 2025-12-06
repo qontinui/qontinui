@@ -11,9 +11,11 @@ This enables:
 - Screenshot-based testing (pre-record screenshots, replay in tests)
 """
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PIL import Image
 
@@ -96,7 +98,7 @@ class MockCapture:
 
     def capture_region(
         self,
-        region: "Region",
+        region: Region,
         monitor: int | None = None,
     ) -> Image.Image:
         """Capture specific region (mock).
@@ -199,7 +201,7 @@ class MockCapture:
         self,
         filepath: str,
         monitor: int | None = None,
-        region: Optional["Region"] = None,
+        region: Region | None = None,
     ) -> str:
         """Save screenshot to file (mock).
 

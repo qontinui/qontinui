@@ -5,6 +5,8 @@ This module defines the interface for static analyzers that extract UI structure
 and state information from application source code.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 

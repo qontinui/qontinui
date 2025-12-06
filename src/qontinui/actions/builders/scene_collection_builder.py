@@ -3,6 +3,8 @@
 Handles Scenes for offline processing.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -22,7 +24,7 @@ class SceneCollectionBuilder:
         """Initialize builder with empty list."""
         self.scenes: list[Scene] = []
 
-    def with_scenes(self, *scenes) -> "SceneCollectionBuilder":
+    def with_scenes(self, *scenes) -> SceneCollectionBuilder:
         """Add scenes to collection.
 
         Args:
@@ -44,7 +46,7 @@ class SceneCollectionBuilder:
                 self.scenes.extend(item)
         return self
 
-    def build(self) -> list["Scene"]:
+    def build(self) -> list[Scene]:
         """Build and return the scenes list.
 
         Returns:

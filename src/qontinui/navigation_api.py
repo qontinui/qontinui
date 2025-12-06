@@ -15,8 +15,10 @@ The runner should ONLY call the public API functions in this module.
 The runner should NOT create StateMemory, Navigator, or any other state management objects.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from qontinui.model.state.state_service import StateService
@@ -28,9 +30,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Global navigation instance
-_navigator: Optional["PathfindingNavigator"] = None
-_state_memory: Optional["StateMemory"] = None
-_state_service: Optional["StateService"] = None
+_navigator: PathfindingNavigator | None = None
+_state_memory: StateMemory | None = None
+_state_service: StateService | None = None
 _workflow_executor: Any | None = None
 _initialized = False
 

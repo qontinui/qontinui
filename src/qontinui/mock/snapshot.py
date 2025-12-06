@@ -7,6 +7,8 @@ Key Insight: Brobot uses the SAME Match class for both mock and real automation.
 There is NO separate "MatchSnapshot" class. ActionRecord stores actual Match objects.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from dataclasses import dataclass, field
@@ -50,7 +52,7 @@ class ActionRecord:
 
     action_type: str
     action_success: bool
-    match_list: list["Match"] = field(default_factory=list)
+    match_list: list[Match] = field(default_factory=list)
     text: str = ""
     duration: float = 0.0
     timestamp: datetime = field(default_factory=datetime.now)
@@ -91,7 +93,7 @@ class ActionRecord:
         return json.dumps(self.to_dict(), indent=2)
 
     @staticmethod
-    def _match_to_dict(match: "Match") -> dict[str, Any]:
+    def _match_to_dict(match: Match) -> dict[str, Any]:
         """Convert Match object to dictionary for JSON serialization.
 
         Args:
@@ -126,7 +128,7 @@ class ActionRecord:
         }
 
     @staticmethod
-    def _dict_to_match(data: dict[str, Any]) -> "Match":
+    def _dict_to_match(data: dict[str, Any]) -> Match:
         """Reconstruct Match object from dictionary.
 
         Args:
@@ -165,7 +167,7 @@ class ActionRecord:
         return match
 
     @staticmethod
-    def from_json(json_str: str) -> "ActionRecord":
+    def from_json(json_str: str) -> ActionRecord:
         """Deserialize from JSON string.
 
         Args:
@@ -182,7 +184,7 @@ class ActionRecord:
         return ActionRecord.from_dict(data)
 
     @staticmethod
-    def from_dict(data: dict[str, Any]) -> "ActionRecord":
+    def from_dict(data: dict[str, Any]) -> ActionRecord:
         """Reconstruct ActionRecord from dictionary.
 
         Args:
@@ -264,7 +266,7 @@ class ActionHistory:
             self.times_found += 1
         logger.debug(f"Added record: {record.action_type} at {record.timestamp}")
 
-    def get_matches_for_states(self, active_states: set[str]) -> list["Match"]:
+    def get_matches_for_states(self, active_states: set[str]) -> list[Match]:
         """Get matches for current active states using state overlap matching.
 
         Implements the matching function from section 11.1 that compares:
@@ -412,7 +414,7 @@ class ActionHistory:
         logger.info(f"Saved {len(self.snapshots)} records to {filepath}")
 
     @staticmethod
-    def load_from_file(filepath: str) -> "ActionHistory":
+    def load_from_file(filepath: str) -> ActionHistory:
         """Load records from JSON file.
 
         Args:

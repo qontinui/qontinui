@@ -3,6 +3,8 @@
 Handles Matches and ActionResults.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -26,7 +28,7 @@ class MatchCollectionBuilder:
         self.state_regions_from_matches: list[StateRegion] = []
         self.state_images_from_matches: list[StateImage] = []
 
-    def with_matches(self, *matches: "ActionResult") -> "MatchCollectionBuilder":
+    def with_matches(self, *matches: ActionResult) -> MatchCollectionBuilder:
         """Add matches to collection.
 
         Args:
@@ -38,7 +40,7 @@ class MatchCollectionBuilder:
         self.matches.extend(matches)
         return self
 
-    def set_matches(self, matches: list["ActionResult"]) -> "MatchCollectionBuilder":
+    def set_matches(self, matches: list[ActionResult]) -> MatchCollectionBuilder:
         """Set matches list.
 
         Args:
@@ -50,7 +52,7 @@ class MatchCollectionBuilder:
         self.matches = matches
         return self
 
-    def with_match_objects_as_regions(self, *matches: "Match") -> "MatchCollectionBuilder":
+    def with_match_objects_as_regions(self, *matches: Match) -> MatchCollectionBuilder:
         """Add match objects as regions.
 
         Args:
@@ -68,7 +70,7 @@ class MatchCollectionBuilder:
                 self.state_regions_from_matches.append(state_region)
         return self
 
-    def with_match_objects_as_state_images(self, *matches: "Match") -> "MatchCollectionBuilder":
+    def with_match_objects_as_state_images(self, *matches: Match) -> MatchCollectionBuilder:
         """Add match objects as state images.
 
         Args:
@@ -83,7 +85,7 @@ class MatchCollectionBuilder:
 
     def build(
         self,
-    ) -> tuple[list["ActionResult"], list["StateRegion"], list["StateImage"]]:
+    ) -> tuple[list[ActionResult], list[StateRegion], list[StateImage]]:
         """Build and return the matches and derived objects.
 
         Returns:

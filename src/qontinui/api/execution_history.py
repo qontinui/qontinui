@@ -7,6 +7,8 @@ This module provides the ExecutionHistory class that handles:
 - Managing history size limits
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import TYPE_CHECKING
@@ -41,7 +43,7 @@ class ExecutionHistory:
 
         logger.info(f"ExecutionHistory initialized with max_history={max_history}")
 
-    async def add_record(self, context: "ExecutionContext") -> None:
+    async def add_record(self, context: ExecutionContext) -> None:
         """Add execution to history.
 
         Creates a history record from the execution context and adds it to the

@@ -88,7 +88,7 @@ def verify_python_import():
     print("\nChecking Python imports...")
 
     try:
-        from .parser import (
+        from .parser import (  # noqa: F401
             ComponentInfo,
             ConditionalRenderInfo,
             EventHandlerInfo,
@@ -104,7 +104,7 @@ def verify_python_import():
         return False
 
     try:
-        parser = TypeScriptParser()
+        TypeScriptParser()
         print("  ✓ TypeScriptParser can be instantiated")
     except Exception as e:
         print(f"  ✗ Instantiation error: {e}")

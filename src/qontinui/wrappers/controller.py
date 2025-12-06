@@ -21,9 +21,11 @@ Architecture:
     Each wrapper routes to mock or real based on ExecutionMode
 """
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from ..config.execution_mode import (
     ExecutionModeConfig,
@@ -72,7 +74,7 @@ class ExecutionModeController:
     """
 
     # Singleton instance
-    _instance: Optional["ExecutionModeController"] = None
+    _instance: ExecutionModeController | None = None
 
     def __init__(self) -> None:
         """Initialize controller with all wrappers.
@@ -95,7 +97,7 @@ class ExecutionModeController:
         logger.debug("ExecutionModeController initialized")
 
     @classmethod
-    def get_instance(cls) -> "ExecutionModeController":
+    def get_instance(cls) -> ExecutionModeController:
         """Get singleton controller instance.
 
         Returns:

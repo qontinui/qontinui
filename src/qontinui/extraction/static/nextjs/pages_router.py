@@ -9,6 +9,8 @@ Handles the traditional Pages Router including:
 - Data fetching: getServerSideProps, getStaticProps, getStaticPaths
 """
 
+from __future__ import annotations
+
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -25,7 +27,7 @@ DYNAMIC_SEGMENT_PATTERN = re.compile(r"\[([^\]]+)\]")
 CATCH_ALL_PATTERN = re.compile(r"\[\.\.\.([^\]]+)\]")
 
 
-def extract_pages_routes(pages_dir: Path) -> list["RouteDefinition"]:
+def extract_pages_routes(pages_dir: Path) -> list[RouteDefinition]:
     """
     Extract routes from pages/ directory structure.
 
@@ -89,7 +91,7 @@ def extract_pages_routes(pages_dir: Path) -> list["RouteDefinition"]:
     return routes
 
 
-def extract_get_server_side_props(parse_results: dict) -> list["APICallDefinition"]:
+def extract_get_server_side_props(parse_results: dict) -> list[APICallDefinition]:
     """
     Extract getServerSideProps data fetching.
 
@@ -101,7 +103,6 @@ def extract_get_server_side_props(parse_results: dict) -> list["APICallDefinitio
     Returns:
         List of API call definitions for getServerSideProps
     """
-    from qontinui.extraction.models.static import APICallDefinition
 
     calls: list[APICallDefinition] = []
 
@@ -113,7 +114,7 @@ def extract_get_server_side_props(parse_results: dict) -> list["APICallDefinitio
     return calls
 
 
-def extract_get_static_props(parse_results: dict) -> list["APICallDefinition"]:
+def extract_get_static_props(parse_results: dict) -> list[APICallDefinition]:
     """
     Extract getStaticProps data fetching.
 
@@ -125,7 +126,6 @@ def extract_get_static_props(parse_results: dict) -> list["APICallDefinition"]:
     Returns:
         List of API call definitions for getStaticProps
     """
-    from qontinui.extraction.models.static import APICallDefinition
 
     calls: list[APICallDefinition] = []
 
@@ -137,7 +137,7 @@ def extract_get_static_props(parse_results: dict) -> list["APICallDefinition"]:
     return calls
 
 
-def extract_api_routes(api_dir: Path) -> list["RouteDefinition"]:
+def extract_api_routes(api_dir: Path) -> list[RouteDefinition]:
     """
     Extract API route definitions from pages/api/.
 

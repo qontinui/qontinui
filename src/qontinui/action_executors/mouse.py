@@ -311,9 +311,20 @@ class MouseActionExecutor(ActionExecutorBase):
             # Use first match from last action result
             if self.context.last_action_result and self.context.last_action_result.matches:
                 match = self.context.last_action_result.matches[0]
-                location = (match.x, match.y)
-                log_debug(f"Using last action result match[0]: {location}")
-                logger.debug(f"Using last action result match[0]: {location}")
+                # Apply monitor offset to convert relative coordinates to absolute screen coordinates
+                # FIND results are relative to the captured monitor's screenshot, but mouse operations
+                # need absolute virtual screen coordinates
+                offset_x = getattr(self.context, "monitor_offset_x", 0)
+                offset_y = getattr(self.context, "monitor_offset_y", 0)
+                location = (match.x + offset_x, match.y + offset_y)
+                log_debug(
+                    f"Using last action result match[0]: raw=({match.x}, {match.y}), "
+                    f"offset=({offset_x}, {offset_y}), final={location}"
+                )
+                logger.debug(
+                    f"Using last action result match[0]: raw=({match.x}, {match.y}), "
+                    f"offset=({offset_x}, {offset_y}), final={location}"
+                )
                 return location
             else:
                 log_debug(
@@ -342,8 +353,14 @@ class MouseActionExecutor(ActionExecutorBase):
                 return None
 
             match = matches[target.index]
-            location = (match.x, match.y)
-            logger.debug(f"Using match[{target.index}]: {location}")
+            # Apply monitor offset to convert relative coordinates to absolute screen coordinates
+            offset_x = getattr(self.context, "monitor_offset_x", 0)
+            offset_y = getattr(self.context, "monitor_offset_y", 0)
+            location = (match.x + offset_x, match.y + offset_y)
+            logger.debug(
+                f"Using match[{target.index}]: raw=({match.x}, {match.y}), "
+                f"offset=({offset_x}, {offset_y}), final={location}"
+            )
             return location
 
         elif isinstance(target, AllResultsTarget):
@@ -352,10 +369,14 @@ class MouseActionExecutor(ActionExecutorBase):
             # Return first match location as fallback
             if self.context.last_action_result and self.context.last_action_result.matches:
                 match = self.context.last_action_result.matches[0]
-                location = (match.x, match.y)
+                # Apply monitor offset to convert relative coordinates to absolute screen coordinates
+                offset_x = getattr(self.context, "monitor_offset_x", 0)
+                offset_y = getattr(self.context, "monitor_offset_y", 0)
+                location = (match.x + offset_x, match.y + offset_y)
                 logger.warning(
                     "AllResultsTarget not supported for single-location actions, "
-                    f"using first match: {location}"
+                    f"using first match: raw=({match.x}, {match.y}), "
+                    f"offset=({offset_x}, {offset_y}), final={location}"
                 )
                 return location
             else:
@@ -385,9 +406,14 @@ class MouseActionExecutor(ActionExecutorBase):
                         source_id = metadata.__dict__.get("source_image_id")
 
                     if source_id == target.image_id:
-                        location = (match.x, match.y)
+                        # Apply monitor offset to convert relative coordinates to absolute
+                        offset_x = getattr(self.context, "monitor_offset_x", 0)
+                        offset_y = getattr(self.context, "monitor_offset_y", 0)
+                        location = (match.x + offset_x, match.y + offset_y)
                         logger.debug(
-                            f"Found match from source image '{target.image_id}': {location}"
+                            f"Found match from source image '{target.image_id}': "
+                            f"raw=({match.x}, {match.y}), offset=({offset_x}, {offset_y}), "
+                            f"final={location}"
                         )
                         return location
 
@@ -624,26 +650,35 @@ class MouseActionExecutor(ActionExecutorBase):
         from datetime import datetime
 
         debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_click_executor_debug.log")
-        try:
-            with open(debug_log_path, "a", encoding="utf-8") as f:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{timestamp}] _execute_click() called for action {action.id}\n")
-                f.write(f"[{timestamp}] Target: {typed_config.target}\n")
-                f.write(f"[{timestamp}] Mouse button: {typed_config.mouse_button}\n")
-        except Exception:
-            pass
+
+        def debug_write(msg: str) -> None:
+            try:
+                with open(debug_log_path, "a", encoding="utf-8") as f:
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{timestamp}] {msg}\n")
+            except Exception:
+                pass
+
+        debug_write(f"_execute_click() called for action {action.id}")
+        debug_write(f"Target: {typed_config.target}")
+        debug_write(f"Mouse button: {typed_config.mouse_button}")
 
         logger.info("[COMBINED ACTION: CLICK] Starting click action")
+        debug_write("Starting click action")
 
         # Check if target is None or currentPosition (pure action)
         location = None
         if typed_config.target and typed_config.target.type != "currentPosition":
+            debug_write(f"Getting target location for: {typed_config.target}")
             location = self._get_target_location(typed_config.target)
+            debug_write(f"Got location: {location}")
             if not location:
                 logger.error("Failed to get target location for CLICK")
+                debug_write("ERROR: Failed to get target location - returning False")
                 return False
         else:
             logger.debug("No target specified - clicking at current position (pure action)")
+            debug_write("No target - clicking at current position")
 
         # Get button
         button_value = typed_config.mouse_button.value if typed_config.mouse_button else None
@@ -652,9 +687,11 @@ class MouseActionExecutor(ActionExecutorBase):
         )
         button = self._convert_mouse_button(button_value)
         logger.info(f"[CLICK DEBUG] Converted button: {button}, type: {type(button)}")
+        debug_write(f"Button converted: {button}")
 
         # Get click count
         click_count = typed_config.number_of_clicks or 1
+        debug_write(f"Click count: {click_count}")
 
         # Get timing values (convert milliseconds to seconds)
         hold_duration = (
@@ -671,7 +708,9 @@ class MouseActionExecutor(ActionExecutorBase):
         safety_delay = self._get_default_timing("mouse", "safety_release_delay", 0.1)
 
         # Get current position for logging
+        debug_write("Getting current mouse position...")
         current_pos = self.context.mouse.position()
+        debug_write(f"Current position: ({current_pos.x}, {current_pos.y})")
         logger.debug(f"Current position: ({current_pos.x}, {current_pos.y})")
         logger.debug(f"Target: {location}, Button: {button.value}, Count: {click_count}")
         logger.debug(f"Timing: hold={hold_duration}s, release={release_delay}s")
@@ -679,44 +718,62 @@ class MouseActionExecutor(ActionExecutorBase):
         # Step 1: Safety - Release all buttons first (if enabled)
         if safety_release:
             logger.debug("Step 1: Release all mouse buttons")
+            debug_write("Step 1: Safety release - calling mouse.up() 3 times")
             self.context.mouse.up(button=HALMouseButton.LEFT)
+            debug_write("  - Released LEFT")
             self.context.mouse.up(button=HALMouseButton.RIGHT)
+            debug_write("  - Released RIGHT")
             self.context.mouse.up(button=HALMouseButton.MIDDLE)
+            debug_write("  - Released MIDDLE")
             self.context.time.wait(safety_delay)
+            debug_write("  - Safety delay completed")
 
         # Step 1.5: Move to target location if specified
         if location:
             logger.debug(f"Step 1.5: Moving to target location: {location}")
+            debug_write(f"Step 1.5: Moving mouse to ({location[0]}, {location[1]})")
             self.context.mouse.move(location[0], location[1])
+            debug_write("  - Move command issued")
             # Small delay after move to ensure GUI registers position
             self.context.time.wait(0.05)
+            debug_write("  - Post-move delay completed")
 
         # Step 2: Perform clicks at target/current position
         click_location = location if location else "current position"
         logger.info(
             f"[CLICK DEBUG] Step 2: Perform {click_count} click(s) at {click_location} with button {button}"
         )
+        debug_write(f"Step 2: Starting {click_count} click(s) at {click_location}")
         for i in range(click_count):
             logger.info(f"[CLICK DEBUG] Click {i+1}/{click_count} - Pressing {button}")
+            debug_write(f"  Click {i+1}/{click_count}")
 
             # Sub-action: MOUSE_DOWN
             logger.info(f"[CLICK DEBUG] Calling mouse.down with button={button}")
+            debug_write(f"    - Calling mouse.down(button={button})")
             self.context.mouse.down(button=button)
+            debug_write("    - mouse.down returned")
             self.context.time.wait(hold_duration)
+            debug_write("    - hold delay completed")
 
             # Sub-action: MOUSE_UP
             logger.info(f"[CLICK DEBUG] Calling mouse.up with button={button}")
+            debug_write(f"    - Calling mouse.up(button={button})")
             self.context.mouse.up(button=button)
+            debug_write("    - mouse.up returned")
 
             if i < click_count - 1:
                 self.context.time.wait(release_delay)
+                debug_write("    - inter-click delay completed")
 
         # Step 3: Final safety release
         self.context.time.wait(release_delay)
         self.context.mouse.up(button=button)
         logger.debug("Step 3: Final safety release")
+        debug_write("Step 3: Final safety release completed")
 
         logger.info(f"[COMBINED ACTION: CLICK] Completed {click_count} {button.value}-click(s)")
+        debug_write(f"SUCCESS: Completed {click_count} {button.value}-click(s)")
         return True
 
     def _execute_double_click(self, action: Action, typed_config: ClickActionConfig) -> bool:

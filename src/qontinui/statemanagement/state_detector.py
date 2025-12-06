@@ -3,9 +3,11 @@
 Visual pattern-based state discovery system.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from ..actions.basic.find.find import Find
@@ -36,7 +38,7 @@ class StateDetector:
     state_memory: StateMemory
     state_service: StateService
     state_store: StateStore
-    find_action: Optional["Find"] = None  # Find action for visual search
+    find_action: Find | None = None  # Find action for visual search
 
     # Configuration
     max_search_time: float = 30.0  # Maximum time to search for states
@@ -122,7 +124,7 @@ class StateDetector:
         logger.info(f"Rebuild complete. Found {len(found_states)} active states")
         return found_states
 
-    def search_all_images_for_current_states(self) -> dict[int, list["Match"]]:
+    def search_all_images_for_current_states(self) -> dict[int, list[Match]]:
         """Comprehensive state search across all images.
 
         Searches for all state images of all states and returns
@@ -256,7 +258,7 @@ class StateDetector:
         matches = self._search_state_images(state)
         return len(matches) > 0
 
-    def _search_state_images(self, state: State) -> list["Match"]:
+    def _search_state_images(self, state: State) -> list[Match]:
         """Search for a state's visual patterns.
 
         Args:

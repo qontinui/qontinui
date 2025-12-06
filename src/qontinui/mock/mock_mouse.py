@@ -11,8 +11,10 @@ This enables:
 - Operation tracking (verify correct operations were performed)
 """
 
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..hal.interfaces.input_controller import MouseButton, MousePosition
@@ -76,7 +78,7 @@ class MockMouse:
         self,
         x: int | None = None,
         y: int | None = None,
-        button: Optional["MouseButton"] = None,
+        button: MouseButton | None = None,
         clicks: int = 1,
     ) -> bool:
         """Click mouse button (mock).
@@ -176,7 +178,7 @@ class MockMouse:
 
         return True
 
-    def get_position(self) -> "MousePosition":
+    def get_position(self) -> MousePosition:
         """Get current mouse position (mock).
 
         Returns:

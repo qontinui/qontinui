@@ -7,6 +7,8 @@ This module provides the ExecutionStatusTracker class that handles:
 - Computing execution statistics
 """
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -132,7 +134,7 @@ class ExecutionStatusTracker:
         """
         return await self.history.get_statistics(workflow_id=workflow_id)
 
-    def _calculate_progress(self, context: "ExecutionContext") -> float:
+    def _calculate_progress(self, context: ExecutionContext) -> float:
         """Calculate execution progress percentage.
 
         Args:

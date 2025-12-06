@@ -830,7 +830,7 @@ class ExtractionOrchestrator:
 
         # Create transitions between states in each group
         trans_idx = 0
-        for (parent_comp, control_var), states_in_group in state_groups.items():
+        for (_parent_comp, control_var), states_in_group in state_groups.items():
             if len(states_in_group) < 2:
                 continue  # Need at least 2 states to have a transition
 

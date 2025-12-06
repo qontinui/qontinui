@@ -12,7 +12,6 @@ This integration test suite covers:
 6. State object completeness verification
 """
 
-
 from unittest.mock import patch
 
 import cv2

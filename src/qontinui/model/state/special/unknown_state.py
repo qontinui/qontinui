@@ -3,8 +3,10 @@
 Represents the initial uncertain state in the state management system.
 """
 
+from __future__ import annotations
+
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from ..state import State
 
@@ -69,9 +71,9 @@ class UnknownState:
     - Use keyboard shortcuts to reach main menu
     """
 
-    _instance: Optional["UnknownState"] = None
+    _instance: UnknownState | None = None
 
-    def __init__(self, state_service: Optional["StateService"] = None) -> None:
+    def __init__(self, state_service: StateService | None = None) -> None:
         """Initialize UnknownState.
 
         Args:
@@ -107,7 +109,7 @@ class UnknownState:
         """
         return True
 
-    def add_recovery_transition(self, target_state: State, action: "Action") -> None:
+    def add_recovery_transition(self, target_state: State, action: Action) -> None:
         """Add a recovery transition to a known state.
 
         Args:
@@ -132,7 +134,7 @@ class UnknownState:
         return f"UnknownState(state={self._state.name})"
 
     @classmethod
-    def instance(cls, state_service: Optional["StateService"] = None) -> "UnknownState":
+    def instance(cls, state_service: StateService | None = None) -> UnknownState:
         """Get or create the UnknownState singleton.
 
         Args:

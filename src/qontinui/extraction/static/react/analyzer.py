@@ -264,7 +264,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
     def _process_parse_result(
         self,
-        parse_result: "FileParseResult",  # type: ignore
+        parse_result: FileParseResult,  # type: ignore
         file_path: Path,
     ) -> None:
         """
@@ -520,7 +520,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         visibility_states: list[VisibilityState] = []
 
         # Build a map of state variable names to their IDs for quick lookup
-        state_var_map = {var.name: var for var in state_vars}
+        {var.name: var for var in state_vars}
 
         # Identify visibility-controlling state variables
         # These typically have names like: isOpen, showModal, menuExpanded, etc.
@@ -963,8 +963,8 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
         # Build lookup maps
         component_by_id = {c.id: c for c in self._components}
-        state_var_by_id = {s.id: s for s in self._state_variables}
-        handler_by_id = {h.id: h for h in self._event_handlers}
+        {s.id: s for s in self._state_variables}
+        {h.id: h for h in self._event_handlers}
 
         # 1. Generate StateHints from routes (each route is a potential state)
         for route in self._routes:

@@ -3,6 +3,8 @@
 Executes actions in order, stopping on first failure.
 """
 
+from __future__ import annotations
+
 import time
 from typing import TYPE_CHECKING
 
@@ -19,7 +21,7 @@ class SequentialMode(BaseChainMode):
     and the chain stops immediately if any action fails.
     """
 
-    def execute(self, actions: list["ChainAction"]) -> bool:
+    def execute(self, actions: list[ChainAction]) -> bool:
         """Execute actions sequentially until completion or failure.
 
         Args:

@@ -3,8 +3,10 @@
 Discovers states reachable through direct transitions from given states.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from .state_memory import StateMemory
 
@@ -64,9 +66,9 @@ class AdjacentStates:
 
     def __init__(
         self,
-        all_states_in_project_service: Optional["StateService"] = None,
+        all_states_in_project_service: StateService | None = None,
         state_memory: StateMemory | None = None,
-        state_transitions_in_project_service: Optional["StateTransitionService"] = None,
+        state_transitions_in_project_service: StateTransitionService | None = None,
     ) -> None:
         """Initialize AdjacentStates.
 
@@ -176,7 +178,7 @@ class StateService:
     Will be implemented when migrating the navigation package.
     """
 
-    def get_state(self, state_id: int) -> Optional["State"]:
+    def get_state(self, state_id: int) -> State | None:
         """Get state by ID.
 
         Args:
@@ -194,7 +196,7 @@ class StateTransitionService:
     Will be implemented when migrating the navigation package.
     """
 
-    def get_transitions(self, state_id: int) -> Optional["StateTransitions"]:
+    def get_transitions(self, state_id: int) -> StateTransitions | None:
         """Get transitions for a state.
 
         Args:

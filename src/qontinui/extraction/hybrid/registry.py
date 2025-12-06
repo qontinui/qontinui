@@ -4,6 +4,8 @@ Registry for tech stack extractors.
 Manages the registration and discovery of TechStackExtractor implementations.
 """
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -42,7 +44,7 @@ class TechStackRegistry:
         except ImportError as e:
             logger.debug(f"NextJSExtractor not available: {e}")
 
-    def register(self, extractor_class: type["TechStackExtractor"]) -> None:
+    def register(self, extractor_class: type[TechStackExtractor]) -> None:
         """
         Register a tech stack extractor.
 
@@ -53,7 +55,7 @@ class TechStackRegistry:
             self._extractors.append(extractor_class)
             logger.debug(f"Registered extractor: {extractor_class.tech_stack_name}")
 
-    def unregister(self, extractor_class: type["TechStackExtractor"]) -> None:
+    def unregister(self, extractor_class: type[TechStackExtractor]) -> None:
         """
         Unregister a tech stack extractor.
 
@@ -64,7 +66,7 @@ class TechStackRegistry:
             self._extractors.remove(extractor_class)
             logger.debug(f"Unregistered extractor: {extractor_class.tech_stack_name}")
 
-    def get_extractor_for(self, project_path: Path) -> type["TechStackExtractor"] | None:
+    def get_extractor_for(self, project_path: Path) -> type[TechStackExtractor] | None:
         """
         Find the appropriate extractor for a project.
 
@@ -107,7 +109,7 @@ class TechStackRegistry:
                 names.append(extractor_class.__name__)
         return names
 
-    def get_all_extractors(self) -> list[type["TechStackExtractor"]]:
+    def get_all_extractors(self) -> list[type[TechStackExtractor]]:
         """
         Get all registered extractor classes.
 

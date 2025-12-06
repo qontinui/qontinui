@@ -28,6 +28,8 @@ Example Usage:
     >>> print(f"Locations: {len(state.state_locations)}")
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 

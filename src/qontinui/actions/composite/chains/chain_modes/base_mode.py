@@ -3,6 +3,8 @@
 Defines the abstract interface for chain execution strategies.
 """
 
+from __future__ import annotations
+
 import time
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
@@ -21,7 +23,7 @@ class BaseChainMode(ABC):
     for action chains (sequential, retry, continue on error, etc.).
     """
 
-    def __init__(self, options: "ActionChainOptions") -> None:
+    def __init__(self, options: ActionChainOptions) -> None:
         """Initialize chain mode.
 
         Args:
@@ -32,7 +34,7 @@ class BaseChainMode(ABC):
         self.current_index = 0
 
     @abstractmethod
-    def execute(self, actions: list["ChainAction"]) -> bool:
+    def execute(self, actions: list[ChainAction]) -> bool:
         """Execute the chain of actions.
 
         Args:
@@ -43,7 +45,7 @@ class BaseChainMode(ABC):
         """
         pass
 
-    def _record_action(self, chain_action: "ChainAction", success: bool, duration: float) -> None:
+    def _record_action(self, chain_action: ChainAction, success: bool, duration: float) -> None:
         """Record action execution in history.
 
         Args:

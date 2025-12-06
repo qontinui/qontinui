@@ -69,6 +69,35 @@ class StateExecutor:
         self.state_history: list[str] = []
         # Pass self to action executor so it can change states
         self.action_executor = DelegatingActionExecutor(config, state_executor=self)
+        self._monitor_manager = None
+
+    def set_monitor_manager(self, monitor_manager: Any) -> None:
+        """Set the monitor manager for multi-monitor support.
+
+        Args:
+            monitor_manager: MonitorManager instance
+        """
+        self._monitor_manager = monitor_manager
+
+    def set_monitor_offset(self, monitor_index: int, offset_x: int, offset_y: int) -> None:
+        """Set monitor offset for coordinate conversion.
+
+        When automation targets a specific monitor, found coordinates from FIND actions
+        are relative to that monitor's screenshot. This offset converts them to absolute
+        virtual screen coordinates for mouse operations.
+
+        Args:
+            monitor_index: Monitor index (0-based)
+            offset_x: Monitor's X position in virtual screen space
+            offset_y: Monitor's Y position in virtual screen space
+        """
+        context = self.action_executor.context
+        context.monitor_index = monitor_index
+        context.monitor_offset_x = offset_x
+        context.monitor_offset_y = offset_y
+        logger.info(
+            f"Set monitor offset: index={monitor_index}, " f"offset=({offset_x}, {offset_y})"
+        )
 
     def initialize(self):
         """Initialize the state machine."""

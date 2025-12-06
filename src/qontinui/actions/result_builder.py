@@ -4,8 +4,10 @@ Provides fluent interface for creating and configuring ActionResult instances
 with method chaining.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..find.match import Match
@@ -28,7 +30,7 @@ class ActionResultBuilder:
                  .build())
     """
 
-    def __init__(self, action_config: Optional["ActionConfig"] = None) -> None:
+    def __init__(self, action_config: ActionConfig | None = None) -> None:
         """Initialize builder with optional configuration.
 
         Args:
@@ -52,7 +54,7 @@ class ActionResultBuilder:
         self._execution_history: list[ActionRecord] = []
         self._times_acted_on = 0
 
-    def with_success(self, success: bool) -> "ActionResultBuilder":
+    def with_success(self, success: bool) -> ActionResultBuilder:
         """Set success status.
 
         Args:
@@ -64,7 +66,7 @@ class ActionResultBuilder:
         self._success = success
         return self
 
-    def with_description(self, description: str) -> "ActionResultBuilder":
+    def with_description(self, description: str) -> ActionResultBuilder:
         """Set action description.
 
         Args:
@@ -76,7 +78,7 @@ class ActionResultBuilder:
         self._description = description
         return self
 
-    def with_output_text(self, text: str) -> "ActionResultBuilder":
+    def with_output_text(self, text: str) -> ActionResultBuilder:
         """Set output text.
 
         Args:
@@ -88,7 +90,7 @@ class ActionResultBuilder:
         self._output_text = text
         return self
 
-    def with_matches(self, matches: list["Match"]) -> "ActionResultBuilder":
+    def with_matches(self, matches: list[Match]) -> ActionResultBuilder:
         """Set match list.
 
         Args:
@@ -100,7 +102,7 @@ class ActionResultBuilder:
         self._matches = matches if matches else []
         return self
 
-    def add_match(self, match: "Match") -> "ActionResultBuilder":
+    def add_match(self, match: Match) -> ActionResultBuilder:
         """Add a single match.
 
         Args:
@@ -117,7 +119,7 @@ class ActionResultBuilder:
                 self._active_states.add(state_data.get_owner_state_name())
         return self
 
-    def with_initial_matches(self, matches: list["Match"]) -> "ActionResultBuilder":
+    def with_initial_matches(self, matches: list[Match]) -> ActionResultBuilder:
         """Set initial matches before filtering.
 
         Args:
@@ -129,7 +131,7 @@ class ActionResultBuilder:
         self._initial_matches = matches if matches else []
         return self
 
-    def with_max_matches(self, max_matches: int) -> "ActionResultBuilder":
+    def with_max_matches(self, max_matches: int) -> ActionResultBuilder:
         """Set maximum number of matches.
 
         Args:
@@ -141,7 +143,7 @@ class ActionResultBuilder:
         self._max_matches = max_matches
         return self
 
-    def with_text(self, text: "Text") -> "ActionResultBuilder":
+    def with_text(self, text: Text) -> ActionResultBuilder:
         """Set accumulated text content.
 
         Args:
@@ -153,7 +155,7 @@ class ActionResultBuilder:
         self._text = text
         return self
 
-    def with_selected_text(self, text: str) -> "ActionResultBuilder":
+    def with_selected_text(self, text: str) -> ActionResultBuilder:
         """Set selected text.
 
         Args:
@@ -165,7 +167,7 @@ class ActionResultBuilder:
         self._selected_text = text
         return self
 
-    def with_active_states(self, states: set[str]) -> "ActionResultBuilder":
+    def with_active_states(self, states: set[str]) -> ActionResultBuilder:
         """Set active states.
 
         Args:
@@ -182,7 +184,7 @@ class ActionResultBuilder:
         start: datetime | None = None,
         end: datetime | None = None,
         duration: timedelta | None = None,
-    ) -> "ActionResultBuilder":
+    ) -> ActionResultBuilder:
         """Set timing information.
 
         Args:
@@ -198,7 +200,7 @@ class ActionResultBuilder:
         self._duration = duration
         return self
 
-    def with_defined_regions(self, regions: list["Region"]) -> "ActionResultBuilder":
+    def with_defined_regions(self, regions: list[Region]) -> ActionResultBuilder:
         """Set defined regions.
 
         Args:
@@ -210,7 +212,7 @@ class ActionResultBuilder:
         self._defined_regions = regions
         return self
 
-    def add_defined_region(self, region: "Region") -> "ActionResultBuilder":
+    def add_defined_region(self, region: Region) -> ActionResultBuilder:
         """Add a single defined region.
 
         Args:
@@ -222,7 +224,7 @@ class ActionResultBuilder:
         self._defined_regions.append(region)
         return self
 
-    def with_movements(self, movements: list["Movement"]) -> "ActionResultBuilder":
+    def with_movements(self, movements: list[Movement]) -> ActionResultBuilder:
         """Set movements.
 
         Args:
@@ -234,7 +236,7 @@ class ActionResultBuilder:
         self._movements = movements
         return self
 
-    def add_movement(self, movement: "Movement") -> "ActionResultBuilder":
+    def add_movement(self, movement: Movement) -> ActionResultBuilder:
         """Add a single movement.
 
         Args:
@@ -246,7 +248,7 @@ class ActionResultBuilder:
         self._movements.append(movement)
         return self
 
-    def with_execution_history(self, history: list["ActionRecord"]) -> "ActionResultBuilder":
+    def with_execution_history(self, history: list[ActionRecord]) -> ActionResultBuilder:
         """Set execution history.
 
         Args:
@@ -258,7 +260,7 @@ class ActionResultBuilder:
         self._execution_history = history
         return self
 
-    def add_execution_record(self, record: "ActionRecord") -> "ActionResultBuilder":
+    def add_execution_record(self, record: ActionRecord) -> ActionResultBuilder:
         """Add a single execution record.
 
         Args:
@@ -270,7 +272,7 @@ class ActionResultBuilder:
         self._execution_history.append(record)
         return self
 
-    def with_times_acted_on(self, times: int) -> "ActionResultBuilder":
+    def with_times_acted_on(self, times: int) -> ActionResultBuilder:
         """Set times acted on counter.
 
         Args:
@@ -282,7 +284,7 @@ class ActionResultBuilder:
         self._times_acted_on = times
         return self
 
-    def build(self) -> "ActionResult":
+    def build(self) -> ActionResult:
         """Build the final ActionResult instance.
 
         Returns:

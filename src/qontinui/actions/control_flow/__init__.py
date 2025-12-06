@@ -7,6 +7,8 @@ The original monolithic ControlFlowExecutor has been split into specialized
 executors for better separation of concerns:
 - LoopExecutor: Handles FOR, WHILE, and FOREACH loops
 - ConditionalExecutor: Handles IF/ELSE conditional branching
+- SwitchExecutor: Handles SWITCH case-based branching
+- TryCatchExecutor: Handles TRY_CATCH error handling
 - FlowControlExecutor: Handles BREAK and CONTINUE statements
 
 This module exports both the specialized executors and a wrapper ControlFlowExecutor
@@ -18,6 +20,8 @@ Exports:
     - ContinueLoop: Exception raised to skip to next loop iteration
     - LoopExecutor: Specialized executor for loop operations
     - ConditionalExecutor: Specialized executor for conditional branching
+    - SwitchExecutor: Specialized executor for case-based branching
+    - TryCatchExecutor: Specialized executor for error handling
     - FlowControlExecutor: Specialized executor for flow control statements
     - ConditionEvaluator: Condition evaluation utility
 """
@@ -33,6 +37,8 @@ from .conditional_executor import ConditionalExecutor
 from .exceptions import BreakLoop, ContinueLoop
 from .flow_control_executor import FlowControlExecutor
 from .loop_executor import LoopExecutor
+from .switch_executor import SwitchExecutor
+from .try_catch_executor import TryCatchExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +49,9 @@ __all__ = [
     "LoopExecutor",
     "ConditionalExecutor",
     "FlowControlExecutor",
+    "TryCatchExecutor",
     "ConditionEvaluator",
+    "SwitchExecutor",
 ]
 
 
@@ -101,6 +109,8 @@ class ControlFlowExecutor:
         self._loop_executor = LoopExecutor(self._context)
         self._conditional_executor = ConditionalExecutor(self._context)
         self._flow_control_executor = FlowControlExecutor(self._context)
+        self._switch_executor = SwitchExecutor(self._context)
+        self._try_catch_executor = TryCatchExecutor(self._context)
 
         logger.debug("ControlFlowExecutor initialized with %d variables", len(self.variables))
 
@@ -162,6 +172,43 @@ class ControlFlowExecutor:
             ContinueLoop: Always raises to signal iteration skip
         """
         self._flow_control_executor.execute_continue(action)
+
+    def execute_switch(self, action: Action) -> dict[str, Any]:
+        """Execute a SWITCH action (case-based branching).
+
+        Args:
+            action: The SWITCH action to execute
+
+        Returns:
+            Dictionary containing:
+                - success: Whether execution succeeded
+                - expression_value: Result of expression evaluation
+                - matched_case: Value of the matched case (or 'default')
+                - case_index: Index of matched case (-1 for default)
+                - actions_executed: Number of actions executed
+                - errors: List of errors encountered (if any)
+        """
+        config = get_typed_config(action)
+        return self._switch_executor.execute_switch(action, config)  # type: ignore[arg-type]
+
+    def execute_try_catch(self, action: Action) -> dict[str, Any]:
+        """Execute a TRY_CATCH action (error handling).
+
+        Args:
+            action: The TRY_CATCH action to execute
+
+        Returns:
+            Dictionary containing:
+                - success: Whether execution succeeded overall
+                - branch_taken: 'try' or 'catch'
+                - try_actions_executed: Number of try actions executed
+                - catch_actions_executed: Number of catch actions executed
+                - finally_actions_executed: Number of finally actions executed
+                - error_caught: Error information if an error was caught
+                - errors: List of errors encountered (if any)
+        """
+        config = get_typed_config(action)
+        return self._try_catch_executor.execute_try_catch(action, config)  # type: ignore[arg-type]
 
     # ========================================================================
     # Variable Management (maintain API compatibility)

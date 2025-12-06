@@ -4,6 +4,8 @@ Based on Brobot's wrapper pattern - provides stable API that routes
 to mock or live implementation based on execution mode.
 """
 
+from __future__ import annotations
+
 import logging
 import threading
 from typing import TYPE_CHECKING
@@ -41,15 +43,15 @@ class Screen:
     """
 
     _mock_screen = MockScreen()
-    _screen_capture: "IScreenCapture | None" = None
+    _screen_capture: IScreenCapture | None = None
     _screen_capture_lock = threading.Lock()
-    _pattern_matcher: "IPatternMatcher | None" = None
+    _pattern_matcher: IPatternMatcher | None = None
     _pattern_matcher_lock = threading.Lock()
-    _ocr_engine: "IOCREngine | None" = None
+    _ocr_engine: IOCREngine | None = None
     _ocr_engine_lock = threading.Lock()
 
     @classmethod
-    def _get_screen_capture(cls) -> "IScreenCapture":
+    def _get_screen_capture(cls) -> IScreenCapture:
         """Lazy initialization of screen capture.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -63,7 +65,7 @@ class Screen:
         return cls._screen_capture
 
     @classmethod
-    def _get_pattern_matcher(cls) -> "IPatternMatcher":
+    def _get_pattern_matcher(cls) -> IPatternMatcher:
         """Lazy initialization of pattern matcher.
 
         Uses double-check locking pattern for thread-safe singleton.
@@ -77,7 +79,7 @@ class Screen:
         return cls._pattern_matcher
 
     @classmethod
-    def _get_ocr_engine(cls) -> "IOCREngine":
+    def _get_ocr_engine(cls) -> IOCREngine:
         """Lazy initialization of OCR engine.
 
         Uses double-check locking pattern for thread-safe singleton.

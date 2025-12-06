@@ -7,6 +7,8 @@ This module implements the complete transition execution flow including:
 - State visibility management
 """
 
+from __future__ import annotations
+
 import logging
 import time
 from dataclasses import dataclass
@@ -48,9 +50,9 @@ class TransitionExecutor:
     """
 
     joint_table: StateTransitionsJointTable
-    active_states: "EnhancedActiveStateSet | None" = None  # Will be injected
-    state_memory: "StateMemory | None" = None  # Will be injected
-    visibility_manager: "StateVisibilityManager | None" = None  # Will be injected
+    active_states: EnhancedActiveStateSet | None = None  # Will be injected
+    state_memory: StateMemory | None = None  # Will be injected
+    visibility_manager: StateVisibilityManager | None = None  # Will be injected
 
     # Execution options
     execute_incoming: bool = True  # Execute incoming transitions for activated states

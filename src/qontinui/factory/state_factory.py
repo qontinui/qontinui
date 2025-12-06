@@ -3,6 +3,8 @@
 Factory for creating states after framework initialization.
 """
 
+from __future__ import annotations
+
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
@@ -48,7 +50,7 @@ class StateFactory:
 
         return builder.build()
 
-    def create_state_image(self, *image_names: str) -> "StateImage":
+    def create_state_image(self, *image_names: str) -> StateImage:
         """Create a StateImage with the given names.
 
         This is a lightweight operation that doesn't load the actual image.
@@ -68,7 +70,7 @@ class StateFactory:
 
     def create_state_string(
         self, value: str, name: str | None = None, owner_state_name: str | None = None
-    ) -> "StateString":
+    ) -> StateString:
         """Create a StateString with the given string value.
 
         Args:

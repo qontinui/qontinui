@@ -8,6 +8,8 @@ This module provides the ExecutionController class that handles:
 - Coordinating with registry, event bus, and orchestrator
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import uuid
@@ -68,7 +70,7 @@ class ExecutionController:
     async def start_execution(
         self,
         workflow: Workflow,
-        options: "ExecutionOptions",
+        options: ExecutionOptions,
         context_factory,
     ) -> str:
         """Start a new workflow execution.
@@ -253,7 +255,7 @@ class ExecutionController:
             raise ValueError(f"Execution {execution_id} not found")
         return state_api
 
-    async def _run_execution(self, context: "ExecutionContext") -> None:
+    async def _run_execution(self, context: ExecutionContext) -> None:
         """Run workflow execution.
 
         Delegates to ExecutionOrchestrator for orchestration logic.
@@ -273,7 +275,7 @@ class ExecutionController:
 
     async def _emit_event(
         self,
-        context: "ExecutionContext",
+        context: ExecutionContext,
         event_type,
         action_id: str | None = None,
         action_type: str | None = None,
