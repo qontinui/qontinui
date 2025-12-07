@@ -263,9 +263,12 @@ class JSONRunner:
         # Set monitor index if provided
         if monitor_index is not None:
             self.monitor_index = monitor_index
-            print(f"Using monitor {monitor_index} for automation")
+            print(f"[PYTHON_RUNNER] run() received monitor_index={monitor_index}")
+            print(f"[PYTHON_RUNNER] Using monitor {monitor_index} for automation")
             # Configure monitor manager to use specified monitor
             self._configure_monitor(monitor_index)
+        else:
+            print("[PYTHON_RUNNER] run() received monitor_index=None, using default monitor 0")
 
         # Reset stop flag before starting
         self._should_stop = False
@@ -340,9 +343,11 @@ class JSONRunner:
         Args:
             monitor_index: Index of monitor to use (0-based)
         """
+        print(f"[PYTHON_RUNNER] _configure_monitor() called with monitor_index={monitor_index}")
         try:
             # Set the primary monitor index for all operations
             self.monitor_manager.primary_monitor_index = monitor_index
+            print(f"[PYTHON_RUNNER] Set monitor_manager.primary_monitor_index = {monitor_index}")
 
             # Get monitor info to verify it exists
             monitor_info = self.monitor_manager.get_monitor_info(monitor_index)

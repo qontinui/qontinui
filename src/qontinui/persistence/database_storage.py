@@ -9,8 +9,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Column, MetaData, String, Table, create_engine, text
+from sqlalchemy import Column
 from sqlalchemy import DateTime as SQLDateTime
+from sqlalchemy import MetaData, String, Table, create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker
 

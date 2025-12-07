@@ -2,6 +2,48 @@
 
 This module provides the MouseActionExecutor class that handles all mouse operations
 including movement, clicking, dragging, and scrolling.
+
+# Multi-Monitor Coordinate System
+# ===============================
+#
+# When targeting FIND results on multi-monitor setups, coordinate translation is critical.
+#
+# ## The Problem
+#
+# - FIND captures the ENTIRE virtual desktop (all monitors combined)
+# - Match coordinates are relative to the virtual desktop screenshot origin
+# - pyautogui needs absolute virtual desktop coordinates
+#
+# ## The Solution
+#
+# The Rust runner calculates the "virtual desktop origin" (minimum X, minimum Y across
+# all monitors) and passes it to Python as `monitor_offset_x` and `monitor_offset_y`
+# via the execution context.
+#
+# When resolving LastFindResultTarget, ResultIndexTarget, etc., this offset is added
+# to the FIND result coordinates:
+#
+#     final_x = match.x + context.monitor_offset_x
+#     final_y = match.y + context.monitor_offset_y
+#
+# ## Example
+#
+# Monitor layout:
+#     Left: (-1920, 702), 1920x1080
+#     Primary: (0, 0), 3840x2160
+#     Right: (3840, 702), 1920x1080
+#
+# Virtual desktop origin: (-1920, 0)  # min X=-1920, min Y=0
+#
+# FIND result on left monitor: (65, 1372)
+# After offset: (65 + -1920, 1372 + 0) = (-1855, 1372)
+# pyautogui moves mouse to (-1855, 1372) -> lands on left monitor correctly!
+#
+# ## Key Files in the Coordinate Chain
+#
+# 1. mcp_api.rs (Rust) - Calculates virtual desktop origin from Tauri monitors
+# 2. mouse.py (Python) - Applies offset when resolving target locations
+# 3. mss_capture.py (Python) - Captures virtual desktop as monitors[0]
 """
 
 import logging
@@ -311,9 +353,26 @@ class MouseActionExecutor(ActionExecutorBase):
             # Use first match from last action result
             if self.context.last_action_result and self.context.last_action_result.matches:
                 match = self.context.last_action_result.matches[0]
-                # Apply monitor offset to convert relative coordinates to absolute screen coordinates
-                # FIND results are relative to the captured monitor's screenshot, but mouse operations
-                # need absolute virtual screen coordinates
+                # =======================================================================
+                # MONITOR OFFSET APPLICATION - Critical for Multi-Monitor Accuracy
+                # =======================================================================
+                #
+                # The FIND action captures the ENTIRE virtual desktop (all monitors),
+                # so match coordinates are relative to the virtual desktop origin.
+                #
+                # The offset values come from Rust (mcp_api.rs) and represent the
+                # virtual desktop origin: (min_x, min_y) across all monitors.
+                #
+                # By adding the offset, we convert from screenshot-relative coordinates
+                # to absolute virtual desktop coordinates that pyautogui can use.
+                #
+                # Example:
+                #   match = (65, 1372)  # relative to screenshot
+                #   offset = (-1920, 0)  # virtual desktop origin
+                #   result = (-1855, 1372)  # absolute coordinates for pyautogui
+                #
+                # See module docstring and mcp_api.rs for full documentation.
+                # =======================================================================
                 offset_x = getattr(self.context, "monitor_offset_x", 0)
                 offset_y = getattr(self.context, "monitor_offset_y", 0)
                 location = (match.x + offset_x, match.y + offset_y)
