@@ -1,4 +1,48 @@
-"""MSS-based screen capture implementation."""
+"""MSS-based screen capture implementation.
+
+# MSS Monitor Indexing and Virtual Desktop
+# =========================================
+#
+# MSS uses a special indexing scheme for monitors:
+#
+#   monitors[0] = Virtual Desktop (all monitors combined)
+#   monitors[1] = First physical monitor
+#   monitors[2] = Second physical monitor
+#   ...
+#
+# The Virtual Desktop (monitors[0]) is crucial for multi-monitor automation:
+# - Its origin is at (min_x, min_y) across all physical monitors
+# - It contains the ENTIRE screen area across all monitors
+# - Coordinates in the virtual desktop can be negative (for monitors left of primary)
+#
+# ## Example 3-Monitor Setup
+#
+# Physical layout:
+#     Left Monitor: x=-1920, y=702, 1920x1080
+#     Primary (center): x=0, y=0, 3840x2160
+#     Right Monitor: x=3840, y=702, 1920x1080
+#
+# MSS monitors array:
+#     monitors[0]: Virtual Desktop - left=-1920, top=0, width=7680, height=2160
+#     monitors[1]: Left - left=-1920, top=702, width=1920, height=1080
+#     monitors[2]: Primary - left=0, top=0, width=3840, height=2160
+#     monitors[3]: Right - left=3840, top=702, width=1920, height=1080
+#
+# Note: The virtual desktop origin (monitors[0]) has top=0, NOT top=702!
+# This is because the primary monitor starts at y=0, which is the minimum Y.
+#
+# ## Coordinate Translation for Mouse Actions
+#
+# When FIND captures monitors[0] (virtual desktop), match coordinates are relative
+# to the virtual desktop origin (-1920, 0 in our example). To convert these to
+# absolute screen coordinates for pyautogui:
+#
+#     absolute_x = match_x + virtual_desktop_left  # e.g., 65 + (-1920) = -1855
+#     absolute_y = match_y + virtual_desktop_top   # e.g., 1372 + 0 = 1372
+#
+# This calculation is performed in mcp_api.rs (Rust) and applied in mouse.py (Python).
+# See those files for implementation details.
+"""
 
 import time
 from pathlib import Path
@@ -72,10 +116,16 @@ class MSSScreenCapture(IScreenCapture):
 
         Returns:
             List of Monitor objects
+
+        Note:
+            MSS monitors[0] is the virtual desktop (all monitors combined).
+            We skip it here and only return physical monitors.
+            See module docstring for details on the coordinate system.
         """
         monitors = []
 
-        # Skip index 0 as it's the combined virtual monitor
+        # Skip index 0 as it's the combined virtual monitor (see module docstring)
+        # Physical monitors start at index 1
         for i, mon in enumerate(self.sct.monitors[1:], 1):  # type: ignore[attr-defined]
             monitor = Monitor(
                 index=i - 1,  # 0-based index
@@ -193,9 +243,12 @@ class MSSScreenCapture(IScreenCapture):
             if monitor is None:
                 if self.config.enable_multi_monitor:
                     # Capture all monitors (virtual desktop)
+                    # monitors[0] is the combined virtual desktop - coordinates in the
+                    # resulting screenshot are relative to the virtual desktop origin
+                    # (min_x, min_y across all monitors). See module docstring.
                     sct_img = self.sct.grab(self.sct.monitors[0])  # type: ignore[attr-defined]
                 else:
-                    # Capture primary monitor
+                    # Capture primary monitor only
                     sct_img = self.sct.grab(self.sct.monitors[1])  # type: ignore[attr-defined]
             else:
                 # Capture specific monitor

@@ -109,9 +109,9 @@ def _load_single_transition(transition_def: dict[str, Any], state_service: State
     # IncomingTransition types don't require a fromState - they represent
     # verification workflows that execute when entering a state
     if transition_type == "IncomingTransition":
-        # Look up toState
+        # Look up toState - try by name first, then by string ID
         to_state_id = transition_def["toState"]
-        to_state = state_service.get_state_by_name(to_state_id)
+        to_state = state_service.get_state_by_identifier(to_state_id)
         if to_state is None:
             logger.error(f"Transition '{transition_id}': toState '{to_state_id}' not found")
             return False
@@ -136,15 +136,16 @@ def _load_single_transition(transition_def: dict[str, Any], state_service: State
         return True
 
     # OutgoingTransition - requires both fromState and toState
+    # Look up states by identifier (tries name first, then string ID)
     from_state_id = transition_def["fromState"]
-    from_state = state_service.get_state_by_name(from_state_id)
+    from_state = state_service.get_state_by_identifier(from_state_id)
     if from_state is None:
         logger.error(f"Transition '{transition_id}': fromState '{from_state_id}' not found")
         return False
 
-    # Look up toState
+    # Look up toState - try by name first, then by string ID
     to_state_id = transition_def["toState"]
-    to_state = state_service.get_state_by_name(to_state_id)
+    to_state = state_service.get_state_by_identifier(to_state_id)
     if to_state is None:
         logger.error(f"Transition '{transition_id}': toState '{to_state_id}' not found")
         return False
@@ -282,25 +283,25 @@ def _create_transition_object(
         # Parse activateStates (additional states to activate)
         activate_states = transition_def.get("activateStates", [])
         if isinstance(activate_states, list):
-            for state_name in activate_states:
-                state = state_service.get_state_by_name(state_name)
+            for state_identifier in activate_states:
+                state = state_service.get_state_by_identifier(state_identifier)
                 if state and state.id is not None:
                     transition.activate.add(state.id)
                 else:
                     logger.warning(
-                        f"Transition '{transition_id}': activateState '{state_name}' not found"
+                        f"Transition '{transition_id}': activateState '{state_identifier}' not found"
                     )
 
         # Parse deactivateStates (states to exit)
         deactivate_states = transition_def.get("deactivateStates", [])
         if isinstance(deactivate_states, list):
-            for state_name in deactivate_states:
-                state = state_service.get_state_by_name(state_name)
+            for state_identifier in deactivate_states:
+                state = state_service.get_state_by_identifier(state_identifier)
                 if state and state.id is not None:
                     transition.exit.add(state.id)
                 else:
                     logger.warning(
-                        f"Transition '{transition_id}': deactivateState '{state_name}' not found"
+                        f"Transition '{transition_id}': deactivateState '{state_identifier}' not found"
                     )
 
         # Optional: parse timeout and retryCount (not currently used by TaskSequenceStateTransition)

@@ -236,9 +236,9 @@ class TypeScriptParser:
             return self._convert_to_dataclasses(result_data)
 
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to run Node.js parser: {e}")
+            raise RuntimeError(f"Failed to run Node.js parser: {e}") from e
         except json.JSONDecodeError as e:
-            raise RuntimeError(f"Failed to parse parser output: {e}")
+            raise RuntimeError(f"Failed to parse parser output: {e}") from e
         finally:
             # Clean up the temporary file
             try:

@@ -98,6 +98,44 @@ class StateService:
         """
         return self.states_by_name.get(name)
 
+    def get_state_by_string_id(self, string_id: str) -> State | None:
+        """Get a state by its string ID from configuration.
+
+        This looks up the state using the string ID (e.g., "state-123")
+        that was assigned in the JSON configuration.
+
+        Args:
+            string_id: String ID from configuration
+
+        Returns:
+            State object if found, None otherwise
+        """
+        int_id = self.string_id_to_int_id.get(string_id)
+        if int_id is None:
+            return None
+        return self.states_by_id.get(int_id)
+
+    def get_state_by_identifier(self, identifier: str) -> State | None:
+        """Get a state by either its name or string ID.
+
+        This method first tries to look up by name, then by string ID.
+        This is useful when processing transitions that might reference
+        states by either their human-readable name or their config ID.
+
+        Args:
+            identifier: Either state name or string ID from configuration
+
+        Returns:
+            State object if found, None otherwise
+        """
+        # First try by name
+        state = self.states_by_name.get(identifier)
+        if state is not None:
+            return state
+
+        # Then try by string ID
+        return self.get_state_by_string_id(identifier)
+
     def get_all_states(self) -> list[State]:
         """Get all states managed by this service.
 
