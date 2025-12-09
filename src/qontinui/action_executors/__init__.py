@@ -46,6 +46,7 @@ from . import (
     keyboard,  # noqa: F401
     mouse,  # noqa: F401
     navigation,  # noqa: F401
+    shell,  # noqa: F401
     utility,  # noqa: F401
     vision,  # noqa: F401
 )

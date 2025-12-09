@@ -64,6 +64,8 @@ from .models import (
     SearchOptions,
     SearchStrategy,
     SetVariableActionConfig,
+    ShellActionConfig,
+    ShellScriptActionConfig,
     SortActionConfig,
     StateStringTarget,
     StringOperationActionConfig,
@@ -172,6 +174,9 @@ __all__ = [
     "StringOperationActionConfig",
     "StringOperationParameters",
     "ValueSource",
+    # Shell actions
+    "ShellActionConfig",
+    "ShellScriptActionConfig",
     # State actions
     "GoToStateActionConfig",
     "RunWorkflowActionConfig",

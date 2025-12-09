@@ -55,6 +55,7 @@ class ExecutionContext:
 
     # Event emission functions
     emit_event: Callable[[str, dict], None]
+    # emit_action_event signature: (action_type, action_id, success, data)
     emit_action_event: Callable[[str, str, bool, dict], None]
     emit_image_recognition_event: Callable[[dict], None]
 
@@ -68,15 +69,19 @@ class ExecutionContext:
     monitor_offset_x: int = field(default=0)  # Monitor's left position in virtual screen
     monitor_offset_y: int = field(default=0)  # Monitor's top position in virtual screen
 
-    def update_last_action_result(self, result: ActionResult) -> None:
+    def update_last_action_result(self, result: ActionResult | None) -> None:
         """Store complete action result for subsequent actions to reference.
 
         This method stores the full ActionResult object, preserving all matches
         and execution details. Subsequent actions can access any match from the
         result, not just the first/best one.
 
+        Pass None to clear the last result (e.g., when FIND fails, to prevent
+        subsequent CLICK from using stale data).
+
         Args:
-            result: Complete ActionResult with all matches and execution data
+            result: Complete ActionResult with all matches and execution data,
+                    or None to clear.
 
         Example:
             # FIND action stores result with multiple matches
@@ -91,6 +96,9 @@ class ExecutionContext:
             # - result.matches[0] for best match
             # - result.matches[1] for second match
             # - result.matches for all matches
+
+            # When FIND fails, clear the result:
+            context.update_last_action_result(None)
         """
         self.last_action_result = result
 
@@ -161,9 +169,10 @@ class ActionExecutorBase(ABC):
         Args:
             action: Action being executed
         """
+        # Note: emit_action_event signature is (action_type, action_id, success, data)
         self.context.emit_action_event(
-            action.id or "unknown",
             action.type,
+            action.id or "unknown",
             True,
             {"status": "started"},
         )
@@ -175,7 +184,8 @@ class ActionExecutorBase(ABC):
             action: Action that succeeded
             data: Optional additional data
         """
-        self.context.emit_action_event(action.id or "unknown", action.type, True, data or {})
+        # Note: emit_action_event signature is (action_type, action_id, success, data)
+        self.context.emit_action_event(action.type, action.id or "unknown", True, data or {})
 
     def _emit_action_failure(self, action: Action, error: str, data: dict | None = None) -> None:
         """Emit action failure event.
@@ -189,9 +199,10 @@ class ActionExecutorBase(ABC):
         if data:
             failure_data.update(data)
 
+        # Note: emit_action_event signature is (action_type, action_id, success, data)
         self.context.emit_action_event(
-            action.id or "unknown",
             action.type,
+            action.id or "unknown",
             False,
             failure_data,
         )

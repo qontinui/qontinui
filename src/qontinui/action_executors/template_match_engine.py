@@ -177,9 +177,14 @@ class TemplateMatchEngine:
         log_debug("  Creating FindAction instance...")
         action = FindAction()
 
+        # Get monitor_index from context for single-monitor screenshot capture
+        monitor_index = getattr(self.context, "monitor_index", None)
+        log_debug(f"  Using monitor_index={monitor_index}")
+
         log_debug("  Calling FindAction.find()...")
         find_result = action.find(
-            pattern=pattern, options=FindOptions(similarity=threshold, find_all=False)
+            pattern=pattern,
+            options=FindOptions(similarity=threshold, find_all=False, monitor_index=monitor_index),
         )
 
         log_debug(f"  FindAction.find() returned: {find_result}")
@@ -228,6 +233,9 @@ class TemplateMatchEngine:
         Returns:
             List of (pattern, index, find_result) tuples
         """
+        # Get monitor_index from context for single-monitor screenshot capture
+        monitor_index = getattr(self.context, "monitor_index", None)
+
         # Get or create event loop
         try:
             loop = asyncio.get_event_loop()
@@ -245,7 +253,9 @@ class TemplateMatchEngine:
                     asyncio.to_thread(
                         action.find,
                         pattern=pattern,
-                        options=FindOptions(similarity=threshold, find_all=False),
+                        options=FindOptions(
+                            similarity=threshold, find_all=False, monitor_index=monitor_index
+                        ),
                     )
                 )
                 tasks.append((pattern, i, task))

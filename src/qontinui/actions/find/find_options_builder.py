@@ -47,6 +47,7 @@ class CascadeContext:
         pattern: Pattern with image-level overrides (priority 3)
         state_image: StateImage with state-level config (priority 4)
         project_config: Project-level settings (priority 5)
+        monitor_index: Target monitor index for screenshot capture (from ExecutionContext)
 
     Note: Priority 1 (explicit FindOptions params) is handled by caller.
     Priority 6 (library defaults) is handled by factory functions.
@@ -56,6 +57,7 @@ class CascadeContext:
     pattern: Pattern | None = None
     state_image: StateImage | None = None
     project_config: QontinuiSettings | None = None
+    monitor_index: int | None = None  # From ExecutionContext for multi-monitor support
 
 
 def build_find_options(
@@ -105,6 +107,7 @@ def build_find_options(
         search_region=_cascade_search_region(ctx, explicit_search_region),
         find_all=_cascade_find_all(ctx, explicit_find_all),
         collect_debug=_cascade_debug(ctx, explicit_debug),
+        monitor_index=ctx.monitor_index,  # Pass through from ExecutionContext
     )
 
 

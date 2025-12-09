@@ -101,6 +101,13 @@ from .search import (
     TextSearchOptions,
 )
 
+# Shell action configs
+from .shell_actions import (
+    ShellActionConfig,
+    ShellScriptActionConfig,
+    TriggerAiAnalysisActionConfig,
+)
+
 # State and workflow action configs
 from .state_actions import (
     GoToStateActionConfig,
@@ -223,6 +230,10 @@ __all__ = [
     "CodeBlockActionConfig",
     "CustomFunctionActionConfig",
     "ErrorHandling",
+    # Shell actions
+    "ShellActionConfig",
+    "ShellScriptActionConfig",
+    "TriggerAiAnalysisActionConfig",
     # State actions
     "GoToStateActionConfig",
     "RunWorkflowActionConfig",

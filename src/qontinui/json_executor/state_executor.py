@@ -79,8 +79,54 @@ class StateExecutor:
         """
         self._monitor_manager = monitor_manager
 
+    def set_monitor(self, monitor_index: int) -> None:
+        """Set the target monitor for automation.
+
+        When automation targets a specific monitor, found coordinates from FIND actions
+        are relative to that monitor's screenshot. This method looks up the monitor's
+        position using MSS and stores it for coordinate conversion in mouse operations.
+
+        Args:
+            monitor_index: Monitor index (0-based)
+        """
+        context = self.action_executor.context
+        context.monitor_index = monitor_index
+
+        # Look up monitor position from MSS
+        try:
+            from ..hal.implementations.mss_capture import MSSScreenCapture
+
+            capture = MSSScreenCapture()
+            monitors = capture.get_monitors()
+
+            if 0 <= monitor_index < len(monitors):
+                monitor = monitors[monitor_index]
+                context.monitor_offset_x = monitor.x
+                context.monitor_offset_y = monitor.y
+                logger.info(
+                    f"Set monitor {monitor_index}: position=({monitor.x}, {monitor.y}), "
+                    f"size={monitor.width}x{monitor.height}"
+                )
+            else:
+                # Monitor index out of range, use (0, 0)
+                context.monitor_offset_x = 0
+                context.monitor_offset_y = 0
+                logger.warning(
+                    f"Monitor index {monitor_index} out of range (have {len(monitors)} monitors), "
+                    "using offset (0, 0)"
+                )
+            capture.close()
+        except Exception as e:
+            # Fallback to (0, 0) if MSS fails
+            context.monitor_offset_x = 0
+            context.monitor_offset_y = 0
+            logger.warning(f"Failed to get monitor position from MSS: {e}, using offset (0, 0)")
+
     def set_monitor_offset(self, monitor_index: int, offset_x: int, offset_y: int) -> None:
-        """Set monitor offset for coordinate conversion.
+        """Set monitor offset for coordinate conversion (legacy method).
+
+        DEPRECATED: Use set_monitor(monitor_index) instead. This method is kept for
+        backward compatibility but the library should determine offsets internally.
 
         When automation targets a specific monitor, found coordinates from FIND actions
         are relative to that monitor's screenshot. This offset converts them to absolute
@@ -96,13 +142,43 @@ class StateExecutor:
         context.monitor_offset_x = offset_x
         context.monitor_offset_y = offset_y
         logger.info(
-            f"Set monitor offset: index={monitor_index}, " f"offset=({offset_x}, {offset_y})"
+            f"Set monitor offset (legacy): index={monitor_index}, offset=({offset_x}, {offset_y})"
         )
 
-    def initialize(self):
-        """Initialize the state machine."""
-        # Find all initial states
+    def initialize(self, initial_state_ids: list[str] | None = None):
+        """Initialize the state machine.
+
+        Args:
+            initial_state_ids: Optional list of state IDs to set as initially active.
+                If provided, these override any states marked with is_initial=True.
+                This is used when running workflows from the Main category that
+                specify their own initial states.
+        """
+        # Reset active states
+        self.active_states.clear()
+        self.current_state = None
+
         initial_states = []
+
+        # Priority 1: Use provided initial_state_ids (from workflow)
+        if initial_state_ids:
+            for state_id in initial_state_ids:
+                if state_id in self.config.state_map:
+                    state = self.config.state_map[state_id]
+                    if not self.current_state:
+                        self.current_state = state.id
+                    self.active_states.add(state.id)
+                    initial_states.append(state.name)
+                else:
+                    logger.warning(f"Initial state ID '{state_id}' not found in configuration")
+
+            if initial_states:
+                logger.info(
+                    f"Initialized with workflow initial states: {', '.join(initial_states)}"
+                )
+                return
+
+        # Priority 2: Use states marked with is_initial=True
         for state in self.config.states:
             if state.is_initial:
                 if not self.current_state:
@@ -116,18 +192,59 @@ class StateExecutor:
             else:
                 logger.info(f"Initial states: {', '.join(initial_states)}")
         elif self.config.states:
-            # Use first state as initial if none marked
+            # Priority 3: Use first state as initial if none marked
             self.current_state = self.config.states[0].id
             self.active_states.add(self.current_state)
             logger.info(f"Using first state as initial: {self.config.states[0].name}")
 
-    def execute(self):
+    def execute_workflow(self, workflow_id: str) -> bool:
+        """Execute a specific workflow with its initial states.
+
+        Looks up the workflow by ID in the config, initializes the state machine
+        using the workflow's initialStateIds, and then executes the workflow.
+
+        Args:
+            workflow_id: The ID of the workflow to execute.
+
+        Returns:
+            bool: True if execution completed successfully, False otherwise.
+
+        Example:
+            >>> executor = StateExecutor(config)
+            >>> success = executor.execute_workflow("my_main_workflow")
+        """
+        workflow = self.config.workflow_map.get(workflow_id)
+        if not workflow:
+            logger.error(f"Workflow '{workflow_id}' not found in configuration")
+            return False
+
+        # Get initial states from workflow (if any)
+        initial_state_ids = workflow.initial_state_ids
+
+        if initial_state_ids:
+            logger.info(f"Using workflow initial states: {initial_state_ids}")
+
+        # Initialize with workflow's initial states
+        self.initialize(initial_state_ids)
+
+        if not self.current_state:
+            logger.error("No initial state found")
+            return False
+
+        # Execute the workflow
+        return self.action_executor.execute_workflow(workflow_id)
+
+    def execute(self, initial_state_ids: list[str] | None = None):
         """Execute the state machine automation workflow.
 
         Runs the complete state machine from initial state to final state (or until
         no transitions are available). The execution loop continuously verifies the
         current state, finds applicable transitions, executes them, and updates the
         active states.
+
+        Args:
+            initial_state_ids: Optional list of state IDs to set as initially active.
+                If provided, these override any states marked with is_initial=True.
 
         The execution stops when:
             - No applicable transitions are found
@@ -153,7 +270,7 @@ class StateExecutor:
             - :meth:`initialize`: Sets up initial state
             - :meth:`_execute_transitions`: Finds and executes transitions
         """
-        self.initialize()
+        self.initialize(initial_state_ids)
 
         if not self.current_state:
             logger.error("No initial state found")
@@ -248,11 +365,14 @@ class StateExecutor:
             except Exception:
                 project_config = None
 
+            # Get monitor_index from action_executor context if available
+            monitor_index = getattr(self.action_executor.context, "monitor_index", None)
             ctx = CascadeContext(
                 search_options=None,
                 pattern=None,  # Not pattern-specific
                 state_image=None,
                 project_config=project_config,
+                monitor_index=monitor_index,
             )
             options = build_find_options(ctx)
 

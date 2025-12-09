@@ -193,15 +193,18 @@ class TargetResolver:
 
             for pattern in patterns:
                 # Build options with cascade for this pattern
+                # Get monitor_index from ExecutionContext if available
+                monitor_index = getattr(self.context, "monitor_index", None)
                 ctx = CascadeContext(
                     search_options=target.search_options,
                     pattern=pattern,
                     state_image=None,  # Not available in this context
                     project_config=project_config,
+                    monitor_index=monitor_index,
                 )
                 options = build_find_options(ctx)
                 log_debug(
-                    f"    Finding pattern {pattern.name} with similarity={options.similarity}"
+                    f"    Finding pattern {pattern.name} with similarity={options.similarity}, monitor={options.monitor_index}"
                 )
 
                 find_result = action.find(pattern, options)
@@ -236,15 +239,18 @@ class TargetResolver:
             pattern = patterns[0]
 
             # Build options with cascade for this pattern
+            # Get monitor_index from ExecutionContext if available
+            monitor_index = getattr(self.context, "monitor_index", None)
             ctx = CascadeContext(
                 search_options=target.search_options,
                 pattern=pattern,
                 state_image=None,  # Not available in this context
                 project_config=project_config,
+                monitor_index=monitor_index,
             )
             options = build_find_options(ctx)
             log_debug(
-                f"  Using cascaded options: similarity={options.similarity}, timeout={options.timeout}"
+                f"  Using cascaded options: similarity={options.similarity}, timeout={options.timeout}, monitor={options.monitor_index}"
             )
 
             find_result = action.find(pattern, options)
@@ -278,6 +284,9 @@ class TargetResolver:
             return result
         else:
             log_debug("  Returning None (no result)")
+            # Clear last_action_result so subsequent actions (e.g., CLICK) don't use stale data
+            self.context.update_last_action_result(None)
+            log_debug("  Cleared context.last_action_result (FIND failed)")
             return None
 
     def _resolve_coordinates_target(self, target: CoordinatesTarget) -> ActionResult:
