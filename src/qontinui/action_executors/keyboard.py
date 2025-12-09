@@ -318,14 +318,13 @@ class KeyboardActionExecutor(ActionExecutorBase):
                 self.context.keyboard.type(text)
                 logger.info(f"Successfully typed: '{text}'")
 
-                # Emit TEXT_TYPED event for runner/frontend
-                import sys
+                # Press Enter after typing if configured
+                if typed_config.press_enter:
+                    logger.info("Pressing Enter key after typing...")
+                    self.context.keyboard.press("enter")
+                    logger.info("Pressed Enter key")
 
-                print(
-                    f"[KEYBOARD_EXECUTOR] About to emit TEXT_TYPED event for text: '{text}'",
-                    file=sys.stderr,
-                    flush=True,
-                )
+                # Emit TEXT_TYPED event for runner/frontend
                 from ..reporting.events import EventType, emit_event
 
                 emit_event(
@@ -338,11 +337,6 @@ class KeyboardActionExecutor(ActionExecutorBase):
                         "action_id": action.id if action.id else "unknown",
                         "success": True,
                     },
-                )
-                print(
-                    "[KEYBOARD_EXECUTOR] TEXT_TYPED event emitted successfully",
-                    file=sys.stderr,
-                    flush=True,
                 )
 
                 self._emit_action_success(action, {"text": text, "length": len(text)})

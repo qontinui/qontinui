@@ -92,9 +92,13 @@ class RealFindImplementation:
 
         try:
             # Capture screenshot and record timestamp
-            logger.debug("[FIND_DEBUG] Calling screenshot_provider.capture()")
+            logger.debug(
+                f"[FIND_DEBUG] Calling screenshot_provider.capture(monitor={options.monitor_index})"
+            )
             screenshot_start_time = time.time()
-            screenshot = self.screenshot_provider.capture(options.search_region)
+            screenshot = self.screenshot_provider.capture(
+                options.search_region, monitor=options.monitor_index
+            )
             screenshot_timestamp = screenshot_start_time  # Save for event emission
             screenshot_end_time = time.time()
             screenshot_duration = screenshot_end_time - screenshot_start_time
@@ -274,10 +278,25 @@ class RealFindImplementation:
         # Debug: Log that we're including screenshot_timestamp
         logger.debug(f"[EVENT] Including screenshot_timestamp: {screenshot_timestamp}")
 
-        # Add screenshot as base64 PNG
+        # Add screenshot as base64 JPEG (preserving full resolution for debugging)
         if screenshot is not None:
             logger.info(f"[EVENT] Encoding screenshot for pattern {pattern.id}")
-            screenshot_image = self._encode_template_image(screenshot)
+            # Get screenshot dimensions before encoding
+            import numpy as np
+            from PIL import Image
+
+            if isinstance(screenshot, Image.Image):
+                screenshot_width, screenshot_height = screenshot.size
+            elif isinstance(screenshot, np.ndarray):
+                screenshot_height, screenshot_width = screenshot.shape[:2]
+            else:
+                screenshot_width, screenshot_height = 0, 0
+
+            # Add screenshot dimensions to event data
+            event_data["screenshot_size"] = (screenshot_width, screenshot_height)
+            logger.debug(f"[EVENT] Screenshot dimensions: {screenshot_width}x{screenshot_height}")
+
+            screenshot_image = self._encode_screenshot(screenshot)
             if screenshot_image:
                 logger.info(
                     f"[EVENT] Screenshot encoded successfully, length={len(screenshot_image)}"
@@ -303,6 +322,22 @@ class RealFindImplementation:
             else:
                 logger.warning(
                     f"[EVENT] Template image encoding returned None for pattern {pattern.id}"
+                )
+
+        # Add matched region crop from screenshot for debugging false positives
+        if screenshot is not None and matches and location:
+            logger.info(f"[EVENT] Extracting matched region for pattern {pattern.id}")
+            matched_region_image = self._encode_matched_region(
+                screenshot, location, pattern.pixel_data
+            )
+            if matched_region_image:
+                logger.info(
+                    f"[EVENT] Matched region encoded successfully, length={len(matched_region_image)}"
+                )
+                event_data["matched_region_image"] = matched_region_image
+            else:
+                logger.warning(
+                    f"[EVENT] Matched region encoding returned None for pattern {pattern.id}"
                 )
 
         # Add debug data if available
@@ -401,6 +436,163 @@ class RealFindImplementation:
 
         except Exception as e:
             logger.error(f"Failed to encode template image: {e}")
+            return None
+
+    def _encode_screenshot(self, screenshot: Any) -> str | None:
+        """Encode screenshot as base64 JPEG for display, preserving original dimensions.
+
+        Unlike _encode_template_image which scales down to 200px for templates,
+        this method preserves the full screenshot resolution for debugging purposes.
+        Uses JPEG with quality 85 to reduce size while maintaining visual fidelity.
+
+        Args:
+            screenshot: Screenshot image data (PIL Image or NumPy array)
+
+        Returns:
+            Base64-encoded JPEG string, or None on error
+        """
+        try:
+            import base64
+
+            import cv2
+            import numpy as np
+            from PIL import Image
+
+            # Convert PIL Image to NumPy if needed
+            if isinstance(screenshot, Image.Image):
+                screenshot = np.array(screenshot)
+                screenshot = cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR)
+
+            # Validate
+            if screenshot is None or screenshot.size == 0:
+                return None
+
+            # Log original dimensions
+            s_h, s_w = screenshot.shape[:2]
+            logger.debug(f"[SCREENSHOT] Encoding screenshot with original size: {s_w}x{s_h}")
+
+            # Encode as JPEG with quality 85 for reasonable file size
+            # JPEG is much smaller than PNG for photos/screenshots
+            encode_params = [cv2.IMWRITE_JPEG_QUALITY, 85]
+            success, buffer = cv2.imencode(".jpg", screenshot, encode_params)
+            if not success:
+                return None
+
+            # Convert to base64
+            jpeg_bytes = buffer.tobytes()
+            base64_str = base64.b64encode(jpeg_bytes).decode("utf-8")
+
+            logger.debug(
+                f"[SCREENSHOT] Encoded screenshot: {s_w}x{s_h} -> {len(base64_str)} chars base64"
+            )
+
+            return base64_str
+
+        except Exception as e:
+            logger.error(f"Failed to encode screenshot: {e}")
+            return None
+
+    def _encode_matched_region(self, screenshot: Any, location: dict, template: Any) -> str | None:
+        """Extract and encode the matched region from the screenshot.
+
+        This crops the screenshot at the match location and encodes it as a base64 PNG
+        for side-by-side comparison with the template image, helping debug false positives.
+
+        Args:
+            screenshot: Screenshot image data (PIL Image or NumPy array)
+            location: Dictionary with x, y, width, height of the match
+            template: Template image data to determine crop dimensions if width/height not in location
+
+        Returns:
+            Base64-encoded PNG string, or None on error
+        """
+        try:
+            import base64
+
+            import cv2
+            import numpy as np
+            from PIL import Image
+
+            # Convert PIL Image to NumPy if needed
+            if isinstance(screenshot, Image.Image):
+                screenshot = np.array(screenshot)
+                screenshot = cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR)
+
+            # Validate
+            if screenshot is None or screenshot.size == 0:
+                return None
+
+            s_h, s_w = screenshot.shape[:2]
+
+            # Get crop dimensions
+            x = int(location.get("x", 0))
+            y = int(location.get("y", 0))
+            width = int(location.get("width", 0))
+            height = int(location.get("height", 0))
+
+            # If width/height not available, try to get from template
+            if (width == 0 or height == 0) and template is not None:
+                if isinstance(template, np.ndarray):
+                    height, width = template.shape[:2]
+                elif isinstance(template, Image.Image):
+                    width, height = template.size
+
+            # Ensure we have valid dimensions
+            if width <= 0 or height <= 0:
+                logger.warning(f"[MATCHED_REGION] Invalid dimensions: {width}x{height}")
+                return None
+
+            # Clamp to screenshot boundaries
+            x = max(0, min(x, s_w - 1))
+            y = max(0, min(y, s_h - 1))
+            x2 = min(x + width, s_w)
+            y2 = min(y + height, s_h)
+
+            # Extract the matched region
+            matched_region = screenshot[y:y2, x:x2]
+
+            if matched_region.size == 0:
+                logger.warning(f"[MATCHED_REGION] Empty crop at ({x}, {y}) size {width}x{height}")
+                return None
+
+            # Scale for visibility (same logic as template)
+            m_h, m_w = matched_region.shape[:2]
+            min_display_size = 100
+            max_display_size = 200
+
+            scale_factor = 1.0
+            larger_dimension = max(m_w, m_h)
+
+            if larger_dimension < min_display_size:
+                scale_factor = min_display_size / larger_dimension
+            elif larger_dimension > max_display_size:
+                scale_factor = max_display_size / larger_dimension
+
+            if scale_factor != 1.0:
+                new_w = int(m_w * scale_factor)
+                new_h = int(m_h * scale_factor)
+                interpolation = cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
+                matched_region = cv2.resize(
+                    matched_region, (new_w, new_h), interpolation=interpolation
+                )
+
+            # Encode as PNG
+            success, buffer = cv2.imencode(".png", matched_region)
+            if not success:
+                return None
+
+            # Convert to base64
+            png_bytes = buffer.tobytes()
+            base64_str = base64.b64encode(png_bytes).decode("utf-8")
+
+            logger.debug(
+                f"[MATCHED_REGION] Encoded matched region: {m_w}x{m_h} -> {len(base64_str)} chars base64"
+            )
+
+            return base64_str
+
+        except Exception as e:
+            logger.error(f"Failed to encode matched region: {e}")
             return None
 
     async def execute_async(

@@ -56,6 +56,9 @@ class PlaywrightExtractor(RuntimeExtractor):
         self.is_connected = False
         self.session: RuntimeExtractionSession | None = None
 
+        # Configuration (set by extract() method)
+        self._configured_viewport: tuple[int, int] | None = None
+
     async def connect(self, target: ExtractionTarget) -> None:
         """
         Connect to web target via Playwright.
@@ -70,15 +73,28 @@ class PlaywrightExtractor(RuntimeExtractor):
             raise ValueError("ExtractionTarget must have a URL for PlaywrightExtractor")
 
         try:
+            # Get headless setting - default to True if not specified
+            # ExtractionTarget from models/base.py doesn't have headless attribute
+            headless = getattr(target, "headless", True)
+
+            # Get viewport - prefer configured viewport from extract(), then target, then default
+            # ExtractionTarget from models/base.py doesn't have viewport attribute
+            if hasattr(self, "_configured_viewport") and self._configured_viewport:
+                viewport = self._configured_viewport
+            else:
+                viewport = getattr(target, "viewport", (1920, 1080))
+
+            logger.info(f"Connecting with headless={headless}, viewport={viewport}")
+
             # Launch Playwright
             self.playwright = await async_playwright().start()
             self.browser = await self.playwright.chromium.launch(
-                headless=target.headless,
+                headless=headless,
             )
 
             # Create context with viewport
             self.context = await self.browser.new_context(
-                viewport={"width": target.viewport[0], "height": target.viewport[1]},
+                viewport={"width": viewport[0], "height": viewport[1]},
             )
 
             # Set cookies if provided
@@ -148,15 +164,64 @@ class PlaywrightExtractor(RuntimeExtractor):
         try:
             self._capture_counter += 1
             capture_id = f"capture_{self._capture_counter:04d}"
+            logger.info("=" * 50)
+            logger.info(f"EXTRACTING CURRENT STATE (capture_id={capture_id})")
+            logger.info("=" * 50)
+            logger.info(f"  Page URL: {self.page.url}")
 
             # Extract elements
+            logger.info("  Step 1: Extracting elements...")
             elements = await self.extract_elements()
+            logger.info(f"  --> Found {len(elements)} elements")
 
             # Detect regions
+            logger.info("  Step 2: Detecting semantic regions...")
             regions = await self.detect_regions()
+            logger.info(f"  --> Found {len(regions)} regions")
+            for i, region in enumerate(regions):
+                logger.info(
+                    f"      Region {i}: id={region.id}, type={region.region_type}, name={region.name}"
+                )
 
             # Convert regions to states
+            logger.info("  Step 3: Converting regions to states...")
             states = await self._regions_to_states(regions, elements)
+            logger.info(f"  --> Converted to {len(states)} states")
+
+            # If no semantic regions were found, create a page-level state
+            # This ensures we always have at least one state per page
+            if not states:
+                logger.info(
+                    "  Step 4: No semantic regions found, creating page-level FALLBACK state"
+                )
+                from ...web.models import ExtractedState, StateType
+
+                # Get page dimensions
+                viewport_size = self.page.viewport_size
+                width = viewport_size["width"] if viewport_size else 1920
+                height = viewport_size["height"] if viewport_size else 1080
+
+                # Create a page-level state containing all elements
+                page_state = ExtractedState(
+                    id=f"state_page_{self._capture_counter:04d}",
+                    name=await self.page.title() or f"Page {self._capture_counter}",
+                    bbox=WebBoundingBox(x=0, y=0, width=width, height=height),
+                    state_type=StateType.PAGE,
+                    element_ids=[e.id for e in elements],
+                    screenshot_id=f"screenshot_{self._screenshot_counter:04d}",
+                    detection_method="page_fallback",
+                    confidence=1.0,
+                    semantic_role="main",
+                    aria_label=None,
+                    source_url=self.page.url,
+                    metadata={"fallback": True, "element_count": len(elements)},
+                )
+                states = [page_state]
+                logger.info(
+                    f"  --> Created page-level fallback state with {len(elements)} elements"
+                )
+
+            logger.info(f"  FINAL: Returning {len(states)} states, {len(elements)} elements")
 
             # Capture screenshot
             screenshot_path = None
@@ -652,11 +717,39 @@ class PlaywrightExtractor(RuntimeExtractor):
         from ...models.base import RuntimeExtractionResult
         from ..types import RuntimeExtractionSession
 
+        logger.info("=" * 60)
+        logger.info("PLAYWRIGHT EXTRACTOR: extract() called")
+        logger.info("=" * 60)
+        logger.info(f"  Target URL: {target.url}")
+
+        # Get viewport from config (ExtractionConfig.viewports) or target or default
+        viewport = (1920, 1080)  # Default
+        if config is not None:
+            # ExtractionConfig has viewports as a list of tuples
+            viewports = getattr(config, "viewports", None)
+            if viewports and len(viewports) > 0:
+                viewport = viewports[0]
+                logger.info(f"  Using viewport from config: {viewport}")
+        if viewport == (1920, 1080):
+            # Check target as fallback
+            target_viewport = getattr(target, "viewport", None)
+            if target_viewport:
+                viewport = target_viewport
+                logger.info(f"  Using viewport from target: {viewport}")
+            else:
+                logger.info(f"  Using default viewport: {viewport}")
+
+        # Store viewport for use in connect()
+        self._configured_viewport = viewport
+
+        logger.info(f"  Target headless: {getattr(target, 'headless', 'N/A')}")
+
         try:
             # Create session
             session_id = str(uuid.uuid4())
             storage_dir = Path.cwd() / ".qontinui" / "extraction" / session_id
             storage_dir.mkdir(parents=True, exist_ok=True)
+            logger.info(f"  Session ID: {session_id}")
 
             self.session = RuntimeExtractionSession(
                 session_id=session_id,
@@ -666,15 +759,23 @@ class PlaywrightExtractor(RuntimeExtractor):
             )
 
             # Connect to target
+            logger.info("  Connecting to target...")
             await self.connect(target)
+            logger.info("  Connected successfully")
 
             # Extract current state
+            logger.info("  Extracting current state...")
             capture = await self.extract_current_state()
+            logger.info(
+                f"  Capture complete: {len(capture.states)} states, {len(capture.elements)} elements"
+            )
 
             # Disconnect
+            logger.info("  Disconnecting...")
             await self.disconnect()
 
             # Convert to RuntimeExtractionResult
+            logger.info("  Creating RuntimeExtractionResult...")
             result = RuntimeExtractionResult(
                 elements=capture.elements,
                 states=capture.states,
@@ -685,10 +786,15 @@ class PlaywrightExtractor(RuntimeExtractor):
                 errors=[],
             )
 
-            logger.info(
-                f"Extraction complete: {len(result.elements)} elements, "
-                f"{len(result.states)} states"
-            )
+            logger.info("=" * 60)
+            logger.info("PLAYWRIGHT EXTRACTOR: RESULT")
+            logger.info("=" * 60)
+            logger.info(f"  Elements: {len(result.elements)}")
+            logger.info(f"  States: {len(result.states)}")
+            for i, state in enumerate(result.states):
+                state_name = getattr(state, "name", "Unknown")
+                state_id = getattr(state, "id", f"state_{i}")
+                logger.info(f"    State {i}: id={state_id}, name={state_name}")
 
             return result
 

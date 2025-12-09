@@ -134,5 +134,10 @@ class Workflow(BaseModel):
         None, description="Workflow metadata (author, description, etc.)"
     )
     tags: list[str] | None = Field(None, description="Tags for categorizing workflows")
+    initial_state_ids: list[str] | None = Field(
+        None,
+        alias="initialStateIds",
+        description="Initial active states when workflow starts. Required for Main category workflows for model-based GUI automation.",
+    )
 
     model_config = {"populate_by_name": True}

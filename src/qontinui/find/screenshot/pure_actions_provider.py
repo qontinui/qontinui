@@ -30,11 +30,13 @@ class PureActionsScreenshotProvider(ScreenshotProvider):
             screen_capture = HALFactory.get_screen_capture()
         self.screen = screen_capture
 
-    def capture(self, region: Region | None = None) -> Image.Image:
+    def capture(self, region: Region | None = None, monitor: int | None = None) -> Image.Image:
         """Capture screenshot using PureActions.
 
         Args:
             region: Optional region to capture. If None, captures entire screen.
+            monitor: Optional monitor index (0-based). If None, captures all monitors
+                    (virtual desktop) when multi-monitor is enabled.
 
         Returns:
             PIL Image of the captured screenshot.
@@ -44,11 +46,13 @@ class PureActionsScreenshotProvider(ScreenshotProvider):
         """
         try:
             if region is not None:
-                # Capture specific region
-                image = self.screen.capture_region(region.x, region.y, region.width, region.height)
+                # Capture specific region (monitor offset is applied by the HAL)
+                image = self.screen.capture_region(
+                    region.x, region.y, region.width, region.height, monitor=monitor
+                )
             else:
-                # Capture entire screen
-                image = self.screen.capture_screen()
+                # Capture screen - specific monitor or all monitors
+                image = self.screen.capture_screen(monitor=monitor)
 
             if image is None:
                 raise RuntimeError("Screenshot capture returned None")

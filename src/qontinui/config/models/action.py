@@ -55,6 +55,11 @@ from .mouse_actions import (
     MouseUpActionConfig,
     ScrollActionConfig,
 )
+from .shell_actions import (
+    ShellActionConfig,
+    ShellScriptActionConfig,
+    TriggerAiAnalysisActionConfig,
+)
 from .state_actions import (
     GoToStateActionConfig,
     RunWorkflowActionConfig,
@@ -124,6 +129,10 @@ ACTION_CONFIG_MAP = {
     # Code execution actions
     "CODE_BLOCK": CodeBlockActionConfig,
     "CUSTOM_FUNCTION": CustomFunctionActionConfig,
+    # Shell actions
+    "SHELL": ShellActionConfig,
+    "SHELL_SCRIPT": ShellScriptActionConfig,
+    "TRIGGER_AI_ANALYSIS": TriggerAiAnalysisActionConfig,
 }
 
 

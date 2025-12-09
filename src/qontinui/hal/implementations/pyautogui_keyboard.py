@@ -168,6 +168,10 @@ class PyAutoGUIKeyboardOperations(IKeyboardController):
     def type_text(self, text: str, interval: float = 0.0) -> bool:
         """Type text string.
 
+        Handles special characters like newlines by using press() for them.
+        PyAutoGUI's typewrite() can only handle printable characters, so we
+        need to split the text and handle special characters separately.
+
         Args:
             text: Text to type
             interval: Interval between characters in seconds
@@ -179,7 +183,33 @@ class PyAutoGUIKeyboardOperations(IKeyboardController):
             InputControlError: If type text fails
         """
         try:
-            self._pyautogui.typewrite(text, interval=interval)
+            # Map of special characters to their key names
+            special_chars = {
+                "\n": "enter",
+                "\r": "enter",
+                "\t": "tab",
+            }
+
+            # Process text character by character to handle special chars
+            buffer = ""
+            for char in text:
+                if char in special_chars:
+                    # First, type any buffered regular text
+                    if buffer:
+                        self._pyautogui.typewrite(buffer, interval=interval)
+                        buffer = ""
+                    # Then press the special key
+                    self._pyautogui.press(special_chars[char])
+                    if interval > 0:
+                        import time
+
+                        time.sleep(interval)
+                else:
+                    buffer += char
+
+            # Type any remaining buffered text
+            if buffer:
+                self._pyautogui.typewrite(buffer, interval=interval)
 
             logger.debug(f"Typed text: '{text[:20]}...' ({len(text)} chars)")
             return True

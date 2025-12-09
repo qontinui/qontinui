@@ -179,6 +179,10 @@ class KeyboardOperations(IKeyboardController):
     def type_text(self, text: str, interval: float = 0.0) -> bool:
         """Type text string.
 
+        Handles special characters like newlines by using key_press() for them.
+        Pynput's type() method may not properly simulate Enter key for \n,
+        so we handle special characters explicitly.
+
         Args:
             text: Text to type
             interval: Interval between characters in seconds
@@ -190,12 +194,43 @@ class KeyboardOperations(IKeyboardController):
             InputControlError: If type text fails
         """
         try:
-            if interval > 0:
-                for char in text:
-                    self._keyboard.type(char)
-                    TimeWrapper().wait(seconds=interval)
-            else:
-                self._keyboard.type(text)
+            # Map of special characters to their key names
+            special_chars = {
+                "\n": Key.ENTER,
+                "\r": Key.ENTER,
+                "\t": Key.TAB,
+            }
+
+            # Process text character by character to handle special chars
+            buffer = ""
+            for char in text:
+                if char in special_chars:
+                    # First, type any buffered regular text
+                    if buffer:
+                        if interval > 0:
+                            for c in buffer:
+                                self._keyboard.type(c)
+                                TimeWrapper().wait(seconds=interval)
+                        else:
+                            self._keyboard.type(buffer)
+                        buffer = ""
+                    # Then press the special key
+                    pynput_key = self._get_pynput_key(special_chars[char])
+                    self._keyboard.press(pynput_key)
+                    self._keyboard.release(pynput_key)
+                    if interval > 0:
+                        TimeWrapper().wait(seconds=interval)
+                else:
+                    buffer += char
+
+            # Type any remaining buffered text
+            if buffer:
+                if interval > 0:
+                    for c in buffer:
+                        self._keyboard.type(c)
+                        TimeWrapper().wait(seconds=interval)
+                else:
+                    self._keyboard.type(buffer)
 
             logger.debug(f"Typed text: '{text[:20]}...' ({len(text)} chars)")
             return True

@@ -338,18 +338,59 @@ class NavigationActionExecutor(ActionExecutorBase):
             # Execute the nested workflow using workflow_executor
             # All workflows are now graph-based, so we delegate to the executor
             if workflow.format == "graph":
-                # Graph execution - delegate to workflow_executor
-                for nested_action in workflow.actions:
-                    # Use the execute_action callback from context to execute nested actions
-                    # Model-based GUI automation principle: always continue, never stop on failure
-                    action_success = self.context.execute_action(nested_action)
-                    if not action_success:
-                        logger.warning(
-                            f"Nested action failed in workflow '{workflow.name}': "
-                            f"{nested_action.type} (id: {nested_action.id}), continuing execution"
-                        )
-                        success = False
-                    executed_count += 1
+                # Graph execution - use GraphTraverser to get proper execution order
+                # The actions array order may not match the connection graph order
+                from ..execution.graph_traverser import GraphTraverser
+
+                traverser = GraphTraverser(workflow)
+                action_map = {action.id: action for action in workflow.actions}
+
+                # Find entry points and execute in graph order
+                entry_points = traverser.find_entry_points()
+                if not entry_points:
+                    logger.warning(f"No entry points found in workflow '{workflow.name}'")
+                    # Fallback to array order if no entry points
+                    for nested_action in workflow.actions:
+                        action_success = self.context.execute_action(nested_action)
+                        if not action_success:
+                            logger.warning(
+                                f"Nested action failed in workflow '{workflow.name}': "
+                                f"{nested_action.type} (id: {nested_action.id}), continuing execution"
+                            )
+                            success = False
+                        executed_count += 1
+                else:
+                    # Execute following the graph connections
+                    executed_set: set[str] = set()
+                    execution_queue = list(entry_points)
+
+                    while execution_queue:
+                        action_id = execution_queue.pop(0)
+                        if action_id in executed_set:
+                            continue
+
+                        nested_action = action_map.get(action_id)
+                        if not nested_action:
+                            logger.warning(f"Action '{action_id}' not found in workflow")
+                            continue
+
+                        # Execute the action
+                        action_success = self.context.execute_action(nested_action)
+                        executed_set.add(action_id)
+                        executed_count += 1
+
+                        if not action_success:
+                            logger.warning(
+                                f"Nested action failed in workflow '{workflow.name}': "
+                                f"{nested_action.type} (id: {nested_action.id}), continuing execution"
+                            )
+                            success = False
+
+                        # Get next actions from connections
+                        next_actions = traverser.get_next_actions(action_id, "main")
+                        for next_id, _ in next_actions:
+                            if next_id not in executed_set:
+                                execution_queue.append(next_id)
 
             elif workflow.type == "parallel":
                 # For now, execute sequentially (parallel execution would need threading)

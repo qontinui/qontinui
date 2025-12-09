@@ -145,8 +145,22 @@ class ExtractionOrchestrator:
 
             # Phase 2: Runtime Extraction (BLACK_BOX or WHITE_BOX)
             if config.mode in (ExtractionMode.BLACK_BOX, ExtractionMode.WHITE_BOX):
-                logger.info("Starting runtime extraction phase...")
+                logger.info("=" * 50)
+                logger.info("PHASE 2: RUNTIME EXTRACTION")
+                logger.info("=" * 50)
                 result.runtime_extraction = await self._run_runtime_extraction(config)
+                logger.info(
+                    f"Runtime extraction returned {len(result.runtime_extraction.states)} states, "
+                    f"{len(result.runtime_extraction.elements)} elements"
+                )
+                # Log state details
+                for i, state in enumerate(result.runtime_extraction.states):
+                    state_name = getattr(state, "name", "Unknown")
+                    state_id = getattr(state, "id", f"state_{i}")
+                    state_type = getattr(state, "state_type", "Unknown")
+                    logger.info(
+                        f"  Runtime state {i}: id={state_id}, name={state_name}, type={state_type}"
+                    )
 
                 if result.runtime_extraction.errors:
                     logger.warning(
@@ -170,12 +184,22 @@ class ExtractionOrchestrator:
                 result.states = self._states_from_static(result.static_analysis)
                 result.transitions = self._transitions_from_static(result.static_analysis)
 
-            # Handle BLACK_BOX mode - use runtime results directly
+            # Handle BLACK_BOX mode - convert runtime results to CorrelatedState
             elif config.mode == ExtractionMode.BLACK_BOX and result.runtime_extraction:
-                logger.info("Using runtime extraction results directly...")
-                # Runtime states are already in result.runtime_extraction
-                # Could convert them to CorrelatedState format if needed
-                pass
+                logger.info("=" * 50)
+                logger.info("BLACK_BOX MODE: CONVERTING RUNTIME STATES")
+                logger.info("=" * 50)
+                logger.info(
+                    f"Converting {len(result.runtime_extraction.states)} runtime states to CorrelatedState..."
+                )
+                result.states = self._states_from_runtime(result.runtime_extraction)
+                logger.info(
+                    f"Conversion complete: {len(result.states)} CorrelatedState objects created"
+                )
+                for i, state in enumerate(result.states):
+                    logger.info(
+                        f"  CorrelatedState {i}: id={state.id}, name={state.name}, confidence={state.confidence}"
+                    )
 
             # Mark completion
             import datetime
@@ -769,6 +793,73 @@ class ExtractionOrchestrator:
             f"Created {len(states)} states: {len(static.routes)} route-based states + "
             f"{len(visibility_states)} visibility sub-states"
         )
+        return states
+
+    def _states_from_runtime(self, runtime: RuntimeExtractionResult) -> list[CorrelatedState]:
+        """
+        Convert runtime extraction results to CorrelatedState objects.
+
+        This is used for BLACK_BOX mode where we only have runtime extraction
+        (no static analysis to correlate with).
+
+        Args:
+            runtime: Runtime extraction results
+
+        Returns:
+            List of CorrelatedState objects derived from runtime states
+        """
+        states: list[CorrelatedState] = []
+
+        logger.info(
+            f"Converting runtime results: {len(runtime.states)} states, "
+            f"{len(runtime.elements)} elements"
+        )
+
+        # Convert each ExtractedState from runtime to CorrelatedState
+        for i, extracted_state in enumerate(runtime.states):
+            # ExtractedState has: id, name, bbox, state_type, element_ids, screenshot_id,
+            # detection_method, confidence, semantic_role, aria_label, source_url, metadata
+
+            # Get state attributes safely
+            state_id = getattr(extracted_state, "id", f"runtime_state_{i:04d}")
+            state_name = getattr(extracted_state, "name", f"State {i}")
+            state_confidence = getattr(extracted_state, "confidence", 0.7)
+            source_url = getattr(extracted_state, "source_url", None)
+            state_type = getattr(extracted_state, "state_type", None)
+            state_type_value = state_type.value if state_type else "unknown"
+            element_ids = getattr(extracted_state, "element_ids", [])
+            screenshot_id = getattr(extracted_state, "screenshot_id", None)
+            detection_method = getattr(extracted_state, "detection_method", "runtime")
+            metadata = getattr(extracted_state, "metadata", {}) or {}
+
+            # Build visible elements list from element_ids
+            visible_elements = element_ids if isinstance(element_ids, list) else []
+
+            state = CorrelatedState(
+                id=state_id,
+                name=state_name,
+                confidence=state_confidence,
+                route_path=None,  # No route info in BLACK_BOX mode
+                component_name=None,  # No component info in BLACK_BOX mode
+                source_file=None,
+                line_number=None,
+                state_variables=[],
+                runtime_state_id=state_id,
+                screenshot_id=screenshot_id,
+                url=source_url,
+                visible_elements=visible_elements,
+                correlation_method=detection_method,
+                correlation_score=state_confidence,
+                metadata={
+                    "state_type": state_type_value,
+                    "detection_method": detection_method,
+                    "element_count": len(visible_elements),
+                    **metadata,
+                },
+            )
+            states.append(state)
+
+        logger.info(f"Converted {len(states)} runtime states to CorrelatedState")
         return states
 
     def _transitions_from_static(self, static: StaticAnalysisResult) -> list[InferredTransition]:

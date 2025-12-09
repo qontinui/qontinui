@@ -4,6 +4,19 @@ This module provides comprehensive functionality for discovering, detecting, and
 constructing application states through automated analysis of screenshots and
 UI elements.
 
+Quick Start:
+    The simplest way to use state discovery is through the facade:
+
+    >>> from qontinui.discovery import StateDiscoveryFacade, discover_states
+    >>>
+    >>> # Quick one-liner
+    >>> result = discover_states(screenshots)
+    >>>
+    >>> # Or with more control
+    >>> facade = StateDiscoveryFacade()
+    >>> result = facade.discover_states(screenshots)
+    >>> print(f"Found {len(result.states)} states")
+
 Submodules:
     - element_detection: UI element identification and classification
     - region_analysis: Screen region segmentation and analysis
@@ -17,7 +30,7 @@ The discovery system forms the foundation for automated testing and exploration
 by enabling the system to understand and navigate application states without
 manual state definition.
 
-Example:
+Advanced Example:
     >>> from qontinui.discovery.state_detection import DifferentialConsistencyDetector
     >>> from qontinui.discovery.state_construction import StateBuilder
     >>>
@@ -56,6 +69,15 @@ from .click_analysis import (
     InferredBoundingBox,
     infer_bbox_from_click,
 )
+
+# Discovery facade - primary entry point
+from .discovery_facade import (
+    DiscoveryAlgorithm,
+    DiscoveryConfig,
+    DiscoveryResult,
+    StateDiscoveryFacade,
+    discover_states,
+)
 from .models import AnalysisResult, DiscoveredState, StateImage
 from .multi_screenshot_detector import MultiScreenshotDetector
 
@@ -88,6 +110,12 @@ from .state_detection import (
 # from qontinui.discovery import click_analysis
 
 __all__ = [
+    # Discovery facade - primary entry point
+    "StateDiscoveryFacade",
+    "DiscoveryConfig",
+    "DiscoveryResult",
+    "DiscoveryAlgorithm",
+    "discover_states",
     # Background removal
     "BackgroundRemovalAnalyzer",
     "BackgroundRemovalConfig",

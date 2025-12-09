@@ -39,6 +39,7 @@ class ElementType(Enum):
 class StateType(Enum):
     """Types of UI states/regions."""
 
+    PAGE = "page"  # Full page state (fallback when no semantic regions found)
     NAVIGATION = "navigation"
     MENU = "menu"
     DROPDOWN_MENU = "dropdown_menu"
