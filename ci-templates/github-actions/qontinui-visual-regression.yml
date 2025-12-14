@@ -1,0 +1,365 @@
+name: Qontinui Visual Regression Tests
+
+# This workflow runs visual regression tests to detect unintended UI changes.
+# It compares screenshots from test runs against approved baselines.
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      update-baselines:
+        description: 'Update baseline screenshots'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout baseline screenshots
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref || 'main' }}
+          path: baseline-repo
+
+      - name: Setup Qontinui
+        uses: ./.github/actions/setup-qontinui
+        with:
+          python-version: '3.12'
+          install-dev-dependencies: 'true'
+
+      - name: Setup virtual display
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          sleep 3
+
+      - name: Install visual comparison tools
+        run: |
+          poetry add --group dev pixelmatch pillow numpy scikit-image
+
+      - name: Prepare test environment
+        run: |
+          mkdir -p .qontinui/screenshots/current
+          mkdir -p .qontinui/screenshots/baseline
+          mkdir -p .qontinui/screenshots/diff
+          mkdir -p .qontinui/visual-regression-results
+
+          # Copy baseline screenshots
+          if [ -d baseline-repo/.qontinui/screenshots/baseline ]; then
+            cp -r baseline-repo/.qontinui/screenshots/baseline/* .qontinui/screenshots/baseline/
+            echo "Copied $(ls -1 .qontinui/screenshots/baseline | wc -l) baseline screenshots"
+          else
+            echo "No baseline screenshots found - will create new baselines"
+          fi
+
+      - name: Run visual regression tests
+        id: run-tests
+        run: |
+          # Run Qontinui visual tests
+          poetry run python -m qontinui.cli run \
+            --config ./tests/visual-regression-config.json \
+            --headless \
+            --timeout 600 \
+            --output-dir .qontinui/visual-regression-results \
+            --screenshot-dir .qontinui/screenshots/current \
+            --enable-visual-comparison \
+            --verbose
+        env:
+          DISPLAY: :99
+
+      - name: Compare screenshots
+        id: compare
+        run: |
+          # Run visual comparison script
+          poetry run python -c "
+          import json
+          import os
+          from pathlib import Path
+          from PIL import Image
+          import numpy as np
+          from skimage.metrics import structural_similarity as ssim
+
+          current_dir = Path('.qontinui/screenshots/current')
+          baseline_dir = Path('.qontinui/screenshots/baseline')
+          diff_dir = Path('.qontinui/screenshots/diff')
+
+          results = {
+              'total': 0,
+              'identical': 0,
+              'changed': 0,
+              'new': 0,
+              'missing': 0,
+              'differences': []
+          }
+
+          # Compare each current screenshot with baseline
+          for current_file in current_dir.glob('*.png'):
+              results['total'] += 1
+              baseline_file = baseline_dir / current_file.name
+
+              if not baseline_file.exists():
+                  results['new'] += 1
+                  results['differences'].append({
+                      'file': current_file.name,
+                      'type': 'new',
+                      'message': 'No baseline found'
+                  })
+                  continue
+
+              # Load images
+              current_img = Image.open(current_file).convert('RGB')
+              baseline_img = Image.open(baseline_file).convert('RGB')
+
+              # Check dimensions
+              if current_img.size != baseline_img.size:
+                  results['changed'] += 1
+                  results['differences'].append({
+                      'file': current_file.name,
+                      'type': 'dimension_mismatch',
+                      'current_size': current_img.size,
+                      'baseline_size': baseline_img.size
+                  })
+                  continue
+
+              # Compare using SSIM
+              current_array = np.array(current_img)
+              baseline_array = np.array(baseline_img)
+
+              similarity = ssim(current_array, baseline_array, channel_axis=2)
+
+              if similarity < 0.95:  # 95% similarity threshold
+                  results['changed'] += 1
+
+                  # Create diff image
+                  diff_array = np.abs(current_array.astype(float) - baseline_array.astype(float))
+                  diff_array = (diff_array * 255 / diff_array.max()).astype(np.uint8)
+                  diff_img = Image.fromarray(diff_array)
+                  diff_img.save(diff_dir / f'diff_{current_file.name}')
+
+                  results['differences'].append({
+                      'file': current_file.name,
+                      'type': 'visual_difference',
+                      'similarity': float(similarity),
+                      'threshold': 0.95
+                  })
+              else:
+                  results['identical'] += 1
+
+          # Check for missing screenshots
+          for baseline_file in baseline_dir.glob('*.png'):
+              current_file = current_dir / baseline_file.name
+              if not current_file.exists():
+                  results['missing'] += 1
+                  results['differences'].append({
+                      'file': baseline_file.name,
+                      'type': 'missing',
+                      'message': 'Screenshot not captured in current run'
+                  })
+
+          # Save results
+          with open('.qontinui/visual-regression-results/comparison.json', 'w') as f:
+              json.dump(results, f, indent=2)
+
+          print(json.dumps(results, indent=2))
+          "
+
+      - name: Parse comparison results
+        if: always()
+        id: parse-results
+        run: |
+          if [ -f .qontinui/visual-regression-results/comparison.json ]; then
+            TOTAL=$(jq '.total' .qontinui/visual-regression-results/comparison.json)
+            IDENTICAL=$(jq '.identical' .qontinui/visual-regression-results/comparison.json)
+            CHANGED=$(jq '.changed' .qontinui/visual-regression-results/comparison.json)
+            NEW=$(jq '.new' .qontinui/visual-regression-results/comparison.json)
+            MISSING=$(jq '.missing' .qontinui/visual-regression-results/comparison.json)
+
+            echo "total=$TOTAL" >> $GITHUB_OUTPUT
+            echo "identical=$IDENTICAL" >> $GITHUB_OUTPUT
+            echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+            echo "new=$NEW" >> $GITHUB_OUTPUT
+            echo "missing=$MISSING" >> $GITHUB_OUTPUT
+
+            # Create summary
+            echo "## 🎨 Visual Regression Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Status | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Total Screenshots | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| ✅ Identical | $IDENTICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔄 Changed | $CHANGED |" >> $GITHUB_STEP_SUMMARY
+            echo "| ➕ New | $NEW |" >> $GITHUB_STEP_SUMMARY
+            echo "| ❌ Missing | $MISSING |" >> $GITHUB_STEP_SUMMARY
+
+            # Check if approval is needed
+            if [ "$CHANGED" -gt 0 ] || [ "$NEW" -gt 0 ] || [ "$MISSING" -gt 0 ]; then
+              echo "::warning::Visual changes detected - review required"
+              echo "visual_changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "visual_changes=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "::error::Comparison results not found"
+            exit 1
+          fi
+
+      - name: Upload comparison artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-results
+          path: |
+            .qontinui/screenshots/current/
+            .qontinui/screenshots/baseline/
+            .qontinui/screenshots/diff/
+            .qontinui/visual-regression-results/
+          retention-days: 30
+
+      - name: Comment PR with visual changes
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const resultsPath = '.qontinui/visual-regression-results/comparison.json';
+
+            if (!fs.existsSync(resultsPath)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '❌ Visual regression tests failed - comparison results not found'
+              });
+              return;
+            }
+
+            const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+            const { total, identical, changed, new: newScreenshots, missing } = results;
+
+            const hasChanges = changed > 0 || newScreenshots > 0 || missing > 0;
+            const icon = hasChanges ? '⚠️' : '✅';
+
+            let comment = `## ${icon} Visual Regression Test Results\n\n`;
+            comment += `| Status | Count |\n`;
+            comment += `|--------|-------|\n`;
+            comment += `| Total Screenshots | ${total} |\n`;
+            comment += `| ✅ Identical | ${identical} |\n`;
+            comment += `| 🔄 Changed | ${changed} |\n`;
+            comment += `| ➕ New | ${newScreenshots} |\n`;
+            comment += `| ❌ Missing | ${missing} |\n\n`;
+
+            if (hasChanges) {
+              comment += `### ⚠️ Visual Changes Detected\n\n`;
+              comment += `This PR introduces visual changes. Please review the screenshots carefully.\n\n`;
+
+              if (results.differences.length > 0) {
+                comment += `#### Changes:\n\n`;
+                results.differences.slice(0, 10).forEach(diff => {
+                  const emoji = diff.type === 'new' ? '➕' : diff.type === 'missing' ? '❌' : '🔄';
+                  comment += `- ${emoji} **${diff.file}**`;
+                  if (diff.similarity !== undefined) {
+                    comment += ` (${(diff.similarity * 100).toFixed(1)}% similar)`;
+                  }
+                  comment += `\n`;
+                });
+
+                if (results.differences.length > 10) {
+                  comment += `\n*... and ${results.differences.length - 10} more*\n`;
+                }
+              }
+
+              comment += `\n### 📸 Review Instructions\n\n`;
+              comment += `1. Download the \`visual-regression-results\` artifact from this workflow run\n`;
+              comment += `2. Review screenshots in the \`diff/\` folder to see highlighted changes\n`;
+              comment += `3. If changes are intentional, approve this PR and update baselines\n`;
+              comment += `4. If changes are unintentional, fix the code before merging\n\n`;
+              comment += `**Note:** This PR will be blocked until visual changes are reviewed and approved.\n`;
+            } else {
+              comment += `✅ All screenshots match baselines - no visual changes detected.\n`;
+            }
+
+            comment += `\n[View full results](${context.payload.pull_request.html_url}/checks)`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
+
+      - name: Request review if visual changes detected
+        if: github.event_name == 'pull_request' && steps.parse-results.outputs.visual_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              reviewers: ['${{ github.repository_owner }}'],
+            });
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['visual-changes', 'needs-review']
+            });
+
+      - name: Block PR if visual changes not approved
+        if: github.event_name == 'pull_request' && steps.parse-results.outputs.visual_changes == 'true' && github.event.inputs.update-baselines != 'true'
+        run: |
+          echo "::error::Visual changes detected and not approved. Review screenshots and re-run with 'update-baselines' if intentional."
+          exit 1
+
+  update-baselines:
+    # This job runs when visual changes are approved
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.update-baselines == 'true'
+    runs-on: ubuntu-latest
+    needs: visual-regression
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download visual regression results
+        uses: actions/download-artifact@v4
+        with:
+          name: visual-regression-results
+          path: .qontinui/
+
+      - name: Update baseline screenshots
+        run: |
+          # Replace baselines with current screenshots
+          rm -rf .qontinui/screenshots/baseline
+          cp -r .qontinui/screenshots/current .qontinui/screenshots/baseline
+          echo "Updated $(ls -1 .qontinui/screenshots/baseline | wc -l) baseline screenshots"
+
+      - name: Commit updated baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .qontinui/screenshots/baseline
+          git commit -m "Update visual regression baselines from PR #${{ github.event.pull_request.number }}"
+          git push
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '✅ Visual regression baselines updated successfully!'
+            });

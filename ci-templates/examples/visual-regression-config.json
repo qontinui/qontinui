@@ -1,0 +1,374 @@
+{
+  "name": "Visual Regression Tests",
+  "description": "Capture screenshots of key pages for visual comparison",
+  "version": "1.0.0",
+  "timeout": 600,
+  "workflows": [
+    {
+      "name": "Capture Login Page",
+      "description": "Screenshot of login page in various states",
+      "timeout": 30,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/login",
+          "wait": 2000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "login-page-default",
+          "full_page": true
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Email"}
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "login-page-email-focused",
+          "full_page": true
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Email"},
+          "text": "invalid-email"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Sign In"}
+        },
+        {
+          "type": "WAIT",
+          "duration": 1000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "login-page-validation-error",
+          "full_page": true
+        }
+      ]
+    },
+    {
+      "name": "Capture Dashboard",
+      "description": "Screenshot of main dashboard",
+      "timeout": 60,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/login"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Email"},
+          "text": "test@example.com"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Password"},
+          "text": "testpassword123"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Sign In"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Dashboard"},
+          "timeout": 5000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "dashboard-default",
+          "full_page": true
+        }
+      ]
+    },
+    {
+      "name": "Capture Product List",
+      "description": "Screenshot of product listing page",
+      "timeout": 45,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/products",
+          "wait": 2000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "products-list-default",
+          "full_page": true
+        },
+        {
+          "type": "SCROLL",
+          "direction": "down",
+          "amount": 500
+        },
+        {
+          "type": "WAIT",
+          "duration": 500
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "products-list-scrolled",
+          "full_page": false
+        }
+      ]
+    },
+    {
+      "name": "Capture Shopping Cart",
+      "description": "Screenshot of cart with items",
+      "timeout": 60,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/products"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Add to Cart"},
+          "nth": 1
+        },
+        {
+          "type": "WAIT",
+          "duration": 1000
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "View Cart"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Shopping Cart"},
+          "timeout": 3000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "cart-with-items",
+          "full_page": true
+        }
+      ]
+    },
+    {
+      "name": "Capture Checkout Page",
+      "description": "Screenshot of checkout process",
+      "timeout": 60,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/products"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Add to Cart"},
+          "nth": 1
+        },
+        {
+          "type": "WAIT",
+          "duration": 1000
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Checkout"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Shipping Information"},
+          "timeout": 3000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "checkout-shipping",
+          "full_page": true
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Address"},
+          "text": "123 Test St"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Continue"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Payment"},
+          "timeout": 3000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "checkout-payment",
+          "full_page": true
+        }
+      ]
+    },
+    {
+      "name": "Capture User Settings",
+      "description": "Screenshot of settings page",
+      "timeout": 45,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/settings",
+          "wait": 2000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "settings-profile",
+          "full_page": true
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Security"}
+        },
+        {
+          "type": "WAIT",
+          "duration": 1000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "settings-security",
+          "full_page": true
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Notifications"}
+        },
+        {
+          "type": "WAIT",
+          "duration": 1000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "settings-notifications",
+          "full_page": true
+        }
+      ]
+    },
+    {
+      "name": "Capture Modal Dialogs",
+      "description": "Screenshot of various modal states",
+      "timeout": 45,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/dashboard"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Create New"}
+        },
+        {
+          "type": "WAIT",
+          "duration": 500
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "modal-create-new",
+          "full_page": false
+        },
+        {
+          "type": "KEY",
+          "key": "escape"
+        },
+        {
+          "type": "WAIT",
+          "duration": 500
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Delete"},
+          "nth": 1
+        },
+        {
+          "type": "WAIT",
+          "duration": 500
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "modal-confirm-delete",
+          "full_page": false
+        }
+      ]
+    },
+    {
+      "name": "Capture Responsive Views",
+      "description": "Screenshot at different viewport sizes",
+      "timeout": 60,
+      "actions": [
+        {
+          "type": "SET_VIEWPORT",
+          "width": 1920,
+          "height": 1080
+        },
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com",
+          "wait": 2000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "home-desktop-1920",
+          "full_page": true
+        },
+        {
+          "type": "SET_VIEWPORT",
+          "width": 1366,
+          "height": 768
+        },
+        {
+          "type": "WAIT",
+          "duration": 1000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "home-laptop-1366",
+          "full_page": true
+        },
+        {
+          "type": "SET_VIEWPORT",
+          "width": 768,
+          "height": 1024
+        },
+        {
+          "type": "WAIT",
+          "duration": 1000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "home-tablet-768",
+          "full_page": true
+        },
+        {
+          "type": "SET_VIEWPORT",
+          "width": 375,
+          "height": 667
+        },
+        {
+          "type": "WAIT",
+          "duration": 1000
+        },
+        {
+          "type": "SCREENSHOT",
+          "name": "home-mobile-375",
+          "full_page": true
+        }
+      ]
+    }
+  ],
+  "global_config": {
+    "retry_on_failure": false,
+    "screenshot_on_error": true,
+    "screenshot_on_success": false,
+    "default_viewport": {
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "screenshot_options": {
+    "format": "png",
+    "quality": 100,
+    "full_page": true,
+    "capture_beyond_viewport": true,
+    "omit_background": false
+  }
+}

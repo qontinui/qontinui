@@ -1,0 +1,98 @@
+{
+  "name": "CI Test Suite",
+  "description": "Fast smoke tests for CI pipeline - runs on every push/PR",
+  "version": "1.0.0",
+  "timeout": 600,
+  "workflows": [
+    {
+      "name": "Login Test",
+      "description": "Verify user can log in successfully",
+      "timeout": 60,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/login",
+          "wait": 2000
+        },
+        {
+          "type": "TYPE",
+          "target": {
+            "type": "OCR",
+            "text": "Email"
+          },
+          "text": "test@example.com"
+        },
+        {
+          "type": "TYPE",
+          "target": {
+            "type": "OCR",
+            "text": "Password"
+          },
+          "text": "testpassword123"
+        },
+        {
+          "type": "CLICK",
+          "target": {
+            "type": "OCR",
+            "text": "Sign In"
+          }
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {
+            "type": "OCR",
+            "text": "Dashboard"
+          },
+          "timeout": 5000
+        }
+      ],
+      "success_criteria": {
+        "required_states": ["logged_in"],
+        "forbidden_states": ["error_message"]
+      }
+    },
+    {
+      "name": "Navigation Test",
+      "description": "Verify main navigation works",
+      "timeout": 30,
+      "actions": [
+        {
+          "type": "CLICK",
+          "target": {
+            "type": "OCR",
+            "text": "Products"
+          }
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {
+            "type": "OCR",
+            "text": "Product List"
+          },
+          "timeout": 3000
+        },
+        {
+          "type": "CLICK",
+          "target": {
+            "type": "OCR",
+            "text": "Settings"
+          }
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {
+            "type": "OCR",
+            "text": "User Settings"
+          },
+          "timeout": 3000
+        }
+      ]
+    }
+  ],
+  "global_config": {
+    "retry_on_failure": true,
+    "max_retries": 2,
+    "screenshot_on_error": true,
+    "screenshot_on_success": false
+  }
+}

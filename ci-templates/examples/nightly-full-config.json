@@ -1,0 +1,294 @@
+{
+  "name": "Nightly Full Test Suite",
+  "description": "Comprehensive test suite run nightly - includes all workflows and performance testing",
+  "version": "1.0.0",
+  "timeout": 3600,
+  "workflows": [
+    {
+      "name": "User Registration Flow",
+      "description": "Complete user registration from signup to email verification",
+      "timeout": 120,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/signup"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Full Name"},
+          "text": "Test User"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Email"},
+          "text": "testuser{{timestamp}}@example.com"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Password"},
+          "text": "SecurePass123!"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Confirm Password"},
+          "text": "SecurePass123!"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Create Account"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Verify your email"},
+          "timeout": 5000
+        }
+      ],
+      "success_criteria": {
+        "required_states": ["registration_success"],
+        "performance": {
+          "max_duration": 15000
+        }
+      }
+    },
+    {
+      "name": "Complete Purchase Flow",
+      "description": "End-to-end purchase including product selection, cart, and checkout",
+      "timeout": 180,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/products"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Add to Cart"},
+          "nth": 1
+        },
+        {
+          "type": "WAIT",
+          "duration": 1000
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "View Cart"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Shopping Cart"},
+          "timeout": 3000
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Proceed to Checkout"}
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Shipping Address"},
+          "text": "123 Test Street"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "City"},
+          "text": "Test City"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "ZIP Code"},
+          "text": "12345"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Continue to Payment"}
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Card Number"},
+          "text": "4242424242424242"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Expiry"},
+          "text": "12/25"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "CVV"},
+          "text": "123"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Place Order"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Order Confirmed"},
+          "timeout": 10000
+        }
+      ],
+      "success_criteria": {
+        "required_states": ["order_complete"],
+        "performance": {
+          "max_duration": 30000
+        }
+      }
+    },
+    {
+      "name": "Admin Panel Access",
+      "description": "Verify admin panel access and basic operations",
+      "timeout": 90,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/admin/login"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Admin Email"},
+          "text": "admin@example.com"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Password"},
+          "text": "AdminPass123!"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Sign In"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Admin Dashboard"},
+          "timeout": 5000
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Users"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "User Management"},
+          "timeout": 3000
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Orders"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Order Management"},
+          "timeout": 3000
+        }
+      ]
+    },
+    {
+      "name": "Search and Filter",
+      "description": "Test search functionality and filtering",
+      "timeout": 60,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/products"
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Search"},
+          "text": "laptop"
+        },
+        {
+          "type": "KEY",
+          "key": "enter"
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Search Results"},
+          "timeout": 3000
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Price: Low to High"}
+        },
+        {
+          "type": "WAIT",
+          "duration": 2000
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Filter"},
+          "wait": 1000
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "In Stock"}
+        },
+        {
+          "type": "WAIT",
+          "duration": 2000
+        }
+      ],
+      "success_criteria": {
+        "performance": {
+          "max_duration": 10000
+        }
+      }
+    },
+    {
+      "name": "Settings and Profile Update",
+      "description": "Test user profile editing and settings",
+      "timeout": 90,
+      "actions": [
+        {
+          "type": "NAVIGATE",
+          "url": "https://myapp.com/settings"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Profile"}
+        },
+        {
+          "type": "CLEAR",
+          "target": {"type": "OCR", "text": "Display Name"}
+        },
+        {
+          "type": "TYPE",
+          "target": {"type": "OCR", "text": "Display Name"},
+          "text": "Updated Name"
+        },
+        {
+          "type": "CLICK",
+          "target": {"type": "OCR", "text": "Save Changes"}
+        },
+        {
+          "type": "WAIT_FOR",
+          "target": {"type": "OCR", "text": "Profile updated"},
+          "timeout": 3000
+        }
+      ]
+    }
+  ],
+  "global_config": {
+    "retry_on_failure": true,
+    "max_retries": 3,
+    "screenshot_on_error": true,
+    "screenshot_on_success": false,
+    "enable_logging": true,
+    "log_level": "DEBUG"
+  },
+  "coverage": {
+    "enabled": true,
+    "threshold": 80,
+    "report_format": "html"
+  },
+  "performance": {
+    "enabled": true,
+    "metrics": [
+      "action_duration",
+      "vision_time",
+      "state_discovery_time"
+    ],
+    "thresholds": {
+      "max_action_time": 1000,
+      "max_vision_time": 500,
+      "max_workflow_time": 60000
+    }
+  }
+}

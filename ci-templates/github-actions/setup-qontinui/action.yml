@@ -1,0 +1,99 @@
+name: 'Setup Qontinui'
+description: 'Set up Python, Poetry, and Qontinui dependencies with caching'
+author: 'Qontinui Team'
+
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.12'
+  cache-key-suffix:
+    description: 'Additional suffix for cache key (for cache busting)'
+    required: false
+    default: ''
+  install-dev-dependencies:
+    description: 'Whether to install development dependencies'
+    required: false
+    default: 'true'
+  install-system-dependencies:
+    description: 'Whether to install system dependencies (Linux only)'
+    required: false
+    default: 'true'
+  poetry-version:
+    description: 'Poetry version to install'
+    required: false
+    default: '1.8.0'
+
+outputs:
+  python-version:
+    description: 'The Python version that was installed'
+    value: ${{ steps.setup-python.outputs.python-version }}
+  cache-hit:
+    description: 'Whether the cache was hit'
+    value: ${{ steps.cache-poetry.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      id: setup-python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install system dependencies (Linux)
+      if: inputs.install-system-dependencies == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          python3-tk python3-dev \
+          xvfb x11-utils \
+          libgl1 libglib2.0-0 \
+          libsm6 libxext6 libxrender-dev \
+          libgomp1
+
+    - name: Install Poetry
+      shell: bash
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 - --version ${{ inputs.poetry-version }}
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Configure Poetry
+      shell: bash
+      run: |
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project false
+
+    - name: Cache Poetry dependencies
+      id: cache-poetry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pypoetry
+          ~/.local/share/pypoetry
+        key: ${{ runner.os }}-poetry-${{ inputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-${{ inputs.cache-key-suffix }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-${{ inputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          ${{ runner.os }}-poetry-${{ inputs.python-version }}-
+          ${{ runner.os }}-poetry-
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        if [ "${{ inputs.install-dev-dependencies }}" = "true" ]; then
+          poetry install --no-interaction --no-ansi
+        else
+          poetry install --no-interaction --no-ansi --only main
+        fi
+
+    - name: Verify installation
+      shell: bash
+      run: |
+        poetry run python -c "import qontinui; print(f'Qontinui version: {qontinui.__version__}')"
+        poetry run python -c "import cv2; print(f'OpenCV version: {cv2.__version__}')"
+        poetry run python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
+
+branding:
+  icon: 'package'
+  color: 'blue'

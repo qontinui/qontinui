@@ -1,0 +1,263 @@
+name: Qontinui Nightly Tests
+
+# This workflow runs comprehensive Qontinui tests nightly to catch issues early.
+# It includes extended timeout, full test suite, and coverage reporting.
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+    inputs:
+      test-suite:
+        description: 'Test suite to run (full, smoke, regression)'
+        required: false
+        default: 'full'
+      send-notification:
+        description: 'Send notification on completion'
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  nightly-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120  # Extended timeout for comprehensive tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Qontinui
+        uses: ./.github/actions/setup-qontinui
+        with:
+          python-version: '3.12'
+          install-dev-dependencies: 'true'
+
+      - name: Setup virtual display
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          sleep 3
+
+      - name: Prepare test environment
+        run: |
+          mkdir -p .qontinui/logs
+          mkdir -p .qontinui/screenshots
+          mkdir -p .qontinui/test-results
+          mkdir -p .qontinui/coverage
+
+          # Determine test suite
+          TEST_SUITE="${{ github.event.inputs.test-suite || 'full' }}"
+          echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_ENV
+
+          # Configure for comprehensive testing
+          echo "QONTINUI_TEST_MODE=true" >> $GITHUB_ENV
+          echo "QONTINUI_LOG_LEVEL=DEBUG" >> $GITHUB_ENV
+          echo "QONTINUI_ENABLE_PROFILING=true" >> $GITHUB_ENV
+
+      - name: Run comprehensive test suite
+        id: run-tests
+        run: |
+          # Select test configuration based on suite
+          case "${{ env.TEST_SUITE }}" in
+            full)
+              CONFIG_FILE="./tests/nightly-full-config.json"
+              ;;
+            smoke)
+              CONFIG_FILE="./tests/smoke-test-config.json"
+              ;;
+            regression)
+              CONFIG_FILE="./tests/regression-test-config.json"
+              ;;
+            *)
+              CONFIG_FILE="./tests/nightly-full-config.json"
+              ;;
+          esac
+
+          echo "Running test suite: ${{ env.TEST_SUITE }}"
+          echo "Config file: $CONFIG_FILE"
+
+          # Run with coverage
+          poetry run pytest \
+            --cov=qontinui \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term \
+            tests/ \
+            --verbose \
+            --tb=short \
+            --maxfail=10 \
+            --durations=20
+
+          # Also run Qontinui CLI tests
+          poetry run python -m qontinui.cli run \
+            --config "$CONFIG_FILE" \
+            --headless \
+            --timeout 3600 \
+            --output-dir .qontinui/test-results \
+            --enable-coverage \
+            --verbose
+        env:
+          DISPLAY: :99
+
+      - name: Generate coverage report
+        if: always()
+        run: |
+          if [ -f coverage.xml ]; then
+            # Calculate coverage percentage
+            COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(f\"{float(root.attrib['line-rate']) * 100:.2f}\")")
+            echo "coverage_percentage=$COVERAGE" >> $GITHUB_OUTPUT
+            echo "Coverage: $COVERAGE%"
+
+            # Add to summary
+            echo "## Test Coverage" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Line Coverage: ${COVERAGE}%**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: nightly,unittests
+          name: nightly-coverage
+          fail_ci_if_error: false
+
+      - name: Parse test results
+        if: always()
+        id: parse-results
+        run: |
+          if [ -f .qontinui/test-results/results.json ]; then
+            TOTAL=$(jq '.summary.total' .qontinui/test-results/results.json)
+            PASSED=$(jq '.summary.passed' .qontinui/test-results/results.json)
+            FAILED=$(jq '.summary.failed' .qontinui/test-results/results.json)
+            DURATION=$(jq '.summary.duration' .qontinui/test-results/results.json)
+
+            echo "total=$TOTAL" >> $GITHUB_OUTPUT
+            echo "passed=$PASSED" >> $GITHUB_OUTPUT
+            echo "failed=$FAILED" >> $GITHUB_OUTPUT
+            echo "duration=$DURATION" >> $GITHUB_OUTPUT
+
+            # Create detailed summary
+            echo "## 🌙 Nightly Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Test Suite:** ${{ env.TEST_SUITE }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Date:** $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Total Tests | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| Passed | ✅ $PASSED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed | ❌ $FAILED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+
+            # Extract performance metrics
+            if [ -f .qontinui/test-results/performance.json ]; then
+              AVG_ACTION_TIME=$(jq '.avg_action_time' .qontinui/test-results/performance.json)
+              AVG_VISION_TIME=$(jq '.avg_vision_time' .qontinui/test-results/performance.json)
+
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Performance Metrics" >> $GITHUB_STEP_SUMMARY
+              echo "- Average Action Time: ${AVG_ACTION_TIME}ms" >> $GITHUB_STEP_SUMMARY
+              echo "- Average Vision Time: ${AVG_VISION_TIME}ms" >> $GITHUB_STEP_SUMMARY
+            fi
+
+            # Fail if tests failed
+            if [ "$FAILED" -gt 0 ]; then
+              echo "::error::$FAILED nightly test(s) failed"
+              exit 1
+            fi
+          else
+            echo "::error::Test results file not found"
+            exit 1
+          fi
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-test-results-${{ github.run_number }}
+          path: |
+            .qontinui/test-results/
+            .qontinui/screenshots/
+            .qontinui/logs/
+            coverage.xml
+            htmlcov/
+          retention-days: 90  # Keep nightly results longer
+
+      - name: Send Slack notification on failure
+        if: failure() && (github.event.inputs.send-notification == 'true' || github.event_name == 'schedule')
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "❌ Qontinui Nightly Tests Failed",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "❌ Nightly Tests Failed"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Test Suite:*\n${{ env.TEST_SUITE }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Failed Tests:*\n${{ steps.parse-results.outputs.failed || 'Unknown' }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Send success notification
+        if: success() && (github.event.inputs.send-notification == 'true' || github.event_name == 'schedule')
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ Qontinui Nightly Tests Passed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *Nightly tests completed successfully*\n\n*Tests:* ${{ steps.parse-results.outputs.passed }}/${{ steps.parse-results.outputs.total }} passed\n*Duration:* ${{ steps.parse-results.outputs.duration }}s"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

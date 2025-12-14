@@ -1,0 +1,195 @@
+// Example Jenkins Pipeline for Qontinui testing
+// Save as: Jenkinsfile
+
+pipeline {
+    agent any
+
+    options {
+        // Keep only last 10 builds
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        // Set build timeout
+        timeout(time: 30, unit: 'MINUTES')
+        // Add timestamps to console output
+        timestamps()
+    }
+
+    parameters {
+        choice(
+            name: 'TEST_MODE',
+            choices: ['all', 'single'],
+            description: 'Run all workflows or a single workflow'
+        )
+        string(
+            name: 'WORKFLOW_NAME',
+            defaultValue: '',
+            description: 'Workflow name (if TEST_MODE is single)'
+        )
+        choice(
+            name: 'OUTPUT_FORMAT',
+            choices: ['junit', 'json', 'tap'],
+            description: 'Test result output format'
+        )
+        booleanParam(
+            name: 'CONTINUE_ON_FAILURE',
+            defaultValue: true,
+            description: 'Continue testing even if a workflow fails'
+        )
+    }
+
+    environment {
+        PYTHON_VERSION = '3.12'
+        QONTINUI_CONFIG = 'automation.json'
+        TEST_RESULTS_DIR = 'test-results'
+    }
+
+    stages {
+        stage('Setup') {
+            steps {
+                echo 'Setting up Python environment...'
+                sh '''
+                    python${PYTHON_VERSION} -m venv .venv
+                    . .venv/bin/activate
+                    pip install --upgrade pip
+                    pip install poetry
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo 'Installing Qontinui dependencies...'
+                sh '''
+                    . .venv/bin/activate
+                    cd qontinui
+                    poetry install
+                '''
+            }
+        }
+
+        stage('Validate Configuration') {
+            steps {
+                echo 'Validating Qontinui configuration...'
+                sh '''
+                    . .venv/bin/activate
+                    poetry run qontinui validate ${QONTINUI_CONFIG} --verbose
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    echo 'Running Qontinui tests...'
+
+                    // Build command based on parameters
+                    def command = "poetry run qontinui test ${QONTINUI_CONFIG}"
+
+                    if (params.TEST_MODE == 'single' && params.WORKFLOW_NAME) {
+                        command += " --workflow '${params.WORKFLOW_NAME}'"
+                    }
+
+                    command += " --format ${params.OUTPUT_FORMAT}"
+                    command += " --output ./${TEST_RESULTS_DIR}/"
+                    command += " --timeout 300"
+                    command += " --headless"
+                    command += " --verbose"
+
+                    if (params.CONTINUE_ON_FAILURE) {
+                        command += " --continue-on-failure"
+                    }
+
+                    // Run with Xvfb for headless execution
+                    sh """
+                        . .venv/bin/activate
+                        xvfb-run -a ${command}
+                    """
+                }
+            }
+        }
+
+        stage('Stream to Server') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo 'Streaming results to qontinui-web...'
+                sh '''
+                    . .venv/bin/activate
+                    if [ -n "${QONTINUI_SERVER_URL}" ]; then
+                        poetry run qontinui test ${QONTINUI_CONFIG} \
+                            --stream-to ${QONTINUI_SERVER_URL} \
+                            --format json \
+                            --headless
+                    else
+                        echo "QONTINUI_SERVER_URL not set, skipping streaming"
+                    fi
+                '''
+            }
+        }
+
+        stage('Archive Results') {
+            steps {
+                echo 'Archiving test results...'
+                archiveArtifacts artifacts: "${TEST_RESULTS_DIR}/**/*", allowEmptyArchive: true
+                archiveArtifacts artifacts: ".automation-results/**/*", allowEmptyArchive: true
+            }
+        }
+    }
+
+    post {
+        always {
+            // Publish test results
+            script {
+                if (params.OUTPUT_FORMAT == 'junit') {
+                    junit "${TEST_RESULTS_DIR}/*.xml"
+                }
+            }
+
+            // Clean up workspace
+            cleanWs(deleteDirs: true, patterns: [
+                [pattern: '.venv', type: 'INCLUDE'],
+                [pattern: '__pycache__', type: 'INCLUDE']
+            ])
+        }
+
+        success {
+            echo 'Qontinui tests passed successfully!'
+
+            // Send notification
+            script {
+                if (env.SLACK_WEBHOOK_URL) {
+                    slackSend(
+                        color: 'good',
+                        message: "Qontinui tests passed: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+                    )
+                }
+            }
+        }
+
+        failure {
+            echo 'Qontinui tests failed!'
+
+            // Send notification
+            script {
+                if (env.SLACK_WEBHOOK_URL) {
+                    slackSend(
+                        color: 'danger',
+                        message: "Qontinui tests failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
+                    )
+                }
+            }
+        }
+
+        unstable {
+            echo 'Qontinui tests are unstable'
+        }
+    }
+}
+
+// Multibranch pipeline configuration
+// Create a Jenkinsfile in each branch for branch-specific testing
+
+// For scheduled builds, add this to Jenkins job configuration:
+// triggers {
+//     cron('H 2 * * *')  // Run daily at 2 AM
+// }

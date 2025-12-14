@@ -1,0 +1,198 @@
+name: Qontinui Tests with Result Streaming
+
+# This workflow runs Qontinui tests and streams results to qontinui.io in real-time.
+# This enables live monitoring of test execution and integration with the Qontinui dashboard.
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  # Configure the Qontinui streaming endpoint
+  QONTINUI_STREAM_URL: ${{ vars.QONTINUI_STREAM_URL || 'https://api.qontinui.io/v1/test-runs' }}
+
+jobs:
+  qontinui-test-streaming:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Qontinui
+        uses: ./.github/actions/setup-qontinui
+        with:
+          python-version: '3.12'
+          install-dev-dependencies: 'true'
+
+      - name: Setup virtual display
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          sleep 3
+
+      - name: Validate required secrets
+        run: |
+          if [ -z "${{ secrets.QONTINUI_API_KEY }}" ]; then
+            echo "::error::QONTINUI_API_KEY secret is not set"
+            echo "Please add your Qontinui API key to repository secrets"
+            exit 1
+          fi
+
+      - name: Create test run
+        id: create-run
+        run: |
+          # Create a new test run in Qontinui
+          RESPONSE=$(curl -s -X POST "${{ env.QONTINUI_STREAM_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.QONTINUI_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repository": "${{ github.repository }}",
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "pr_number": "${{ github.event.pull_request.number }}",
+              "trigger": "${{ github.event_name }}",
+              "runner": "github-actions"
+            }')
+
+          RUN_ID=$(echo $RESPONSE | jq -r '.run_id')
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          echo "Created test run: $RUN_ID"
+
+      - name: Prepare test environment
+        run: |
+          mkdir -p .qontinui/logs
+          mkdir -p .qontinui/screenshots
+          mkdir -p .qontinui/test-results
+
+          # Configure streaming
+          echo "QONTINUI_TEST_MODE=true" >> $GITHUB_ENV
+          echo "QONTINUI_LOG_LEVEL=INFO" >> $GITHUB_ENV
+          echo "QONTINUI_STREAM_ENABLED=true" >> $GITHUB_ENV
+          echo "QONTINUI_RUN_ID=${{ steps.create-run.outputs.run_id }}" >> $GITHUB_ENV
+
+      - name: Run Qontinui tests with streaming
+        id: run-tests
+        run: |
+          # Run tests with real-time result streaming
+          poetry run python -m qontinui.cli run \
+            --config ./tests/ci-test-config.json \
+            --headless \
+            --timeout 600 \
+            --output-dir .qontinui/test-results \
+            --stream-url "${{ env.QONTINUI_STREAM_URL }}/stream" \
+            --stream-token "${{ secrets.QONTINUI_API_KEY }}" \
+            --run-id "${{ steps.create-run.outputs.run_id }}" \
+            --verbose
+        env:
+          DISPLAY: :99
+
+      - name: Finalize test run
+        if: always()
+        run: |
+          # Mark test run as complete
+          STATUS="completed"
+          if [ "${{ steps.run-tests.outcome }}" != "success" ]; then
+            STATUS="failed"
+          fi
+
+          curl -s -X PATCH "${{ env.QONTINUI_STREAM_URL }}/${{ steps.create-run.outputs.run_id }}" \
+            -H "Authorization: Bearer ${{ secrets.QONTINUI_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"status\": \"$STATUS\",
+              \"completed_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+            }"
+
+      - name: Parse test results
+        if: always()
+        id: parse-results
+        run: |
+          if [ -f .qontinui/test-results/results.json ]; then
+            TOTAL=$(jq '.summary.total' .qontinui/test-results/results.json)
+            PASSED=$(jq '.summary.passed' .qontinui/test-results/results.json)
+            FAILED=$(jq '.summary.failed' .qontinui/test-results/results.json)
+
+            echo "total=$TOTAL" >> $GITHUB_OUTPUT
+            echo "passed=$PASSED" >> $GITHUB_OUTPUT
+            echo "failed=$FAILED" >> $GITHUB_OUTPUT
+
+            echo "## Qontinui Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- Total: $TOTAL" >> $GITHUB_STEP_SUMMARY
+            echo "- Passed: ✅ $PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "- Failed: ❌ $FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔗 [View live results on Qontinui Dashboard](https://qontinui.io/runs/${{ steps.create-run.outputs.run_id }})" >> $GITHUB_STEP_SUMMARY
+
+            if [ "$FAILED" -gt 0 ]; then
+              echo "::error::$FAILED Qontinui test(s) failed"
+              exit 1
+            fi
+          else
+            echo "::error::Test results file not found"
+            exit 1
+          fi
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qontinui-test-results-streaming
+          path: |
+            .qontinui/test-results/
+            .qontinui/screenshots/
+            .qontinui/logs/
+          retention-days: 30
+
+      - name: Comment PR with streaming link
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const runId = '${{ steps.create-run.outputs.run_id }}';
+            const resultsPath = '.qontinui/test-results/results.json';
+
+            let comment = `## Qontinui Test Results\n\n`;
+
+            if (!fs.existsSync(resultsPath)) {
+              comment += '❌ Tests failed to run - no results file generated\n\n';
+            } else {
+              const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+              const { total, passed, failed } = results.summary;
+
+              const icon = failed === 0 ? '✅' : '❌';
+              const status = failed === 0 ? 'All tests passed!' : `${failed} test(s) failed`;
+
+              comment += `**${status}**\n\n`;
+              comment += `| Metric | Count |\n`;
+              comment += `|--------|-------|\n`;
+              comment += `| Total | ${total} |\n`;
+              comment += `| Passed | ✅ ${passed} |\n`;
+              comment += `| Failed | ❌ ${failed} |\n\n`;
+
+              if (failed > 0 && results.failures) {
+                comment += `### Failed Tests\n\n`;
+                results.failures.slice(0, 5).forEach(failure => {
+                  comment += `- **${failure.name}**: ${failure.error}\n`;
+                });
+                if (results.failures.length > 5) {
+                  comment += `\n*... and ${results.failures.length - 5} more*\n`;
+                }
+              }
+            }
+
+            comment += `\n### 🔗 Links\n\n`;
+            comment += `- [View live results on Qontinui Dashboard](https://qontinui.io/runs/${runId})\n`;
+            comment += `- [GitHub Actions workflow](${context.payload.pull_request.html_url}/checks)\n`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });

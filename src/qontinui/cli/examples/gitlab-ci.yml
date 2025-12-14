@@ -1,0 +1,148 @@
+# Example GitLab CI configuration for Qontinui testing
+# Save as: .gitlab-ci.yml
+
+stages:
+  - validate
+  - test
+  - report
+
+variables:
+  PYTHON_VERSION: "3.12"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+    - .venv
+
+# Validate configuration before running tests
+validate_config:
+  stage: validate
+  image: python:${PYTHON_VERSION}
+
+  before_script:
+    - pip install poetry
+    - poetry install
+
+  script:
+    - poetry run qontinui validate automation.json --verbose
+
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+# Run Qontinui tests
+qontinui_tests:
+  stage: test
+  image: python:${PYTHON_VERSION}
+
+  before_script:
+    - apt-get update
+    - apt-get install -y xvfb libgtk-3-0 libnotify4
+    - pip install poetry
+    - poetry install
+
+  script:
+    - mkdir -p test-results
+    - xvfb-run -a poetry run qontinui test automation.json
+        --format junit
+        --output ./test-results/
+        --timeout 300
+        --continue-on-failure
+        --headless
+        --verbose
+
+  artifacts:
+    when: always
+    paths:
+      - test-results/
+      - .automation-results/
+    reports:
+      junit: test-results/*.xml
+    expire_in: 30 days
+
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+# Stream results to qontinui-web server (production only)
+stream_results:
+  stage: test
+  image: python:${PYTHON_VERSION}
+
+  before_script:
+    - apt-get update
+    - apt-get install -y xvfb libgtk-3-0 libnotify4
+    - pip install poetry
+    - poetry install
+
+  script:
+    - xvfb-run -a poetry run qontinui test automation.json
+        --stream-to ${QONTINUI_SERVER_URL}
+        --format json
+        --headless
+        --verbose
+
+  only:
+    - main
+
+  when: on_success
+
+# Generate test report
+test_report:
+  stage: report
+  image: python:${PYTHON_VERSION}
+
+  dependencies:
+    - qontinui_tests
+
+  script:
+    - echo "Generating test report..."
+    - |
+      if [ -f test-results/results.json ]; then
+        cat test-results/results.json | jq '.summary'
+      fi
+
+  artifacts:
+    paths:
+      - test-results/
+
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# Scheduled nightly tests
+nightly_tests:
+  stage: test
+  image: python:${PYTHON_VERSION}
+
+  before_script:
+    - apt-get update
+    - apt-get install -y xvfb libgtk-3-0 libnotify4
+    - pip install poetry
+    - poetry install
+
+  script:
+    - xvfb-run -a poetry run qontinui test automation.json
+        --format junit
+        --output ./test-results/
+        --timeout 600
+        --continue-on-failure
+        --headless
+        --verbose
+
+  artifacts:
+    when: always
+    paths:
+      - test-results/
+    reports:
+      junit: test-results/*.xml
+
+  only:
+    - schedules
+
+  allow_failure: true
