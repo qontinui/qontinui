@@ -450,7 +450,7 @@ class ColorRegionStrategy(LocatorStrategy):
 
             # Find largest contour above minimum area
             largest_contour = None
-            largest_area = 0
+            largest_area = 0.0
 
             for contour in contours:
                 area = cv2.contourArea(contour)

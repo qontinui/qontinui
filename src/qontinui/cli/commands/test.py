@@ -157,9 +157,12 @@ def test(
         if stream:
             try:
                 # Build streaming endpoint URL
-                stream_url = f"{cloud_url.rstrip('/')}/api/v1/projects/{project_id}/results"
-                streamer = ResultStreamer(stream_url, api_token=api_token)
-                click.echo(f"Cloud streaming enabled: {stream_url}")
+                if cloud_url:
+                    stream_url = f"{cloud_url.rstrip('/')}/api/v1/projects/{project_id}/results"
+                    streamer = ResultStreamer(stream_url, api_token=api_token)
+                    click.echo(f"Cloud streaming enabled: {stream_url}")
+                else:
+                    raise ValueError("cloud_url is required for streaming")
             except Exception as e:
                 print_warning(f"Failed to initialize cloud streaming: {e}")
                 if not headless:
@@ -398,9 +401,11 @@ def _run_with_timeout(
         return False
 
     if result["error"]:
-        raise result["error"]
+        error = result["error"]
+        if isinstance(error, BaseException):
+            raise error
 
-    return result["success"]
+    return bool(result["success"])
 
 
 def _save_results(content: str, output_path: Path, format_type: str):

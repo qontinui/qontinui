@@ -746,7 +746,7 @@ class ShellActionExecutor(ActionExecutorBase):
                 logger.info(f"Started Claude analysis process (pid: {process.pid})")
             else:
                 output_file_path = None
-                process = subprocess.Popen(
+                process = subprocess.Popen(  # type: ignore[assignment]
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,  # Merge stderr into stdout for unified streaming
@@ -852,16 +852,17 @@ class ShellActionExecutor(ActionExecutorBase):
 
                 else:
                     # Unix path - use direct pipe reading
-                    for line in iter(process.stdout.readline, ""):
-                        if not line:
-                            break
+                    if process.stdout:
+                        for line in iter(process.stdout.readline, ""):  # type: ignore[assignment]
+                            if not line:
+                                break
 
-                        line_count += 1
-                        line = line.rstrip("\n\r")
-                        stdout_lines.append(line)
-                        logger.info(f"[Claude] {line}")
+                            line_count += 1
+                            line = line.rstrip("\n\r")  # type: ignore[assignment]
+                            stdout_lines.append(line)
+                            logger.info(f"[Claude] {line}")
 
-                        # Emit streaming event to runner
+                            # Emit streaming event to runner
                         self._emit_stream_event(action, line)
 
                         # Check timeout

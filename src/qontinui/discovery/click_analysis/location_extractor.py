@@ -111,7 +111,7 @@ class ClickLocationExtractor:
             cy1 = max(0, click_y - context_padding)
             cx2 = min(width, click_x + context_padding)
             cy2 = min(height, click_y + context_padding)
-            context = screenshot[cy1:cy2, cx1:cx2].copy()
+            _ = screenshot[cy1:cy2, cx1:cx2].copy()
 
             # Generate name if not provided
             if name is None:

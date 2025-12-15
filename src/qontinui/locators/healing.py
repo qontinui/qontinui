@@ -302,7 +302,7 @@ class HealingManager:
         if isinstance(target, Pattern):
             return target.id
         elif isinstance(target, dict):
-            return target.get("id", "unknown")
+            return str(target.get("id", "unknown"))
         return "unknown"
 
     def _record_successful_strategy(self, pattern_id: str, strategy_name: str) -> None:
@@ -410,11 +410,11 @@ class HealingManager:
         try:
             # Map healing event to generic event type
             if event_type == HealingEventType.HEALING_SUCCEEDED:
-                generic_type = EventType.DIAGNOSTIC
+                generic_type = EventType.ACTION_COMPLETED
             elif event_type == HealingEventType.HEALING_FAILED:
-                generic_type = EventType.DIAGNOSTIC
+                generic_type = EventType.ACTION_FAILED
             else:
-                generic_type = EventType.DIAGNOSTIC
+                generic_type = EventType.ACTION_STARTED
 
             emit_event(
                 generic_type,

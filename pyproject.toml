@@ -80,6 +80,7 @@ types-pyyaml = "^6.0.12.20250915"
 
 # Note: SAM3 must be installed manually (see README for instructions)
 # Poetry extras removed since SAM3 cannot be installed via poetry
+types-requests = "^2.32.4.20250913"
 
 [tool.poetry.scripts]
 brobot-converter = "qontinui.migrations.brobot_converter:main"

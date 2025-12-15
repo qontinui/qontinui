@@ -311,7 +311,7 @@ class MultiStrategyLocator:
                 stats[strategy_name]["failures"] += 1
 
         # Calculate averages
-        for strategy_name, strategy_stats in stats.items():
+        for _strategy_name, strategy_stats in stats.items():
             attempts = strategy_stats["attempts"]
             successes = strategy_stats["successes"]
 
@@ -382,7 +382,7 @@ class MultiStrategyLocator:
                 raise ValueError(
                     f"Unknown strategy: {name}. " f"Available: {', '.join(strategy_map.keys())}"
                 )
-            strategies.append(strategy_map[name_lower]())
+            strategies.append(strategy_map[name_lower]())  # type: ignore[abstract]
 
         return cls(strategies=strategies)
 

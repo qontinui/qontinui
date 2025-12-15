@@ -232,7 +232,8 @@ class StateExecutor:
             return False
 
         # Execute the workflow
-        return self.action_executor.execute_workflow(workflow_id)
+        result = self.action_executor.execute_workflow(workflow_id)
+        return bool(result)
 
     def execute(self, initial_state_ids: list[str] | None = None):
         """Execute the state machine automation workflow.
@@ -297,7 +298,7 @@ class StateExecutor:
                 logger.info("No applicable transitions found")
                 # Check if we should wait or exit
                 if self._should_continue():
-                    TimeWrapper.wait(1)
+                    TimeWrapper().wait(1)
                 else:
                     break
 

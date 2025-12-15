@@ -593,14 +593,14 @@ class CodeExecutor(ActionExecutorBase):
             # Set alarm for timeout (Unix systems)
             if hasattr(signal, "SIGALRM"):
                 signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(timeout)
+                signal.alarm(timeout)  # type: ignore[attr-defined]
 
             # Execute code
             exec(code, exec_globals, exec_locals)
 
             # Cancel alarm
             if hasattr(signal, "SIGALRM"):
-                signal.alarm(0)
+                signal.alarm(0)  # type: ignore[attr-defined]
 
             # Extract result
             result_value = exec_locals.get("result", None)
@@ -616,7 +616,7 @@ class CodeExecutor(ActionExecutorBase):
 
         except TimeoutError as e:
             if hasattr(signal, "SIGALRM"):
-                signal.alarm(0)
+                signal.alarm(0)  # type: ignore[attr-defined]
             return {
                 "success": False,
                 "result": None,
@@ -626,7 +626,7 @@ class CodeExecutor(ActionExecutorBase):
 
         except Exception as e:
             if hasattr(signal, "SIGALRM"):
-                signal.alarm(0)
+                signal.alarm(0)  # type: ignore[attr-defined]
             return {
                 "success": False,
                 "result": None,

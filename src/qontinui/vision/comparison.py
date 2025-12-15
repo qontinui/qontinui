@@ -585,7 +585,7 @@ class VisualComparator:
 
         h1 = imagehash.hex_to_hash(hash1)
         h2 = imagehash.hex_to_hash(hash2)
-        return h1 - h2
+        return int(h1 - h2)
 
     # Private helper methods
 
@@ -760,5 +760,5 @@ def compare_images(
         screenshot=screenshot,
         algorithm=algorithm,
         threshold=threshold,
-        ignore_regions=ignore_regions,
+        ignore_regions=ignore_regions,  # type: ignore[arg-type]
     )

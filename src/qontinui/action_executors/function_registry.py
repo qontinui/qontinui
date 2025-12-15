@@ -338,14 +338,14 @@ def _execute_callable(
         # Set timeout (Unix only)
         if hasattr(signal, "SIGALRM"):
             signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(timeout)
+            signal.alarm(timeout)  # type: ignore[attr-defined]
 
         # Execute function
         result = callable_func(context, **inputs)
 
         # Cancel timeout
         if hasattr(signal, "SIGALRM"):
-            signal.alarm(0)
+            signal.alarm(0)  # type: ignore[attr-defined]
 
         # Ensure result is a dict
         if not isinstance(result, dict):
@@ -355,12 +355,12 @@ def _execute_callable(
 
     except TimeoutError:
         if hasattr(signal, "SIGALRM"):
-            signal.alarm(0)
+            signal.alarm(0)  # type: ignore[attr-defined]
         raise
 
     finally:
         if hasattr(signal, "SIGALRM"):
-            signal.alarm(0)
+            signal.alarm(0)  # type: ignore[attr-defined]
 
 
 def _execute_code(
@@ -420,7 +420,7 @@ def _execute_code(
         # Set timeout (Unix only)
         if hasattr(signal, "SIGALRM"):
             signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(timeout)
+            signal.alarm(timeout)  # type: ignore[attr-defined]
 
         # Compile and execute the code to define the function
         exec(func.code, exec_globals, exec_locals)
@@ -436,7 +436,7 @@ def _execute_code(
 
         # Cancel timeout
         if hasattr(signal, "SIGALRM"):
-            signal.alarm(0)
+            signal.alarm(0)  # type: ignore[attr-defined]
 
         # Ensure result is a dict
         if not isinstance(result, dict):
@@ -446,9 +446,9 @@ def _execute_code(
 
     except TimeoutError:
         if hasattr(signal, "SIGALRM"):
-            signal.alarm(0)
+            signal.alarm(0)  # type: ignore[attr-defined]
         raise
 
     finally:
         if hasattr(signal, "SIGALRM"):
-            signal.alarm(0)
+            signal.alarm(0)  # type: ignore[attr-defined]
