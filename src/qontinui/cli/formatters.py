@@ -128,12 +128,12 @@ def _format_tap(test_results: list[dict], summary: dict) -> str:
             lines.append(f"not ok {idx} - {result['workflow_name']}")
 
         # Add diagnostic information
-        lines.append(f"  ---")
+        lines.append("  ---")
         lines.append(f"  duration_ms: {result['duration'] * 1000:.0f}")
         lines.append(f"  workflow_id: {result['workflow_id']}")
         if result.get("error"):
             lines.append(f"  error: {result['error']}")
-        lines.append(f"  ...")
+        lines.append("  ...")
 
     # Add summary as diagnostic
     lines.append("")

@@ -1,7 +1,5 @@
 """Main CLI entry point for Qontinui automation."""
 
-import sys
-from pathlib import Path
 
 import click
 

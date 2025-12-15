@@ -169,7 +169,9 @@ def example_aggressive_healing() -> None:
     # Create actions with aggressive healing
     # - Updates patterns on successful heal
     # - Lower confidence threshold
-    actions = SelfHealingActions(HealingConfig(auto_heal=True, update_on_heal=True, confidence_threshold=0.6))
+    actions = SelfHealingActions(
+        HealingConfig(auto_heal=True, update_on_heal=True, confidence_threshold=0.6)
+    )
 
     # Find pattern
     result = actions.find(pattern)

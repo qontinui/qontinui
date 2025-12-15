@@ -1,6 +1,5 @@
 """Result streaming to remote servers (e.g., qontinui-web)."""
 
-import json
 import logging
 from typing import Any
 
@@ -81,9 +80,7 @@ class ResultStreamer:
             return True
 
         except ImportError:
-            logger.error(
-                "requests library not available. Install with: pip install requests"
-            )
+            logger.error("requests library not available. Install with: pip install requests")
             return False
         except Exception as e:
             logger.warning(f"Failed to stream result to {self.url}: {e}")
@@ -123,9 +120,7 @@ class ResultStreamer:
             return True
 
         except ImportError:
-            logger.error(
-                "requests library not available. Install with: pip install requests"
-            )
+            logger.error("requests library not available. Install with: pip install requests")
             return False
         except Exception as e:
             logger.warning(f"Failed to stream summary to {self.url}: {e}")

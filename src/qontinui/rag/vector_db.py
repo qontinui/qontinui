@@ -15,7 +15,6 @@ from qdrant_client.models import (
     Filter,
     MatchValue,
     PointStruct,
-    ScoredPoint,
     VectorParams,
 )
 

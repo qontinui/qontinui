@@ -775,9 +775,7 @@ class ShellActionExecutor(ActionExecutorBase):
                     while not done_marker_found:
                         # Read any new content from the file
                         try:
-                            with open(
-                                output_file_path, encoding="utf-8", errors="replace"
-                            ) as f:
+                            with open(output_file_path, encoding="utf-8", errors="replace") as f:
                                 f.seek(last_position)
                                 new_content = f.read()
                                 if new_content:

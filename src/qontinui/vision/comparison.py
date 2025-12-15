@@ -20,11 +20,9 @@ Usage:
 
 from __future__ import annotations
 
-import io
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal
 
 import cv2
 import numpy as np
@@ -33,12 +31,14 @@ from PIL import Image
 # Optional imports with graceful fallback
 try:
     from skimage.metrics import structural_similarity as ssim
+
     SSIM_AVAILABLE = True
 except ImportError:
     SSIM_AVAILABLE = False
 
 try:
     import imagehash
+
     IMAGEHASH_AVAILABLE = True
 except ImportError:
     IMAGEHASH_AVAILABLE = False
@@ -600,9 +600,7 @@ class VisualComparator:
             # BGR to grayscale
             return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    def _resize_to_match(
-        self, img1: np.ndarray, img2: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def _resize_to_match(self, img1: np.ndarray, img2: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Resize images to match dimensions (uses larger dimensions)."""
         h1, w1 = img1.shape[:2]
         h2, w2 = img2.shape[:2]
@@ -637,9 +635,7 @@ class VisualComparator:
         else:
             raise ValueError(f"Unsupported image format: {image.shape}")
 
-    def _extract_diff_regions(
-        self, diff_mask: np.ndarray, min_area: int = 100
-    ) -> list[DiffRegion]:
+    def _extract_diff_regions(self, diff_mask: np.ndarray, min_area: int = 100) -> list[DiffRegion]:
         """Extract bounding box regions from diff mask.
 
         Args:

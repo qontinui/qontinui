@@ -19,7 +19,6 @@ import cv2
 import numpy as np
 
 from ..model.element import Location, Pattern, Region
-from ..vision.find_result import FindResult
 
 logger = logging.getLogger(__name__)
 

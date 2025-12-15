@@ -86,7 +86,7 @@ def extract_function_components(parse_result: dict, file_path: Path) -> list[Com
                         line_number=func.get("line", 0),
                         component_type=ComponentType.FUNCTION,
                         framework="react",
-                        props={prop: "any" for prop in props},
+                        props=dict.fromkeys(props, "any"),
                         state_variables_used=state_vars,
                         metadata={
                             "type": "function_component",
@@ -124,7 +124,7 @@ def extract_function_components(parse_result: dict, file_path: Path) -> list[Com
                             line_number=var_decl.get("line", 0),
                             component_type=ComponentType.FUNCTION,
                             framework="react",
-                            props={prop: "any" for prop in props},
+                            props=dict.fromkeys(props, "any"),
                             state_variables_used=state_vars,
                             metadata={
                                 "type": "arrow_function_component",
@@ -217,7 +217,7 @@ def extract_class_components(parse_result: dict, file_path: Path) -> list[Compon
                     line_number=cls.get("line", 0),
                     component_type=ComponentType.CLASS,
                     framework="react",
-                    props={prop: "any" for prop in props},
+                    props=dict.fromkeys(props, "any"),
                     state_variables_used=state_vars,
                     metadata={
                         "type": "class_component",

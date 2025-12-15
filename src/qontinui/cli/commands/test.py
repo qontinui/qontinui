@@ -1,6 +1,5 @@
 """Test command - Run workflows in test mode with result reporting."""
 
-import json
 import sys
 import time
 from pathlib import Path
@@ -147,7 +146,9 @@ def test(
 
         # Handle deprecated --stream-to option
         if stream_to:
-            print_warning("--stream-to is deprecated. Use --stream --cloud-url --api-token --project-id instead.")
+            print_warning(
+                "--stream-to is deprecated. Use --stream --cloud-url --api-token --project-id instead."
+            )
             if not stream:
                 streamer = ResultStreamer(stream_to)
                 click.echo(f"Results will be streamed to: {stream_to}")

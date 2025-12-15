@@ -116,9 +116,7 @@ class HealingManager:
         self.config = config or HealingConfig()
 
         # Create multi-strategy locator with configured strategies
-        self.locator = MultiStrategyLocator.create_with_strategies(
-            *self.config.fallback_strategies
-        )
+        self.locator = MultiStrategyLocator.create_with_strategies(*self.config.fallback_strategies)
 
         # Healing history
         self._healing_history: list[HealingAttempt] = []
