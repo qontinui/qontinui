@@ -1,9 +1,17 @@
 """QontinUI API Module.
 
-This module provides REST and WebSocket APIs for workflow execution.
+This module provides workflow execution management components.
+The HTTP routing layer was migrated to qontinui-api.
+
+This module exports:
+- ExecutionManager: Facade for managing concurrent workflow executions
+- ExecutionOptions: Configuration options for workflow execution
+- ExecutionContext: Execution state and context
+- ExecutionEvent: Event notifications during execution
+- ExecutionStatus: Execution status enumeration
+- ExecutionEventType: Event type enumeration
 """
 
-from .execution_api import create_app
 from .execution_manager import (
     ExecutionContext,
     ExecutionEvent,
@@ -20,5 +28,4 @@ __all__ = [
     "ExecutionEvent",
     "ExecutionStatus",
     "ExecutionEventType",
-    "create_app",
 ]
