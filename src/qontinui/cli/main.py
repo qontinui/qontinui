@@ -1,6 +1,5 @@
 """Main CLI entry point for Qontinui automation."""
 
-
 import click
 
 from .commands.run import run
