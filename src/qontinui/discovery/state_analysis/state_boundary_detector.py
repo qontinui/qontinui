@@ -644,8 +644,10 @@ class StateBoundaryDetector:
                 cluster_indices, frames
             )
 
-            # Create state
+            # Create state with unique ID
+            state_id = f"state_{label}"
             state = DetectedState(
+                id=state_id,
                 name=f"State_{label}",
                 description=f"Detected state with {len(cluster_indices)} frames",
                 state_images=[],  # Will be populated by image extraction

@@ -67,6 +67,33 @@ class StateImage:
             "metadata": self.metadata,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "StateImage":
+        """Create StateImage from dictionary.
+
+        Args:
+            data: Dictionary containing state image data (without image arrays)
+
+        Returns:
+            New StateImage instance with placeholder image arrays
+        """
+        # Create placeholder arrays since images can't be serialized
+        placeholder_h, placeholder_w = data["bbox"][3], data["bbox"][2]
+        placeholder_image = np.zeros((placeholder_h, placeholder_w, 3), dtype=np.uint8)
+
+        return cls(
+            name=data["name"],
+            image=placeholder_image,
+            bbox=tuple(data["bbox"]),
+            position_type=data["position_type"],
+            position=tuple(data["position"]),
+            similarity_threshold=data.get("similarity_threshold", 0.85),
+            context_image=None,
+            source_frame_index=data.get("source_frame_index"),
+            extraction_method=data.get("extraction_method", "manual"),
+            metadata=data.get("metadata", {}),
+        )
+
 
 @dataclass
 class DetectedState:
@@ -76,6 +103,7 @@ class DetectedState:
     characterized by specific UI elements, regions, and interaction points.
     """
 
+    id: str
     name: str
     description: str
     state_images: list[StateImage]
@@ -90,6 +118,7 @@ class DetectedState:
     def to_dict(self) -> dict[str, Any]:
         """Convert to JSON-serializable dictionary."""
         return {
+            "id": self.id,
             "name": self.name,
             "description": self.description,
             "state_images": [img.to_dict() for img in self.state_images],
@@ -101,3 +130,38 @@ class DetectedState:
             "transitions_to": self.transitions_to,
             "metadata": self.metadata,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "DetectedState":
+        """Create DetectedState from dictionary.
+
+        Args:
+            data: Dictionary containing detected state data
+
+        Returns:
+            New DetectedState instance
+        """
+        # Convert boundary list to tuple if present
+        boundary = data.get("boundary")
+        if boundary is not None and not isinstance(boundary, tuple):
+            boundary = tuple(boundary)
+
+        # Convert click_locations to list of tuples
+        click_locations = [
+            tuple(loc) if not isinstance(loc, tuple) else loc
+            for loc in data.get("click_locations", [])
+        ]
+
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            description=data["description"],
+            state_images=[StateImage.from_dict(img) for img in data["state_images"]],
+            start_frame_index=data["start_frame_index"],
+            end_frame_index=data["end_frame_index"],
+            frame_indices=data.get("frame_indices", []),
+            boundary=boundary,
+            click_locations=click_locations,
+            transitions_to=data.get("transitions_to", []),
+            metadata=data.get("metadata", {}),
+        )
