@@ -63,9 +63,7 @@ class FilterCondition(BaseModel):
     type: Literal["expression", "property", "custom"]
     expression: str | None = None
     property: str | None = None
-    operator: (
-        Literal["==", "!=", ">", "<", ">=", "<=", "contains", "matches"] | None
-    ) = None
+    operator: Literal["==", "!=", ">", "<", ">=", "<=", "contains", "matches"] | None = None
     value: Any | None = None
     custom_function: str | None = Field(None, alias="customFunction")
 

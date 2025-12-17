@@ -130,9 +130,7 @@ class StateVariable:
     scope: StateScope = StateScope.LOCAL
 
     # Impact
-    controls_visibility: list[str] = field(
-        default_factory=list
-    )  # Conditional render IDs
+    controls_visibility: list[str] = field(default_factory=list)  # Conditional render IDs
     affected_components: list[str] = field(default_factory=list)  # Component IDs
 
     # Metadata
@@ -223,9 +221,7 @@ class EventHandler:
     trigger_selector: str | None = None  # CSS selector if available
 
     # Effects
-    state_changes: list[str] = field(
-        default_factory=list
-    )  # State variable IDs modified
+    state_changes: list[str] = field(default_factory=list)  # State variable IDs modified
     navigation: str | None = None  # Route navigated to
     api_calls: list[str] = field(default_factory=list)  # API call IDs
 
@@ -272,12 +268,8 @@ class VisibilityState:
     variable_value: Any = None  # Expected value (True/False for booleans)
 
     # What gets rendered in this state
-    rendered_components: list[str] = field(
-        default_factory=list
-    )  # Component/element names
-    hidden_components: list[str] = field(
-        default_factory=list
-    )  # Components hidden in this state
+    rendered_components: list[str] = field(default_factory=list)  # Component/element names
+    hidden_components: list[str] = field(default_factory=list)  # Components hidden in this state
 
     # Transitions to/from this state
     toggle_handlers: list[str] = field(
@@ -369,9 +361,7 @@ class StateHint:
     route_params: list[str] = field(default_factory=list)
 
     # Parent relationship (for sub-states)
-    parent_state_hint_id: str | None = (
-        None  # e.g., modal state's parent is the page state
-    )
+    parent_state_hint_id: str | None = None  # e.g., modal state's parent is the page state
 
     # Conditional info (if source_type == "conditional_render")
     controlling_variable: str | None = None
@@ -384,9 +374,7 @@ class StateHint:
     outgoing_transition_hints: list[str] = field(
         default_factory=list
     )  # Element IDs that trigger transitions
-    incoming_from: list[str] = field(
-        default_factory=list
-    )  # StateHint IDs that can navigate here
+    incoming_from: list[str] = field(default_factory=list)  # StateHint IDs that can navigate here
 
     # Navigation hint
     navigation_target: str | None = None  # For states reachable via navigation

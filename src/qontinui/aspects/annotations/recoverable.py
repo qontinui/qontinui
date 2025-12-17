@@ -68,9 +68,7 @@ def recoverable(
             for attempt in range(max_retries + 1):
                 try:
                     if attempt > 0:
-                        logger.info(
-                            f"Retry attempt {attempt}/{max_retries} for {func.__name__}"
-                        )
+                        logger.info(f"Retry attempt {attempt}/{max_retries} for {func.__name__}")
 
                     result = func(*args, **kwargs)
 
@@ -85,9 +83,7 @@ def recoverable(
                     last_exception = e
 
                     # Check if exception is recoverable
-                    if recoverable_exceptions and not isinstance(
-                        e, recoverable_exceptions
-                    ):
+                    if recoverable_exceptions and not isinstance(e, recoverable_exceptions):
                         logger.error(
                             f"Non-recoverable exception in {func.__name__}: {e.__class__.__name__}"
                         )

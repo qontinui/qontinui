@@ -73,9 +73,7 @@ class PathValidator:
             list(directory.iterdir())
             return ValidationResult(valid=True, path=str(directory))
         except PermissionError:
-            return ValidationResult(
-                valid=False, path=str(directory), reason="Permission denied"
-            )
+            return ValidationResult(valid=False, path=str(directory), reason="Permission denied")
 
     @staticmethod
     def validate_file(file_path: str | Path) -> ValidationResult:
@@ -90,14 +88,10 @@ class PathValidator:
         path = Path(file_path)
 
         if not path.exists():
-            return ValidationResult(
-                valid=False, path=str(path), reason="File does not exist"
-            )
+            return ValidationResult(valid=False, path=str(path), reason="File does not exist")
 
         if not path.is_file():
-            return ValidationResult(
-                valid=False, path=str(path), reason="Path is not a file"
-            )
+            return ValidationResult(valid=False, path=str(path), reason="Path is not a file")
 
         try:
             # Test read access
@@ -105,9 +99,7 @@ class PathValidator:
                 pass
             return ValidationResult(valid=True, path=str(path))
         except PermissionError:
-            return ValidationResult(
-                valid=False, path=str(path), reason="Permission denied"
-            )
+            return ValidationResult(valid=False, path=str(path), reason="Permission denied")
 
 
 class ConfigurationValidator:
@@ -213,9 +205,7 @@ class DirectoryAnalyzer:
         # Analyze screenshot directory
         screenshot_dir = Path(settings.screenshot.path)
         if screenshot_dir.exists():
-            results["screenshot_directory"] = DirectoryAnalyzer.analyze_directory(
-                screenshot_dir
-            )
+            results["screenshot_directory"] = DirectoryAnalyzer.analyze_directory(screenshot_dir)
         else:
             results["screenshot_directory"] = {
                 "exists": False,
@@ -239,10 +229,7 @@ class DirectoryAnalyzer:
 
         images = []
         for item in directory.rglob("*"):
-            if (
-                item.is_file()
-                and item.suffix.lower() in DirectoryAnalyzer.IMAGE_EXTENSIONS
-            ):
+            if item.is_file() and item.suffix.lower() in DirectoryAnalyzer.IMAGE_EXTENSIONS:
                 images.append(str(item))
 
         return images

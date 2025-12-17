@@ -40,9 +40,7 @@ class AssignmentStatement(Statement):
     value: Expression | None = None
     """The expression whose value will be assigned to the variable."""
 
-    def __init__(
-        self, variable_name: str = "", value: Expression | None = None
-    ) -> None:
+    def __init__(self, variable_name: str = "", value: Expression | None = None) -> None:
         """Initialize assignment statement.
 
         Args:

@@ -74,9 +74,7 @@ class IntelligentRegionDetector:
 
                         merged_regions.append(
                             {
-                                "mask": original_mask[
-                                    y_min : y_max + 1, x_min : x_max + 1
-                                ],
+                                "mask": original_mask[y_min : y_max + 1, x_min : x_max + 1],
                                 "bbox": (x_min, y_min, x_max, y_max),
                                 "pixel_count": np.sum(original_mask),
                             }
@@ -130,17 +128,13 @@ class IntelligentRegionDetector:
             region_dict: dict[str, Any] = region_data["region"]  # type: ignore[assignment]
 
             for idx, screenshot in enumerate(screenshots):
-                if self._is_region_present(
-                    region_dict, screenshot, similarity_threshold
-                ):
+                if self._is_region_present(region_dict, screenshot, similarity_threshold):
                     region_data["exact_presence"].add(idx)  # type: ignore[union-attr]
 
             # Convert set to sorted list for consistency
             region_data["exact_presence"] = sorted(region_data["exact_presence"])  # type: ignore[arg-type]
 
-        logger.info(
-            f"Found {len(pairwise_regions)} unique regions from pairwise analysis"
-        )
+        logger.info(f"Found {len(pairwise_regions)} unique regions from pairwise analysis")
         return pairwise_regions
 
     def detect_ui_elements(
@@ -175,9 +169,7 @@ class IntelligentRegionDetector:
     ) -> list[dict[str, Any]]:
         """Detect icon-like square regions."""
         edges = cv2.Canny(screenshot, 50, 150)
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         icons = []
         for contour in contours:
@@ -212,16 +204,12 @@ class IntelligentRegionDetector:
             gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
         )
 
-        contours, _ = cv2.findContours(
-            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         buttons = []
         for contour in contours:
             # Approximate to polygon
-            approx = cv2.approxPolyDP(
-                contour, 0.02 * cv2.arcLength(contour, True), True
-            )
+            approx = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
 
             # Rectangles have 4 vertices
             if len(approx) == 4:
@@ -260,9 +248,7 @@ class IntelligentRegionDetector:
         # Combine to find rectangular window shapes
         window_structure = cv2.bitwise_or(horizontal_lines, vertical_lines)
 
-        contours, _ = cv2.findContours(
-            window_structure, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(window_structure, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         windows = []
         for contour in contours:
@@ -286,9 +272,7 @@ class IntelligentRegionDetector:
         """Find stable regions between two screenshots."""
         # Simple difference-based stability
         diff = cv2.absdiff(img1, img2)
-        gray_diff = (
-            cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) if len(diff.shape) == 3 else diff
-        )
+        gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) if len(diff.shape) == 3 else diff
 
         # Regions with low difference are stable
         stable_mask = gray_diff < (255 * (1 - threshold))

@@ -51,9 +51,7 @@ class TryCatchExecutor:
         self.context = context
         logger.debug("TryCatchExecutor initialized with context")
 
-    def execute_try_catch(
-        self, action: Action, config: TryCatchActionConfig
-    ) -> dict[str, Any]:
+    def execute_try_catch(self, action: Action, config: TryCatchActionConfig) -> dict[str, Any]:
         """Execute a TRY_CATCH action (error handling).
 
         Executes the try actions and falls back to catch actions if an error
@@ -128,14 +126,10 @@ class TryCatchExecutor:
             # Set error variable if specified
             if config.error_variable:
                 self.context.set_variable(config.error_variable, error_caught)
-                logger.debug(
-                    "Set error variable '%s' = %s", config.error_variable, error_caught
-                )
+                logger.debug("Set error variable '%s' = %s", config.error_variable, error_caught)
 
             try:
-                logger.debug(
-                    "Executing CATCH block with %d actions", len(config.catch_actions)
-                )
+                logger.debug("Executing CATCH block with %d actions", len(config.catch_actions))
                 catch_result = self._execute_action_sequence(config.catch_actions)
                 result["catch_actions_executed"] = catch_result["actions_executed"]
                 result["error_caught"] = error_caught
@@ -186,9 +180,7 @@ class TryCatchExecutor:
 
             except Exception as e:
                 # Unexpected exception during finally block execution
-                logger.error(
-                    "FINALLY block raised exception: %s", str(e), exc_info=True
-                )
+                logger.error("FINALLY block raised exception: %s", str(e), exc_info=True)
                 if isinstance(result["errors"], list):
                     result["errors"].append(
                         {
@@ -247,9 +239,7 @@ class TryCatchExecutor:
                 # Execute action via context callback
                 # The ExecutionContext.execute_action method handles all the
                 # orchestration including error handling, event emission, etc.
-                success = getattr(self.context, "execute_action", lambda x: False)(
-                    action
-                )
+                success = getattr(self.context, "execute_action", lambda x: False)(action)
 
                 # Track execution
                 if not success:
@@ -266,9 +256,7 @@ class TryCatchExecutor:
 
             except Exception as e:
                 # Unexpected exception during action execution
-                logger.error(
-                    "Action %s raised exception: %s", action_id, str(e), exc_info=True
-                )
+                logger.error("Action %s raised exception: %s", action_id, str(e), exc_info=True)
                 errors_list.append(
                     {
                         "action_id": action_id,

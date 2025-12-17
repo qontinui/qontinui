@@ -97,9 +97,7 @@ class DebugSession:
             if self._action_stack and self._action_stack[-1] == action_id:
                 self._action_stack.pop()
                 self._action_depth = len(self._action_stack)
-                self._current_action_id = (
-                    self._action_stack[-1] if self._action_stack else None
-                )
+                self._current_action_id = self._action_stack[-1] if self._action_stack else None
 
     def snapshot_variables(self, action_id: str, variables: dict[str, Any]) -> None:
         """Store a snapshot of variables at the current execution point.

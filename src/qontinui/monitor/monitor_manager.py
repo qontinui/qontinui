@@ -114,7 +114,11 @@ class MonitorManager:
         return closest_index
 
     def _initialize_monitors(self) -> None:
-        """Initialize monitor information and cache available monitors."""
+        """Initialize monitor information and cache available monitors.
+
+        Uses MSS for multi-monitor detection on all platforms.
+        MSS monitors[0] is the virtual desktop, physical monitors start at index 1.
+        """
         # Check if headless mode is forced
         import os
 
@@ -133,16 +137,54 @@ class MonitorManager:
             return
 
         try:
-            # Use tkinter to detect monitors
-            root = tk.Tk()
-            root.withdraw()  # Hide the window
+            # Use MSS for multi-monitor detection
+            import mss
 
-            # Get screen dimensions
+            with mss.mss() as sct:
+                # MSS monitors[0] is virtual desktop, physical monitors start at index 1
+                # We use 0-based indexing in our cache
+                for i, mon in enumerate(sct.monitors[1:], 0):
+                    info = MonitorInfo(
+                        index=i,
+                        x=mon["left"],
+                        y=mon["top"],
+                        width=mon["width"],
+                        height=mon["height"],
+                        device_id=f"monitor-{i}",
+                    )
+                    self.monitor_cache[i] = info
+
+                    if self.properties and self.properties.monitor.log_monitor_info:
+                        logger.info(
+                            f"Monitor {i}: {info.device_id} - "
+                            f"Bounds: x={info.x}, y={info.y}, "
+                            f"width={info.width}, height={info.height}"
+                        )
+
+            logger.info(f"Detected {len(self.monitor_cache)} monitor(s)")
+
+            # Determine the primary monitor
+            self.primary_monitor_index = self._detect_primary_monitor()
+
+        except ImportError:
+            logger.warning("MSS not available, falling back to tkinter")
+            self._initialize_monitors_tkinter()
+        except Exception as e:
+            logger.error(f"Error during monitor initialization: {e}. Creating default monitor.")
+            info = MonitorInfo(
+                index=0, x=0, y=0, width=1920, height=1080, device_id="error-default"
+            )
+            self.monitor_cache[0] = info
+
+    def _initialize_monitors_tkinter(self) -> None:
+        """Fallback monitor initialization using tkinter (single monitor only)."""
+        try:
+            root = tk.Tk()
+            root.withdraw()
+
             screen_width = root.winfo_screenwidth()
             screen_height = root.winfo_screenheight()
 
-            # For now, we'll just detect the primary monitor
-            # Multi-monitor detection would require platform-specific code
             info = MonitorInfo(
                 index=0,
                 x=0,
@@ -155,22 +197,11 @@ class MonitorManager:
 
             root.destroy()
 
-            logger.info("Detected 1 monitor(s)")
-
-            if self.properties and self.properties.monitor.log_monitor_info:
-                logger.info(
-                    f"Monitor 0: {info.device_id} - "
-                    f"Bounds: x={info.x}, y={info.y}, "
-                    f"width={info.width}, height={info.height}"
-                )
-
-            # Determine the primary monitor
-            self.primary_monitor_index = self._detect_primary_monitor()
+            logger.info("Detected 1 monitor(s) (tkinter fallback)")
+            self.primary_monitor_index = 0
 
         except Exception as e:
-            logger.error(
-                f"Error during monitor initialization: {e}. Creating default monitor."
-            )
+            logger.error(f"Tkinter fallback failed: {e}. Creating default monitor.")
             info = MonitorInfo(
                 index=0, x=0, y=0, width=1920, height=1080, device_id="error-default"
             )
@@ -196,9 +227,7 @@ class MonitorManager:
         if operation_name and operation_name in self.operation_monitor_map:
             monitor_index = self.operation_monitor_map[operation_name]
             if self.properties and self.properties.monitor.log_monitor_info:
-                logger.debug(
-                    f"Operation '{operation_name}' assigned to monitor {monitor_index}"
-                )
+                logger.debug(f"Operation '{operation_name}' assigned to monitor {monitor_index}")
         elif monitor_index is None:
             # Use default monitor from configuration or primary
             if self.properties and self.properties.monitor.default_screen_index >= 0:
@@ -210,17 +239,13 @@ class MonitorManager:
                 monitor_index = 0
 
         if not self.is_valid_monitor_index(monitor_index):
-            logger.warning(
-                f"Invalid monitor index: {monitor_index}. Using primary monitor."
-            )
+            logger.warning(f"Invalid monitor index: {monitor_index}. Using primary monitor.")
             monitor_index = self.primary_monitor_index
 
         if self.properties and self.properties.monitor.log_monitor_info:
             info = self.monitor_cache.get(monitor_index)
             if info:
-                logger.debug(
-                    f"Using monitor {monitor_index}: {info.device_id} for operation"
-                )
+                logger.debug(f"Using monitor {monitor_index}: {info.device_id} for operation")
 
         # Return a Screen-like object (would need actual implementation)
         # For now, return None to indicate we're not using SikuliX screens
@@ -297,9 +322,7 @@ class MonitorManager:
         """
         if self.is_valid_monitor_index(monitor_index):
             self.operation_monitor_map[operation_name] = monitor_index
-            logger.info(
-                f"Assigned operation '{operation_name}' to monitor {monitor_index}"
-            )
+            logger.info(f"Assigned operation '{operation_name}' to monitor {monitor_index}")
         else:
             logger.error(
                 f"Cannot assign operation '{operation_name}' to invalid monitor index: "

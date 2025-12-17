@@ -32,6 +32,10 @@ class StateLocation:
     _anchor: bool = False  # If true, used as anchor point
     _fixed: bool = True  # If true, location is fixed
 
+    # Monitor association - which monitor(s) this location is on
+    # Required for multi-monitor support. Must be a specific monitor (not -1/all).
+    monitors: list[int] = field(default_factory=lambda: [0])
+
     # Metadata
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -43,8 +47,40 @@ class StateLocation:
         if self.name is None:
             self.name = f"Location_{self.location.x}_{self.location.y}"
 
+    def _get_global_coordinates(self) -> tuple[int, int]:
+        """Convert location coordinates to global screen coordinates.
+
+        If the location has monitor associations, the coordinates are assumed
+        to be relative to that monitor and are translated to global coordinates.
+
+        Returns:
+            (x, y) tuple in global screen coordinates
+        """
+        x, y = self.location.x, self.location.y
+
+        if self.monitors and self.monitors[0] >= 0:
+            try:
+                from qontinui.monitor.monitor_manager import MonitorManager
+
+                manager = MonitorManager()
+                monitor_idx = self.monitors[0]
+
+                # Check if coordinates need translation
+                monitor_info = manager.get_monitor_info(monitor_idx)
+                if monitor_info and monitor_idx > 0:
+                    # Translate monitor-relative to global coordinates
+                    x, y = manager.to_global_coordinates(x, y, monitor_idx)
+            except Exception:
+                # Fall back to using coordinates as-is
+                pass
+
+        return (x, y)
+
     def click(self) -> ActionResult:
         """Click at this location.
+
+        Coordinates are translated to global screen coordinates based on
+        the associated monitor.
 
         Returns:
             ActionResult from click
@@ -52,21 +88,26 @@ class StateLocation:
         from ..actions import Action
         from ..actions.basic.click.click_options import ClickOptionsBuilder
 
+        x, y = self._get_global_coordinates()
         click_options = ClickOptionsBuilder().build()
         action = Action(click_options)
-        result: ActionResult = action.click(self.location.x, self.location.y)
+        result: ActionResult = action.click(x, y)
         return result
 
     def hover(self) -> ActionResult:
         """Move mouse to this location.
+
+        Coordinates are translated to global screen coordinates based on
+        the associated monitor.
 
         Returns:
             ActionResult from move
         """
         from ..actions import Action
 
+        x, y = self._get_global_coordinates()
         action = Action()
-        result: ActionResult = action.move(self.location.x, self.location.y)
+        result: ActionResult = action.move(x, y)
         return result
 
     def distance_to(self, other: StateLocation) -> float:
@@ -150,6 +191,4 @@ class StateLocation:
     def __str__(self) -> str:
         """String representation."""
         state_name = self.owner_state.name if self.owner_state else "None"
-        return (
-            f"StateLocation('{self.name}' at {self.location} in state '{state_name}')"
-        )
+        return f"StateLocation('{self.name}' at {self.location} in state '{state_name}')"

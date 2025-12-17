@@ -179,9 +179,7 @@ class SafeEvaluator:
             # Validate all nodes are safe
             for node in ast.walk(tree):
                 if type(node) not in cls.ALLOWED_NODES:
-                    raise ValueError(
-                        f"Unsafe operation in expression: {type(node).__name__}"
-                    )
+                    raise ValueError(f"Unsafe operation in expression: {type(node).__name__}")
 
                 # Extra validation for function calls
                 if isinstance(node, ast.Call):
@@ -194,9 +192,7 @@ class SafeEvaluator:
                         # Allow method calls on safe objects (like list.append, str.upper, etc.)
                         pass
                     else:
-                        raise ValueError(
-                            f"Unsafe function call type: {type(node.func).__name__}"
-                        )
+                        raise ValueError(f"Unsafe function call type: {type(node.func).__name__}")
 
             # Create safe namespace
             safe_namespace = {

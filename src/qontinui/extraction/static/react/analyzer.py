@@ -68,9 +68,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         self._event_handlers: list[EventHandler] = []
         self._routes: list[RouteDefinition] = []
         self._api_calls: list[APICallDefinition] = []
-        self._navigation_links: list[dict] = (
-            []
-        )  # Navigation links from JSX Link elements
+        self._navigation_links: list[dict] = []  # Navigation links from JSX Link elements
         self._visibility_states: list[VisibilityState] = []
         self._errors: list[str] = []
         self._warnings: list[str] = []
@@ -157,9 +155,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
                         logger.error(error_msg)
                         self._errors.append(error_msg)
             except Exception as e:
-                error_msg = (
-                    f"Error parsing batch {batch_start // batch_size + 1}: {str(e)}"
-                )
+                error_msg = f"Error parsing batch {batch_start // batch_size + 1}: {str(e)}"
                 logger.error(error_msg)
                 self._errors.append(error_msg)
 
@@ -170,12 +166,8 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         comp_module.classify_components(self._components)
 
         # Count states vs widgets
-        state_count = sum(
-            1 for c in self._components if c.category == ComponentCategory.STATE
-        )
-        widget_count = sum(
-            1 for c in self._components if c.category == ComponentCategory.WIDGET
-        )
+        state_count = sum(1 for c in self._components if c.category == ComponentCategory.STATE)
+        widget_count = sum(1 for c in self._components if c.category == ComponentCategory.WIDGET)
 
         logger.info(
             f"Analysis complete: {len(self._components)} total components "
@@ -227,9 +219,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         function_components = comp_module.extract_function_components(
             parse_result.to_dict(), file_path
         )
-        class_components = comp_module.extract_class_components(
-            parse_result.to_dict(), file_path
-        )
+        class_components = comp_module.extract_class_components(parse_result.to_dict(), file_path)
 
         all_components = function_components + class_components
         self._components.extend(all_components)
@@ -293,9 +283,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         function_components = comp_module.extract_function_components(
             parse_result.to_dict(), file_path
         )
-        class_components = comp_module.extract_class_components(
-            parse_result.to_dict(), file_path
-        )
+        class_components = comp_module.extract_class_components(parse_result.to_dict(), file_path)
 
         all_components = function_components + class_components
         self._components.extend(all_components)
@@ -430,9 +418,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
         return files
 
-    def _get_component_parse_result(
-        self, parse_result: dict, component_name: str
-    ) -> dict:
+    def _get_component_parse_result(self, parse_result: dict, component_name: str) -> dict:
         """
         Get parse result scoped to a specific component.
 
@@ -465,9 +451,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         state_vars: list[StateVariable] = []
 
         # Extract from different hook types
-        state_vars.extend(
-            hook_module.extract_use_state(component_parse, component_name, file_path)
-        )
+        state_vars.extend(hook_module.extract_use_state(component_parse, component_name, file_path))
         state_vars.extend(
             hook_module.extract_use_reducer(component_parse, component_name, file_path)
         )
@@ -500,9 +484,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         conditionals.extend(
             jsx_module.extract_logical_and(component_parse, component_name, file_path)
         )
-        conditionals.extend(
-            jsx_module.extract_ternary(component_parse, component_name, file_path)
-        )
+        conditionals.extend(jsx_module.extract_ternary(component_parse, component_name, file_path))
         conditionals.extend(
             jsx_module.extract_early_returns(component_parse, component_name, file_path)
         )
@@ -564,11 +546,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
             toggle_handlers = self._find_toggle_handlers(var, handlers)
 
             # For boolean visibility variables, create two states: visible and hidden
-            if (
-                var.initial_value is False
-                or var.initial_value is True
-                or self._is_boolean_var(var)
-            ):
+            if var.initial_value is False or var.initial_value is True or self._is_boolean_var(var):
                 # State 1: Variable is False (default/closed/hidden)
                 default_state = VisibilityState(
                     id=f"{component.id}:{var.name}_false",
@@ -578,9 +556,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
                     controlling_variable=var.id,
                     variable_value=False,
                     rendered_components=[],  # Nothing extra rendered
-                    hidden_components=self._extract_rendered_components(
-                        related_conditionals, True
-                    ),
+                    hidden_components=self._extract_rendered_components(related_conditionals, True),
                     toggle_handlers=[h.id for h in toggle_handlers],
                     conditional_render_id=(
                         related_conditionals[0].id if related_conditionals else None
@@ -743,9 +719,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
         return unique_components
 
-    def _extract_api_calls(
-        self, parse_result: dict, file_path: Path
-    ) -> list[APICallDefinition]:
+    def _extract_api_calls(self, parse_result: dict, file_path: Path) -> list[APICallDefinition]:
         """
         Extract API calls from the file.
 
@@ -797,9 +771,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
         return api_calls
 
-    def _extract_routes(
-        self, file_path: Path, parse_result: dict
-    ) -> list[RouteDefinition]:
+    def _extract_routes(self, file_path: Path, parse_result: dict) -> list[RouteDefinition]:
         """
         Extract route definitions (Next.js App Router, Pages Router, etc.).
 
@@ -878,9 +850,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
             return APICallType.FETCH
         elif "query" in lower_name or "mutation" in lower_name:
             return APICallType.REACT_QUERY
-        elif any(
-            method in lower_name for method in ["get", "post", "put", "delete", "patch"]
-        ):
+        elif any(method in lower_name for method in ["get", "post", "put", "delete", "patch"]):
             return APICallType.AXIOS
         else:
             return APICallType.FETCH
@@ -1056,8 +1026,7 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
             # Check if conditionally rendered
             is_conditional = any(
-                component.id in cr.renders_when_true
-                or component.id in cr.renders_when_false
+                component.id in cr.renders_when_true or component.id in cr.renders_when_false
                 for cr in self._conditional_renders
             )
 

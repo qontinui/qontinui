@@ -171,9 +171,7 @@ class FindResult:
             metadata={**self.metadata, "filtered_by_region": str(region)},
         )
 
-    def filter_by_distance(
-        self, reference_match: Match, max_distance: float
-    ) -> FindResult:
+    def filter_by_distance(self, reference_match: Match, max_distance: float) -> FindResult:
         """Create new result with matches filtered by distance from reference.
 
         Args:
@@ -190,9 +188,7 @@ class FindResult:
             raise ValueError(f"max_distance must be non-negative, got {max_distance}")
 
         filtered = [
-            m
-            for m in self.matches
-            if reference_match.center.distance_to(m.center) <= max_distance
+            m for m in self.matches if reference_match.center.distance_to(m.center) <= max_distance
         ]
         return FindResult(
             matches=filtered,
@@ -220,9 +216,7 @@ class FindResult:
             ValueError: If overlap_threshold is outside valid range
         """
         if not 0.0 <= overlap_threshold <= 1.0:
-            raise ValueError(
-                f"overlap_threshold must be 0.0-1.0, got {overlap_threshold}"
-            )
+            raise ValueError(f"overlap_threshold must be 0.0-1.0, got {overlap_threshold}")
 
         if not self.matches:
             return FindResult(
@@ -275,9 +269,7 @@ class FindResult:
         Returns:
             New FindResult with sorted matches
         """
-        sorted_matches = sorted(
-            self.matches, key=lambda m: m.similarity, reverse=descending
-        )
+        sorted_matches = sorted(self.matches, key=lambda m: m.similarity, reverse=descending)
         return FindResult(
             matches=sorted_matches,
             pattern=self.pattern,
@@ -475,9 +467,7 @@ class FindResult:
         return iter(self.matches)
 
     @classmethod
-    def empty(
-        cls, pattern: Pattern | None = None, strategy: str = "template"
-    ) -> FindResult:
+    def empty(cls, pattern: Pattern | None = None, strategy: str = "template") -> FindResult:
         """Create empty (no matches) result.
 
         Args:
@@ -487,6 +477,4 @@ class FindResult:
         Returns:
             Empty FindResult
         """
-        return cls(
-            matches=[], pattern=pattern, strategy=strategy, metadata={"empty": True}
-        )
+        return cls(matches=[], pattern=pattern, strategy=strategy, metadata={"empty": True})

@@ -98,9 +98,7 @@ class PaddleOCREngine(BaseOCREngine):
 
                     text_region = Region(int(x), int(y), int(w), int(h))
 
-                    result = OCRResult(
-                        text=text, confidence=confidence, region=text_region
-                    )
+                    result = OCRResult(text=text, confidence=confidence, region=text_region)
                     ocr_results.append(result)
 
             return ocr_results

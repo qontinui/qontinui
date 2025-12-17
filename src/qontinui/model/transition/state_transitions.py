@@ -101,9 +101,7 @@ class StateTransitions:
         # Filter transitions where to_state matches
         return [t for t in self.transitions if t.to_state == state.name]
 
-    def get_between_states(
-        self, from_state: State, to_state: State
-    ) -> list[StateTransition]:
+    def get_between_states(self, from_state: State, to_state: State) -> list[StateTransition]:
         """Get transitions between two states.
 
         Args:
@@ -131,9 +129,7 @@ class StateTransitions:
         """
         return [t for t in self.transitions if t.transition_type == transition_type]
 
-    def get_best_transition(
-        self, from_state: State, to_state: State
-    ) -> StateTransition | None:
+    def get_best_transition(self, from_state: State, to_state: State) -> StateTransition | None:
         """Get the best transition between states.
 
         Args:
@@ -299,9 +295,7 @@ class StateTransitionsBuilder:
         self._transitions.append(transition)
         return self
 
-    def add_transitions(
-        self, transitions: list[StateTransition]
-    ) -> StateTransitionsBuilder:
+    def add_transitions(self, transitions: list[StateTransition]) -> StateTransitionsBuilder:
         """Add multiple transitions (fluent).
 
         Args:

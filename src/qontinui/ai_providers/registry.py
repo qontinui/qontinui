@@ -74,9 +74,7 @@ class AIProviderRegistry:
         """
         if name not in cls._providers:
             available = ", ".join(cls._providers.keys())
-            raise KeyError(
-                f"AI provider '{name}' not found. Available providers: {available}"
-            )
+            raise KeyError(f"AI provider '{name}' not found. Available providers: {available}")
 
         # Return cached instance if available
         if name in cls._instances:

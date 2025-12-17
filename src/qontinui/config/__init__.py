@@ -42,6 +42,12 @@ Usage:
         print(f"Action: {action.name}, Type: {action.type}")
 """
 
+# Configuration adapter for qontinui-schemas
+from .config_adapter import (
+    ConfigAdapter,
+    load_config,
+    load_config_from_dict,
+)
 from .configuration_manager import ConfigurationManager, get_config_manager
 from .execution_environment import (
     DisplayServer,
@@ -141,6 +147,8 @@ from .schema import (  # Workflow graph format support; WorkflowFormat,  # Does 
     SearchStrategy,
     SetVariableActionConfig,
     SortActionConfig,
+    StateLocationTarget,
+    StateRegionTarget,
     StringOperationActionConfig,
     SwitchActionConfig,
     TargetConfig,
@@ -256,6 +264,8 @@ __all__ = [
     "ImageTarget",
     "CoordinatesTarget",
     "RegionTarget",
+    "StateLocationTarget",
+    "StateRegionTarget",
     "TextTarget",
     "LastFindResultTarget",
     # Action Schema - Enums
@@ -350,6 +360,10 @@ __all__ = [
     "load_actions_from_string",
     "load_actions_from_dict",
     "load_actions_from_directory",
+    # Config Adapter (qontinui-schemas)
+    "ConfigAdapter",
+    "load_config",
+    "load_config_from_dict",
     # Action Defaults - removed or not yet implemented
     # "ActionDefaults",
     # "MouseActionDefaults",

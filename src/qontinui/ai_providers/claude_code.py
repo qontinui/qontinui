@@ -84,9 +84,7 @@ class ClaudeCodeProvider(AIProvider):
             cmd = self._build_command(request)
             cwd = request.working_directory
 
-            logger.info(
-                f"Executing Claude Code analysis (timeout: {request.timeout_seconds}s)"
-            )
+            logger.info(f"Executing Claude Code analysis (timeout: {request.timeout_seconds}s)")
             logger.debug(f"Command: {cmd}")
 
             if system == "Windows":
@@ -187,9 +185,7 @@ class ClaudeCodeProvider(AIProvider):
             escaped_prompt = prompt.replace('"', '\\"').replace("'", "'\\''")
 
             # Build bash command with PATH setup for npm globals
-            npm_paths = (
-                "$HOME/.npm-global/lib/bin:$HOME/.npm-global/bin:$HOME/.local/bin"
-            )
+            npm_paths = "$HOME/.npm-global/lib/bin:$HOME/.npm-global/bin:$HOME/.local/bin"
             path_setup = f'export PATH="{npm_paths}:$PATH"'
             env_setup = "export CI=true TERM=dumb FORCE_COLOR=0"
 
@@ -222,9 +218,7 @@ class ClaudeCodeProvider(AIProvider):
                 "bypassPermissions",
             ]
 
-    def _execute_windows(
-        self, cmd: list[str], request: AnalysisRequest
-    ) -> tuple[str, str]:
+    def _execute_windows(self, cmd: list[str], request: AnalysisRequest) -> tuple[str, str]:
         """Execute command on Windows with special WSL handling.
 
         Args:
@@ -249,9 +243,7 @@ class ClaudeCodeProvider(AIProvider):
             original_cmd_str = cmd[3]  # The bash -lc argument
             modified_cmd_str = original_cmd_str.replace(" 2>&1", "")
             modified_cmd_str += f' >> "{wsl_output_path}" 2>&1'
-            modified_cmd_str += (
-                f'; echo "___QONTINUI_DONE_$$___" >> "{wsl_output_path}"'
-            )
+            modified_cmd_str += f'; echo "___QONTINUI_DONE_$$___" >> "{wsl_output_path}"'
 
             modified_cmd = ["wsl.exe", "bash", "-lc", modified_cmd_str]
 
@@ -284,9 +276,7 @@ class ClaudeCodeProvider(AIProvider):
             except Exception:
                 pass
 
-    async def _stream_windows(
-        self, cmd: list[str], request: AnalysisRequest
-    ) -> AsyncIterator[str]:
+    async def _stream_windows(self, cmd: list[str], request: AnalysisRequest) -> AsyncIterator[str]:
         """Stream output from Windows/WSL process.
 
         Args:
@@ -310,9 +300,7 @@ class ClaudeCodeProvider(AIProvider):
             original_cmd_str = cmd[3]
             modified_cmd_str = original_cmd_str.replace(" 2>&1", "")
             modified_cmd_str += f' >> "{wsl_output_path}" 2>&1'
-            modified_cmd_str += (
-                f'; echo "___QONTINUI_DONE_$$___" >> "{wsl_output_path}"'
-            )
+            modified_cmd_str += f'; echo "___QONTINUI_DONE_$$___" >> "{wsl_output_path}"'
 
             modified_cmd = ["wsl.exe", "bash", "-lc", modified_cmd_str]
 
@@ -387,9 +375,7 @@ class ClaudeCodeProvider(AIProvider):
 
         return full_output.strip()
 
-    async def _poll_output_file_async(
-        self, file_path: str, timeout: int
-    ) -> AsyncIterator[str]:
+    async def _poll_output_file_async(self, file_path: str, timeout: int) -> AsyncIterator[str]:
         """Asynchronously poll output file and yield lines.
 
         Args:
@@ -418,9 +404,7 @@ class ClaudeCodeProvider(AIProvider):
                         # Check for completion
                         if completion_marker in new_content:
                             # Remove marker and yield final content
-                            final_content = new_content[
-                                : new_content.find(completion_marker)
-                            ]
+                            final_content = new_content[: new_content.find(completion_marker)]
                             if final_content:
                                 yield final_content
                             break

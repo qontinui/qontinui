@@ -164,6 +164,54 @@ class ResultByImageTarget(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class StateRegionTarget(BaseModel):
+    """Target a StateRegion by ID.
+
+    This target type references a StateRegion defined on a state, preserving
+    the monitor association. When executed, the action will use the region's
+    configured monitors instead of a global default.
+
+    Attributes:
+        type: Literal type discriminator for this target type.
+        region_id: The ID of the StateRegion to target.
+
+    Example:
+        {
+            "type": "stateRegion",
+            "regionId": "region-123"
+        }
+    """
+
+    type: Literal["stateRegion"] = "stateRegion"
+    region_id: str = Field(alias="regionId")
+
+    model_config = {"populate_by_name": True}
+
+
+class StateLocationTarget(BaseModel):
+    """Target a StateLocation by ID.
+
+    This target type references a StateLocation defined on a state, preserving
+    the monitor association. When executed, the action will use the location's
+    configured monitors instead of a global default.
+
+    Attributes:
+        type: Literal type discriminator for this target type.
+        location_id: The ID of the StateLocation to target.
+
+    Example:
+        {
+            "type": "stateLocation",
+            "locationId": "location-456"
+        }
+    """
+
+    type: Literal["stateLocation"] = "stateLocation"
+    location_id: str = Field(alias="locationId")
+
+    model_config = {"populate_by_name": True}
+
+
 # Union type for all target configurations
 TargetConfig = (
     ImageTarget
@@ -171,6 +219,8 @@ TargetConfig = (
     | TextTarget
     | CoordinatesTarget
     | StateStringTarget
+    | StateRegionTarget
+    | StateLocationTarget
     | CurrentPositionTarget
     | LastFindResultTarget
     | ResultIndexTarget

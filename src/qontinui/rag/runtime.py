@@ -248,9 +248,7 @@ class ScreenSegmenter:
                 y = min(y, height - segment_height)
 
                 # Crop segment
-                segment_img = screenshot.crop(
-                    (x, y, x + segment_width, y + segment_height)
-                )
+                segment_img = screenshot.crop((x, y, x + segment_width, y + segment_height))
 
                 segments.append(
                     ScreenSegment(
@@ -391,9 +389,7 @@ class SearchSession:
 
         # Element boost (highest priority)
         element_positions = [
-            i
-            for i, eid in enumerate(reversed(self.recent_elements))
-            if eid == element_id
+            i for i, eid in enumerate(reversed(self.recent_elements)) if eid == element_id
         ]
         if element_positions:
             # Most recent position gets highest boost
@@ -409,9 +405,7 @@ class SearchSession:
             boost += recency * 0.3  # State boost up to 0.3
 
         # App boost (lower priority)
-        app_positions = [
-            i for i, aid in enumerate(reversed(self.recent_apps)) if aid == app_id
-        ]
+        app_positions = [i for i, aid in enumerate(reversed(self.recent_apps)) if aid == app_id]
         if app_positions:
             recency = 1.0 - (app_positions[0] / len(self.recent_apps))
             boost += recency * 0.2  # App boost up to 0.2
@@ -662,9 +656,7 @@ class RuntimeElementFinder:
 
             # Resolve effective settings using cascade
             threshold = self._resolve_threshold(element.similarity_threshold, options)
-            strategy = self._resolve_strategy(
-                None, options
-            )  # Element strategy from metadata
+            strategy = self._resolve_strategy(None, options)  # Element strategy from metadata
             ocr_config = self._resolve_ocr_config(None, options)
 
             # Get OCR filter text
@@ -696,9 +688,7 @@ class RuntimeElementFinder:
 
             # Apply OCR filtering if configured
             if ocr_config and ocr_config.enabled and ocr_config.as_filter:
-                matches = self._apply_ocr_filter(
-                    matches, options.ocr_filter, ocr_config
-                )
+                matches = self._apply_ocr_filter(matches, options.ocr_filter, ocr_config)
 
             # Get best match for this element
             if matches:
@@ -885,9 +875,7 @@ class RuntimeElementFinder:
 
         return min(score, 1.0)
 
-    def _extract_metadata(
-        self, segment: ScreenSegment, screenshot: Image.Image
-    ) -> dict[str, Any]:
+    def _extract_metadata(self, segment: ScreenSegment, screenshot: Image.Image) -> dict[str, Any]:
         """Extract metadata from a screen segment.
 
         Currently extracts basic visual features. Can be extended to include
@@ -1000,8 +988,7 @@ class RuntimeElementFinder:
 
         # Calculate similarities
         similarities = [
-            self._cosine_similarity(indexed_embedding, seg_emb)
-            for seg_emb in segment_embeddings
+            self._cosine_similarity(indexed_embedding, seg_emb) for seg_emb in segment_embeddings
         ]
 
         # Find best match

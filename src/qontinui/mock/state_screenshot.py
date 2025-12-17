@@ -166,14 +166,10 @@ class StateScreenshotRegistry:
             return max(exact_matches, key=lambda s: s.timestamp)
 
         # Strategy 2: Subset match (screenshot states ⊆ current states)
-        subset_matches = [
-            s for s in self.screenshots if s.active_states.issubset(active_states)
-        ]
+        subset_matches = [s for s in self.screenshots if s.active_states.issubset(active_states)]
         if subset_matches:
             # Prefer screenshot with most states, then most recent
-            return max(
-                subset_matches, key=lambda s: (len(s.active_states), s.timestamp)
-            )
+            return max(subset_matches, key=lambda s: (len(s.active_states), s.timestamp))
 
         # Strategy 3: Overlap match (maximize intersection)
         overlap_matches = [

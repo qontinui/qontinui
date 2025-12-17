@@ -36,9 +36,7 @@ class MockModeManager:
 
         # Log to console for visibility
         if enabled:
-            print(
-                "[MockModeManager] Mock mode ENABLED - using simulated GUI operations"
-            )
+            print("[MockModeManager] Mock mode ENABLED - using simulated GUI operations")
         else:
             print("[MockModeManager] Mock mode DISABLED - using real GUI operations")
 
@@ -75,9 +73,7 @@ class MockModeManager:
                 return
 
         # Check if running in test mode
-        if os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get(
-            "UNITTEST_CURRENT_TEST"
-        ):
+        if os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get("UNITTEST_CURRENT_TEST"):
             cls._mock_mode = True
             cls._initialized = True
             logger.debug("Mock mode enabled due to test environment")

@@ -30,9 +30,7 @@ class PureActionsScreenshotProvider(ScreenshotProvider):
             screen_capture = HALFactory.get_screen_capture()
         self.screen = screen_capture
 
-    def capture(
-        self, region: Region | None = None, monitor: int | None = None
-    ) -> Image.Image:
+    def capture(self, region: Region | None = None, monitor: int | None = None) -> Image.Image:
         """Capture screenshot using PureActions.
 
         Args:

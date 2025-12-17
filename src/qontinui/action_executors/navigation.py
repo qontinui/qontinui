@@ -82,9 +82,7 @@ class NavigationActionExecutor(ActionExecutorBase):
                 action_id=action.id,
             )
 
-    def _execute_go_to_state(
-        self, action: Action, typed_config: GoToStateActionConfig
-    ) -> bool:
+    def _execute_go_to_state(self, action: Action, typed_config: GoToStateActionConfig) -> bool:
         """Execute GO_TO_STATE action - navigate to target states.
 
         Navigates to one or more target states using the qontinui library's
@@ -109,11 +107,7 @@ class NavigationActionExecutor(ActionExecutorBase):
         logger.debug("Executing GO_TO_STATE action")
 
         # Get target state IDs from config
-        state_ids = (
-            typed_config.state_ids
-            if typed_config
-            else action.config.get("stateIds", [])
-        )
+        state_ids = typed_config.state_ids if typed_config else action.config.get("stateIds", [])
         logger.debug(f"Target state IDs: {state_ids}")
 
         if not state_ids:
@@ -143,9 +137,7 @@ class NavigationActionExecutor(ActionExecutorBase):
         logger.debug(f"Current state: {current_state_id}")
 
         if all(current_state_id == sid for sid in state_ids):
-            target_names = [
-                self.context.config.state_map[sid].name for sid in state_ids
-            ]
+            target_names = [self.context.config.state_map[sid].name for sid in state_ids]
             logger.info(f"Already at target state(s): {', '.join(target_names)}")
 
             self._emit_action_success(
@@ -170,9 +162,7 @@ class NavigationActionExecutor(ActionExecutorBase):
         # Old code: navigation_api.set_workflow_executor(self.context.workflow_executor)
         # Convert state IDs to state names for the navigation API
         target_names = [st.name for st in target_states]
-        logger.info(
-            f"Navigating to {len(state_ids)} state(s): {', '.join(target_names)}"
-        )
+        logger.info(f"Navigating to {len(state_ids)} state(s): {', '.join(target_names)}")
 
         try:
             # Call navigation_api.open_states with state names
@@ -211,9 +201,7 @@ class NavigationActionExecutor(ActionExecutorBase):
                 action_id=action.id,
             ) from e
 
-    def _execute_run_workflow(
-        self, action: Action, typed_config: RunWorkflowActionConfig
-    ) -> bool:
+    def _execute_run_workflow(self, action: Action, typed_config: RunWorkflowActionConfig) -> bool:
         """Execute RUN_WORKFLOW action - run nested workflow with optional repetition.
 
         This method executes a nested workflow by looking it up in the config's
@@ -279,14 +267,10 @@ class NavigationActionExecutor(ActionExecutorBase):
         if until_success:
             # Mode: Repeat until success or max repeats
             for run_num in range(1, total_runs + 1):
-                success = self._execute_workflow_once(
-                    workflow, workflow_id, run_num, total_runs
-                )
+                success = self._execute_workflow_once(workflow, workflow_id, run_num, total_runs)
 
                 if success:
-                    logger.info(
-                        f"Workflow succeeded on run {run_num}/{total_runs}, stopping early"
-                    )
+                    logger.info(f"Workflow succeeded on run {run_num}/{total_runs}, stopping early")
                     return True
 
                 # Delay before next attempt (if not the last run)
@@ -301,9 +285,7 @@ class NavigationActionExecutor(ActionExecutorBase):
             # Mode: Run fixed count, aggregate results
             results = []
             for run_num in range(1, total_runs + 1):
-                success = self._execute_workflow_once(
-                    workflow, workflow_id, run_num, total_runs
-                )
+                success = self._execute_workflow_once(workflow, workflow_id, run_num, total_runs)
                 results.append(success)
 
                 # Delay before next run (if not the last run)
@@ -334,9 +316,7 @@ class NavigationActionExecutor(ActionExecutorBase):
         Returns:
             bool: True if workflow execution succeeded
         """
-        logger.info(
-            f"Executing workflow '{workflow.name}' (run {run_num}/{total_runs})"
-        )
+        logger.info(f"Executing workflow '{workflow.name}' (run {run_num}/{total_runs})")
 
         # Emit workflow started event
         self.context.emit_event(
@@ -368,9 +348,7 @@ class NavigationActionExecutor(ActionExecutorBase):
                 # Find entry points and execute in graph order
                 entry_points = traverser.find_entry_points()
                 if not entry_points:
-                    logger.warning(
-                        f"No entry points found in workflow '{workflow.name}'"
-                    )
+                    logger.warning(f"No entry points found in workflow '{workflow.name}'")
                     # Fallback to array order if no entry points
                     for nested_action in workflow.actions:
                         action_success = self.context.execute_action(nested_action)
@@ -393,9 +371,7 @@ class NavigationActionExecutor(ActionExecutorBase):
 
                         nested_action = action_map.get(action_id)
                         if not nested_action:
-                            logger.warning(
-                                f"Action '{action_id}' not found in workflow"
-                            )
+                            logger.warning(f"Action '{action_id}' not found in workflow")
                             continue
 
                         # Execute the action
@@ -427,9 +403,7 @@ class NavigationActionExecutor(ActionExecutorBase):
                     executed_count += 1
 
             else:
-                logger.warning(
-                    f"Unknown workflow type: {workflow.type}, executing sequentially"
-                )
+                logger.warning(f"Unknown workflow type: {workflow.type}, executing sequentially")
                 for nested_action in workflow.actions:
                     # Model-based GUI automation principle: always continue, never stop on failure
                     action_success = self.context.execute_action(nested_action)

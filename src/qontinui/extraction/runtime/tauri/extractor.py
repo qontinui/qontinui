@@ -153,9 +153,7 @@ class TauriExtractor(PlaywrightExtractor):
 
             # Check if process is still running
             if self.dev_process.poll() is not None:
-                stderr = (
-                    self.dev_process.stderr.read() if self.dev_process.stderr else ""
-                )
+                stderr = self.dev_process.stderr.read() if self.dev_process.stderr else ""
                 raise RuntimeError(f"Dev server failed to start: {stderr}")
 
             logger.info("Dev server started successfully")
@@ -227,9 +225,7 @@ class TauriExtractor(PlaywrightExtractor):
         # Ensure mocks are still active
         if self.page and self.mock_script:
             # Check if __TAURI__ exists
-            has_tauri = await self.page.evaluate(
-                "() => typeof window.__TAURI__ !== 'undefined'"
-            )
+            has_tauri = await self.page.evaluate("() => typeof window.__TAURI__ !== 'undefined'")
             if not has_tauri:
                 # Re-inject mocks
                 await self.page.add_init_script(self.mock_script)

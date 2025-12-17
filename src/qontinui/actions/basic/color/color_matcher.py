@@ -114,9 +114,7 @@ class ColorMatcher:
         # Check each pixel against profile
         for y in range(h):
             for x in range(w):
-                pixel_hsv = HSV(
-                    scene_hsv[y, x, 0], scene_hsv[y, x, 1], scene_hsv[y, x, 2]
-                )
+                pixel_hsv = HSV(scene_hsv[y, x, 0], scene_hsv[y, x, 1], scene_hsv[y, x, 2])
                 if profile.matches(pixel_hsv, std_range):
                     mask[y, x] = 255
 

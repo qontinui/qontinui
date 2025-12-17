@@ -60,36 +60,24 @@ class HALConfig:
 
     # Backend selections
     capture_backend: str = field(
-        default_factory=lambda: os.getenv(
-            "QONTINUI_CAPTURE_BACKEND", CaptureBackend.MSS.value
-        )
+        default_factory=lambda: os.getenv("QONTINUI_CAPTURE_BACKEND", CaptureBackend.MSS.value)
     )
     input_backend: str = field(
-        default_factory=lambda: os.getenv(
-            "QONTINUI_INPUT_BACKEND", InputBackend.PYNPUT.value
-        )
+        default_factory=lambda: os.getenv("QONTINUI_INPUT_BACKEND", InputBackend.PYNPUT.value)
     )
     matcher_backend: str = field(
-        default_factory=lambda: os.getenv(
-            "QONTINUI_MATCHER_BACKEND", MatcherBackend.OPENCV.value
-        )
+        default_factory=lambda: os.getenv("QONTINUI_MATCHER_BACKEND", MatcherBackend.OPENCV.value)
     )
     ocr_backend: str = field(
-        default_factory=lambda: os.getenv(
-            "QONTINUI_OCR_BACKEND", OCRBackend.EASYOCR.value
-        )
+        default_factory=lambda: os.getenv("QONTINUI_OCR_BACKEND", OCRBackend.EASYOCR.value)
     )
     platform_override: str = field(
-        default_factory=lambda: os.getenv(
-            "QONTINUI_PLATFORM_OVERRIDE", PlatformOverride.AUTO.value
-        )
+        default_factory=lambda: os.getenv("QONTINUI_PLATFORM_OVERRIDE", PlatformOverride.AUTO.value)
     )
 
     # Performance settings
     capture_cache_enabled: bool = field(
-        default_factory=lambda: os.getenv(
-            "QONTINUI_CAPTURE_CACHE_ENABLED", "true"
-        ).lower()
+        default_factory=lambda: os.getenv("QONTINUI_CAPTURE_CACHE_ENABLED", "true").lower()
         == "true"
     )
     capture_cache_ttl: float = field(
@@ -99,49 +87,39 @@ class HALConfig:
         default_factory=lambda: int(os.getenv("QONTINUI_MATCHER_THREADS", "4"))
     )
     ocr_gpu_enabled: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_OCR_GPU_ENABLED", "false").lower()
-        == "true"
+        default_factory=lambda: os.getenv("QONTINUI_OCR_GPU_ENABLED", "false").lower() == "true"
     )
 
     # Fallback settings
     use_fallback: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_USE_FALLBACK", "true").lower()
-        == "true"
+        default_factory=lambda: os.getenv("QONTINUI_USE_FALLBACK", "true").lower() == "true"
     )
     fallback_to_pyautogui: bool = field(
-        default_factory=lambda: os.getenv(
-            "QONTINUI_FALLBACK_TO_PYAUTOGUI", "false"
-        ).lower()
+        default_factory=lambda: os.getenv("QONTINUI_FALLBACK_TO_PYAUTOGUI", "false").lower()
         == "true"
     )
 
     # Debug settings
     debug_mode: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_HAL_DEBUG", "false").lower()
-        == "true"
+        default_factory=lambda: os.getenv("QONTINUI_HAL_DEBUG", "false").lower() == "true"
     )
     log_performance: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_LOG_PERFORMANCE", "false").lower()
-        == "true"
+        default_factory=lambda: os.getenv("QONTINUI_LOG_PERFORMANCE", "false").lower() == "true"
     )
 
     # Feature flags
     enable_multi_monitor: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_MULTI_MONITOR", "true").lower()
-        == "true"
+        default_factory=lambda: os.getenv("QONTINUI_MULTI_MONITOR", "true").lower() == "true"
     )
     enable_dpi_scaling: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_DPI_SCALING", "true").lower()
-        == "true"
+        default_factory=lambda: os.getenv("QONTINUI_DPI_SCALING", "true").lower() == "true"
     )
 
     # Paths
     screenshot_dir: str = field(
         default_factory=lambda: os.getenv("QONTINUI_SCREENSHOT_DIR", "./screenshots")
     )
-    temp_dir: str = field(
-        default_factory=lambda: os.getenv("QONTINUI_TEMP_DIR", "/tmp/qontinui")
-    )
+    temp_dir: str = field(default_factory=lambda: os.getenv("QONTINUI_TEMP_DIR", "/tmp/qontinui"))
 
     def validate(self) -> bool:
         """Validate configuration settings.

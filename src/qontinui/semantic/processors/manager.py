@@ -171,9 +171,7 @@ class ProcessorManager:
         if hints.expected_object_types:
             for name, processor in self.processors.items():
                 supported = processor.get_supported_object_types()
-                if any(
-                    obj_type in supported for obj_type in hints.expected_object_types
-                ):
+                if any(obj_type in supported for obj_type in hints.expected_object_types):
                     return name
 
         return self._default_processor or next(iter(self.processors.keys()))
@@ -258,16 +256,12 @@ class ProcessorManager:
 
         scenes = []
 
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=len(self.processors)
-        ) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.processors)) as executor:
             # Submit all processing tasks
             futures = {}
             for name, processor in self.processors.items():
                 if hints:
-                    future = executor.submit(
-                        processor.process_with_hints, screenshot, hints
-                    )
+                    future = executor.submit(processor.process_with_hints, screenshot, hints)
                 else:
                     future = executor.submit(processor.process, screenshot)
                 futures[future] = name
@@ -321,9 +315,7 @@ class ProcessorManager:
             detailed_scene = detailed_processor.process_region(screenshot, region)
 
             # Merge detailed results back
-            initial_scene = self._merge_scenes(
-                [initial_scene, detailed_scene], screenshot
-            )
+            initial_scene = self._merge_scenes([initial_scene, detailed_scene], screenshot)
 
         return initial_scene
 
@@ -360,11 +352,7 @@ class ProcessorManager:
             if "ocr" not in name.lower():
                 return processor
 
-        return (
-            self.processors.get(self._default_processor)
-            if self._default_processor
-            else None
-        )
+        return self.processors.get(self._default_processor) if self._default_processor else None
 
     def _identify_uncertain_regions(
         self, scene: SemanticScene, confidence_threshold: float = 0.7

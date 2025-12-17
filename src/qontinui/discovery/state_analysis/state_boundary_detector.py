@@ -155,21 +155,15 @@ class StateBoundaryDetector:
         self.config = config or StateBoundaryConfig()
         self.feature_detector = None
         self._init_feature_detector()
-        logger.info(
-            f"Initialized StateBoundaryDetector with {self.config.feature_extractor}"
-        )
+        logger.info(f"Initialized StateBoundaryDetector with {self.config.feature_extractor}")
 
     def _init_feature_detector(self):
         """Initialize the feature detector based on configuration."""
         try:
             if self.config.feature_extractor.lower() == "orb":
-                self.feature_detector = cv2.ORB_create(
-                    nfeatures=self.config.feature_count
-                )
+                self.feature_detector = cv2.ORB_create(nfeatures=self.config.feature_count)
             elif self.config.feature_extractor.lower() == "sift":
-                self.feature_detector = cv2.SIFT_create(
-                    nfeatures=self.config.feature_count
-                )
+                self.feature_detector = cv2.SIFT_create(nfeatures=self.config.feature_count)
             elif self.config.feature_extractor.lower() == "surf":
                 # SURF is in opencv-contrib, may not be available
                 self.feature_detector = cv2.xfeatures2d.SURF_create()
@@ -178,13 +172,9 @@ class StateBoundaryDetector:
                     f"Unknown feature extractor: {self.config.feature_extractor}, "
                     "defaulting to ORB"
                 )
-                self.feature_detector = cv2.ORB_create(
-                    nfeatures=self.config.feature_count
-                )
+                self.feature_detector = cv2.ORB_create(nfeatures=self.config.feature_count)
         except Exception as e:
-            logger.error(
-                f"Failed to initialize feature detector: {e}, defaulting to ORB"
-            )
+            logger.error(f"Failed to initialize feature detector: {e}, defaulting to ORB")
             self.feature_detector = cv2.ORB_create(nfeatures=self.config.feature_count)
 
     def detect_states(self, frames: list[Frame]) -> list[DetectedState]:
@@ -225,9 +215,7 @@ class StateBoundaryDetector:
 
         # Step 4: Build DetectedState objects from clusters
         logger.info("Building state objects from clusters...")
-        states = self._build_states_from_clusters(
-            frames, frame_features, cluster_labels
-        )
+        states = self._build_states_from_clusters(frames, frame_features, cluster_labels)
 
         # Step 5: Filter states by minimum duration
         states = self._filter_states_by_duration(states)
@@ -254,9 +242,7 @@ class StateBoundaryDetector:
         if not frames:
             return []
 
-        logger.info(
-            f"Identifying transitions in {len(frames)} frames with {len(events)} events"
-        )
+        logger.info(f"Identifying transitions in {len(frames)} frames with {len(events)} events")
 
         transitions = []
         prev_frame = None
@@ -533,8 +519,7 @@ class StateBoundaryDetector:
             return self._cluster_kmeans(distance_matrix)
         else:
             logger.warning(
-                f"Unknown clustering algorithm: {self.config.clustering_algorithm}, "
-                "using DBSCAN"
+                f"Unknown clustering algorithm: {self.config.clustering_algorithm}, " "using DBSCAN"
             )
             return self._cluster_dbscan(distance_matrix)
 
@@ -553,9 +538,7 @@ class StateBoundaryDetector:
             metric="precomputed",
         )
         labels = clustering.fit_predict(distance_matrix)
-        logger.info(
-            f"DBSCAN found {len(set(labels)) - (1 if -1 in labels else 0)} clusters"
-        )
+        logger.info(f"DBSCAN found {len(set(labels)) - (1 if -1 in labels else 0)} clusters")
         return labels  # type: ignore[no-any-return]
 
     def _cluster_hierarchical(self, distance_matrix: np.ndarray) -> np.ndarray:
@@ -640,9 +623,7 @@ class StateBoundaryDetector:
             timestamps = [features_list[i].timestamp_ms for i in cluster_indices]
 
             # Find representative frame (frame closest to cluster center)
-            representative_idx = self._find_representative_frame(
-                cluster_indices, frames
-            )
+            representative_idx = self._find_representative_frame(cluster_indices, frames)
 
             # Create state with unique ID
             state_id = f"state_{label}"
@@ -668,9 +649,7 @@ class StateBoundaryDetector:
 
         return states
 
-    def _find_representative_frame(
-        self, cluster_indices: list[int], frames: list[Frame]
-    ) -> int:
+    def _find_representative_frame(self, cluster_indices: list[int], frames: list[Frame]) -> int:
         """Find the most representative frame in a cluster.
 
         This finds the frame that is most similar to all other frames in the cluster,
@@ -704,9 +683,7 @@ class StateBoundaryDetector:
 
         return best_idx
 
-    def _filter_states_by_duration(
-        self, states: list[DetectedState]
-    ) -> list[DetectedState]:
+    def _filter_states_by_duration(self, states: list[DetectedState]) -> list[DetectedState]:
         """Filter out states that are too short.
 
         Args:
@@ -736,9 +713,7 @@ class StateBoundaryDetector:
     # Private Methods - Utilities
     # ========================================================================
 
-    def _find_closest_event(
-        self, frame_timestamp: float, events: list[InputEvent]
-    ) -> int | None:
+    def _find_closest_event(self, frame_timestamp: float, events: list[InputEvent]) -> int | None:
         """Find the input event closest to a frame timestamp.
 
         Args:

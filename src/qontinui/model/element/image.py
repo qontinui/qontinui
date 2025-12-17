@@ -98,9 +98,7 @@ class Image:
         return cls(name=name, _pil_image=pil_image)
 
     @classmethod
-    def from_numpy(
-        cls, numpy_array: np.ndarray[Any, Any], name: str | None = None
-    ) -> Image:
+    def from_numpy(cls, numpy_array: np.ndarray[Any, Any], name: str | None = None) -> Image:
         """Create Image from NumPy array (OpenCV format).
 
         Args:
@@ -154,9 +152,7 @@ class Image:
             BGR NumPy array or None
         """
         if self._pil_image is None:
-            logger.error(
-                f"Cannot convert to BGR - PIL image is null for image: {self.name}"
-            )
+            logger.error(f"Cannot convert to BGR - PIL image is null for image: {self.name}")
             return None
 
         try:
@@ -180,9 +176,7 @@ class Image:
             HSV NumPy array or None
         """
         if self._pil_image is None:
-            logger.error(
-                f"Cannot convert to HSV - PIL image is null for image: {self.name}"
-            )
+            logger.error(f"Cannot convert to HSV - PIL image is null for image: {self.name}")
             return None
 
         try:

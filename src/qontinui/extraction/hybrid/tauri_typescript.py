@@ -168,9 +168,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
         if config.output_dir:
             output_dir = config.output_dir
         else:
-            output_dir = (
-                config.project_path / ".qontinui" / "extraction" / extraction_id
-            )
+            output_dir = config.project_path / ".qontinui" / "extraction" / extraction_id
         output_dir.mkdir(parents=True, exist_ok=True)
         result.screenshots_dir = output_dir / "screenshots"
         result.screenshots_dir.mkdir(exist_ok=True)
@@ -216,9 +214,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
 
         return result
 
-    async def _run_static_analysis(
-        self, config: HybridExtractionConfig
-    ) -> dict[str, Any]:
+    async def _run_static_analysis(self, config: HybridExtractionConfig) -> dict[str, Any]:
         """Run static analysis on TypeScript files."""
         from ..static.typescript.parser import TypeScriptParser
 
@@ -257,8 +253,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
                                 "line": comp.line,
                                 "file": file_path,
                                 "props": [
-                                    {"name": p.name, "default": p.default}
-                                    for p in comp.props
+                                    {"name": p.name, "default": p.default} for p in comp.props
                                 ],
                                 "children": comp.children,
                             }
@@ -439,9 +434,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
             return states, state_images
 
         # Create main page state
-        main_state = await self._capture_current_state(
-            "main", StateType.PAGE, screenshots_dir
-        )
+        main_state = await self._capture_current_state("main", StateType.PAGE, screenshots_dir)
         states.append(main_state)
 
         # Extract StateImages for interactive elements
@@ -514,9 +507,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
 
         viewport_size = self.page.viewport_size
         viewport = (
-            (viewport_size["width"], viewport_size["height"])
-            if viewport_size
-            else (1920, 1080)
+            (viewport_size["width"], viewport_size["height"]) if viewport_size else (1920, 1080)
         )
 
         return State(
@@ -669,9 +660,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
         except Exception:
             pass
 
-    async def _extract_visible_state_images(
-        self, screenshots_dir: Path
-    ) -> list[StateImage]:
+    async def _extract_visible_state_images(self, screenshots_dir: Path) -> list[StateImage]:
         """Extract StateImages for all visible interactive elements."""
         images: list[StateImage] = []
         selectors = await self._find_interactive_selectors()
@@ -764,9 +753,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
             )
 
             # Capture normal state pattern
-            normal_pattern = await self._capture_element_pattern(
-                element, "normal", bbox
-            )
+            normal_pattern = await self._capture_element_pattern(element, "normal", bbox)
             if normal_pattern:
                 state_image.patterns.append(normal_pattern)
 
@@ -775,9 +762,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
                 try:
                     await element.hover()
                     await self.page.wait_for_timeout(100)
-                    hover_pattern = await self._capture_element_pattern(
-                        element, "hover", bbox
-                    )
+                    hover_pattern = await self._capture_element_pattern(element, "hover", bbox)
                     if hover_pattern:
                         state_image.patterns.append(hover_pattern)
                 except Exception:
@@ -788,9 +773,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
                 try:
                     await element.focus()
                     await self.page.wait_for_timeout(100)
-                    focus_pattern = await self._capture_element_pattern(
-                        element, "focus", bbox
-                    )
+                    focus_pattern = await self._capture_element_pattern(element, "focus", bbox)
                     if focus_pattern:
                         state_image.patterns.append(focus_pattern)
                 except Exception:
@@ -904,10 +887,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
             comp_name_lower = comp["name"].lower()
             image_name_lower = image.name.lower()
 
-            if (
-                comp_name_lower in image_name_lower
-                or image_name_lower in comp_name_lower
-            ):
+            if comp_name_lower in image_name_lower or image_name_lower in comp_name_lower:
                 image.component_name = comp["name"]
                 image.source_file = Path(comp["file"])
                 image.source_line = comp["line"]

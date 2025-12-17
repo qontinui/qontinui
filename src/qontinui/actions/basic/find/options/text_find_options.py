@@ -223,9 +223,7 @@ class TextFindOptions(BaseFindOptions):
         self.whitelist_chars = chars
         return self
 
-    def with_preprocessing(
-        self, *preprocessing: TextPreprocessing
-    ) -> "TextFindOptions":
+    def with_preprocessing(self, *preprocessing: TextPreprocessing) -> "TextFindOptions":
         """Set preprocessing steps.
 
         Args:

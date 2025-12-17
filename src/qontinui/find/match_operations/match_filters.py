@@ -43,9 +43,7 @@ class MatchFilters:
         return [m for m in matches if region.contains(m.center)]
 
     @staticmethod
-    def by_distance(
-        matches: list[Match], location: Location, max_distance: float
-    ) -> list[Match]:
+    def by_distance(matches: list[Match], location: Location, max_distance: float) -> list[Match]:
         """Filter matches by distance from location.
 
         Args:
@@ -59,9 +57,7 @@ class MatchFilters:
         return [m for m in matches if m.center.distance_to(location) <= max_distance]
 
     @staticmethod
-    def by_predicate(
-        matches: list[Match], predicate: Callable[[Match], bool]
-    ) -> list[Match]:
+    def by_predicate(matches: list[Match], predicate: Callable[[Match], bool]) -> list[Match]:
         """Filter matches using custom predicate.
 
         Args:
@@ -74,9 +70,7 @@ class MatchFilters:
         return [m for m in matches if predicate(m)]
 
     @staticmethod
-    def remove_overlapping(
-        matches: list[Match], overlap_threshold: float = 0.5
-    ) -> list[Match]:
+    def remove_overlapping(matches: list[Match], overlap_threshold: float = 0.5) -> list[Match]:
         """Remove overlapping matches, keeping best ones.
 
         Args:
@@ -105,9 +99,7 @@ class MatchFilters:
                     continue
                 intersection = match.region.intersection(kept.region)
                 if intersection:
-                    overlap_ratio = intersection.area / min(
-                        match.region.area, kept.region.area
-                    )
+                    overlap_ratio = intersection.area / min(match.region.area, kept.region.area)
                     if overlap_ratio > overlap_threshold:
                         overlaps = True
                         break

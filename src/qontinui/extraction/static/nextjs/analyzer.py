@@ -200,7 +200,5 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
     def supports_framework(cls, framework: FrameworkType) -> bool:
         """Check if this analyzer supports Next.js."""
         # Support both enum naming conventions (NEXT_JS from config, NEXT from base)
-        framework_value = (
-            framework.value if hasattr(framework, "value") else str(framework)
-        )
+        framework_value = framework.value if hasattr(framework, "value") else str(framework)
         return framework_value in ("next_js", "next")

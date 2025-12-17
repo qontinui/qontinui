@@ -85,9 +85,7 @@ class StateMetadataTracker:
                 if duration is not None:
                     # Update average duration using incremental formula
                     n = metadata.transition_count
-                    metadata.average_duration = (
-                        metadata.average_duration * (n - 1) + duration
-                    ) / n
+                    metadata.average_duration = (metadata.average_duration * (n - 1) + duration) / n
 
     def record_error(self, name: str, error: str) -> None:
         """Record an error for a state.
@@ -232,10 +230,7 @@ class StateMetadataTracker:
             List of (state_name, access_count) tuples
         """
         with self._lock:
-            items = [
-                (name, metadata.access_count)
-                for name, metadata in self._metadata.items()
-            ]
+            items = [(name, metadata.access_count) for name, metadata in self._metadata.items()]
             items.sort(key=lambda x: x[1], reverse=True)
             return items[:limit]
 

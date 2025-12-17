@@ -107,9 +107,7 @@ class StateImageExtractor:
 
         # Step 2: Identify click locations within state
         click_locations = self._get_click_locations(state, events)
-        logger.debug(
-            "Found %d click locations in state %s", len(click_locations), state.name
-        )
+        logger.debug("Found %d click locations in state %s", len(click_locations), state.name)
 
         extracted_images: list[StateImage] = []
 
@@ -154,9 +152,7 @@ class StateImageExtractor:
                     click_locations,
                 )
                 extracted_images.extend(contour_images)
-                logger.debug(
-                    "Extracted %d images from contour analysis", len(contour_images)
-                )
+                logger.debug("Extracted %d images from contour analysis", len(contour_images))
             except Exception as e:
                 logger.error("Error in contour analysis: %s", e)
 
@@ -174,14 +170,10 @@ class StateImageExtractor:
                     len(occurrences),
                 )
             except Exception as e:
-                logger.error(
-                    "Error determining position type for %s: %s", state_image.name, e
-                )
+                logger.error("Error determining position type for %s: %s", state_image.name, e)
                 state_image.position_type = "unknown"  # type: ignore[attr-defined]
 
-        logger.info(
-            "Extracted %d total images from state %s", len(extracted_images), state.name
-        )
+        logger.info("Extracted %d total images from state %s", len(extracted_images), state.name)
         return extracted_images
 
     def extract_at_location(
@@ -218,15 +210,11 @@ class StateImageExtractor:
             bbox_h = y2 - y1
 
             if bbox_w < self.config.min_size[0] or bbox_h < self.config.min_size[1]:
-                logger.debug(
-                    "Region too small at (%d, %d): %dx%d", x, y, bbox_w, bbox_h
-                )
+                logger.debug("Region too small at (%d, %d): %dx%d", x, y, bbox_w, bbox_h)
                 return None
 
             if bbox_w > self.config.max_size[0] or bbox_h > self.config.max_size[1]:
-                logger.debug(
-                    "Region too large at (%d, %d): %dx%d", x, y, bbox_w, bbox_h
-                )
+                logger.debug("Region too large at (%d, %d): %dx%d", x, y, bbox_w, bbox_h)
                 return None
 
             # Extract image
@@ -292,9 +280,7 @@ class StateImageExtractor:
                 edges = cv2.Laplacian(gray, cv2.CV_64F)
                 edges = np.uint8(np.absolute(edges))  # type: ignore[assignment]
             else:
-                logger.warning(
-                    "Unknown edge detection method: %s", self.config.edge_detection
-                )
+                logger.warning("Unknown edge detection method: %s", self.config.edge_detection)
                 edges = cv2.Canny(gray, 50, 150)
 
             # Find contours
@@ -541,11 +527,7 @@ class StateImageExtractor:
         # to match events to state timeframes based on timestamps.
         clicks = []
         for event in events:
-            if (
-                event.event_type == "click"
-                and event.x is not None
-                and event.y is not None
-            ):
+            if event.event_type == "click" and event.x is not None and event.y is not None:
                 clicks.append((event.x, event.y))
 
         return clicks
@@ -582,9 +564,7 @@ class StateImageExtractor:
                 # Check if too close to any click location
                 too_close = False
                 for click_x, click_y in exclude_locations:
-                    distance = np.sqrt(
-                        (center_x - click_x) ** 2 + (center_y - click_y) ** 2
-                    )
+                    distance = np.sqrt((center_x - click_x) ** 2 + (center_y - click_y) ** 2)
                     if distance < self.config.click_region_padding * 2:
                         too_close = True
                         break

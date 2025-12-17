@@ -130,15 +130,11 @@ class TransitionAnalyzer:
                 else None
             )
             to_state_id = (
-                list(change_point.states_appeared)[0]
-                if change_point.states_appeared
-                else None
+                list(change_point.states_appeared)[0] if change_point.states_appeared else None
             )
 
             if not from_state_id or not to_state_id:
-                logger.debug(
-                    f"Incomplete state transition at frame {change_point.frame_number}"
-                )
+                logger.debug(f"Incomplete state transition at frame {change_point.frame_number}")
                 continue
 
             # Get the actual state objects
@@ -157,17 +153,13 @@ class TransitionAnalyzer:
                 if change_point.frame_number < len(frames)
                 else None
             )
-            action_target_id = self.identify_action_target(
-                trigger_event, frame, from_state
-            )
+            action_target_id = self.identify_action_target(trigger_event, frame, from_state)
 
             # Step 4: Identify recognition images (which StateImages appeared in new state)
             recognition_ids = self.identify_recognition_images(to_state)
 
             # Step 5: Calculate visual change metrics
-            visual_change_score = self._calculate_visual_change_score(
-                change_point, frames
-            )
+            visual_change_score = self._calculate_visual_change_score(change_point, frames)
             optical_flow = self._estimate_optical_flow_magnitude(change_point, frames)
 
             # Step 6: Build transition object
@@ -209,9 +201,7 @@ class TransitionAnalyzer:
             )
 
             transitions.append(transition)
-            logger.info(
-                f"Created transition: {transition_id} ({from_state_id} -> {to_state_id})"
-            )
+            logger.info(f"Created transition: {transition_id} ({from_state_id} -> {to_state_id})")
 
         logger.info(f"Generated {len(transitions)} transitions")
         return transitions
@@ -254,10 +244,7 @@ class TransitionAnalyzer:
             distance = math.sqrt((click_x - center_x) ** 2 + (click_y - center_y) ** 2)
 
             # Check if click is within the bounding box or close enough
-            in_bbox = (
-                bbox_x <= click_x <= bbox_x + bbox_w
-                and bbox_y <= click_y <= bbox_y + bbox_h
-            )
+            in_bbox = bbox_x <= click_x <= bbox_x + bbox_w and bbox_y <= click_y <= bbox_y + bbox_h
 
             if in_bbox or distance < self.click_proximity_threshold:
                 if distance < closest_distance:
@@ -529,9 +516,7 @@ class AutoTransitionBuilder:
             transition.metadata["session_fps"] = session.fps
             transition.metadata["session_metadata"] = session.metadata
             # Store suggested name in metadata
-            transition.metadata["suggested_name"] = self.suggest_transition_name(
-                transition
-            )
+            transition.metadata["suggested_name"] = self.suggest_transition_name(transition)
 
         logger.info(f"Built {len(transitions)} transitions from capture session")
         return transitions

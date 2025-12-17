@@ -303,9 +303,7 @@ class FluentActions:
         self.chain.add(self.pure.pause, milliseconds)  # type: ignore[attr-defined]
         return self
 
-    def screenshot(
-        self, region: tuple[int, int, int, int] | None = None
-    ) -> "FluentActions":
+    def screenshot(self, region: tuple[int, int, int, int] | None = None) -> "FluentActions":
         """Add screenshot to chain.
 
         Args:

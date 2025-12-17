@@ -30,9 +30,7 @@ EVIDENCE_WEIGHTS = {
 }
 
 
-def compute_state_confidence(
-    state: CorrelatedState, evidence: list[MatchingEvidence]
-) -> float:
+def compute_state_confidence(state: CorrelatedState, evidence: list[MatchingEvidence]) -> float:
     """Compute overall confidence score for a correlated state.
 
     Factors:

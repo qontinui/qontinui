@@ -192,14 +192,10 @@ class FindWrapper(BaseWrapper):
                 print("Dialog appeared!")
         """
         if self.is_mock_mode():
-            logger.debug(
-                f"FindWrapper.wait_for (MOCK): {pattern.name}, timeout={timeout}"
-            )
+            logger.debug(f"FindWrapper.wait_for (MOCK): {pattern.name}, timeout={timeout}")
             return self.mock_find.wait_for(pattern, timeout)  # type: ignore[no-any-return]
         else:
-            logger.debug(
-                f"FindWrapper.wait_for (REAL): {pattern.name}, timeout={timeout}"
-            )
+            logger.debug(f"FindWrapper.wait_for (REAL): {pattern.name}, timeout={timeout}")
             return self._wait_for_real(pattern, timeout, search_region)
 
     def _find_real(
@@ -270,9 +266,7 @@ class FindWrapper(BaseWrapper):
                 haystack=screenshot_pil,
                 needle=pattern_pil,
                 confidence=similarity,
-                grayscale=(
-                    not pattern.use_color if hasattr(pattern, "use_color") else False
-                ),
+                grayscale=(not pattern.use_color if hasattr(pattern, "use_color") else False),
             )
 
             if hal_match:
@@ -380,9 +374,7 @@ class FindWrapper(BaseWrapper):
                 haystack=screenshot_pil,
                 needle=pattern_pil,
                 confidence=similarity,
-                grayscale=(
-                    not pattern.use_color if hasattr(pattern, "use_color") else False
-                ),
+                grayscale=(not pattern.use_color if hasattr(pattern, "use_color") else False),
             )
 
             # Convert HAL matches to qontinui Matches
@@ -411,9 +403,7 @@ class FindWrapper(BaseWrapper):
             return matches
 
         except Exception as e:
-            logger.error(
-                f"Error finding all patterns {pattern.name}: {e}", exc_info=True
-            )
+            logger.error(f"Error finding all patterns {pattern.name}: {e}", exc_info=True)
             return []
 
     def _wait_for_real(

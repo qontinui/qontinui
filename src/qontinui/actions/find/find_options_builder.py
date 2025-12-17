@@ -191,21 +191,21 @@ def _cascade_timeout(ctx: CascadeContext, explicit: float | None) -> float:
     return get_defaults().find.default_timeout
 
 
-def _cascade_search_region(
-    ctx: CascadeContext, explicit: Region | None
-) -> Region | None:
+def _cascade_search_region(ctx: CascadeContext, explicit: Region | None) -> Region | None:
     """Cascade search region.
 
     Priority:
     1. explicit parameter
     2. SearchOptions.search_regions[0] (use first if multiple)
-    3. Pattern.search_regions.get_one_region() (returns fixed or first region)
-    4. StateImage._search_region
-    5. None (search full screen)
+    3. StateImage._search_regions (from monitors config - highest config priority)
+    4. Pattern.search_regions.get_one_region() (from original capture)
+    5. StateImage._search_region (singular, from pattern)
+    6. None (search full screen)
 
-    Note: SearchOptions has search_regions (list), FindOptions has search_region (single).
-    We take the first region from the list if multiple are provided.
-    Pattern has search_regions (SearchRegions object) which can contain multiple regions.
+    Note: StateImage._search_regions (from monitors) takes priority over Pattern
+    search regions because monitors is an explicit user configuration that should
+    override pattern-level defaults. Pattern searchRegions are from the original
+    capture location and may point to a different monitor than configured.
 
     Args:
         ctx: Cascade context
@@ -224,15 +224,27 @@ def _cascade_search_region(
         if regions and len(regions) > 0:
             return regions[0]  # type: ignore[return-value]
 
-    # Priority 3: Pattern search region
+    # Priority 3: StateImage search regions (plural, from monitors config)
+    # This takes priority over Pattern search regions because monitors is an
+    # explicit user configuration that should override pattern-level defaults.
+    # Pattern searchRegions are from the original capture location and may
+    # point to a different monitor than configured.
+    if (
+        ctx.state_image
+        and ctx.state_image._search_regions is not None
+        and not ctx.state_image._search_regions.is_empty()
+    ):
+        return ctx.state_image._search_regions.get_one_region()
+
+    # Priority 4: Pattern search region (from original capture)
     if ctx.pattern and not ctx.pattern.search_regions.is_empty():
         return ctx.pattern.search_regions.get_one_region()
 
-    # Priority 4: StateImage search region
+    # Priority 5: StateImage search region (singular)
     if ctx.state_image and ctx.state_image._search_region is not None:
         return ctx.state_image._search_region
 
-    # Priority 5: None (full screen search)
+    # Priority 6: None (search full screen)
     return None
 
 
@@ -260,16 +272,10 @@ def _cascade_find_all(ctx: CascadeContext, explicit: bool | None) -> bool:
     # Priority 2: Infer from SearchOptions max/min matches
     if ctx.search_options:
         # If max_matches > 1, we need to find multiple
-        if (
-            ctx.search_options.max_matches is not None
-            and ctx.search_options.max_matches > 1
-        ):
+        if ctx.search_options.max_matches is not None and ctx.search_options.max_matches > 1:
             return True
         # If min_matches > 1, we need to find multiple
-        if (
-            ctx.search_options.min_matches is not None
-            and ctx.search_options.min_matches > 1
-        ):
+        if ctx.search_options.min_matches is not None and ctx.search_options.min_matches > 1:
             return True
         # If max_matches_to_act_on > 1, find multiple
         if (
@@ -318,9 +324,7 @@ def _cascade_debug(ctx: CascadeContext, explicit: bool | None) -> bool:
 # These are ready to use when FindOptions is expanded to include these fields.
 
 
-def _cascade_polling(
-    ctx: CascadeContext, explicit: PollingConfig | None
-) -> PollingConfig | None:
+def _cascade_polling(ctx: CascadeContext, explicit: PollingConfig | None) -> PollingConfig | None:
     """Cascade polling configuration.
 
     Priority:

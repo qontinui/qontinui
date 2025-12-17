@@ -155,9 +155,7 @@ class InitialStates:
             # Filter out None values before creating frozenset
             valid_ids = {id for id in state_ids if id is not None}
             if valid_ids:
-                self.potential_active_states[frozenset(valid_ids)] = (
-                    self.sum_of_probabilities
-                )
+                self.potential_active_states[frozenset(valid_ids)] = self.sum_of_probabilities
 
     def find_initial_states(self) -> None:
         """Discover and activate the initial states for automation.
@@ -201,9 +199,7 @@ class InitialStates:
 
         # Generate a random number between 1 and sum_of_probabilities
         random_value = random.randint(1, self.sum_of_probabilities)
-        logger.debug(
-            f"Randomly selected value: {random_value} out of {self.sum_of_probabilities}"
-        )
+        logger.debug(f"Randomly selected value: {random_value} out of {self.sum_of_probabilities}")
 
         # Find the state set whose probability range contains the random value
         for state_ids, threshold in self.potential_active_states.items():

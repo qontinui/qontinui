@@ -116,9 +116,7 @@ class HealingManager:
         self.config = config or HealingConfig()
 
         # Create multi-strategy locator with configured strategies
-        self.locator = MultiStrategyLocator.create_with_strategies(
-            *self.config.fallback_strategies
-        )
+        self.locator = MultiStrategyLocator.create_with_strategies(*self.config.fallback_strategies)
 
         # Healing history
         self._healing_history: list[HealingAttempt] = []
@@ -212,9 +210,7 @@ class HealingManager:
                 )
 
         elif not result.found:
-            logger.warning(
-                f"Healing failed for pattern {pattern_id} - no strategy succeeded"
-            )
+            logger.warning(f"Healing failed for pattern {pattern_id} - no strategy succeeded")
 
             # Emit failure event
             if self.config.emit_events:
@@ -379,9 +375,7 @@ class HealingManager:
 
                 pattern.mask = np.ones(new_pixel_data.shape[:2], dtype=np.float32)
 
-            logger.info(
-                f"Updated pattern {pattern.id} with new pixel data from healed match"
-            )
+            logger.info(f"Updated pattern {pattern.id} with new pixel data from healed match")
 
             # Call update callback if registered
             if pattern.id in self._update_callbacks:

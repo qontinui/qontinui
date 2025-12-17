@@ -80,18 +80,12 @@ class BoundingBox:
 
     def contains(self, other: "BoundingBox") -> bool:
         return (
-            self.x <= other.x
-            and self.y <= other.y
-            and self.x2 >= other.x2
-            and self.y2 >= other.y2
+            self.x <= other.x and self.y <= other.y and self.x2 >= other.x2 and self.y2 >= other.y2
         )
 
     def intersects(self, other: "BoundingBox") -> bool:
         return not (
-            self.x2 <= other.x
-            or other.x2 <= self.x
-            or self.y2 <= other.y
-            or other.y2 <= self.y
+            self.x2 <= other.x or other.x2 <= self.x or self.y2 <= other.y or other.y2 <= self.y
         )
 
 
@@ -190,9 +184,7 @@ class StateImage:
                 }
                 for p in self.patterns
             ],
-            "search_region": (
-                self.search_region.to_dict() if self.search_region else None
-            ),
+            "search_region": (self.search_region.to_dict() if self.search_region else None),
             "text_content": self.text_content,
             "has_dynamic_text": self.has_dynamic_text,
             "aria_label": self.aria_label,
@@ -261,9 +253,7 @@ class State:
             "controlling_variable": self.controlling_variable,
             "controlling_value": self.controlling_value,
             "state_images": [img.to_dict() for img in self.state_images],
-            "screenshot_path": (
-                str(self.screenshot_path) if self.screenshot_path else None
-            ),
+            "screenshot_path": (str(self.screenshot_path) if self.screenshot_path else None),
             "viewport": list(self.viewport),
             "parent_state_id": self.parent_state_id,
             "child_state_ids": self.child_state_ids,
@@ -382,13 +372,9 @@ class HybridExtractionResult:
             "states": [s.to_dict() for s in self.states],
             "state_images": [img.to_dict() for img in self.state_images],
             "transitions": [t.to_dict() for t in self.transitions],
-            "screenshots_dir": (
-                str(self.screenshots_dir) if self.screenshots_dir else None
-            ),
+            "screenshots_dir": (str(self.screenshots_dir) if self.screenshots_dir else None),
             "started_at": self.started_at.isoformat(),
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
+            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
             "errors": self.errors,
             "warnings": self.warnings,
             "metadata": self.metadata,

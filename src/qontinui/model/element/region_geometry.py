@@ -32,8 +32,7 @@ class RegionGeometry:
             px, py = point.x, point.y
 
         return (
-            region.x <= px <= region.x + region.width
-            and region.y <= py <= region.y + region.height
+            region.x <= px <= region.x + region.width and region.y <= py <= region.y + region.height
         )
 
     @staticmethod
@@ -48,10 +47,7 @@ class RegionGeometry:
         Returns:
             True if point is inside region
         """
-        return (
-            region.x <= x < region.x + region.width
-            and region.y <= y < region.y + region.height
-        )
+        return region.x <= x < region.x + region.width and region.y <= y < region.y + region.height
 
     @staticmethod
     def overlaps(region1: Region, region2: Region) -> bool:

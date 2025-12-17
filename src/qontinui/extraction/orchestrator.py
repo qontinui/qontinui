@@ -55,14 +55,10 @@ class ExtractionOrchestrator:
             framework: The framework this analyzer supports
             analyzer_class: The analyzer class (not an instance)
         """
-        logger.info(
-            f"Registering static analyzer for {framework.value}: {analyzer_class.__name__}"
-        )
+        logger.info(f"Registering static analyzer for {framework.value}: {analyzer_class.__name__}")
         self.static_analyzers[framework] = analyzer_class
 
-    def register_runtime_extractor(
-        self, extractor_class: type[RuntimeExtractor]
-    ) -> None:
+    def register_runtime_extractor(self, extractor_class: type[RuntimeExtractor]) -> None:
         """
         Register a runtime extractor.
 
@@ -72,9 +68,7 @@ class ExtractionOrchestrator:
         logger.info(f"Registering runtime extractor: {extractor_class.__name__}")
         self.runtime_extractors.append(extractor_class)
 
-    def register_matcher(
-        self, framework: FrameworkType, matcher_class: type[StateMatcher]
-    ) -> None:
+    def register_matcher(self, framework: FrameworkType, matcher_class: type[StateMatcher]) -> None:
         """
         Register a state matcher for a framework.
 
@@ -82,9 +76,7 @@ class ExtractionOrchestrator:
             framework: The framework this matcher supports
             matcher_class: The matcher class (not an instance)
         """
-        logger.info(
-            f"Registering state matcher for {framework.value}: {matcher_class.__name__}"
-        )
+        logger.info(f"Registering state matcher for {framework.value}: {matcher_class.__name__}")
         self.matchers[framework] = matcher_class
 
     async def extract(self, config: ExtractionConfig) -> ExtractionResult:
@@ -142,9 +134,7 @@ class ExtractionOrchestrator:
             # Phase 1: Static Analysis (STATIC_ONLY or WHITE_BOX)
             if config.mode in (ExtractionMode.STATIC_ONLY, ExtractionMode.WHITE_BOX):
                 logger.info("Starting static analysis phase...")
-                result.static_analysis = await self._run_static_analysis(
-                    config, framework
-                )
+                result.static_analysis = await self._run_static_analysis(config, framework)
 
                 if result.static_analysis.errors:
                     logger.warning(
@@ -184,9 +174,7 @@ class ExtractionOrchestrator:
                     logger.info("Starting correlation phase...")
                     await self._correlate_results(config, result)
                 else:
-                    error_msg = (
-                        "WHITE_BOX mode requires both static and runtime results"
-                    )
+                    error_msg = "WHITE_BOX mode requires both static and runtime results"
                     logger.error(error_msg)
                     result.errors.append(error_msg)
 
@@ -194,9 +182,7 @@ class ExtractionOrchestrator:
             elif config.mode == ExtractionMode.STATIC_ONLY and result.static_analysis:
                 logger.info("Converting static analysis to preliminary states...")
                 result.states = self._states_from_static(result.static_analysis)
-                result.transitions = self._transitions_from_static(
-                    result.static_analysis
-                )
+                result.transitions = self._transitions_from_static(result.static_analysis)
 
             # Handle BLACK_BOX mode - convert runtime results to CorrelatedState
             elif config.mode == ExtractionMode.BLACK_BOX and result.runtime_extraction:
@@ -251,16 +237,10 @@ class ExtractionOrchestrator:
         # Additional orchestrator-specific validation
         if config.mode in (ExtractionMode.STATIC_ONLY, ExtractionMode.WHITE_BOX):
             if not config.target.project_path:
-                raise ConfigError(
-                    f"{config.mode.value} mode requires target.project_path"
-                )
+                raise ConfigError(f"{config.mode.value} mode requires target.project_path")
 
         if config.mode in (ExtractionMode.BLACK_BOX, ExtractionMode.WHITE_BOX):
-            if not (
-                config.target.url
-                or config.target.executable_path
-                or config.target.app_id
-            ):
+            if not (config.target.url or config.target.executable_path or config.target.app_id):
                 raise ConfigError(
                     f"{config.mode.value} mode requires target.url, executable_path, or app_id"
                 )
@@ -283,9 +263,7 @@ class ExtractionOrchestrator:
         """
         # If framework is explicitly specified, use it
         if target.framework:
-            logger.info(
-                f"Using explicitly specified framework: {target.framework.value}"
-            )
+            logger.info(f"Using explicitly specified framework: {target.framework.value}")
             return target.framework
 
         # Otherwise, auto-detect from project files
@@ -294,9 +272,7 @@ class ExtractionOrchestrator:
             if target.url:
                 logger.info("No project path, assuming generic web application")
                 return FrameworkType.WEB
-            logger.warning(
-                "Cannot detect framework without project_path or framework hint"
-            )
+            logger.warning("Cannot detect framework without project_path or framework hint")
             return FrameworkType.UNKNOWN
 
         project_path = target.project_path
@@ -427,9 +403,7 @@ class ExtractionOrchestrator:
         logger.warning(f"No static analyzer available for {framework.value}")
         return None
 
-    def _get_runtime_extractor(
-        self, target: ExtractionTarget
-    ) -> RuntimeExtractor | None:
+    def _get_runtime_extractor(self, target: ExtractionTarget) -> RuntimeExtractor | None:
         """
         Get appropriate runtime extractor for target.
 
@@ -528,22 +502,14 @@ class ExtractionOrchestrator:
             # Convert routes
             routes = getattr(analyzer_result, "routes", [])
             result.routes = [
-                (
-                    {"id": r.id, "path": r.path, "component": r.component}
-                    if hasattr(r, "id")
-                    else r
-                )
+                ({"id": r.id, "path": r.path, "component": r.component} if hasattr(r, "id") else r)
                 for r in routes
             ]
 
             # Convert state variables to state definitions
             state_vars = getattr(analyzer_result, "state_variables", [])
             result.state_definitions = [
-                (
-                    {"id": s.id, "name": s.name, "type": s.var_type}
-                    if hasattr(s, "id")
-                    else s
-                )
+                ({"id": s.id, "name": s.name, "type": s.var_type} if hasattr(s, "id") else s)
                 for s in state_vars
             ]
 
@@ -566,9 +532,7 @@ class ExtractionOrchestrator:
                 route_map = {}
                 for r in routes:
                     path = r.path if hasattr(r, "path") else r.get("path", "")
-                    state_id = (
-                        f"state_{path.replace('/', '_').strip('_')}" if path else ""
-                    )
+                    state_id = f"state_{path.replace('/', '_').strip('_')}" if path else ""
                     route_map[path] = state_id
                     # Also store normalized versions
                     normalized = path.rstrip("/") or "/"
@@ -582,9 +546,7 @@ class ExtractionOrchestrator:
                     for r in routes:
                         route_file = str(r.file_path) if hasattr(r, "file_path") else ""
                         if route_file and source_file and route_file in source_file:
-                            from_path = (
-                                r.path if hasattr(r, "path") else r.get("path", "")
-                            )
+                            from_path = r.path if hasattr(r, "path") else r.get("path", "")
                             from_state = route_map.get(from_path, "")
                             break
 
@@ -640,9 +602,7 @@ class ExtractionOrchestrator:
             result.analysis_duration_ms = (time.time() - start_time) * 1000
             return result
 
-    async def _run_runtime_extraction(
-        self, config: ExtractionConfig
-    ) -> RuntimeExtractionResult:
+    async def _run_runtime_extraction(self, config: ExtractionConfig) -> RuntimeExtractionResult:
         """
         Run the runtime extraction phase.
 
@@ -679,9 +639,7 @@ class ExtractionOrchestrator:
             result.extraction_duration_ms = (time.time() - start_time) * 1000
             return result
 
-    async def _correlate_results(
-        self, config: ExtractionConfig, result: ExtractionResult
-    ) -> None:
+    async def _correlate_results(self, config: ExtractionConfig, result: ExtractionResult) -> None:
         """
         Correlate static and runtime results (WHITE_BOX mode).
 
@@ -734,9 +692,7 @@ class ExtractionOrchestrator:
                     result.warnings.append(warning)
 
                     if config.require_correlation:
-                        error = (
-                            "Correlation threshold not met and require_correlation=True"
-                        )
+                        error = "Correlation threshold not met and require_correlation=True"
                         logger.error(error)
                         result.errors.append(error)
 
@@ -752,9 +708,7 @@ class ExtractionOrchestrator:
             result.states = self._states_from_static(result.static_analysis)
             result.transitions = self._transitions_from_static(result.static_analysis)
 
-    def _states_from_static(
-        self, static: StaticAnalysisResult
-    ) -> list[CorrelatedState]:
+    def _states_from_static(self, static: StaticAnalysisResult) -> list[CorrelatedState]:
         """
         Convert static analysis to preliminary states.
 
@@ -782,9 +736,7 @@ class ExtractionOrchestrator:
             route_component = route.get("component")
 
             # Get component details if available
-            component_info = (
-                component_map.get(route_component, {}) if route_component else {}
-            )
+            component_info = component_map.get(route_component, {}) if route_component else {}
 
             state = CorrelatedState(
                 id=f"state_{i:04d}",
@@ -817,9 +769,7 @@ class ExtractionOrchestrator:
                 source_file=str(vis_state.file_path) if vis_state.file_path else None,
                 line_number=vis_state.line_number,
                 state_variables=(
-                    [vis_state.controlling_variable]
-                    if vis_state.controlling_variable
-                    else []
+                    [vis_state.controlling_variable] if vis_state.controlling_variable else []
                 ),
                 correlation_method="visibility_state",
                 metadata={
@@ -845,9 +795,7 @@ class ExtractionOrchestrator:
         )
         return states
 
-    def _states_from_runtime(
-        self, runtime: RuntimeExtractionResult
-    ) -> list[CorrelatedState]:
+    def _states_from_runtime(self, runtime: RuntimeExtractionResult) -> list[CorrelatedState]:
         """
         Convert runtime extraction results to CorrelatedState objects.
 
@@ -914,9 +862,7 @@ class ExtractionOrchestrator:
         logger.info(f"Converted {len(states)} runtime states to CorrelatedState")
         return states
 
-    def _transitions_from_static(
-        self, static: StaticAnalysisResult
-    ) -> list[InferredTransition]:
+    def _transitions_from_static(self, static: StaticAnalysisResult) -> list[InferredTransition]:
         """
         Extract transitions from static analysis.
 
@@ -994,9 +940,7 @@ class ExtractionOrchestrator:
                             trigger_type="toggle",
                             event_handler=handler_id,
                             source_location=(
-                                f"{state.file_path}:{state.line_number}"
-                                if state.file_path
-                                else ""
+                                f"{state.file_path}:{state.line_number}" if state.file_path else ""
                             ),
                             confidence=0.75,
                             metadata={
@@ -1010,14 +954,10 @@ class ExtractionOrchestrator:
                         trans_idx += 1
 
         nav_count = sum(
-            1
-            for t in transitions
-            if t.metadata.get("transition_type") != "visibility_toggle"
+            1 for t in transitions if t.metadata.get("transition_type") != "visibility_toggle"
         )
         vis_count = sum(
-            1
-            for t in transitions
-            if t.metadata.get("transition_type") == "visibility_toggle"
+            1 for t in transitions if t.metadata.get("transition_type") == "visibility_toggle"
         )
 
         logger.info(
@@ -1071,9 +1011,7 @@ class ExtractionOrchestrator:
                     source_file=str(state.source_file) if state.source_file else None,
                     line_number=state.source_line,
                     state_variables=(
-                        [state.controlling_variable]
-                        if state.controlling_variable
-                        else []
+                        [state.controlling_variable] if state.controlling_variable else []
                     ),
                     correlation_method="hybrid",
                     metadata={
@@ -1081,9 +1019,7 @@ class ExtractionOrchestrator:
                         "url": state.url,
                         "viewport": state.viewport,
                         "screenshot_path": (
-                            str(state.screenshot_path)
-                            if state.screenshot_path
-                            else None
+                            str(state.screenshot_path) if state.screenshot_path else None
                         ),
                         "state_images": [img.id for img in state.state_images],
                     },
@@ -1099,9 +1035,7 @@ class ExtractionOrchestrator:
                     trigger_type=trans.trigger.value,
                     event_handler=trans.event_handler_name,
                     source_location=(
-                        f"{trans.source_file}:{trans.source_line}"
-                        if trans.source_file
-                        else None
+                        f"{trans.source_file}:{trans.source_line}" if trans.source_file else None
                     ),
                     confidence=trans.confidence,
                     metadata={
@@ -1117,9 +1051,7 @@ class ExtractionOrchestrator:
             result.metadata["hybrid_result"] = hybrid_result.to_dict()
             result.metadata["tech_stack"] = hybrid_result.tech_stack
             result.metadata["screenshots_dir"] = (
-                str(hybrid_result.screenshots_dir)
-                if hybrid_result.screenshots_dir
-                else None
+                str(hybrid_result.screenshots_dir) if hybrid_result.screenshots_dir else None
             )
 
             # Copy errors and warnings

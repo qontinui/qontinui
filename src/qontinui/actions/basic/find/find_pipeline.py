@@ -47,9 +47,7 @@ class FindPipeline:
     # Performance metrics
     _metrics: dict[str, Any] = field(default_factory=dict)
 
-    def execute(
-        self, object_collection: ObjectCollection, options: BaseFindOptions
-    ) -> list[Match]:
+    def execute(self, object_collection: ObjectCollection, options: BaseFindOptions) -> list[Match]:
         """Execute the find pipeline.
 
         Args:
@@ -138,9 +136,7 @@ class FindPipeline:
         if self.strategy_registry:
             implementation = self.strategy_registry.get_implementation(strategy)
             if implementation:
-                return cast(
-                    list[Match], implementation.find(object_collection, options)
-                )
+                return cast(list[Match], implementation.find(object_collection, options))
 
         # Fallback to basic implementation
         logger.warning(f"No implementation found for strategy: {strategy.name}")
@@ -166,9 +162,7 @@ class FindPipeline:
         # For now, return empty list
         return []
 
-    def _postprocess(
-        self, matches: list[Match], options: BaseFindOptions
-    ) -> list[Match]:
+    def _postprocess(self, matches: list[Match], options: BaseFindOptions) -> list[Match]:
         """Postprocess matches after finding.
 
         Args:
@@ -199,9 +193,7 @@ class FindPipeline:
 
         return matches
 
-    def _apply_search_type(
-        self, matches: list[Match], options: BaseFindOptions
-    ) -> list[Match]:
+    def _apply_search_type(self, matches: list[Match], options: BaseFindOptions) -> list[Match]:
         """Apply search type filtering.
 
         Args:
@@ -228,10 +220,7 @@ class FindPipeline:
             seen_patterns = set()
             unique_matches = []
             for match in matches:
-                if (
-                    hasattr(match, "pattern_id")
-                    and match.pattern_id not in seen_patterns
-                ):
+                if hasattr(match, "pattern_id") and match.pattern_id not in seen_patterns:
                     seen_patterns.add(match.pattern_id)
                     unique_matches.append(match)
             return unique_matches

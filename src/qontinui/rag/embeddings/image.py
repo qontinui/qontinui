@@ -28,12 +28,10 @@ class CLIPEmbedder:
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
         try:
-            self._processor = CLIPProcessor.from_pretrained(
-                model_name, cache_dir=self._cache_dir
+            self._processor = CLIPProcessor.from_pretrained(model_name, cache_dir=self._cache_dir)
+            self._model = CLIPModel.from_pretrained(model_name, cache_dir=self._cache_dir).to(
+                self._device
             )
-            self._model = CLIPModel.from_pretrained(
-                model_name, cache_dir=self._cache_dir
-            ).to(self._device)
             self._model.eval()
         except Exception as e:
             raise RuntimeError(
@@ -56,9 +54,7 @@ class CLIPEmbedder:
             with torch.no_grad():
                 image_features = self._model.get_image_features(**inputs)
                 # Normalize for cosine similarity
-                image_features = image_features / image_features.norm(
-                    dim=-1, keepdim=True
-                )
+                image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
             result: list[float] = image_features.cpu().numpy().flatten().tolist()
             return result
@@ -107,16 +103,12 @@ class CLIPEmbedder:
             batch = images[i : i + batch_size]
 
             try:
-                inputs = self._processor(images=batch, return_tensors="pt").to(
-                    self._device
-                )
+                inputs = self._processor(images=batch, return_tensors="pt").to(self._device)
 
                 with torch.no_grad():
                     batch_features = self._model.get_image_features(**inputs)
                     # Normalize for cosine similarity
-                    batch_features = batch_features / batch_features.norm(
-                        dim=-1, keepdim=True
-                    )
+                    batch_features = batch_features / batch_features.norm(dim=-1, keepdim=True)
 
                 embeddings.extend(batch_features.cpu().numpy().tolist())
             except Exception as e:
@@ -147,9 +139,7 @@ class DINOv2Embedder:
         "dinov2_vitg14": {"embed_dim": 1536, "repo": "facebookresearch/dinov2"},
     }
 
-    def __init__(
-        self, model_name: str = "dinov2_vits14", cache_dir: Path | None = None
-    ) -> None:
+    def __init__(self, model_name: str = "dinov2_vits14", cache_dir: Path | None = None) -> None:
         """Initialize DINOv2 model.
 
         Args:
@@ -180,14 +170,10 @@ class DINOv2Embedder:
             # DINOv2 preprocessing
             self._transform = transforms.Compose(
                 [
-                    transforms.Resize(
-                        256, interpolation=transforms.InterpolationMode.BICUBIC
-                    ),
+                    transforms.Resize(256, interpolation=transforms.InterpolationMode.BICUBIC),
                     transforms.CenterCrop(224),
                     transforms.ToTensor(),
-                    transforms.Normalize(
-                        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                    ),
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
                 ]
             )
         except Exception as e:
@@ -222,9 +208,7 @@ class DINOv2Embedder:
         except Exception as e:
             raise RuntimeError(f"Failed to encode image with DINOv2: {e}") from e
 
-    def batch_encode(
-        self, images: list[Image.Image], batch_size: int = 16
-    ) -> list[list[float]]:
+    def batch_encode(self, images: list[Image.Image], batch_size: int = 16) -> list[list[float]]:
         """Batch encode multiple images.
 
         Args:

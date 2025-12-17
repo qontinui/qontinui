@@ -132,9 +132,7 @@ def extract_early_returns(
             condition = _serialize_expression(if_stmt.get("test", {}))
             true_branch = _serialize_jsx_element(consequent.get("argument", {}))
 
-            controlling_vars = _extract_variables_from_condition(
-                if_stmt.get("test", {})
-            )
+            controlling_vars = _extract_variables_from_condition(if_stmt.get("test", {}))
 
             conditionals.append(
                 ConditionalRender(
@@ -156,9 +154,7 @@ def extract_early_returns(
                 condition = _serialize_expression(if_stmt.get("test", {}))
                 true_branch = _serialize_jsx_element(body[0].get("argument", {}))
 
-                controlling_vars = _extract_variables_from_condition(
-                    if_stmt.get("test", {})
-                )
+                controlling_vars = _extract_variables_from_condition(if_stmt.get("test", {}))
 
                 conditionals.append(
                     ConditionalRender(
@@ -199,9 +195,7 @@ def extract_switch_render(
 
     for switch_stmt in switch_statements:
         discriminant = _serialize_expression(switch_stmt.get("discriminant", {}))
-        controlling_vars = _extract_variables_from_condition(
-            switch_stmt.get("discriminant", {})
-        )
+        controlling_vars = _extract_variables_from_condition(switch_stmt.get("discriminant", {}))
 
         cases = switch_stmt.get("cases", [])
 

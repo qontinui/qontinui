@@ -123,9 +123,7 @@ class ExecutionStatusTracker:
         """
         return await self.history.get_history(workflow_id=workflow_id, limit=limit)
 
-    async def get_execution_statistics(
-        self, workflow_id: str | None = None
-    ) -> dict[str, Any]:
+    async def get_execution_statistics(self, workflow_id: str | None = None) -> dict[str, Any]:
         """Get execution statistics.
 
         Args:
@@ -148,7 +146,5 @@ class ExecutionStatusTracker:
         if context.total_actions == 0:
             return 0.0
 
-        completed = (
-            context.completed_actions + context.failed_actions + context.skipped_actions
-        )
+        completed = context.completed_actions + context.failed_actions + context.skipped_actions
         return (completed / context.total_actions) * 100.0

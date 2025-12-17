@@ -60,9 +60,7 @@ class TemplateMatcher(ImageMatcher):
             ValueError: If method name is not recognized
         """
         if method not in self.METHODS:
-            raise ValueError(
-                f"Unknown method: {method}. Available: {list(self.METHODS.keys())}"
-            )
+            raise ValueError(f"Unknown method: {method}. Available: {list(self.METHODS.keys())}")
         self.method = method
         self.nms_overlap_threshold = nms_overlap_threshold
 
@@ -248,9 +246,7 @@ class TemplateMatcher(ImageMatcher):
             "Expected PIL Image, numpy array, or object with get_mat_bgr()"
         )
 
-    def _extract_template_and_mask(
-        self, pattern: Pattern
-    ) -> tuple[np.ndarray, np.ndarray | None]:
+    def _extract_template_and_mask(self, pattern: Pattern) -> tuple[np.ndarray, np.ndarray | None]:
         """Extract template image and mask from pattern.
 
         Args:
@@ -614,9 +610,7 @@ class TemplateMatcher(ImageMatcher):
         # Flatten the result array and get indices sorted by confidence (descending)
         flat_result = result.flatten()
         # Get indices of top N values
-        top_indices = np.argpartition(flat_result, -min(top_n, len(flat_result)))[
-            -top_n:
-        ]
+        top_indices = np.argpartition(flat_result, -min(top_n, len(flat_result)))[-top_n:]
         # Sort these indices by their actual values (descending)
         top_indices = top_indices[np.argsort(-flat_result[top_indices])]
 

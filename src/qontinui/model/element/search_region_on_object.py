@@ -92,9 +92,7 @@ class SearchRegionOnObject:
         self.target_object_name = object_name
         return self
 
-    def set_adjustments(
-        self, adjustments: MatchAdjustmentOptions
-    ) -> SearchRegionOnObject:
+    def set_adjustments(self, adjustments: MatchAdjustmentOptions) -> SearchRegionOnObject:
         """Set adjustment options.
 
         Args:

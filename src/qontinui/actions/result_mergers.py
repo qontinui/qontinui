@@ -68,9 +68,7 @@ class ResultMerger:
         return builder.build()
 
     @staticmethod
-    def add_non_match_results(
-        target: ActionResult, source: ActionResult
-    ) -> ActionResult:
+    def add_non_match_results(target: ActionResult, source: ActionResult) -> ActionResult:
         """Merge non-match data from source into target.
 
         This includes text, states, regions, movements, and execution history.

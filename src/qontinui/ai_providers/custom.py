@@ -127,9 +127,7 @@ class CustomCommandProvider(AIProvider):
                 result.success = True
                 logger.info("Custom AI command completed successfully")
             else:
-                result.error = (
-                    proc.stderr or f"Command exited with code {proc.returncode}"
-                )
+                result.error = proc.stderr or f"Command exited with code {proc.returncode}"
                 logger.error(f"Custom AI command failed: {result.error}")
 
         except subprocess.TimeoutExpired:

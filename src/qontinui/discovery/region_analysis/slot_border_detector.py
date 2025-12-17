@@ -79,9 +79,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
 
         return grid_regions
 
-    def _detect_borders(
-        self, gray: np.ndarray, params: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def _detect_borders(self, gray: np.ndarray, params: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Detect rectangular borders in the image
 
@@ -97,9 +95,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel_close)
 
         # Find contours
-        contours, hierarchy = cv2.findContours(
-            edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         borders = []
 
@@ -193,10 +189,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
                 width_diff = abs(other["width"] - ref_width) / ref_width
                 height_diff = abs(other["height"] - ref_height) / ref_height
 
-                if (
-                    width_diff < params["size_tolerance"]
-                    and height_diff < params["size_tolerance"]
-                ):
+                if width_diff < params["size_tolerance"] and height_diff < params["size_tolerance"]:
                     group.append(other)
                     used.add(j)
 
@@ -221,12 +214,8 @@ class SlotBorderDetector(BaseRegionAnalyzer):
         avg_height = int(np.mean([b["height"] for b in borders]))
 
         # Find grid spacing
-        x_spacings = [
-            x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)
-        ]
-        y_spacings = [
-            y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)
-        ]
+        x_spacings = [x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)]
+        y_spacings = [y_positions[i + 1] - y_positions[i] for i in range(len(y_positions) - 1)]
 
         if not x_spacings or not y_spacings:
             return []
@@ -261,8 +250,7 @@ class SlotBorderDetector(BaseRegionAnalyzer):
 
             if (
                 abs(border["x"] - expected_x) < spacing_x * params["spacing_tolerance"]
-                and abs(border["y"] - expected_y)
-                < spacing_y * params["spacing_tolerance"]
+                and abs(border["y"] - expected_y) < spacing_y * params["spacing_tolerance"]
             ):
                 grid_map[(grid_x, grid_y)] = border
 

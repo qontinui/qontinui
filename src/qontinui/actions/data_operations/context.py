@@ -144,11 +144,7 @@ class VariableContext:
             >>> context.exists("y")
             False
         """
-        return (
-            name in self.local_vars
-            or name in self.process_vars
-            or name in self.global_vars
-        )
+        return name in self.local_vars or name in self.process_vars or name in self.global_vars
 
     def delete(self, name: str, scope: str | None = None) -> bool:
         """Delete a variable from specified scope or all scopes.

@@ -70,10 +70,7 @@ class DropdownDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect dropdown elements in screenshots"""
-        logger.info(
-            f"Running dropdown detection on "
-            f"{len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running dropdown detection on " f"{len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -266,9 +263,7 @@ class DropdownDetector(BaseAnalyzer):
             keep.append(current)
 
             # Remove overlapping matches
-            matches = [
-                m for m in matches if not self._boxes_overlap(current, m, iou_threshold)
-            ]
+            matches = [m for m in matches if not self._boxes_overlap(current, m, iou_threshold)]
 
         return keep
 
@@ -306,14 +301,10 @@ class DropdownDetector(BaseAnalyzer):
         dropdowns = []
 
         # Apply edge detection
-        edges = cv2.Canny(
-            img_gray, params["edge_threshold_low"], params["edge_threshold_high"]
-        )
+        edges = cv2.Canny(img_gray, params["edge_threshold_low"], params["edge_threshold_high"])
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)

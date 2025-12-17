@@ -119,9 +119,7 @@ class MaskedFind(FindImage):
         if len(template.shape) == 3:
             # Expand mask for color images
             active_mask_expanded = np.expand_dims(active_mask, axis=2)
-            active_mask_expanded = np.repeat(
-                active_mask_expanded, template.shape[2], axis=2
-            )
+            active_mask_expanded = np.repeat(active_mask_expanded, template.shape[2], axis=2)
         else:
             active_mask_expanded = active_mask
 
@@ -144,9 +142,7 @@ class MaskedFind(FindImage):
         # Normalize and calculate similarity
         normalized_diff = diff / 255.0
         weighted_diff_sum = np.sum(normalized_diff * active_mask_expanded)
-        avg_diff = weighted_diff_sum / (
-            active_pixels * (3 if len(template.shape) == 3 else 1)
-        )
+        avg_diff = weighted_diff_sum / (active_pixels * (3 if len(template.shape) == 3 else 1))
 
         similarity = 1.0 - avg_diff
         return float(similarity)
@@ -220,9 +216,7 @@ class MaskedFind(FindImage):
 
         for region in regions:
             for y in range(region.y, min(region.y + region.height - h, search_h - h)):
-                for x in range(
-                    region.x, min(region.x + region.width - w, search_w - w)
-                ):
+                for x in range(region.x, min(region.x + region.width - w, search_w - w)):
                     similarity = self._calculate_masked_similarity(
                         template, mask, search_image, x, y
                     )

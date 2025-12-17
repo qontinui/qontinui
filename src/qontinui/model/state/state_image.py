@@ -6,6 +6,7 @@ Images associated with states for identification.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from ...find import Matches
@@ -15,6 +16,28 @@ from .action_history import ActionHistory
 
 if TYPE_CHECKING:
     from qontinui.model.state.state import State
+
+
+class SearchMode(str, Enum):
+    """Search mode for finding images.
+
+    Determines whether to use template matching or RAG-based semantic search.
+    """
+
+    DEFAULT = "default"  # Use project default
+    RAG = "rag"  # Use RAG/semantic search via qontinui-api
+    TEMPLATE = "template"  # Use traditional template matching
+
+
+class MultiPatternMode(str, Enum):
+    """How to search when StateImage has multiple patterns.
+
+    For RAG search, patterns can be searched individually or combined
+    into a single vector for similarity matching.
+    """
+
+    ALL = "all"  # Search each pattern separately
+    COMBINED = "combined"  # Search using combined/averaged vector
 
 
 @dataclass
@@ -36,9 +59,11 @@ class StateImage:
 
     # Search configuration
     _search_region: Region | None = None
-    _search_regions: SearchRegions | None = (
-        None  # SearchRegions associated with this StateImage
-    )
+    _search_regions: SearchRegions | None = None  # SearchRegions associated with this StateImage
+
+    # RAG search configuration
+    _search_mode: SearchMode = SearchMode.DEFAULT
+    _rag_multi_pattern_mode: MultiPatternMode = MultiPatternMode.ALL
 
     # Similarity threshold for this state image
     #
@@ -283,10 +308,59 @@ class StateImage:
         self._search_regions = search_regions
         return self
 
+    def set_search_mode(self, mode: SearchMode | str) -> StateImage:
+        """Set search mode for this image (fluent).
+
+        Args:
+            mode: SearchMode enum or string value ("default", "rag", "template")
+
+        Returns:
+            Self for chaining
+        """
+        if isinstance(mode, str):
+            self._search_mode = SearchMode(mode)
+        else:
+            self._search_mode = mode
+        return self
+
+    def set_rag_multi_pattern_mode(self, mode: MultiPatternMode | str) -> StateImage:
+        """Set RAG multi-pattern mode for this image (fluent).
+
+        Args:
+            mode: MultiPatternMode enum or string value ("all", "combined")
+
+        Returns:
+            Self for chaining
+        """
+        if isinstance(mode, str):
+            self._rag_multi_pattern_mode = MultiPatternMode(mode)
+        else:
+            self._rag_multi_pattern_mode = mode
+        return self
+
     @property
     def search_regions(self) -> SearchRegions | None:
         """Get search regions for this image."""
         return self._search_regions
+
+    @property
+    def search_mode(self) -> SearchMode:
+        """Get search mode for this image."""
+        return self._search_mode
+
+    @property
+    def rag_multi_pattern_mode(self) -> MultiPatternMode:
+        """Get RAG multi-pattern mode for this image."""
+        return self._rag_multi_pattern_mode
+
+    @property
+    def uses_rag(self) -> bool:
+        """Check if this image uses RAG search.
+
+        Returns:
+            True if search_mode is RAG
+        """
+        return self._search_mode == SearchMode.RAG
 
     @property
     def is_fixed(self) -> bool:

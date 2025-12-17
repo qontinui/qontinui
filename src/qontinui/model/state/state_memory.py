@@ -24,12 +24,8 @@ class StateMemory:
     """
 
     # History storage
-    _state_history: deque[StateRecord] = field(
-        default_factory=lambda: deque(maxlen=1000)
-    )
-    _transition_history: deque[TransitionRecord] = field(
-        default_factory=lambda: deque(maxlen=1000)
-    )
+    _state_history: deque[StateRecord] = field(default_factory=lambda: deque(maxlen=1000))
+    _transition_history: deque[TransitionRecord] = field(default_factory=lambda: deque(maxlen=1000))
 
     # Memory limits
     _max_state_history: int = 1000
@@ -186,9 +182,7 @@ class StateMemory:
             Dictionary of statistics
         """
         unique_states = len({r.state_name for r in self._state_history})
-        unique_transitions = len(
-            {(r.from_state, r.to_state) for r in self._transition_history}
-        )
+        unique_transitions = len({(r.from_state, r.to_state) for r in self._transition_history})
 
         return {
             "total_states_recorded": self._total_states_recorded,

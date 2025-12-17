@@ -36,9 +36,7 @@ class Path:
         self._calculate_score()
         self._calculate_probability()
 
-    def add_state(
-        self, state: State, transition: StateTransition | None = None
-    ) -> "Path":
+    def add_state(self, state: State, transition: StateTransition | None = None) -> "Path":
         """Add a state to the path (fluent).
 
         Args:
@@ -280,9 +278,7 @@ class Path:
 
         path_str = self.states[0].name
         for i in range(1, len(self.states)):
-            transition = (
-                self.transitions[i - 1] if i - 1 < len(self.transitions) else None
-            )
+            transition = self.transitions[i - 1] if i - 1 < len(self.transitions) else None
             if transition:
                 # transition_type is already a string, not an enum
                 transition_type = transition.transition_type

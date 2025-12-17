@@ -78,9 +78,7 @@ class TransitionParser:
         # Infer transition type based on presence of fromState
         transition_type = data.get("type")
         if transition_type is None:
-            transition_type = (
-                "OutgoingTransition" if "fromState" in data else "IncomingTransition"
-            )
+            transition_type = "OutgoingTransition" if "fromState" in data else "IncomingTransition"
 
         # Use Pydantic validation
         if transition_type == "OutgoingTransition":
@@ -98,9 +96,7 @@ class TransitionParser:
             transition: OutgoingTransition to assign.
         """
         if transition.from_state in config.state_map:
-            config.state_map[transition.from_state].outgoing_transitions.append(
-                transition
-            )
+            config.state_map[transition.from_state].outgoing_transitions.append(transition)
         else:
             logger.warning(
                 f"Transition {transition.id} references unknown fromState: {transition.from_state}"
@@ -116,9 +112,7 @@ class TransitionParser:
             transition: IncomingTransition to assign.
         """
         if transition.to_state in config.state_map:
-            config.state_map[transition.to_state].incoming_transitions.append(
-                transition
-            )
+            config.state_map[transition.to_state].incoming_transitions.append(transition)
         else:
             logger.warning(
                 f"Transition {transition.id} references unknown toState: {transition.to_state}"

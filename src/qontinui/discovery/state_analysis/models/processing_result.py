@@ -109,9 +109,7 @@ class ProcessingStep:
         """
         # Remove computed properties
         data_copy = {
-            k: v
-            for k, v in data.items()
-            if k not in ["duration", "duration_ms", "throughput"]
+            k: v for k, v in data.items() if k not in ["duration", "duration_ms", "throughput"]
         }
 
         return cls(

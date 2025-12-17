@@ -43,18 +43,12 @@ class SceneQueryService:
 
         try:
             regex = re.compile(pattern, flags)
-            return [
-                obj for obj in self.store.get_all() if regex.search(obj.description)
-            ]
+            return [obj for obj in self.store.get_all() if regex.search(obj.description)]
         except re.error:
             # Fall back to substring matching if regex is invalid
             if not case_sensitive:
                 pattern = pattern.lower()
-                return [
-                    obj
-                    for obj in self.store.get_all()
-                    if pattern in obj.description.lower()
-                ]
+                return [obj for obj in self.store.get_all() if pattern in obj.description.lower()]
             return [obj for obj in self.store.get_all() if pattern in obj.description]
 
     def find_by_type(self, object_type: ObjectType | str) -> list[SemanticObject]:
@@ -121,9 +115,7 @@ class SceneQueryService:
 
         for obj in objects:
             centroid = obj.location.get_centroid()
-            distance = (
-                (centroid.x - point.x) ** 2 + (centroid.y - point.y) ** 2
-            ) ** 0.5
+            distance = ((centroid.x - point.x) ** 2 + (centroid.y - point.y) ** 2) ** 0.5
 
             if distance < min_distance:
                 min_distance = distance

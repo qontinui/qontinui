@@ -100,23 +100,17 @@ def build_filter_query(query: SearchQuery) -> dict[str, Any]:
         )
 
     if filters.element_subtypes:
-        conditions.append(
-            {"key": "element_subtype", "match": {"any": filters.element_subtypes}}
-        )
+        conditions.append({"key": "element_subtype", "match": {"any": filters.element_subtypes}})
 
     # Boolean filters
     if filters.is_interactive is not None:
-        conditions.append(
-            {"key": "is_interactive", "match": {"value": filters.is_interactive}}
-        )
+        conditions.append({"key": "is_interactive", "match": {"value": filters.is_interactive}})
 
     if filters.is_enabled is not None:
         conditions.append({"key": "is_enabled", "match": {"value": filters.is_enabled}})
 
     if filters.is_selected is not None:
-        conditions.append(
-            {"key": "is_selected", "match": {"value": filters.is_selected}}
-        )
+        conditions.append({"key": "is_selected", "match": {"value": filters.is_selected}})
 
     if filters.has_text is not None:
         conditions.append({"key": "has_text", "match": {"value": filters.has_text}})
@@ -134,9 +128,7 @@ def build_filter_query(query: SearchQuery) -> dict[str, Any]:
 
     # Visual state filters
     if filters.visual_states:
-        conditions.append(
-            {"key": "visual_state", "match": {"any": filters.visual_states}}
-        )
+        conditions.append({"key": "visual_state", "match": {"any": filters.visual_states}})
 
     # Source filters
     if filters.source_apps:
@@ -169,25 +161,17 @@ def build_filter_query(query: SearchQuery) -> dict[str, Any]:
 
     # Text length filters
     if filters.min_text_length is not None:
-        conditions.append(
-            {"key": "text_length", "range": {"gte": filters.min_text_length}}
-        )
+        conditions.append({"key": "text_length", "range": {"gte": filters.min_text_length}})
 
     # Semantic filters
     if filters.semantic_roles:
-        conditions.append(
-            {"key": "semantic_role", "match": {"any": filters.semantic_roles}}
-        )
+        conditions.append({"key": "semantic_role", "match": {"any": filters.semantic_roles}})
 
     if filters.semantic_actions:
-        conditions.append(
-            {"key": "semantic_action", "match": {"any": filters.semantic_actions}}
-        )
+        conditions.append({"key": "semantic_action", "match": {"any": filters.semantic_actions}})
 
     if filters.style_families:
-        conditions.append(
-            {"key": "style_family", "match": {"any": filters.style_families}}
-        )
+        conditions.append({"key": "style_family", "match": {"any": filters.style_families}})
 
     # Return empty dict if no conditions, otherwise return must clause
     if not conditions:

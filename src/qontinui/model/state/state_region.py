@@ -33,6 +33,10 @@ class StateRegion:
     _search_region: bool = False  # If true, used as search region for state
     _interaction_region: bool = False  # If true, used for interactions
 
+    # Monitor association - which monitor(s) this region is on
+    # Required for multi-monitor support. Must be a specific monitor (not -1/all).
+    monitors: list[int] = field(default_factory=lambda: [0])
+
     # Metadata
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -44,30 +48,70 @@ class StateRegion:
         if self.name is None:
             self.name = f"Region_{self.region.x}_{self.region.y}"
 
+    def _get_global_coordinates(self, x: int, y: int) -> tuple[int, int]:
+        """Convert coordinates to global screen coordinates.
+
+        If the region has monitor associations, the coordinates are assumed
+        to be relative to that monitor and are translated to global coordinates.
+
+        Args:
+            x: X coordinate (monitor-relative)
+            y: Y coordinate (monitor-relative)
+
+        Returns:
+            (x, y) tuple in global screen coordinates
+        """
+        if self.monitors and self.monitors[0] >= 0:
+            try:
+                from qontinui.monitor.monitor_manager import MonitorManager
+
+                manager = MonitorManager()
+                monitor_idx = self.monitors[0]
+
+                # Check if coordinates need translation
+                monitor_info = manager.get_monitor_info(monitor_idx)
+                if monitor_info and monitor_idx > 0:
+                    # Translate monitor-relative to global coordinates
+                    return manager.to_global_coordinates(x, y, monitor_idx)
+            except Exception:
+                # Fall back to using coordinates as-is
+                pass
+
+        return (x, y)
+
     def contains_point(self, x: int, y: int) -> bool:
         """Check if point is in region.
 
         Args:
-            x: X coordinate
-            y: Y coordinate
+            x: X coordinate (in global screen coordinates)
+            y: Y coordinate (in global screen coordinates)
 
         Returns:
             True if point is in region
         """
-        from ..element import Location
 
-        return self.region.contains(Location(x, y))
+        # Get region bounds in global coordinates
+        global_x, global_y = self._get_global_coordinates(self.region.x, self.region.y)
+        global_right = global_x + self.region.width
+        global_bottom = global_y + self.region.height
+
+        return global_x <= x < global_right and global_y <= y < global_bottom
 
     def get_center(self) -> Location:
-        """Get center of region.
+        """Get center of region in global screen coordinates.
 
         Returns:
-            Center location
+            Center location in global coordinates
         """
-        return self.region.center
+        center = self.region.center
+        global_x, global_y = self._get_global_coordinates(center.x, center.y)
+        return Location(global_x, global_y)
 
     def click(self) -> ActionResult:
         """Click in the center of this region.
+
+        Coordinates are translated to global screen coordinates based on
+        the associated monitor.
 
         Returns:
             ActionResult from click
@@ -83,6 +127,9 @@ class StateRegion:
 
     def hover(self) -> ActionResult:
         """Move mouse to center of region.
+
+        Coordinates are translated to global screen coordinates based on
+        the associated monitor.
 
         Returns:
             ActionResult from move
@@ -147,12 +194,25 @@ class StateRegion:
 
     @property
     def search_region(self) -> Region:
-        """Get the region itself when used as a search region.
+        """Get the region in global screen coordinates for searching.
 
         Returns:
-            The region
+            The region with global coordinates
         """
-        return self.region
+        # Translate region to global coordinates
+        global_x, global_y = self._get_global_coordinates(self.region.x, self.region.y)
+
+        if global_x == self.region.x and global_y == self.region.y:
+            # No translation needed
+            return self.region
+
+        # Return a new region with global coordinates
+        return Region(
+            x=global_x,
+            y=global_y,
+            width=self.region.width,
+            height=self.region.height,
+        )
 
     def get_name(self) -> str:
         """Get the name of this state region.
@@ -171,12 +231,12 @@ class StateRegion:
         return self.owner_state.name if self.owner_state else ""
 
     def get_search_region(self) -> Region:
-        """Get the search region (the region itself).
+        """Get the search region in global screen coordinates.
 
         Returns:
-            The region
+            The region with global coordinates
         """
-        return self.region
+        return self.search_region
 
     def set_times_acted_on(self, times: int) -> None:
         """Set times this region has been acted upon.

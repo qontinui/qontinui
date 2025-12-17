@@ -16,9 +16,7 @@ from qontinui.extraction.models import (
 )
 
 
-def extract_function_components(
-    parse_result: dict, file_path: Path
-) -> list[ComponentDefinition]:
+def extract_function_components(parse_result: dict, file_path: Path) -> list[ComponentDefinition]:
     """
     Extract function component definitions.
 
@@ -134,9 +132,7 @@ def extract_function_components(
                             state_variables_used=state_vars,
                             metadata={
                                 "type": "arrow_function_component",
-                                "is_default_export": var_decl.get(
-                                    "is_default_export", False
-                                ),
+                                "is_default_export": var_decl.get("is_default_export", False),
                                 "hooks_used": hooks,
                             },
                         )
@@ -145,9 +141,7 @@ def extract_function_components(
     return components
 
 
-def extract_class_components(
-    parse_result: dict, file_path: Path
-) -> list[ComponentDefinition]:
+def extract_class_components(parse_result: dict, file_path: Path) -> list[ComponentDefinition]:
     """
     Extract class component definitions.
 
@@ -241,9 +235,7 @@ def extract_class_components(
     return components
 
 
-def build_component_tree(
-    components: list[ComponentDefinition], parse_result: dict
-) -> None:
+def build_component_tree(components: list[ComponentDefinition], parse_result: dict) -> None:
     """
     Build parent-child relationships from JSX.
 
@@ -261,9 +253,7 @@ def build_component_tree(
     # For each component, find which components it renders
     for component in components:
         # Get all JSX elements rendered by this component
-        jsx_elements = parse_result.get("jsx_elements_by_component", {}).get(
-            component.name, []
-        )
+        jsx_elements = parse_result.get("jsx_elements_by_component", {}).get(component.name, [])
 
         for jsx_elem in jsx_elements:
             element_name = _get_jsx_element_name(jsx_elem)

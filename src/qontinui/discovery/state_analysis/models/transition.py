@@ -148,9 +148,7 @@ class Transition:
             "states_disappeared": self.states_disappeared,
             "action_type": self.action_type,
             "action_target": self.action_target,
-            "action_location": (
-                list(self.action_location) if self.action_location else None
-            ),
+            "action_location": (list(self.action_location) if self.action_location else None),
             "action_data": self.action_data,
             "recognition_images": self.recognition_images,
             "recognition_confidence": self.recognition_confidence,

@@ -91,9 +91,7 @@ class ActionValidator:
                 action = self.validate_action(action_data)
                 validated_actions.append(action)
             except ActionValidationError as e:
-                errors.append(
-                    f"Action {idx} (id: {action_data.get('id', 'unknown')}): {e}"
-                )
+                errors.append(f"Action {idx} (id: {action_data.get('id', 'unknown')}): {e}")
 
         if errors:
             raise ActionValidationError(
@@ -132,13 +130,9 @@ class ActionValidator:
             if action.type == "LOOP":
                 loop_config = cast(LoopActionConfig, get_typed_config(action))
                 if loop_config.loop_type == "FOR" and not loop_config.iterations:
-                    warnings.append(
-                        f"FOR loop action '{action.id}' has no iterations specified"
-                    )
+                    warnings.append(f"FOR loop action '{action.id}' has no iterations specified")
                 elif loop_config.loop_type == "WHILE" and not loop_config.condition:
-                    warnings.append(
-                        f"WHILE loop action '{action.id}' has no condition specified"
-                    )
+                    warnings.append(f"WHILE loop action '{action.id}' has no condition specified")
                 elif loop_config.loop_type == "FOREACH" and not loop_config.collection:
                     warnings.append(
                         f"FOREACH loop action '{action.id}' has no collection specified"
@@ -296,9 +290,7 @@ def validate_actions(actions_data: list[dict[str, Any]]) -> list[Action]:
     return validator.validate_actions(actions_data)
 
 
-def validate_action_sequence(
-    actions: list[Action], check_references: bool = True
-) -> list[str]:
+def validate_action_sequence(actions: list[Action], check_references: bool = True) -> list[str]:
     """
     Convenience function to validate an action sequence.
 

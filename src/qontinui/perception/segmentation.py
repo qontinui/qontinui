@@ -9,9 +9,7 @@ import numpy as np
 class ScreenSegmenter:
     """Segment screenshots into UI elements using various methods."""
 
-    def __init__(
-        self, use_sam: bool = False, sam_checkpoint: str | None = None
-    ) -> None:
+    def __init__(self, use_sam: bool = False, sam_checkpoint: str | None = None) -> None:
         """Initialize ScreenSegmenter.
 
         Args:
@@ -70,9 +68,7 @@ class ScreenSegmenter:
         else:
             return self._segment_with_opencv(screenshot)
 
-    def _segment_with_sam(
-        self, screenshot: np.ndarray[Any, Any]
-    ) -> list[dict[str, Any]]:
+    def _segment_with_sam(self, screenshot: np.ndarray[Any, Any]) -> list[dict[str, Any]]:
         """Segment using Segment Anything Model.
 
         Args:
@@ -114,9 +110,7 @@ class ScreenSegmenter:
 
         return segments
 
-    def _segment_with_opencv(
-        self, screenshot: np.ndarray[Any, Any]
-    ) -> list[dict[str, Any]]:
+    def _segment_with_opencv(self, screenshot: np.ndarray[Any, Any]) -> list[dict[str, Any]]:
         """Segment using OpenCV contour detection.
 
         Args:
@@ -136,9 +130,7 @@ class ScreenSegmenter:
         closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         segments = []
         for i, contour in enumerate(contours):
@@ -192,9 +184,7 @@ class ScreenSegmenter:
 
         return img[y:y2, x:x2]
 
-    def detect_text_regions(
-        self, screenshot: np.ndarray[Any, Any]
-    ) -> list[dict[str, Any]]:
+    def detect_text_regions(self, screenshot: np.ndarray[Any, Any]) -> list[dict[str, Any]]:
         """Detect text regions in screenshot.
 
         Args:
@@ -213,9 +203,7 @@ class ScreenSegmenter:
         dilated = cv2.dilate(binary, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         text_regions = []
         for i, contour in enumerate(contours):
@@ -251,9 +239,7 @@ class ScreenSegmenter:
         edges = cv2.Canny(gray, 50, 150)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         buttons = []
         for i, contour in enumerate(contours):

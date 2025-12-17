@@ -77,9 +77,7 @@ class ClickBoundingBoxInferrer:
             # Return fallback centered at nearest valid point
             valid_x = max(0, min(click_x, width - 1))
             valid_y = max(0, min(click_y, height - 1))
-            return self._create_fallback_result(
-                (valid_x, valid_y), width, height, start_time, []
-            )
+            return self._create_fallback_result((valid_x, valid_y), width, height, start_time, [])
 
         strategies_attempted: list[DetectionStrategy] = []
 
@@ -107,11 +105,7 @@ class ClickBoundingBoxInferrer:
         )
 
         strategies_attempted.extend(
-            [
-                s
-                for s in self.config.preferred_strategies
-                if s != DetectionStrategy.FIXED_SIZE
-            ]
+            [s for s in self.config.preferred_strategies if s != DetectionStrategy.FIXED_SIZE]
         )
 
         # Step 3: If candidates found, classify and rank them
@@ -255,9 +249,7 @@ class ClickBoundingBoxInferrer:
             return False
 
         # Calculate similarity
-        diff = np.abs(
-            roi.astype(np.float32) - state_image.pixel_data.astype(np.float32)
-        )
+        diff = np.abs(roi.astype(np.float32) - state_image.pixel_data.astype(np.float32))
 
         if state_image.mask is not None:
             # Apply mask
@@ -284,9 +276,7 @@ class ClickBoundingBoxInferrer:
         strategies_attempted: list[DetectionStrategy],
     ) -> InferenceResult:
         """Create a fallback result with fixed-size bounding box."""
-        fallback_bbox = self._create_fallback_bbox(
-            click_location, img_width, img_height
-        )
+        fallback_bbox = self._create_fallback_bbox(click_location, img_width, img_height)
 
         strategies_attempted.append(DetectionStrategy.FIXED_SIZE)
         processing_time = (time.time() - start_time) * 1000

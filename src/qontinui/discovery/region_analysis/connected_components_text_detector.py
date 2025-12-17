@@ -105,9 +105,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions)
-            if all_regions
-            else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
         )
 
         return RegionAnalysisResult(
@@ -123,9 +121,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
             },
         )
 
-    def _detect_text_regions(
-        self, gray: np.ndarray, screenshot_index: int
-    ) -> list[DetectedRegion]:
+    def _detect_text_regions(self, gray: np.ndarray, screenshot_index: int) -> list[DetectedRegion]:
         """Detect text regions in a grayscale image."""
         # Threshold the image
         if self.use_adaptive_threshold:
@@ -135,9 +131,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
             )
         else:
             # Simple Otsu threshold
-            _, binary = cv2.threshold(
-                gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
-            )
+            _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
         # Morphological operations to connect text characters
         kernel = cv2.getStructuringElement(
@@ -168,10 +162,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
 
             # Filter by aspect ratio
             aspect_ratio = w / h if h > 0 else 0
-            if (
-                aspect_ratio < self.min_aspect_ratio
-                or aspect_ratio > self.max_aspect_ratio
-            ):
+            if aspect_ratio < self.min_aspect_ratio or aspect_ratio > self.max_aspect_ratio:
                 continue
 
             # Calculate solidity (compactness)
@@ -198,9 +189,7 @@ class ConnectedComponentsTextDetector(BaseRegionAnalyzer):
 
             # Calculate confidence based on properties
             # Higher solidity and moderate aspect ratio = higher confidence
-            aspect_score = 1.0 - min(
-                abs(aspect_ratio - 3.0) / 7.0, 1.0
-            )  # Prefer ~3:1 ratio
+            aspect_score = 1.0 - min(abs(aspect_ratio - 3.0) / 7.0, 1.0)  # Prefer ~3:1 ratio
             solidity_score = solidity
             confidence = (aspect_score * 0.4 + solidity_score * 0.6) * 0.75
 

@@ -352,15 +352,11 @@ class ElementClassifier:
             is_interactive = element_type in self.INTERACTIVE_TYPES
 
             # Determine if enabled
-            is_enabled = (
-                not properties.get("disabled")
-                and properties.get("ariaDisabled") != "true"
-            )
+            is_enabled = not properties.get("disabled") and properties.get("ariaDisabled") != "true"
 
             # Determine if visible
             is_visible = (
-                properties.get("isVisible", True)
-                and properties.get("ariaHidden") != "true"
+                properties.get("isVisible", True) and properties.get("ariaHidden") != "true"
             )
 
             # Compute accessible name
@@ -404,9 +400,7 @@ class ElementClassifier:
             logger.warning(f"Error extracting element info: {e}")
             return None
 
-    async def _generate_selector(
-        self, element: ElementHandle, properties: dict[str, Any]
-    ) -> str:
+    async def _generate_selector(self, element: ElementHandle, properties: dict[str, Any]) -> str:
         """Generate a CSS selector for the element."""
         try:
             # Try to generate a unique selector

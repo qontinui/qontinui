@@ -81,9 +81,7 @@ class ButtonShapeDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Perform shape-based button detection"""
-        logger.info(
-            f"Running button shape detection on {len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running button shape detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -96,14 +94,10 @@ class ButtonShapeDetector(BaseAnalyzer):
         for screenshot_idx, (img_gray, img_color) in enumerate(
             zip(images_gray, images_color, strict=False)
         ):
-            elements = await self._analyze_screenshot(
-                img_gray, img_color, screenshot_idx, params
-            )
+            elements = await self._analyze_screenshot(img_gray, img_color, screenshot_idx, params)
             all_elements.extend(elements)
 
-        logger.info(
-            f"Detected {len(all_elements)} button candidates using shape analysis"
-        )
+        logger.info(f"Detected {len(all_elements)} button candidates using shape analysis")
 
         return AnalysisResult(
             analyzer_type=self.analysis_type,
@@ -132,9 +126,7 @@ class ButtonShapeDetector(BaseAnalyzer):
         for data in screenshot_data:
             img = Image.open(BytesIO(data)).convert("RGB")
             # Convert RGB to BGR for OpenCV
-            images.append(
-                cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR)
-            )
+            images.append(cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR))
         return images
 
     async def _analyze_screenshot(
@@ -158,9 +150,7 @@ class ButtonShapeDetector(BaseAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)  # type: ignore[call-overload]
 
         # Step 3: Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         logger.debug(f"Found {len(contours)} contours in screenshot {screenshot_idx}")
 
@@ -176,9 +166,7 @@ class ButtonShapeDetector(BaseAnalyzer):
 
             # Step 5: Filter by aspect ratio
             aspect_ratio = w / h if h > 0 else 0
-            if not (
-                params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]
-            ):
+            if not (params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]):
                 continue
 
             # Step 6: Calculate rectangularity (how close to a perfect rectangle)
@@ -215,9 +203,7 @@ class ButtonShapeDetector(BaseAnalyzer):
             # Create detected element
             elements.append(
                 DetectedElement(
-                    bounding_box=BoundingBox(
-                        x=int(x), y=int(y), width=int(w), height=int(h)
-                    ),
+                    bounding_box=BoundingBox(x=int(x), y=int(y), width=int(w), height=int(h)),
                     confidence=confidence,
                     label="Button",
                     element_type="button",

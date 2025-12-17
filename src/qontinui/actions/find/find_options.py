@@ -70,6 +70,4 @@ class FindOptions:
     search_region: Region | None = None
     timeout: float = 0.0
     collect_debug: bool = False
-    monitor_index: int | None = (
-        None  # Target monitor for screenshot capture (None = all monitors)
-    )
+    monitor_index: int | None = None  # Target monitor for screenshot capture (None = all monitors)

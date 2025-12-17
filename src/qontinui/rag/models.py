@@ -111,9 +111,7 @@ class GUIElementChunk:
     height: int = 0
     aspect_ratio: float = 0.0
     area: int = 0
-    position_quadrant: str = (
-        ""  # "top-left", "top-right", "bottom-left", "bottom-right", "center"
-    )
+    position_quadrant: str = ""  # "top-left", "top-right", "bottom-left", "bottom-right", "center"
 
     # ============================================================================
     # Visual Features
@@ -172,9 +170,7 @@ class GUIElementChunk:
     # ============================================================================
     state_id: str | None = None  # Associated state ID
     state_name: str = ""  # Human-readable state name
-    is_defining_element: bool = (
-        False  # Is this element required for state identification?
-    )
+    is_defining_element: bool = False  # Is this element required for state identification?
     is_optional_element: bool = False  # Is this element optional in the state?
     similarity_threshold: float = 0.8  # Threshold for matching
     is_fixed_position: bool = False  # Does element stay in same position?
