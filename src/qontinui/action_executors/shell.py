@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 from typing import Any
 
+from ..ai_providers import AIProviderRegistry, AnalysisRequest
 from ..config.models.shell_actions import (
     ShellActionConfig,
     ShellScriptActionConfig,
@@ -97,13 +98,17 @@ class ShellActionExecutor(ActionExecutorBase):
         except ActionExecutionError:
             raise
         except Exception as e:
-            logger.error(f"Unexpected error executing {action_type}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error executing {action_type}: {e}", exc_info=True
+            )
             raise ActionExecutionError(
                 action_type=action_type,
                 reason=f"Unexpected error: {e}",
             ) from e
 
-    def _execute_shell(self, action: Action, typed_config: ShellActionConfig | None) -> bool:
+    def _execute_shell(
+        self, action: Action, typed_config: ShellActionConfig | None
+    ) -> bool:
         """Execute SHELL action - run a single command.
 
         Args:
@@ -182,7 +187,10 @@ class ShellActionExecutor(ActionExecutorBase):
                 self._emit_action_failure(
                     action,
                     error_msg,
-                    {"exit_code": exit_code, "stderr": stderr[:500] if stderr else None},
+                    {
+                        "exit_code": exit_code,
+                        "stderr": stderr[:500] if stderr else None,
+                    },
                 )
                 return False
 
@@ -303,7 +311,10 @@ class ShellActionExecutor(ActionExecutorBase):
                 self._emit_action_failure(
                     action,
                     error_msg,
-                    {"exit_code": exit_code, "stderr": stderr[:500] if stderr else None},
+                    {
+                        "exit_code": exit_code,
+                        "stderr": stderr[:500] if stderr else None,
+                    },
                 )
                 return False
 
@@ -360,7 +371,10 @@ class ShellActionExecutor(ActionExecutorBase):
             "bash": ("/bin/bash" if system != "Windows" else "bash.exe", "-c"),
             "sh": ("/bin/sh" if system != "Windows" else "sh.exe", "-c"),
             "zsh": ("/bin/zsh" if system != "Windows" else "zsh.exe", "-c"),
-            "powershell": ("powershell.exe" if system == "Windows" else "pwsh", "-Command"),
+            "powershell": (
+                "powershell.exe" if system == "Windows" else "pwsh",
+                "-Command",
+            ),
             "cmd": ("cmd.exe", "/c"),
         }
 
@@ -425,8 +439,12 @@ class ShellActionExecutor(ActionExecutorBase):
                 if len(parts) >= 3:
                     drive_letter = parts[2]  # 'c' from /mnt/c/...
                     rest_of_path = "/".join(parts[3:])  # path/to/dir
-                    windows_path = f"{drive_letter.upper()}:\\{rest_of_path.replace('/', '\\')}"
-                    logger.debug(f"Converted WSL path '{path}' to Windows path '{windows_path}'")
+                    windows_path = (
+                        f"{drive_letter.upper()}:\\{rest_of_path.replace('/', '\\')}"
+                    )
+                    logger.debug(
+                        f"Converted WSL path '{path}' to Windows path '{windows_path}'"
+                    )
                     return windows_path
 
             # Also handle forward slashes that might be intended as Windows paths
@@ -435,8 +453,12 @@ class ShellActionExecutor(ActionExecutorBase):
                 if len(path) == 2 or path[2] == "/":
                     drive_letter = path[1]
                     rest_of_path = path[3:] if len(path) > 3 else ""
-                    windows_path = f"{drive_letter.upper()}:\\{rest_of_path.replace('/', '\\')}"
-                    logger.debug(f"Converted path '{path}' to Windows path '{windows_path}'")
+                    windows_path = (
+                        f"{drive_letter.upper()}:\\{rest_of_path.replace('/', '\\')}"
+                    )
+                    logger.debug(
+                        f"Converted path '{path}' to Windows path '{windows_path}'"
+                    )
                     return windows_path
 
         else:
@@ -448,7 +470,9 @@ class ShellActionExecutor(ActionExecutorBase):
                 if rest_of_path.startswith("/"):
                     rest_of_path = rest_of_path[1:]
                 unix_path = f"/mnt/{drive_letter}/{rest_of_path}"
-                logger.debug(f"Converted Windows path '{path}' to Unix path '{unix_path}'")
+                logger.debug(
+                    f"Converted Windows path '{path}' to Unix path '{unix_path}'"
+                )
                 return unix_path
 
         return path
@@ -520,6 +544,9 @@ class ShellActionExecutor(ActionExecutorBase):
         This action triggers an AI assistant to analyze the automation results, review
         screenshots and logs, identify issues, and potentially fix them.
 
+        Uses the extensible AI provider system - providers are registered in
+        qontinui.ai_providers and can be selected via the 'provider' config option.
+
         Args:
             action: Action model
             typed_config: Validated TriggerAiAnalysisActionConfig
@@ -536,53 +563,55 @@ class ShellActionExecutor(ActionExecutorBase):
                 reason="TRIGGER_AI_ANALYSIS action requires valid config",
             )
 
-        provider = typed_config.provider or "claude"
-        description = typed_config.description or f"Trigger {provider} analysis"
-        logger.info(f"Executing TRIGGER_AI_ANALYSIS with provider '{provider}': {description}")
+        # Map legacy provider name "claude" to new name "claude_code"
+        provider_name = typed_config.provider or "claude_code"
+        if provider_name == "claude":
+            provider_name = "claude_code"
 
-        # Dispatch to provider-specific implementation
-        if provider == "claude":
-            return self._execute_claude_analysis(action, typed_config)
-        else:
+        description = typed_config.description or f"Trigger {provider_name} analysis"
+        logger.info(
+            f"Executing TRIGGER_AI_ANALYSIS with provider '{provider_name}': {description}"
+        )
+
+        # Get provider from registry
+        try:
+            provider = AIProviderRegistry.get_provider(provider_name)
+        except KeyError as e:
+            available = AIProviderRegistry.list_available_providers()
             raise ActionExecutionError(
                 action_type="TRIGGER_AI_ANALYSIS",
-                reason=f"Unsupported AI provider: {provider}. Currently supported: claude",
+                reason=f"AI provider '{provider_name}' not found. Available: {available}",
+            ) from e
+
+        # Check if provider is available
+        if not provider.is_available():
+            available = AIProviderRegistry.list_available_providers()
+            error_msg = (
+                f"AI provider '{provider_name}' is not available on this system."
             )
+            if available:
+                error_msg += f" Available providers: {available}"
+            else:
+                error_msg += " No providers are currently available."
+            logger.error(error_msg)
+            self._emit_action_failure(action, error_msg)
+            return False
 
-    def _execute_claude_analysis(
-        self, action: Action, typed_config: TriggerAiAnalysisActionConfig
-    ) -> bool:
-        """Execute analysis using Claude Code.
-
-        Args:
-            action: Action model
-            typed_config: Validated TriggerAiAnalysisActionConfig
-
-        Returns:
-            True if analysis was triggered successfully
-        """
-        timeout_seconds = (typed_config.timeout or 600000) / 1000.0
-        system = platform.system()
-
-        # Determine paths
+        # Determine working directory
         if typed_config.working_directory:
             working_dir = self._normalize_path(typed_config.working_directory)
             logger.info(f"Using configured working directory: {working_dir}")
         else:
-            # Default to project root (find it by looking for CLAUDE.md or .claude)
             working_dir = self._find_project_root()
             logger.info(f"Found project root: {working_dir}")
 
-        if typed_config.results_directory:
-            results_dir = typed_config.results_directory
-        else:
-            results_dir = ".automation-results/latest"
-
+        # Determine results directory
+        results_dir = typed_config.results_directory or ".automation-results/latest"
         logger.info(f"Results directory: {results_dir}")
 
-        # Check if results exist
+        # Validate results exist
         if working_dir:
-            results_path = os.path.join(working_dir, results_dir) if working_dir else results_dir
+            results_path = os.path.join(working_dir, results_dir)
             execution_json = os.path.join(results_path, "execution.json")
 
             if not os.path.exists(execution_json):
@@ -591,7 +620,7 @@ class ShellActionExecutor(ActionExecutorBase):
                 self._emit_action_failure(action, error_msg)
                 return False
 
-            # Read execution metadata for logging
+            # Log execution metadata
             try:
                 with open(execution_json) as f:
                     metadata = json.load(f)
@@ -603,17 +632,14 @@ class ShellActionExecutor(ActionExecutorBase):
                 logger.warning(f"Could not read execution metadata: {e}")
 
         # Determine the prompt to use
-        # Use user-provided prompt, or fallback to default
         if typed_config.prompt:
             prompt_text = typed_config.prompt
         else:
-            prompt_text = (
-                f"Analyze the automation results in {results_dir} and fix any issues found."
-            )
+            prompt_text = f"Analyze the automation results in {results_dir} and fix any issues found."
 
         logger.info(f"Using prompt: {prompt_text[:100]}...")
 
-        # Emit the prompt to the runner UI before starting Claude
+        # Emit the prompt to the runner UI
         self.context.emit_event(
             "ai_output_stream",
             {
@@ -624,305 +650,105 @@ class ShellActionExecutor(ActionExecutorBase):
             },
         )
 
-        # Build the Claude Code invocation command
+        # Create analysis request
+        timeout_seconds = (typed_config.timeout or 600000) / 1000.0
+        request = AnalysisRequest(
+            prompt=prompt_text,
+            working_directory=working_dir,
+            results_directory=results_dir,
+            timeout_seconds=int(timeout_seconds),
+            output_format="text",
+        )
+
+        # Execute analysis
+        return self._execute_streaming_analysis(action, provider, request, typed_config)
+
+    def _execute_streaming_analysis(
+        self,
+        action: Action,
+        provider: Any,  # AIProvider type, using Any to avoid circular import
+        request: AnalysisRequest,
+        typed_config: TriggerAiAnalysisActionConfig,
+    ) -> bool:
+        """Execute AI analysis using the provider system.
+
+        This method calls the provider's analyze() method and streams
+        output to the runner UI line-by-line.
+
+        Args:
+            action: Action model
+            provider: AI provider instance
+            request: Analysis request
+            typed_config: Original action config for output variable storage
+
+        Returns:
+            True if analysis was successful
+        """
         try:
-            if system == "Windows":
-                # On Windows, invoke via WSL where Claude Code has MCP configured
-                wsl_working_dir = self._to_wsl_path(working_dir) if working_dir else None
+            logger.info(f"Starting analysis with provider: {provider.name}")
 
-                # Escape the prompt for shell usage
-                escaped_prompt = prompt_text.replace('"', '\\"').replace("'", "'\\''")
+            # Call the provider's synchronous analyze method
+            result = provider.analyze(request)
 
-                # Use bash -lc (login shell) instead of -ic (interactive) to avoid TTY issues
-                # IMPORTANT: When wsl.exe runs bash -lc from Windows subprocess, it creates a
-                # non-interactive shell. The standard .bashrc has a check at the top that
-                # skips execution for non-interactive shells (case $- in *i*)... return).
-                # This means user PATH additions (like npm-global) are NOT applied.
-                #
-                # Solution: Explicitly add common npm global paths to PATH before running claude.
-                # Claude is typically installed via npm globally at one of:
-                # - ~/.npm-global/lib/bin/claude
-                # - ~/.npm-global/bin/claude
-                # - ~/.local/bin/claude
-                #
-                # Use stdbuf -oL to force line-buffered output for real-time streaming
-
-                # Explicitly extend PATH with common npm global paths
-                npm_paths = "$HOME/.npm-global/lib/bin:" "$HOME/.npm-global/bin:" "$HOME/.local/bin"
-                path_setup = f'export PATH="{npm_paths}:$PATH"'
-
-                # Note: We don't use stdbuf with Claude CLI as it can cause issues.
-                # Claude CLI is a Node.js app that handles its own buffering.
-                # Force non-interactive mode with CI=true, TERM=dumb, and explicit /dev/null stdin.
-                # The --print flag ensures output even in non-interactive mode.
-                env_setup = "export CI=true TERM=dumb FORCE_COLOR=0"
-                if wsl_working_dir:
-                    cmd = [
-                        "wsl.exe",
-                        "bash",
-                        "-lc",
-                        f'{path_setup}; cd "{wsl_working_dir}" && '
-                        f'{env_setup}; claude -p "{escaped_prompt}" '
-                        f"--output-format text --permission-mode bypassPermissions --print < /dev/null 2>&1",
-                    ]
-                else:
-                    cmd = [
-                        "wsl.exe",
-                        "bash",
-                        "-lc",
-                        f'{path_setup}; {env_setup}; claude -p "{escaped_prompt}" '
-                        f"--output-format text --permission-mode bypassPermissions --print < /dev/null 2>&1",
-                    ]
-            else:
-                # On Unix, invoke Claude directly with stdbuf for line-buffered output
-                cmd = [
-                    "stdbuf",
-                    "-oL",
-                    "claude",
-                    "-p",
-                    prompt_text,
-                    "--output-format",
-                    "text",
-                    "--permission-mode",
-                    "bypassPermissions",
-                ]
-
-            logger.info(f"Executing command: {cmd}")
-
-            # On Windows, when calling wsl.exe, there are known issues with
-            # stdout buffering across the Windows-WSL boundary. The subprocess
-            # can hang indefinitely unless we:
-            # 1. Use CREATE_NEW_CONSOLE with STARTUPINFO SW_HIDE for hidden window
-            # 2. Redirect stdin/stdout/stderr to DEVNULL
-            # 3. Capture output via a temp file that WSL writes to
-            # 4. Use a completion marker to detect when claude finishes
-            if system == "Windows":
-                # Create a temp file for output
-                output_file = tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".txt", delete=False, encoding="utf-8"
-                )
-                output_file_path = output_file.name
-                output_file.close()
-
-                # Modify command to redirect output to file
-                wsl_output_path = self._to_wsl_path(output_file_path)
-
-                # Build a command that writes to the temp file with completion marker
-                original_cmd_str = cmd[3]  # The bash -lc argument
-
-                # Remove the 2>&1 at the end and redirect to file instead
-                modified_cmd_str = original_cmd_str.replace(" 2>&1", "")
-                modified_cmd_str += f' >> "{wsl_output_path}" 2>&1'
-
-                # Add completion marker at the end
-                modified_cmd_str += f'; echo "___QONTINUI_DONE_$$___" >> "{wsl_output_path}"'
-
-                modified_cmd = [
-                    "wsl.exe",
-                    "bash",
-                    "-lc",
-                    modified_cmd_str,
-                ]
-
-                # WSL needs its own console to run properly when spawned from a
-                # process without a console (like a Tauri-spawned Python bridge).
-                # CREATE_NEW_CONSOLE gives WSL a console, and we use STARTUPINFO
-                # with SW_HIDE to make that console window hidden.
-                creationflags = subprocess.CREATE_NEW_CONSOLE
-
-                # Use STARTUPINFO to hide the console window
-                startupinfo = subprocess.STARTUPINFO()
-                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = subprocess.SW_HIDE
-
-                process = subprocess.Popen(
-                    modified_cmd,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    stdin=subprocess.DEVNULL,
-                    creationflags=creationflags,
-                    startupinfo=startupinfo,
-                )
-                logger.info(f"Started Claude analysis process (pid: {process.pid})")
-            else:
-                output_file_path = None
-                process = subprocess.Popen(  # type: ignore[assignment]
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,  # Merge stderr into stdout for unified streaming
-                    text=True,
-                    bufsize=1,  # Line buffered
-                    cwd=working_dir,
-                )
-                logger.info(f"Started Claude analysis process (pid: {process.pid})")
-
-            # Stream output in real-time
-            stdout_lines: list[str] = []
-            try:
-                import time as time_module
-
-                start_time = time_module.time()
-                line_count = 0
-
-                if system == "Windows" and output_file_path:
-                    # On Windows, poll the output file for new content
-                    # The process is detached so process.poll() may return 0 immediately
-                    # We rely on the completion marker (___QONTINUI_DONE_*___) instead
-                    last_position = 0
-                    done_marker_found = False
-                    completion_marker_prefix = "___QONTINUI_DONE_"
-
-                    while not done_marker_found:
-                        # Read any new content from the file
-                        try:
-                            with open(output_file_path, encoding="utf-8", errors="replace") as f:
-                                f.seek(last_position)
-                                new_content = f.read()
-                                if new_content:
-                                    new_position = f.tell()
-                                    last_position = new_position
-
-                                    # Process line by line
-                                    for line in new_content.splitlines():
-                                        if not line:
-                                            continue
-
-                                        # Check for completion marker
-                                        if completion_marker_prefix in line:
-                                            done_marker_found = True
-                                            break
-
-                                        line_count += 1
-                                        stdout_lines.append(line)
-                                        logger.info(f"[Claude] {line}")
-
-                                        # Emit streaming event to runner
-                                        self._emit_stream_event(action, line)
-                        except FileNotFoundError:
-                            # File not created yet
-                            pass
-                        except Exception as e:
-                            logger.warning(f"Error reading output file: {e}")
-
-                        if done_marker_found:
-                            break
-
-                        # Check if process has exited
-                        poll_result = process.poll()
-                        if poll_result is not None:
-                            # Give a moment for file to flush
-                            time_module.sleep(0.3)
-                            # Read any remaining content
-                            try:
-                                with open(
-                                    output_file_path, encoding="utf-8", errors="replace"
-                                ) as f:
-                                    f.seek(last_position)
-                                    final_content = f.read()
-                                    if final_content:
-                                        for line in final_content.splitlines():
-                                            if line and completion_marker_prefix not in line:
-                                                line_count += 1
-                                                stdout_lines.append(line)
-                                                logger.info(f"[Claude] {line}")
-                                                self._emit_stream_event(action, line)
-                            except Exception as e:
-                                logger.warning(f"Error reading final content: {e}")
-                            break
-
-                        # Check timeout
-                        if time_module.time() - start_time > timeout_seconds:
-                            try:
-                                process.kill()
-                            except Exception:
-                                pass
-                            raise subprocess.TimeoutExpired(cmd, timeout_seconds)
-
-                        # Small sleep to avoid busy-waiting
-                        time_module.sleep(0.1)
-
-                    # Process completed (marker found or process exited)
-                    exit_code = process.poll() or 0
-
-                    # Clean up temp file
-                    try:
-                        os.unlink(output_file_path)
-                    except Exception:
-                        pass  # Ignore cleanup errors
-
-                else:
-                    # Unix path - use direct pipe reading
-                    if process.stdout:
-                        for line in iter(process.stdout.readline, ""):  # type: ignore[assignment]
-                            if not line:
-                                break
-
-                            line_count += 1
-                            line = line.rstrip("\n\r")  # type: ignore[assignment]
-                            stdout_lines.append(line)
-                            logger.info(f"[Claude] {line}")
-
-                            # Emit streaming event to runner
-                        self._emit_stream_event(action, line)
-
-                        # Check timeout
-                        if time_module.time() - start_time > timeout_seconds:
-                            process.kill()
-                            raise subprocess.TimeoutExpired(cmd, timeout_seconds)
-
-                    process.wait()
-                    exit_code = process.returncode
-
-            finally:
-                if process.stdout:
-                    process.stdout.close()
-
-            stdout = "\n".join(stdout_lines)
-            stderr = ""  # Already merged into stdout
-
-            logger.info(f"Claude analysis completed with exit code: {exit_code}")
-            logger.info(f"Total output lines: {len(stdout_lines)}")
+            # Stream output lines to the runner
+            if result.output:
+                for line in result.output.splitlines():
+                    logger.info(f"[{provider.name}] {line}")
+                    self._emit_stream_event(action, line)
 
             # Store output if variable specified
             if typed_config.output_variable:
-                self._store_variable(typed_config.output_variable, stdout)
+                self._store_variable(typed_config.output_variable, result.output)
 
-            # Check for errors
-            if exit_code != 0:
+            # Handle result
+            if result.success:
+                self._emit_action_success(
+                    action,
+                    {
+                        "provider": provider.name,
+                        "output_length": len(result.output) if result.output else 0,
+                        "metadata": result.metadata,
+                    },
+                )
+                return True
+            else:
+                # Analysis failed
                 if typed_config.fail_on_issues:
-                    error_msg = f"Claude analysis reported issues (exit code {exit_code})"
-                    if stderr:
-                        error_msg += f": {stderr[:200]}"
-                    logger.warning(error_msg)
-                    self._emit_action_failure(action, error_msg, {"exit_code": exit_code})
+                    error_msg = result.error or "Analysis reported issues"
+                    logger.warning(f"Analysis failed: {error_msg}")
+                    self._emit_action_failure(
+                        action, error_msg, {"provider": provider.name}
+                    )
                     return False
                 else:
                     # Log but don't fail - analysis completing is success
-                    logger.info(f"Claude analysis completed with findings (exit code {exit_code})")
-
-            self._emit_action_success(
-                action,
-                {
-                    "exit_code": exit_code,
-                    "output_length": len(stdout) if stdout else 0,
-                },
-            )
-            return True
+                    logger.info(f"Analysis completed with findings: {result.error}")
+                    self._emit_action_success(
+                        action,
+                        {
+                            "provider": provider.name,
+                            "output_length": len(result.output) if result.output else 0,
+                            "had_issues": True,
+                        },
+                    )
+                    return True
 
         except subprocess.TimeoutExpired:
-            error_msg = f"Claude analysis timed out after {timeout_seconds}s"
+            error_msg = f"Analysis timed out after {request.timeout_seconds}s"
             logger.error(error_msg)
-            self._emit_action_failure(action, error_msg, {"timeout": timeout_seconds})
+            self._emit_action_failure(
+                action, error_msg, {"timeout": request.timeout_seconds}
+            )
             return False
 
         except FileNotFoundError as e:
-            error_msg = f"Claude Code CLI not found: {e}"
+            error_msg = f"AI provider executable not found: {e}"
             logger.error(error_msg)
             self._emit_action_failure(action, error_msg)
             return False
 
         except Exception as e:
-            error_msg = f"Failed to trigger Claude analysis: {e}"
+            error_msg = f"Failed to execute analysis: {e}"
             logger.error(error_msg, exc_info=True)
             self._emit_action_failure(action, error_msg)
             return False
@@ -946,30 +772,6 @@ class ShellActionExecutor(ActionExecutorBase):
             if parent == current:
                 break
             current = parent
-
-        return None
-
-    def _find_python_bridge_path(self) -> str | None:
-        """Find the python-bridge path in the qontinui-runner.
-
-        Returns:
-            WSL path to python-bridge, or None if not found
-        """
-        # Look for the runner relative to common locations
-        possible_paths = [
-            # Relative to current directory
-            "qontinui-runner/python-bridge",
-            "../qontinui-runner/python-bridge",
-            # From project root
-        ]
-
-        project_root = self._find_project_root()
-        if project_root:
-            possible_paths.append(os.path.join(project_root, "qontinui-runner", "python-bridge"))
-
-        for path in possible_paths:
-            if os.path.exists(path):
-                return self._to_wsl_path(os.path.abspath(path))
 
         return None
 

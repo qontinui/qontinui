@@ -95,11 +95,15 @@ class ClickLocationExtractor:
             bbox_h = y2 - y1
 
             if bbox_w < self.min_size[0] or bbox_h < self.min_size[1]:
-                logger.debug(f"Region too small at ({click_x}, {click_y}): {bbox_w}x{bbox_h}")
+                logger.debug(
+                    f"Region too small at ({click_x}, {click_y}): {bbox_w}x{bbox_h}"
+                )
                 return None
 
             if bbox_w > self.max_size[0] or bbox_h > self.max_size[1]:
-                logger.debug(f"Region too large at ({click_x}, {click_y}): {bbox_w}x{bbox_h}")
+                logger.debug(
+                    f"Region too large at ({click_x}, {click_y}): {bbox_w}x{bbox_h}"
+                )
                 return None
 
             # Extract image

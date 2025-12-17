@@ -51,7 +51,9 @@ class StateTransitions:
     transition_finish: StateTransition | None = None
     """Transition executed when arriving at this state."""
 
-    action_definition_transitions: dict[int, StateTransition] = field(default_factory=dict)
+    action_definition_transitions: dict[int, StateTransition] = field(
+        default_factory=dict
+    )
     """Map of target state IDs to TaskSequence-based transitions."""
 
     transitions: list[StateTransition] = field(default_factory=list)
@@ -62,7 +64,9 @@ class StateTransitions:
     When set, the same variable in a Transition takes precedence over this one.
     Only applies to OutgoingTransitions."""
 
-    def get_transition_function_by_activated_state_id(self, to: int) -> StateTransition | None:
+    def get_transition_function_by_activated_state_id(
+        self, to: int
+    ) -> StateTransition | None:
         """Find the transition that activates a specific target state.
 
         Searches through all transitions to find one that includes the target
@@ -126,7 +130,9 @@ class StateTransitions:
             for state_id in transition.get_activate():
                 self.action_definition_transitions[state_id] = transition
 
-    def add_transition_from_function(self, transition: Callable[[], bool], *to_states: str) -> None:
+    def add_transition_from_function(
+        self, transition: Callable[[], bool], *to_states: str
+    ) -> None:
         """Convenience method to add a simple function-based transition.
 
         Creates a CodeStateTransition with the provided function and target states.
@@ -230,7 +236,9 @@ class StateTransitionsBuilder:
         self.transitions.append(code_transition)
         return self
 
-    def add_transition_object(self, transition: StateTransition) -> "StateTransitionsBuilder":
+    def add_transition_object(
+        self, transition: StateTransition
+    ) -> "StateTransitionsBuilder":
         """Add a pre-configured StateTransition.
 
         Args:
@@ -276,7 +284,9 @@ class StateTransitionsBuilder:
         self.transition_finish = transition_finish
         return self
 
-    def set_stays_visible_after_transition(self, stays_visible: bool) -> "StateTransitionsBuilder":
+    def set_stays_visible_after_transition(
+        self, stays_visible: bool
+    ) -> "StateTransitionsBuilder":
         """Set default visibility behavior for outgoing transitions.
 
         Individual transitions can override this default.
@@ -300,5 +310,7 @@ class StateTransitionsBuilder:
         state_transitions.state_name = self.state_name
         state_transitions.transition_finish = self.transition_finish
         state_transitions.transitions = self.transitions
-        state_transitions.stays_visible_after_transition = self.stays_visible_after_transition
+        state_transitions.stays_visible_after_transition = (
+            self.stays_visible_after_transition
+        )
         return state_transitions

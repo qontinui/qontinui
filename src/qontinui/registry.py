@@ -105,7 +105,9 @@ def register_image(
         >>> registry.register_image("submit_button", img, file_path="button.png", name="Submit Button")
     """
     if image_id in _image_registry:
-        logger.warning(f"Image '{image_id}' already registered - replacing with new image")
+        logger.warning(
+            f"Image '{image_id}' already registered - replacing with new image"
+        )
     _image_registry[image_id] = image
 
     # Store metadata if provided
@@ -118,7 +120,9 @@ def register_image(
     logger.debug(f"Registered image: {image_id}")
 
 
-def register_workflow(workflow_id: str, workflow: Any, workflow_name: str | None = None) -> None:
+def register_workflow(
+    workflow_id: str, workflow: Any, workflow_name: str | None = None
+) -> None:
     """Register a workflow for use by the library.
 
     This should be called by the runner after loading workflows from configuration.
@@ -248,7 +252,9 @@ def clear_images() -> None:
     logger.debug("Cleared all registered images and metadata")
 
 
-def register_workflow_definition(workflow_id: str, workflow_def: dict[str, Any]) -> None:
+def register_workflow_definition(
+    workflow_id: str, workflow_def: dict[str, Any]
+) -> None:
     """Register a full workflow definition (for graph workflows).
 
     This stores the complete workflow definition including connections, metadata, etc.
@@ -269,7 +275,9 @@ def register_workflow_definition(workflow_id: str, workflow_def: dict[str, Any])
         >>> registry.register_workflow_definition("my-workflow", workflow_def)
     """
     if workflow_id in _workflow_definitions:
-        logger.warning(f"Workflow definition '{workflow_id}' already registered - replacing")
+        logger.warning(
+            f"Workflow definition '{workflow_id}' already registered - replacing"
+        )
     _workflow_definitions[workflow_id] = workflow_def
     logger.debug(f"Registered workflow definition: {workflow_id}")
 

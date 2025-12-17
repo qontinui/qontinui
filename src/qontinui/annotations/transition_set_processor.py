@@ -74,7 +74,9 @@ class TransitionSetProcessor:
 
         # Find all transition set classes
         transition_set_classes = self._find_decorated_classes(module, is_transition_set)
-        logger.info(f"Found {len(transition_set_classes)} classes with @transition_set decorator")
+        logger.info(
+            f"Found {len(transition_set_classes)} classes with @transition_set decorator"
+        )
 
         for transition_set_class in transition_set_classes:
             # Create instance if needed
@@ -85,7 +87,9 @@ class TransitionSetProcessor:
                 )
                 continue
 
-            self._transition_set_instances[transition_set_class] = transition_set_instance
+            self._transition_set_instances[transition_set_class] = (
+                transition_set_instance
+            )
 
             # Get transition set metadata
             metadata = get_transition_set_metadata(transition_set_class)
@@ -101,14 +105,22 @@ class TransitionSetProcessor:
                 )
                 continue
 
-            target_state_names = [self._get_state_name(state) for state in target_states]
-            logger.info(f"Processing transition set for states: {', '.join(target_state_names)}")
+            target_state_names = [
+                self._get_state_name(state) for state in target_states
+            ]
+            logger.info(
+                f"Processing transition set for states: {', '.join(target_state_names)}"
+            )
 
             # Find @incoming_transition method (arrival verification)
-            incoming_transition_method = self._find_incoming_transition(transition_set_instance)
+            incoming_transition_method = self._find_incoming_transition(
+                transition_set_instance
+            )
 
             # Find all @outgoing_transition methods
-            outgoing_transitions = self._find_outgoing_transitions(transition_set_instance)
+            outgoing_transitions = self._find_outgoing_transitions(
+                transition_set_instance
+            )
 
             # Register each outgoing transition with its corresponding incoming transition
             for outgoing_method, outgoing_metadata in outgoing_transitions:
@@ -167,7 +179,9 @@ class TransitionSetProcessor:
                 logger.debug(f"Found @incoming_transition method: {name}")
                 return method
 
-        logger.warning(f"No @incoming_transition method found in {instance.__class__.__name__}")
+        logger.warning(
+            f"No @incoming_transition method found in {instance.__class__.__name__}"
+        )
         return None
 
     def _find_outgoing_transitions(self, instance: Any) -> list[tuple[Any, ...]]:
@@ -218,7 +232,9 @@ class TransitionSetProcessor:
                 target_names_str = ", ".join(target_names)
 
                 # Step 1: Execute the outgoing transition FIRST
-                logger.debug(f"Executing outgoing_transition: {source_name} -> {target_names_str}")
+                logger.debug(
+                    f"Executing outgoing_transition: {source_name} -> {target_names_str}"
+                )
                 outgoing_result = outgoing_method()
 
                 if not outgoing_result:
@@ -234,12 +250,16 @@ class TransitionSetProcessor:
                     )
 
                     # Get metadata to check if verification is required
-                    incoming_metadata = get_incoming_transition_metadata(incoming_method)
+                    incoming_metadata = get_incoming_transition_metadata(
+                        incoming_method
+                    )
 
                     incoming_result = incoming_method()
 
                     if not incoming_result:
-                        if incoming_metadata and incoming_metadata.get("required", True):
+                        if incoming_metadata and incoming_metadata.get(
+                            "required", True
+                        ):
                             logger.error(
                                 f"Required incoming_transition verification failed for {target_names_str}"
                             )
@@ -250,7 +270,9 @@ class TransitionSetProcessor:
                             )
                             # Continue anyway since it's not required
 
-                logger.debug(f"Transition successful: {source_name} -> {target_names_str}")
+                logger.debug(
+                    f"Transition successful: {source_name} -> {target_names_str}"
+                )
                 return True
 
             except (RuntimeError, ValueError, AttributeError, TypeError) as e:
@@ -287,7 +309,9 @@ class TransitionSetProcessor:
             return class_name[:-5]
         return class_name
 
-    def _find_decorated_classes(self, module: Any, predicate: Callable[..., Any]) -> list[type]:
+    def _find_decorated_classes(
+        self, module: Any, predicate: Callable[..., Any]
+    ) -> list[type]:
         """Find all classes matching the predicate.
 
         Args:

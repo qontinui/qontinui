@@ -48,7 +48,7 @@ python-dotenv = "^1.0"
 structlog = "^25.4"
 mss = "^9.0"
 prometheus-client = "^0.19"
-psutil = "^5.9"
+psutil = ">=5.9,<8.0"
 sqlalchemy = "^2.0"
 pydantic = "^2.11.9"
 croniter = "^5.0"
@@ -81,9 +81,6 @@ types-pyyaml = "^6.0.12.20250915"
 # Note: SAM3 must be installed manually (see README for instructions)
 # Poetry extras removed since SAM3 cannot be installed via poetry
 types-requests = "^2.32.4.20250913"
-
-[tool.poetry.scripts]
-brobot-converter = "qontinui.migrations.brobot_converter:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

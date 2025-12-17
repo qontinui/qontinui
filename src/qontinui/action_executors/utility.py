@@ -136,7 +136,9 @@ class UtilityActionExecutor(ActionExecutorBase):
                 action_id=action.id,
             )
 
-    def _execute_screenshot(self, action: Action, typed_config: ScreenshotActionConfig) -> bool:
+    def _execute_screenshot(
+        self, action: Action, typed_config: ScreenshotActionConfig
+    ) -> bool:
         """Execute SCREENSHOT action - capture screen or region to file.
 
         Args:
@@ -167,7 +169,9 @@ class UtilityActionExecutor(ActionExecutorBase):
                 if typed_config.save_to_file.directory:
                     import os
 
-                    filename = os.path.join(typed_config.save_to_file.directory, filename)
+                    filename = os.path.join(
+                        typed_config.save_to_file.directory, filename
+                    )
 
             # Check if region is specified
             if typed_config.region:
@@ -200,7 +204,9 @@ class UtilityActionExecutor(ActionExecutorBase):
                 # Capture full screen
                 self.context.screen.save(filename)
 
-                self._emit_action_success(action, {"filename": filename, "fullscreen": True})
+                self._emit_action_success(
+                    action, {"filename": filename, "fullscreen": True}
+                )
 
             logger.info(f"Screenshot saved to {filename}")
             return True

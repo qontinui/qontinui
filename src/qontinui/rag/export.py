@@ -151,7 +151,9 @@ class ConfigExportPipeline:
             ExportResult with paths and statistics
         """
         try:
-            logger.info("starting_config_export", project_id=project_id, force=force_reembed)
+            logger.info(
+                "starting_config_export", project_id=project_id, force=force_reembed
+            )
 
             # Create project directory
             project_dir = self.config_dir / project_id
@@ -243,7 +245,8 @@ class ConfigExportPipeline:
             "bounding_box": element.get("bounding_box") or element.get("bbox"),
             "ocr_text": element.get("ocr_text") or element.get("text"),
             "element_type": element.get("element_type") or element.get("type"),
-            "screenshot_id": element.get("source_screenshot_id") or element.get("screenshot_path"),
+            "screenshot_id": element.get("source_screenshot_id")
+            or element.get("screenshot_path"),
         }
         hash_str = json.dumps(hashable, sort_keys=True)
         return hashlib.sha256(hash_str.encode()).hexdigest()
@@ -306,7 +309,9 @@ class ConfigExportPipeline:
 
         # Batch image embeddings
         images = []
-        screenshots_dir = self.config_dir / config.get("project_id", "unknown") / "screenshots"
+        screenshots_dir = (
+            self.config_dir / config.get("project_id", "unknown") / "screenshots"
+        )
 
         for element in elements:
             try:
@@ -379,7 +384,9 @@ class ConfigExportPipeline:
             bbox = BoundingBox(x=0, y=0, width=0, height=0)
 
         # Parse element type
-        element_type_str = element.get("element_type") or element.get("type") or "unknown"
+        element_type_str = (
+            element.get("element_type") or element.get("type") or "unknown"
+        )
         try:
             element_type = ElementType(element_type_str)
         except ValueError:
@@ -496,7 +503,9 @@ class ConfigExportPipeline:
             raise ValueError(f"Invalid bbox: {bbox}")
 
         # Get screenshot path
-        screenshot_path = element.get("screenshot_path") or element.get("source_screenshot_id")
+        screenshot_path = element.get("screenshot_path") or element.get(
+            "source_screenshot_id"
+        )
         if not screenshot_path:
             raise ValueError("No screenshot path in element")
 

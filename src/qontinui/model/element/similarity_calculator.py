@@ -71,12 +71,18 @@ class SimilarityCalculator:
             mask2 = np.ones(img2.shape[:2], dtype=np.float32)
 
         # Apply masks and calculate difference
-        masked_img1, masked_img2, combined_mask = self._apply_masks(img1, mask1, img2, mask2)
+        masked_img1, masked_img2, combined_mask = self._apply_masks(
+            img1, mask1, img2, mask2
+        )
 
         # Calculate weighted difference
-        return self._calculate_weighted_difference(masked_img1, masked_img2, combined_mask)
+        return self._calculate_weighted_difference(
+            masked_img1, masked_img2, combined_mask
+        )
 
-    def _validate_shapes(self, img1: np.ndarray[Any, Any], img2: np.ndarray[Any, Any]) -> bool:
+    def _validate_shapes(
+        self, img1: np.ndarray[Any, Any], img2: np.ndarray[Any, Any]
+    ) -> bool:
         """
         Validate that two images have compatible shapes.
 

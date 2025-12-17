@@ -203,7 +203,9 @@ class VisualComparator:
         elif algorithm == ComparisonAlgorithm.PIXEL_DIFF:
             return self.compare_pixel_diff(baseline, screenshot, threshold, **kwargs)
         elif algorithm == ComparisonAlgorithm.PERCEPTUAL_HASH:
-            return self.compare_perceptual_hash(baseline, screenshot, threshold, **kwargs)
+            return self.compare_perceptual_hash(
+                baseline, screenshot, threshold, **kwargs
+            )
         else:
             return ComparisonResult(
                 similarity_score=0.0,
@@ -348,7 +350,9 @@ class VisualComparator:
             total_pixels = baseline.shape[0] * baseline.shape[1]
             diff_pixels = np.count_nonzero(diff_mask)
             matching_pixels = total_pixels - diff_pixels
-            similarity_score = matching_pixels / total_pixels if total_pixels > 0 else 0.0
+            similarity_score = (
+                matching_pixels / total_pixels if total_pixels > 0 else 0.0
+            )
 
             # Extract diff regions
             diff_regions = self._extract_diff_regions(diff_mask)
@@ -529,7 +533,9 @@ class VisualComparator:
             # Ensure diff_mask matches output dimensions
             if diff_mask.shape[:2] != output.shape[:2]:
                 diff_mask = cv2.resize(
-                    diff_mask, (output.shape[1], output.shape[0]), interpolation=cv2.INTER_NEAREST
+                    diff_mask,
+                    (output.shape[1], output.shape[0]),
+                    interpolation=cv2.INTER_NEAREST,
                 )
 
             # Create colored overlay
@@ -537,10 +543,14 @@ class VisualComparator:
             overlay[diff_mask > 0] = highlight_color
 
             # Blend with original
-            cv2.addWeighted(overlay, overlay_alpha, output, 1 - overlay_alpha, 0, output)
+            cv2.addWeighted(
+                overlay, overlay_alpha, output, 1 - overlay_alpha, 0, output
+            )
 
             # Draw contours around diff regions for clarity
-            contours, _ = cv2.findContours(diff_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                diff_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
             cv2.drawContours(output, contours, -1, highlight_color, 2)
 
         # Convert to PNG bytes
@@ -600,7 +610,9 @@ class VisualComparator:
             # BGR to grayscale
             return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    def _resize_to_match(self, img1: np.ndarray, img2: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _resize_to_match(
+        self, img1: np.ndarray, img2: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Resize images to match dimensions (uses larger dimensions)."""
         h1, w1 = img1.shape[:2]
         h2, w2 = img2.shape[:2]
@@ -613,9 +625,13 @@ class VisualComparator:
         target_w = max(w1, w2)
 
         if h1 != target_h or w1 != target_w:
-            img1 = cv2.resize(img1, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+            img1 = cv2.resize(
+                img1, (target_w, target_h), interpolation=cv2.INTER_LINEAR
+            )
         if h2 != target_h or w2 != target_w:
-            img2 = cv2.resize(img2, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+            img2 = cv2.resize(
+                img2, (target_w, target_h), interpolation=cv2.INTER_LINEAR
+            )
 
         return img1, img2
 
@@ -635,7 +651,9 @@ class VisualComparator:
         else:
             raise ValueError(f"Unsupported image format: {image.shape}")
 
-    def _extract_diff_regions(self, diff_mask: np.ndarray, min_area: int = 100) -> list[DiffRegion]:
+    def _extract_diff_regions(
+        self, diff_mask: np.ndarray, min_area: int = 100
+    ) -> list[DiffRegion]:
         """Extract bounding box regions from diff mask.
 
         Args:
@@ -649,7 +667,9 @@ class VisualComparator:
             return []
 
         # Find contours of diff areas
-        contours, _ = cv2.findContours(diff_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            diff_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         regions = []
         for contour in contours:

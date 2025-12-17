@@ -55,7 +55,9 @@ class UnifiedInputController:
             button=button if isinstance(button, MouseButton) else MouseButton[button.upper()]  # type: ignore[arg-type]
         )
 
-    def click_at(self, x: int, y: int, button: MouseButton | str, clicks: int = 1) -> None:
+    def click_at(
+        self, x: int, y: int, button: MouseButton | str, clicks: int = 1
+    ) -> None:
         """Click at coordinates."""
         self._mouse.mouse_click(
             x, y, button if isinstance(button, MouseButton) else MouseButton[button.upper()], clicks  # type: ignore[arg-type]
@@ -200,7 +202,9 @@ class PureActions:
         except Exception as e:
             return ActionResult(success=False, error=str(e))
 
-    def mouse_scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> ActionResult:
+    def mouse_scroll(
+        self, clicks: int, x: int | None = None, y: int | None = None
+    ) -> ActionResult:
         """Scroll mouse wheel.
 
         Args:
@@ -328,7 +332,9 @@ class PureActions:
         except Exception as e:
             return ActionResult(success=False, error=str(e))
 
-    def screenshot(self, region: tuple[int, int, int, int] | None = None) -> ActionResult:
+    def screenshot(
+        self, region: tuple[int, int, int, int] | None = None
+    ) -> ActionResult:
         """Take screenshot.
 
         Args:

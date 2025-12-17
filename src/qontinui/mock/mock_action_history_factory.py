@@ -336,7 +336,9 @@ class MockActionHistoryBuilder:
                 matches.append(match)
 
             # Generate duration
-            duration = random.uniform(self._min_duration / 1000.0, self._max_duration / 1000.0)
+            duration = random.uniform(
+                self._min_duration / 1000.0, self._max_duration / 1000.0
+            )
 
             # Create record
             record = ActionRecord(

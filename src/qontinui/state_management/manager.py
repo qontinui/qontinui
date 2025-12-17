@@ -120,7 +120,9 @@ class QontinuiStateManager:
             after=self._create_after_transition_callback(transition),
         )
 
-        logger.info(f"Added transition: {transition.from_state} -> {transition.to_state}")
+        logger.info(
+            f"Added transition: {transition.from_state} -> {transition.to_state}"
+        )
 
     def activate_state(self, state_name: str, evidence_score: float):
         """Activate a state based on evidence score.
@@ -143,15 +145,21 @@ class QontinuiStateManager:
         if self.state_evidence[state_name] > self.activation_threshold:
             if state_name not in self.active_states:
                 self.active_states.add(state_name)
-                self.activation_history.append((state_name, evidence_score, datetime.now()))
+                self.activation_history.append(
+                    (state_name, evidence_score, datetime.now())
+                )
 
                 # Trigger state machine transition if possible
                 try:
                     self.machine.set_state(state_name)
-                    logger.info(f"Activated state: {state_name} (evidence: {evidence_score:.2f})")
+                    logger.info(
+                        f"Activated state: {state_name} (evidence: {evidence_score:.2f})"
+                    )
                 except Exception as e:
                     # State machine transition failed, but state is still active
-                    logger.debug(f"State {state_name} activated without machine transition: {e}")
+                    logger.debug(
+                        f"State {state_name} activated without machine transition: {e}"
+                    )
 
                 # Execute enter callbacks
                 self._execute_callbacks(self.on_state_enter, state_name)
@@ -193,7 +201,9 @@ class QontinuiStateManager:
             ):
                 self.deactivate_state(state_name)
 
-    def _calculate_state_evidence(self, state: State, current_elements: list[Element]) -> float:
+    def _calculate_state_evidence(
+        self, state: State, current_elements: list[Element]
+    ) -> float:
         """Calculate evidence score for a state.
 
         Args:
@@ -215,7 +225,9 @@ class QontinuiStateManager:
 
             for current_elem in current_elements:
                 # Calculate similarity (simple bbox overlap for now)
-                similarity = self._calculate_element_similarity(state_elem, current_elem)
+                similarity = self._calculate_element_similarity(
+                    state_elem, current_elem
+                )
                 best_match = max(best_match, similarity)
 
             if best_match > 0.5:  # Threshold for considering a match
@@ -387,7 +399,9 @@ class QontinuiStateManager:
 
         return conditions if conditions else None
 
-    def _create_before_transition_callback(self, transition: Transition) -> Callable[..., Any]:
+    def _create_before_transition_callback(
+        self, transition: Transition
+    ) -> Callable[..., Any]:
         """Create before-transition callback.
 
         Args:
@@ -398,11 +412,15 @@ class QontinuiStateManager:
         """
 
         def callback(event):
-            logger.debug(f"Transitioning: {transition.from_state} -> {transition.to_state}")
+            logger.debug(
+                f"Transitioning: {transition.from_state} -> {transition.to_state}"
+            )
 
         return callback
 
-    def _create_after_transition_callback(self, transition: Transition) -> Callable[..., Any]:
+    def _create_after_transition_callback(
+        self, transition: Transition
+    ) -> Callable[..., Any]:
         """Create after-transition callback.
 
         Args:
@@ -413,7 +431,9 @@ class QontinuiStateManager:
         """
 
         def callback(event):
-            logger.debug(f"Transitioned: {transition.from_state} -> {transition.to_state}")
+            logger.debug(
+                f"Transitioned: {transition.from_state} -> {transition.to_state}"
+            )
 
         return callback
 
@@ -466,6 +486,8 @@ class QontinuiStateManager:
             lines.append(f"[{active}] {state_name}")
 
             for transition in state.transitions:
-                lines.append(f"    -> {transition.to_state} ({transition.action_type.value})")
+                lines.append(
+                    f"    -> {transition.to_state} ({transition.action_type.value})"
+                )
 
         return "\n".join(lines)

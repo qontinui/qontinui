@@ -36,7 +36,9 @@ class StateImage:
 
     # Search configuration
     _search_region: Region | None = None
-    _search_regions: SearchRegions | None = None  # SearchRegions associated with this StateImage
+    _search_regions: SearchRegions | None = (
+        None  # SearchRegions associated with this StateImage
+    )
 
     # Similarity threshold for this state image
     #

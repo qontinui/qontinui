@@ -168,7 +168,9 @@ class MonitorManager:
             self.primary_monitor_index = self._detect_primary_monitor()
 
         except Exception as e:
-            logger.error(f"Error during monitor initialization: {e}. Creating default monitor.")
+            logger.error(
+                f"Error during monitor initialization: {e}. Creating default monitor."
+            )
             info = MonitorInfo(
                 index=0, x=0, y=0, width=1920, height=1080, device_id="error-default"
             )
@@ -194,7 +196,9 @@ class MonitorManager:
         if operation_name and operation_name in self.operation_monitor_map:
             monitor_index = self.operation_monitor_map[operation_name]
             if self.properties and self.properties.monitor.log_monitor_info:
-                logger.debug(f"Operation '{operation_name}' assigned to monitor {monitor_index}")
+                logger.debug(
+                    f"Operation '{operation_name}' assigned to monitor {monitor_index}"
+                )
         elif monitor_index is None:
             # Use default monitor from configuration or primary
             if self.properties and self.properties.monitor.default_screen_index >= 0:
@@ -206,13 +210,17 @@ class MonitorManager:
                 monitor_index = 0
 
         if not self.is_valid_monitor_index(monitor_index):
-            logger.warning(f"Invalid monitor index: {monitor_index}. Using primary monitor.")
+            logger.warning(
+                f"Invalid monitor index: {monitor_index}. Using primary monitor."
+            )
             monitor_index = self.primary_monitor_index
 
         if self.properties and self.properties.monitor.log_monitor_info:
             info = self.monitor_cache.get(monitor_index)
             if info:
-                logger.debug(f"Using monitor {monitor_index}: {info.device_id} for operation")
+                logger.debug(
+                    f"Using monitor {monitor_index}: {info.device_id} for operation"
+                )
 
         # Return a Screen-like object (would need actual implementation)
         # For now, return None to indicate we're not using SikuliX screens
@@ -289,7 +297,9 @@ class MonitorManager:
         """
         if self.is_valid_monitor_index(monitor_index):
             self.operation_monitor_map[operation_name] = monitor_index
-            logger.info(f"Assigned operation '{operation_name}' to monitor {monitor_index}")
+            logger.info(
+                f"Assigned operation '{operation_name}' to monitor {monitor_index}"
+            )
         else:
             logger.error(
                 f"Cannot assign operation '{operation_name}' to invalid monitor index: "

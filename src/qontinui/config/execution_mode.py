@@ -78,7 +78,9 @@ class ExecutionModeConfig:
         """
         # Screenshots take precedence (realistic testing wins)
         if self.screenshot_dir and os.path.exists(self.screenshot_dir):
-            logger.debug(f"Screenshot directory exists: {self.screenshot_dir}, not using mock mode")
+            logger.debug(
+                f"Screenshot directory exists: {self.screenshot_dir}, not using mock mode"
+            )
             return False
 
         is_mock = self.mode == MockMode.MOCK
@@ -129,7 +131,9 @@ class ExecutionModeConfig:
         try:
             mode = MockMode(mode_str)
         except ValueError:
-            logger.warning(f"Invalid QONTINUI_MOCK_MODE: {mode_str}, defaulting to REAL")
+            logger.warning(
+                f"Invalid QONTINUI_MOCK_MODE: {mode_str}, defaulting to REAL"
+            )
             mode = MockMode.REAL
 
         screenshot_dir = os.getenv("QONTINUI_SCREENSHOT_DIR")

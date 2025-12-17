@@ -179,11 +179,14 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
             Dictionary mapping screenshot index to detected regions
         """
         # Create consecutive pairs
-        pairs = [(screenshots[i], screenshots[i + 1]) for i in range(len(screenshots) - 1)]
+        pairs = [
+            (screenshots[i], screenshots[i + 1]) for i in range(len(screenshots) - 1)
+        ]
 
         if len(pairs) < 10:
             raise ValueError(
-                f"Need at least 10 screenshot pairs (11 screenshots), " f"got {len(pairs)} pairs"
+                f"Need at least 10 screenshot pairs (11 screenshots), "
+                f"got {len(pairs)} pairs"
             )
 
         # Detect regions
@@ -413,7 +416,9 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
             Visualization image with heatmap and bounding boxes
         """
         # Create heatmap from consistency map
-        heatmap = cv2.applyColorMap((consistency_map * 255).astype(np.uint8), cv2.COLORMAP_JET)
+        heatmap = cv2.applyColorMap(
+            (consistency_map * 255).astype(np.uint8), cv2.COLORMAP_JET
+        )
 
         # Convert screenshot to BGR if grayscale
         if len(screenshot.shape) == 2:
@@ -423,7 +428,9 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
 
         # Resize heatmap if needed
         if heatmap.shape[:2] != screenshot_bgr.shape[:2]:
-            heatmap = cv2.resize(heatmap, (screenshot_bgr.shape[1], screenshot_bgr.shape[0]))
+            heatmap = cv2.resize(
+                heatmap, (screenshot_bgr.shape[1], screenshot_bgr.shape[0])
+            )
 
         # Overlay heatmap on screenshot (60% screenshot, 40% heatmap)
         overlay = cv2.addWeighted(screenshot_bgr, 0.6, heatmap, 0.4, 0)

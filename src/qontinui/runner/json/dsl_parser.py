@@ -76,7 +76,9 @@ class DSLParser:
 
         if "automationFunctions" in data:
             for func_data in data["automationFunctions"]:
-                instruction_set.automation_functions.append(self.parse_business_task(func_data))
+                instruction_set.automation_functions.append(
+                    self.parse_business_task(func_data)
+                )
 
         return instruction_set
 
@@ -171,12 +173,16 @@ class DSLValidator:
         param_names = set()
         for param in task.parameters:
             if param.name in param_names:
-                logger.error(f"Duplicate parameter name '{param.name}' in task '{task.name}'")
+                logger.error(
+                    f"Duplicate parameter name '{param.name}' in task '{task.name}'"
+                )
                 return False
             param_names.add(param.name)
 
             if not param.type:
-                logger.error(f"Parameter '{param.name}' missing type in task '{task.name}'")
+                logger.error(
+                    f"Parameter '{param.name}' missing type in task '{task.name}'"
+                )
                 return False
 
         return True

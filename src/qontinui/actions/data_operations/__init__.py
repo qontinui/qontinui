@@ -71,7 +71,9 @@ class DataOperationsExecutor:
         coercer = TypeCoercer()
 
         # Initialize specialized executors
-        self._variable_executor = VariableExecutor(self.variable_context, evaluator, coercer)
+        self._variable_executor = VariableExecutor(
+            self.variable_context, evaluator, coercer
+        )
         self._collection_executor = CollectionExecutor(self.variable_context, evaluator)
         self._string_executor = StringExecutor(self.variable_context)
         self._math_executor = MathExecutor(self.variable_context, evaluator)
@@ -137,7 +139,9 @@ class DataOperationsExecutor:
 
             if config.target == "variable":
                 if not config.variable_name:
-                    raise ValueError("SORT with target='variable' requires 'variable_name'")
+                    raise ValueError(
+                        "SORT with target='variable' requires 'variable_name'"
+                    )
 
                 collection = self.variable_context.get(config.variable_name)
                 if collection is None:
@@ -215,7 +219,9 @@ class DataOperationsExecutor:
                 raise ValueError(f"Variable '{config.variable_name}' not found")
 
             if not isinstance(collection, list | tuple):
-                raise ValueError(f"Cannot filter non-collection type: {type(collection)}")
+                raise ValueError(
+                    f"Cannot filter non-collection type: {type(collection)}"
+                )
 
             # Perform filter using CollectionExecutor
             filtered_collection = self._collection_executor.filter_collection(
@@ -269,7 +275,9 @@ class DataOperationsExecutor:
                 raise ValueError(f"Variable '{config.variable_name}' not found")
 
             if not isinstance(collection, list | tuple):
-                raise ValueError(f"Cannot map over non-collection type: {type(collection)}")
+                raise ValueError(
+                    f"Cannot map over non-collection type: {type(collection)}"
+                )
 
             # Perform map using CollectionExecutor
             mapped_collection = self._collection_executor.map_collection(
@@ -320,7 +328,9 @@ class DataOperationsExecutor:
                 raise ValueError(f"Variable '{config.variable_name}' not found")
 
             if not isinstance(collection, list | tuple):
-                raise ValueError(f"Cannot reduce non-collection type: {type(collection)}")
+                raise ValueError(
+                    f"Cannot reduce non-collection type: {type(collection)}"
+                )
 
             # Perform reduce using CollectionExecutor
             reduced_value = self._collection_executor.reduce_collection(
@@ -342,7 +352,9 @@ class DataOperationsExecutor:
                 "item_count": len(collection),
             }
 
-            logger.info(f"Successfully reduced {len(collection)} items to {reduced_value}")
+            logger.info(
+                f"Successfully reduced {len(collection)} items to {reduced_value}"
+            )
             return result
 
         except (ValueError, TypeError, AttributeError) as e:
@@ -463,7 +475,9 @@ class DataOperationsExecutor:
                 "operation": config.operation,
             }
 
-            logger.info(f"Math operation completed: {config.operation} = {result_value}")
+            logger.info(
+                f"Math operation completed: {config.operation} = {result_value}"
+            )
             return result
 
         except (ValueError, TypeError, AttributeError, ZeroDivisionError) as e:

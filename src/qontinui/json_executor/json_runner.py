@@ -45,7 +45,9 @@ class JSONRunner:
         self.parser = ConfigParser()
         self.config: QontinuiConfig | None = None
         self.state_executor: StateExecutor | None = None
-        self.scheduler_executor: SchedulerExecutor | None = None  # State-aware scheduler
+        self.scheduler_executor: SchedulerExecutor | None = (
+            None  # State-aware scheduler
+        )
         self.monitor_index: int = 0  # Default to primary monitor
         self.monitor_manager = MonitorManager()
         self._should_stop = False  # Flag to request execution stop
@@ -111,7 +113,9 @@ class JSONRunner:
 
                 import threading
 
-                cleanup_thread = threading.Thread(target=cleanup_old_config, daemon=True)
+                cleanup_thread = threading.Thread(
+                    target=cleanup_old_config, daemon=True
+                )
                 cleanup_thread.start()
 
             print(f"Loading configuration from: {path}")
@@ -134,7 +138,9 @@ class JSONRunner:
 
             # Initialize scheduler if schedules exist
             if self.config.schedules:
-                print(f"Initializing scheduler with {len(self.config.schedules)} schedules...")
+                print(
+                    f"Initializing scheduler with {len(self.config.schedules)} schedules..."
+                )
                 self.scheduler_executor = SchedulerExecutor(
                     runner=self,
                     state_executor=self.state_executor,
@@ -268,7 +274,9 @@ class JSONRunner:
             # Configure monitor manager to use specified monitor
             self._configure_monitor(monitor_index)
         else:
-            print("[PYTHON_RUNNER] run() received monitor_index=None, using default monitor 0")
+            print(
+                "[PYTHON_RUNNER] run() received monitor_index=None, using default monitor 0"
+            )
 
         # Reset stop flag before starting
         self._should_stop = False
@@ -343,11 +351,15 @@ class JSONRunner:
         Args:
             monitor_index: Index of monitor to use (0-based)
         """
-        print(f"[PYTHON_RUNNER] _configure_monitor() called with monitor_index={monitor_index}")
+        print(
+            f"[PYTHON_RUNNER] _configure_monitor() called with monitor_index={monitor_index}"
+        )
         try:
             # Set the primary monitor index for all operations
             self.monitor_manager.primary_monitor_index = monitor_index
-            print(f"[PYTHON_RUNNER] Set monitor_manager.primary_monitor_index = {monitor_index}")
+            print(
+                f"[PYTHON_RUNNER] Set monitor_manager.primary_monitor_index = {monitor_index}"
+            )
 
             # Get monitor info to verify it exists
             monitor_info = self.monitor_manager.get_monitor_info(monitor_index)
@@ -366,7 +378,9 @@ class JSONRunner:
                         offset_y=monitor_info.y,
                     )
             else:
-                print(f"Warning: Monitor {monitor_index} not found, using default monitor")
+                print(
+                    f"Warning: Monitor {monitor_index} not found, using default monitor"
+                )
                 self.monitor_manager.primary_monitor_index = 0
         except (RuntimeError, IndexError, ValueError) as e:
             print(f"Error configuring monitor {monitor_index}: {e}")
@@ -442,7 +456,8 @@ class JSONRunner:
 
         # Count transitions from all states
         transition_count = sum(
-            len(s.outgoing_transitions) + len(s.incoming_transitions) for s in self.config.states
+            len(s.outgoing_transitions) + len(s.incoming_transitions)
+            for s in self.config.states
         )
 
         summary = {
@@ -454,7 +469,9 @@ class JSONRunner:
             "transitions": transition_count,
             "images": len(self.config.images),
             "schedules": len(self.config.schedules),
-            "current_state": (self.state_executor.current_state if self.state_executor else None),
+            "current_state": (
+                self.state_executor.current_state if self.state_executor else None
+            ),
             "active_states": (
                 list(self.state_executor.active_states) if self.state_executor else []
             ),

@@ -88,7 +88,9 @@ class MouseOperations(IMouseController):
             # Debug: Verify actual position after move
             import datetime
 
-            debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
+            debug_log_path = (
+                r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
+            )
             try:
                 actual_pos = self._mouse.position
                 with open(debug_log_path, "a") as f:
@@ -192,11 +194,15 @@ class MouseOperations(IMouseController):
         # Debug logging to file for troubleshooting
         import datetime
 
-        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
+        debug_log_path = (
+            r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
+        )
         try:
             with open(debug_log_path, "a") as f:
                 ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}] HAL mouse_down() called: x={x}, y={y}, button={button}\n")
+                f.write(
+                    f"[{ts}] HAL mouse_down() called: x={x}, y={y}, button={button}\n"
+                )
         except Exception:
             pass
 
@@ -223,7 +229,9 @@ class MouseOperations(IMouseController):
             try:
                 with open(debug_log_path, "a") as f:
                     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] HAL mouse_down() pynput press completed successfully\n")
+                    f.write(
+                        f"[{ts}] HAL mouse_down() pynput press completed successfully\n"
+                    )
             except Exception:
                 pass
 
@@ -235,7 +243,9 @@ class MouseOperations(IMouseController):
             try:
                 with open(debug_log_path, "a") as f:
                     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] HAL mouse_down() EXCEPTION: {type(e).__name__}: {e}\n")
+                    f.write(
+                        f"[{ts}] HAL mouse_down() EXCEPTION: {type(e).__name__}: {e}\n"
+                    )
             except Exception:
                 pass
             logger.error(f"Mouse down failed: {e}")
@@ -263,11 +273,15 @@ class MouseOperations(IMouseController):
         # Debug logging to file for troubleshooting
         import datetime
 
-        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
+        debug_log_path = (
+            r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
+        )
         try:
             with open(debug_log_path, "a") as f:
                 ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}] HAL mouse_up() called: x={x}, y={y}, button={button}\n")
+                f.write(
+                    f"[{ts}] HAL mouse_up() called: x={x}, y={y}, button={button}\n"
+                )
         except Exception:
             pass
 
@@ -294,7 +308,9 @@ class MouseOperations(IMouseController):
             try:
                 with open(debug_log_path, "a") as f:
                     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] HAL mouse_up() pynput release completed successfully\n")
+                    f.write(
+                        f"[{ts}] HAL mouse_up() pynput release completed successfully\n"
+                    )
             except Exception:
                 pass
 
@@ -306,7 +322,9 @@ class MouseOperations(IMouseController):
             try:
                 with open(debug_log_path, "a") as f:
                     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] HAL mouse_up() EXCEPTION: {type(e).__name__}: {e}\n")
+                    f.write(
+                        f"[{ts}] HAL mouse_up() EXCEPTION: {type(e).__name__}: {e}\n"
+                    )
             except Exception:
                 pass
             logger.error(f"Mouse up failed: {e}")
@@ -353,7 +371,9 @@ class MouseOperations(IMouseController):
             TimeWrapper().wait(seconds=0.1)  # Small delay before release
             self._mouse.release(pynput_button)
 
-            logger.debug(f"Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+            logger.debug(
+                f"Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})"
+            )
             return True
 
         except (OSError, RuntimeError, ValueError, TypeError) as e:
@@ -366,7 +386,9 @@ class MouseOperations(IMouseController):
                 pass
             raise InputControlError("mouse_drag", str(e)) from e
 
-    def mouse_scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:
+    def mouse_scroll(
+        self, clicks: int, x: int | None = None, y: int | None = None
+    ) -> bool:
         """Scroll mouse wheel.
 
         Args:
@@ -424,7 +446,9 @@ class MouseOperations(IMouseController):
         """
         return self.mouse_click(x, y, button, clicks=1)
 
-    def double_click_at(self, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
+    def double_click_at(
+        self, x: int, y: int, button: MouseButton = MouseButton.LEFT
+    ) -> bool:
         """Double click at specific coordinates.
 
         Args:
@@ -452,7 +476,9 @@ class MouseOperations(IMouseController):
         Returns:
             True if successful
         """
-        return self.mouse_drag(start_x, start_y, end_x, end_y, MouseButton.LEFT, duration)
+        return self.mouse_drag(
+            start_x, start_y, end_x, end_y, MouseButton.LEFT, duration
+        )
 
     def move_mouse(self, x: int, y: int, duration: float = 0.0) -> bool:
         """Move mouse to position (alias for mouse_move).

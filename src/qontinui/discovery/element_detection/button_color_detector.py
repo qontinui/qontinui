@@ -92,7 +92,9 @@ class ButtonColorDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Perform color-based button detection"""
-        logger.info(f"Running button color detection on {len(input_data.screenshots)} screenshots")
+        logger.info(
+            f"Running button color detection on {len(input_data.screenshots)} screenshots"
+        )
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 
@@ -105,10 +107,14 @@ class ButtonColorDetector(BaseAnalyzer):
         for screenshot_idx, (img_gray, img_color) in enumerate(
             zip(images_gray, images_color, strict=False)
         ):
-            elements = await self._analyze_screenshot(img_gray, img_color, screenshot_idx, params)
+            elements = await self._analyze_screenshot(
+                img_gray, img_color, screenshot_idx, params
+            )
             all_elements.extend(elements)
 
-        logger.info(f"Detected {len(all_elements)} button candidates using color analysis")
+        logger.info(
+            f"Detected {len(all_elements)} button candidates using color analysis"
+        )
 
         return AnalysisResult(
             analyzer_type=self.analysis_type,
@@ -136,7 +142,9 @@ class ButtonColorDetector(BaseAnalyzer):
         images = []
         for data in screenshot_data:
             img = Image.open(BytesIO(data)).convert("RGB")
-            images.append(cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR))
+            images.append(
+                cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR)
+            )
         return images
 
     async def _analyze_screenshot(
@@ -160,7 +168,9 @@ class ButtonColorDetector(BaseAnalyzer):
             cluster_mask = (labels == cluster_id).astype(np.uint8) * 255
 
             # Find contours in this cluster
-            contours, _ = cv2.findContours(cluster_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                cluster_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
 
             for contour in contours:
                 # Get bounding rectangle
@@ -177,7 +187,11 @@ class ButtonColorDetector(BaseAnalyzer):
 
                 # Step 4: Filter by aspect ratio
                 aspect_ratio = w_rect / h_rect if h_rect > 0 else 0
-                if not (params["min_aspect_ratio"] <= aspect_ratio <= params["max_aspect_ratio"]):
+                if not (
+                    params["min_aspect_ratio"]
+                    <= aspect_ratio
+                    <= params["max_aspect_ratio"]
+                ):
                     continue
 
                 # Step 5: Analyze color uniformity within this region
@@ -260,7 +274,9 @@ class ButtonColorDetector(BaseAnalyzer):
 
         return clustered_img, labels
 
-    def _analyze_region_color(self, region: np.ndarray, params: dict[str, Any]) -> dict[str, Any]:
+    def _analyze_region_color(
+        self, region: np.ndarray, params: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Analyze color properties of a region
 
@@ -360,7 +376,9 @@ class ButtonColorDetector(BaseAnalyzer):
         ):
             # Set button region to zero (will be excluded from mean calculation)
             mask = np.ones(background.shape[:2], dtype=bool)
-            mask[button_y_in_bg : button_y_in_bg + h, button_x_in_bg : button_x_in_bg + w] = False
+            mask[
+                button_y_in_bg : button_y_in_bg + h, button_x_in_bg : button_x_in_bg + w
+            ] = False
             background_pixels = background[mask]
         else:
             background_pixels = background.reshape(-1, 3)

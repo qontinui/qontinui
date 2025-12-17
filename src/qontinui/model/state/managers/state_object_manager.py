@@ -164,7 +164,9 @@ class StateObjectManager:
         for state_location in self.state_locations:
             loc = state_location.location
             final_loc = loc.get_final_location()
-            image_regions.append(Region(x=final_loc.x, y=final_loc.y, width=0, height=0))
+            image_regions.append(
+                Region(x=final_loc.x, y=final_loc.y, width=0, height=0)
+            )
 
         if not image_regions:
             return Region()  # Return undefined region

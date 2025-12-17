@@ -106,7 +106,9 @@ storage_operations = Counter(
     ["operation", "storage_type", "status"],
 )
 
-storage_size = Gauge("qontinui_storage_size_bytes", "Storage size in bytes", ["storage_type"])
+storage_size = Gauge(
+    "qontinui_storage_size_bytes", "Storage size in bytes", ["storage_type"]
+)
 
 # Error metrics
 error_counter = Counter(
@@ -301,7 +303,9 @@ class MetricsCollector:
 
     # Error metrics methods
 
-    def record_error(self, error_type: str, component: str, error: Exception | None = None) -> None:
+    def record_error(
+        self, error_type: str, component: str, error: Exception | None = None
+    ) -> None:
         """Record error occurrence.
 
         Args:

@@ -209,7 +209,8 @@ class TextEmbedder:
         """
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
             raise ImportError(
-                "sentence-transformers is not installed. " "Install it with: poetry install -E rag"
+                "sentence-transformers is not installed. "
+                "Install it with: poetry install -E rag"
             )
 
         self.model_name = model_name
@@ -243,7 +244,9 @@ class TextEmbedder:
 
         except Exception as e:
             logger.error("text_embedder_load_failed", model=model_name, error=str(e))
-            raise RuntimeError(f"Failed to load text embedder model '{model_name}': {e}") from e
+            raise RuntimeError(
+                f"Failed to load text embedder model '{model_name}': {e}"
+            ) from e
 
     def encode(self, text: str) -> list[float]:
         """Encode single text into embedding vector.

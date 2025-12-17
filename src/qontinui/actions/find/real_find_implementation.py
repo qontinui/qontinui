@@ -62,10 +62,16 @@ class RealFindImplementation:
             with open(debug_log, "a", encoding="utf-8") as f:
                 ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(f"[{ts}] RealFindImplementation.execute() ENTRY\n")
-                f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
-                f.write(f"[{ts}]   pattern.pixel_data is None: {pattern.pixel_data is None}\n")
+                f.write(
+                    f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n"
+                )
+                f.write(
+                    f"[{ts}]   pattern.pixel_data is None: {pattern.pixel_data is None}\n"
+                )
                 if pattern.pixel_data is not None:
-                    f.write(f"[{ts}]   pattern.pixel_data.shape={pattern.pixel_data.shape}\n")
+                    f.write(
+                        f"[{ts}]   pattern.pixel_data.shape={pattern.pixel_data.shape}\n"
+                    )
                 f.write(
                     f"[{ts}]   FindOptions: similarity={options.similarity}, find_all={options.find_all}\n"
                 )
@@ -75,9 +81,13 @@ class RealFindImplementation:
         logger.debug(
             f"[FIND_DEBUG] RealFindImplementation.execute() ENTRY - pattern.id={pattern.id}, pattern.name={pattern.name}"
         )
-        logger.debug(f"[FIND_DEBUG] Pattern pixel_data is None: {pattern.pixel_data is None}")
+        logger.debug(
+            f"[FIND_DEBUG] Pattern pixel_data is None: {pattern.pixel_data is None}"
+        )
         if pattern.pixel_data is not None:
-            logger.debug(f"[FIND_DEBUG] Pattern pixel_data shape: {pattern.pixel_data.shape}")
+            logger.debug(
+                f"[FIND_DEBUG] Pattern pixel_data shape: {pattern.pixel_data.shape}"
+            )
         logger.debug(
             f"[FIND_DEBUG] FindOptions: similarity={options.similarity}, find_all={options.find_all}"
         )
@@ -88,7 +98,9 @@ class RealFindImplementation:
         settings = FrameworkSettings.get_instance()
         collect_debug = options.collect_debug or settings.image_debug.emit_match_details
 
-        logger.debug(f"[DEBUG_FEATURE] emit_match_details={collect_debug} for image {pattern.id}")
+        logger.debug(
+            f"[DEBUG_FEATURE] emit_match_details={collect_debug} for image {pattern.id}"
+        )
 
         try:
             # Capture screenshot and record timestamp
@@ -112,7 +124,9 @@ class RealFindImplementation:
             )
 
             # Perform template matching with debug support
-            logger.debug("[FIND_DEBUG] Calling template_matcher.find_matches_with_debug()")
+            logger.debug(
+                "[FIND_DEBUG] Calling template_matcher.find_matches_with_debug()"
+            )
             matching_start_time = time.time()
             matches, debug_data = self.template_matcher.find_matches_with_debug(
                 screenshot=screenshot,
@@ -153,7 +167,9 @@ class RealFindImplementation:
                 if visual_debug_image:
                     logger.info("[REAL_FIND] Visual debug image generated successfully")
                 else:
-                    logger.warning("[REAL_FIND] Visual debug image generation returned None")
+                    logger.warning(
+                        "[REAL_FIND] Visual debug image generation returned None"
+                    )
 
             # Emit IMAGE_RECOGNITION event (this makes debug work everywhere!)
             logger.debug("[FIND_DEBUG] Calling _emit_image_recognition_event()")
@@ -234,7 +250,9 @@ class RealFindImplementation:
             with open(debug_log, "a", encoding="utf-8") as f:
                 ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(f"[{ts}] _emit_image_recognition_event CALLED\n")
-                f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
+                f.write(
+                    f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n"
+                )
                 f.write(f"[{ts}]   matches count={len(matches)}\n")
                 f.write(f"[{ts}]   found={len(matches) > 0}\n")
         except Exception:
@@ -246,9 +264,13 @@ class RealFindImplementation:
 
         # Get pattern name with fallback - use pattern.id as it's the filename
         # pattern.name might be empty, but pattern.id contains the actual filename
-        pattern_name = pattern.name if pattern.name and pattern.name.strip() else pattern.id
+        pattern_name = (
+            pattern.name if pattern.name and pattern.name.strip() else pattern.id
+        )
 
-        logger.debug(f"Pattern name='{pattern.name}', id='{pattern.id}', using='{pattern_name}'")
+        logger.debug(
+            f"Pattern name='{pattern.name}', id='{pattern.id}', using='{pattern_name}'"
+        )
 
         # Build location with full region info (x, y, width, height)
         location = None
@@ -294,7 +316,9 @@ class RealFindImplementation:
 
             # Add screenshot dimensions to event data
             event_data["screenshot_size"] = (screenshot_width, screenshot_height)
-            logger.debug(f"[EVENT] Screenshot dimensions: {screenshot_width}x{screenshot_height}")
+            logger.debug(
+                f"[EVENT] Screenshot dimensions: {screenshot_width}x{screenshot_height}"
+            )
 
             screenshot_image = self._encode_screenshot(screenshot)
             if screenshot_image:
@@ -347,20 +371,28 @@ class RealFindImplementation:
         # Add visual debug image if available
         if visual_debug_image:
             event_data["visual_debug_image"] = visual_debug_image
-            event_data["debug_visual_base64"] = visual_debug_image  # Alias for spec compliance
+            event_data["debug_visual_base64"] = (
+                visual_debug_image  # Alias for spec compliance
+            )
 
         # Add timestamp
         event_data["timestamp"] = time.time()
 
         # Emit MATCH_ATTEMPTED event (EventTranslator listens for this)
-        logger.debug(f"[FIND_DEBUG] Emitting MATCH_ATTEMPTED event for pattern {pattern.id}")
+        logger.debug(
+            f"[FIND_DEBUG] Emitting MATCH_ATTEMPTED event for pattern {pattern.id}"
+        )
 
         # File-based debug logging
         try:
             with open(debug_log, "a", encoding="utf-8") as f:
                 ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}] About to call emit_event(EventType.MATCH_ATTEMPTED, ...)\n")
-                f.write(f"[{ts}]   EventType.MATCH_ATTEMPTED={EventType.MATCH_ATTEMPTED}\n")
+                f.write(
+                    f"[{ts}] About to call emit_event(EventType.MATCH_ATTEMPTED, ...)\n"
+                )
+                f.write(
+                    f"[{ts}]   EventType.MATCH_ATTEMPTED={EventType.MATCH_ATTEMPTED}\n"
+                )
                 f.write(f"[{ts}]   event_data keys={list(event_data.keys())}\n")
         except Exception:
             pass
@@ -420,8 +452,12 @@ class RealFindImplementation:
             if scale_factor != 1.0:
                 new_w = int(t_w * scale_factor)
                 new_h = int(t_h * scale_factor)
-                interpolation = cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
-                template = cv2.resize(template, (new_w, new_h), interpolation=interpolation)
+                interpolation = (
+                    cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
+                )
+                template = cv2.resize(
+                    template, (new_w, new_h), interpolation=interpolation
+                )
 
             # Encode as PNG
             success, buffer = cv2.imencode(".png", template)
@@ -469,7 +505,9 @@ class RealFindImplementation:
 
             # Log original dimensions
             s_h, s_w = screenshot.shape[:2]
-            logger.debug(f"[SCREENSHOT] Encoding screenshot with original size: {s_w}x{s_h}")
+            logger.debug(
+                f"[SCREENSHOT] Encoding screenshot with original size: {s_w}x{s_h}"
+            )
 
             # Encode as JPEG with quality 85 for reasonable file size
             # JPEG is much smaller than PNG for photos/screenshots
@@ -492,7 +530,9 @@ class RealFindImplementation:
             logger.error(f"Failed to encode screenshot: {e}")
             return None
 
-    def _encode_matched_region(self, screenshot: Any, location: dict, template: Any) -> str | None:
+    def _encode_matched_region(
+        self, screenshot: Any, location: dict, template: Any
+    ) -> str | None:
         """Extract and encode the matched region from the screenshot.
 
         This crops the screenshot at the match location and encodes it as a base64 PNG
@@ -552,7 +592,9 @@ class RealFindImplementation:
             matched_region = screenshot[y:y2, x:x2]
 
             if matched_region.size == 0:
-                logger.warning(f"[MATCHED_REGION] Empty crop at ({x}, {y}) size {width}x{height}")
+                logger.warning(
+                    f"[MATCHED_REGION] Empty crop at ({x}, {y}) size {width}x{height}"
+                )
                 return None
 
             # Scale for visibility (same logic as template)
@@ -571,7 +613,9 @@ class RealFindImplementation:
             if scale_factor != 1.0:
                 new_w = int(m_w * scale_factor)
                 new_h = int(m_h * scale_factor)
-                interpolation = cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
+                interpolation = (
+                    cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
+                )
                 matched_region = cv2.resize(
                     matched_region, (new_w, new_h), interpolation=interpolation
                 )
@@ -616,7 +660,9 @@ class RealFindImplementation:
         logger.info(f"Executing async find for {len(patterns)} patterns")
 
         # Create tasks for each pattern
-        tasks = [asyncio.to_thread(self.execute, pattern, options) for pattern in patterns]
+        tasks = [
+            asyncio.to_thread(self.execute, pattern, options) for pattern in patterns
+        ]
 
         # Execute all searches concurrently
         results = await asyncio.gather(*tasks, return_exceptions=True)

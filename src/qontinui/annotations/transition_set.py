@@ -286,7 +286,9 @@ def is_transition_set(obj: Any) -> bool:
         True if object is decorated with @transition_set
     """
     target = obj if isinstance(obj, type) else type(obj)
-    return hasattr(target, "_qontinui_transition_set") and target._qontinui_transition_set
+    return (
+        hasattr(target, "_qontinui_transition_set") and target._qontinui_transition_set
+    )
 
 
 def get_transition_metadata(obj: Any) -> TransitionSetMetadata | None:
@@ -361,7 +363,8 @@ def get_incoming_transitions(transitions: list[Any], state_class: type) -> list[
         metadata = get_transition_metadata(transition)
         if (
             metadata
-            and metadata.transition_type in [TransitionType.INCOMING, TransitionType.BIDIRECTIONAL]
+            and metadata.transition_type
+            in [TransitionType.INCOMING, TransitionType.BIDIRECTIONAL]
             and state_class in metadata.to_states
         ):
             incoming.append(transition)

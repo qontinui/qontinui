@@ -33,7 +33,9 @@ class MapExecutor:
         [2, 4, 6, 8, 10]
     """
 
-    def __init__(self, variable_context: VariableContext, evaluator: SafeEvaluator) -> None:
+    def __init__(
+        self, variable_context: VariableContext, evaluator: SafeEvaluator
+    ) -> None:
         """Initialize the map executor.
 
         Args:

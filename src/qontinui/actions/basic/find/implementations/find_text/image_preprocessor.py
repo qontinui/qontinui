@@ -19,7 +19,9 @@ class ImagePreprocessor:
     Applies various image transformations to improve text recognition.
     """
 
-    def __init__(self, preprocessing: list[TextPreprocessing], scale_factor: float = 1.0) -> None:
+    def __init__(
+        self, preprocessing: list[TextPreprocessing], scale_factor: float = 1.0
+    ) -> None:
         """Initialize image preprocessor.
 
         Args:

@@ -55,7 +55,9 @@ class CompositeHook(ExecutionHook):
             except Exception as e:
                 logger.warning(f"Hook {type(hook).__name__}.before_action failed: {e}")
 
-    def after_action(self, action: Action, context: dict[str, Any], result: dict[str, Any]):
+    def after_action(
+        self, action: Action, context: dict[str, Any], result: dict[str, Any]
+    ):
         """Call after_action on all child hooks."""
         for hook in self.hooks:
             try:

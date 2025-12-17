@@ -87,12 +87,16 @@ class HybridDetector(BaseDetector):
                 final_boxes.append(merged)
 
         # Final merge of very similar boxes
-        final_boxes = self.merge_overlapping_boxes(final_boxes, iou_threshold=merge_threshold)
+        final_boxes = self.merge_overlapping_boxes(
+            final_boxes, iou_threshold=merge_threshold
+        )
         final_boxes = self.remove_contained_boxes(final_boxes)
 
         return final_boxes
 
-    def _group_overlapping_boxes(self, boxes: list[BBox], iou_threshold: float) -> list[list[BBox]]:
+    def _group_overlapping_boxes(
+        self, boxes: list[BBox], iou_threshold: float
+    ) -> list[list[BBox]]:
         """Group boxes that overlap significantly"""
         if not boxes:
             return []

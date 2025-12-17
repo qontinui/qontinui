@@ -73,7 +73,9 @@ class ScreenCapture:
 
         raise ScreenCaptureException(f"Monitor {index} not found")
 
-    def capture_screen(self, monitor: int | None = None, cache: bool = True) -> Image.Image:
+    def capture_screen(
+        self, monitor: int | None = None, cache: bool = True
+    ) -> Image.Image:
         """Capture entire screen or specific monitor.
 
         Args:
@@ -170,7 +172,9 @@ class ScreenCapture:
                 offset_x, offset_y = 0, 0
 
             # Use HAL pattern matcher
-            match = self.hal_matcher.find_pattern(haystack, needle, confidence, grayscale)
+            match = self.hal_matcher.find_pattern(
+                haystack, needle, confidence, grayscale
+            )
 
             if match:
                 # Adjust coordinates for offset
@@ -230,7 +234,9 @@ class ScreenCapture:
                 offset_x, offset_y = 0, 0
 
             # Use HAL pattern matcher
-            matches = self.hal_matcher.find_all_patterns(haystack, needle, confidence, grayscale)
+            matches = self.hal_matcher.find_all_patterns(
+                haystack, needle, confidence, grayscale
+            )
 
             # Adjust coordinates for offset
             locations = []
@@ -275,7 +281,9 @@ class ScreenCapture:
                 f"Failed to save screenshot (monitor={monitor}): {e}"
             ) from e
 
-    def get_pixel_color(self, x: int, y: int, monitor: int | None = None) -> tuple[int, int, int]:
+    def get_pixel_color(
+        self, x: int, y: int, monitor: int | None = None
+    ) -> tuple[int, int, int]:
         """Get color of pixel at coordinates.
 
         Args:
@@ -287,7 +295,9 @@ class ScreenCapture:
             RGB color tuple
         """
         try:
-            return cast(tuple[int, int, int], self.hal_capture.get_pixel_color(x, y, monitor))
+            return cast(
+                tuple[int, int, int], self.hal_capture.get_pixel_color(x, y, monitor)
+            )
         except Exception as e:
             logger.error("get_pixel_color_failed", x=x, y=y, error=str(e))
             return (0, 0, 0)

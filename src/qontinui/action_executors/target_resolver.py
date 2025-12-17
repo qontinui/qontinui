@@ -52,7 +52,9 @@ class TargetResolver:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
@@ -111,7 +113,9 @@ class TargetResolver:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
@@ -142,7 +146,9 @@ class TargetResolver:
             )
         log_debug(f"  Resolved strategy: {strategy}")
 
-        logger.debug(f"Resolving ImageTarget: {len(image_ids)} image(s), strategy={strategy}")
+        logger.debug(
+            f"Resolving ImageTarget: {len(image_ids)} image(s), strategy={strategy}"
+        )
 
         # Use registry to load patterns (same as IF actions)
         patterns = []
@@ -185,7 +191,9 @@ class TargetResolver:
         action = FindAction()
 
         if strategy == "BEST" and len(patterns) > 1:
-            log_debug("  BEST strategy with multiple patterns - finding all and picking best")
+            log_debug(
+                "  BEST strategy with multiple patterns - finding all and picking best"
+            )
             # Find all patterns and pick the one with highest score
             best_result = None
             best_score = 0.0
@@ -278,7 +286,9 @@ class TargetResolver:
 
         if result:
             log_debug(f"  result.success: {result.success}")
-            log_debug(f"  result.matches count: {len(result.matches) if result.matches else 0}")
+            log_debug(
+                f"  result.matches count: {len(result.matches) if result.matches else 0}"
+            )
             self.context.update_last_action_result(result)
             log_debug("  Updated context.last_action_result")
             return result
@@ -338,7 +348,9 @@ class TargetResolver:
             target=Location(
                 x=center_x,
                 y=center_y,
-                region=Region(x=region.x, y=region.y, width=region.width, height=region.height),
+                region=Region(
+                    x=region.x, y=region.y, width=region.width, height=region.height
+                ),
             ),
         )
         find_match = FindMatch(match_object=model_match)

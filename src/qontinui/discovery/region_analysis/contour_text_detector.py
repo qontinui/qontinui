@@ -117,7 +117,9 @@ class ContourTextDetector(BaseRegionAnalyzer):
 
         # Calculate overall confidence
         overall_confidence = (
-            sum(r.confidence for r in all_regions) / len(all_regions) if all_regions else 0.0
+            sum(r.confidence for r in all_regions) / len(all_regions)
+            if all_regions
+            else 0.0
         )
 
         return RegionAnalysisResult(
@@ -132,7 +134,9 @@ class ContourTextDetector(BaseRegionAnalyzer):
             },
         )
 
-    def _detect_text_regions(self, gray: np.ndarray, screenshot_index: int) -> list[DetectedRegion]:
+    def _detect_text_regions(
+        self, gray: np.ndarray, screenshot_index: int
+    ) -> list[DetectedRegion]:
         """Detect text regions in a grayscale image."""
         # Apply bilateral filter to preserve edges while reducing noise
         filtered = cv2.bilateralFilter(gray, 9, 75, 75)
@@ -143,7 +147,9 @@ class ContourTextDetector(BaseRegionAnalyzer):
         )
 
         # Find contours
-        contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(
+            binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         # Filter contours using text heuristics
         character_candidates = []
@@ -163,7 +169,10 @@ class ContourTextDetector(BaseRegionAnalyzer):
 
             # Filter by aspect ratio
             aspect_ratio = w / h if h > 0 else 0
-            if aspect_ratio < self.min_aspect_ratio or aspect_ratio > self.max_aspect_ratio:
+            if (
+                aspect_ratio < self.min_aspect_ratio
+                or aspect_ratio > self.max_aspect_ratio
+            ):
                 continue
 
             # Calculate rectangularity (how well the contour fits its bounding box)
@@ -205,7 +214,8 @@ class ContourTextDetector(BaseRegionAnalyzer):
                 {
                     "bbox": c["bbox"],
                     "chars": [c],
-                    "confidence": (c["rectangularity"] * 0.5 + c["solidity"] * 0.5) * 0.6,
+                    "confidence": (c["rectangularity"] * 0.5 + c["solidity"] * 0.5)
+                    * 0.6,
                 }
                 for c in character_candidates
             ]
@@ -240,7 +250,9 @@ class ContourTextDetector(BaseRegionAnalyzer):
 
         return detected_regions
 
-    def _group_characters(self, characters: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _group_characters(
+        self, characters: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Group nearby characters into text regions."""
         if not characters:
             return []
@@ -302,7 +314,9 @@ class ContourTextDetector(BaseRegionAnalyzer):
 
         # Check height similarity
         char_height = char["bbox"][3]
-        height_ratio = max(char_height, avg_height) / (min(char_height, avg_height) + 1e-5)
+        height_ratio = max(char_height, avg_height) / (
+            min(char_height, avg_height) + 1e-5
+        )
 
         if height_ratio > self.max_height_ratio:
             return False

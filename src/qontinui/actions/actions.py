@@ -114,11 +114,15 @@ class Actions:
                     )
             elif isinstance(target, Location):
 
-                return cast(ActionResult, self.pure.mouse_click(target.x, target.y, button))
+                return cast(
+                    ActionResult, self.pure.mouse_click(target.x, target.y, button)
+                )
             elif isinstance(target, Region):
 
                 center = target.get_center()
-                return cast(ActionResult, self.pure.mouse_click(center.x, center.y, button))
+                return cast(
+                    ActionResult, self.pure.mouse_click(center.x, center.y, button)
+                )
             else:
                 return (
                     ActionResultBuilder()
@@ -271,11 +275,15 @@ class Actions:
             return (
                 ActionResultBuilder()
                 .with_success(False)
-                .with_output_text(f"Pattern {target.name} still visible after {timeout}s")
+                .with_output_text(
+                    f"Pattern {target.name} still visible after {timeout}s"
+                )
                 .build()
             )
 
-    def drag(self, from_target: Any, to_target: Any, duration: float = 1.0) -> ActionResult:
+    def drag(
+        self, from_target: Any, to_target: Any, duration: float = 1.0
+    ) -> ActionResult:
         """Drag from one target to another.
 
         Args:
@@ -291,7 +299,9 @@ class Actions:
 
         if MockModeManager.is_mock_mode():
             if self._mock_actions:
-                result: ActionResult = self._mock_actions.drag(from_target, to_target, duration)
+                result: ActionResult = self._mock_actions.drag(
+                    from_target, to_target, duration
+                )
                 return result
             return ActionResultBuilder().with_success(True).build()
         else:

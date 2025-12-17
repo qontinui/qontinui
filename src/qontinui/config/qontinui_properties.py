@@ -76,7 +76,9 @@ class QontinuiProperties(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     # Delegated property access through composition
-    core: CoreConfig = Field(default_factory=CoreConfig, description="Core framework settings")
+    core: CoreConfig = Field(
+        default_factory=CoreConfig, description="Core framework settings"
+    )
     startup: StartupConfig = Field(
         default_factory=StartupConfig, description="Startup configuration"
     )
@@ -138,7 +140,9 @@ class QontinuiProperties(BaseModel):
     monitor: MonitorConfig = Field(
         default_factory=MonitorConfig, description="Monitor configuration settings"
     )
-    dpi: DpiConfig = Field(default_factory=DpiConfig, description="DPI and scaling configuration")
+    dpi: DpiConfig = Field(
+        default_factory=DpiConfig, description="DPI and scaling configuration"
+    )
     capture: CaptureConfig = Field(
         default_factory=CaptureConfig,
         description="Screen capture provider configuration",

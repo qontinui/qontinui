@@ -221,7 +221,9 @@ class PlaywrightExtractor(RuntimeExtractor):
                     f"  --> Created page-level fallback state with {len(elements)} elements"
                 )
 
-            logger.info(f"  FINAL: Returning {len(states)} states, {len(elements)} elements")
+            logger.info(
+                f"  FINAL: Returning {len(states)} states, {len(elements)} elements"
+            )
 
             # Capture screenshot
             screenshot_path = None
@@ -266,7 +268,9 @@ class PlaywrightExtractor(RuntimeExtractor):
             # Add to session
             self.add_capture(capture)
 
-            logger.info(f"Extracted state: {len(elements)} elements, {len(states)} states")
+            logger.info(
+                f"Extracted state: {len(elements)} elements, {len(states)} states"
+            )
             return capture
 
         except Exception as e:
@@ -394,7 +398,9 @@ class PlaywrightExtractor(RuntimeExtractor):
 
         return states
 
-    async def capture_screenshot(self, region: BaseBoundingBox | None = None) -> Screenshot:
+    async def capture_screenshot(
+        self, region: BaseBoundingBox | None = None
+    ) -> Screenshot:
         """
         Capture a screenshot of the current state.
 
@@ -573,7 +579,9 @@ class PlaywrightExtractor(RuntimeExtractor):
             before_state_ids = {s.id for s in before_capture.states}
             after_state_ids = {s.id for s in after_capture.states}
 
-            appeared_states = [s.id for s in after_capture.states if s.id not in before_state_ids]
+            appeared_states = [
+                s.id for s in after_capture.states if s.id not in before_state_ids
+            ]
             disappeared_states = [
                 s.id for s in before_capture.states if s.id not in after_state_ids
             ]
@@ -588,10 +596,14 @@ class PlaywrightExtractor(RuntimeExtractor):
                 url_changed=(before_url != after_url),
                 new_url=after_url if before_url != after_url else None,
                 screenshot_before=(
-                    str(before_capture.screenshot_path) if before_capture.screenshot_path else None
+                    str(before_capture.screenshot_path)
+                    if before_capture.screenshot_path
+                    else None
                 ),
                 screenshot_after=(
-                    str(after_capture.screenshot_path) if after_capture.screenshot_path else None
+                    str(after_capture.screenshot_path)
+                    if after_capture.screenshot_path
+                    else None
                 ),
                 metadata={
                     "action": {
@@ -780,7 +792,9 @@ class PlaywrightExtractor(RuntimeExtractor):
                 elements=capture.elements,
                 states=capture.states,
                 transitions=[],
-                screenshots=[str(capture.screenshot_path)] if capture.screenshot_path else [],
+                screenshots=(
+                    [str(capture.screenshot_path)] if capture.screenshot_path else []
+                ),
                 pages_visited=1,
                 extraction_duration_ms=0.0,
                 errors=[],

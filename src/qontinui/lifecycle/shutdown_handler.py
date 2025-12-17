@@ -64,7 +64,9 @@ class QontinuiShutdownHandler:
             signum: Signal number
             frame: Current stack frame
         """
-        signal_name = signal.Signals(signum).name if hasattr(signal, "Signals") else str(signum)
+        signal_name = (
+            signal.Signals(signum).name if hasattr(signal, "Signals") else str(signum)
+        )
         logger.info(f"Received signal {signal_name}, initiating graceful shutdown")
 
         # Use exit code 128 + signal number (Unix convention)
@@ -88,7 +90,9 @@ class QontinuiShutdownHandler:
         logger.info(f"Initiating graceful shutdown with exit code: {exit_code}")
 
         # Start shutdown in a separate thread to avoid blocking
-        shutdown_thread = threading.Thread(target=self._perform_shutdown, name="QontinuiShutdown")
+        shutdown_thread = threading.Thread(
+            target=self._perform_shutdown, name="QontinuiShutdown"
+        )
         shutdown_thread.daemon = False
         shutdown_thread.start()
 

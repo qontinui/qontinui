@@ -119,7 +119,9 @@ class Find:
             # SearchRegions doesn't have x, y, width, height directly
             # Don't set individual region in options
         elif isinstance(region, Region):
-            self._search_region = Region(region.x, region.y, region.width, region.height)
+            self._search_region = Region(
+                region.x, region.y, region.width, region.height
+            )
             self._options.search_region(region.x, region.y, region.width, region.height)
         return self
 
@@ -250,7 +252,10 @@ class Find:
             filters.append(NMSFilter(iou_threshold=0.3))  # type: ignore[arg-type]
 
         # Region filter (if using SearchRegions with multiple regions)
-        if isinstance(self._search_region, SearchRegions) and self._search_region.regions:
+        if (
+            isinstance(self._search_region, SearchRegions)
+            and self._search_region.regions
+        ):
             filters.append(RegionFilter(self._search_region))  # type: ignore[arg-type]
 
         # Create executor
@@ -292,8 +297,11 @@ class Find:
         # Convert SearchRegions to Region if needed for results
         search_region_for_results = (
             self._search_region.regions[0]
-            if isinstance(self._search_region, SearchRegions) and self._search_region.regions
-            else (self._search_region if isinstance(self._search_region, Region) else None)
+            if isinstance(self._search_region, SearchRegions)
+            and self._search_region.regions
+            else (
+                self._search_region if isinstance(self._search_region, Region) else None
+            )
         )
 
         return FindResults(
@@ -301,7 +309,9 @@ class Find:
             pattern=self._target,
             search_region=search_region_for_results,
             duration=duration,
-            screenshot=(screenshot_provider._cache.image if screenshot_provider._cache else None),
+            screenshot=(
+                screenshot_provider._cache.image if screenshot_provider._cache else None
+            ),
             method=self._method,
         )
 
@@ -392,7 +402,9 @@ class Find:
             EventType.MATCH_ATTEMPTED,
             data={
                 "image_id": image_id,
-                "image_name": (self._target.name if hasattr(self._target, "name") else None),
+                "image_name": (
+                    self._target.name if hasattr(self._target, "name") else None
+                ),
                 "template_dimensions": {
                     "width": (
                         self._target.pixel_data.shape[1]
@@ -412,10 +424,14 @@ class Find:
                         "region": (
                             {
                                 "x": (
-                                    best_match.region.x if best_match and best_match.region else 0
+                                    best_match.region.x
+                                    if best_match and best_match.region
+                                    else 0
                                 ),
                                 "y": (
-                                    best_match.region.y if best_match and best_match.region else 0
+                                    best_match.region.y
+                                    if best_match and best_match.region
+                                    else 0
                                 ),
                                 "width": (
                                     best_match.region.width
@@ -452,5 +468,7 @@ class Find:
     def __repr__(self) -> str:
         """Developer representation."""
         return (
-            f"Find(target={self._target}, " f"method='{self._method}', " f"options={self._options})"
+            f"Find(target={self._target}, "
+            f"method='{self._method}', "
+            f"options={self._options})"
         )

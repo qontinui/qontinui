@@ -23,7 +23,9 @@ class ProgressHook(ExecutionHook):
         progress_callback: Optional callback function for progress updates
     """
 
-    def __init__(self, total_actions: int, progress_callback: Callable | None = None) -> None:
+    def __init__(
+        self, total_actions: int, progress_callback: Callable | None = None
+    ) -> None:
         """Initialize progress hook.
 
         Args:
@@ -38,7 +40,9 @@ class ProgressHook(ExecutionHook):
         """Track action start."""
         pass
 
-    def after_action(self, action: Action, context: dict[str, Any], result: dict[str, Any]):
+    def after_action(
+        self, action: Action, context: dict[str, Any], result: dict[str, Any]
+    ):
         """Update progress after action completion."""
         self.completed_actions += 1
         progress_percent = (self.completed_actions / self.total_actions) * 100
@@ -85,7 +89,9 @@ class TimingHook(ExecutionHook):
         """Record action start time."""
         self.start_times[action.id] = time.time()
 
-    def after_action(self, action: Action, context: dict[str, Any], result: dict[str, Any]):
+    def after_action(
+        self, action: Action, context: dict[str, Any], result: dict[str, Any]
+    ):
         """Record action completion time."""
         if action.id in self.start_times:
             elapsed = time.time() - self.start_times[action.id]
@@ -112,7 +118,9 @@ class TimingHook(ExecutionHook):
         total_time = sum(self.action_timings.values())
         avg_time = total_time / len(self.action_timings)
 
-        sorted_timings = sorted(self.action_timings.items(), key=lambda x: x[1], reverse=True)
+        sorted_timings = sorted(
+            self.action_timings.items(), key=lambda x: x[1], reverse=True
+        )
 
         return {
             "total_actions": len(self.action_timings),

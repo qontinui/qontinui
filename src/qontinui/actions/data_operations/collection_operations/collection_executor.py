@@ -39,7 +39,9 @@ class CollectionExecutor:
         ... )
     """
 
-    def __init__(self, variable_context: VariableContext, evaluator: SafeEvaluator) -> None:
+    def __init__(
+        self, variable_context: VariableContext, evaluator: SafeEvaluator
+    ) -> None:
         """Initialize the collection executor facade.
 
         Args:
@@ -82,7 +84,9 @@ class CollectionExecutor:
         Raises:
             ValueError: If comparator is CUSTOM but custom_comparator is not provided
         """
-        return self._sort.sort_collection(collection, sort_by, order, comparator, custom_comparator)
+        return self._sort.sort_collection(
+            collection, sort_by, order, comparator, custom_comparator
+        )
 
     def filter_collection(self, collection: list[Any], condition: Any) -> list[Any]:
         """Filter a collection using specified condition.
@@ -135,4 +139,6 @@ class CollectionExecutor:
         Raises:
             ValueError: If operation is custom but custom_reducer is not provided
         """
-        return self._reduce.reduce_collection(collection, operation, initial_value, custom_reducer)
+        return self._reduce.reduce_collection(
+            collection, operation, initial_value, custom_reducer
+        )

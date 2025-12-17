@@ -115,9 +115,12 @@ def find_claude() -> ClaudeInfo:
             # On Windows, .cmd files may not be executable in the Unix sense
             if system == "Windows" or os.access(configured_path, os.X_OK):
                 logger.info(f"Using claude from configured path: {configured_path}")
-                return ClaudeInfo(found=True, method="native", path=configured_path, error=None)
+                return ClaudeInfo(
+                    found=True, method="native", path=configured_path, error=None
+                )
         logger.warning(
-            f"Configured Claude path {configured_path} not found, " "falling back to auto-detection"
+            f"Configured Claude path {configured_path} not found, "
+            "falling back to auto-detection"
         )
 
     # 2. Check CLAUDE_PATH environment variable
@@ -125,8 +128,12 @@ def find_claude() -> ClaudeInfo:
         if os.path.isfile(claude_path):
             if system == "Windows" or os.access(claude_path, os.X_OK):
                 logger.info(f"Using claude from CLAUDE_PATH: {claude_path}")
-                return ClaudeInfo(found=True, method="native", path=claude_path, error=None)
-        logger.warning(f"CLAUDE_PATH set to {claude_path} but file not found or not executable")
+                return ClaudeInfo(
+                    found=True, method="native", path=claude_path, error=None
+                )
+        logger.warning(
+            f"CLAUDE_PATH set to {claude_path} but file not found or not executable"
+        )
 
     # 3. Check native PATH (works on all platforms)
     native_claude = shutil.which("claude")
@@ -189,7 +196,9 @@ def _check_wsl_claude() -> ClaudeInfo:
             if result.returncode == 0 and result.stdout.strip():
                 wsl_claude_path = result.stdout.strip()
                 logger.info(f"Found claude in WSL: {wsl_claude_path}")
-                return ClaudeInfo(found=True, method="wsl", path=wsl_claude_path, error=None)
+                return ClaudeInfo(
+                    found=True, method="wsl", path=wsl_claude_path, error=None
+                )
     except subprocess.TimeoutExpired:
         logger.debug("WSL check timed out")
     except FileNotFoundError:
@@ -364,7 +373,9 @@ def _run_native_claude(
     if result["success"]:
         logger.info("Claude Code completed successfully")
     else:
-        logger.error(f"Claude Code failed: {result['error'] or f'exit code {proc.returncode}'}")
+        logger.error(
+            f"Claude Code failed: {result['error'] or f'exit code {proc.returncode}'}"
+        )
 
     return result
 
@@ -401,7 +412,9 @@ claude -p "$PROMPT" --output-format {output_format} --permission-mode {permissio
 """
 
     # Write script to temp file with Unix line endings
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False, newline="\n") as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".sh", delete=False, newline="\n"
+    ) as f:
         f.write(script_content)
         script_path = f.name
 
@@ -637,7 +650,9 @@ def _run_native_claude_streaming(
                                             try:
                                                 on_output(text, source)
                                             except Exception as e:
-                                                logger.warning(f"on_output callback error: {e}")
+                                                logger.warning(
+                                                    f"on_output callback error: {e}"
+                                                )
                                         output_text_parts.append(text)
 
                         # Handle assistant message content (snapshot of full message so far)
@@ -656,7 +671,9 @@ def _run_native_claude_streaming(
                                         try:
                                             on_output(result_data, source)
                                         except Exception as e:
-                                            logger.warning(f"on_output callback error: {e}")
+                                            logger.warning(
+                                                f"on_output callback error: {e}"
+                                            )
 
                         logger.debug(f"[{source}] Parsed event type: {event_type}")
 
@@ -679,8 +696,12 @@ def _run_native_claude_streaming(
             stream.close()
 
     # Start threads to read stdout and stderr
-    stdout_thread = threading.Thread(target=read_stream, args=(proc.stdout, stdout_lines, "stdout"))
-    stderr_thread = threading.Thread(target=read_stream, args=(proc.stderr, stderr_lines, "stderr"))
+    stdout_thread = threading.Thread(
+        target=read_stream, args=(proc.stdout, stdout_lines, "stdout")
+    )
+    stderr_thread = threading.Thread(
+        target=read_stream, args=(proc.stderr, stderr_lines, "stderr")
+    )
 
     stdout_thread.daemon = True
     stderr_thread.daemon = True
@@ -704,11 +725,15 @@ def _run_native_claude_streaming(
     stdout_thread.join(timeout=5)
     stderr_thread.join(timeout=5)
 
-    logger.info(f"Collected {len(stdout_lines)} stdout lines, {len(stderr_lines)} stderr lines")
+    logger.info(
+        f"Collected {len(stdout_lines)} stdout lines, {len(stderr_lines)} stderr lines"
+    )
     logger.info(f"Accumulated {len(output_text_parts)} text parts from stream-json")
 
     # Use accumulated text from stream-json events as the output
-    final_output = "".join(output_text_parts) if output_text_parts else "\n".join(stdout_lines)
+    final_output = (
+        "".join(output_text_parts) if output_text_parts else "\n".join(stdout_lines)
+    )
 
     result: ClaudeResult = {
         "success": proc.returncode == 0,
@@ -767,7 +792,9 @@ claude -p "$PROMPT" --output-format stream-json --include-partial-messages --ver
 """
 
     # Write script to temp file with Unix line endings
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False, newline="\n") as f:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".sh", delete=False, newline="\n"
+    ) as f:
         f.write(script_content)
         script_path = f.name
 
@@ -822,7 +849,9 @@ claude -p "$PROMPT" --output-format stream-json --include-partial-messages --ver
                                                 try:
                                                     on_output(text, source)
                                                 except Exception as e:
-                                                    logger.warning(f"on_output callback error: {e}")
+                                                    logger.warning(
+                                                        f"on_output callback error: {e}"
+                                                    )
                                             output_text_parts.append(text)
 
                             # Handle assistant message - skip for streaming
@@ -839,7 +868,9 @@ claude -p "$PROMPT" --output-format stream-json --include-partial-messages --ver
                                             try:
                                                 on_output(result_data, source)
                                             except Exception as e:
-                                                logger.warning(f"on_output callback error: {e}")
+                                                logger.warning(
+                                                    f"on_output callback error: {e}"
+                                                )
 
                         except json.JSONDecodeError:
                             # Not valid JSON, pass through as-is
@@ -879,7 +910,9 @@ claude -p "$PROMPT" --output-format stream-json --include-partial-messages --ver
         stderr_thread.join(timeout=5)
 
         # Use accumulated text from stream-json events as the output
-        final_output = "".join(output_text_parts) if output_text_parts else "\n".join(stdout_lines)
+        final_output = (
+            "".join(output_text_parts) if output_text_parts else "\n".join(stdout_lines)
+        )
 
         result: ClaudeResult = {
             "success": proc.returncode == 0,

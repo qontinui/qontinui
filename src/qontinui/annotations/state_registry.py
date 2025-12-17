@@ -90,7 +90,9 @@ class StateRegistry:
     next_state_id: int = 1
 
     # Joint table for transitions
-    joint_table: StateTransitionsJointTable = field(default_factory=StateTransitionsJointTable)
+    joint_table: StateTransitionsJointTable = field(
+        default_factory=StateTransitionsJointTable
+    )
 
     # Current active profile
     active_profile: str = "default"
@@ -99,7 +101,9 @@ class StateRegistry:
     _frozen: bool = field(default=False, init=False, repr=False)
 
     # Thread safety lock
-    _lock: threading.RLock = field(default_factory=threading.RLock, init=False, repr=False)
+    _lock: threading.RLock = field(
+        default_factory=threading.RLock, init=False, repr=False
+    )
 
     def freeze(self) -> None:
         """Freeze registry. No more registrations allowed.
@@ -272,7 +276,9 @@ class StateRegistry:
         """
         metadata = get_transition_metadata(transition_class)
         if not metadata:
-            raise ValueError(f"{transition_class} is not decorated with @transition_set")
+            raise ValueError(
+                f"{transition_class} is not decorated with @transition_set"
+            )
 
         transition_name = metadata.name
 
@@ -505,7 +511,9 @@ class StateRegistry:
             self.active_profile = profile
             logger.info(f"Active profile set to: {profile}")
 
-    def get_transitions_for_state(self, state_class: type) -> tuple[list[type], list[type]]:
+    def get_transitions_for_state(
+        self, state_class: type
+    ) -> tuple[list[type], list[type]]:
         """Get all transitions for a state.
 
         Args:

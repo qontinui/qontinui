@@ -107,7 +107,9 @@ class MSSScreenCapture(IScreenCapture):
 
         if not hasattr(self._thread_local, "sct"):
             self._thread_local.sct = mss.mss()
-            logger.debug("mss_instance_created", thread_id=threading.current_thread().ident)
+            logger.debug(
+                "mss_instance_created", thread_id=threading.current_thread().ident
+            )
 
         return self._thread_local.sct  # type: ignore[no-any-return]
 
@@ -133,7 +135,9 @@ class MSSScreenCapture(IScreenCapture):
                 y=mon["top"],
                 width=mon["width"],
                 height=mon["height"],
-                scale=(1.0 if not self.config.enable_dpi_scaling else self._get_dpi_scale()),
+                scale=(
+                    1.0 if not self.config.enable_dpi_scaling else self._get_dpi_scale()
+                ),
                 is_primary=(i == 1),  # First monitor is usually primary
                 name=f"Monitor {i}",
             )
@@ -184,8 +188,12 @@ class MSSScreenCapture(IScreenCapture):
 
         except Exception as e:
             # Don't let DPI awareness failures crash the process
-            logger.warning("dpi_awareness_failed", error=str(e), error_type=type(e).__name__)
-            MSSScreenCapture._dpi_awareness_set = True  # Mark as attempted to avoid retry
+            logger.warning(
+                "dpi_awareness_failed", error=str(e), error_type=type(e).__name__
+            )
+            MSSScreenCapture._dpi_awareness_set = (
+                True  # Mark as attempted to avoid retry
+            )
 
     def _get_dpi_scale(self) -> float:
         """Get DPI scaling factor for current system.
@@ -267,7 +275,9 @@ class MSSScreenCapture(IScreenCapture):
             if self._cache_enabled:
                 self._update_cache(cache_key, image)
 
-            logger.debug("screen_captured", monitor=monitor, size=(image.width, image.height))
+            logger.debug(
+                "screen_captured", monitor=monitor, size=(image.width, image.height)
+            )
 
             return image
 
@@ -324,7 +334,9 @@ class MSSScreenCapture(IScreenCapture):
             if self._cache_enabled:
                 self._update_cache(cache_key, image)
 
-            logger.debug("region_captured", region=(x, y, width, height), monitor=monitor)
+            logger.debug(
+                "region_captured", region=(x, y, width, height), monitor=monitor
+            )
 
             return image
 
@@ -367,7 +379,9 @@ class MSSScreenCapture(IScreenCapture):
         primary = self.get_primary_monitor()
         return (primary.width, primary.height)
 
-    def get_pixel_color(self, x: int, y: int, monitor: int | None = None) -> tuple[int, int, int]:
+    def get_pixel_color(
+        self, x: int, y: int, monitor: int | None = None
+    ) -> tuple[int, int, int]:
         """Get color of pixel at coordinates.
 
         Args:
@@ -399,7 +413,9 @@ class MSSScreenCapture(IScreenCapture):
             return pixel[:3]  # type: ignore[no-any-return]
 
         except (OSError, RuntimeError, ValueError) as e:
-            logger.error("get_pixel_color_failed", x=x, y=y, monitor=monitor, error=str(e))
+            logger.error(
+                "get_pixel_color_failed", x=x, y=y, monitor=monitor, error=str(e)
+            )
             return (0, 0, 0)
 
     def save_screenshot(
@@ -434,7 +450,9 @@ class MSSScreenCapture(IScreenCapture):
             # Save image
             image.save(path)
 
-            logger.info("screenshot_saved", path=str(path), size=(image.width, image.height))
+            logger.info(
+                "screenshot_saved", path=str(path), size=(image.width, image.height)
+            )
 
             return str(path)
 

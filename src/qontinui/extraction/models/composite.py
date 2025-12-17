@@ -57,7 +57,9 @@ class StateStructure:
     states: list[CorrelatedState] = field(default_factory=list)
     """All states in this structure (may form disjoint trees)."""
 
-    transitions: list[InferredTransition | VerifiedTransition] = field(default_factory=list)
+    transitions: list[InferredTransition | VerifiedTransition] = field(
+        default_factory=list
+    )
     """All transitions (connect states within the same tree)."""
 
     elements: list[ExtractedElement] = field(default_factory=list)
@@ -81,7 +83,9 @@ class StateStructure:
     """Maps element_id -> source_id (origin identifier for replacement)."""
 
     # Environment info
-    viewport: Viewport = field(default_factory=lambda: Viewport(width=1920, height=1080))
+    viewport: Viewport = field(
+        default_factory=lambda: Viewport(width=1920, height=1080)
+    )
     """Environment viewport/screen size."""
 
     created_at: datetime = field(default_factory=datetime.now)
@@ -168,7 +172,9 @@ class StateStructure:
     ) -> list[InferredTransition | VerifiedTransition]:
         """Get all transitions originating from a state."""
         return [
-            t for t in self.transitions if hasattr(t, "state_before") and t.state_before == state_id
+            t
+            for t in self.transitions
+            if hasattr(t, "state_before") and t.state_before == state_id
         ]
 
     def get_transitions_to_state(
@@ -176,21 +182,27 @@ class StateStructure:
     ) -> list[InferredTransition | VerifiedTransition]:
         """Get all transitions leading to a state."""
         return [
-            t for t in self.transitions if hasattr(t, "state_after") and t.state_after == state_id
+            t
+            for t in self.transitions
+            if hasattr(t, "state_after") and t.state_after == state_id
         ]
 
     def get_transitions_by_source(
         self, source_id: str
     ) -> list[InferredTransition | VerifiedTransition]:
         """Get all transitions from a specific source."""
-        transition_ids = {tid for tid, src in self.transition_origins.items() if src == source_id}
+        transition_ids = {
+            tid for tid, src in self.transition_origins.items() if src == source_id
+        }
         return [t for t in self.transitions if t.id in transition_ids]
 
     # =========================================================================
     # Element Management
     # =========================================================================
 
-    def add_element(self, element: ExtractedElement, source_id: str | None = None) -> None:
+    def add_element(
+        self, element: ExtractedElement, source_id: str | None = None
+    ) -> None:
         """Add an element to the structure."""
         if any(e.id == element.id for e in self.elements):
             raise ValueError(f"Element with ID '{element.id}' already exists")
@@ -206,7 +218,9 @@ class StateStructure:
 
     def get_elements_by_source(self, source_id: str) -> list[ExtractedElement]:
         """Get all elements from a specific source."""
-        element_ids = {eid for eid, src in self.element_origins.items() if src == source_id}
+        element_ids = {
+            eid for eid, src in self.element_origins.items() if src == source_id
+        }
         return [e for e in self.elements if e.id in element_ids]
 
     # =========================================================================
@@ -248,7 +262,9 @@ class StateStructure:
             self.transition_origins[inferred.id] = source_id
 
         # Add elements from runtime extraction if available
-        if new_result.runtime_extraction and hasattr(new_result.runtime_extraction, "states"):
+        if new_result.runtime_extraction and hasattr(
+            new_result.runtime_extraction, "states"
+        ):
             for runtime_state in new_result.runtime_extraction.states:
                 if hasattr(runtime_state, "elements"):
                     for element in runtime_state.elements:
@@ -263,7 +279,9 @@ class StateStructure:
             source_id: The source identifier to remove
         """
         # Get IDs to remove
-        state_ids_to_remove = {sid for sid, src in self.state_origins.items() if src == source_id}
+        state_ids_to_remove = {
+            sid for sid, src in self.state_origins.items() if src == source_id
+        }
         transition_ids_to_remove = {
             tid for tid, src in self.transition_origins.items() if src == source_id
         }
@@ -277,7 +295,9 @@ class StateStructure:
                 self.screenshots.pop(state.screenshot.id, None)
 
         self.states = [s for s in self.states if s.id not in state_ids_to_remove]
-        self.transitions = [t for t in self.transitions if t.id not in transition_ids_to_remove]
+        self.transitions = [
+            t for t in self.transitions if t.id not in transition_ids_to_remove
+        ]
         self.elements = [e for e in self.elements if e.id not in element_ids_to_remove]
 
         # Clean up origin maps
@@ -332,7 +352,9 @@ class StateStructure:
 
     def get_active_states_by_source(self, source_id: str) -> list[CorrelatedState]:
         """Get active states from a specific source."""
-        source_state_ids = {sid for sid, src in self.state_origins.items() if src == source_id}
+        source_state_ids = {
+            sid for sid, src in self.state_origins.items() if src == source_id
+        }
         active_in_source = self._active_state_ids & source_state_ids
         return [s for s in self.states if s.id in active_in_source]
 
@@ -421,7 +443,9 @@ class StateStructure:
                     "name": s.name,
                     "confidence": s.confidence,
                     "state_type": (
-                        s.state_type.value if hasattr(s.state_type, "value") else str(s.state_type)
+                        s.state_type.value
+                        if hasattr(s.state_type, "value")
+                        else str(s.state_type)
                     ),
                     "source_component": s.source_component,
                     "route": s.route,
@@ -432,7 +456,9 @@ class StateStructure:
             "transitions": [
                 {
                     "id": t.id,
-                    "type": ("verified" if isinstance(t, VerifiedTransition) else "inferred"),
+                    "type": (
+                        "verified" if isinstance(t, VerifiedTransition) else "inferred"
+                    ),
                     "state_before": getattr(t, "state_before", None),
                     "state_after": getattr(t, "state_after", None),
                     "confidence": t.confidence,
@@ -552,7 +578,9 @@ class StateStructure:
                 "mode": result.mode,
                 "framework": result.framework,
                 "started_at": result.started_at.isoformat(),
-                "completed_at": (result.completed_at.isoformat() if result.completed_at else None),
+                "completed_at": (
+                    result.completed_at.isoformat() if result.completed_at else None
+                ),
             },
         )
 

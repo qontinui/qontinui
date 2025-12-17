@@ -105,7 +105,9 @@ class AdjacentStates:
         if not self.state_transitions_in_project_service:
             return adjacent
 
-        transitions_opt = self.state_transitions_in_project_service.get_transitions(state_id)
+        transitions_opt = self.state_transitions_in_project_service.get_transitions(
+            state_id
+        )
         if not transitions_opt:
             return adjacent
 

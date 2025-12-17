@@ -24,7 +24,9 @@ from qontinui.model.state.state_service import StateService
 logger = logging.getLogger(__name__)
 
 
-def load_states_from_config(config: dict[str, Any], state_service: StateService) -> bool:
+def load_states_from_config(
+    config: dict[str, Any], state_service: StateService
+) -> bool:
     """Load all states from configuration and populate StateService.
 
     This function is the main entry point for Phase 2 of the state loading process.
@@ -86,7 +88,9 @@ def load_states_from_config(config: dict[str, Any], state_service: StateService)
             logger.error(f"Unexpected error loading state: {e}", exc_info=True)
             error_count += 1
 
-    logger.info(f"State loading complete: {success_count} succeeded, {error_count} failed")
+    logger.info(
+        f"State loading complete: {success_count} succeeded, {error_count} failed"
+    )
 
     # Return True only if all states loaded successfully
     return error_count == 0
@@ -133,13 +137,17 @@ def _load_single_state(state_def: dict[str, Any], state_service: StateService) -
     image_count = 0
     for image_id in identifying_images:
         if not isinstance(image_id, str):
-            logger.warning(f"State '{state_id}': skipping non-string image ID: {image_id}")
+            logger.warning(
+                f"State '{state_id}': skipping non-string image ID: {image_id}"
+            )
             continue
 
         # Look up image in registry
         image = registry.get_image(image_id)
         if image is None:
-            logger.error(f"State '{state_id}': image '{image_id}' not found in registry")
+            logger.error(
+                f"State '{state_id}': image '{image_id}' not found in registry"
+            )
             # Continue loading other images instead of failing completely
             continue
 
@@ -179,7 +187,8 @@ def _load_single_state(state_def: dict[str, Any], state_service: StateService) -
     state_service.add_state(state)
 
     logger.debug(
-        f"Loaded state '{name}': id={int_id}, images={image_count}, " f"initial={is_initial}"
+        f"Loaded state '{name}': id={int_id}, images={image_count}, "
+        f"initial={is_initial}"
     )
 
     return True
@@ -257,7 +266,9 @@ def get_state_statistics(state_service: StateService) -> dict[str, Any]:
         "states_with_images": states_with_images,
         "states_without_images": total_states - states_with_images,
         "total_images": total_images,
-        "avg_images_per_state": (total_images / total_states if total_states > 0 else 0),
+        "avg_images_per_state": (
+            total_images / total_states if total_states > 0 else 0
+        ),
         "max_images_per_state": max_images_per_state,
         "initial_states": initial_states,
     }
@@ -290,7 +301,9 @@ def validate_state_images(state_service: StateService) -> list[str]:
                 issues.append(
                     f"State '{state.name}': StateImage '{state_image.name}' has null image"
                 )
-            elif hasattr(state_image.image, "is_empty") and state_image.image.is_empty():
+            elif (
+                hasattr(state_image.image, "is_empty") and state_image.image.is_empty()
+            ):
                 issues.append(
                     f"State '{state.name}': StateImage '{state_image.name}' has empty image"
                 )
@@ -299,7 +312,9 @@ def validate_state_images(state_service: StateService) -> list[str]:
         image_names = [img.name for img in state.state_images if img.name]
         if len(image_names) != len(set(image_names)):
             duplicates = [name for name in image_names if image_names.count(name) > 1]
-            issues.append(f"State '{state.name}': duplicate image names: {set(duplicates)}")
+            issues.append(
+                f"State '{state.name}': duplicate image names: {set(duplicates)}"
+            )
 
     return issues
 

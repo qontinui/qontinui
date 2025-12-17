@@ -84,7 +84,9 @@ class TestLocatorStrategies:
         strategy = SemanticTextStrategy()
 
         assert strategy.can_handle({"text": "Login"}) is True
-        assert strategy.can_handle({"color_range": [(0, 0, 0), (255, 255, 255)]}) is False
+        assert (
+            strategy.can_handle({"color_range": [(0, 0, 0), (255, 255, 255)]}) is False
+        )
 
     def test_relative_position_strategy_can_handle(self, sample_pattern):
         """Test RelativePositionStrategy.can_handle()."""

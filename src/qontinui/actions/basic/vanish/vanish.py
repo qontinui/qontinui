@@ -34,7 +34,9 @@ class Vanish(ActionInterface):
         """
         self.find = find
 
-    def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, action_result: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the vanish operation.
 
         Repeatedly checks for the presence of elements until they disappear
@@ -60,7 +62,9 @@ class Vanish(ActionInterface):
 
         object.__setattr__(action_result, "success", vanished)
         if vanished:
-            object.__setattr__(action_result, "output_text", "Element(s) vanished successfully")
+            object.__setattr__(
+                action_result, "output_text", "Element(s) vanished successfully"
+            )
         else:
             object.__setattr__(
                 action_result,

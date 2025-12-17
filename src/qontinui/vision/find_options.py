@@ -291,7 +291,9 @@ class FindOptions:
         if min_scale <= 0 or max_scale <= 0:
             raise ValueError("Scale parameters must be positive")
         if min_scale > max_scale:
-            raise ValueError(f"min_scale ({min_scale}) must be <= max_scale ({max_scale})")
+            raise ValueError(
+                f"min_scale ({min_scale}) must be <= max_scale ({max_scale})"
+            )
         if steps < 2:
             raise ValueError(f"steps must be >= 2, got {steps}")
 
@@ -363,7 +365,9 @@ class FindOptions:
         self.cache_results = False
         return self
 
-    def enable_debug(self, save_images: bool = True, highlight: bool = True) -> "FindOptions":
+    def enable_debug(
+        self, save_images: bool = True, highlight: bool = True
+    ) -> "FindOptions":
         """Enable debug visualization.
 
         Args:
@@ -416,13 +420,19 @@ class FindOptions:
             raise ValueError(f"timeout must be positive, got {self.timeout}")
 
         if self.poll_interval <= 0:
-            raise ValueError(f"poll_interval must be positive, got {self.poll_interval}")
+            raise ValueError(
+                f"poll_interval must be positive, got {self.poll_interval}"
+            )
 
         if self.max_matches < 0:
-            raise ValueError(f"max_matches must be non-negative, got {self.max_matches}")
+            raise ValueError(
+                f"max_matches must be non-negative, got {self.max_matches}"
+            )
 
         if self.min_matches < 0:
-            raise ValueError(f"min_matches must be non-negative, got {self.min_matches}")
+            raise ValueError(
+                f"min_matches must be non-negative, got {self.min_matches}"
+            )
 
         if self.min_matches > self.max_matches:
             raise ValueError(
@@ -435,7 +445,9 @@ class FindOptions:
             if min_scale <= 0 or max_scale <= 0:
                 raise ValueError("Scale parameters must be positive")
             if min_scale > max_scale:
-                raise ValueError(f"min_scale ({min_scale}) must be <= max_scale ({max_scale})")
+                raise ValueError(
+                    f"min_scale ({min_scale}) must be <= max_scale ({max_scale})"
+                )
             if self.scale_steps < 2:
                 raise ValueError(f"scale_steps must be >= 2, got {self.scale_steps}")
 

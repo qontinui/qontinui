@@ -172,7 +172,9 @@ class MultiStrategyLocator:
         for strategy in self.strategies:
             # Check if strategy can handle this target
             if not strategy.can_handle(target):
-                logger.debug(f"Strategy {strategy.get_name()} cannot handle target type")
+                logger.debug(
+                    f"Strategy {strategy.get_name()} cannot handle target type"
+                )
                 continue
 
             strategy_start = time.time()
@@ -195,7 +197,10 @@ class MultiStrategyLocator:
                     )
 
                     # Keep track of best result
-                    if best_result is None or result.confidence > best_result.confidence:
+                    if (
+                        best_result is None
+                        or result.confidence > best_result.confidence
+                    ):
                         best_result = result
                         successful_strategy = strategy.get_name()
 
@@ -319,10 +324,14 @@ class MultiStrategyLocator:
                 float(successes) / float(attempts) if attempts > 0 else 0.0
             )
             strategy_stats["avg_confidence"] = (
-                strategy_stats["total_confidence"] / float(successes) if successes > 0 else 0.0
+                strategy_stats["total_confidence"] / float(successes)
+                if successes > 0
+                else 0.0
             )
             strategy_stats["avg_duration"] = (
-                strategy_stats["total_duration"] / float(attempts) if attempts > 0 else 0.0
+                strategy_stats["total_duration"] / float(attempts)
+                if attempts > 0
+                else 0.0
             )
 
         return stats
@@ -380,7 +389,8 @@ class MultiStrategyLocator:
             name_lower = name.lower()
             if name_lower not in strategy_map:
                 raise ValueError(
-                    f"Unknown strategy: {name}. " f"Available: {', '.join(strategy_map.keys())}"
+                    f"Unknown strategy: {name}. "
+                    f"Available: {', '.join(strategy_map.keys())}"
                 )
             strategies.append(strategy_map[name_lower]())  # type: ignore[abstract]
 

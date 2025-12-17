@@ -45,7 +45,9 @@ class VisualDebugGenerator:
             result = int(round(float(value)))
             return result
         except (ValueError, TypeError) as e:
-            logger.error(f"Failed to convert {name}={value} (type={type(value)}) to int: {e}")
+            logger.error(
+                f"Failed to convert {name}={value} (type={type(value)}) to int: {e}"
+            )
             return 0
 
     def generate_debug_image(
@@ -73,7 +75,9 @@ class VisualDebugGenerator:
         logger = logging.getLogger(__name__)
 
         # Create a debug log file
-        debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_visual_debug.log")
+        debug_log_path = os.path.join(
+            tempfile.gettempdir(), "qontinui_visual_debug.log"
+        )
 
         def log_to_file(msg: str):
             """Write to both logger and debug file."""
@@ -101,11 +105,15 @@ class VisualDebugGenerator:
             from PIL import Image
 
             if isinstance(screenshot, Image.Image):
-                log_to_file("[VISUAL_DEBUG] Step 2.5: Converting PIL Image to NumPy array")
+                log_to_file(
+                    "[VISUAL_DEBUG] Step 2.5: Converting PIL Image to NumPy array"
+                )
                 screenshot = np.array(screenshot)
                 # PIL uses RGB, OpenCV uses BGR - convert
                 screenshot = cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR)
-                log_to_file(f"[VISUAL_DEBUG] Converted to NumPy array, shape: {screenshot.shape}")
+                log_to_file(
+                    f"[VISUAL_DEBUG] Converted to NumPy array, shape: {screenshot.shape}"
+                )
 
             try:
                 log_to_file("[VISUAL_DEBUG] Step 3: Accessing screenshot.shape")
@@ -155,7 +163,9 @@ class VisualDebugGenerator:
                     f"[VISUAL_DEBUG] Drawing non-match boxes from {len(top_matches)} top matches"
                 )
                 logger.info(f"[VISUAL_DEBUG] Threshold for red boxes: {threshold}")
-                logger.info(f"[VISUAL_DEBUG] Number of green boxes drawn: {len(matches)}")
+                logger.info(
+                    f"[VISUAL_DEBUG] Number of green boxes drawn: {len(matches)}"
+                )
 
                 # Build a set of match coordinates to identify which top_matches were returned
                 returned_match_coords = set()
@@ -165,7 +175,9 @@ class VisualDebugGenerator:
                     returned_match_coords.add((x, y))
 
                 # Sort top_matches by confidence (ascending) so we draw worst first, best last
-                sorted_top_matches = sorted(top_matches, key=lambda tm: tm.get("confidence", 0.0))
+                sorted_top_matches = sorted(
+                    top_matches, key=lambda tm: tm.get("confidence", 0.0)
+                )
 
                 for idx, top_match in enumerate(sorted_top_matches):
                     try:
@@ -198,9 +210,15 @@ class VisualDebugGenerator:
                             label_text = f"NO MATCH {confidence:.1%}"
 
                         # Get template size from debug data
-                        template_size = debug_data.get("template_size", {"width": 0, "height": 0})
-                        w = self._safe_int(template_size.get("width", 0), "template.width")
-                        h = self._safe_int(template_size.get("height", 0), "template.height")
+                        template_size = debug_data.get(
+                            "template_size", {"width": 0, "height": 0}
+                        )
+                        w = self._safe_int(
+                            template_size.get("width", 0), "template.width"
+                        )
+                        h = self._safe_int(
+                            template_size.get("height", 0), "template.height"
+                        )
 
                         logger.debug(
                             f"[VISUAL_DEBUG] Drawing {label_text} at ({x}, {y}): w={w}, h={h}, conf={confidence:.3f}"
@@ -241,7 +259,9 @@ class VisualDebugGenerator:
                         logger.warning(f"Skipping non-match box due to error: {e}")
 
             # Step 2: Draw actual returned matches (green) LAST so they appear on top
-            log_to_file(f"[VISUAL_DEBUG] Drawing {num_matches} green match boxes on top")
+            log_to_file(
+                f"[VISUAL_DEBUG] Drawing {num_matches} green match boxes on top"
+            )
             for idx, match in enumerate(matches):
                 try:
                     # Get raw values first for logging
@@ -281,9 +301,13 @@ class VisualDebugGenerator:
                     )
 
                     # Draw green box
-                    cv2.rectangle(annotated, pt1, pt2, self.COLOR_MATCH, self.BOX_THICKNESS)
+                    cv2.rectangle(
+                        annotated, pt1, pt2, self.COLOR_MATCH, self.BOX_THICKNESS
+                    )
 
-                    log_to_file(f"[VISUAL_DEBUG] Successfully drew rectangle for match {idx}")
+                    log_to_file(
+                        f"[VISUAL_DEBUG] Successfully drew rectangle for match {idx}"
+                    )
 
                     # Draw confidence label
                     self._draw_label(
@@ -366,7 +390,9 @@ class VisualDebugGenerator:
             cv2.LINE_AA,
         )
 
-    def _draw_threshold_info(self, image: np.ndarray, threshold: float, match_count: int) -> None:
+    def _draw_threshold_info(
+        self, image: np.ndarray, threshold: float, match_count: int
+    ) -> None:
         """Draw threshold and match count info at top of image.
 
         Args:
@@ -412,7 +438,9 @@ class VisualDebugGenerator:
             logger = logging.getLogger(__name__)
             logger.warning(f"Failed to draw threshold info: {e}")
 
-    def _draw_template_overlay(self, image: np.ndarray, template: np.ndarray, log_to_file) -> None:
+    def _draw_template_overlay(
+        self, image: np.ndarray, template: np.ndarray, log_to_file
+    ) -> None:
         """Draw template image overlay in top-left corner.
 
         Args:
@@ -451,7 +479,9 @@ class VisualDebugGenerator:
             if larger_dimension < min_display_size:
                 # Scale up small templates for visibility
                 scale_factor = min_display_size / larger_dimension
-                log_to_file(f"[VISUAL_DEBUG] Template too small, scaling up by {scale_factor:.2f}x")
+                log_to_file(
+                    f"[VISUAL_DEBUG] Template too small, scaling up by {scale_factor:.2f}x"
+                )
             elif larger_dimension > max_display_size:
                 # Scale down large templates
                 scale_factor = max_display_size / larger_dimension
@@ -462,8 +492,12 @@ class VisualDebugGenerator:
             if scale_factor != 1.0:
                 new_w = int(t_w * scale_factor)
                 new_h = int(t_h * scale_factor)
-                interpolation = cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
-                template = cv2.resize(template, (new_w, new_h), interpolation=interpolation)
+                interpolation = (
+                    cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
+                )
+                template = cv2.resize(
+                    template, (new_w, new_h), interpolation=interpolation
+                )
                 t_h, t_w = new_h, new_w
                 log_to_file(f"[VISUAL_DEBUG] Scaled template to {t_w}x{t_h}")
 
@@ -509,7 +543,9 @@ class VisualDebugGenerator:
             # Add label above template
             label = "Template"
             label_y = y_pos - border - 5
-            log_to_file(f"[VISUAL_DEBUG] Adding label '{label}' at position ({x_pos}, {label_y})")
+            log_to_file(
+                f"[VISUAL_DEBUG] Adding label '{label}' at position ({x_pos}, {label_y})"
+            )
             self._draw_label(image, x_pos, label_y, label, (255, 255, 0))  # Yellow
 
             log_to_file("[VISUAL_DEBUG] Template overlay drawn successfully")

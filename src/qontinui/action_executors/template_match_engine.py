@@ -57,7 +57,9 @@ class TemplateMatchEngine:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TEMPLATE_MATCH_ENGINE: {msg}\n")
@@ -135,7 +137,9 @@ class TemplateMatchEngine:
 
         if action_result:
             self.context.update_last_action_result(action_result)
-            logger.debug(f"Found {len(action_result.matches)} matches using {strategy} strategy")
+            logger.debug(
+                f"Found {len(action_result.matches)} matches using {strategy} strategy"
+            )
 
         return action_result
 
@@ -159,7 +163,9 @@ class TemplateMatchEngine:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TEMPLATE_MATCH_ENGINE: {msg}\n")
@@ -184,12 +190,16 @@ class TemplateMatchEngine:
         log_debug("  Calling FindAction.find()...")
         find_result = action.find(
             pattern=pattern,
-            options=FindOptions(similarity=threshold, find_all=False, monitor_index=monitor_index),
+            options=FindOptions(
+                similarity=threshold, find_all=False, monitor_index=monitor_index
+            ),
         )
 
         log_debug(f"  FindAction.find() returned: {find_result}")
         log_debug(f"  find_result.found: {find_result.found if find_result else 'N/A'}")
-        log_debug(f"  find_result.matches: {find_result.matches if find_result else 'N/A'}")
+        log_debug(
+            f"  find_result.matches: {find_result.matches if find_result else 'N/A'}"
+        )
 
         if not find_result.found or not find_result.matches:
             log_debug(f"  Pattern {pattern.name} not found - returning None")
@@ -218,7 +228,9 @@ class TemplateMatchEngine:
         self.context.update_last_action_result(action_result)
         log_debug("  Updated context.last_action_result")
 
-        logger.debug(f"Found {len(action_result.matches)} matches for pattern {pattern.name}")
+        logger.debug(
+            f"Found {len(action_result.matches)} matches for pattern {pattern.name}"
+        )
         return action_result
 
     def _run_async_find(
@@ -254,7 +266,9 @@ class TemplateMatchEngine:
                         action.find,
                         pattern=pattern,
                         options=FindOptions(
-                            similarity=threshold, find_all=False, monitor_index=monitor_index
+                            similarity=threshold,
+                            find_all=False,
+                            monitor_index=monitor_index,
                         ),
                     )
                 )

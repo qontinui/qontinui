@@ -12,7 +12,9 @@ class AutoScalingConfig(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    enabled: bool = Field(default=True, description="Enable automatic pattern scaling detection")
+    enabled: bool = Field(
+        default=True, description="Enable automatic pattern scaling detection"
+    )
     cache_enabled: bool = Field(default=True, description="Enable scaling cache")
     global_learning: bool = Field(
         default=True, description="Enable global learning across patterns"
@@ -36,7 +38,9 @@ class AnalysisConfig(BaseModel):
         le=20,
         description="Number of k-means clusters for color analysis",
     )
-    color_tolerance: int = Field(default=30, ge=0, le=255, description="Color matching tolerance")
+    color_tolerance: int = Field(
+        default=30, ge=0, le=255, description="Color matching tolerance"
+    )
     hsv_bins: list[int] = Field(
         default=[50, 60, 60], description="HSV histogram bins [hue, saturation, value]"
     )
@@ -53,21 +57,29 @@ class ImageDebugConfig(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    enabled: bool = Field(default=False, description="Master switch for image debugging")
+    enabled: bool = Field(
+        default=False, description="Master switch for image debugging"
+    )
     level: str = Field(
         default="VISUAL",
         pattern="^(OFF|BASIC|DETAILED|VISUAL|FULL)$",
         description="Debug level",
     )
-    save_screenshots: bool = Field(default=True, description="Save screenshots of entire screen")
+    save_screenshots: bool = Field(
+        default=True, description="Save screenshots of entire screen"
+    )
     save_patterns: bool = Field(default=True, description="Save pattern images")
     save_comparisons: bool = Field(default=True, description="Save comparison images")
-    output_dir: str = Field(default="debug/image-finding", description="Output directory")
+    output_dir: str = Field(
+        default="debug/image-finding", description="Output directory"
+    )
 
     # Visual properties
     show_search_regions: bool = Field(default=True, description="Show search regions")
     show_match_scores: bool = Field(default=True, description="Show match scores")
-    create_heatmap: bool = Field(default=False, description="Create heatmap visualization")
+    create_heatmap: bool = Field(
+        default=False, description="Create heatmap visualization"
+    )
 
     # Debug data emission
     emit_match_details: bool = Field(

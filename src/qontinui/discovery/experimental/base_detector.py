@@ -63,7 +63,9 @@ class BaseDetector(ABC):
         return [{}]  # Default: no parameters
 
     @staticmethod
-    def merge_overlapping_boxes(boxes: list[BBox], iou_threshold: float = 0.5) -> list[BBox]:
+    def merge_overlapping_boxes(
+        boxes: list[BBox], iou_threshold: float = 0.5
+    ) -> list[BBox]:
         """Merge highly overlapping boxes"""
         if not boxes:
             return []
@@ -187,7 +189,9 @@ class MultiScreenshotDetector(ABC):
         self.params: dict[str, Any] = {}
 
     @abstractmethod
-    def detect_multi(self, dataset: MultiScreenshotDataset, **params) -> dict[int, list[BBox]]:
+    def detect_multi(
+        self, dataset: MultiScreenshotDataset, **params
+    ) -> dict[int, list[BBox]]:
         """
         Detect GUI elements across multiple screenshots
 

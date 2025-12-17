@@ -112,7 +112,9 @@ class ControlFlowExecutor:
         self._switch_executor = SwitchExecutor(self._context)
         self._try_catch_executor = TryCatchExecutor(self._context)
 
-        logger.debug("ControlFlowExecutor initialized with %d variables", len(self.variables))
+        logger.debug(
+            "ControlFlowExecutor initialized with %d variables", len(self.variables)
+        )
 
     def execute_loop(self, action: Action) -> dict[str, Any]:
         """Execute a LOOP action (FOR, WHILE, or FOREACH).
@@ -271,7 +273,9 @@ class ControlFlowExecutor:
         def execute_action_callback(action_id: str) -> bool:
             """Execute action using the provided action_executor callback."""
             if not self.action_executor:
-                logger.warning(f"No action executor configured, skipping action {action_id}")
+                logger.warning(
+                    f"No action executor configured, skipping action {action_id}"
+                )
                 return True
 
             try:

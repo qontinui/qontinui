@@ -100,7 +100,9 @@ class TypeScriptAnalysisReport:
                         "pattern": cond.pattern,
                         "condition": cond.condition,
                         "renders": cond.renders or cond.renders_true,
-                        "alternative": (cond.renders_false if cond.pattern == "TERNARY" else None),
+                        "alternative": (
+                            cond.renders_false if cond.pattern == "TERNARY" else None
+                        ),
                         "file": file_path,
                         "line": cond.line,
                     }
@@ -213,7 +215,9 @@ class TypeScriptAnalysisReport:
             total_handlers += len(file_result.event_handlers)
 
             for component in file_result.components:
-                component_types[component.type] = component_types.get(component.type, 0) + 1
+                component_types[component.type] = (
+                    component_types.get(component.type, 0) + 1
+                )
 
             for state in file_result.state_variables:
                 hook_types[state.hook] = hook_types.get(state.hook, 0) + 1

@@ -82,7 +82,9 @@ class StateRelationshipManager:
         with self._lock:
             return parent in self._child_states and len(self._child_states[parent]) > 0
 
-    def add_transition(self, from_state: str, to_state: str, transition: StateTransition) -> bool:
+    def add_transition(
+        self, from_state: str, to_state: str, transition: StateTransition
+    ) -> bool:
         """Add a transition between states.
 
         Args:

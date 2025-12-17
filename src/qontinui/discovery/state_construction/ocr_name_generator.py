@@ -97,7 +97,9 @@ class OCRNameGenerator:
 
         if requested == "tesseract":
             if not HAS_TESSERACT:
-                raise ValueError("Tesseract not available. Install: pip install pytesseract")
+                raise ValueError(
+                    "Tesseract not available. Install: pip install pytesseract"
+                )
             return "tesseract"
 
         if requested == "easyocr":
@@ -108,7 +110,9 @@ class OCRNameGenerator:
         # Fallback with auto-selection
         return self._select_engine("auto")
 
-    def generate_name_from_image(self, image: np.ndarray, context: str = "generic") -> str:
+    def generate_name_from_image(
+        self, image: np.ndarray, context: str = "generic"
+    ) -> str:
         """Generate a name from an image using OCR.
 
         Extracts text from the image and converts it to a valid identifier.

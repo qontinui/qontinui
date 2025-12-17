@@ -73,7 +73,9 @@ class SceneAnalyzer:
         processed = set()
 
         # Sort by area (largest first) to find top-level containers
-        sorted_objects = sorted(objects, key=lambda o: o.location.get_area(), reverse=True)
+        sorted_objects = sorted(
+            objects, key=lambda o: o.location.get_area(), reverse=True
+        )
 
         for potential_parent in sorted_objects:
             if potential_parent.id in processed:
@@ -128,7 +130,9 @@ class SceneAnalyzer:
             elif self_count == 0 or other_count == 0:
                 type_similarity += 0.0
             else:
-                type_similarity += min(self_count, other_count) / max(self_count, other_count)
+                type_similarity += min(self_count, other_count) / max(
+                    self_count, other_count
+                )
 
         type_similarity /= len(all_types)
 

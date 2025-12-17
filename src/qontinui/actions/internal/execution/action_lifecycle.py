@@ -375,7 +375,9 @@ class ActionLifecycle:
             self._listeners[event] = []
         self._listeners[event].append(listener)
 
-    def remove_listener(self, event: LifecycleEvent, listener: Callable[..., Any]) -> None:
+    def remove_listener(
+        self, event: LifecycleEvent, listener: Callable[..., Any]
+    ) -> None:
         """Remove event listener.
 
         Args:
@@ -385,7 +387,9 @@ class ActionLifecycle:
         if event in self._listeners:
             self._listeners[event].remove(listener)
 
-    def add_validator(self, stage: LifecycleStage, validator: Callable[[], bool]) -> None:
+    def add_validator(
+        self, stage: LifecycleStage, validator: Callable[[], bool]
+    ) -> None:
         """Add stage validator.
 
         Args:

@@ -131,7 +131,9 @@ class QdrantLocalDB:
         for vector_name, config in vectors_config.items():
             distance_str = config.get("distance", "Cosine")
             if distance_str not in distance_map:
-                raise ValueError(f"Invalid distance metric for {vector_name}: {distance_str}")
+                raise ValueError(
+                    f"Invalid distance metric for {vector_name}: {distance_str}"
+                )
 
             vector_params[vector_name] = VectorParams(
                 size=config["size"],
@@ -210,7 +212,8 @@ class QdrantLocalDB:
         )
 
         logger.debug(
-            f"Search in '{collection}' returned {len(results)} results " f"(limit={limit})"
+            f"Search in '{collection}' returned {len(results)} results "
+            f"(limit={limit})"
         )
         return cast(list[Any], results)
 

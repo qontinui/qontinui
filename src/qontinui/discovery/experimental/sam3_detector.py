@@ -77,7 +77,9 @@ class SAM3Detector(BaseDetector):
             if checkpoint_path is None:
                 print("SAM3 checkpoint not found. Will skip SAM3 detection.")
                 print("Download from: https://github.com/facebookresearch/sam3")
-                print("Note: You need to request access to SAM3 checkpoints on Hugging Face")
+                print(
+                    "Note: You need to request access to SAM3 checkpoints on Hugging Face"
+                )
                 self.sam_available = False
                 return
 
@@ -94,7 +96,9 @@ class SAM3Detector(BaseDetector):
 
         except ImportError as e:
             print(f"SAM3 not available: {e}")
-            print("Install with: pip install git+https://github.com/facebookresearch/sam3.git")
+            print(
+                "Install with: pip install git+https://github.com/facebookresearch/sam3.git"
+            )
             self.sam_available = False
         except Exception as e:
             print(f"Error loading SAM3: {e}")
@@ -142,8 +146,16 @@ class SAM3Detector(BaseDetector):
 
                 if results and "masks" in results:
                     for idx, _mask in enumerate(results["masks"]):
-                        bbox = results.get("boxes", [])[idx] if "boxes" in results else None
-                        confidence = results.get("scores", [])[idx] if "scores" in results else 1.0
+                        bbox = (
+                            results.get("boxes", [])[idx]
+                            if "boxes" in results
+                            else None
+                        )
+                        confidence = (
+                            results.get("scores", [])[idx]
+                            if "scores" in results
+                            else 1.0
+                        )
 
                         if bbox is not None:
                             x1, y1, x2, y2 = bbox

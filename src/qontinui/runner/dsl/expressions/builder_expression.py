@@ -74,7 +74,9 @@ class BuilderExpression(Expression):
         """
         method_calls = []
         if "methodCalls" in data:
-            method_calls = [BuilderMethodCall.from_dict(mc) for mc in data["methodCalls"]]
+            method_calls = [
+                BuilderMethodCall.from_dict(mc) for mc in data["methodCalls"]
+            ]
 
         return cls(builder_type=data.get("builderType", ""), method_calls=method_calls)
 

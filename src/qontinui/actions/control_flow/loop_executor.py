@@ -215,7 +215,9 @@ class LoopExecutor:
         while iteration < max_iterations:
             # Evaluate condition
             try:
-                condition_result = self.condition_evaluator.evaluate_condition(config.condition)
+                condition_result = self.condition_evaluator.evaluate_condition(
+                    config.condition
+                )
             except ValueError as e:
                 logger.error("Failed to evaluate WHILE condition: %s", str(e))
                 errors_list.append(
@@ -228,7 +230,9 @@ class LoopExecutor:
                 break
 
             if not condition_result:
-                logger.debug("WHILE condition false, exiting loop after %d iterations", iteration)
+                logger.debug(
+                    "WHILE condition false, exiting loop after %d iterations", iteration
+                )
                 break
 
             logger.debug("WHILE loop iteration %d", iteration)
@@ -262,7 +266,9 @@ class LoopExecutor:
             iteration += 1
 
         if iteration >= max_iterations:
-            logger.warning("WHILE loop hit max_iterations (%d), stopping", max_iterations)
+            logger.warning(
+                "WHILE loop hit max_iterations (%d), stopping", max_iterations
+            )
             errors_list.append(
                 {
                     "type": "MaxIterationsExceeded",
@@ -320,7 +326,9 @@ class LoopExecutor:
         result: dict[str, Any] = {"iterations_completed": 0, "errors": errors_list}
 
         for index, item in enumerate(items):
-            logger.debug("FOREACH iteration %d/%d, item=%s", index + 1, len(items), item)
+            logger.debug(
+                "FOREACH iteration %d/%d, item=%s", index + 1, len(items), item
+            )
 
             # Set iterator variable if specified
             if config.iterator_variable:
@@ -405,7 +413,9 @@ class LoopExecutor:
             # Placeholder: Match-based collections require image finding integration
             # Integration point: Use Find action to get matches, then extract locations/regions
             # Example: find_result = find_action.perform(...); return [m.target for m in find_result.matches]
-            logger.warning("Match-based collections not implemented yet, returning empty list")
+            logger.warning(
+                "Match-based collections not implemented yet, returning empty list"
+            )
             return []
 
         else:
@@ -430,7 +440,9 @@ class LoopExecutor:
         result: dict[str, Any] = {"actions_executed": 0, "errors": errors_list}
 
         # Check if execute_action callback is available
-        if not hasattr(self.context, "execute_action") or not callable(self.context.execute_action):
+        if not hasattr(self.context, "execute_action") or not callable(
+            self.context.execute_action
+        ):
             logger.warning(
                 "No execute_action callback in context, skipping %d actions",
                 len(action_ids),
@@ -477,7 +489,9 @@ class LoopExecutor:
 
             except KeyError as e:
                 logger.error("Action %s raised KeyError: %s", action_id, str(e))
-                errors_list.append({"action_id": action_id, "type": "KeyError", "message": str(e)})
+                errors_list.append(
+                    {"action_id": action_id, "type": "KeyError", "message": str(e)}
+                )
                 result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
 
         return result

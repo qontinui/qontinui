@@ -92,7 +92,9 @@ class EventRegistry:
             True if any callbacks registered
         """
         # Single bool check + len check - very fast (~2-5 nanoseconds)
-        return self._enabled and (bool(self._callbacks) or bool(self._wildcard_callbacks))
+        return self._enabled and (
+            bool(self._callbacks) or bool(self._wildcard_callbacks)
+        )
 
     def register(
         self,
@@ -287,7 +289,9 @@ def unregister_callback(
     _event_registry.unregister(event_type, callback)
 
 
-def emit_event(event_type: EventType, data: dict[str, Any] | None = None, **kwargs) -> None:
+def emit_event(
+    event_type: EventType, data: dict[str, Any] | None = None, **kwargs
+) -> None:
     """Emit an event (internal library use).
 
     Args:

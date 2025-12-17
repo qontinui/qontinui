@@ -39,7 +39,9 @@ class ExtractionTarget:
     runtime_type: RuntimeType
     url: str | None = None  # For web/Tauri/Electron
     app_path: str | None = None  # For native apps
-    app_dev_command: str | None = None  # Command to start dev server (e.g., "npm run dev")
+    app_dev_command: str | None = (
+        None  # Command to start dev server (e.g., "npm run dev")
+    )
 
     # Connection details
     viewport: tuple[int, int] = (1920, 1080)
@@ -104,7 +106,9 @@ class RuntimeStateCapture:
             "timestamp": self.timestamp.isoformat(),
             "elements": [e.to_dict() for e in self.elements],
             "states": [s.to_dict() for s in self.states],
-            "screenshot_path": (str(self.screenshot_path) if self.screenshot_path else None),
+            "screenshot_path": (
+                str(self.screenshot_path) if self.screenshot_path else None
+            ),
             "url": self.url,
             "title": self.title,
             "viewport": list(self.viewport),
@@ -142,7 +146,9 @@ class RuntimeExtractionSession:
             "session_id": self.session_id,
             "target": self.target.to_dict(),
             "started_at": self.started_at.isoformat(),
-            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
             "captures": [c.to_dict() for c in self.captures],
             "transitions": [t.to_dict() for t in self.transitions],
             "storage_dir": str(self.storage_dir) if self.storage_dir else None,

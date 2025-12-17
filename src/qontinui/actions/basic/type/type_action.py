@@ -132,7 +132,9 @@ class TypeAction(ActionInterface):
         """
         return ActionType.TYPE
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, matches: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the type action using the Qontinui framework pattern.
 
         Args:
@@ -143,7 +145,9 @@ class TypeAction(ActionInterface):
         text_to_type = ""
         for collection in object_collections:
             if collection.state_strings:
-                text_to_type = collection.state_strings[0].get_string()  # Use first string
+                text_to_type = collection.state_strings[
+                    0
+                ].get_string()  # Use first string
                 break
 
         # Execute the type action
@@ -194,7 +198,9 @@ class TypeAction(ActionInterface):
                 # Emit TEXT_TYPED event for runner/frontend
                 from ....reporting.events import EventType, emit_event
 
-                emit_event(EventType.TEXT_TYPED, {"text": text, "character_count": len(text)})
+                emit_event(
+                    EventType.TEXT_TYPED, {"text": text, "character_count": len(text)}
+                )
 
             # Verify if requested
             if self.options.verify_text:

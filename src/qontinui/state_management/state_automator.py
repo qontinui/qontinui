@@ -106,7 +106,9 @@ class StateAutomator:
         logger.info(f"Registered {registered_count} states with StateStore")
         return registered_count
 
-    def collect_and_register_transitions(self, objects_with_transitions: list[Any]) -> int:
+    def collect_and_register_transitions(
+        self, objects_with_transitions: list[Any]
+    ) -> int:
         """Collect @transition decorated methods and register them with StateStore.
 
         Scans provided objects for @transition decorated methods and automatically
@@ -195,7 +197,9 @@ class StateAutomator:
                 "from_state": current.name,
             }
             transition_info.append(info)
-            logger.info(f"  - {trans.name} -> {trans.to_state} (priority: {trans.priority})")
+            logger.info(
+                f"  - {trans.name} -> {trans.to_state} (priority: {trans.priority})"
+            )
 
         return transition_info
 
@@ -227,7 +231,10 @@ class StateAutomator:
 
                 try:
                     # Execute the transition function if it exists
-                    if hasattr(trans, "transition_function") and trans.transition_function:
+                    if (
+                        hasattr(trans, "transition_function")
+                        and trans.transition_function
+                    ):
                         success = trans.transition_function()
                     else:
                         # No function means automatic success
@@ -268,7 +275,9 @@ class StateAutomator:
 
                 except Exception as e:
                     self.state_store.record_failed_transition(current.name, str(e))
-                    logger.error(f"Exception during transition '{transition_name}': {e}")
+                    logger.error(
+                        f"Exception during transition '{transition_name}': {e}"
+                    )
                     return False
 
         logger.error(f"Transition not found: {transition_name}")
@@ -299,7 +308,9 @@ class StateAutomator:
         """
         return list(self._registered_states)
 
-    def get_transition_history(self, state_name: str | None = None) -> list[dict[str, Any]]:
+    def get_transition_history(
+        self, state_name: str | None = None
+    ) -> list[dict[str, Any]]:
         """Get transition history for a state or all states.
 
         Args:
@@ -360,7 +371,9 @@ class StateAutomator:
             for trans in transitions:
                 to_state = trans.get("to_state")
                 if to_state and to_state not in self._registered_states:
-                    errors.append(f"Transition target state '{to_state}' not registered")
+                    errors.append(
+                        f"Transition target state '{to_state}' not registered"
+                    )
 
         return errors
 

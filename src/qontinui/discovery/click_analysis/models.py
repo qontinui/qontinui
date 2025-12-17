@@ -195,7 +195,9 @@ class InferenceResult:
         return {
             "click_location": self.click_location,
             "primary_bbox": self.primary_bbox.to_dict(),
-            "alternative_candidates": [c.to_dict() for c in self.alternative_candidates],
+            "alternative_candidates": [
+                c.to_dict() for c in self.alternative_candidates
+            ],
             "image_width": self.image_width,
             "image_height": self.image_height,
             "strategies_attempted": [s.value for s in self.strategies_attempted],

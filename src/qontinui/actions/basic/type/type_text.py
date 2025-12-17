@@ -75,7 +75,9 @@ class TypeText(ActionInterface):
         """
         return ActionType.TYPE
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    def perform(
+        self, matches: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Type text strings from the object collections.
 
         Args:
@@ -103,7 +105,9 @@ class TypeText(ActionInterface):
                     self.text_typer.type(state_string, type_options)
                 else:
                     # Placeholder implementation
-                    print(f"Typing: {state_string.string} with delay {current_type_delay}")
+                    print(
+                        f"Typing: {state_string.string} with delay {current_type_delay}"
+                    )
 
                 # Pause between typing different strings (except after the last one)
                 if i < len(strings) - 1:

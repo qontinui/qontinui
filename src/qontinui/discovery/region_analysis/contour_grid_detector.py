@@ -173,7 +173,10 @@ class ContourGridDetector(BaseRegionAnalyzer):
                     rectangles[i] for i in range(len(rectangles)) if labels[i] == label
                 ]
 
-                if len(cluster_rects) >= params["min_grid_rows"] * params["min_grid_cols"]:
+                if (
+                    len(cluster_rects)
+                    >= params["min_grid_rows"] * params["min_grid_cols"]
+                ):
                     # Check size consistency
                     widths = [r["width"] for r in cluster_rects]
                     heights = [r["height"] for r in cluster_rects]
@@ -186,7 +189,9 @@ class ContourGridDetector(BaseRegionAnalyzer):
                             width_std < params["size_tolerance"]
                             and height_std < params["size_tolerance"]
                         ):
-                            score = len(cluster_rects) * (1 - width_std) * (1 - height_std)
+                            score = (
+                                len(cluster_rects) * (1 - width_std) * (1 - height_std)
+                            )
                             if score > best_score:
                                 best_score = score
 
@@ -201,7 +206,10 @@ class ContourGridDetector(BaseRegionAnalyzer):
             width_std = np.std(widths) / (np.mean(widths) + 1e-7)
             height_std = np.std(heights) / (np.mean(heights) + 1e-7)
 
-            if width_std < params["size_tolerance"] and height_std < params["size_tolerance"]:
+            if (
+                width_std < params["size_tolerance"]
+                and height_std < params["size_tolerance"]
+            ):
                 if rectangles not in best_clusters:
                     best_clusters.append(rectangles)
 
@@ -232,7 +240,9 @@ class ContourGridDetector(BaseRegionAnalyzer):
             if label == -1:  # noise
                 continue
 
-            cluster_rects = [rectangles[i] for i in range(len(rectangles)) if labels[i] == label]
+            cluster_rects = [
+                rectangles[i] for i in range(len(rectangles)) if labels[i] == label
+            ]
 
             if len(cluster_rects) >= params["min_grid_rows"] * params["min_grid_cols"]:
                 # Check if cluster forms a grid
@@ -261,7 +271,10 @@ class ContourGridDetector(BaseRegionAnalyzer):
         y_coords = sorted({y for x, y in positions})
 
         # Calculate spacing
-        if len(x_coords) < params["min_grid_cols"] or len(y_coords) < params["min_grid_rows"]:
+        if (
+            len(x_coords) < params["min_grid_cols"]
+            or len(y_coords) < params["min_grid_rows"]
+        ):
             return None
 
         x_diffs = [x_coords[i + 1] - x_coords[i] for i in range(len(x_coords) - 1)]

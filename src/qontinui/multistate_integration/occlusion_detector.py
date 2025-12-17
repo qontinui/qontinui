@@ -149,7 +149,9 @@ class OcclusionDetector:
                         occlusion_type=OcclusionType.MODAL,
                         confidence=0.95,
                     )
-                    logger.debug(f"Modal state {state.name} covers {len(covered)} states")
+                    logger.debug(
+                        f"Modal state {state.name} covers {len(covered)} states"
+                    )
 
     def _detect_spatial_occlusions(self, state_ids: set[int]) -> None:
         """Detect spatial UI occlusions.
@@ -307,7 +309,9 @@ class OcclusionDetector:
         """
         return self.get_covering_state(state_id) is not None
 
-    def generate_reveal_transition(self, covering_state_id: int) -> StateTransition | None:
+    def generate_reveal_transition(
+        self, covering_state_id: int
+    ) -> StateTransition | None:
         """Generate transition to reveal states when covering state closes.
 
         Args:
@@ -337,7 +341,9 @@ class OcclusionDetector:
                 reveal_transition=reveal_trans,
             )
             self.reveal_history.append(event)
-            logger.info(f"Generated reveal transition for {len(relation.covered_state_ids)} states")
+            logger.info(
+                f"Generated reveal transition for {len(relation.covered_state_ids)} states"
+            )
 
         return reveal_trans
 
@@ -458,7 +464,9 @@ class OcclusionDetector:
         occlusion_type_counts: dict[str, int] = {}
         for relation in self.occlusions.values():
             type_name = relation.occlusion_type.value
-            occlusion_type_counts[type_name] = occlusion_type_counts.get(type_name, 0) + 1
+            occlusion_type_counts[type_name] = (
+                occlusion_type_counts.get(type_name, 0) + 1
+            )
 
         return {
             "active_states": len(active),
@@ -485,7 +493,9 @@ class OcclusionDetector:
         for covering_id, relation in self.occlusions.items():
             if self.state_memory.state_service:
                 covering_state = self.state_memory.state_service.get_state(covering_id)
-                covering_name = covering_state.name if covering_state else f"State {covering_id}"
+                covering_name = (
+                    covering_state.name if covering_state else f"State {covering_id}"
+                )
             else:
                 covering_name = f"State {covering_id}"
 

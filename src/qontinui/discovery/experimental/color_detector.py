@@ -75,7 +75,9 @@ class ColorClusterDetector(BaseDetector):
             mask = (labels == cluster_id).astype(np.uint8) * 255
 
             # Find contours in this cluster
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
 
             for contour in contours:
                 x, y, w, h = cv2.boundingRect(contour)

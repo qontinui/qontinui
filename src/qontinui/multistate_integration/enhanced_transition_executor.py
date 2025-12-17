@@ -196,7 +196,9 @@ class EnhancedTransitionExecutor:
         # Check preconditions
         if transition.from_states:
             current_states = self.state_memory.active_states
-            if not any(state_id in current_states for state_id in transition.from_states):
+            if not any(
+                state_id in current_states for state_id in transition.from_states
+            ):
                 logger.debug("Precondition failed: no from_states active")
                 return False
 
@@ -231,7 +233,9 @@ class EnhancedTransitionExecutor:
 
         logger.debug(f"_execute_outgoing called for transition '{transition.name}'")
         logger.debug(f"  workflow_executor is None: {self.workflow_executor is None}")
-        logger.debug(f"  transition has workflow_ids attr: {hasattr(transition, 'workflow_ids')}")
+        logger.debug(
+            f"  transition has workflow_ids attr: {hasattr(transition, 'workflow_ids')}"
+        )
         if hasattr(transition, "workflow_ids"):
             logger.debug(f"  transition.workflow_ids: {transition.workflow_ids}")
 
@@ -245,7 +249,9 @@ class EnhancedTransitionExecutor:
 
         # Execute each workflow associated with this transition
         for workflow_id in transition.workflow_ids:
-            logger.info(f"Executing workflow '{workflow_id}' for transition '{transition.name}'")
+            logger.info(
+                f"Executing workflow '{workflow_id}' for transition '{transition.name}'"
+            )
 
             try:
                 if self.workflow_executor:
@@ -295,7 +301,9 @@ class EnhancedTransitionExecutor:
                     return False
 
             except Exception as e:
-                logger.error(f"Error executing workflow '{workflow_id}': {e}", exc_info=True)
+                logger.error(
+                    f"Error executing workflow '{workflow_id}': {e}", exc_info=True
+                )
                 return False
 
         # Run phase callbacks
@@ -303,7 +311,9 @@ class EnhancedTransitionExecutor:
             if not callback(context):
                 return False
 
-        logger.debug(f"Outgoing transitions executed successfully for {transition.name}")
+        logger.debug(
+            f"Outgoing transitions executed successfully for {transition.name}"
+        )
         return True
 
     def _execute_activate(self, context: ExecutionContext) -> None:
@@ -331,7 +341,9 @@ class EnhancedTransitionExecutor:
         for callback in self.phase_callbacks[ExecutionPhase.ACTIVATE]:
             callback(context)
 
-        activated_count = len(context.activated_states) if context.activated_states else 0
+        activated_count = (
+            len(context.activated_states) if context.activated_states else 0
+        )
         logger.debug(f"Activated {activated_count} states")
 
     def _execute_incoming(self, context: ExecutionContext) -> bool:
@@ -361,7 +373,9 @@ class EnhancedTransitionExecutor:
         # Determine success based on policy
         return self._evaluate_success(context)
 
-    def _execute_single_incoming(self, state_id: int, context: ExecutionContext) -> bool:
+    def _execute_single_incoming(
+        self, state_id: int, context: ExecutionContext
+    ) -> bool:
         """Execute incoming transition workflows for a single state.
 
         IncomingTransitions are verification workflows that run when entering a state.
@@ -385,7 +399,9 @@ class EnhancedTransitionExecutor:
 
         # Check if state has incoming transitions
         if not hasattr(state, "incoming_transitions") or not state.incoming_transitions:
-            logger.debug(f"State {state.name} has no incoming transitions - verification skipped")
+            logger.debug(
+                f"State {state.name} has no incoming transitions - verification skipped"
+            )
             return True  # No incoming transitions = no verification needed = success
 
         logger.info(
@@ -408,7 +424,9 @@ class EnhancedTransitionExecutor:
                 )
 
                 if not self.workflow_executor:
-                    logger.error("No workflow_executor available for incoming transition")
+                    logger.error(
+                        "No workflow_executor available for incoming transition"
+                    )
                     return False
 
                 # Build transition context for runner
@@ -423,7 +441,9 @@ class EnhancedTransitionExecutor:
                 logger.debug(
                     f"Calling workflow_executor.execute_workflow('{workflow_id}') with transition context..."
                 )
-                result = self.workflow_executor.execute_workflow(workflow_id, transition_context)
+                result = self.workflow_executor.execute_workflow(
+                    workflow_id, transition_context
+                )
                 logger.debug(f"Workflow '{workflow_id}' returned: {result}")
 
                 if not result.get("success", False):
@@ -474,7 +494,9 @@ class EnhancedTransitionExecutor:
         if self.multistate_adapter:
             self.multistate_adapter.sync_with_state_memory()
 
-        activated_count = len(context.activated_states) if context.activated_states else 0
+        activated_count = (
+            len(context.activated_states) if context.activated_states else 0
+        )
         logger.info(f"Rolled back activation of {activated_count} states")
 
     def _evaluate_success(self, context: ExecutionContext) -> bool:
@@ -487,7 +509,9 @@ class EnhancedTransitionExecutor:
             True if successful per policy
         """
         total = len(context.activated_states) if context.activated_states else 0
-        successful = len(context.successful_incoming) if context.successful_incoming else 0
+        successful = (
+            len(context.successful_incoming) if context.successful_incoming else 0
+        )
 
         if total == 0:
             return True  # No states to activate is success

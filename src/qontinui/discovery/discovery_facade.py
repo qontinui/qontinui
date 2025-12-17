@@ -298,7 +298,9 @@ class StateDiscoveryFacade:
 
         # Optionally enhance with pixel stability
         if config.algorithm == DiscoveryAlgorithm.COMBINED:
-            pixel_result = self._discover_with_pixel_stability(screenshots, config, None)
+            pixel_result = self._discover_with_pixel_stability(
+                screenshots, config, None
+            )
             merged = self._merge_results(pixel_result, diff_result)
             return DiscoveryResult.from_analysis_result(merged, config)
 

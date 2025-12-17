@@ -25,7 +25,9 @@ class RunProcessOptions(ActionConfig):
         """
         super().__init__(builder)
         self.process_id: str = builder.process_id
-        self.process_repetition: ProcessRepetitionOptions = builder.process_repetition.build()
+        self.process_repetition: ProcessRepetitionOptions = (
+            builder.process_repetition.build()
+        )
 
     def get_process_id(self) -> str:
         """Get the ID of the process to execute.

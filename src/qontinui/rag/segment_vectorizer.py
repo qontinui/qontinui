@@ -162,7 +162,9 @@ class SegmentVectorizer:
         self._sam3_processor: Any = None
 
         # Initialize description generator
-        self._description_generator = description_generator or BasicDescriptionGenerator()
+        self._description_generator = (
+            description_generator or BasicDescriptionGenerator()
+        )
 
         logger.info(
             "segment_vectorizer_initialized",
@@ -230,7 +232,9 @@ class SegmentVectorizer:
 
         # Generate text description
         np_image = np.array(pil_image)
-        text_description = self._description_generator.generate(np_image, mask=mask, bbox=bbox)
+        text_description = self._description_generator.generate(
+            np_image, mask=mask, bbox=bbox
+        )
 
         # Generate text embedding if we have a description
         text_embedding: list[float] | None = None
@@ -313,7 +317,9 @@ class SegmentVectorizer:
                     if obj.description:
                         segment_vec.text_description = obj.description
                         # Re-encode text if description changed
-                        segment_vec.text_embedding = self.clip_embedder.encode_text(obj.description)
+                        segment_vec.text_embedding = self.clip_embedder.encode_text(
+                            obj.description
+                        )
 
                     # Add OCR text from semantic object if available
                     if hasattr(obj, "ocr_text") and obj.ocr_text:
@@ -431,7 +437,9 @@ class SegmentVectorizer:
 
         for segment in segments:
             # Compute visual similarity
-            visual_sim = self._cosine_similarity(query_embedding, segment.image_embedding)
+            visual_sim = self._cosine_similarity(
+                query_embedding, segment.image_embedding
+            )
 
             # Apply threshold
             if visual_sim < threshold:
@@ -447,7 +455,9 @@ class SegmentVectorizer:
             # Compute text similarity if available
             text_sim: float | None = None
             if segment.text_embedding:
-                text_sim = self._cosine_similarity(query_embedding, segment.text_embedding)
+                text_sim = self._cosine_similarity(
+                    query_embedding, segment.text_embedding
+                )
 
             # Compute OCR similarity if available
             ocr_sim: float | None = None
@@ -493,7 +503,9 @@ class SegmentVectorizer:
 
         for segment in segments:
             for pattern_emb in pattern_embeddings:
-                visual_sim = self._cosine_similarity(pattern_emb, segment.image_embedding)
+                visual_sim = self._cosine_similarity(
+                    pattern_emb, segment.image_embedding
+                )
 
                 if visual_sim >= threshold and visual_sim > best_score:
                     best_match = RAGMatch(
@@ -628,7 +640,9 @@ class SegmentVectorizer:
 
         return segments
 
-    def _extract_ocr(self, image: Image.Image, bbox: tuple[int, int, int, int]) -> str | None:
+    def _extract_ocr(
+        self, image: Image.Image, bbox: tuple[int, int, int, int]
+    ) -> str | None:
         """Extract OCR text from image region.
 
         Args:

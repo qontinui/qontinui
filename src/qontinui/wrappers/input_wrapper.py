@@ -176,10 +176,14 @@ class MouseWrapper(BaseWrapper):
             True if successful
         """
         if self.is_mock_mode():
-            logger.debug(f"MouseWrapper.drag (MOCK): ({start_x},{start_y}) → ({end_x},{end_y})")
+            logger.debug(
+                f"MouseWrapper.drag (MOCK): ({start_x},{start_y}) → ({end_x},{end_y})"
+            )
             return self.mock_mouse.drag(start_x, start_y, end_x, end_y, duration)  # type: ignore[no-any-return]
         else:
-            logger.debug(f"MouseWrapper.drag (REAL): ({start_x},{start_y}) → ({end_x},{end_y})")
+            logger.debug(
+                f"MouseWrapper.drag (REAL): ({start_x},{start_y}) → ({end_x},{end_y})"
+            )
             return self.hal_input.drag(start_x, start_y, end_x, end_y, duration)  # type: ignore[no-any-return]
 
     def scroll(self, clicks: int, x: int | None = None, y: int | None = None) -> bool:

@@ -55,7 +55,9 @@ class DeletionManager:
 
         for state in affected_states:
             # Count remaining StateImages after deletion
-            remaining = len([si for si in state.state_image_ids if si != state_image_id])
+            remaining = len(
+                [si for si in state.state_image_ids if si != state_image_id]
+            )
 
             if remaining == 0:
                 orphaned_state_ids.append(state.id)
@@ -122,7 +124,9 @@ class DeletionManager:
 
             # Handle orphaned states
             if impact.will_create_orphans:
-                self._handle_orphaned_states(impact.orphaned_state_ids, options.handle_orphans)
+                self._handle_orphaned_states(
+                    impact.orphaned_state_ids, options.handle_orphans
+                )
 
             # Delete the StateImage
             self._delete_state_image_record(state_image_id)
@@ -180,7 +184,9 @@ class DeletionManager:
 
                 # Skip critical if not forced
                 if impact.is_critical and not options.force:
-                    skipped.append({"id": state_image_id, "reason": "critical_state_image"})
+                    skipped.append(
+                        {"id": state_image_id, "reason": "critical_state_image"}
+                    )
                     continue
 
                 # Perform deletion
@@ -195,7 +201,9 @@ class DeletionManager:
 
             # Handle all orphaned states at once
             if all_orphaned_states:
-                self._handle_orphaned_states(list(all_orphaned_states), options.handle_orphans)
+                self._handle_orphaned_states(
+                    list(all_orphaned_states), options.handle_orphans
+                )
 
             # Commit transaction
             self._commit_bulk_transaction(transaction_id)
@@ -248,7 +256,9 @@ class DeletionManager:
     def _get_state_image(self, state_image_id: str) -> StateImage | None:
         """Get StateImage by ID."""
         if self.state_manager:
-            return cast(StateImage | None, self.state_manager.get_state_image(state_image_id))
+            return cast(
+                StateImage | None, self.state_manager.get_state_image(state_image_id)
+            )
 
         # Mock implementation for testing
         return StateImage(
@@ -306,7 +316,9 @@ class DeletionManager:
             recommendations.append("Consider merging with similar StateImage instead")
 
         if states_affected > 3:
-            recommendations.append(f"Affects {states_affected} states - high impact deletion")
+            recommendations.append(
+                f"Affects {states_affected} states - high impact deletion"
+            )
 
         if will_create_orphans:
             recommendations.append("Will create orphaned states requiring cleanup")
@@ -353,7 +365,9 @@ class DeletionManager:
             # Mock deletion
             logger.info(f"Deleted StateImage {state_image_id}")
 
-    def _create_deletion_snapshot(self, state_image_id: str, impact: DeletionImpact) -> str:
+    def _create_deletion_snapshot(
+        self, state_image_id: str, impact: DeletionImpact
+    ) -> str:
         """Create snapshot for undo functionality."""
         snapshot_id = f"undo_{state_image_id}_{datetime.now().timestamp()}"
 
@@ -378,7 +392,9 @@ class DeletionManager:
     def _get_deletion_snapshot(self, undo_id: str) -> dict[str, Any] | None:
         """Retrieve deletion snapshot."""
         if self.db:
-            result = self.db.query("SELECT data FROM deletion_snapshots WHERE id = ?", (undo_id,))
+            result = self.db.query(
+                "SELECT data FROM deletion_snapshots WHERE id = ?", (undo_id,)
+            )
             return json.loads(result[0]["data"]) if result else None
 
         # Check in-memory history
@@ -405,7 +421,9 @@ class DeletionManager:
                 (datetime.now(), undo_id),
             )
 
-    def _record_deletion(self, state_image_id: str, impact: DeletionImpact, undo_id: str):
+    def _record_deletion(
+        self, state_image_id: str, impact: DeletionImpact, undo_id: str
+    ):
         """Record deletion in history."""
         record = {
             "state_image_id": state_image_id,
@@ -415,7 +433,9 @@ class DeletionManager:
         }
 
         if self.db:
-            self.db.execute("INSERT INTO deletion_history (data) VALUES (?)", (json.dumps(record),))
+            self.db.execute(
+                "INSERT INTO deletion_history (data) VALUES (?)", (json.dumps(record),)
+            )
         else:
             logger.info(f"Deletion recorded: {record}")
 

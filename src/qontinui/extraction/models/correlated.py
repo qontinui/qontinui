@@ -56,7 +56,9 @@ class MatchingEvidence:
 
     # Strength/confidence (use either field, they're synchronized)
     strength: float = 0.0  # Primary field: How strong this evidence is (0-1)
-    confidence_contribution: float | None = None  # Legacy field, auto-synced with strength
+    confidence_contribution: float | None = (
+        None  # Legacy field, auto-synced with strength
+    )
 
     # Source references
     source_file: Path | None = None
@@ -121,7 +123,9 @@ class InferredTransition:
 
     # Effects (from static analysis)
     causes_appear: list[str] = field(default_factory=list)  # Component/conditional IDs
-    causes_disappear: list[str] = field(default_factory=list)  # Component/conditional IDs
+    causes_disappear: list[str] = field(
+        default_factory=list
+    )  # Component/conditional IDs
 
     # Confidence
     confidence: float = 0.0
@@ -229,7 +233,9 @@ class ExtractionResult:
                 return transition
         return None
 
-    def get_high_confidence_states(self, min_confidence: float = 0.7) -> list[CorrelatedState]:
+    def get_high_confidence_states(
+        self, min_confidence: float = 0.7
+    ) -> list[CorrelatedState]:
         """Get states with confidence above threshold."""
         return [s for s in self.correlated_states if s.confidence >= min_confidence]
 

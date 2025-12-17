@@ -30,7 +30,9 @@ class Pattern:
     """
 
     # Class-level optimizer (shared across all patterns)
-    _optimizer: PatternOptimizer = field(default_factory=PatternOptimizer, init=False, repr=False)
+    _optimizer: PatternOptimizer = field(
+        default_factory=PatternOptimizer, init=False, repr=False
+    )
 
     # Class-level similarity calculator (shared across all patterns)
     _similarity_calculator: SimilarityCalculator = field(
@@ -75,7 +77,9 @@ class Pattern:
     rotation_invariant: bool = False
 
     # Brobot Pattern properties
-    fixed: bool = False  # An image that should always appear in the same location has fixed==true
+    fixed: bool = (
+        False  # An image that should always appear in the same location has fixed==true
+    )
     dynamic: bool = False  # Dynamic images cannot be found using pattern matching
 
     # Search regions - Following Brobot's model with SearchRegions object
@@ -452,7 +456,9 @@ class Pattern:
         return PatternFactory.from_match(match, pattern_id)
 
     @classmethod
-    def from_state_image(cls, state_image: Any, pattern_id: str | None = None) -> Pattern:
+    def from_state_image(
+        cls, state_image: Any, pattern_id: str | None = None
+    ) -> Pattern:
         """Create a Pattern from a StateImage (delegates to factory).
 
         Args:

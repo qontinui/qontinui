@@ -201,6 +201,8 @@ class TaskExecutor:
             "total_failed": self.total_failed,
             "total_timeout": self.total_timeout,
             "success_rate": (
-                self.total_succeeded / self.total_executed if self.total_executed > 0 else 0.0
+                self.total_succeeded / self.total_executed
+                if self.total_executed > 0
+                else 0.0
             ),
         }

@@ -45,7 +45,9 @@ class ActionService:
         """
         self.basic_action = basic_action
         self.find_functions = find_functions
-        self._custom_find: Callable[[ActionResult, list[ObjectCollection]], None] | None = None
+        self._custom_find: (
+            Callable[[ActionResult, list[ObjectCollection]], None] | None
+        ) = None
 
     def set_custom_find(
         self, custom_find: Callable[[ActionResult, list[ObjectCollection]], None]
@@ -87,7 +89,10 @@ class ActionService:
         config_class_name = action_config.__class__.__name__
 
         # Pattern-based find operations
-        if "FindOptions" in config_class_name or "PatternFindOptions" in config_class_name:
+        if (
+            "FindOptions" in config_class_name
+            or "PatternFindOptions" in config_class_name
+        ):
             if self.basic_action:
                 return self.basic_action.get_action(ActionType.FIND)
         # Color-based find operations

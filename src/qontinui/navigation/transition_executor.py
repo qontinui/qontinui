@@ -131,7 +131,8 @@ class TransitionExecutor:
                 for state_id, result in incoming_results.items():
                     if not result.successful:
                         logger.warning(
-                            f"Incoming transition failed for state {state_id}: " f"{result.errors}"
+                            f"Incoming transition failed for state {state_id}: "
+                            f"{result.errors}"
                         )
 
             # Phase 5: Update state visibility
@@ -286,7 +287,9 @@ class TransitionExecutor:
         incoming_map = self.joint_table.get_incoming_transitions(activated_states)
 
         for state_id, transitions in incoming_map.items():
-            logger.debug(f"State {state_id} has {len(transitions)} incoming transitions")
+            logger.debug(
+                f"State {state_id} has {len(transitions)} incoming transitions"
+            )
 
             # Execute first valid incoming transition
             for transition in transitions:
@@ -303,14 +306,19 @@ class TransitionExecutor:
                     results[state_id] = result
 
                     if result.successful:
-                        logger.debug(f"Incoming transition succeeded for state {state_id}")
+                        logger.debug(
+                            f"Incoming transition succeeded for state {state_id}"
+                        )
                         break  # Only execute first successful incoming
                     else:
                         logger.warning(
-                            f"Incoming transition failed for state {state_id}: " f"{result.errors}"
+                            f"Incoming transition failed for state {state_id}: "
+                            f"{result.errors}"
                         )
                 else:
-                    logger.debug(f"Incoming transition cannot execute for state {state_id}")
+                    logger.debug(
+                        f"Incoming transition cannot execute for state {state_id}"
+                    )
 
             # If no incoming transition executed, create a default result
             if state_id not in results:

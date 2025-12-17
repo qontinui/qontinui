@@ -286,7 +286,9 @@ def generate_mock_script(mock_responses: dict[str, Any] | None = None) -> str:
             # Convert Python values to JavaScript
             if callable(response):
                 # For functions, we can't directly inject them, so use a placeholder
-                mocks_js += f"window.__TAURI_MOCKS__['{cmd}'] = null; // Function placeholder\n"
+                mocks_js += (
+                    f"window.__TAURI_MOCKS__['{cmd}'] = null; // Function placeholder\n"
+                )
             else:
                 # Convert to JSON
                 import json

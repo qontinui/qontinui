@@ -136,7 +136,9 @@ class StateTraversal:
 
                 if next_state not in visited:
                     visited.add(next_state)
-                    queue.append((next_state, path + [current], transitions + [transition]))
+                    queue.append(
+                        (next_state, path + [current], transitions + [transition])
+                    )
 
         return TraversalResult(
             path=[],
@@ -147,7 +149,9 @@ class StateTraversal:
             metadata={"strategy": "breadth_first", "nodes_explored": len(visited)},
         )
 
-    def _dfs_search(self, start: str, goal: str, max_depth: int = 100) -> TraversalResult | None:
+    def _dfs_search(
+        self, start: str, goal: str, max_depth: int = 100
+    ) -> TraversalResult | None:
         """Depth-first search for finding path.
 
         Args:
@@ -220,7 +224,9 @@ class StateTraversal:
         import heapq
 
         # Priority queue: (cost, state, path, transitions)
-        pq: list[tuple[float, str, list[str], list[Transition]]] = [(0, start, [start], [])]
+        pq: list[tuple[float, str, list[str], list[Transition]]] = [
+            (0, start, [start], [])
+        ]
         visited = set()
         costs: dict[str, float] = {start: 0.0}
 

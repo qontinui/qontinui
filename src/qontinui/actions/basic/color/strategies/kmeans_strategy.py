@@ -60,7 +60,9 @@ class KMeansStrategy(BaseColorStrategy):
 
         return matches
 
-    def _get_kmeans_colors(self, image: np.ndarray[Any, Any], n_clusters: int) -> list[RGB]:
+    def _get_kmeans_colors(
+        self, image: np.ndarray[Any, Any], n_clusters: int
+    ) -> list[RGB]:
         """Get dominant colors using k-means.
 
         Args:

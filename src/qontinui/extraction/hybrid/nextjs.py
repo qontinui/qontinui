@@ -167,7 +167,9 @@ class NextJSExtractor(TechStackExtractor):
         if config.output_dir:
             output_dir = config.output_dir
         else:
-            output_dir = config.project_path / ".qontinui" / "extraction" / extraction_id
+            output_dir = (
+                config.project_path / ".qontinui" / "extraction" / extraction_id
+            )
         output_dir.mkdir(parents=True, exist_ok=True)
         result.screenshots_dir = output_dir / "screenshots"
         result.screenshots_dir.mkdir(exist_ok=True)
@@ -217,7 +219,9 @@ class NextJSExtractor(TechStackExtractor):
 
         return result
 
-    async def _run_static_analysis(self, config: HybridExtractionConfig) -> dict[str, Any]:
+    async def _run_static_analysis(
+        self, config: HybridExtractionConfig
+    ) -> dict[str, Any]:
         """Run static analysis on TypeScript files."""
         from ..static.typescript.parser import TypeScriptParser
 
@@ -257,7 +261,8 @@ class NextJSExtractor(TechStackExtractor):
                                 "line": comp.line,
                                 "file": file_path,
                                 "props": [
-                                    {"name": p.name, "default": p.default} for p in comp.props
+                                    {"name": p.name, "default": p.default}
+                                    for p in comp.props
                                 ],
                                 "children": comp.children,
                             }
@@ -408,7 +413,9 @@ class NextJSExtractor(TechStackExtractor):
             return states, state_images
 
         # Create main page state
-        main_state = await self._capture_current_state("main", StateType.PAGE, screenshots_dir)
+        main_state = await self._capture_current_state(
+            "main", StateType.PAGE, screenshots_dir
+        )
         states.append(main_state)
 
         # Extract StateImages for interactive elements
@@ -486,7 +493,9 @@ class NextJSExtractor(TechStackExtractor):
 
         viewport_size = self.page.viewport_size
         viewport = (
-            (viewport_size["width"], viewport_size["height"]) if viewport_size else (1920, 1080)
+            (viewport_size["width"], viewport_size["height"])
+            if viewport_size
+            else (1920, 1080)
         )
 
         return State(
@@ -873,7 +882,10 @@ class NextJSExtractor(TechStackExtractor):
             comp_name_lower = comp["name"].lower()
             image_name_lower = image.name.lower()
 
-            if comp_name_lower in image_name_lower or image_name_lower in comp_name_lower:
+            if (
+                comp_name_lower in image_name_lower
+                or image_name_lower in comp_name_lower
+            ):
                 image.component_name = comp["name"]
                 image.source_file = Path(comp["file"])
                 image.source_line = comp["line"]

@@ -158,7 +158,9 @@ class StatementExecutor:
             self.execute(statement)
         return None
 
-    def _execute_variable_declaration(self, statement: VariableDeclarationStatement) -> None:
+    def _execute_variable_declaration(
+        self, statement: VariableDeclarationStatement
+    ) -> None:
         """Execute a variable declaration statement.
 
         Declares a new variable in the current scope and optionally initializes
@@ -221,7 +223,9 @@ class StatementExecutor:
             raise ExecutionError("Expected AssignmentStatement")
 
         if not statement.value:
-            raise ExecutionError(f"Assignment to '{statement.variable_name}' has no value")
+            raise ExecutionError(
+                f"Assignment to '{statement.variable_name}' has no value"
+            )
 
         value = self._evaluate_expression(statement.value)
 

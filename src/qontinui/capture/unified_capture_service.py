@@ -108,13 +108,15 @@ class UnifiedCaptureService:
         """
         return CaptureConfig(
             provider=os.getenv("QONTINUI_CAPTURE_PROVIDER", "AUTO"),
-            enable_logging=os.getenv("QONTINUI_CAPTURE_LOGGING", "false").lower() == "true",
+            enable_logging=os.getenv("QONTINUI_CAPTURE_LOGGING", "false").lower()
+            == "true",
             auto_retry=os.getenv("QONTINUI_CAPTURE_RETRY", "true").lower() == "true",
             retry_count=int(os.getenv("QONTINUI_CAPTURE_RETRY_COUNT", "3")),
             retry_delay=float(os.getenv("QONTINUI_CAPTURE_RETRY_DELAY", "0.5")),
             cache_enabled=os.getenv("QONTINUI_CAPTURE_CACHE", "true").lower() == "true",
             cache_ttl=float(os.getenv("QONTINUI_CAPTURE_CACHE_TTL", "1.0")),
-            fallback_enabled=os.getenv("QONTINUI_CAPTURE_FALLBACK", "true").lower() == "true",
+            fallback_enabled=os.getenv("QONTINUI_CAPTURE_FALLBACK", "true").lower()
+            == "true",
         )
 
     def _init_provider(self):
@@ -195,7 +197,9 @@ class UnifiedCaptureService:
         """
         # This would load a custom provider class dynamically
         # For now, we'll raise an error
-        raise NotImplementedError(f"Custom provider loading not implemented: {class_name}")
+        raise NotImplementedError(
+            f"Custom provider loading not implemented: {class_name}"
+        )
 
     def _get_fallback_provider(self):
         """Get next fallback provider.
@@ -305,7 +309,9 @@ class UnifiedCaptureService:
             "save_screenshot",
         )
 
-    def _execute_with_retry(self, operation: Callable[..., Any], operation_name: str) -> Any:
+    def _execute_with_retry(
+        self, operation: Callable[..., Any], operation_name: str
+    ) -> Any:
         """Execute operation with automatic retry.
 
         Args:
@@ -365,7 +371,9 @@ class UnifiedCaptureService:
         try:
             self.config.provider = provider_name
             self._init_provider()
-            logger.info(f"Changed capture provider from {old_provider} to {provider_name}")
+            logger.info(
+                f"Changed capture provider from {old_provider} to {provider_name}"
+            )
         except Exception as e:
             logger.error(f"Failed to change provider to {provider_name}: {e}")
             self.config.provider = old_provider

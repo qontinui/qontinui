@@ -59,7 +59,9 @@ class StateNavigationRequest(BaseModel):
     """
 
     execution_id: str = "default"
-    target_state_ids: list[str] = Field(..., description="List of target state IDs", min_length=1)
+    target_state_ids: list[str] = Field(
+        ..., description="List of target state IDs", min_length=1
+    )
 
 
 class StateNavigationResponse(BaseModel):

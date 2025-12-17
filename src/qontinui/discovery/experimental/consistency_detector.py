@@ -34,7 +34,9 @@ class ConsistencyDetector(MultiScreenshotDetector):
     def __init__(self):
         super().__init__("ConsistencyDetector")
 
-    def detect_multi(self, dataset: MultiScreenshotDataset, **params) -> dict[int, list[BBox]]:
+    def detect_multi(
+        self, dataset: MultiScreenshotDataset, **params
+    ) -> dict[int, list[BBox]]:
         """
         Detect elements by finding consistent regions across screenshots
 
@@ -145,7 +147,9 @@ class ConsistencyDetector(MultiScreenshotDetector):
 
                 if height != ref_height or width != ref_width:
                     # Resize first
-                    img = cv2.resize(img, (ref_width, ref_height), interpolation=cv2.INTER_LINEAR)
+                    img = cv2.resize(
+                        img, (ref_width, ref_height), interpolation=cv2.INTER_LINEAR
+                    )
                     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
                 # Use phase correlation to find shift
@@ -230,10 +234,14 @@ class ConsistencyDetector(MultiScreenshotDetector):
         edge_count = np.sum(edge_stack > 0, axis=0) / len(screenshots)
 
         # Combine pixel consistency and edge consistency
-        combined_consistency = (1.0 - edge_weight) * pixel_consistency + edge_weight * edge_count
+        combined_consistency = (
+            1.0 - edge_weight
+        ) * pixel_consistency + edge_weight * edge_count
 
         # Threshold to create binary mask
-        consistency_mask = (combined_consistency >= consistency_threshold).astype(np.uint8) * 255
+        consistency_mask = (combined_consistency >= consistency_threshold).astype(
+            np.uint8
+        ) * 255
 
         # Clean up the mask with morphological operations
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
@@ -282,7 +290,9 @@ class ConsistencyDetector(MultiScreenshotDetector):
                 continue
 
             # Create bounding box
-            boxes.append(BBox(x1=x, y1=y, x2=x + w, y2=y + h, label="consistent", confidence=1.0))
+            boxes.append(
+                BBox(x1=x, y1=y, x2=x + w, y2=y + h, label="consistent", confidence=1.0)
+            )
 
         return boxes
 

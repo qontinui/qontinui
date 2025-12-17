@@ -92,7 +92,9 @@ class RANSACGridDetector(BaseRegionAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         candidates: list[Any] = []
 
@@ -191,7 +193,9 @@ class RANSACGridDetector(BaseRegionAnalyzer):
 
                 # Remove inliers from remaining candidates
                 inlier_set = {id(p) for p in best_inliers}
-                remaining_candidates = [c for c in remaining_candidates if id(c) not in inlier_set]
+                remaining_candidates = [
+                    c for c in remaining_candidates if id(c) not in inlier_set
+                ]
             else:
                 break
 
