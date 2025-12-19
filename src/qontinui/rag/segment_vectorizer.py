@@ -630,7 +630,7 @@ class SegmentVectorizer:
 
             # Create mask for this contour
             mask = np.zeros((h, w), dtype=np.uint8)
-            cv2.drawContours(mask, [contour], -1, 1, thickness=cv2.FILLED)
+            cv2.drawContours(mask, [contour], -1, (1.0,), thickness=cv2.FILLED)
 
             bbox = (x, y, cw, ch)
 
