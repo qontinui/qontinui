@@ -212,6 +212,37 @@ class StateLocationTarget(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class StateImageTarget(BaseModel):
+    """Target a StateImage by ID or by state reference.
+
+    This target type references a StateImage for FIND operations, allowing
+    navigation systems to verify state by finding images associated with
+    the target state. The StateImage's configured monitors are used.
+
+    Attributes:
+        type: Literal type discriminator for this target type.
+        state_id: The ID of the state containing the StateImages.
+        image_ids: List of StateImage IDs to search for.
+        state_name: Optional human-readable state name (for debugging).
+        image_names: Optional list of human-readable image names.
+
+    Example:
+        {
+            "type": "stateImage",
+            "stateId": "state-123",
+            "imageIds": ["stateimage-456"]
+        }
+    """
+
+    type: Literal["stateImage"] = "stateImage"
+    state_id: str = Field(alias="stateId")
+    image_ids: list[str] = Field(alias="imageIds")
+    state_name: str | None = Field(None, alias="stateName")
+    image_names: list[str] | None = Field(None, alias="imageNames")
+
+    model_config = {"populate_by_name": True}
+
+
 # Union type for all target configurations
 TargetConfig = (
     ImageTarget
@@ -221,6 +252,7 @@ TargetConfig = (
     | StateStringTarget
     | StateRegionTarget
     | StateLocationTarget
+    | StateImageTarget
     | CurrentPositionTarget
     | LastFindResultTarget
     | ResultIndexTarget

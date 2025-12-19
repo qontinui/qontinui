@@ -103,9 +103,9 @@ from .search import (
 
 # Shell action configs
 from .shell_actions import (
+    AIPromptActionConfig,
     ShellActionConfig,
     ShellScriptActionConfig,
-    TriggerAiAnalysisActionConfig,
 )
 
 # State and workflow action configs
@@ -127,6 +127,7 @@ from .targets import (
     RegionTarget,
     ResultByImageTarget,
     ResultIndexTarget,
+    StateImageTarget,
     StateLocationTarget,
     StateRegionTarget,
     StateStringTarget,
@@ -178,6 +179,7 @@ __all__ = [
     "RegionTarget",
     "ResultByImageTarget",
     "ResultIndexTarget",
+    "StateImageTarget",
     "StateLocationTarget",
     "StateRegionTarget",
     "StateStringTarget",
@@ -235,9 +237,9 @@ __all__ = [
     "CustomFunctionActionConfig",
     "ErrorHandling",
     # Shell actions
+    "AIPromptActionConfig",
     "ShellActionConfig",
     "ShellScriptActionConfig",
-    "TriggerAiAnalysisActionConfig",
     # State actions
     "GoToStateActionConfig",
     "RunWorkflowActionConfig",

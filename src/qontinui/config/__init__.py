@@ -75,6 +75,9 @@ from .importer import (
     load_actions_from_file,
     load_actions_from_string,
 )
+
+# Additional target types from models (not in schema.py)
+from .models import StateImageTarget
 from .qontinui_properties import (
     AnalysisConfig,
     AutomationConfig,
@@ -266,6 +269,7 @@ __all__ = [
     "RegionTarget",
     "StateLocationTarget",
     "StateRegionTarget",
+    "StateImageTarget",
     "TextTarget",
     "LastFindResultTarget",
     # Action Schema - Enums

@@ -10,43 +10,41 @@ including movement, clicking, dragging, and scrolling.
 #
 # ## The Problem
 #
-# - FIND captures the ENTIRE virtual desktop (all monitors combined)
-# - Match coordinates are relative to the virtual desktop screenshot origin
-# - pyautogui needs absolute virtual desktop coordinates
+# FIND can capture screenshots in two modes:
+# 1. Virtual Desktop (monitor_index=None): Captures all monitors combined
+# 2. Specific Monitor (monitor_index=N): Captures only that monitor
+#
+# The coordinate system of match results differs based on capture mode:
+# - Virtual desktop capture: Coordinates are relative to (0,0) of combined screenshot
+# - Specific monitor capture: Coordinates are relative to (0,0) of that monitor
 #
 # ## The Solution
 #
-# The Rust runner calculates the "virtual desktop origin" (minimum X, minimum Y across
-# all monitors) and passes it to Python as `monitor_offset_x` and `monitor_offset_y`
-# via the execution context.
+# This module uses CoordinateService with proper coordinate translation based on
+# the ActionResult.monitor_index field set during FIND:
 #
-# When resolving LastFindResultTarget, ResultIndexTarget, etc., this offset is added
-# to the FIND result coordinates:
+# - If monitor_index is None: Use match_to_screen() to add virtual desktop origin
+# - If monitor_index is set: Use monitor_to_screen() to add that monitor's offset
 #
-#     final_x = match.x + context.monitor_offset_x
-#     final_y = match.y + context.monitor_offset_y
-#
-# ## Example
+# ## Example: Virtual Desktop Capture
 #
 # Monitor layout:
 #     Left: (-1920, 702), 1920x1080
 #     Primary: (0, 0), 3840x2160
-#     Right: (3840, 702), 1920x1080
 #
-# Virtual desktop origin: (-1920, 0)  # min X=-1920, min Y=0
+# Virtual desktop origin: (-1920, 0)
+# FIND captures virtual desktop, finds image at (65, 1372)
+# After conversion: match_to_screen(65, 1372) -> ScreenPoint(-1855, 1372)
 #
-# FIND result on left monitor: (65, 1372)
-# After offset: (65 + -1920, 1372 + 0) = (-1855, 1372)
-# pyautogui moves mouse to (-1855, 1372) -> lands on left monitor correctly!
+# ## Example: Specific Monitor Capture
 #
-# ## Key Files in the Coordinate Chain
-#
-# 1. mcp_api.rs (Rust) - Calculates virtual desktop origin from Tauri monitors
-# 2. mouse.py (Python) - Applies offset when resolving target locations
-# 3. mss_capture.py (Python) - Captures virtual desktop as monitors[0]
+# FIND captures monitor 1 (primary at 0,0), finds image at (1126, 141)
+# After conversion: monitor_to_screen(1126, 141, monitor=1) -> ScreenPoint(1126, 141)
+# (No offset needed since primary monitor is at 0,0)
 """
 
 import logging
+import time
 from typing import Any
 
 from ..config.schema import (
@@ -60,6 +58,7 @@ from ..config.schema import (
     ScrollActionConfig,
     TargetConfig,
 )
+from ..coordinates import CoordinateService, ScreenPoint
 from ..exceptions import ActionExecutionError
 from ..hal.interfaces.input_controller import MouseButton as HALMouseButton
 from .base import ActionExecutorBase
@@ -273,13 +272,15 @@ class MouseActionExecutor(ActionExecutorBase):
 
             image = self.context.config.image_map.get(image_id)
             if image and image.file_path:
-                # Use find wrapper to locate image
-                from ..wrappers.find_wrapper import Find  # type: ignore[attr-defined]
+                # Use FindImage to locate image on screen
+                from ..find import FindImage
 
-                location = Find.image(image.file_path, similarity=similarity)
-                if location:
+                match = FindImage(image.file_path).similarity(similarity).find()
+                if match:
+                    # Return center coordinates of the match
+                    location = (match.x, match.y)
                     logger.debug(f"Found image at {location}")
-                    return location  # type: ignore[no-any-return]
+                    return location
                 else:
                     logger.warning(f"Image {image_id} not found on screen")
                     return None
@@ -353,36 +354,17 @@ class MouseActionExecutor(ActionExecutorBase):
             # Use first match from last action result
             if self.context.last_action_result and self.context.last_action_result.matches:
                 match = self.context.last_action_result.matches[0]
-                # =======================================================================
-                # MONITOR OFFSET APPLICATION - Critical for Multi-Monitor Accuracy
-                # =======================================================================
-                #
-                # The FIND action captures the ENTIRE virtual desktop (all monitors),
-                # so match coordinates are relative to the virtual desktop origin.
-                #
-                # The offset values come from Rust (mcp_api.rs) and represent the
-                # virtual desktop origin: (min_x, min_y) across all monitors.
-                #
-                # By adding the offset, we convert from screenshot-relative coordinates
-                # to absolute virtual desktop coordinates that pyautogui can use.
-                #
-                # Example:
-                #   match = (65, 1372)  # relative to screenshot
-                #   offset = (-1920, 0)  # virtual desktop origin
-                #   result = (-1855, 1372)  # absolute coordinates for pyautogui
-                #
-                # See module docstring and mcp_api.rs for full documentation.
-                # =======================================================================
-                offset_x = getattr(self.context, "monitor_offset_x", 0)
-                offset_y = getattr(self.context, "monitor_offset_y", 0)
-                location = (match.x + offset_x, match.y + offset_y)
+                # Convert FIND match coordinates to absolute screen coordinates
+                # using the CoordinateService singleton
+                screen_point = self._match_to_screen_point(match.x, match.y)
+                location = (screen_point.x, screen_point.y)
                 log_debug(
                     f"Using last action result match[0]: raw=({match.x}, {match.y}), "
-                    f"offset=({offset_x}, {offset_y}), final={location}"
+                    f"screen={location}"
                 )
                 logger.debug(
                     f"Using last action result match[0]: raw=({match.x}, {match.y}), "
-                    f"offset=({offset_x}, {offset_y}), final={location}"
+                    f"screen={location} (via CoordinateService)"
                 )
                 return location
             else:
@@ -412,13 +394,12 @@ class MouseActionExecutor(ActionExecutorBase):
                 return None
 
             match = matches[target.index]
-            # Apply monitor offset to convert relative coordinates to absolute screen coordinates
-            offset_x = getattr(self.context, "monitor_offset_x", 0)
-            offset_y = getattr(self.context, "monitor_offset_y", 0)
-            location = (match.x + offset_x, match.y + offset_y)
+            # Convert FIND match coordinates to absolute screen coordinates
+            screen_point = self._match_to_screen_point(match.x, match.y)
+            location = (screen_point.x, screen_point.y)
             logger.debug(
                 f"Using match[{target.index}]: raw=({match.x}, {match.y}), "
-                f"offset=({offset_x}, {offset_y}), final={location}"
+                f"screen={location} (via CoordinateService)"
             )
             return location
 
@@ -428,14 +409,13 @@ class MouseActionExecutor(ActionExecutorBase):
             # Return first match location as fallback
             if self.context.last_action_result and self.context.last_action_result.matches:
                 match = self.context.last_action_result.matches[0]
-                # Apply monitor offset to convert relative coordinates to absolute screen coordinates
-                offset_x = getattr(self.context, "monitor_offset_x", 0)
-                offset_y = getattr(self.context, "monitor_offset_y", 0)
-                location = (match.x + offset_x, match.y + offset_y)
+                # Convert FIND match coordinates to absolute screen coordinates
+                screen_point = self._match_to_screen_point(match.x, match.y)
+                location = (screen_point.x, screen_point.y)
                 logger.warning(
                     "AllResultsTarget not supported for single-location actions, "
                     f"using first match: raw=({match.x}, {match.y}), "
-                    f"offset=({offset_x}, {offset_y}), final={location}"
+                    f"screen={location} (via CoordinateService)"
                 )
                 return location
             else:
@@ -465,14 +445,13 @@ class MouseActionExecutor(ActionExecutorBase):
                         source_id = metadata.__dict__.get("source_image_id")
 
                     if source_id == target.image_id:
-                        # Apply monitor offset to convert relative coordinates to absolute
-                        offset_x = getattr(self.context, "monitor_offset_x", 0)
-                        offset_y = getattr(self.context, "monitor_offset_y", 0)
-                        location = (match.x + offset_x, match.y + offset_y)
+                        # Convert FIND match coordinates to absolute screen coordinates
+                        screen_point = self._match_to_screen_point(match.x, match.y)
+                        location = (screen_point.x, screen_point.y)
                         logger.debug(
                             f"Found match from source image '{target.image_id}': "
-                            f"raw=({match.x}, {match.y}), offset=({offset_x}, {offset_y}), "
-                            f"final={location}"
+                            f"raw=({match.x}, {match.y}), screen={location} "
+                            f"(via CoordinateService)"
                         )
                         return location
 
@@ -507,6 +486,51 @@ class MouseActionExecutor(ActionExecutorBase):
             "MIDDLE": HALMouseButton.MIDDLE,
         }
         return button_map.get(button_str.upper(), HALMouseButton.LEFT)
+
+    def _match_to_screen_point(self, match_x: int, match_y: int) -> ScreenPoint:
+        """Convert FIND match coordinates to absolute screen coordinates.
+
+        Uses the CoordinateService singleton to convert match coordinates to
+        absolute screen coordinates that pyautogui can use.
+
+        The transformation depends on how the screenshot was captured:
+        - If a specific monitor was captured (monitor_index is not None):
+          Match coordinates are monitor-relative, use monitor_to_screen()
+        - If virtual desktop was captured (monitor_index is None):
+          Match coordinates are virtual-desktop-relative, use match_to_screen()
+
+        Args:
+            match_x: X coordinate from FIND match result
+            match_y: Y coordinate from FIND match result
+
+        Returns:
+            ScreenPoint with absolute screen coordinates
+        """
+        service = CoordinateService.get_instance()
+
+        # Check if last_action_result has monitor_index set
+        # This tells us which coordinate system the FIND result used
+        monitor_index = None
+        if (
+            hasattr(self.context, "last_action_result")
+            and self.context.last_action_result is not None
+            and hasattr(self.context.last_action_result, "monitor_index")
+        ):
+            monitor_index = self.context.last_action_result.monitor_index
+
+        if monitor_index is not None:
+            # FIND captured a specific monitor - coordinates are monitor-relative
+            # Use monitor_to_screen to add that monitor's absolute offset
+            logger.debug(
+                f"Converting monitor-relative coords ({match_x}, {match_y}) "
+                f"for monitor {monitor_index}"
+            )
+            return service.monitor_to_screen(match_x, match_y, monitor_index)
+        else:
+            # FIND captured virtual desktop - coordinates are virtual-desktop-relative
+            # Use match_to_screen to add virtual desktop origin offset
+            logger.debug(f"Converting virtual-desktop-relative coords ({match_x}, {match_y})")
+            return service.match_to_screen(match_x, match_y)
 
     # Pure action executors
 
@@ -830,6 +854,26 @@ class MouseActionExecutor(ActionExecutorBase):
         self.context.mouse.up(button=button)
         logger.debug("Step 3: Final safety release")
         debug_write("Step 3: Final safety release completed")
+
+        # Step 4: Emit MOUSE_CLICKED event with actual click coordinates
+        # This enables coordinate validation by comparing with FIND results
+        if location:
+            from ..reporting import EventType, emit_event
+
+            emit_event(
+                EventType.MOUSE_CLICKED,
+                data={
+                    "x": location[0],
+                    "y": location[1],
+                    "button": button.value,
+                    "clicks": click_count,
+                    "click_type": "double" if click_count > 1 else "single",
+                    "target_type": typed_config.target.type if typed_config.target else "unknown",
+                    "timestamp": time.time(),
+                    "action_id": action.id,
+                },
+            )
+            debug_write(f"Step 4: Emitted MOUSE_CLICKED event with location={location}")
 
         logger.info(f"[COMBINED ACTION: CLICK] Completed {click_count} {button.value}-click(s)")
         debug_write(f"SUCCESS: Completed {click_count} {button.value}-click(s)")

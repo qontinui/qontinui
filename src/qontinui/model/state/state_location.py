@@ -65,11 +65,9 @@ class StateLocation:
                 manager = MonitorManager()
                 monitor_idx = self.monitors[0]
 
-                # Check if coordinates need translation
-                monitor_info = manager.get_monitor_info(monitor_idx)
-                if monitor_info and monitor_idx > 0:
-                    # Translate monitor-relative to global coordinates
-                    x, y = manager.to_global_coordinates(x, y, monitor_idx)
+                # Always translate coordinates - monitor 0 may not be at (0,0)
+                # This handles cases where monitor 0 is positioned to the right or below other monitors
+                x, y = manager.to_global_coordinates(x, y, monitor_idx)
             except Exception:
                 # Fall back to using coordinates as-is
                 pass

@@ -262,6 +262,8 @@ class RealFindImplementation:
             }
 
         # Build event data
+        # Debug: Log the monitor_index value
+        logger.info(f"[EVENT] Building event data with monitor_index={options.monitor_index}")
         event_data = {
             "image_id": pattern.id,
             "pattern_name": pattern_name,
@@ -273,6 +275,7 @@ class RealFindImplementation:
             "location": location,
             "duration_ms": duration_ms,
             "screenshot_timestamp": screenshot_timestamp,  # Unix timestamp when screenshot was captured
+            "monitor_index": options.monitor_index,  # Which monitor was captured (None = all monitors)
         }
 
         # Debug: Log that we're including screenshot_timestamp

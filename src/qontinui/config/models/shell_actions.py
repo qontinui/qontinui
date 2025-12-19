@@ -128,18 +128,16 @@ class ShellActionConfig(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class TriggerAiAnalysisActionConfig(BaseModel):
-    """TRIGGER_AI_ANALYSIS action configuration.
+class AIPromptActionConfig(BaseModel):
+    """AI_PROMPT action configuration.
 
-    Triggers an AI assistant to analyze the automation results and fix any issues.
-    This action is designed to be used at the end of automation workflows to
-    enable autonomous debugging and improvement.
+    Execute a single AI prompt with optional fresh context.
+    This action is designed to invoke AI assistants for various tasks.
 
     The action:
-    1. Reads execution results from .automation-results/latest/
-    2. Invokes the configured AI provider with the analyze-automation prompt
-    3. The AI reviews screenshots, logs, and errors
-    4. The AI fixes issues and re-runs automation if needed
+    1. Optionally reads context from .automation-results/latest/
+    2. Invokes the configured AI provider with the specified prompt
+    3. The AI executes the prompt and returns the result
 
     Supported providers:
         - claude: Claude Code CLI (default)
@@ -147,18 +145,18 @@ class TriggerAiAnalysisActionConfig(BaseModel):
 
     Example config:
         {
-            "type": "TRIGGER_AI_ANALYSIS",
+            "type": "AI_PROMPT",
             "config": {
                 "provider": "claude",
-                "timeout": 600000,
-                "resultsDirectory": ".automation-results/latest"
+                "prompt": "Analyze the automation results and fix any issues",
+                "freshContext": true,
+                "timeout": 600000
             }
         }
 
     Prerequisites:
         - For Claude: Claude Code CLI must be installed
         - On Windows: Claude Code should be installed in WSL with MCP configured
-        - Automation results must exist in the results directory
     """
 
     # AI provider to use for analysis

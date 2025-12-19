@@ -56,9 +56,9 @@ from .mouse_actions import (
     ScrollActionConfig,
 )
 from .shell_actions import (
+    AIPromptActionConfig,
     ShellActionConfig,
     ShellScriptActionConfig,
-    TriggerAiAnalysisActionConfig,
 )
 from .state_actions import (
     GoToStateActionConfig,
@@ -132,7 +132,8 @@ ACTION_CONFIG_MAP = {
     # Shell actions
     "SHELL": ShellActionConfig,
     "SHELL_SCRIPT": ShellScriptActionConfig,
-    "TRIGGER_AI_ANALYSIS": TriggerAiAnalysisActionConfig,
+    # AI actions
+    "AI_PROMPT": AIPromptActionConfig,
 }
 
 

@@ -14,9 +14,9 @@ from typing import Any
 
 from ..ai_providers import AIProviderRegistry, AnalysisRequest
 from ..config.models.shell_actions import (
+    AIPromptActionConfig,
     ShellActionConfig,
     ShellScriptActionConfig,
-    TriggerAiAnalysisActionConfig,
 )
 from ..config.schema import Action
 from ..exceptions import ActionExecutionError
@@ -63,9 +63,9 @@ class ShellActionExecutor(ActionExecutorBase):
         """Get list of shell action types this executor handles.
 
         Returns:
-            List containing: SHELL, SHELL_SCRIPT, TRIGGER_AI_ANALYSIS
+            List containing: SHELL, SHELL_SCRIPT, AI_PROMPT
         """
-        return ["SHELL", "SHELL_SCRIPT", "TRIGGER_AI_ANALYSIS"]
+        return ["SHELL", "SHELL_SCRIPT", "AI_PROMPT"]
 
     def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute a shell action with validated configuration.
@@ -87,8 +87,8 @@ class ShellActionExecutor(ActionExecutorBase):
                 return self._execute_shell(action, typed_config)
             elif action_type == "SHELL_SCRIPT":
                 return self._execute_shell_script(action, typed_config)
-            elif action_type == "TRIGGER_AI_ANALYSIS":
-                return self._execute_trigger_ai_analysis(action, typed_config)
+            elif action_type == "AI_PROMPT":
+                return self._execute_ai_prompt(action, typed_config)
             else:
                 raise ActionExecutionError(
                     action_type=action_type,
@@ -522,31 +522,30 @@ class ShellActionExecutor(ActionExecutorBase):
             },
         )
 
-    def _execute_trigger_ai_analysis(
-        self, action: Action, typed_config: TriggerAiAnalysisActionConfig | None
-    ) -> bool:
-        """Execute TRIGGER_AI_ANALYSIS action - invoke an AI to analyze results.
+    def _execute_ai_prompt(self, action: Action, typed_config: AIPromptActionConfig | None) -> bool:
+        """Execute AI_PROMPT action - invoke an AI with a prompt.
 
-        This action triggers an AI assistant to analyze the automation results, review
-        screenshots and logs, identify issues, and potentially fix them.
+        This action triggers an AI assistant to execute the specified prompt.
+        Can optionally analyze automation results, review screenshots and logs,
+        identify issues, and potentially fix them.
 
         Uses the extensible AI provider system - providers are registered in
         qontinui.ai_providers and can be selected via the 'provider' config option.
 
         Args:
             action: Action model
-            typed_config: Validated TriggerAiAnalysisActionConfig
+            typed_config: Validated AIPromptActionConfig
 
         Returns:
-            True if analysis was triggered successfully
+            True if AI prompt was executed successfully
 
         Raises:
             ActionExecutionError: If AI invocation fails
         """
         if not typed_config:
             raise ActionExecutionError(
-                action_type="TRIGGER_AI_ANALYSIS",
-                reason="TRIGGER_AI_ANALYSIS action requires valid config",
+                action_type="AI_PROMPT",
+                reason="AI_PROMPT action requires valid config",
             )
 
         # Map legacy provider name "claude" to new name "claude_code"
@@ -554,8 +553,8 @@ class ShellActionExecutor(ActionExecutorBase):
         if provider_name == "claude":
             provider_name = "claude_code"
 
-        description = typed_config.description or f"Trigger {provider_name} analysis"
-        logger.info(f"Executing TRIGGER_AI_ANALYSIS with provider '{provider_name}': {description}")
+        description = typed_config.description or f"Execute {provider_name} prompt"
+        logger.info(f"Executing AI_PROMPT with provider '{provider_name}': {description}")
 
         # Get provider from registry
         try:
@@ -563,7 +562,7 @@ class ShellActionExecutor(ActionExecutorBase):
         except KeyError as e:
             available = AIProviderRegistry.list_available_providers()
             raise ActionExecutionError(
-                action_type="TRIGGER_AI_ANALYSIS",
+                action_type="AI_PROMPT",
                 reason=f"AI provider '{provider_name}' not found. Available: {available}",
             ) from e
 
@@ -652,7 +651,7 @@ class ShellActionExecutor(ActionExecutorBase):
         action: Action,
         provider: Any,  # AIProvider type, using Any to avoid circular import
         request: AnalysisRequest,
-        typed_config: TriggerAiAnalysisActionConfig,
+        typed_config: AIPromptActionConfig,
     ) -> bool:
         """Execute AI analysis using the provider system.
 

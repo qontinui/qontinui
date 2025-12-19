@@ -356,14 +356,27 @@ class JSONRunner:
                     f"Monitor {monitor_index} configured: {monitor_info.width}x{monitor_info.height} at ({monitor_info.x}, {monitor_info.y})"
                 )
 
+                # Calculate virtual desktop origin (minimum x and y across all monitors)
+                # This is critical for multi-monitor setups where monitor 0 is not at (0,0)
+                from ..hal.implementations.mss_capture import MSSScreenCapture
+
+                capture = MSSScreenCapture()
+                monitors = capture.get_monitors()
+                origin_x = min(m.x for m in monitors)
+                origin_y = min(m.y for m in monitors)
+                capture.close()
+
+                print(f"[PYTHON_RUNNER] Virtual desktop origin: ({origin_x}, {origin_y})")
+
                 # Set monitor offset in state executor for coordinate conversion
+                # The offset is the virtual desktop origin, NOT the selected monitor's position
                 # This allows CLICK actions to use absolute screen coordinates
                 # when targeting coordinates from FIND results
                 if self.state_executor:
                     self.state_executor.set_monitor_offset(
                         monitor_index=monitor_index,
-                        offset_x=monitor_info.x,
-                        offset_y=monitor_info.y,
+                        offset_x=origin_x,
+                        offset_y=origin_y,
                     )
             else:
                 print(f"Warning: Monitor {monitor_index} not found, using default monitor")

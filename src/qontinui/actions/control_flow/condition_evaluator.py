@@ -265,6 +265,7 @@ class ConditionEvaluator:
             pattern=pattern,
             state_image=None,  # Not using StateImage in IF conditions
             project_config=project_config,
+            monitor_index=getattr(self.context, "monitor_index", None),
         )
         options = build_find_options(ctx)
 
@@ -365,6 +366,7 @@ class ConditionEvaluator:
             pattern=None,  # Not pattern-specific
             state_image=None,
             project_config=project_config,
+            monitor_index=getattr(self.context, "monitor_index", None),
         )
         options = build_find_options(ctx)
 

@@ -314,8 +314,20 @@ class StateImage(BaseModel):
     shared: bool = False
     source: str = ""
     search_regions: list[SearchRegion] = Field(default_factory=list, alias="searchRegions")
+    monitors: list[int] = Field(default_factory=list)
 
     model_config = {"populate_by_name": True}
+
+    def get_monitor(self) -> int:
+        """Get the primary monitor index for this StateImage.
+
+        Returns the first monitor in the monitors list, or 0 if no monitors are configured.
+        This is the monitor that should be used for pattern matching and clicking.
+
+        Returns:
+            int: Monitor index (0-based)
+        """
+        return self.monitors[0] if self.monitors else 0
 
 
 class StateRegion(BaseModel):

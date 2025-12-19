@@ -2,6 +2,8 @@
 
 Handles resolving different target types (ImageTarget, CoordinatesTarget, RegionTarget)
 into ActionResult objects with match locations.
+
+Coordinate translations are handled by CoordinateService for multi-monitor support.
 """
 
 import logging
@@ -13,9 +15,11 @@ from ..config import (
     ImageTarget,
     LastFindResultTarget,
     RegionTarget,
+    StateImageTarget,
     StateLocationTarget,
     StateRegionTarget,
 )
+from ..coordinates import CoordinateService
 from ..find.match import Match as FindMatch
 from ..model.element import Location, Region
 from ..model.match import Match as ModelMatch
@@ -87,6 +91,9 @@ class TargetResolver:
         elif isinstance(target_config, StateLocationTarget):
             log_debug("  Routing to _resolve_state_location_target()")
             return self._resolve_state_location_target(target_config)
+        elif isinstance(target_config, StateImageTarget):
+            log_debug("  Routing to _resolve_state_image_target()")
+            return self._resolve_state_image_target(target_config)
         else:
             log_debug("  ERROR: Unsupported target type")
             logger.error(f"Unsupported target type: {type(target_config)}")
@@ -169,11 +176,17 @@ class TargetResolver:
                 # Get monitors from StateImage metadata (monitors are registered on StateImage ID)
                 if state_image_monitors is None:
                     state_image_meta = registry.get_image_metadata(image_id)
+                    print(f"[TARGET_RESOLVER] StateImage {image_id} metadata: {state_image_meta}")
                     if state_image_meta and state_image_meta.get("monitors"):
                         state_image_monitors = state_image_meta.get("monitors")
                         log_debug(
                             f"    Got monitors from StateImage config: {state_image_monitors}"
                         )
+                        print(
+                            f"[TARGET_RESOLVER] Using monitors from StateImage: {state_image_monitors}"
+                        )
+                    else:
+                        print("[TARGET_RESOLVER] WARNING: No monitors in StateImage metadata!")
             else:
                 # Not a StateImage, use as-is
                 expanded_image_ids.append(image_id)
@@ -238,6 +251,9 @@ class TargetResolver:
             # Fall back to ExecutionContext monitor
             resolved_monitor = getattr(self.context, "monitor_index", None)
             log_debug(f"  Using monitor from ExecutionContext: {resolved_monitor}")
+            # Also log to standard logger for visibility
+            logger.info(f"[TARGET_RESOLVER] ExecutionContext.monitor_index = {resolved_monitor}")
+            print(f"[TARGET_RESOLVER] DEBUG: context.monitor_index = {resolved_monitor}")
 
         if strategy == "BEST" and len(patterns) > 1:
             log_debug("  BEST strategy with multiple patterns - finding all and picking best")
@@ -272,7 +288,10 @@ class TargetResolver:
             if best_result and best_pattern:
                 log_debug(f"  Best match score: {best_score}")
                 # Convert FindResult to ActionResult
-                builder = ActionResultBuilder().with_success(True)
+                # Pass monitor_index so coordinate transformation knows which system to use
+                builder = (
+                    ActionResultBuilder().with_success(True).with_monitor_index(resolved_monitor)
+                )
                 for match_obj in best_result.matches:
                     # Set search_image from the Pattern that was used
                     match_obj.search_image = best_pattern.image
@@ -317,7 +336,12 @@ class TargetResolver:
                         f"    Pattern '{pattern.name}' found! {len(find_result.matches)} matches - stopping search"
                     )
                     # Convert FindResult to ActionResult
-                    builder = ActionResultBuilder().with_success(True)
+                    # Pass monitor_index so coordinate transformation knows which system to use
+                    builder = (
+                        ActionResultBuilder()
+                        .with_success(True)
+                        .with_monitor_index(resolved_monitor)
+                    )
                     for match_obj in find_result.matches:
                         # Set search_image from the Pattern that was used
                         match_obj.search_image = pattern.image
@@ -431,7 +455,7 @@ class TargetResolver:
         """Resolve StateRegionTarget by looking up region from registry.
 
         Uses the region's configured monitors instead of a global default.
-        Coordinates are translated if the region is on a specific monitor.
+        Coordinates are translated using CoordinateService for multi-monitor support.
 
         Args:
             target: StateRegionTarget with region_id
@@ -468,17 +492,19 @@ class TargetResolver:
         if monitors and len(monitors) > 0:
             target_monitor = monitors[0]
             try:
-                from ..hal.monitor_manager import MonitorManager
+                service = CoordinateService.get_instance()
 
-                monitor_manager = MonitorManager()
-                monitor_info = monitor_manager.get_monitor_info(target_monitor)
-                if monitor_info:
-                    # Region coordinates are relative to monitor, translate to absolute
-                    center_x = monitor_info["left"] + center_x
-                    center_y = monitor_info["top"] + center_y
-                    x = monitor_info["left"] + x
-                    y = monitor_info["top"] + y
-                    logger.debug(f"Translated to absolute: center=({center_x}, {center_y})")
+                # Translate center coordinates
+                center_screen = service.monitor_to_screen(center_x, center_y, target_monitor)
+                center_x = center_screen.x
+                center_y = center_screen.y
+
+                # Translate region bounds
+                region_screen = service.monitor_to_screen(x, y, target_monitor)
+                x = region_screen.x
+                y = region_screen.y
+
+                logger.debug(f"Translated to absolute: center=({center_x}, {center_y})")
             except Exception as e:
                 logger.warning(f"Failed to translate coordinates for monitor {target_monitor}: {e}")
 
@@ -501,7 +527,7 @@ class TargetResolver:
         """Resolve StateLocationTarget by looking up location from registry.
 
         Uses the location's configured monitors instead of a global default.
-        Coordinates are translated if the location is on a specific monitor.
+        Coordinates are translated using CoordinateService for multi-monitor support.
 
         Args:
             target: StateLocationTarget with location_id
@@ -530,15 +556,14 @@ class TargetResolver:
         if monitors and len(monitors) > 0:
             target_monitor = monitors[0]
             try:
-                from ..hal.monitor_manager import MonitorManager
+                service = CoordinateService.get_instance()
 
-                monitor_manager = MonitorManager()
-                monitor_info = monitor_manager.get_monitor_info(target_monitor)
-                if monitor_info:
-                    # Location coordinates are relative to monitor, translate to absolute
-                    x = monitor_info["left"] + x
-                    y = monitor_info["top"] + y
-                    logger.debug(f"Translated to absolute: ({x}, {y})")
+                # Translate location coordinates
+                screen_point = service.monitor_to_screen(x, y, target_monitor)
+                x = screen_point.x
+                y = screen_point.y
+
+                logger.debug(f"Translated to absolute: ({x}, {y})")
             except Exception as e:
                 logger.warning(f"Failed to translate coordinates for monitor {target_monitor}: {e}")
 
@@ -556,3 +581,49 @@ class TargetResolver:
         result = ActionResultBuilder().with_success(True).add_match(find_match).build()
         self.context.update_last_action_result(result)
         return result
+
+    def _resolve_state_image_target(self, target: StateImageTarget) -> ActionResult | None:
+        """Resolve StateImageTarget by converting to ImageTarget and using same logic.
+
+        StateImageTarget is used by navigation systems to verify state by finding
+        images associated with the target state. We convert it to an ImageTarget
+        and use the existing image resolution logic.
+
+        Args:
+            target: StateImageTarget with state_id and image_ids
+
+        Returns:
+            ActionResult with found matches or None if not found
+        """
+        import os
+        import tempfile
+        from datetime import datetime
+
+        def log_debug(msg: str) -> None:
+            """Helper to write timestamped debug messages."""
+            try:
+                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                with open(debug_log, "a", encoding="utf-8") as f:
+                    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
+            except Exception:
+                pass
+
+        log_debug("_resolve_state_image_target() called")
+        log_debug(f"  state_id: {target.state_id}")
+        log_debug(f"  image_ids: {target.image_ids}")
+        log_debug(f"  state_name: {target.state_name}")
+        log_debug(f"  image_names: {target.image_names}")
+
+        # Convert StateImageTarget to ImageTarget and use existing logic
+        # The image_ids in StateImageTarget are StateImage IDs
+        image_target = ImageTarget(
+            type="image",
+            image_ids=target.image_ids,
+            search_options=None,
+        )
+
+        log_debug(f"  Converted to ImageTarget: {image_target}")
+
+        # Use the existing image target resolution which handles StateImage expansion
+        return self._resolve_image_target(image_target)

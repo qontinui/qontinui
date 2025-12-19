@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from ..action_executors import DelegatingActionExecutor
+from ..coordinates import CoordinateService
 from ..wrappers import TimeWrapper
 from .config_parser import (
     IncomingTransition,
@@ -83,8 +84,14 @@ class StateExecutor:
         """Set the target monitor for automation.
 
         When automation targets a specific monitor, found coordinates from FIND actions
-        are relative to that monitor's screenshot. This method looks up the monitor's
-        position using MSS and stores it for coordinate conversion in mouse operations.
+        are relative to the virtual desktop origin (min x,y across all monitors).
+        This method uses CoordinateService to calculate the virtual desktop origin
+        and stores it for coordinate conversion in mouse operations.
+
+        IMPORTANT: FIND captures the entire virtual desktop (all monitors combined).
+        Match coordinates are relative to the virtual desktop origin, NOT the selected
+        monitor's position. To convert to absolute screen coordinates, we add the
+        virtual desktop origin (min_x, min_y).
 
         Args:
             monitor_index: Monitor index (0-based)
@@ -92,57 +99,63 @@ class StateExecutor:
         context = self.action_executor.context
         context.monitor_index = monitor_index
 
-        # Look up monitor position from MSS
+        # Use CoordinateService to get virtual desktop origin
         try:
-            from ..hal.implementations.mss_capture import MSSScreenCapture
+            service = CoordinateService.get_instance()
+            desktop = service.get_virtual_desktop()
 
-            capture = MSSScreenCapture()
-            monitors = capture.get_monitors()
+            # Store virtual desktop origin for backward compatibility
+            # (context.monitor_offset_x/y are still used by mouse.py)
+            context.monitor_offset_x = desktop.origin_x
+            context.monitor_offset_y = desktop.origin_y
 
-            if 0 <= monitor_index < len(monitors):
-                monitor = monitors[monitor_index]
-                context.monitor_offset_x = monitor.x
-                context.monitor_offset_y = monitor.y
-                logger.info(
-                    f"Set monitor {monitor_index}: position=({monitor.x}, {monitor.y}), "
-                    f"size={monitor.width}x{monitor.height}"
-                )
-            else:
-                # Monitor index out of range, use (0, 0)
-                context.monitor_offset_x = 0
-                context.monitor_offset_y = 0
-                logger.warning(
-                    f"Monitor index {monitor_index} out of range (have {len(monitors)} monitors), "
-                    "using offset (0, 0)"
-                )
-            capture.close()
+            logger.info(
+                f"Set monitor {monitor_index}: "
+                f"virtual desktop origin=({desktop.origin_x}, {desktop.origin_y}), "
+                f"size={desktop.width}x{desktop.height}"
+            )
         except Exception as e:
-            # Fallback to (0, 0) if MSS fails
+            # Fallback to (0, 0) if service fails
             context.monitor_offset_x = 0
             context.monitor_offset_y = 0
-            logger.warning(f"Failed to get monitor position from MSS: {e}, using offset (0, 0)")
+            logger.warning(f"Failed to get virtual desktop info: {e}, using offset (0, 0)")
 
     def set_monitor_offset(self, monitor_index: int, offset_x: int, offset_y: int) -> None:
         """Set monitor offset for coordinate conversion (legacy method).
 
-        DEPRECATED: Use set_monitor(monitor_index) instead. This method is kept for
-        backward compatibility but the library should determine offsets internally.
+        DEPRECATED: Use set_monitor(monitor_index) instead, which automatically
+        calculates the correct virtual desktop origin using CoordinateService.
 
-        When automation targets a specific monitor, found coordinates from FIND actions
-        are relative to that monitor's screenshot. This offset converts them to absolute
-        virtual screen coordinates for mouse operations.
+        This method is kept for backward compatibility with external callers.
+
+        IMPORTANT: The offset_x and offset_y parameters should be the virtual desktop
+        origin (min x,y across all monitors), NOT the selected monitor's position.
+        FIND captures the entire virtual desktop, so coordinates are relative to the
+        virtual desktop origin, not the monitor's position.
 
         Args:
             monitor_index: Monitor index (0-based)
-            offset_x: Monitor's X position in virtual screen space
-            offset_y: Monitor's Y position in virtual screen space
+            offset_x: Virtual desktop origin X (min x across all monitors)
+            offset_y: Virtual desktop origin Y (min y across all monitors)
         """
+        import warnings
+
+        warnings.warn(
+            "set_monitor_offset() is deprecated. Use set_monitor() instead, which "
+            "automatically calculates the correct virtual desktop origin using CoordinateService.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         context = self.action_executor.context
         context.monitor_index = monitor_index
         context.monitor_offset_x = offset_x
         context.monitor_offset_y = offset_y
-        logger.info(
-            f"Set monitor offset (legacy): index={monitor_index}, offset=({offset_x}, {offset_y})"
+
+        logger.warning(
+            f"Set monitor offset (DEPRECATED - use set_monitor instead): "
+            f"index={monitor_index}, offset=({offset_x}, {offset_y}). "
+            f"Note: offset should be virtual desktop origin, not monitor position!"
         )
 
     def initialize(self, initial_state_ids: list[str] | None = None):

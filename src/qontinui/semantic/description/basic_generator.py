@@ -38,6 +38,14 @@ class BasicDescriptionGenerator(DescriptionGenerator):
         # Preprocess
         region = self.preprocess_image(image, mask, bbox)
 
+        # Crop mask to match region if bbox is provided
+        cropped_mask = mask
+        if mask is not None and bbox is not None:
+            x, y, w, h = bbox
+            y_end = min(y + h, mask.shape[0])
+            x_end = min(x + w, mask.shape[1])
+            cropped_mask = mask[y:y_end, x:x_end]
+
         properties = []
 
         # Analyze size
@@ -46,12 +54,12 @@ class BasicDescriptionGenerator(DescriptionGenerator):
             properties.append(size_desc)
 
         # Analyze shape
-        shape_desc = self._describe_shape(region, mask)
+        shape_desc = self._describe_shape(region, cropped_mask)
         if shape_desc:
             properties.append(shape_desc)
 
         # Analyze color
-        color_desc = self._describe_color(region, mask)
+        color_desc = self._describe_color(region, cropped_mask)
         if color_desc:
             properties.append(color_desc)
 

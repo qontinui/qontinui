@@ -80,6 +80,9 @@ class ActionResult:
     action_config: ActionConfig | None = None
     """Configuration used for this action execution. None if not provided."""
 
+    monitor_index: int | None = None
+    """Monitor index that was captured for this action (0-based). None = virtual desktop."""
+
     @property
     def is_success(self) -> bool:
         """Check if action was successful.
@@ -151,6 +154,7 @@ class ActionResultBuilder:
         self._duration: timedelta | None = None
         self._start_time: datetime | None = None
         self._end_time: datetime | None = None
+        self._monitor_index: int | None = None
 
     def with_success(self, success: bool) -> ActionResultBuilder:
         """Set success status.
@@ -325,6 +329,23 @@ class ActionResultBuilder:
             self._duration = duration
         return self
 
+    def with_monitor_index(self, monitor_index: int | None) -> ActionResultBuilder:
+        """Set monitor index for multi-monitor coordinate translation.
+
+        When FIND captures a specific monitor (not the virtual desktop),
+        this tracks which monitor was captured so subsequent actions
+        can use the correct coordinate transformation.
+
+        Args:
+            monitor_index: 0-based monitor index, or None for virtual desktop
+
+        Returns:
+            Self for method chaining
+        """
+        with self._lock:
+            self._monitor_index = monitor_index
+        return self
+
     def build(self) -> ActionResult:
         """Build immutable ActionResult.
 
@@ -356,6 +377,7 @@ class ActionResultBuilder:
                 start_time=self._start_time,
                 end_time=self._end_time,
                 action_config=self._action_config,
+                monitor_index=self._monitor_index,
             )
 
 

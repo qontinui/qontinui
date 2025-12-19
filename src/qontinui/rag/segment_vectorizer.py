@@ -576,7 +576,95 @@ class SegmentVectorizer:
         np_image: np.ndarray[Any, Any],
         max_segments: int,
     ) -> list[SegmentVector]:
-        """Fallback grid-based segmentation when SAM3 is unavailable.
+        """Fallback contour-based segmentation when SAM3 is unavailable.
+
+        Uses OpenCV edge detection and contour finding to identify
+        meaningful UI regions instead of a simple grid.
+
+        Args:
+            pil_image: PIL image
+            np_image: Numpy image
+            max_segments: Maximum segments to generate
+
+        Returns:
+            List of segment vectors
+        """
+        import cv2
+
+        segments: list[SegmentVector] = []
+        h, w = np_image.shape[:2]
+
+        # Convert to grayscale for edge detection
+        if len(np_image.shape) == 3:
+            gray = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = np_image
+
+        # Apply edge detection
+        edges = cv2.Canny(gray, 50, 150)
+
+        # Morphological operations to connect nearby edges
+        kernel = np.ones((5, 5), np.uint8)
+        closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+
+        # Find contours (RETR_TREE to get all contours including nested)
+        contours, _ = cv2.findContours(closed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Sort contours by area (largest first)
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+        # Minimum size threshold (filter tiny regions)
+        min_area = (h * w) * 0.001  # At least 0.1% of image area
+
+        for i, contour in enumerate(contours):
+            if len(segments) >= max_segments:
+                break
+
+            # Get bounding rectangle
+            x, y, cw, ch = cv2.boundingRect(contour)
+
+            # Filter out very small regions
+            area = cv2.contourArea(contour)
+            if area < min_area or cw < 10 or ch < 10:
+                continue
+
+            # Create mask for this contour
+            mask = np.zeros((h, w), dtype=np.uint8)
+            cv2.drawContours(mask, [contour], -1, 1, thickness=cv2.FILLED)
+
+            bbox = (x, y, cw, ch)
+
+            try:
+                segment_vec = self.vectorize_segment(
+                    pil_image,
+                    mask,
+                    bbox=bbox,
+                    confidence=0.8,  # Lower confidence for contour detection
+                )
+                segment_vec.metadata["contour_index"] = i
+                segment_vec.metadata["contour_area"] = float(area)
+                segments.append(segment_vec)
+            except Exception as e:
+                logger.warning(
+                    "contour_segment_failed",
+                    contour_index=i,
+                    error=str(e),
+                )
+
+        # If no contours found, fall back to simple grid
+        if len(segments) == 0:
+            logger.warning("no_contours_found_falling_back_to_grid")
+            return self._simple_grid_segment(pil_image, np_image, max_segments)
+
+        return segments
+
+    def _simple_grid_segment(
+        self,
+        pil_image: Image.Image,
+        np_image: np.ndarray[Any, Any],
+        max_segments: int,
+    ) -> list[SegmentVector]:
+        """Simple grid-based segmentation as last resort fallback.
 
         Args:
             pil_image: PIL image
@@ -589,8 +677,8 @@ class SegmentVectorizer:
         segments: list[SegmentVector] = []
         h, w = np_image.shape[:2]
 
-        # Calculate grid size
-        grid_size = int(np.sqrt(max_segments))
+        # Use smaller grid (4x4 = 16 segments max)
+        grid_size = min(4, int(np.sqrt(max_segments)))
         cell_w = w // grid_size
         cell_h = h // grid_size
 
@@ -602,19 +690,25 @@ class SegmentVectorizer:
                 x = col * cell_w
                 y = row * cell_h
 
-                # Create full mask for this cell
-                mask = np.zeros((h, w), dtype=np.uint8)
-                mask[y : y + cell_h, x : x + cell_w] = 1
-
+                # Create mask just for this cell region (not full image)
+                # This avoids dimension mismatch issues
                 bbox = (x, y, cell_w, cell_h)
 
+                # Create a cell-sized mask
+                cell_mask = np.ones((cell_h, cell_w), dtype=np.uint8)
+
                 try:
+                    # Crop the image to the cell
+                    cell_image = pil_image.crop((x, y, x + cell_w, y + cell_h))
+
                     segment_vec = self.vectorize_segment(
-                        pil_image,
-                        mask,
-                        bbox=bbox,
-                        confidence=1.0,
+                        cell_image,
+                        cell_mask,
+                        bbox=None,  # bbox is relative to cropped image
+                        confidence=0.5,
                     )
+                    # Store actual bbox in metadata
+                    segment_vec.bbox = bbox
                     segment_vec.metadata["grid_row"] = row
                     segment_vec.metadata["grid_col"] = col
                     segments.append(segment_vec)
