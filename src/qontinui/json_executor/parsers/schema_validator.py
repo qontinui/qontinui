@@ -11,8 +11,11 @@ class SchemaValidator:
 
     The validator checks for:
     - Legacy "processes" field (v1.0.0 format no longer supported)
-    - Legacy workflow format (missing connections field)
-    - Required v2.0.0 graph-based workflow structure
+    - Required v2.0.0 workflow structure (either graph-based with connections or sequential with actions)
+
+    v2.0.0 workflows support two formats:
+    - Graph-based: workflows with "connections" field for complex branching
+    - Sequential: workflows with "actions" field for linear execution
 
     Example:
         >>> validator = SchemaValidator()
@@ -47,14 +50,22 @@ class SchemaValidator:
                 "Please use v2.0.0 format with 'workflows' instead of 'processes'."
             )
 
-        # Check for legacy workflow format (missing connections field)
+        # Check for legacy workflow format (missing both connections and actions)
+        # v2.0.0 workflows can use either:
+        # - Graph format: with "connections" field
+        # - Sequential format: with "actions" field (list of actions executed in order)
         if "workflows" in data:
             for workflow in data["workflows"]:
-                if isinstance(workflow, dict) and "connections" not in workflow:
-                    raise ValueError(
-                        "Configuration format v1.0.0 is no longer supported. "
-                        "Please use v2.0.0 format with graph-based workflows."
-                    )
+                if isinstance(workflow, dict):
+                    has_connections = "connections" in workflow
+                    has_actions = "actions" in workflow and isinstance(workflow["actions"], list)
+
+                    # Reject if workflow has neither connections nor actions
+                    if not has_connections and not has_actions:
+                        raise ValueError(
+                            "Configuration format v1.0.0 is no longer supported. "
+                            "Please use v2.0.0 format with graph-based workflows (connections) or sequential workflows (actions)."
+                        )
 
     def validate_workflows_field(self, data: Any) -> Any:
         """Validate that workflows field is used (not legacy processes field).
