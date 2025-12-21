@@ -7,12 +7,7 @@ flow control operations within loops.
 
 import logging
 
-from qontinui.config import (
-    Action,
-    BreakActionConfig,
-    ContinueActionConfig,
-    get_typed_config,
-)
+from qontinui.config import Action, BreakActionConfig, ContinueActionConfig, get_typed_config
 from qontinui.orchestration.execution_context import ExecutionContext
 
 from .condition_evaluator import ConditionEvaluator

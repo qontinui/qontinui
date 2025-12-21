@@ -8,20 +8,10 @@ configuration, organized by domain for maintainability.
 # Base types and enums
 # Core action model
 from .action import ACTION_CONFIG_MAP, Action, get_typed_config
-from .base_types import (
-    LogLevel,
-    MouseButton,
-    SearchStrategy,
-    VerificationMode,
-    WorkflowVisibility,
-)
+from .base_types import LogLevel, MouseButton, SearchStrategy, VerificationMode, WorkflowVisibility
 
 # Code execution configs
-from .code_actions import (
-    CodeBlockActionConfig,
-    CustomFunctionActionConfig,
-    ErrorHandling,
-)
+from .code_actions import CodeBlockActionConfig, CustomFunctionActionConfig, ErrorHandling
 
 # Control flow configs
 from .control_flow import (
@@ -93,20 +83,10 @@ from .mouse_actions import (
 )
 
 # Search and pattern matching
-from .search import (
-    MatchAdjustment,
-    PatternOptions,
-    PollingConfig,
-    SearchOptions,
-    TextSearchOptions,
-)
+from .search import MatchAdjustment, PatternOptions, PollingConfig, SearchOptions, TextSearchOptions
 
 # Shell action configs
-from .shell_actions import (
-    AIPromptActionConfig,
-    ShellActionConfig,
-    ShellScriptActionConfig,
-)
+from .shell_actions import AIPromptActionConfig, ShellActionConfig, ShellScriptActionConfig
 
 # State and workflow action configs
 from .state_actions import (

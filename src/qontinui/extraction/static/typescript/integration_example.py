@@ -8,12 +8,7 @@ QontinUI extraction system to provide comprehensive static analysis.
 from pathlib import Path
 from typing import Any
 
-from .parser import (
-    ComponentInfo,
-    ParseResult,
-    StateVariableInfo,
-    TypeScriptParser,
-)
+from .parser import ComponentInfo, ParseResult, StateVariableInfo, TypeScriptParser
 
 
 class TypeScriptAnalysisReport:

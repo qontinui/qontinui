@@ -87,19 +87,10 @@ from .pixel_analysis.extractor import StableRegionExtractor
 from .pixel_stability_matrix_analyzer import PixelStabilityMatrixAnalyzer
 
 # State construction - import key classes for convenience
-from .state_construction import (
-    ElementIdentifier,
-    OCRNameGenerator,
-    StateBuilder,
-    TransitionInfo,
-)
+from .state_construction import ElementIdentifier, OCRNameGenerator, StateBuilder, TransitionInfo
 
 # State detection - import key classes for convenience
-from .state_detection import (
-    DifferentialConsistencyDetector,
-    StateDetector,
-    TransitionDetector,
-)
+from .state_detection import DifferentialConsistencyDetector, StateDetector, TransitionDetector
 
 # Submodules available for import
 # from qontinui.discovery import element_detection

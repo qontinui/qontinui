@@ -13,10 +13,7 @@ The adapter wraps the existing ControlFlowExecutor and translates between:
 import logging
 from typing import Any
 
-from ..actions.control_flow import (
-    BreakLoop,
-    ContinueLoop,
-)
+from ..actions.control_flow import BreakLoop, ContinueLoop
 from ..actions.control_flow import ControlFlowExecutor as LegacyControlFlowExecutor
 from ..config import (
     Action,

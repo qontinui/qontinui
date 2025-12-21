@@ -8,10 +8,7 @@ import logging
 from typing import Any
 
 from ..config.schema import Action, ScreenshotActionConfig, WaitActionConfig
-from ..exceptions import (
-    ActionExecutionError,
-    ScreenCaptureException,
-)
+from ..exceptions import ActionExecutionError, ScreenCaptureException
 from .base import ActionExecutorBase
 from .registry import register_executor
 

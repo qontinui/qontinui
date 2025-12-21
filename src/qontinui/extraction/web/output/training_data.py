@@ -13,11 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..models import (
-    ElementType,
-    ExtractionResult,
-    StateType,
-)
+from ..models import ElementType, ExtractionResult, StateType
 
 logger = logging.getLogger(__name__)
 

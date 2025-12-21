@@ -6,12 +6,7 @@ Based on Brobot's mock pattern - simulates input operations instantly.
 import logging
 from datetime import datetime
 
-from ..hal.interfaces.input_controller import (
-    IInputController,
-    Key,
-    MouseButton,
-    MousePosition,
-)
+from ..hal.interfaces.input_controller import IInputController, Key, MouseButton, MousePosition
 
 logger = logging.getLogger(__name__)
 

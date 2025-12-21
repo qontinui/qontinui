@@ -31,12 +31,7 @@ import threading
 from typing import Any, cast
 
 from .config import HALConfig, get_config
-from .interfaces import (
-    IOCREngine,
-    IPatternMatcher,
-    IPlatformSpecific,
-    IScreenCapture,
-)
+from .interfaces import IOCREngine, IPatternMatcher, IPlatformSpecific, IScreenCapture
 from .interfaces.keyboard_controller import IKeyboardController
 from .interfaces.mouse_controller import IMouseController
 

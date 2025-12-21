@@ -6,11 +6,7 @@ with proper flow control, variable scoping, and expression evaluation.
 
 from typing import Any
 
-from qontinui.runner.dsl.executor import (
-    ExecutionContext,
-    ReturnException,
-    StatementExecutor,
-)
+from qontinui.runner.dsl.executor import ExecutionContext, ReturnException, StatementExecutor
 from qontinui.runner.dsl.expressions import (
     BinaryOperationExpression,
     LiteralExpression,

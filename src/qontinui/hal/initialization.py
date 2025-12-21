@@ -9,12 +9,7 @@ from typing import cast
 
 from .config import HALConfig
 from .container import HALContainer
-from .interfaces import (
-    IOCREngine,
-    IPatternMatcher,
-    IPlatformSpecific,
-    IScreenCapture,
-)
+from .interfaces import IOCREngine, IPatternMatcher, IPlatformSpecific, IScreenCapture
 from .interfaces.keyboard_controller import IKeyboardController
 from .interfaces.mouse_controller import IMouseController
 

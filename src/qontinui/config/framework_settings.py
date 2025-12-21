@@ -7,9 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any, Optional
 
-from .qontinui_properties import (
-    QontinuiProperties,
-)
+from .qontinui_properties import QontinuiProperties
 
 logger = logging.getLogger(__name__)
 

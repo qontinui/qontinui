@@ -7,12 +7,7 @@ based on the quality and quantity of evidence.
 
 import logging
 
-from ..models.correlated import (
-    CorrelatedState,
-    EvidenceType,
-    MatchingEvidence,
-    VerifiedTransition,
-)
+from ..models.correlated import CorrelatedState, EvidenceType, MatchingEvidence, VerifiedTransition
 
 logger = logging.getLogger(__name__)
 

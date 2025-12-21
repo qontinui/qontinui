@@ -16,12 +16,7 @@ from datetime import datetime
 from typing import Any
 
 from .base import Screenshot, Viewport
-from .correlated import (
-    CorrelatedState,
-    ExtractionResult,
-    InferredTransition,
-    VerifiedTransition,
-)
+from .correlated import CorrelatedState, ExtractionResult, InferredTransition, VerifiedTransition
 from .runtime import ExtractedElement
 
 

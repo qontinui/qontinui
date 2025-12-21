@@ -365,10 +365,7 @@ class StateExecutor:
         action = FindAction()
 
         async def verify_async():
-            from ..actions.find.find_options_builder import (
-                CascadeContext,
-                build_find_options,
-            )
+            from ..actions.find.find_options_builder import CascadeContext, build_find_options
 
             # Build options with proper cascade
             # Patterns already have similarity set via with_similarity(), cascade will use that

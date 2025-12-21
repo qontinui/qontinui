@@ -21,10 +21,7 @@ from typing import Any
 
 from ..actions.action_result import ActionResultBuilder
 from ..config.models.action import Action
-from ..config.models.code_actions import (
-    CodeBlockActionConfig,
-    CustomFunctionActionConfig,
-)
+from ..config.models.code_actions import CodeBlockActionConfig, CustomFunctionActionConfig
 from ..util.common.file_loader import PythonFileLoader
 from .base import ActionExecutorBase
 from .registry import register_executor
@@ -669,9 +666,19 @@ class CodeExecutor(ActionExecutorBase):
         Returns:
             A custom __import__ function that validates module names
         """
-        original_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__dict__["__import__"]
+        original_import = (
+            __builtins__["__import__"]
+            if isinstance(__builtins__, dict)
+            else __builtins__.__dict__["__import__"]
+        )
 
-        def safe_import(name: str, globals: dict | None = None, locals: dict | None = None, fromlist: tuple = (), level: int = 0):
+        def safe_import(
+            name: str,
+            globals: dict | None = None,
+            locals: dict | None = None,
+            fromlist: tuple = (),
+            level: int = 0,
+        ):
             """Safe import that only allows allowlisted modules.
 
             Args:

@@ -8,12 +8,7 @@ It implements the Command side of Command-Query Separation (CQS) pattern.
 from datetime import datetime
 from typing import Any
 
-from .execution_types import (
-    ActionExecutionRecord,
-    ActionStatus,
-    ExecutionStatus,
-    PendingAction,
-)
+from .execution_types import ActionExecutionRecord, ActionStatus, ExecutionStatus, PendingAction
 
 
 class ExecutionController:

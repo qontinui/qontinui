@@ -35,11 +35,7 @@ from qontinui.model.state.state_service import StateService
 from qontinui.model.state.state_string import StateString
 
 if TYPE_CHECKING:
-    from qontinui_schemas import (
-        ImageAsset,
-        QontinuiConfig,
-        SearchRegion,
-    )
+    from qontinui_schemas import ImageAsset, QontinuiConfig, SearchRegion
     from qontinui_schemas import State as ConfigState
     from qontinui_schemas import StateImage as ConfigStateImage
     from qontinui_schemas import StateLocation as ConfigStateLocation

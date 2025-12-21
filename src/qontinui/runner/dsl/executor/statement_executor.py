@@ -8,12 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from .execution_context import ExecutionContext
-from .flow_control import (
-    BreakException,
-    ContinueException,
-    ExecutionError,
-    ReturnException,
-)
+from .flow_control import BreakException, ContinueException, ExecutionError, ReturnException
 
 if TYPE_CHECKING:
     from ..statements.assignment_statement import AssignmentStatement
@@ -21,9 +16,7 @@ if TYPE_CHECKING:
     from ..statements.if_statement import IfStatement
     from ..statements.method_call_statement import MethodCallStatement
     from ..statements.return_statement import ReturnStatement
-    from ..statements.variable_declaration_statement import (
-        VariableDeclarationStatement,
-    )
+    from ..statements.variable_declaration_statement import VariableDeclarationStatement
 
 
 class StatementExecutor:
@@ -95,9 +88,7 @@ class StatementExecutor:
         from ..statements.if_statement import IfStatement
         from ..statements.method_call_statement import MethodCallStatement
         from ..statements.return_statement import ReturnStatement
-        from ..statements.variable_declaration_statement import (
-            VariableDeclarationStatement,
-        )
+        from ..statements.variable_declaration_statement import VariableDeclarationStatement
 
         try:
             if isinstance(statement, VariableDeclarationStatement):
@@ -177,9 +168,7 @@ class StatementExecutor:
             )
             ```
         """
-        from ..statements.variable_declaration_statement import (
-            VariableDeclarationStatement,
-        )
+        from ..statements.variable_declaration_statement import VariableDeclarationStatement
 
         if not isinstance(statement, VariableDeclarationStatement):
             raise ExecutionError("Expected VariableDeclarationStatement")

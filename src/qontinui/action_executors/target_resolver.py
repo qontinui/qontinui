@@ -121,10 +121,7 @@ class TargetResolver:
         from qontinui import registry
 
         from ..actions.find import FindAction
-        from ..actions.find.find_options_builder import (
-            CascadeContext,
-            build_find_options,
-        )
+        from ..actions.find.find_options_builder import CascadeContext, build_find_options
         from ..config.settings import QontinuiSettings
         from ..model.element import Pattern
 

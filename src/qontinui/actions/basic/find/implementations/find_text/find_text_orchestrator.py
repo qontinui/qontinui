@@ -15,13 +15,7 @@ from ......model.match.match import Match
 from .....object_collection import ObjectCollection
 from ...options.text_find_options import OCREngine, TextFindOptions, TextMatchType
 from .image_preprocessor import ImagePreprocessor
-from .ocr_engines import (
-    BaseOCREngine,
-    EasyOCREngine,
-    OCRResult,
-    PaddleOCREngine,
-    TesseractEngine,
-)
+from .ocr_engines import BaseOCREngine, EasyOCREngine, OCRResult, PaddleOCREngine, TesseractEngine
 from .text_matchers import (
     BaseMatcher,
     ContainsMatcher,

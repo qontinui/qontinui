@@ -1,7 +1,7 @@
 """Monitoring and metrics module for Qontinui."""
 
-from .metrics import (  # Export key metrics for direct use
-    HealthCheck,
+from .metrics import (
+    HealthCheck,  # Export key metrics for direct use
     MetricsCollector,
     action_counter,
     action_duration,

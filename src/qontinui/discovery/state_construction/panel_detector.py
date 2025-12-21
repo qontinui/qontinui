@@ -10,10 +10,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-from qontinui.discovery.state_construction.element_identifier import (
-    IdentifiedRegion,
-    RegionType,
-)
+from qontinui.discovery.state_construction.element_identifier import IdentifiedRegion, RegionType
 
 
 class PanelDetector:

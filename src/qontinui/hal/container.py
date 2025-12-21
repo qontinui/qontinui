@@ -7,12 +7,7 @@ the global factory pattern with explicit dependency injection.
 from dataclasses import dataclass
 
 from .config import HALConfig
-from .interfaces import (
-    IOCREngine,
-    IPatternMatcher,
-    IPlatformSpecific,
-    IScreenCapture,
-)
+from .interfaces import IOCREngine, IPatternMatcher, IPlatformSpecific, IScreenCapture
 from .interfaces.keyboard_controller import IKeyboardController
 from .interfaces.mouse_controller import IMouseController
 

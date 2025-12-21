@@ -30,16 +30,8 @@ from .models.base import (
     StaticAnalysisResult,
     Viewport,
 )
-from .models.composite import (
-    ApplicationStateStructure,
-    CompositeStateStructure,
-    StateStructure,
-)
-from .models.correlated import (
-    EvidenceType,
-    MatchingEvidence,
-    VerifiedTransition,
-)
+from .models.composite import ApplicationStateStructure, CompositeStateStructure, StateStructure
+from .models.correlated import EvidenceType, MatchingEvidence, VerifiedTransition
 from .orchestrator import ExtractionOrchestrator
 from .runtime import RuntimeExtractor
 from .static import StaticAnalyzer

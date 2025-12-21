@@ -16,10 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from qontinui.extraction.models.static import (
-        APICallDefinition,
-        RouteDefinition,
-    )
+    from qontinui.extraction.models.static import APICallDefinition, RouteDefinition
 
 
 # Dynamic route patterns

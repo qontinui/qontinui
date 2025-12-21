@@ -43,11 +43,7 @@ Usage:
 """
 
 # Configuration adapter for qontinui-schemas
-from .config_adapter import (
-    ConfigAdapter,
-    load_config,
-    load_config_from_dict,
-)
+from .config_adapter import ConfigAdapter, load_config, load_config_from_dict
 from .configuration_manager import ConfigurationManager, get_config_manager
 from .execution_environment import (
     DisplayServer,
@@ -104,8 +100,8 @@ from .qontinui_properties import (
 )
 
 # Action schema - Pydantic models for action configurations
-from .schema import (  # Workflow graph format support; WorkflowFormat,  # Does not exist in schema.py
-    Action,
+from .schema import (
+    Action,  # Workflow graph format support; WorkflowFormat,  # Does not exist in schema.py
     BaseActionSettings,
     BreakActionConfig,
     ClickActionConfig,
@@ -179,8 +175,8 @@ from .validator import (
 )
 
 # Workflow utilities
-from .workflow_utils import (  # detect_workflow_format,  # Not yet implemented; convert_sequential_to_graph,  # Not yet implemented; get_action_connection_types,  # Not yet implemented
-    calculate_max_depth,
+from .workflow_utils import (
+    calculate_max_depth,  # detect_workflow_format,  # Not yet implemented; convert_sequential_to_graph,  # Not yet implemented; get_action_connection_types,  # Not yet implemented
     find_entry_points,
     find_exit_points,
     get_action_by_id,

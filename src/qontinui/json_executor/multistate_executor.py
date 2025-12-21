@@ -8,10 +8,7 @@ import time
 from typing import Any
 
 from ..model.state.state import State
-from ..model.transition.enhanced_state_transition import (
-    StaysVisible,
-    TaskSequenceStateTransition,
-)
+from ..model.transition.enhanced_state_transition import StaysVisible, TaskSequenceStateTransition
 from ..multistate_integration.multistate_adapter import MultiStateAdapter
 from .action_executor import ActionExecutor  # type: ignore[attr-defined]
 from .config_parser import QontinuiConfig

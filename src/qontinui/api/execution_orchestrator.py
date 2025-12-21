@@ -18,12 +18,7 @@ from ..actions.internal.execution.action_executor import ActionExecutor
 from ..execution.graph_executor import GraphExecutor
 from .execution_event_bus import ExecutionEventBus
 from .execution_history import ExecutionHistory
-from .execution_manager import (
-    ExecutionContext,
-    ExecutionEvent,
-    ExecutionEventType,
-    ExecutionStatus,
-)
+from .execution_manager import ExecutionContext, ExecutionEvent, ExecutionEventType, ExecutionStatus
 
 logger = logging.getLogger(__name__)
 

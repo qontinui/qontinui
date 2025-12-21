@@ -22,10 +22,7 @@ from .base import (
 )
 
 # Composite models for multi-application environments
-from .composite import (
-    ApplicationStateStructure,
-    CompositeStateStructure,
-)
+from .composite import ApplicationStateStructure, CompositeStateStructure
 
 # Correlated/output models
 from .correlated import (

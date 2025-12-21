@@ -8,8 +8,8 @@ analyzers in the static/ directory.
 # Re-export for backwards compatibility
 # Import StaticConfig from the config module
 from qontinui.extraction.config import StaticConfig
-from qontinui.extraction.models.static import (  # New hint models for state discovery
-    APICallDefinition,
+from qontinui.extraction.models.static import (
+    APICallDefinition,  # New hint models for state discovery
     APICallType,
     ComponentCategory,
     ComponentDefinition,

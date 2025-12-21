@@ -10,11 +10,7 @@ from typing import Any, cast
 
 from playwright.async_api import ElementHandle, Page
 
-from .models import (
-    BoundingBox,
-    ElementType,
-    ExtractedElement,
-)
+from .models import BoundingBox, ElementType, ExtractedElement
 
 logger = logging.getLogger(__name__)
 

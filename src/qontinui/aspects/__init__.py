@@ -5,8 +5,8 @@ cross-cutting concerns.
 """
 
 # Annotations
-from .annotations import (  # Data collection; Monitoring; Recovery
-    CollectedData,
+from .annotations import (
+    CollectedData,  # Data collection; Monitoring; Recovery
     MonitoredConfig,
     clear_collected_data,
     collect_data,
@@ -30,12 +30,7 @@ from .aspect_registry import (
 )
 
 # Core aspects
-from .core import (
-    ActionContext,
-    ActionLifecycleAspect,
-    get_lifecycle_aspect,
-    with_lifecycle,
-)
+from .core import ActionContext, ActionLifecycleAspect, get_lifecycle_aspect, with_lifecycle
 
 # Monitoring aspects
 from .monitoring import (

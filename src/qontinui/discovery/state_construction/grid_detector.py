@@ -5,14 +5,10 @@ detection and pattern analysis to identify grid structures like inventory slots,
 skill bars, or tile layouts.
 """
 
-
 import cv2
 import numpy as np
 
-from qontinui.discovery.state_construction.element_identifier import (
-    IdentifiedRegion,
-    RegionType,
-)
+from qontinui.discovery.state_construction.element_identifier import IdentifiedRegion, RegionType
 
 
 class GridDetector:

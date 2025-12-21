@@ -9,10 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from .code_actions import (
-    CodeBlockActionConfig,
-    CustomFunctionActionConfig,
-)
+from .code_actions import CodeBlockActionConfig, CustomFunctionActionConfig
 from .control_flow import (
     BreakActionConfig,
     ContinueActionConfig,
@@ -55,16 +52,8 @@ from .mouse_actions import (
     MouseUpActionConfig,
     ScrollActionConfig,
 )
-from .shell_actions import (
-    AIPromptActionConfig,
-    ShellActionConfig,
-    ShellScriptActionConfig,
-)
-from .state_actions import (
-    GoToStateActionConfig,
-    RunWorkflowActionConfig,
-    ScreenshotActionConfig,
-)
+from .shell_actions import AIPromptActionConfig, ShellActionConfig, ShellScriptActionConfig
+from .state_actions import GoToStateActionConfig, RunWorkflowActionConfig, ScreenshotActionConfig
 
 
 class Action(BaseModel):

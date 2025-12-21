@@ -15,7 +15,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../../multista
 
 from multistate.core.state import State as MultiState  # noqa: E402
 from multistate.dynamics.hidden_states import HiddenStateManager  # noqa: E402
-from multistate.manager import StateManager, StateManagerConfig  # noqa: E402
+from multistate.manager import (
+    StateManager,  # noqa: E402
+    StateManagerConfig,
+)
 from multistate.pathfinding.multi_target import SearchStrategy  # noqa: E402
 from multistate.transitions.transition import Transition as MultiTransition  # noqa: E402
 

@@ -9,11 +9,7 @@ This module provides functions to extract React components:
 
 from pathlib import Path
 
-from qontinui.extraction.models import (
-    ComponentCategory,
-    ComponentDefinition,
-    ComponentType,
-)
+from qontinui.extraction.models import ComponentCategory, ComponentDefinition, ComponentType
 
 
 def extract_function_components(parse_result: dict, file_path: Path) -> list[ComponentDefinition]:

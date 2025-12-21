@@ -13,12 +13,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, cast
 
-from .schedule_config import (
-    CheckMode,
-    ExecutionRecord,
-    ScheduleConfig,
-    StateCheckResult,
-)
+from .schedule_config import CheckMode, ExecutionRecord, ScheduleConfig, StateCheckResult
 
 logger = logging.getLogger(__name__)
 

@@ -13,9 +13,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from qontinui.model.transition.enhanced_state_transition import (
-    TaskSequenceStateTransition,
-)
+from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
 from qontinui.state_management.state_memory import StateMemory
 
 from .multistate_adapter import MultiStateAdapter

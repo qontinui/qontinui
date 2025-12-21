@@ -78,9 +78,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
                 self._additional_routes.extend(app_routes)
 
         elif self._router_type == "pages":
-            from qontinui.extraction.static.nextjs.pages_router import (
-                extract_pages_routes,
-            )
+            from qontinui.extraction.static.nextjs.pages_router import extract_pages_routes
 
             pages_dir = config.source_root / "pages"
             if pages_dir.exists():
@@ -89,9 +87,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
 
         # Step 4: Extract server components (App Router only)
         if self._router_type == "app":
-            from qontinui.extraction.static.nextjs.app_router import (
-                extract_server_components,
-            )
+            from qontinui.extraction.static.nextjs.app_router import extract_server_components
 
             app_dir = config.source_root / "app"
             if app_dir.exists():

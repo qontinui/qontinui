@@ -5,13 +5,7 @@ import logging
 from datetime import datetime
 from typing import Any, cast
 
-from .models import (
-    DeleteOptions,
-    DeleteResult,
-    DeletionImpact,
-    DiscoveredState,
-    StateImage,
-)
+from .models import DeleteOptions, DeleteResult, DeletionImpact, DiscoveredState, StateImage
 
 logger = logging.getLogger(__name__)
 

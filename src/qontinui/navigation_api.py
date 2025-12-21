@@ -22,9 +22,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from qontinui.model.state.state_service import StateService
-    from qontinui.multistate_integration.pathfinding_navigator import (
-        PathfindingNavigator,
-    )
+    from qontinui.multistate_integration.pathfinding_navigator import PathfindingNavigator
     from qontinui.state_management.state_memory import StateMemory
 
 logger = logging.getLogger(__name__)
@@ -78,9 +76,7 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         from qontinui.config.state_loader import load_states_from_config
         from qontinui.config.transition_loader import load_transitions_from_config
         from qontinui.model.state.state_service import StateService
-        from qontinui.multistate_integration.pathfinding_navigator import (
-            PathfindingNavigator,
-        )
+        from qontinui.multistate_integration.pathfinding_navigator import PathfindingNavigator
         from qontinui.state_management.state_memory import StateMemory
 
         # Step 1: Create StateService
