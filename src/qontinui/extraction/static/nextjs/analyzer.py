@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         APICallDefinition,
         ComponentDefinition,
         RouteDefinition,
+        StateVariable,
         StaticAnalysisResult,
     )
 
@@ -38,6 +39,11 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
         self._router_type: str | None = None
         self._server_components: list[ComponentDefinition] = []
         self._server_actions: list[APICallDefinition] = []
+        # Local storage for additional Next.js-specific data
+        self._additional_routes: list[RouteDefinition] = []
+        self._additional_components: list[ComponentDefinition] = []
+        self._additional_state_variables: list[StateVariable] = []
+        self._additional_api_calls: list[APICallDefinition] = []
 
     async def analyze(self, config: StaticConfig) -> StaticAnalysisResult:
         """
@@ -69,7 +75,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
             app_dir = config.source_root / "app"
             if app_dir.exists():
                 app_routes = extract_app_routes(app_dir)
-                self._routes.extend(app_routes)
+                self._additional_routes.extend(app_routes)
 
         elif self._router_type == "pages":
             from qontinui.extraction.static.nextjs.pages_router import (
@@ -79,7 +85,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
             pages_dir = config.source_root / "pages"
             if pages_dir.exists():
                 pages_routes = extract_pages_routes(pages_dir)
-                self._routes.extend(pages_routes)
+                self._additional_routes.extend(pages_routes)
 
         # Step 4: Extract server components (App Router only)
         if self._router_type == "app":
@@ -93,7 +99,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
                 parse_results: dict[str, str] = {}  # Placeholder
                 server_components = extract_server_components(app_dir, parse_results)
                 self._server_components.extend(server_components)
-                self._components.extend(server_components)
+                self._additional_components.extend(server_components)
 
         # Step 5: Extract server actions
         from qontinui.extraction.static.nextjs.app_router import extract_server_actions
@@ -101,7 +107,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
         parse_results = {}  # Placeholder
         server_actions = extract_server_actions(parse_results)
         self._server_actions.extend(server_actions)
-        self._api_calls.extend(server_actions)
+        self._additional_api_calls.extend(server_actions)
 
         # Extract Pages Router data fetching methods
         if self._router_type == "pages":
@@ -113,8 +119,8 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
             parse_results = {}  # Placeholder
             gssp = extract_get_server_side_props(parse_results)
             gsp = extract_get_static_props(parse_results)
-            self._api_calls.extend(gssp)
-            self._api_calls.extend(gsp)
+            self._additional_api_calls.extend(gssp)
+            self._additional_api_calls.extend(gsp)
 
         # Extract Next.js specific hooks
         from qontinui.extraction.static.nextjs.hooks import (
@@ -130,16 +136,16 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
         pathname_state = extract_use_pathname(parse_results)
         params_state = extract_use_params(parse_results)
 
-        self._state_variables.extend(router_state)
-        self._state_variables.extend(search_params_state)
-        self._state_variables.extend(pathname_state)
-        self._state_variables.extend(params_state)
+        self._additional_state_variables.extend(router_state)
+        self._additional_state_variables.extend(search_params_state)
+        self._additional_state_variables.extend(pathname_state)
+        self._additional_state_variables.extend(params_state)
 
-        # Update result with new data
-        result.routes = self._routes
-        result.components = self._components
-        result.state_variables = self._state_variables
-        result.api_calls = self._api_calls
+        # Update result with new data (combine parent result with additional Next.js data)
+        result.routes = list(result.routes) + self._additional_routes
+        result.components = list(result.components) + self._additional_components
+        result.state_variables = list(result.state_variables) + self._additional_state_variables
+        result.api_calls = list(result.api_calls) + self._additional_api_calls
 
         # Note: metadata fields would be added here if StaticAnalysisResult supported them
         # For now, the router type and counts are implicit from the result data
@@ -153,7 +159,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
         Returns:
             List of route definitions based on file system structure
         """
-        return self._routes
+        return self.route_analyzer.get_routes() + self._additional_routes
 
     def _detect_router_type(self, source_root: Path) -> str:
         """

@@ -3,6 +3,13 @@ Code execution action executor.
 
 This module provides execution for inline Python code blocks and custom functions
 within automation workflows, with sandboxing and context access.
+
+Security Model:
+- Dangerous builtins removed: eval, exec, compile, open, input, help, breakpoint, exit, quit
+- Imports restricted to safe modules via SAFE_IMPORT_ALLOWLIST
+- Dangerous modules blocked: os, subprocess, sys, shutil, socket, etc.
+- Timeout protection (Unix: signal-based, Windows: best-effort)
+- Project imports sandboxed to project root only
 """
 
 import logging
@@ -23,6 +30,129 @@ from .base import ActionExecutorBase
 from .registry import register_executor
 
 logger = logging.getLogger(__name__)
+
+# Modules that are safe to import in sandboxed code execution
+# These modules don't provide file system, network, or process control access
+SAFE_IMPORT_ALLOWLIST: set[str] = {
+    # Data types and structures
+    "json",
+    "csv",
+    "collections",
+    "dataclasses",
+    "typing",
+    "types",
+    "enum",
+    "abc",
+    # Math and numbers
+    "math",
+    "decimal",
+    "fractions",
+    "random",
+    "statistics",
+    # Date and time
+    "datetime",
+    "time",
+    "calendar",
+    "zoneinfo",
+    # String processing
+    "re",
+    "string",
+    "textwrap",
+    "difflib",
+    "unicodedata",
+    # Functional programming
+    "functools",
+    "itertools",
+    "operator",
+    # Data validation and parsing
+    "copy",
+    "pprint",
+    "reprlib",
+    # Hashing (for data integrity, not crypto)
+    "hashlib",
+    "hmac",
+    # Base64/encoding
+    "base64",
+    "binascii",
+    # UUID generation
+    "uuid",
+    # Logging (read-only, useful for debugging)
+    "logging",
+    # Warnings
+    "warnings",
+    # Context managers
+    "contextlib",
+    # Third-party safe libraries (common in automation)
+    "pydantic",
+    "attrs",
+}
+
+# Modules that are explicitly blocked (dangerous)
+# This list is used for clear error messages and documentation
+BLOCKED_IMPORT_DENYLIST: set[str] = {
+    # System and process control
+    "os",
+    "sys",
+    "subprocess",
+    "multiprocessing",
+    "threading",
+    "concurrent",
+    "asyncio",
+    "signal",
+    # File system access
+    "shutil",
+    "pathlib",
+    "glob",
+    "fnmatch",
+    "tempfile",
+    "io",
+    "builtins",
+    # Network access
+    "socket",
+    "ssl",
+    "http",
+    "urllib",
+    "ftplib",
+    "smtplib",
+    "poplib",
+    "imaplib",
+    "telnetlib",
+    "requests",
+    "httpx",
+    "aiohttp",
+    # Code execution and introspection
+    "importlib",
+    "pkgutil",
+    "code",
+    "codeop",
+    "ast",
+    "dis",
+    "inspect",
+    "traceback",
+    # Serialization (potential for code execution)
+    "pickle",
+    "shelve",
+    "marshal",
+    # C extensions and low-level
+    "ctypes",
+    "cffi",
+    # Database access
+    "sqlite3",
+    "dbm",
+    # Compression (file access)
+    "zipfile",
+    "tarfile",
+    "gzip",
+    "bz2",
+    "lzma",
+    # Other dangerous
+    "pty",
+    "tty",
+    "termios",
+    "resource",
+    "gc",
+    "_thread",
+}
 
 
 @register_executor
@@ -530,6 +660,62 @@ class CodeExecutor(ActionExecutorBase):
             ],
         }
 
+    def _create_safe_import(self, project_root: str | None = None) -> Any:
+        """Create a safe import function that restricts imports to allowlisted modules.
+
+        Args:
+            project_root: Optional project root for allowing project-local imports
+
+        Returns:
+            A custom __import__ function that validates module names
+        """
+        original_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__dict__["__import__"]
+
+        def safe_import(name: str, globals: dict | None = None, locals: dict | None = None, fromlist: tuple = (), level: int = 0):
+            """Safe import that only allows allowlisted modules.
+
+            Args:
+                name: Module name to import
+                globals: Global namespace (unused but required for signature)
+                locals: Local namespace (unused but required for signature)
+                fromlist: List of names to import from the module
+                level: Relative import level (0 = absolute, >0 = relative)
+
+            Returns:
+                Imported module if allowed
+
+            Raises:
+                ImportError: If module is not in allowlist
+            """
+            # Get the top-level module name
+            top_level_module = name.split(".")[0]
+
+            # Check if explicitly blocked (for clear error message)
+            if top_level_module in BLOCKED_IMPORT_DENYLIST:
+                raise ImportError(
+                    f"Import of '{name}' is blocked for security reasons. "
+                    f"Blocked modules include: os, subprocess, sys, socket, etc."
+                )
+
+            # Check if in allowlist
+            if top_level_module in SAFE_IMPORT_ALLOWLIST:
+                return original_import(name, globals, locals, fromlist, level)
+
+            # Allow project-local imports if project_root is set and this is a relative import
+            # or if the module exists within the project
+            if project_root and level > 0:
+                # Relative imports are allowed (they're project-local by definition)
+                return original_import(name, globals, locals, fromlist, level)
+
+            # Reject unknown modules
+            raise ImportError(
+                f"Import of '{name}' is not allowed in sandboxed code. "
+                f"Allowed modules: {', '.join(sorted(SAFE_IMPORT_ALLOWLIST))}. "
+                f"If this is a project module, use relative imports."
+            )
+
+        return safe_import
+
     def _execute_with_timeout(
         self,
         code: str,
@@ -538,6 +724,12 @@ class CodeExecutor(ActionExecutorBase):
         enable_imports: bool = True,
     ) -> dict[str, Any]:
         """Execute code with timeout protection and import resolution.
+
+        Security features:
+        - Dangerous builtins removed (eval, exec, compile, open, etc.)
+        - Imports restricted to SAFE_IMPORT_ALLOWLIST
+        - Dangerous modules blocked (os, subprocess, sys, etc.)
+        - Timeout protection (Unix: signal-based, Windows: best-effort)
 
         Args:
             code: Python code to execute
@@ -550,9 +742,13 @@ class CodeExecutor(ActionExecutorBase):
         """
         start_time = time.time()
 
+        # Get project root for import sandboxing
+        project_root = str(self._get_project_root()) if enable_imports else None
+
+        # Create safe import function
+        safe_import = self._create_safe_import(project_root)
+
         # Restricted builtins (remove dangerous functions)
-        # Note: __import__ is allowed to enable module imports (including project files)
-        # Import validation should be done via allowed_imports config field
         builtins_dict = __builtins__ if isinstance(__builtins__, dict) else __builtins__.__dict__
         restricted_builtins = {
             k: v
@@ -568,8 +764,12 @@ class CodeExecutor(ActionExecutorBase):
                 "breakpoint",
                 "exit",
                 "quit",
+                "__import__",  # Replace with safe_import
             }
         }
+
+        # Add safe import function
+        restricted_builtins["__import__"] = safe_import
 
         # Prepare execution namespace
         exec_globals = {
@@ -578,12 +778,9 @@ class CodeExecutor(ActionExecutorBase):
         }
         exec_locals: dict[str, Any] = {}
 
-        # Add project root to sys.path for import resolution
-        project_root = None
-        if enable_imports:
-            project_root = str(self._get_project_root())
-            if project_root not in sys.path:
-                sys.path.insert(0, project_root)
+        # Add project root to sys.path for import resolution (if not already set)
+        if enable_imports and project_root and project_root not in sys.path:
+            sys.path.insert(0, project_root)
 
         # Set timeout alarm (Unix only)
         def timeout_handler(signum, frame):

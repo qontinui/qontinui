@@ -19,10 +19,10 @@ from typing import Any
 
 import cv2
 
-from qontinui.discovery.state_analysis.image_extractor import (
-    ImageExtractionConfig,
-    StateImageExtractor,
-)
+from qontinui.discovery.state_analysis.boundary_detector import BoundaryDetector
+from qontinui.discovery.state_analysis.frame_analyzer import FrameAnalyzer
+from qontinui.discovery.state_analysis.image_extractor import ImageExtractionConfig
+from qontinui.discovery.state_analysis.metadata_generator import MetadataGenerator
 from qontinui.discovery.state_analysis.models import (
     DetectedState,
     Frame,
@@ -32,11 +32,9 @@ from qontinui.discovery.state_analysis.models import (
     ProcessingStep,
     Transition,
 )
-from qontinui.discovery.state_analysis.state_boundary_detector import (
-    StateBoundaryConfig,
-    StateBoundaryDetector,
-)
-from qontinui.discovery.state_analysis.transition_analyzer import TransitionAnalyzer
+from qontinui.discovery.state_analysis.state_boundary_detector import StateBoundaryConfig
+from qontinui.discovery.state_analysis.state_extractor import StateExtractor
+from qontinui.discovery.state_analysis.transition_analyzer_stage import TransitionAnalyzerStage
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -247,14 +245,16 @@ class AnalysisPipeline:
         self.state_config = self._build_state_config()
         self.image_config = self._build_image_config()
 
-        # Initialize components
-        self.state_detector = StateBoundaryDetector(config=self.state_config)
-        self.image_extractor = StateImageExtractor(config=self.image_config)
-        self.transition_analyzer = TransitionAnalyzer(
+        # Initialize pipeline stages
+        self.frame_analyzer = FrameAnalyzer()
+        self.boundary_detector = BoundaryDetector(config=self.state_config)
+        self.state_extractor = StateExtractor(config=self.image_config)
+        self.transition_analyzer = TransitionAnalyzerStage(
             event_correlation_window_ms=self.config.event_correlation_window_ms,
             click_proximity_threshold=self.config.click_proximity_threshold,
             min_visual_change_score=self.config.min_visual_change_score,
         )
+        self.metadata_generator = MetadataGenerator()
 
         # Initialize processing log (will be reset for each analysis)
         self.processing_log: ProcessingLog | None = None
@@ -502,14 +502,16 @@ class AnalysisPipeline:
         self.state_config = self._build_state_config()
         self.image_config = self._build_image_config()
 
-        # Re-initialize components
-        self.state_detector = StateBoundaryDetector(config=self.state_config)
-        self.image_extractor = StateImageExtractor(config=self.image_config)
-        self.transition_analyzer = TransitionAnalyzer(
+        # Re-initialize pipeline stages
+        self.frame_analyzer = FrameAnalyzer()
+        self.boundary_detector = BoundaryDetector(config=self.state_config)
+        self.state_extractor = StateExtractor(config=self.image_config)
+        self.transition_analyzer = TransitionAnalyzerStage(
             event_correlation_window_ms=self.config.event_correlation_window_ms,
             click_proximity_threshold=self.config.click_proximity_threshold,
             min_visual_change_score=self.config.min_visual_change_score,
         )
+        self.metadata_generator = MetadataGenerator()
 
         # Re-run analysis
         return self.analyze_session(session)
@@ -628,48 +630,32 @@ class AnalysisPipeline:
         Returns:
             ProcessingStep with validation results
         """
-        start_time = time.time()
+        # Validate frames using frame_analyzer
+        validation_step = self.frame_analyzer.validate_frames(
+            session.frames, session.session_id, len(session.events)
+        )
 
-        try:
-            if not session.frames:
-                raise ValueError("Session has no frames")
+        if not session.events:
+            logger.warning("Session has no input events")
 
-            if not session.events:
-                logger.warning("Session has no input events")
-
-            # Additional validation
-            for i, frame in enumerate(session.frames):
-                if frame.image is None or frame.image.size == 0:
-                    raise ValueError(f"Frame {i} has invalid image data")
-
-            success = True
-            error = None
+        if validation_step.success:
             logger.info(
                 "Session validation successful: %d frames, %d events",
                 len(session.frames),
                 len(session.events),
             )
 
-        except Exception as e:
-            success = False
-            error = str(e)
-            logger.error("Session validation failed: %s", error)
-
-        end_time = time.time()
-
+        # Rename step to match expected name
         return ProcessingStep(
             name="session_validation",
-            start_time=start_time,
-            end_time=end_time,
-            input_count=len(session.frames) + len(session.events),
-            output_count=len(session.frames) if success else 0,
-            parameters={
-                "num_frames": len(session.frames),
-                "num_events": len(session.events),
-            },
-            success=success,
-            error=error,
-            metadata={"session_id": session.session_id},
+            start_time=validation_step.start_time,
+            end_time=validation_step.end_time,
+            input_count=validation_step.input_count,
+            output_count=validation_step.output_count,
+            parameters=validation_step.parameters,
+            success=validation_step.success,
+            error=validation_step.error,
+            metadata=validation_step.metadata,
         )
 
     def _run_state_detection(
@@ -683,45 +669,7 @@ class AnalysisPipeline:
         Returns:
             Tuple of (detected states, processing step)
         """
-        start_time = time.time()
-        states = []
-        error = None
-        success = False
-
-        try:
-            states = self.state_detector.detect_states(frames)
-            success = True
-
-            logger.info("State detection complete: %d states detected", len(states))
-            for state in states:
-                logger.debug(
-                    "  - %s: %d frames (indices %d-%d)",
-                    state.name,
-                    len(state.frame_indices),
-                    state.start_frame_index,
-                    state.end_frame_index,
-                )
-
-        except Exception as e:
-            error = str(e)
-            logger.error("State detection failed: %s", error, exc_info=True)
-
-        end_time = time.time()
-
-        return states, ProcessingStep(  # type: ignore[return-value]
-            name="state_detection",
-            start_time=start_time,
-            end_time=end_time,
-            input_count=len(frames),
-            output_count=len(states),
-            parameters=self.state_config.__dict__,
-            success=success,
-            error=error,
-            metadata={
-                "clustering_algorithm": self.config.clustering_algorithm,
-                "similarity_threshold": self.config.state_similarity_threshold,
-            },
-        )
+        return self.boundary_detector.detect_states(frames)
 
     def _run_image_extraction(
         self, states: list[DetectedState], frames: list[Frame], events: list[InputEvent]
@@ -736,43 +684,7 @@ class AnalysisPipeline:
         Returns:
             ProcessingStep with extraction results
         """
-        start_time = time.time()
-        total_images = 0
-        error = None
-        success = False
-
-        try:
-            for state in states:
-                extracted_images = self.image_extractor.extract_from_state(state, frames, events)
-                state.state_images = extracted_images  # type: ignore[attr-defined]
-                total_images += len(extracted_images)
-
-            success = True
-            logger.info("Image extraction complete: %d total images extracted", total_images)
-
-            for state in states:
-                logger.debug("  - %s: %d StateImages", state.name, len(state.state_images))  # type: ignore[attr-defined]
-
-        except Exception as e:
-            error = str(e)
-            logger.error("Image extraction failed: %s", error, exc_info=True)
-
-        end_time = time.time()
-
-        return ProcessingStep(
-            name="image_extraction",
-            start_time=start_time,
-            end_time=end_time,
-            input_count=len(states),
-            output_count=total_images,
-            parameters=self.image_config.__dict__,
-            success=success,
-            error=error,
-            metadata={
-                "extract_at_clicks": self.config.extract_at_clicks,
-                "extract_from_contours": self.config.extract_from_contours,
-            },
-        )
+        return self.state_extractor.extract_images(states, frames, events)
 
     def _run_element_detection(
         self, states: list[DetectedState], frames: list[Frame]
@@ -836,49 +748,7 @@ class AnalysisPipeline:
         Returns:
             Tuple of (transitions, processing step)
         """
-        start_time = time.time()
-        transitions = []
-        error = None
-        success = False
-
-        try:
-            transitions = self.transition_analyzer.analyze_transitions(states, events, frames)  # type: ignore[arg-type]
-            success = True
-
-            logger.info("Transition analysis complete: %d transitions found", len(transitions))
-            for transition in transitions:
-                logger.debug(
-                    "  - %s: %s -> %s (%s)",
-                    transition.id,
-                    transition.get_primary_source_state(),
-                    transition.get_primary_target_state(),
-                    transition.action_type,
-                )
-
-        except Exception as e:
-            error = str(e)
-            logger.error("Transition analysis failed: %s", error, exc_info=True)
-
-        end_time = time.time()
-
-        return transitions, ProcessingStep(
-            name="transition_analysis",
-            start_time=start_time,
-            end_time=end_time,
-            input_count=len(states) + len(events),
-            output_count=len(transitions),
-            parameters={
-                "event_correlation_window_ms": self.config.event_correlation_window_ms,
-                "click_proximity_threshold": self.config.click_proximity_threshold,
-                "min_visual_change_score": self.config.min_visual_change_score,
-            },
-            success=success,
-            error=error,
-            metadata={
-                "num_states": len(states),
-                "num_events": len(events),
-            },
-        )
+        return self.transition_analyzer.analyze_transitions(states, events, frames)
 
     # ========================================================================
     # Private Methods - Analysis and Reporting
@@ -896,35 +766,7 @@ class AnalysisPipeline:
         Returns:
             Dictionary of confidence metrics
         """
-        scores = {}
-
-        # Average state image count (more images = higher confidence)
-        if states:
-            avg_images_per_state = sum(len(s.state_images) for s in states) / len(states)  # type: ignore[misc,attr-defined]
-            scores["avg_state_images"] = avg_images_per_state
-
-            # State coverage (what percentage of frames are in states)
-            total_state_frames = sum(len(s.frame_indices) for s in states)  # type: ignore[misc,attr-defined]
-            scores["state_coverage"] = total_state_frames / max(
-                1, max(s.end_frame_index for s in states)  # type: ignore[attr-defined]
-            )
-
-        # Transition coverage (what percentage of states have transitions)
-        if states and transitions:
-            states_with_transitions = set()
-            for t in transitions:
-                states_with_transitions.update(t.source_states)
-                states_with_transitions.update(t.target_states)
-
-            scores["transition_coverage"] = len(states_with_transitions) / len(states)
-
-        # Average transition confidence
-        if transitions:
-            scores["avg_transition_confidence"] = sum(
-                t.recognition_confidence for t in transitions
-            ) / len(transitions)
-
-        return scores
+        return self.metadata_generator.calculate_confidence_scores(states, transitions)
 
     def _generate_recommendation(self, result1: AnalysisResult, result2: AnalysisResult) -> str:
         """Generate a recommendation on which result is better.
@@ -936,24 +778,17 @@ class AnalysisPipeline:
         Returns:
             Recommendation string
         """
-        # Simple heuristic: prefer more states and transitions with fewer errors
-        score1 = (
-            len(result1.states)
-            + len(result1.transitions) * 2
-            - len(result1.processing_log.errors) * 10
-        )
-        score2 = (
-            len(result2.states)
-            + len(result2.transitions) * 2
-            - len(result2.processing_log.errors) * 10
-        )
-
-        if score2 > score1:
-            return "Result 2 appears better (more states/transitions, fewer errors)"
-        elif score1 > score2:
-            return "Result 1 appears better (more states/transitions, fewer errors)"
-        else:
-            return "Results are comparable in quality"
+        result1_data = {
+            "num_states": len(result1.states),
+            "num_transitions": len(result1.transitions),
+            "errors": len(result1.processing_log.errors),
+        }
+        result2_data = {
+            "num_states": len(result2.states),
+            "num_transitions": len(result2.transitions),
+            "errors": len(result2.processing_log.errors),
+        }
+        return self.metadata_generator.generate_recommendation(result1_data, result2_data)
 
 
 # ============================================================================
