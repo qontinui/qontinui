@@ -6,7 +6,7 @@ Executes a named workflow (v2.0.0+) or process (v1.0.0 compatibility) with optio
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ....actions.action_interface import ActionInterface
 from ....actions.action_result import ActionResult
@@ -14,12 +14,12 @@ from ....actions.action_type import ActionType
 from .run_process_options import RunProcessOptions
 
 if TYPE_CHECKING:
-    from ....json_executor.config_parser import (
-        Process,  # type: ignore[attr-defined]
-        QontinuiConfig,
-        Workflow,
-    )
+    from ....config.models.workflow import Workflow
+    from ....json_executor.config_parser import QontinuiConfig
     from ....model.object_collection import ObjectCollection
+
+    # Process is an alias for Workflow (backward compatibility)
+    Process = Workflow
 
 
 class RunProcess(ActionInterface):
@@ -132,10 +132,10 @@ class RunProcess(ActionInterface):
             return None
         # workflow_map is aliased to process_map in config for backward compatibility
         if hasattr(self.config, "workflow_map"):
-            return self.config.workflow_map.get(workflow_id)
+            return cast("Workflow | None", self.config.workflow_map.get(workflow_id))
         # Fallback to process_map for older configs
         if hasattr(self.config, "process_map"):
-            return self.config.process_map.get(workflow_id)
+            return cast("Workflow | None", self.config.process_map.get(workflow_id))
         return None
 
     def _execute_workflow_once(

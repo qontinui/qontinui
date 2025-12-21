@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
 from .base import (
     BoundingBox,
@@ -48,7 +48,7 @@ class NextJSExtractor(TechStackExtractor):
     tech_stack_name = "nextjs"
 
     def __init__(self) -> None:
-        self.playwright = None
+        self.playwright: Playwright | None = None
         self.browser: Browser | None = None
         self.context: BrowserContext | None = None
         self.page: Page | None = None
