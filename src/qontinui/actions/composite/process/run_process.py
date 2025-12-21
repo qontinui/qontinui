@@ -14,8 +14,8 @@ from ....actions.action_type import ActionType
 from .run_process_options import RunProcessOptions
 
 if TYPE_CHECKING:
+    from ....json_executor.config_parser import Process  # type: ignore[attr-defined]
     from ....json_executor.config_parser import (
-        Process,  # type: ignore[attr-defined]
         QontinuiConfig,
         Workflow,
     )

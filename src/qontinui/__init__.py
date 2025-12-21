@@ -103,7 +103,10 @@ from .model.search_regions import SearchRegions
 from .model.state import (
     Path,
     PathFinder,
-    State,
+)
+from .model.state import State
+from .model.state import State as BrobotState
+from .model.state import (
     StateEnum,
     StateImage,
     StateLocation,
@@ -113,7 +116,6 @@ from .model.state import (
     StateService,
     StateString,
 )
-from .model.state import State as BrobotState
 
 # Transition System (Brobot-style)
 from .model.transition import StateTransition, StateTransitions, TransitionType
