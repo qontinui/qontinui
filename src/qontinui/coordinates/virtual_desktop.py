@@ -85,7 +85,7 @@ class VirtualDesktopInfo:
                 origin_y=0,
                 width=1920,
                 height=1080,
-                monitors=tuple(),
+                monitors=(),
             )
 
         # Calculate virtual desktop origin as (min_x, min_y) across ALL monitors
