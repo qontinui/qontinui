@@ -33,7 +33,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
     Handles both App Router (app/) and Pages Router (pages/).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Next.js analyzer."""
         super().__init__()
         self._router_type: str | None = None

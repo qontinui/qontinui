@@ -37,7 +37,7 @@ class TauriExtractor(PlaywrightExtractor):
     without requiring the full Tauri runtime.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Tauri extractor."""
         super().__init__()
         self.dev_process: subprocess.Popen | None = None

@@ -110,7 +110,7 @@ class SignatureBasedDetector(StateDetector):
     for the presence of required elements and validating constraints.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize signature-based detector."""
         self.signatures: dict[str, StateSignature] = {}
         self.confidence_threshold = 0.7
@@ -208,7 +208,7 @@ class TransitionDetector:
     transitions from one state to another.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize transition detector."""
         self.previous_state: str | None = None
         self.state_detector: StateDetector | None = None

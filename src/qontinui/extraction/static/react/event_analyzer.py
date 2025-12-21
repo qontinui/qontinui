@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class EventAnalyzer:
     """Analyzer for extracting conditional rendering and event handlers."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the event analyzer."""
         self.conditional_renders: list[ConditionalRender] = []
         self.event_handlers: list[EventHandler] = []

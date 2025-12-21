@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 class ExtractionOrchestrator:
     """Main orchestrator that coordinates extraction components."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the orchestrator with empty registries."""
         self.static_analyzers: dict[FrameworkType, type[StaticAnalyzer]] = {}
         self.runtime_extractors: list[type[RuntimeExtractor]] = []

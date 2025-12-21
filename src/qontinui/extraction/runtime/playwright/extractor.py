@@ -38,7 +38,7 @@ class PlaywrightExtractor(RuntimeExtractor):
     components from the web extraction module.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Playwright extractor."""
         super().__init__()
         self.playwright = None

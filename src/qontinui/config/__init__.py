@@ -102,8 +102,6 @@ from .qontinui_properties import (
 # Action schema - Pydantic models for action configurations
 from .schema import (
     Action,  # Workflow graph format support; WorkflowFormat,  # Does not exist in schema.py
-)
-from .schema import (
     BaseActionSettings,
     BreakActionConfig,
     ClickActionConfig,
@@ -179,8 +177,6 @@ from .validator import (
 # Workflow utilities
 from .workflow_utils import (
     calculate_max_depth,  # detect_workflow_format,  # Not yet implemented; convert_sequential_to_graph,  # Not yet implemented; get_action_connection_types,  # Not yet implemented
-)
-from .workflow_utils import (
     find_entry_points,
     find_exit_points,
     get_action_by_id,

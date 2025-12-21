@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class StateAnalyzer:
     """Analyzer for extracting and analyzing React state variables."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the state analyzer."""
         self.state_variables: list[StateVariable] = []
         self.visibility_states: list[VisibilityState] = []

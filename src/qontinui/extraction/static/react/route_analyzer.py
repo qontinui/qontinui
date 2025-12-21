@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class RouteAnalyzer:
     """Analyzer for extracting routes and API calls."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the route analyzer."""
         self.routes: list[RouteDefinition] = []
         self.api_calls: list[APICallDefinition] = []

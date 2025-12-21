@@ -24,7 +24,7 @@ class TechStackRegistry:
     based on project structure.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._extractors: list[type[TechStackExtractor]] = []
         self._load_default_extractors()
 

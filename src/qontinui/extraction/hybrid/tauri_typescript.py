@@ -47,7 +47,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
 
     tech_stack_name = "tauri-typescript"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.playwright = None
         self.browser: Browser | None = None
         self.context: BrowserContext | None = None

@@ -322,13 +322,13 @@ class TypeAction(ActionInterface):
 
     def _pause_before(self):
         """Apply pre-action pause from options."""
-        if self.options.pause_before > 0:
-            self._pause(self.options.pause_before)
+        if self.options.get_pause_before_begin() > 0:
+            self._pause(self.options.get_pause_before_begin())
 
     def _pause_after(self):
         """Apply post-action pause from options."""
-        if self.options.pause_after > 0:
-            self._pause(self.options.pause_after)
+        if self.options.get_pause_after_end() > 0:
+            self._pause(self.options.get_pause_after_end())
 
     def _pause(self, duration: float):
         """Pause for specified duration.

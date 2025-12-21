@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ComponentAnalyzer:
     """Analyzer for extracting and classifying React components."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the component analyzer."""
         self.components: list[ComponentDefinition] = []
 
