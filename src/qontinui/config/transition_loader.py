@@ -388,7 +388,9 @@ def _link_workflows_to_transition(
         workflow = registry.get_workflow(workflow_id)
         if workflow is None:
             _debug_print(f"  ERROR: workflow '{workflow_id}' NOT FOUND in registry!")
-            _debug_print(f"    Available workflows: {list(registry._workflows.keys())[:10]}...")
+            _debug_print(
+                f"    Available workflows: {list(registry._workflow_names.keys())[:10]}..."
+            )
             logger.error(
                 f"Transition '{transition_id}': workflow '{workflow_id}' not found in registry"
             )

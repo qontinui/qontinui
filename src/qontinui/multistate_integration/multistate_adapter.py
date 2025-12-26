@@ -39,11 +39,11 @@ from multistate.pathfinding.multi_target import SearchStrategy  # noqa: E402
 from multistate.transitions.transition import Transition as MultiTransition  # noqa: E402
 
 from qontinui.model.state.state import State as QontinuiState  # noqa: E402
-from qontinui.model.transition.enhanced_state_transition import (
-    TaskSequenceStateTransition,  # noqa: E402
+from qontinui.model.transition.enhanced_state_transition import (  # noqa: E402
+    TaskSequenceStateTransition,
 )
-from qontinui.model.transition.enhanced_state_transition import (
-    TaskSequenceStateTransition as StateTransition,  # noqa: E402
+from qontinui.model.transition.enhanced_state_transition import (  # noqa: E402
+    TaskSequenceStateTransition as StateTransition,
 )
 from qontinui.state_management.state_memory import StateMemory  # noqa: E402
 
