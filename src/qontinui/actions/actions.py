@@ -1,7 +1,7 @@
 """Unified Actions class that handles both mock and live execution.
 
 This is the main entry point for all actions in Qontinui applications.
-Mock vs live execution is determined by application properties.
+Mock vs live execution is determined by FrameworkSettings configuration.
 """
 
 import logging
@@ -9,6 +9,7 @@ from typing import Any, cast
 
 from ..model.element import Location, Pattern, Region
 from .action_result import ActionResult, ActionResultBuilder
+from .find import FindAction, FindOptions
 from .fluent import FluentActions
 from .pure import PureActions
 
@@ -20,7 +21,7 @@ class Actions:
 
     Following Brobot principles:
     - Application code doesn't know if it's running mock or live
-    - Mock/live decision is made at the lowest action level
+    - Mock/live decision is made at the lowest action level (FindAction)
     - All higher-level code is agnostic to execution mode
     """
 
@@ -29,20 +30,25 @@ class Actions:
         self.pure = PureActions()
         self.fluent = FluentActions()
 
-        # Mock implementations (lazy loaded to avoid circular imports)
-        self._mock_find = None
+        # FindAction handles mock/real routing internally
+        self._find_action: FindAction | None = None
         self._mock_actions = None
         self._mock_mode_checked = False
+
+    @property
+    def find_action(self) -> FindAction:
+        """Get FindAction instance (lazy initialization)."""
+        if self._find_action is None:
+            self._find_action = FindAction()
+        return self._find_action
 
     def _ensure_mock_initialized(self):
         """Lazy load mock implementations to avoid circular imports."""
         if not self._mock_mode_checked:
             self._mock_mode_checked = True
-            # Import here to avoid circular imports
-            from ..mock import MockActions, MockFind, MockModeManager
+            from ..mock import MockActions, MockModeManager
 
             if MockModeManager.is_mock_mode():
-                self._mock_find = MockFind()
                 self._mock_actions = MockActions()
                 logger.info("Actions initialized in MOCK mode")
             else:
@@ -58,21 +64,20 @@ class Actions:
         Returns:
             ActionResult with matches
         """
-        self._ensure_mock_initialized()
+        from ..find.match import Match as FindMatch
 
-        # Import here to avoid circular imports
-        from ..mock import MockModeManager
+        # FindAction handles mock/real routing internally
+        options = FindOptions(search_region=region, find_all=False)
+        find_result = self.find_action.find(target, options)
 
-        if MockModeManager.is_mock_mode():
-            if self._mock_find:
-                result: ActionResult = self._mock_find.find(target, region)
-                return result
-            # Fallback if mock not initialized
-            return ActionResultBuilder().with_success(False).build()
-        else:
-            # Live implementation would use real computer vision
-            # For now, return empty result
-            return ActionResultBuilder().with_success(True).build()
+        # Convert FindResult to ActionResult for compatibility
+        # Wrap model.Match into find.Match (which has action methods)
+        builder = ActionResultBuilder().with_success(find_result.found)
+        if find_result.found:
+            for match in find_result.matches:
+                wrapped_match = FindMatch(match_object=match)
+                builder.add_match(wrapped_match)
+        return builder.build()
 
     def click(self, target: Any, button: str = "left") -> ActionResult:
         """Click on a target.

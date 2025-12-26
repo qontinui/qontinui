@@ -4,13 +4,13 @@ Performs scroll operations at specified locations.
 """
 
 import time
-from typing import Any, cast
+from typing import Any
 
+from ....actions.find import FindAction, FindOptions
 from ....model.element.location import Location
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
-from ..find.find import Find
 from .scroll_options import ScrollDirection, ScrollOptions
 
 
@@ -26,13 +26,13 @@ class Scroll(ActionInterface):
     - Use smooth or discrete scrolling
     """
 
-    def __init__(self, find: Find | None = None) -> None:
+    def __init__(self, find_action: FindAction | None = None) -> None:
         """Initialize Scroll action.
 
         Args:
-            find: The Find action for locating scroll positions
+            find_action: The FindAction for locating scroll positions
         """
-        self.find = find
+        self.find_action = find_action or FindAction()
 
     def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the scroll operation.
@@ -90,15 +90,21 @@ class Scroll(ActionInterface):
             # No specific location, use screen center
             return Location(640, 360)  # Default center position
 
-        # Use Find to locate the target
-        if self.find:
-            find_result = ActionResult(action_result.action_config)  # type: ignore[arg-type,call-arg]
-            self.find.perform(find_result, *object_collections)
+        # Use FindAction to locate the target
+        for obj_coll in object_collections:
+            # Extract patterns from state images
+            for state_image in obj_coll.state_images:
+                pattern = state_image.get_pattern()
+                if pattern:
+                    options = FindOptions(similarity=0.8)
+                    result = self.find_action.find(pattern, options)
 
-            if find_result.is_success and find_result.matches:
-                # Use the first match's location
-                first_match = find_result.matches[0]
-                return cast(Location | None, first_match.get_target())
+                    if result.found and result.best_match:
+                        # Return location from match center
+                        return Location(
+                            result.best_match.center.x,
+                            result.best_match.center.y,
+                        )
 
         return None
 

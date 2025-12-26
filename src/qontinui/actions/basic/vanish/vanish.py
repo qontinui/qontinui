@@ -7,10 +7,10 @@ import time
 from datetime import timedelta
 from typing import Any
 
+from ....actions.find import FindAction, FindOptions
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
-from ..find.find import Find
 from .vanish_options import VanishOptions
 
 
@@ -26,13 +26,13 @@ class Vanish(ActionInterface):
     - Ensuring temporary UI elements are gone
     """
 
-    def __init__(self, find: Find | None = None) -> None:
+    def __init__(self, find_action: FindAction | None = None) -> None:
         """Initialize Vanish action.
 
         Args:
-            find: The Find action for checking element presence
+            find_action: The FindAction for checking element presence
         """
-        self.find = find
+        self.find_action = find_action or FindAction()
 
     def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the vanish operation.
@@ -86,7 +86,7 @@ class Vanish(ActionInterface):
         Returns:
             True if elements vanished, False if timeout
         """
-        if not object_collections or not self.find:
+        if not object_collections:
             # Nothing to check for vanishing
             return True
 
@@ -94,7 +94,7 @@ class Vanish(ActionInterface):
 
         while time.time() - start_time < max_wait:
             # Check if elements are still present
-            if self._elements_are_gone(action_result, object_collections):
+            if self._elements_are_gone(object_collections):
                 # Elements have vanished
                 object.__setattr__(
                     action_result,
@@ -110,25 +110,26 @@ class Vanish(ActionInterface):
         object.__setattr__(action_result, "duration", timedelta(seconds=max_wait))
         return False
 
-    def _elements_are_gone(
-        self, action_result: ActionResult, object_collections: tuple[Any, ...]
-    ) -> bool:
+    def _elements_are_gone(self, object_collections: tuple[Any, ...]) -> bool:
         """Check if elements are no longer present.
 
         Args:
-            action_result: The action result for tracking
             object_collections: Collections to check
 
         Returns:
             True if elements are gone, False if still present
         """
-        # Type guard: ensure find is not None
-        if self.find is None:
-            return True  # If no find configured, consider elements gone
+        # Check each pattern in the collections
+        for obj_coll in object_collections:
+            for state_image in obj_coll.state_images:
+                pattern = state_image.get_pattern()
+                if pattern:
+                    options = FindOptions(similarity=0.8)
+                    result = self.find_action.find(pattern, options)
 
-        # Use Find to check for presence
-        find_result = ActionResult(action_result.action_config)  # type: ignore[arg-type,call-arg]
-        self.find.perform(find_result, *object_collections)
+                    if result.found:
+                        # Element still present
+                        return False
 
-        # Elements are gone if Find fails or finds no matches
-        return not find_result.is_success or len(find_result.matches) == 0
+        # No elements found - they have vanished
+        return True

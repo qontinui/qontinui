@@ -18,6 +18,8 @@ The runner should NOT create StateMemory, Navigator, or any other state manageme
 from __future__ import annotations
 
 import logging
+import os
+import tempfile
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -26,6 +28,22 @@ if TYPE_CHECKING:
     from qontinui.state_management.state_memory import StateMemory
 
 logger = logging.getLogger(__name__)
+
+_DEBUG_LOG_PATH = os.path.join(tempfile.gettempdir(), "qontinui_navigation_debug.log")
+
+
+def _debug_print(msg: str) -> None:
+    """Write debug message to file to ensure visibility when logging is disabled."""
+    try:
+        from datetime import datetime
+
+        with open(_DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            f.write(f"[{timestamp}] [NAVIGATION_API] {msg}\n")
+            f.flush()
+    except Exception:
+        pass
+
 
 # Global navigation instance
 _navigator: PathfindingNavigator | None = None
@@ -69,10 +87,12 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
     """
     global _navigator, _state_memory, _state_service, _initialized
 
+    _debug_print("load_configuration() called")
     logger.info("Loading qontinui configuration...")
 
     try:
         # Import required modules
+        _debug_print("Importing required modules...")
         from qontinui.config.state_loader import load_states_from_config
         from qontinui.config.transition_loader import load_transitions_from_config
         from qontinui.model.state.state_service import StateService
@@ -81,18 +101,26 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
 
         # Step 1: Create StateService
         _state_service = StateService()
+        _debug_print("StateService created")
         logger.debug("StateService created")
 
         # Step 2: Load states from config
+        _debug_print("Loading states from config...")
         if not load_states_from_config(config_dict, _state_service):
+            _debug_print("ERROR: Failed to load states from configuration")
             logger.error("Failed to load states from configuration")
             return False
 
         state_count = len(_state_service.get_all_states())
+        _debug_print(f"Loaded {state_count} states")
         logger.info(f"Loaded {state_count} states from configuration")
 
         # Step 3: Load transitions from config
-        if not load_transitions_from_config(config_dict, _state_service):
+        _debug_print("Step 3: Loading transitions from config...")
+        transitions_loaded = load_transitions_from_config(config_dict, _state_service)
+        _debug_print(f"load_transitions_from_config returned: {transitions_loaded}")
+        if not transitions_loaded:
+            _debug_print("ERROR: Failed to load transitions from configuration!")
             logger.error("Failed to load transitions from configuration")
             return False
 
@@ -147,29 +175,35 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
                 _navigator.multistate_adapter.register_qontinui_state(state)
                 registered_count += 1
 
-        logger.info(f"Registered {registered_count} states with multistate adapter")
+        _debug_print(f"Registered {registered_count} states with multistate adapter")
 
         # Step 8: Register all transitions with the multistate adapter
         transition_count = 0
         states_with_transitions = 0
+        _debug_print(f"Checking transitions on {len(_state_service.get_all_states())} states")
         for state in _state_service.get_all_states():
+            _debug_print(
+                f"  State '{state.name}' (id={state.id}): {len(state.transitions)} transitions"
+            )
             if state.transitions:
                 states_with_transitions += 1
-                logger.info(f"State '{state.name}' has {len(state.transitions)} transitions")
+                _debug_print(f"    State '{state.name}' has {len(state.transitions)} transitions")
             for transition in state.transitions:
-                logger.info(f"Registering transition: {transition.id} from state '{state.name}'")  # type: ignore[attr-defined]
+                _debug_print(f"    Registering transition: {transition.id} from state '{state.name}'")  # type: ignore[attr-defined]
                 _navigator.multistate_adapter.register_qontinui_transition(transition)  # type: ignore[arg-type]
                 transition_count += 1
 
-        logger.info(f"Found {states_with_transitions} states with transitions")
-        logger.info(f"Registered {transition_count} total transitions with multistate adapter")
+        _debug_print(f"Found {states_with_transitions} states with transitions")
+        _debug_print(f"Registered {transition_count} total transitions with multistate adapter")
 
         _initialized = True
+        _debug_print(f"Navigation system initialized successfully! _initialized={_initialized}")
 
         logger.info(f"Navigation system initialized successfully with {state_count} states")
         return True
 
     except Exception as e:
+        _debug_print(f"EXCEPTION in load_configuration: {e}")
         logger.error(f"Failed to load configuration: {e}", exc_info=True)
         _initialized = False
         return False
@@ -234,21 +268,30 @@ def open_states(state_identifiers: list[str | int]) -> bool:
     Returns:
         True if navigation succeeded and ALL target states were reached, False otherwise
     """
+    _debug_print(f"open_states() called with: {state_identifiers}")
+    _debug_print(
+        f"_initialized={_initialized}, _navigator={_navigator is not None}, _state_service={_state_service is not None}"
+    )
+
     if not _initialized:
+        _debug_print("ERROR: Navigation system not initialized!")
         logger.error("Navigation system not initialized - call load_configuration() first")
         return False
 
     if not _navigator:
+        _debug_print("ERROR: Navigator not available!")
         logger.error("Navigator not available")
         return False
 
     if not _state_service:
+        _debug_print("ERROR: State service not available!")
         logger.error(
             "State service not available - state/transition loading from config not yet implemented"
         )
         return False
 
     if not state_identifiers:
+        _debug_print("ERROR: No state identifiers provided!")
         logger.error("No state identifiers provided")
         return False
 
@@ -259,24 +302,31 @@ def open_states(state_identifiers: list[str | int]) -> bool:
             state_id = identifier
             state = _state_service.get_state_by_id(state_id)  # type: ignore[attr-defined]
             if not state:
+                _debug_print(f"ERROR: State ID {state_id} not found!")
                 logger.error(f"State ID {state_id} not found in state service")
                 return False
         elif isinstance(identifier, str):
             state = _state_service.get_state_by_name(identifier)
             if not state or not state.id:
+                _debug_print(f"ERROR: State '{identifier}' not found!")
                 logger.error(f"State '{identifier}' not found in state service")
                 return False
             state_id = state.id
+            _debug_print(f"State '{identifier}' -> ID {state_id}")
         else:
+            _debug_print(f"ERROR: Invalid state identifier type: {type(identifier)}")
             logger.error(f"Invalid state identifier type: {type(identifier)}")
             return False
 
         target_state_ids.append(state_id)
 
+    _debug_print(f"Target state IDs: {target_state_ids}")
     logger.info(f"Navigating to states: {state_identifiers} (IDs: {target_state_ids})")
 
     # Get current active states for debugging
     active_states = _state_memory.get_active_state_names() if _state_memory else []
+    active_state_ids = list(_state_memory.active_states) if _state_memory else []
+    _debug_print(f"Current active states: {active_states} (IDs: {active_state_ids})")
     logger.info(f"Current active states: {active_states}")
 
     # Navigate using PathfindingNavigator with multiple targets

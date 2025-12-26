@@ -4,12 +4,19 @@ This is the delegation layer in model-based GUI automation architecture.
 It's the ONLY class that knows about mock vs real execution.
 """
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 from ...config.framework_settings import FrameworkSettings
 from ...model.element import Pattern
 from .find_options import FindOptions
 from .find_result import FindResult
+
+if TYPE_CHECKING:
+    from .mock_find_implementation import MockFindImplementation
+    from .real_find_implementation import RealFindImplementation
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +31,13 @@ class FindWrapper:
     Single Responsibility: Delegate to correct implementation.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize wrapper with lazy-loaded implementations."""
-        self._mock_impl = None
-        self._real_impl = None
+        self._mock_impl: MockFindImplementation | None = None
+        self._real_impl: RealFindImplementation | None = None
 
     @property
-    def mock_implementation(self):
+    def mock_implementation(self) -> MockFindImplementation:
         """Get MockFindImplementation (lazy init)."""
         if self._mock_impl is None:
             from .mock_find_implementation import MockFindImplementation
@@ -39,7 +46,7 @@ class FindWrapper:
         return self._mock_impl
 
     @property
-    def real_implementation(self):
+    def real_implementation(self) -> RealFindImplementation:
         """Get RealFindImplementation (lazy init)."""
         if self._real_impl is None:
             from .real_find_implementation import RealFindImplementation
@@ -63,62 +70,20 @@ class FindWrapper:
         Returns:
             FindResult (identical format from both implementations)
         """
-        # File-based debug logging
-        import os
-        import tempfile
-        from datetime import datetime
-
-        debug_log = os.path.join(tempfile.gettempdir(), "qontinui_event_emission.log")
-        try:
-            with open(debug_log, "a", encoding="utf-8") as f:
-                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}] FindWrapper.find() ENTRY\n")
-                f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
-        except Exception:
-            pass
-
-        logger.debug(
-            f"[FIND_DEBUG] FindWrapper.find() ENTRY - pattern.id={pattern.id}, pattern.name={pattern.name}"
-        )
-        logger.debug(f"[FIND_DEBUG] Pattern pixel_data is None: {pattern.pixel_data is None}")
-
         settings = FrameworkSettings.get_instance()
         is_mock = settings.core.mock
 
-        logger.debug(f"[FIND_DEBUG] Execution mode: {'MOCK' if is_mock else 'REAL'}")
-
-        # File-based debug logging for execution mode
-        try:
-            with open(debug_log, "a", encoding="utf-8") as f:
-                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}]   Execution mode: {'MOCK' if is_mock else 'REAL'}\n")
-        except Exception:
-            pass
+        logger.debug(
+            f"FindWrapper.find: pattern={pattern.name}, mode={'MOCK' if is_mock else 'REAL'}"
+        )
 
         if is_mock:
-            logger.debug(f"[MOCK] Finding pattern: {pattern.name}")
             result = self.mock_implementation.execute(pattern, options)
         else:
-            logger.debug(f"[REAL] Finding pattern: {pattern.name}")
-            try:
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}]   Calling real_implementation.execute()...\n")
-            except Exception:
-                pass
             result = self.real_implementation.execute(pattern, options)
 
-        logger.debug(f"[FIND_DEBUG] FindWrapper.find() RETURN - found={result.found}")
-
-        # File-based debug logging for result
-        try:
-            with open(debug_log, "a", encoding="utf-8") as f:
-                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}]   FindWrapper.find() returning - found={result.found}\n")
-        except Exception:
-            pass
-
-        return result  # type: ignore[no-any-return]
+        logger.debug(f"FindWrapper.find: found={result.found}, matches={len(result.matches)}")
+        return result
 
     async def find_async(
         self,

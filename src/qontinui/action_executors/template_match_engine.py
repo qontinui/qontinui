@@ -123,7 +123,7 @@ class TemplateMatchEngine:
         # Multiple patterns: use async execution
         logger.debug(f"Finding {len(patterns)} patterns with strategy={strategy}")
 
-        async_results = self._run_async_find(patterns, threshold)
+        async_results = self._run_async_find(patterns, threshold, image_ids)
 
         if not async_results:
             return None
@@ -177,9 +177,18 @@ class TemplateMatchEngine:
         log_debug("  Creating FindAction instance...")
         action = FindAction()
 
-        # Get monitor_index from context for single-monitor screenshot capture
-        monitor_index = getattr(self.context, "monitor_index", None)
-        log_debug(f"  Using monitor_index={monitor_index}")
+        # Get monitor_index - first try from StateImage config, then fall back to context
+        monitor_index = None
+        if image_id:
+            monitors = self.pattern_loader.get_monitors_for_image(image_id)
+            if monitors:
+                monitor_index = monitors[0]  # Use first monitor from list
+                log_debug(f"  Using monitor from StateImage config: {monitor_index}")
+
+        # Fall back to context monitor_index if not set from StateImage
+        if monitor_index is None:
+            monitor_index = getattr(self.context, "monitor_index", None)
+            log_debug(f"  Using monitor_index from context: {monitor_index}")
 
         log_debug("  Calling FindAction.find()...")
         find_result = action.find(
@@ -222,19 +231,32 @@ class TemplateMatchEngine:
         return action_result
 
     def _run_async_find(
-        self, patterns: list[Pattern], threshold: float
+        self, patterns: list[Pattern], threshold: float, image_ids: list[str] | None = None
     ) -> list[tuple[Pattern, int, Any]]:
         """Run async pattern finding for multiple patterns.
 
         Args:
             patterns: List of patterns to find
             threshold: Similarity threshold (0.0-1.0)
+            image_ids: Optional list of image IDs for per-pattern monitor lookup
 
         Returns:
             List of (pattern, index, find_result) tuples
         """
-        # Get monitor_index from context for single-monitor screenshot capture
-        monitor_index = getattr(self.context, "monitor_index", None)
+        # Get default monitor_index from context
+        default_monitor_index = getattr(self.context, "monitor_index", None)
+
+        # Build per-pattern monitor indices
+        pattern_monitors: list[int | None] = []
+        for i in range(len(patterns)):
+            monitor_index = None
+            if image_ids and i < len(image_ids):
+                monitors = self.pattern_loader.get_monitors_for_image(image_ids[i])
+                if monitors:
+                    monitor_index = monitors[0]
+            if monitor_index is None:
+                monitor_index = default_monitor_index
+            pattern_monitors.append(monitor_index)
 
         # Get or create event loop
         try:
@@ -256,7 +278,7 @@ class TemplateMatchEngine:
                         options=FindOptions(
                             similarity=threshold,
                             find_all=False,
-                            monitor_index=monitor_index,
+                            monitor_index=pattern_monitors[i],
                         ),
                     )
                 )

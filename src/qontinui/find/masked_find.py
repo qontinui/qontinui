@@ -221,7 +221,7 @@ class MaskedFind(FindImage):
                         template, mask, search_image, x, y
                     )
 
-                    if similarity >= self._options._min_similarity:
+                    if similarity >= self._min_similarity:
                         from ..model.match import Match as MatchObject
 
                         match_obj = MatchObject(

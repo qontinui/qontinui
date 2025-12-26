@@ -14,8 +14,8 @@ from .color_find_options import (
     HSVBinOptions,
     HSVBinOptionsBuilder,
 )
-from .color_statistics import ColorStatistics, ColorStatisticsAnalyzer
 from .color_profile import ColorProfile
+from .color_statistics import ColorStatistics, ColorStatisticsAnalyzer
 from .find_color import FindColor
 
 __all__ = [

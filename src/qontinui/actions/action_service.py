@@ -2,10 +2,13 @@
 
 This service maintains a registry of action implementations and provides
 the correct action for a given configuration.
+
+MIGRATION NOTE: All find operations now use FindAction internally.
 """
 
 import logging
 
+from ..actions.find import FindAction
 from .action_config import ActionConfig
 from .action_interface import ActionInterface
 from .basic.click.click import Click
@@ -116,13 +119,13 @@ class ActionService:
         """
         # Import here to avoid circular dependencies
         from .basic.click.click import Click, SingleClickExecutor, TimeProvider
-        from .basic.find.find import Find, FindPipeline
+        from .basic.find.find import Find
 
         # For now, create with default constructor
         # In a real implementation, this would inject proper dependencies
         if action_type == Find:
-            # Find needs special handling as it requires FindPipeline
-            return Find(find_pipeline=FindPipeline())
+            # Find now delegates to FindAction internally
+            return Find(find_action=FindAction())
         elif action_type == Click:
             # Click only needs click-specific dependencies (no Find - it's atomic)
             return Click(

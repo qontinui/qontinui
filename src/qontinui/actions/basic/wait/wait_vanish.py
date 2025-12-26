@@ -5,12 +5,12 @@ Waits for visual elements to disappear from screen.
 
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from .....actions.find import FindAction, FindOptions
 from ....action_interface import ActionInterface
 from ....action_result import ActionResult
 from ....object_collection import ObjectCollection
-from ..find.find import Find
 from ..vanish.vanish_options import VanishOptions
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class WaitVanish(ActionInterface):
     Critical for synchronization and state transition detection.
     """
 
-    find: Find
+    find_action: FindAction = field(default_factory=FindAction)
 
     def get_action_type(self) -> str:
         """Get action type.
@@ -63,11 +63,19 @@ class WaitVanish(ActionInterface):
             # Clear previous matches for fresh search
             matches.clear_matches()
 
-            # Search for objects
-            self.find.perform(matches, first_collection)
+            # Search for objects using FindAction
+            found_any = False
+            for state_image in first_collection.state_images:
+                pattern = state_image.get_pattern()
+                if pattern:
+                    options = FindOptions(similarity=0.8)
+                    result = self.find_action.find(pattern, options)
+                    if result.found:
+                        found_any = True
+                        break
 
             # If nothing found, objects have vanished - success!
-            if not matches.match_locations:
+            if not found_any:
                 matches.success = True
                 logger.debug("Objects vanished successfully")
                 break

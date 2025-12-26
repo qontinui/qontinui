@@ -1,11 +1,14 @@
-"""Client for fetching historical data from qontinui-api.
+"""Client for fetching historical data from qontinui-web.
 
 This module provides an interface for retrieving historical automation
-results from the qontinui-api database during integration testing.
+results from the qontinui-web backend during integration testing.
 
 When running in mock mode with historical data enabled, the mock system
 uses this client to fetch random historical results that match the
 current action context, making each test run different.
+
+Note: Historical data endpoints were migrated from qontinui-api (port 8001)
+to qontinui-web (port 8000) in the testing API namespace.
 """
 
 import logging
@@ -59,7 +62,7 @@ class HistoricalMatchData:
 
 
 class HistoricalDataClient:
-    """Client for fetching historical data from qontinui-api.
+    """Client for fetching historical data from qontinui-web.
 
     This client is used during integration testing to retrieve
     historical automation results. It supports:
@@ -69,7 +72,8 @@ class HistoricalDataClient:
     - Frame retrieval for visual playback
 
     Configuration is via environment variables:
-    - QONTINUI_API_URL: Base URL of qontinui-api (default: http://localhost:8001)
+    - QONTINUI_WEB_URL: Base URL of qontinui-web (default: http://localhost:8000)
+    - QONTINUI_API_URL: Legacy alias for QONTINUI_WEB_URL
     - QONTINUI_API_ENABLED: Enable API calls (default: true in mock mode)
     """
 
@@ -87,7 +91,11 @@ class HistoricalDataClient:
         if self._initialized:
             return
 
-        self.api_url = os.getenv("QONTINUI_API_URL", "http://localhost:8001")
+        # Use QONTINUI_WEB_URL (new) or fall back to QONTINUI_API_URL (legacy)
+        self.api_url = os.getenv(
+            "QONTINUI_WEB_URL",
+            os.getenv("QONTINUI_API_URL", "http://localhost:8000"),
+        )
         self.enabled = os.getenv("QONTINUI_API_ENABLED", "true").lower() == "true"
         self.timeout = float(os.getenv("QONTINUI_API_TIMEOUT", "5.0"))
         self._client: httpx.Client | None = None
@@ -145,14 +153,14 @@ class HistoricalDataClient:
 
         try:
             response = self.client.post(
-                "/api/capture/historical/random",
+                "/api/v1/testing/historical/random",
                 json={
                     "pattern_id": pattern_id,
                     "action_type": action_type,
                     "active_states": active_states,
                     "success_only": success_only,
                     "workflow_id": workflow_id,
-                    "project_id": project_id,
+                    "project_id": str(project_id) if project_id else None,
                 },
             )
 
@@ -199,7 +207,7 @@ class HistoricalDataClient:
                 params["active_states"] = ",".join(active_states)
 
             response = self.client.get(
-                f"/api/capture/historical/pattern/{pattern_id}",
+                f"/api/v1/testing/historical/pattern/{pattern_id}",
                 params=params,
             )
 
@@ -233,7 +241,7 @@ class HistoricalDataClient:
 
         try:
             response = self.client.get(
-                f"/api/capture/frames/{historical_result_id}",
+                f"/api/v1/testing/historical/frames/{historical_result_id}",
                 params={"frame_type": frame_type},
             )
 
@@ -264,7 +272,7 @@ class HistoricalDataClient:
 
         try:
             response = self.client.post(
-                "/api/capture/frames/playback",
+                "/api/v1/testing/historical/playback",
                 json={"historical_result_ids": historical_result_ids},
             )
 

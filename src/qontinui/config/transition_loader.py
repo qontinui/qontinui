@@ -14,11 +14,31 @@ The loader handles:
 """
 
 import logging
-from typing import Any
+import os
+import tempfile
 
-from qontinui import registry
-from qontinui.model.state.state_service import StateService
-from qontinui.model.transition.enhanced_state_transition import (
+# Debug logging helper - writes to file to bypass disabled logging
+_DEBUG_LOG_PATH = os.path.join(tempfile.gettempdir(), "qontinui_navigation_debug.log")
+
+
+def _debug_print(msg: str) -> None:
+    """Write debug message to file to ensure visibility when logging is disabled."""
+    try:
+        from datetime import datetime
+
+        with open(_DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            f.write(f"[{timestamp}] [TRANSITION_LOADER] {msg}\n")
+            f.flush()
+    except Exception:
+        pass
+
+
+from typing import Any  # noqa: E402
+
+from qontinui import registry  # noqa: E402
+from qontinui.model.state.state_service import StateService  # noqa: E402
+from qontinui.model.transition.enhanced_state_transition import (  # noqa: E402
     StaysVisible,
     TaskSequenceStateTransition,
 )
@@ -83,10 +103,13 @@ def load_transitions_from_config(config: dict[str, Any], state_service: StateSer
             logger.error(f"Unexpected error loading transition: {e}", exc_info=True)
             error_count += 1
 
+    _debug_print(f"Transition loading complete: {success_count} succeeded, {error_count} failed")
     logger.info(f"Transition loading complete: {success_count} succeeded, {error_count} failed")
 
     # Return True only if all transitions loaded successfully
-    return error_count == 0
+    result = error_count == 0
+    _debug_print(f"load_transitions_from_config returning: {result}")
+    return result
 
 
 def _load_single_transition(transition_def: dict[str, Any], state_service: StateService) -> bool:
@@ -358,9 +381,14 @@ def _link_workflows_to_transition(
     linked_count = 0
 
     # Link regular workflows by ID
+    _debug_print(
+        f"_link_workflows: transition '{transition_id}' has {len(workflows)} workflows to link"
+    )
     for workflow_id in workflows:
         workflow = registry.get_workflow(workflow_id)
         if workflow is None:
+            _debug_print(f"  ERROR: workflow '{workflow_id}' NOT FOUND in registry!")
+            _debug_print(f"    Available workflows: {list(registry._workflows.keys())[:10]}...")
             logger.error(
                 f"Transition '{transition_id}': workflow '{workflow_id}' not found in registry"
             )
@@ -368,6 +396,7 @@ def _link_workflows_to_transition(
 
         # Store workflow ID in transition for later execution
         transition.workflow_ids.append(workflow_id)
+        _debug_print(f"  Linked workflow '{workflow_id}'")
         logger.debug(f"Transition '{transition_id}': linked to workflow '{workflow_id}'")
         linked_count += 1
 

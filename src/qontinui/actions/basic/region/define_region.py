@@ -6,6 +6,7 @@ Central orchestrator for region definition operations.
 import logging
 from dataclasses import dataclass, field
 
+from .....actions.find import FindAction, FindOptions
 from ....action_interface import ActionInterface
 from ....action_result import ActionResult
 from ....hal.factory import HALFactory
@@ -13,7 +14,6 @@ from ....model.element.location import Location
 from ....model.element.region import Region
 from ....model.match.match import Match
 from ....object_collection import ObjectCollection
-from ..find.find import Find
 from .define_region_options import DefineAs, DefineRegionOptions
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class DefineWithWindow:
 class DefineWithMatch:
     """Define region relative to matches."""
 
-    find: Find
+    find_action: FindAction = field(default_factory=FindAction)
 
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define region relative to matches.
@@ -62,9 +62,20 @@ class DefineWithMatch:
 
         options = matches.action_config
 
-        # Find matches first
+        # Find matches first using FindAction
         if object_collections:
-            self.find.perform(matches, *object_collections)
+            for obj_coll in object_collections:
+                for state_image in obj_coll.state_images:
+                    pattern = state_image.get_pattern()
+                    if pattern:
+                        find_options = FindOptions(similarity=0.8)
+                        result = self.find_action.find(pattern, find_options)
+                        if result.found and result.best_match:
+                            # Add match to results
+                            matches.add_match(result.best_match)
+                            break
+                if matches.matches:
+                    break
 
         if not matches.matches:
             logger.warning("No matches found for region definition")
@@ -127,7 +138,7 @@ class DefineWithMatch:
 class DefineInsideAnchors:
     """Define smallest region containing all anchors."""
 
-    find: Find
+    find_action: FindAction = field(default_factory=FindAction)
 
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define smallest region containing all anchors.
@@ -136,9 +147,17 @@ class DefineInsideAnchors:
             matches: Action result to populate
             object_collections: Anchor objects
         """
-        # Find all anchors
+        # Find all anchors using FindAction
         if object_collections:
-            self.find.perform(matches, *object_collections)
+            for obj_coll in object_collections:
+                for state_image in obj_coll.state_images:
+                    pattern = state_image.get_pattern()
+                    if pattern:
+                        find_options = FindOptions(similarity=0.8, find_all=True)
+                        result = self.find_action.find(pattern, find_options)
+                        if result.found:
+                            for match in result.matches:
+                                matches.add_match(match)
 
         if not matches.matches:
             logger.warning("No anchors found for region definition")
@@ -170,7 +189,7 @@ class DefineInsideAnchors:
 class DefineOutsideAnchors:
     """Define largest region containing all anchors."""
 
-    find: Find
+    find_action: FindAction = field(default_factory=FindAction)
 
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define largest region containing all anchors.
@@ -179,9 +198,17 @@ class DefineOutsideAnchors:
             matches: Action result to populate
             object_collections: Anchor objects
         """
-        # Similar to inside anchors but with padding
+        # Similar to inside anchors but with padding - find all anchors using FindAction
         if object_collections:
-            self.find.perform(matches, *object_collections)
+            for obj_coll in object_collections:
+                for state_image in obj_coll.state_images:
+                    pattern = state_image.get_pattern()
+                    if pattern:
+                        find_options = FindOptions(similarity=0.8, find_all=True)
+                        result = self.find_action.find(pattern, find_options)
+                        if result.found:
+                            for match in result.matches:
+                                matches.add_match(match)
 
         if not matches.matches:
             logger.warning("No anchors found for region definition")
@@ -222,7 +249,7 @@ class DefineOutsideAnchors:
 class DefineIncludingMatches:
     """Define region including all matches."""
 
-    find: Find
+    find_action: FindAction = field(default_factory=FindAction)
 
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define region including all matches.
@@ -231,9 +258,17 @@ class DefineIncludingMatches:
             matches: Action result to populate
             object_collections: Objects to find and include
         """
-        # Find all objects
+        # Find all objects using FindAction
         if object_collections:
-            self.find.perform(matches, *object_collections)
+            for obj_coll in object_collections:
+                for state_image in obj_coll.state_images:
+                    pattern = state_image.get_pattern()
+                    if pattern:
+                        find_options = FindOptions(similarity=0.8, find_all=True)
+                        result = self.find_action.find(pattern, find_options)
+                        if result.found:
+                            for match in result.matches:
+                                matches.add_match(match)
 
         if not matches.matches:
             logger.warning("No matches found for region definition")
@@ -275,16 +310,16 @@ class DefineRegion(ActionInterface):
     Delegates to specific strategies based on DefineAs configuration.
     """
 
-    find: Find
+    find_action: FindAction = field(default_factory=FindAction)
     _strategies: dict[DefineAs, ActionInterface] = field(init=False)
 
     def __post_init__(self):
         """Initialize strategy mappings."""
         define_with_window = DefineWithWindow()
-        define_with_match = DefineWithMatch(self.find)
-        define_inside = DefineInsideAnchors(self.find)
-        define_outside = DefineOutsideAnchors(self.find)
-        define_including = DefineIncludingMatches(self.find)
+        define_with_match = DefineWithMatch(self.find_action)
+        define_inside = DefineInsideAnchors(self.find_action)
+        define_outside = DefineOutsideAnchors(self.find_action)
+        define_including = DefineIncludingMatches(self.find_action)
 
         self._strategies = {
             DefineAs.FOCUSED_WINDOW: define_with_window,

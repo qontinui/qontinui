@@ -270,15 +270,39 @@ class MouseActionExecutor(ActionExecutorBase):
 
             logger.debug(f"Finding image {image_id} with similarity {similarity}")
 
+            # Get monitor setting from StateImage registry (if this is a StateImage)
+            from .. import registry
+
+            monitor_index: int | None = None
+            state_image_meta = registry.get_image_metadata(image_id)
+            if state_image_meta and state_image_meta.get("monitors"):
+                monitors = state_image_meta.get("monitors")
+                if monitors:
+                    monitor_index = monitors[0]  # Use first monitor
+                    logger.debug(f"Using monitor {monitor_index} from StateImage config")
+
+            # Fall back to context monitor_index if not set from StateImage
+            if monitor_index is None:
+                monitor_index = getattr(self.context, "monitor_index", None)
+                logger.debug(f"Using monitor {monitor_index} from ExecutionContext")
+
             image = self.context.config.image_map.get(image_id)
             if image and image.file_path:
-                # Use FindImage to locate image on screen
-                from ..find import FindImage
+                # Use FindAction to locate image on screen
+                from ..actions.find import FindAction, FindOptions
+                from ..model.element import Pattern
 
-                match = FindImage(image.file_path).similarity(similarity).find()
-                if match:
+                # Create pattern from image file
+                pattern = Pattern.from_file(image.file_path)
+                options = FindOptions(similarity=similarity, monitor_index=monitor_index)
+
+                # Use FindAction to find the pattern
+                find_action = FindAction()
+                result = find_action.find(pattern, options)
+
+                if result.found and result.best_match:
                     # Return center coordinates of the match
-                    location = (match.x, match.y)
+                    location = (result.best_match.center.x, result.best_match.center.y)
                     logger.debug(f"Found image at {location}")
                     return location
                 else:

@@ -1,6 +1,9 @@
 """Find class - ported from Qontinui framework.
 
 Base class for all find operations with builder pattern.
+
+MIGRATION NOTE: This class now delegates to the new FindAction system.
+This provides backward compatibility while the codebase is migrated.
 """
 
 from __future__ import annotations
@@ -8,17 +11,14 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from ..actions import FindOptions
+from ..actions.find import FindAction
+from ..actions.find import FindOptions as NewFindOptions
 from ..model.element import Image, Pattern, Region
+from ..model.match import Match as ModelMatch
 from ..model.search_regions import SearchRegions
-from ..reporting.events import EventType, emit_event
-from .filters import NMSFilter, RegionFilter, SimilarityFilter
-from .find_executor import FindExecutor
 from .find_results import FindResults
 from .match import Match
-from .matchers import TemplateMatcher
 from .matches import Matches
-from .screenshot import CachedScreenshotProvider, PureActionsScreenshotProvider
 
 # Type alias for search regions
 SearchRegion = Region | SearchRegions
@@ -27,8 +27,8 @@ SearchRegion = Region | SearchRegions
 class Find:
     """Base find class with builder pattern.
 
-    Port of Find from Qontinui framework class.
-    Provides fluent interface for configuring and executing find operations.
+    MIGRATION: This class now delegates to FindAction for all operations.
+    The builder pattern is preserved for backward compatibility.
     """
 
     def __init__(self, target: Pattern | Image | str | None = None) -> None:
@@ -44,10 +44,20 @@ class Find:
         else:
             self._target = self._convert_to_pattern(target) if target else None
 
-        self._options = FindOptions()
+        # Options storage for builder pattern
+        self._min_similarity: float = 0.8
         self._search_region: SearchRegion | None = None
+        self._timeout: float = 0.0
+        self._max_matches: int = 100
+        self._find_all_mode: bool = False
+        self._sort_by: str = "similarity"
+        self._cache_result: bool = False
+        self._use_cache: bool = False
         self._screenshot: Any | None = None
         self._method = "template"  # Default matching method
+
+        # The new system instance
+        self._find_action = FindAction()
 
     def _convert_to_pattern(self, target: Pattern | Image | str) -> Pattern:
         """Convert various input types to Pattern.
@@ -100,7 +110,7 @@ class Find:
         Returns:
             Self for chaining
         """
-        self._options.min_similarity(similarity)
+        self._min_similarity = similarity
         if self._target:
             self._target.similarity = similarity
         return self
@@ -116,11 +126,8 @@ class Find:
         """
         if isinstance(region, SearchRegions):
             self._search_region = region
-            # SearchRegions doesn't have x, y, width, height directly
-            # Don't set individual region in options
         elif isinstance(region, Region):
             self._search_region = Region(region.x, region.y, region.width, region.height)
-            self._options.search_region(region.x, region.y, region.width, region.height)
         return self
 
     def timeout(self, seconds: float) -> Find:
@@ -132,7 +139,7 @@ class Find:
         Returns:
             Self for chaining
         """
-        self._options.timeout(seconds)
+        self._timeout = seconds
         return self
 
     def max_matches(self, count: int) -> Find:
@@ -144,7 +151,7 @@ class Find:
         Returns:
             Self for chaining
         """
-        self._options.max_matches(count)
+        self._max_matches = count
         return self
 
     def find_all(self, find_all: bool = True) -> Find:
@@ -156,7 +163,7 @@ class Find:
         Returns:
             Self for chaining
         """
-        self._options.find_all(find_all)
+        self._find_all_mode = find_all
         return self
 
     def method(self, method: str) -> Find:
@@ -192,7 +199,7 @@ class Find:
         Returns:
             Self for chaining
         """
-        self._options.sort_by(criteria)
+        self._sort_by = criteria
         return self
 
     def cache_result(self, cache: bool = True) -> Find:
@@ -204,7 +211,7 @@ class Find:
         Returns:
             Self for chaining
         """
-        self._options.cache_result(cache)
+        self._cache_result = cache
         return self
 
     def use_cache(self, use: bool = True) -> Find:
@@ -216,11 +223,14 @@ class Find:
         Returns:
             Self for chaining
         """
-        self._options.use_cache(use)
+        self._use_cache = use
         return self
 
     def execute(self) -> FindResults:
-        """Execute the find operation using FindExecutor.
+        """Execute the find operation by delegating to FindAction.
+
+        MIGRATION: This method now delegates to the new FindAction system.
+        The result is converted back to FindResults for backward compatibility.
 
         Returns:
             FindResults with matches
@@ -230,64 +240,46 @@ class Find:
 
         start_time = time.time()
 
-        # Configure screenshot provider with caching
-        base_provider = PureActionsScreenshotProvider()
-        screenshot_provider = CachedScreenshotProvider(
-            provider=base_provider, ttl_seconds=0.1  # Cache for 100ms
+        # Build FindOptions for the new system
+        search_region = None
+        if isinstance(self._search_region, Region):
+            search_region = self._search_region
+        elif isinstance(self._search_region, SearchRegions) and self._search_region.regions:
+            # Use first region from SearchRegions
+            search_region = self._search_region.regions[0]
+
+        options = NewFindOptions(
+            similarity=self._min_similarity,
+            find_all=self._find_all_mode,
+            search_region=search_region,
+            timeout=self._timeout,
+            collect_debug=True,  # Always collect debug for visual reporting
         )
 
-        # Configure template matcher
-        matcher = TemplateMatcher(method="TM_CCOEFF_NORMED", nms_overlap_threshold=0.3)
+        # Delegate to FindAction
+        result = self._find_action.find(self._target, options)
 
-        # Configure filters
-        filters = []
+        # Convert new Match objects to old Match wrapper objects
+        old_matches = self._convert_matches(result.matches.to_list())
 
-        # Similarity filter (always applied)
-        filters.append(SimilarityFilter(min_similarity=self._options._min_similarity))
-
-        # NMS filter (for find_all mode)
-        if self._options._find_all:
-            filters.append(NMSFilter(iou_threshold=0.3))  # type: ignore[arg-type]
-
-        # Region filter (if using SearchRegions with multiple regions)
-        if isinstance(self._search_region, SearchRegions) and self._search_region.regions:
-            filters.append(RegionFilter(self._search_region))  # type: ignore[arg-type]
-
-        # Create executor
-        executor = FindExecutor(
-            screenshot_provider=screenshot_provider, matcher=matcher, filters=filters  # type: ignore[arg-type]
-        )
-
-        # Execute find operation
-        match_list = executor.execute(
-            pattern=self._target,
-            search_region=self._search_region,
-            similarity=self._options._min_similarity,
-            find_all=self._options._find_all,
-        )
-
-        # Convert to Matches collection
-        matches = Matches(match_list)
+        # Create Matches collection
+        matches = Matches(old_matches)
 
         # Sort matches if configured
-        sort_criteria = self._options._sort_by
-        if sort_criteria == "similarity":
+        if self._sort_by == "similarity":
             matches.sort_by_similarity()
-        elif sort_criteria == "position":
+        elif self._sort_by == "position":
             matches.sort_by_position()
 
         # Apply max matches limit
-        if not self._options._find_all and matches.size() > 0:
+        if not self._find_all_mode and matches.size() > 0:
             first_match = matches.first
             if first_match is not None:
                 matches = Matches([first_match])
-        elif self._options._max_matches < matches.size():
-            matches = Matches(matches.to_list()[: self._options._max_matches])
+        elif self._max_matches < matches.size():
+            matches = Matches(matches.to_list()[: self._max_matches])
 
         duration = time.time() - start_time
-
-        # Emit match attempted event for reporting
-        self._emit_match_event(matches, match_list)
 
         # Convert SearchRegions to Region if needed for results
         search_region_for_results = (
@@ -301,9 +293,20 @@ class Find:
             pattern=self._target,
             search_region=search_region_for_results,
             duration=duration,
-            screenshot=(screenshot_provider._cache.image if screenshot_provider._cache else None),
+            screenshot=None,  # Screenshot is handled internally by FindAction
             method=self._method,
         )
+
+    def _convert_matches(self, model_matches: list[ModelMatch]) -> list[Match]:
+        """Convert new system Match objects to old Match wrapper objects.
+
+        Args:
+            model_matches: List of model/match/Match objects
+
+        Returns:
+            List of find/match/Match wrapper objects
+        """
+        return [Match(match_object=m) for m in model_matches]
 
     def find(self) -> Match | None:
         """Find first/best match.
@@ -371,79 +374,6 @@ class Find:
 
         return False
 
-    def _emit_match_event(self, matches: Matches, raw_matches: list[Match]) -> None:
-        """Emit match attempted event for reporting.
-
-        Args:
-            matches: Final filtered matches
-            raw_matches: Raw matches before final filtering
-        """
-        if not self._target:
-            return
-
-        # Get best match from raw matches for reporting
-        best_match = raw_matches[0] if raw_matches else None
-        best_confidence = best_match.similarity if best_match else 0.0
-        threshold_passed = best_confidence >= self._options._min_similarity
-
-        # Emit diagnostic event
-        image_id = self._target.name if hasattr(self._target, "name") else "unknown"
-        emit_event(
-            EventType.MATCH_ATTEMPTED,
-            data={
-                "image_id": image_id,
-                "image_name": (self._target.name if hasattr(self._target, "name") else None),
-                "template_dimensions": {
-                    "width": (
-                        self._target.pixel_data.shape[1]
-                        if self._target.pixel_data is not None
-                        else 0
-                    ),
-                    "height": (
-                        self._target.pixel_data.shape[0]
-                        if self._target.pixel_data is not None
-                        else 0
-                    ),
-                },
-                "best_match_location": (
-                    {
-                        "x": best_match.x if best_match else 0,
-                        "y": best_match.y if best_match else 0,
-                        "region": (
-                            {
-                                "x": (
-                                    best_match.region.x if best_match and best_match.region else 0
-                                ),
-                                "y": (
-                                    best_match.region.y if best_match and best_match.region else 0
-                                ),
-                                "width": (
-                                    best_match.region.width
-                                    if best_match and best_match.region
-                                    else 0
-                                ),
-                                "height": (
-                                    best_match.region.height
-                                    if best_match and best_match.region
-                                    else 0
-                                ),
-                            }
-                            if best_match and best_match.region
-                            else None
-                        ),
-                    }
-                    if best_match
-                    else None
-                ),
-                "best_match_confidence": float(best_confidence),
-                "similarity_threshold": float(self._options._min_similarity),
-                "threshold_passed": bool(threshold_passed),
-                "match_method": self._method,
-                "find_all_mode": self._options._find_all,
-                "num_matches_found": matches.size(),
-            },
-        )
-
     def __str__(self) -> str:
         """String representation."""
         target_name = self._target.name if self._target else "None"
@@ -452,5 +382,7 @@ class Find:
     def __repr__(self) -> str:
         """Developer representation."""
         return (
-            f"Find(target={self._target}, " f"method='{self._method}', " f"options={self._options})"
+            f"Find(target={self._target}, "
+            f"method='{self._method}', "
+            f"similarity={self._min_similarity})"
         )

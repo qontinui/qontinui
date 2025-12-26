@@ -63,11 +63,35 @@ class FindOptions:
     3. StateImage._similarity (if using StateImage)
     4. Project config (QontinuiSettings.similarity_threshold)
     5. Library default (action_defaults) - lowest priority
+
+    Image Variant Options:
+    - grayscale: Convert to grayscale before matching
+    - edge_detection: Use edge detection for matching
+    - scale_invariant: Enable scale-invariant matching (SIFT/SURF)
+    - rotation_invariant: Enable rotation-invariant matching
+    - color_tolerance: Tolerance for color differences (0-255)
     """
 
+    # Core options
     similarity: float = field(default_factory=_get_default_similarity)
     find_all: bool = False
     search_region: Region | None = None
     timeout: float = 0.0
     collect_debug: bool = False
     monitor_index: int | None = None  # Target monitor for screenshot capture (None = all monitors)
+
+    # Image variant options (from FindImage)
+    grayscale: bool = False
+    """Convert images to grayscale before matching."""
+
+    edge_detection: bool = False
+    """Apply edge detection (Canny) before matching."""
+
+    scale_invariant: bool = False
+    """Use scale-invariant feature matching (SIFT/ORB)."""
+
+    rotation_invariant: bool = False
+    """Use rotation-invariant feature matching."""
+
+    color_tolerance: int = 0
+    """Tolerance for color differences (0-255). 0 means exact match."""

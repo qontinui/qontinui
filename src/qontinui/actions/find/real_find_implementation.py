@@ -8,6 +8,9 @@ import logging
 import time
 from typing import Any
 
+import cv2
+import numpy as np
+
 from ...config.framework_settings import FrameworkSettings
 from ...find.matchers.template_matcher import TemplateMatcher
 from ...find.screenshot.pure_actions_provider import PureActionsScreenshotProvider
@@ -15,6 +18,7 @@ from ...model.element import Pattern
 from ...reporting.events import EventType, emit_event
 from .find_options import FindOptions
 from .find_result import FindResult
+from .matches import Matches
 from .visual_debug import VisualDebugGenerator
 
 logger = logging.getLogger(__name__)
@@ -37,6 +41,77 @@ class RealFindImplementation:
         self.screenshot_provider = PureActionsScreenshotProvider()
         self.template_matcher = TemplateMatcher()
         self.visual_debug = VisualDebugGenerator()
+
+    def _preprocess_image(self, image: np.ndarray, options: FindOptions) -> np.ndarray:
+        """Apply image preprocessing based on FindOptions.
+
+        Args:
+            image: Input image (BGR format)
+            options: Find options with preprocessing flags
+
+        Returns:
+            Preprocessed image
+        """
+        result = image.copy()
+
+        # Apply grayscale conversion
+        if options.grayscale:
+            if len(result.shape) == 3:
+                result = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+                # Convert back to 3-channel for consistent processing
+                result = cv2.cvtColor(result, cv2.COLOR_GRAY2BGR)
+
+        # Apply edge detection (Canny)
+        if options.edge_detection:
+            if len(result.shape) == 3:
+                gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+            else:
+                gray = result
+            edges = cv2.Canny(gray, 100, 200)
+            # Convert edges to 3-channel for consistent processing
+            result = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+
+        # Apply color tolerance (blur to reduce color sensitivity)
+        if options.color_tolerance > 0:
+            # Use bilateral filter to blur while preserving edges
+            # color_tolerance maps to d parameter (larger = more blur)
+            d = max(1, options.color_tolerance // 25)  # Scale 0-255 to ~0-10
+            result = cv2.bilateralFilter(result, d, 75, 75)
+
+        return result
+
+    def _preprocess_pattern(self, pattern: Pattern, options: FindOptions) -> Pattern:
+        """Apply preprocessing to pattern's pixel data.
+
+        Creates a modified pattern with preprocessed pixel data.
+
+        Args:
+            pattern: Original pattern
+            options: Find options with preprocessing flags
+
+        Returns:
+            Pattern with preprocessed pixel_data (or original if no preprocessing)
+        """
+        if pattern.pixel_data is None:
+            return pattern
+
+        # Check if any preprocessing is needed
+        if not (options.grayscale or options.edge_detection or options.color_tolerance > 0):
+            return pattern
+
+        # Preprocess the template
+        preprocessed = self._preprocess_image(pattern.pixel_data, options)
+
+        # Create a new pattern with preprocessed data
+        # We can't modify the original pattern, so we create a shallow copy approach
+        # by returning a new pattern with the same attributes but different pixel_data
+        from copy import copy
+
+        new_pattern = copy(pattern)
+        # Directly set the pixel_data (this is a shallow copy, so we need to be careful)
+        object.__setattr__(new_pattern, "pixel_data", preprocessed)
+
+        return new_pattern
 
     def execute(
         self,
@@ -111,12 +186,34 @@ class RealFindImplementation:
                 f"[TIMING] Screenshot capture took {screenshot_duration:.3f}s ({screenshot_duration*1000:.1f}ms) for pattern {pattern.name}"
             )
 
+            # Apply image preprocessing if any variant options are enabled
+            preprocessed_screenshot = screenshot
+            preprocessed_pattern = pattern
+
+            if options.grayscale or options.edge_detection or options.color_tolerance > 0:
+                logger.debug(
+                    f"[FIND_DEBUG] Applying preprocessing: grayscale={options.grayscale}, "
+                    f"edge_detection={options.edge_detection}, color_tolerance={options.color_tolerance}"
+                )
+                # Convert screenshot to numpy array if needed
+                if hasattr(screenshot, "__array__"):
+                    screenshot_array = np.array(screenshot)
+                else:
+                    screenshot_array = screenshot
+
+                # Ensure BGR format
+                if len(screenshot_array.shape) == 3 and screenshot_array.shape[2] == 4:
+                    screenshot_array = screenshot_array[:, :, :3]
+
+                preprocessed_screenshot = self._preprocess_image(screenshot_array, options)
+                preprocessed_pattern = self._preprocess_pattern(pattern, options)
+
             # Perform template matching with debug support
             logger.debug("[FIND_DEBUG] Calling template_matcher.find_matches_with_debug()")
             matching_start_time = time.time()
             matches, debug_data = self.template_matcher.find_matches_with_debug(
-                screenshot=screenshot,
-                pattern=pattern,
+                screenshot=preprocessed_screenshot,
+                pattern=preprocessed_pattern,
                 find_all=options.find_all,
                 similarity=options.similarity,
                 search_region=options.search_region,
@@ -170,7 +267,7 @@ class RealFindImplementation:
             logger.debug("[FIND_DEBUG] _emit_image_recognition_event() completed")
 
             return FindResult(
-                matches=matches,
+                matches=Matches(matches),
                 found=len(matches) > 0,
                 pattern_name=pattern.name,
                 duration_ms=duration_ms,
@@ -191,7 +288,7 @@ class RealFindImplementation:
             )
 
             return FindResult(
-                matches=[],
+                matches=Matches(),
                 found=False,
                 pattern_name=pattern.name,
                 duration_ms=duration_ms,
@@ -631,7 +728,7 @@ class RealFindImplementation:
                 logger.error(f"Error finding pattern {patterns[i].name}: {result}")
                 final_results.append(
                     FindResult(
-                        matches=[],
+                        matches=Matches(),
                         found=False,
                         pattern_name=patterns[i].name,
                         duration_ms=0.0,

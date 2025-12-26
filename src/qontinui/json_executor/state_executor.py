@@ -331,6 +331,7 @@ class StateExecutor:
         """
         import asyncio
 
+        from .. import registry
         from ..actions.find import FindAction
         from ..model.element import Pattern
 
@@ -342,8 +343,9 @@ class StateExecutor:
             # State has no identifying images, consider it active
             return True
 
-        # Collect all required patterns
+        # Collect all required patterns and their monitor settings
         patterns = []
+        state_image_monitors: list[int] | None = None
         for state_image in state.identifying_images:
             if state_image.required:
                 image = self.config.image_map.get(state_image.id)
@@ -357,6 +359,12 @@ class StateExecutor:
                     if state_image.threshold:
                         pattern = pattern.with_similarity(state_image.threshold)
                     patterns.append(pattern)
+
+                    # Get monitors from StateImage registry (first one wins)
+                    if state_image_monitors is None:
+                        state_image_meta = registry.get_image_metadata(state_image.id)
+                        if state_image_meta and state_image_meta.get("monitors"):
+                            state_image_monitors = state_image_meta.get("monitors")
 
         if not patterns:
             return True
@@ -376,8 +384,16 @@ class StateExecutor:
             except Exception:
                 project_config = None
 
-            # Get monitor_index from action_executor context if available
-            monitor_index = getattr(self.action_executor.context, "monitor_index", None)
+            # Determine monitor to use - StateImage config takes priority
+            monitor_index: int | None = None
+            if state_image_monitors:
+                monitor_index = state_image_monitors[0]
+                logger.debug(f"Using monitor {monitor_index} from StateImage config")
+            else:
+                # Fall back to action_executor context
+                monitor_index = getattr(self.action_executor.context, "monitor_index", None)
+                logger.debug(f"Using monitor {monitor_index} from ExecutionContext")
+
             ctx = CascadeContext(
                 search_options=None,
                 pattern=None,  # Not pattern-specific
@@ -385,7 +401,8 @@ class StateExecutor:
                 project_config=project_config,
                 monitor_index=monitor_index,
             )
-            options = build_find_options(ctx)
+            # Enable debug collection to get visual data for state verification
+            options = build_find_options(ctx, explicit_debug=True)
 
             # Check all patterns concurrently
             find_results = await action.find_async(patterns, options)

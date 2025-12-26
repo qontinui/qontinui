@@ -1,10 +1,15 @@
 """FindImage class - ported from Qontinui framework.
 
 Specialized find class for image-based pattern matching.
+
+MIGRATION NOTE: This class now uses FindOptions image variant options
+to delegate image processing to the new FindAction system.
 """
 
+from ..actions.find import FindOptions as NewFindOptions
 from ..model.element import Image, Location, Region
 from .find import Find
+from .find_results import FindResults
 from .match import Match
 from .matches import Matches
 
@@ -12,8 +17,8 @@ from .matches import Matches
 class FindImage(Find):
     """Specialized find class for image matching.
 
-    Port of FindImage from Qontinui framework class.
-    Extends Find with image-specific matching capabilities.
+    MIGRATION: This class now uses FindOptions image variant options
+    to configure image processing in the new FindAction system.
     """
 
     def __init__(self, image: Image | str | None = None) -> None:
@@ -29,7 +34,7 @@ class FindImage(Find):
             else:
                 self.image(image)
 
-        # Image-specific settings
+        # Image-specific settings (now passed to FindOptions)
         self._use_grayscale = False
         self._use_edges = False
         self._scale_invariant = False
@@ -233,31 +238,85 @@ class FindImage(Find):
         results = self.find_all(True).execute()
         return results.count
 
-    def _perform_find(self) -> Matches:
-        """Perform image-specific pattern matching.
+    def execute(self) -> FindResults:
+        """Execute the find operation with image variant options.
+
+        MIGRATION: This method overrides Find.execute() to add image
+        variant options (grayscale, edge detection, etc.) to FindOptions.
 
         Returns:
-            Matches found
+            FindResults with matches
         """
-        # Apply image-specific preprocessing
-        if self._use_grayscale:
-            # Convert to grayscale for matching
-            pass
+        from ..model.search_regions import SearchRegions
 
-        if self._use_edges:
-            # Apply edge detection
-            pass
+        if not self._target:
+            return FindResults.empty()
 
-        if self._scale_invariant:
-            # Use scale-invariant matching (e.g., SIFT/SURF)
-            self._method = "feature"
+        import time
 
-        if self._rotation_invariant:
-            # Use rotation-invariant matching
-            self._method = "feature"
+        start_time = time.time()
 
-        # Call parent implementation
-        return super()._perform_find()  # type: ignore[no-any-return,misc]
+        # Build FindOptions with image variant options
+        search_region = None
+        if isinstance(self._search_region, Region):
+            search_region = self._search_region
+        elif isinstance(self._search_region, SearchRegions) and self._search_region.regions:
+            search_region = self._search_region.regions[0]
+
+        options = NewFindOptions(
+            similarity=self._min_similarity,
+            find_all=self._find_all_mode,
+            search_region=search_region,
+            timeout=self._timeout,
+            collect_debug=True,
+            # Image variant options
+            grayscale=self._use_grayscale,
+            edge_detection=self._use_edges,
+            scale_invariant=self._scale_invariant,
+            rotation_invariant=self._rotation_invariant,
+            color_tolerance=self._color_tolerance,
+        )
+
+        # Delegate to FindAction
+        result = self._find_action.find(self._target, options)
+
+        # Convert new Match objects to old Match wrapper objects
+        old_matches = self._convert_matches(result.matches.to_list())
+
+        # Create Matches collection
+        matches = Matches(old_matches)
+
+        # Sort matches if configured
+        if self._sort_by == "similarity":
+            matches.sort_by_similarity()
+        elif self._sort_by == "position":
+            matches.sort_by_position()
+
+        # Apply max matches limit
+        if not self._find_all_mode and matches.size() > 0:
+            first_match = matches.first
+            if first_match is not None:
+                matches = Matches([first_match])
+        elif self._max_matches < matches.size():
+            matches = Matches(matches.to_list()[: self._max_matches])
+
+        duration = time.time() - start_time
+
+        # Convert SearchRegions to Region if needed for results
+        search_region_for_results = (
+            self._search_region.regions[0]
+            if isinstance(self._search_region, SearchRegions) and self._search_region.regions
+            else (self._search_region if isinstance(self._search_region, Region) else None)
+        )
+
+        return FindResults(
+            matches=matches,
+            pattern=self._target,
+            search_region=search_region_for_results,
+            duration=duration,
+            screenshot=None,
+            method=self._method,
+        )
 
     def highlight_matches(self, duration: float = 2.0) -> "FindImage":
         """Highlight all found matches on screen.

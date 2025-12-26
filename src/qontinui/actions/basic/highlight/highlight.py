@@ -6,11 +6,11 @@ Highlights regions on screen for debugging and visualization.
 import time
 from typing import Any
 
+from ....actions.find import FindAction, FindOptions
 from ....model.element.region import Region
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
 from ...object_collection import ObjectCollection
-from ..find.find import Find
 from .highlight_options import HighlightOptions
 
 
@@ -25,13 +25,13 @@ class Highlight(ActionInterface):
     - Demonstrating where actions will occur
     """
 
-    def __init__(self, find: Find | None = None) -> None:
+    def __init__(self, find_action: FindAction | None = None) -> None:
         """Initialize Highlight action.
 
         Args:
-            find: The Find action for locating regions to highlight
+            find_action: The FindAction for locating regions to highlight
         """
-        self.find = find
+        self.find_action = find_action or FindAction()
 
     def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the highlight operation.
@@ -88,17 +88,19 @@ class Highlight(ActionInterface):
         if not object_collections:
             return regions
 
-        # Use Find to locate targets
-        if self.find:
-            find_result = ActionResult(action_result.action_config)  # type: ignore[arg-type,call-arg]
-            self.find.perform(find_result, *object_collections)
+        # Use FindAction to locate targets
+        for obj_coll in object_collections:
+            for state_image in obj_coll.state_images:
+                pattern = state_image.get_pattern()
+                if pattern:
+                    options = FindOptions(similarity=0.8, find_all=True)
+                    result = self.find_action.find(pattern, options)
 
-            if find_result.is_success and find_result.matches:
-                # Extract regions from all matches
-                for match in find_result.matches:
-                    region = match.get_region()
-                    if region is not None:
-                        regions.append(region)
+                    if result.found:
+                        # Extract regions from all matches
+                        for match in result.matches:
+                            if match.region:
+                                regions.append(match.region)
 
         return regions
 

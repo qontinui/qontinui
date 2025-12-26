@@ -103,6 +103,31 @@ class PatternLoader:
             pattern = self._load_direct_image_pattern(image_id)
             return [pattern] if pattern else []
 
+    def get_monitors_for_image(self, image_id: str) -> list[int] | None:
+        """Get monitor settings for a state image.
+
+        Args:
+            image_id: State image ID
+
+        Returns:
+            List of monitor indices, or None if not found/not a state image
+        """
+        if not hasattr(self.config, "states") or not self.config.states:
+            return None
+
+        for state in self.config.states:
+            if not hasattr(state, "state_images") or not state.state_images:
+                continue
+
+            for state_image in state.state_images:
+                if state_image.id == image_id:
+                    # Return monitors if set, otherwise None
+                    if hasattr(state_image, "monitors") and state_image.monitors:
+                        return list(state_image.monitors)
+                    return None
+
+        return None
+
     def _is_state_image_id(self, image_id: str) -> bool:
         """Check if image_id refers to a state image.
 

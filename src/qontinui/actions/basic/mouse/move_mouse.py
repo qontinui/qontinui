@@ -5,12 +5,12 @@ Moves the mouse to one or more locations.
 
 from typing import Optional
 
+from ....actions.find import FindAction, FindOptions
 from ....model.element.location import Location
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
-from ..find.find import Find
 
 
 class MoveMouse(ActionInterface):
@@ -54,18 +54,18 @@ class MoveMouse(ActionInterface):
 
     def __init__(
         self,
-        find: Find | None = None,
+        find_action: FindAction | None = None,
         move_mouse_wrapper: Optional["MoveMouseWrapper"] = None,
         time: Optional["TimeProvider"] = None,
     ) -> None:
         """Initialize MoveMouse action.
 
         Args:
-            find: Find action for locating targets
+            find_action: FindAction for locating targets
             move_mouse_wrapper: Wrapper for actual mouse movement
             time: Time provider for delays
         """
-        self.find = find
+        self.find_action = find_action or FindAction()
         self.move_mouse_wrapper = move_mouse_wrapper
         self.time = time
 
@@ -126,12 +126,29 @@ class MoveMouse(ActionInterface):
             # Only use find if we have images/patterns to search for
             state_images = obj_coll.state_images
             if state_images:
-                if self.find:
-                    self.find.perform(matches, obj_coll)
-                    for location in matches.get_match_locations():  # type: ignore[attr-defined]
-                        if self.move_mouse_wrapper:
-                            self.move_mouse_wrapper.move(location)
-                # Find.perform will populate the matchList and success will be determined by ActionSuccessCriteria
+                for state_image in state_images:
+                    pattern = state_image.get_pattern()
+                    if pattern:
+                        options = FindOptions(similarity=0.8)
+                        result = self.find_action.find(pattern, options)
+
+                        if result.found and result.best_match:
+                            location = Location(
+                                result.best_match.center.x,
+                                result.best_match.center.y,
+                            )
+                            if self.move_mouse_wrapper:
+                                self.move_mouse_wrapper.move(location)
+                            matches.add_match_location(location)  # type: ignore[attr-defined]
+                            # Create a Match object for success determination
+                            from ....find.match import Match
+                            from ....model.match import Match as MatchObject
+
+                            match_obj = MatchObject(
+                                target=location, score=result.best_match.similarity
+                            )
+                            match = Match(match_object=match_obj)
+                            matches.add(match)  # type: ignore[attr-defined]
 
             print("finished move. ")
 

@@ -6,13 +6,14 @@ Combines Find and Click operations in a single action.
 import logging
 from dataclasses import dataclass
 
+from ...actions.find import FindAction
+from ...actions.find import FindOptions as NewFindOptions
 from ..action_config import ActionConfig, ActionConfigBuilder
 from ..action_interface import ActionInterface
 from ..action_result import ActionResult
 from ..action_type import ActionType
 from ..basic.click.click import Click
 from ..basic.click.click_options import ClickOptions, ClickOptionsBuilder
-from ..basic.find.find import Find
 from ..basic.find.options.pattern_find_options import PatternFindOptions
 from ..object_collection import ObjectCollection
 
@@ -166,7 +167,7 @@ class FindAndClick(ActionInterface):
     finding an element and clicking on it.
     """
 
-    find: Find
+    find_action: FindAction
     click: Click
 
     def get_action_type(self) -> ActionType:
@@ -191,22 +192,30 @@ class FindAndClick(ActionInterface):
         # Get configuration
         if isinstance(matches.action_config, FindAndClickOptions):
             options = matches.action_config
-            find_options = options.get_find_options()
+            find_options_config = options.get_find_options()
             click_options = options.get_click_options()
         else:
             # Use defaults if not FindAndClickOptions
-            find_options = PatternFindOptions()
+            find_options_config = PatternFindOptions()
             click_options = ClickOptionsBuilder().build()
 
-        # Step 1: Find the target
-        find_result = ActionResult(action_config=find_options)  # type: ignore[call-arg]
-        self.find.perform(find_result, *object_collections)
+        # Step 1: Find the target using FindAction
+        found_matches = []
+        for obj_coll in object_collections:
+            for state_image in obj_coll.state_images:
+                pattern = state_image.get_pattern()
+                if pattern:
+                    find_opts = NewFindOptions(
+                        similarity=find_options_config.similarity,
+                        find_all=True,
+                    )
+                    result = self.find_action.find(pattern, find_opts)
+                    if result.found:
+                        for match in result.matches:
+                            found_matches.append(match)
+                            matches.add_match(match)  # type: ignore[attr-defined]
 
-        # Copy find results to main matches
-        object.__setattr__(matches, "matches", find_result.matches)
-        matches.match_locations = find_result.match_locations  # type: ignore[attr-defined]
-
-        if not find_result.matches:
+        if not found_matches:
             object.__setattr__(matches, "success", False)
             logger.debug("FindAndClick: No matches found")
             return
@@ -215,7 +224,7 @@ class FindAndClick(ActionInterface):
         click_result = ActionResult(action_config=click_options)  # type: ignore[call-arg]
         # Pass the matches as an ObjectCollection for clicking
         click_collection = ObjectCollection()
-        for match in find_result.matches:
+        for match in found_matches:
             click_collection.add_match(match)  # type: ignore[attr-defined]
 
         self.click.perform(click_result, click_collection)
@@ -224,6 +233,6 @@ class FindAndClick(ActionInterface):
         object.__setattr__(matches, "success", click_result.success)
 
         logger.debug(
-            f"FindAndClick: Found {len(find_result.matches)} matches, "
+            f"FindAndClick: Found {len(found_matches)} matches, "
             f"clicked {'successfully' if matches.success else 'unsuccessfully'}"
         )

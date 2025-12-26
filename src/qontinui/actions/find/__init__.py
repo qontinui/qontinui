@@ -61,5 +61,6 @@ See Also:
 from .find_action import FindAction
 from .find_options import FindOptions
 from .find_result import FindResult
+from .matches import Matches
 
-__all__ = ["FindAction", "FindOptions", "FindResult"]
+__all__ = ["FindAction", "FindOptions", "FindResult", "Matches"]

@@ -1,10 +1,15 @@
 """Find action - ported from Qontinui framework.
 
 Core pattern matching action that locates GUI elements on the screen.
+
+MIGRATION NOTE: This class now delegates to FindAction for actual pattern matching.
+The ActionInterface pattern is preserved for compatibility with the Brobot-style model.
 """
 
 from typing import Any, Optional
 
+from ....actions.find import FindAction
+from ....actions.find import FindOptions as NewFindOptions
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
 from ...action_type import ActionType
@@ -46,13 +51,19 @@ class Find(ActionInterface):
     enables the framework to maintain an accurate understanding of the current GUI state.
     """
 
-    def __init__(self, find_pipeline: Optional["FindPipeline"] = None) -> None:
+    def __init__(
+        self,
+        find_pipeline: Optional["FindPipeline"] = None,
+        find_action: FindAction | None = None,
+    ) -> None:
         """Initialize Find action.
 
         Args:
-            find_pipeline: The pipeline that orchestrates the find process
+            find_pipeline: The pipeline that orchestrates the find process (legacy)
+            find_action: The FindAction for actual pattern matching
         """
         self.find_pipeline = find_pipeline
+        self.find_action = find_action or FindAction()
 
     def get_action_type(self) -> ActionType:
         """Return the action type.
@@ -65,9 +76,7 @@ class Find(ActionInterface):
     def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the find operation to locate GUI elements on screen.
 
-        This method serves as a facade, delegating the entire find process to the
-        FindPipeline. The pipeline handles all orchestration including pattern matching,
-        state management, match fusion, and post-processing adjustments.
+        This method now delegates to FindAction for actual pattern matching.
 
         When called directly (rather than through Action.perform), certain lifecycle
         operations are bypassed to avoid redundant processing:
@@ -91,14 +100,27 @@ class Find(ActionInterface):
         if not isinstance(action_config, BaseFindOptions):
             raise ValueError("Find requires BaseFindOptions configuration")
 
-        find_options = action_config
+        find_options_config = action_config
 
-        # Delegate entire orchestration to the pipeline
-        if self.find_pipeline:
-            self.find_pipeline.execute(find_options, matches, object_collections)
+        # Use FindAction for pattern matching
+        for obj_coll in object_collections:
+            for state_image in obj_coll.state_images:
+                pattern = state_image.get_pattern()
+                if pattern:
+                    options = NewFindOptions(
+                        similarity=find_options_config.similarity,
+                        find_all=True,
+                    )
+                    result = self.find_action.find(pattern, options)
+
+                    if result.found:
+                        for match in result.matches:
+                            matches.add_match(match)  # type: ignore[attr-defined]
+
+        # Set success based on whether matches were found
+        if matches.matches:
+            object.__setattr__(matches, "success", True)
         else:
-            # Placeholder implementation when pipeline not available
-            print("FindPipeline not available, performing placeholder find")
             object.__setattr__(matches, "success", False)
 
 
