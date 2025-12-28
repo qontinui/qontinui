@@ -176,14 +176,18 @@ from .validator import (
 
 # Workflow utilities
 from .workflow_utils import (
+    InitialStatesSource,
+    ResolvedInitialStates,
     calculate_max_depth,  # detect_workflow_format,  # Not yet implemented; convert_sequential_to_graph,  # Not yet implemented; get_action_connection_types,  # Not yet implemented
     find_entry_points,
     find_exit_points,
     get_action_by_id,
     get_action_output_count,
     get_connected_actions,
+    get_initial_states_source,
     get_workflow_statistics,
     has_merge_nodes,
+    resolve_initial_states,
 )
 
 # Workflow validation
@@ -346,6 +350,11 @@ __all__ = [
     "get_action_by_id",
     "get_connected_actions",
     # "convert_sequential_to_graph",  # Not yet implemented
+    # Initial states resolution
+    "InitialStatesSource",
+    "ResolvedInitialStates",
+    "resolve_initial_states",
+    "get_initial_states_source",
     # Action Validation
     "ActionValidator",
     "ActionValidationError",

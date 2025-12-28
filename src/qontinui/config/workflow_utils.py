@@ -5,9 +5,174 @@ Clean utilities for graph-based workflows.
 No format detection, no sequential format support.
 """
 
-from typing import Any
+from typing import Any, Literal
 
 from .schema import Action, Workflow
+
+# Type alias for initial states source
+InitialStatesSource = Literal["override", "workflow", "defaults"]
+
+
+class ResolvedInitialStates:
+    """Result of resolving initial states for a workflow.
+
+    Attributes:
+        state_ids: List of state IDs that will be active initially
+        source: Where the initial states came from ("override", "workflow", or "defaults")
+        states: Optional list of state info dicts with id and name
+    """
+
+    def __init__(
+        self,
+        state_ids: list[str],
+        source: InitialStatesSource,
+        states: list[dict[str, str]] | None = None,
+    ) -> None:
+        self.state_ids = state_ids
+        self.source = source
+        self.states = states or [{"id": sid, "name": sid} for sid in state_ids]
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "stateIds": self.state_ids,
+            "source": self.source,
+            "states": self.states,
+        }
+
+
+def resolve_initial_states(
+    config: dict[str, Any],
+    workflow_id: str,
+    override_ids: list[str] | None = None,
+) -> ResolvedInitialStates:
+    """Resolve initial state IDs for a workflow with priority system.
+
+    This function implements the same logic as the runner's resolve_initial_states
+    function, enabling consistent behavior across the entire qontinui ecosystem.
+
+    Priority (highest to lowest):
+    1. Override IDs passed directly (runner session override)
+    2. Workflow's `initialStateIds` field (workflow-level configuration)
+    3. States with `is_initial: true` or `isInitial: true` (state machine defaults)
+
+    Args:
+        config: Configuration dict containing 'workflows' and 'states' keys.
+            Can be a raw dict from JSON or a validated config object converted to dict.
+        workflow_id: The workflow ID to resolve initial states for
+        override_ids: Optional override from runner UI (highest priority)
+
+    Returns:
+        ResolvedInitialStates with state_ids, source, and state info
+
+    Example:
+        >>> config = {"workflows": [...], "states": [...]}
+        >>> result = resolve_initial_states(config, "my-workflow")
+        >>> print(result.state_ids)  # ['state-1', 'state-2']
+        >>> print(result.source)      # 'workflow' or 'defaults'
+    """
+    # Priority 1: Use override if provided
+    if override_ids and len(override_ids) > 0:
+        states_info = _get_state_info_for_ids(config, override_ids)
+        return ResolvedInitialStates(
+            state_ids=override_ids,
+            source="override",
+            states=states_info,
+        )
+
+    # Priority 2: Check workflow.initialStateIds
+    workflows = config.get("workflows", [])
+    for workflow in workflows:
+        wf_id = workflow.get("id")
+        if wf_id == workflow_id:
+            # Check both camelCase and snake_case
+            initial_ids = workflow.get("initialStateIds") or workflow.get("initial_state_ids")
+            if initial_ids and len(initial_ids) > 0:
+                states_info = _get_state_info_for_ids(config, initial_ids)
+                return ResolvedInitialStates(
+                    state_ids=initial_ids,
+                    source="workflow",
+                    states=states_info,
+                )
+            break
+
+    # Priority 3: Fall back to states with is_initial=true
+    states = config.get("states", [])
+    default_ids: list[str] = []
+    default_states: list[dict[str, str]] = []
+
+    for state in states:
+        # Check both camelCase and snake_case
+        is_initial = state.get("isInitial") or state.get("is_initial")
+        if is_initial:
+            state_id = state.get("id")
+            if state_id:
+                default_ids.append(state_id)
+                default_states.append(
+                    {
+                        "id": state_id,
+                        "name": state.get("name", state_id),
+                    }
+                )
+
+    return ResolvedInitialStates(
+        state_ids=default_ids,
+        source="defaults",
+        states=default_states,
+    )
+
+
+def get_initial_states_source(
+    config: dict[str, Any],
+    workflow_id: str,
+    override_ids: list[str] | None = None,
+) -> InitialStatesSource:
+    """Determine the source of resolved initial states.
+
+    This is a convenience function that returns only the source type
+    without computing full state information.
+
+    Args:
+        config: Configuration dict containing 'workflows' and 'states' keys
+        workflow_id: The workflow ID to check
+        override_ids: Optional override IDs to check
+
+    Returns:
+        The source type: "override", "workflow", or "defaults"
+    """
+    # Check override first
+    if override_ids and len(override_ids) > 0:
+        return "override"
+
+    # Check workflow.initialStateIds
+    workflows = config.get("workflows", [])
+    for workflow in workflows:
+        if workflow.get("id") == workflow_id:
+            initial_ids = workflow.get("initialStateIds") or workflow.get("initial_state_ids")
+            if initial_ids and len(initial_ids) > 0:
+                return "workflow"
+            break
+
+    return "defaults"
+
+
+def _get_state_info_for_ids(
+    config: dict[str, Any],
+    state_ids: list[str],
+) -> list[dict[str, str]]:
+    """Get state info (id and name) for a list of state IDs.
+
+    Args:
+        config: Configuration dict containing 'states' key
+        state_ids: List of state IDs to look up
+
+    Returns:
+        List of dicts with 'id' and 'name' keys
+    """
+    states = config.get("states", [])
+    state_lookup = {s.get("id"): s.get("name", s.get("id")) for s in states}
+
+    return [{"id": sid, "name": state_lookup.get(sid, sid)} for sid in state_ids]
 
 
 def get_action_output_count(action: Action) -> int:

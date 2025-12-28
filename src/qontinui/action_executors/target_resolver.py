@@ -173,17 +173,20 @@ class TargetResolver:
                 # Get monitors from StateImage metadata (monitors are registered on StateImage ID)
                 if state_image_monitors is None:
                     state_image_meta = registry.get_image_metadata(image_id)
-                    print(f"[TARGET_RESOLVER] StateImage {image_id} metadata: {state_image_meta}")
+                    logger.debug(
+                        "[TARGET_RESOLVER] StateImage %s metadata: %s", image_id, state_image_meta
+                    )
                     if state_image_meta and state_image_meta.get("monitors"):
                         state_image_monitors = state_image_meta.get("monitors")
                         log_debug(
                             f"    Got monitors from StateImage config: {state_image_monitors}"
                         )
-                        print(
-                            f"[TARGET_RESOLVER] Using monitors from StateImage: {state_image_monitors}"
+                        logger.debug(
+                            "[TARGET_RESOLVER] Using monitors from StateImage: %s",
+                            state_image_monitors,
                         )
                     else:
-                        print("[TARGET_RESOLVER] WARNING: No monitors in StateImage metadata!")
+                        logger.warning("[TARGET_RESOLVER] No monitors in StateImage metadata!")
             else:
                 # Not a StateImage, use as-is
                 expanded_image_ids.append(image_id)
@@ -250,7 +253,7 @@ class TargetResolver:
             log_debug(f"  Using monitor from ExecutionContext: {resolved_monitor}")
             # Also log to standard logger for visibility
             logger.info(f"[TARGET_RESOLVER] ExecutionContext.monitor_index = {resolved_monitor}")
-            print(f"[TARGET_RESOLVER] DEBUG: context.monitor_index = {resolved_monitor}")
+            logger.debug("[TARGET_RESOLVER] DEBUG: context.monitor_index = %s", resolved_monitor)
 
         if strategy == "BEST" and len(patterns) > 1:
             log_debug("  BEST strategy with multiple patterns - finding all and picking best")

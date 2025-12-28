@@ -42,7 +42,7 @@ from qontinui.model.state.state import State as QontinuiState  # noqa: E402
 from qontinui.model.transition.enhanced_state_transition import (  # noqa: E402
     TaskSequenceStateTransition,
 )
-from qontinui.model.transition.enhanced_state_transition import (  # noqa: E402
+from qontinui.model.transition.enhanced_state_transition import (
     TaskSequenceStateTransition as StateTransition,
 )
 from qontinui.state_management.state_memory import StateMemory  # noqa: E402

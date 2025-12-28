@@ -6,7 +6,10 @@ MIGRATION NOTE: This class now delegates to FindAction for actual pattern matchi
 The ActionInterface pattern is preserved for compatibility with the Brobot-style model.
 """
 
+import logging
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 from ....actions.find import FindAction
 from ....actions.find import FindOptions as NewFindOptions
@@ -145,5 +148,5 @@ class FindPipeline:
             object_collections: Objects to find
         """
         # Placeholder implementation
-        print(f"Executing find with strategy: {find_options.get_find_strategy()}")
+        logger.debug("Executing find with strategy: %s", find_options.get_find_strategy())
         object.__setattr__(matches, "success", False)

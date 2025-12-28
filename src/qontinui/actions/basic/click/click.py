@@ -3,7 +3,10 @@
 Performs mouse click operations on GUI elements.
 """
 
+import logging
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 from ....model.element.location import Location
 from ....model.match import Match as ModelMatch
@@ -80,7 +83,6 @@ class Click(ActionInterface):
             True if click was successful
         """
         import os
-        import sys
         import tempfile
         from datetime import datetime
 
@@ -88,10 +90,10 @@ class Click(ActionInterface):
         debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_click_debug.log")
 
         def log_debug(msg: str):
-            """Write to both stderr and debug file."""
+            """Write to both logger and debug file."""
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             log_line = f"[{timestamp}] {msg}\n"
-            print(f"[CLICK_DEBUG] {msg}", file=sys.stderr, flush=True)
+            logger.debug("[CLICK_DEBUG] %s", msg)
             try:
                 with open(debug_log_path, "a", encoding="utf-8") as f:
                     f.write(log_line)
@@ -300,7 +302,7 @@ class SingleClickExecutor:
             location: Location to click
             click_options: Click configuration
         """
-        print(f"Clicking at {location} with options {click_options}")
+        logger.debug("Clicking at %s with options %s", location, click_options)
 
 
 class PostClickHandler:

@@ -3,7 +3,10 @@
 Moves the mouse to one or more locations.
 """
 
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from ....actions.find import FindAction, FindOptions
 from ....model.element.location import Location
@@ -150,7 +153,7 @@ class MoveMouse(ActionInterface):
                             match = Match(match_object=match_obj)
                             matches.add(match)  # type: ignore[attr-defined]
 
-            print("finished move. ")
+            logger.debug("finished move")
 
             # Pause between collections
             if self.time and config:
@@ -171,7 +174,7 @@ class MoveMouseWrapper:
         Args:
             location: Target location
         """
-        print(f"Moving mouse to {location}")
+        logger.debug("Moving mouse to %s", location)
 
 
 class TimeProvider:

@@ -220,12 +220,11 @@ class DelegatingActionExecutor:
         if action.base:
             pause_before = action.base.pause_before_begin or 0
             pause_after = action.base.pause_after_end or 0
-            import sys
-
-            print(
-                f"[PAUSE_DEBUG] Action {action.type} has base: pause_before={pause_before}ms, pause_after={pause_after}ms",
-                file=sys.stderr,
-                flush=True,
+            logger.debug(
+                "[PAUSE_DEBUG] Action %s has base: pause_before=%dms, pause_after=%dms",
+                action.type,
+                pause_before,
+                pause_after,
             )
             logger.info(
                 f"[PAUSE] Action {action.type} (ID: {action.id}) base settings: pause_before={pause_before}ms, pause_after={pause_after}ms"
@@ -234,13 +233,7 @@ class DelegatingActionExecutor:
                 f"[PAUSE] Action {action.type} base settings: pause_before={pause_before}ms, pause_after={pause_after}ms"
             )
         else:
-            import sys
-
-            print(
-                f"[PAUSE_DEBUG] Action {action.type} has NO base settings",
-                file=sys.stderr,
-                flush=True,
-            )
+            logger.debug("[PAUSE_DEBUG] Action %s has NO base settings", action.type)
             logger.debug(f"[PAUSE] Action {action.type} has no base settings")
 
         # Pause before action if specified
@@ -300,23 +293,17 @@ class DelegatingActionExecutor:
 
                     # Pause after action if specified
                     if pause_after > 0:
-                        import sys
-
-                        print(
-                            f"[PAUSE_DEBUG] About to pause for {pause_after}ms after {action.type}",
-                            file=sys.stderr,
-                            flush=True,
+                        logger.debug(
+                            "[PAUSE_DEBUG] About to pause for %dms after %s",
+                            pause_after,
+                            action.type,
                         )
                         logger.info(
                             f"[PAUSE] Applying pause_after_end: {pause_after}ms ({pause_after/1000.0}s) for action {action.type}"
                         )
                         logger.debug(f"Waiting {pause_after}ms after action")
                         self.time_wrapper.wait(pause_after / 1000.0)
-                        print(
-                            f"[PAUSE_DEBUG] Completed pause for {action.type}",
-                            file=sys.stderr,
-                            flush=True,
-                        )
+                        logger.debug("[PAUSE_DEBUG] Completed pause for %s", action.type)
                         logger.info(f"[PAUSE] Completed pause_after_end for action {action.type}")
 
                     # Log action completion time
@@ -416,6 +403,8 @@ class DelegatingActionExecutor:
             "sequence": 0,  # Can be managed by caller if needed
             "data": data,
         }
+        # Output JSON events to stdout for Tauri IPC parsing
+        # This is intentional stdout output for IPC, not debug logging
         print(json.dumps(event), flush=True)
 
     def _emit_image_recognition_event(self, data: dict) -> None:

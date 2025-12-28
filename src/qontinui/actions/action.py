@@ -5,6 +5,7 @@ Entry point for executing GUI automation actions.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
@@ -12,6 +13,8 @@ if TYPE_CHECKING:
     from ..model.state.state_image import StateImage
 
 from .action_config import ActionConfig
+
+logger = logging.getLogger(__name__)
 from .action_execution import ActionExecution
 from .action_result import ActionResult, ActionResultBuilder
 from .action_service import ActionService
@@ -117,13 +120,13 @@ class Action:
                     action_config, ActionResultBuilder().build(), object_collections
                 )
             else:
-                print("Warning: Action chain executor not available for chained actions")
+                logger.warning("Action chain executor not available for chained actions")
                 return ActionResultBuilder().build()
 
         # Single action execution
         action = self.action_service.get_action(action_config)
         if action is None:
-            print(f"Not a valid Action for {action_config.__class__.__name__}")
+            logger.warning("Not a valid Action for %s", action_config.__class__.__name__)
             return ActionResultBuilder().build()
 
         # Always use action execution for lifecycle management

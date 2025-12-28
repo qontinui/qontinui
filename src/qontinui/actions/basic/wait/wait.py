@@ -3,11 +3,14 @@
 Wait for conditions or time periods.
 """
 
+import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, cast
+
+logger = logging.getLogger(__name__)
 
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
@@ -241,7 +244,7 @@ class Wait(ActionInterface):
                 if condition():
                     return True
             except Exception as e:
-                print(f"Condition check error: {e}")
+                logger.warning("Condition check error: %s", e)
 
             time.sleep(self.options.poll_interval)
 

@@ -119,6 +119,10 @@ ignore = [
 # Late imports in config/transition_loader for debug helper function
 "src/qontinui/config/transition_loader.py" = ["E402"]
 # Late imports in tests are intentional (after sys.path manipulation)
+# Late imports in actions are intentional (to break circular imports)
+"src/qontinui/actions/*.py" = ["E402"]
+"src/qontinui/actions/**/*.py" = ["E402"]
+# Late imports in tests are intentional (after sys.path manipulation)
 "tests/**/*.py" = ["E402", "B011", "B017", "F841"]
 
 [tool.ruff.lint.isort]
