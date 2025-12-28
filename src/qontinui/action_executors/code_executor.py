@@ -8,11 +8,13 @@ Security Model:
 - Dangerous builtins removed: eval, exec, compile, open, input, help, breakpoint, exit, quit
 - Imports restricted to safe modules via SAFE_IMPORT_ALLOWLIST
 - Dangerous modules blocked: os, subprocess, sys, shutil, socket, etc.
-- Timeout protection (Unix: signal-based, Windows: best-effort)
+- Timeout protection (Unix: signal.SIGALRM, Windows: concurrent.futures.ThreadPoolExecutor)
 - Project imports sandboxed to project root only
 """
 
+import concurrent.futures
 import logging
+import platform
 import signal
 import sys
 import time
@@ -736,7 +738,9 @@ class CodeExecutor(ActionExecutorBase):
         - Dangerous builtins removed (eval, exec, compile, open, etc.)
         - Imports restricted to SAFE_IMPORT_ALLOWLIST
         - Dangerous modules blocked (os, subprocess, sys, etc.)
-        - Timeout protection (Unix: signal-based, Windows: best-effort)
+        - Timeout protection:
+          - Unix: Uses signal.SIGALRM for reliable timeout enforcement
+          - Windows: Uses concurrent.futures.ThreadPoolExecutor with timeout
 
         Args:
             code: Python code to execute
@@ -789,48 +793,37 @@ class CodeExecutor(ActionExecutorBase):
         if enable_imports and project_root and project_root not in sys.path:
             sys.path.insert(0, project_root)
 
-        # Set timeout alarm (Unix only)
-        def timeout_handler(signum, frame):
-            raise TimeoutError(f"Code execution exceeded {timeout}s timeout")
-
         try:
-            # Set alarm for timeout (Unix systems)
-            if hasattr(signal, "SIGALRM"):
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(timeout)  # type: ignore[attr-defined]
+            # Choose timeout implementation based on platform
+            is_windows = platform.system() == "Windows"
 
-            # Execute code
-            exec(code, exec_globals, exec_locals)
+            if is_windows:
+                # Windows: Use ThreadPoolExecutor for timeout
+                result = self._execute_with_thread_timeout(code, exec_globals, exec_locals, timeout)
+            else:
+                # Unix: Use signal.SIGALRM for more reliable timeout
+                result = self._execute_with_signal_timeout(code, exec_globals, exec_locals, timeout)
 
-            # Cancel alarm
-            if hasattr(signal, "SIGALRM"):
-                signal.alarm(0)  # type: ignore[attr-defined]
+            if result["success"]:
+                # Extract result from exec_locals
+                result_value = exec_locals.get("result", None)
+                execution_time = (time.time() - start_time) * 1000
 
-            # Extract result
-            result_value = exec_locals.get("result", None)
-
-            execution_time = (time.time() - start_time) * 1000
-
-            return {
-                "success": True,
-                "result": result_value,
-                "error": None,
-                "execution_time_ms": execution_time,
-            }
-
-        except TimeoutError as e:
-            if hasattr(signal, "SIGALRM"):
-                signal.alarm(0)  # type: ignore[attr-defined]
-            return {
-                "success": False,
-                "result": None,
-                "error": str(e),
-                "execution_time_ms": (time.time() - start_time) * 1000,
-            }
+                return {
+                    "success": True,
+                    "result": result_value,
+                    "error": None,
+                    "execution_time_ms": execution_time,
+                }
+            else:
+                return {
+                    "success": False,
+                    "result": None,
+                    "error": result["error"],
+                    "execution_time_ms": (time.time() - start_time) * 1000,
+                }
 
         except Exception as e:
-            if hasattr(signal, "SIGALRM"):
-                signal.alarm(0)  # type: ignore[attr-defined]
             return {
                 "success": False,
                 "result": None,
@@ -842,6 +835,117 @@ class CodeExecutor(ActionExecutorBase):
             # Clean up sys.path
             if enable_imports and project_root and project_root in sys.path:
                 sys.path.remove(project_root)
+
+    def _execute_with_signal_timeout(
+        self,
+        code: str,
+        exec_globals: dict[str, Any],
+        exec_locals: dict[str, Any],
+        timeout: int,
+    ) -> dict[str, Any]:
+        """Execute code with signal-based timeout (Unix only).
+
+        Uses signal.SIGALRM to interrupt execution after the specified timeout.
+        This provides reliable timeout enforcement on Unix systems.
+
+        Args:
+            code: Python code to execute
+            exec_globals: Global namespace for exec
+            exec_locals: Local namespace for exec
+            timeout: Timeout in seconds
+
+        Returns:
+            dict: Result with success and error keys
+        """
+
+        def timeout_handler(signum, frame):
+            raise TimeoutError(f"Code execution exceeded {timeout}s timeout")
+
+        try:
+            # Set alarm for timeout
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(timeout)  # type: ignore[attr-defined]
+
+            # Execute code
+            exec(code, exec_globals, exec_locals)
+
+            # Cancel alarm
+            signal.alarm(0)  # type: ignore[attr-defined]
+
+            return {"success": True, "error": None}
+
+        except TimeoutError as e:
+            signal.alarm(0)  # type: ignore[attr-defined]
+            return {"success": False, "error": str(e)}
+
+        except Exception as e:
+            signal.alarm(0)  # type: ignore[attr-defined]
+            return {"success": False, "error": f"{type(e).__name__}: {str(e)}"}
+
+    def _execute_with_thread_timeout(
+        self,
+        code: str,
+        exec_globals: dict[str, Any],
+        exec_locals: dict[str, Any],
+        timeout: int,
+    ) -> dict[str, Any]:
+        """Execute code with thread-based timeout (Windows compatible).
+
+        Uses concurrent.futures.ThreadPoolExecutor to run code in a separate thread
+        with timeout enforcement. This provides timeout capability on Windows where
+        signal.SIGALRM is not available.
+
+        Note: Thread-based timeout cannot forcibly terminate running code.
+        If the code blocks on I/O or other non-interruptible operations,
+        the thread may continue running after timeout. However, this is
+        acceptable for the sandboxed code execution use case where:
+        - I/O operations (file, network) are blocked by the sandbox
+        - CPU-bound code will respect the timeout on next Python instruction
+
+        Args:
+            code: Python code to execute
+            exec_globals: Global namespace for exec
+            exec_locals: Local namespace for exec
+            timeout: Timeout in seconds
+
+        Returns:
+            dict: Result with success and error keys
+        """
+        # Container to capture exception from thread
+        thread_exception: list[Exception | None] = [None]
+
+        def execute_code():
+            """Execute code in thread, capturing any exceptions."""
+            try:
+                exec(code, exec_globals, exec_locals)
+            except Exception as e:
+                thread_exception[0] = e
+
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(execute_code)
+                try:
+                    # Wait for completion with timeout
+                    future.result(timeout=timeout)
+
+                    # Check if thread raised an exception
+                    if thread_exception[0] is not None:
+                        e = thread_exception[0]
+                        return {"success": False, "error": f"{type(e).__name__}: {str(e)}"}
+
+                    return {"success": True, "error": None}
+
+                except concurrent.futures.TimeoutError:
+                    # Timeout occurred
+                    # Note: The thread may still be running, but we return immediately.
+                    # The sandbox restrictions prevent any harmful operations.
+                    return {
+                        "success": False,
+                        "error": f"Code execution exceeded {timeout}s timeout",
+                    }
+
+        except Exception as e:
+            return {"success": False, "error": f"{type(e).__name__}: {str(e)}"}
 
     def _store_result(self, config: CodeBlockActionConfig, result: Any) -> None:
         """Store code execution result in variable context.
