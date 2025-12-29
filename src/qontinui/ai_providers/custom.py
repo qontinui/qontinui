@@ -6,6 +6,7 @@ enabling integration with any AI system via custom scripts or commands.
 
 import asyncio
 import logging
+import shlex
 import subprocess
 from collections.abc import AsyncIterator
 
@@ -110,7 +111,7 @@ class CustomCommandProvider(AIProvider):
                 )
             else:
                 proc = subprocess.run(
-                    cmd.split(),
+                    shlex.split(cmd),
                     capture_output=True,
                     text=True,
                     timeout=request.timeout_seconds,
@@ -163,7 +164,7 @@ class CustomCommandProvider(AIProvider):
                 )
             else:
                 # Direct execution
-                cmd_parts = cmd.split()
+                cmd_parts = shlex.split(cmd)
                 process = await asyncio.create_subprocess_exec(
                     *cmd_parts,
                     stdout=asyncio.subprocess.PIPE,
@@ -192,6 +193,9 @@ class CustomCommandProvider(AIProvider):
     def _build_command(self, request: AnalysisRequest) -> str:
         """Build command with placeholders replaced.
 
+        When shell mode is enabled, placeholder values are shell-escaped
+        to prevent command injection attacks.
+
         Args:
             request: The analysis request
 
@@ -200,13 +204,17 @@ class CustomCommandProvider(AIProvider):
         """
         cmd = self._command
 
-        # Replace placeholders
+        # Prepare replacement values
         replacements = {
             "{prompt}": request.prompt,
             "{working_directory}": request.working_directory or "",
             "{results_directory}": request.results_directory,
             "{timeout}": str(request.timeout_seconds),
         }
+
+        # Apply shell escaping when using shell mode to prevent injection
+        if self._shell:
+            replacements = {k: shlex.quote(v) for k, v in replacements.items()}
 
         for placeholder, value in replacements.items():
             cmd = cmd.replace(placeholder, value)
