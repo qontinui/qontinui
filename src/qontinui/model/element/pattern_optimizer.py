@@ -8,10 +8,10 @@ Optimization Methods:
 - Discriminative: Maximize discrimination between positive/negative samples
 """
 
-from datetime import datetime
 from typing import Any
 
 import numpy as np
+from qontinui_schemas.common import utc_now
 
 
 class PatternOptimizer:
@@ -227,7 +227,7 @@ class PatternOptimizer:
 
         pattern.mask = new_mask
         pattern.mask_density = float(np.sum(new_mask > 0.5) / new_mask.size)
-        pattern.updated_at = datetime.now()
+        pattern.updated_at = utc_now()
 
         if record_history:
             pattern.optimization_history.append(

@@ -119,7 +119,8 @@ class MouseActionExecutor(ActionExecutorBase):
         # File-based debug logging at entry point - NO stderr output (breaks JSON protocol)
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         # Try multiple log paths
         debug_paths = [
@@ -128,7 +129,7 @@ class MouseActionExecutor(ActionExecutorBase):
             "/mnt/c/Users/jspin/Documents/qontinui_parent/mouse_executor_debug.log",
         ]
 
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         log_msg = f"[{timestamp}] MouseActionExecutor.execute() called for {action.type} (ID: {action.id})\n"
 
         for debug_log_path in debug_paths:
@@ -200,7 +201,8 @@ class MouseActionExecutor(ActionExecutorBase):
         # File-based debug logging at entry
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         from ..config.models.targets import (
             AllResultsTarget,
@@ -218,7 +220,7 @@ class MouseActionExecutor(ActionExecutorBase):
 
         def log_debug(msg: str):
             """Write to debug file."""
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             log_line = f"[{timestamp}] {msg}\n"
             try:
                 with open(debug_log_path, "a", encoding="utf-8") as f:
@@ -332,7 +334,8 @@ class MouseActionExecutor(ActionExecutorBase):
             # File-based debug logging for LastFindResultTarget
             import os
             import tempfile
-            from datetime import datetime
+
+            from qontinui_schemas.common import utc_now
 
             debug_log_path = os.path.join(
                 tempfile.gettempdir(), "qontinui_last_find_result_debug.log"
@@ -340,7 +343,7 @@ class MouseActionExecutor(ActionExecutorBase):
 
             def log_debug(msg: str):
                 """Write to debug file."""
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 log_line = f"[{timestamp}] {msg}\n"
                 logger.info(f"[LAST_FIND_RESULT_DEBUG] {msg}")
                 try:
@@ -571,13 +574,14 @@ class MouseActionExecutor(ActionExecutorBase):
         # File-based debug logging
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_mouse_move_debug.log")
 
         def log_debug(msg: str):
             """Write to both logger and debug file."""
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             log_line = f"[{timestamp}] {msg}\n"
             logger.info(f"[MOUSE_MOVE_DEBUG] {msg}")
             try:
@@ -754,14 +758,15 @@ class MouseActionExecutor(ActionExecutorBase):
         # DEBUG: Write to file to confirm this method is called
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_click_executor_debug.log")
 
         def debug_write(msg: str) -> None:
             try:
                 with open(debug_log_path, "a", encoding="utf-8") as f:
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{timestamp}] {msg}\n")
             except Exception:
                 pass

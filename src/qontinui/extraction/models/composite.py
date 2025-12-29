@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 from .base import Screenshot, Viewport
 from .correlated import CorrelatedState, ExtractionResult, InferredTransition, VerifiedTransition
 from .runtime import ExtractedElement
@@ -79,7 +81,7 @@ class StateStructure:
     viewport: Viewport = field(default_factory=lambda: Viewport(width=1920, height=1080))
     """Environment viewport/screen size."""
 
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=utc_now)
     """When this structure was created."""
 
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -464,9 +466,7 @@ class StateStructure:
             name=data["name"],
             viewport=viewport,
             created_at=(
-                datetime.fromisoformat(data["created_at"])
-                if "created_at" in data
-                else datetime.now()
+                datetime.fromisoformat(data["created_at"]) if "created_at" in data else utc_now()
             ),
             metadata=data.get("metadata", {}),
             state_origins=data.get("state_origins", {}),
@@ -564,10 +564,10 @@ class StateStructure:
             id=f"{self.id}+{other.id}",
             name=f"{self.name} + {other.name}",
             viewport=self.viewport,
-            created_at=datetime.now(),
+            created_at=utc_now(),
             metadata={
                 "merged_from": [self.id, other.id],
-                "merged_at": datetime.now().isoformat(),
+                "merged_at": utc_now().isoformat(),
             },
         )
 

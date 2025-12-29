@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 try:
     from PIL import Image
 except ImportError:
@@ -76,7 +78,7 @@ class SnapshotRecorder:
         if config.run_id:
             self.run_id = config.run_id
         else:
-            self.run_id = f"run-{datetime.now().strftime('%Y-%m-%d-%H%M%S')}"
+            self.run_id = f"run-{utc_now().strftime('%Y-%m-%d-%H%M%S')}"
 
         # Create run directory
         if isinstance(config.base_dir, str):
@@ -94,7 +96,7 @@ class SnapshotRecorder:
         self.pattern_histories: dict[str, ActionHistory] = {}
 
         # Metadata
-        self.start_time = datetime.now()
+        self.start_time = utc_now()
         self.end_time: datetime | None = None
 
         # Create directory structure
@@ -144,7 +146,7 @@ class SnapshotRecorder:
             action_success=len(matches) > 0,
             match_list=matches,  # Uses actual Match objects
             duration=duration_ms / 1000.0,  # Convert ms to seconds
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             active_states=active_states,
             metadata={
                 "pattern_id": pattern_id,
@@ -173,7 +175,7 @@ class SnapshotRecorder:
                 {
                     "action_id": self.action_count,
                     "action_type": "find",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": utc_now().isoformat(),
                     "pattern_id": pattern_id,
                     "pattern_name": pattern_name,
                     "success": record.action_success,
@@ -311,7 +313,7 @@ class SnapshotRecorder:
 
     def finalize(self):
         """Finalize recording and save all data to disk."""
-        self.end_time = datetime.now()
+        self.end_time = utc_now()
 
         logger.info(f"Finalizing snapshot recording: {self.run_id}")
 
@@ -386,5 +388,5 @@ class SnapshotRecorder:
             "actions_recorded": self.action_count,
             "screenshots_saved": self.screenshot_count,
             "patterns_tracked": len(self.pattern_histories),
-            "elapsed_seconds": (datetime.now() - self.start_time).total_seconds(),
+            "elapsed_seconds": (utc_now() - self.start_time).total_seconds(),
         }

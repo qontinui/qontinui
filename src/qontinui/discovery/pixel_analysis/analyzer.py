@@ -3,11 +3,11 @@
 import hashlib
 import logging
 from collections.abc import Callable
-from datetime import datetime
 from typing import Any, cast
 
 import cv2
 import numpy as np
+from qontinui_schemas.common import utc_now
 
 from ..models import AnalysisConfig, AnalysisResult, DiscoveredState, StateImage, StateTransition
 from .merge_components import merge_nearby_components
@@ -590,6 +590,6 @@ class PixelStabilityAnalyzer:
                 {
                     "percentage": percentage,
                     "message": message,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": utc_now().isoformat(),
                 }
             )

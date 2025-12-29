@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 from .action_snapshot import ActionSnapshot, ActionType
 
 
@@ -29,7 +31,7 @@ class ActionHistory:
     def add_snapshot(self, snapshot: ActionSnapshot) -> None:
         """Add a new snapshot to the history."""
         self.snapshots.append(snapshot)
-        self.last_updated = datetime.now()
+        self.last_updated = utc_now()
 
     def remove_snapshot(self, snapshot_id: str) -> bool:
         """Remove a snapshot by ID.
@@ -40,7 +42,7 @@ class ActionHistory:
         initial_length = len(self.snapshots)
         self.snapshots = [s for s in self.snapshots if s.id != snapshot_id]
         if len(self.snapshots) < initial_length:
-            self.last_updated = datetime.now()
+            self.last_updated = utc_now()
             return True
         return False
 
@@ -127,7 +129,7 @@ class ActionHistory:
     def clear(self) -> None:
         """Clear all snapshots."""
         self.snapshots.clear()
-        self.last_updated = datetime.now()
+        self.last_updated = utc_now()
 
     def size(self) -> int:
         """Get the number of snapshots."""
@@ -157,7 +159,7 @@ class ActionHistory:
     def merge(self, other: "ActionHistory") -> None:
         """Merge another history into this one."""
         self.snapshots.extend(other.snapshots)
-        self.last_updated = datetime.now()
+        self.last_updated = utc_now()
 
     def get_statistics(self) -> dict[str, Any]:
         """Get statistics about the action history."""

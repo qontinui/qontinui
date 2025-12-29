@@ -4,8 +4,9 @@ This module provides a simple in-memory cache with time-based expiration
 and LRU eviction policies.
 """
 
-from datetime import datetime
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 from ..logging import get_logger
 
@@ -54,7 +55,7 @@ class CacheStorage:
             self._evict_oldest()
 
         self._cache[key] = value
-        self._timestamps[key] = datetime.now().timestamp()
+        self._timestamps[key] = utc_now().timestamp()
         self._ttls[key] = ttl if ttl is not None else self.default_ttl
 
         logger.debug("cache_set", key=key, ttl=self._ttls[key])
@@ -73,7 +74,7 @@ class CacheStorage:
             return default
 
         # Check expiration
-        age = datetime.now().timestamp() - self._timestamps[key]
+        age = utc_now().timestamp() - self._timestamps[key]
         if age > self._ttls[key]:
             logger.debug("cache_expired", key=key, age=age)
             self._remove_key(key)
@@ -128,7 +129,7 @@ class CacheStorage:
             return False
 
         # Check expiration
-        age = datetime.now().timestamp() - self._timestamps[key]
+        age = utc_now().timestamp() - self._timestamps[key]
         if age > self._ttls[key]:
             self._remove_key(key)
             return False

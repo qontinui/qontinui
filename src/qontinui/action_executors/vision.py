@@ -87,7 +87,8 @@ class VisionActionExecutor(ActionExecutorBase):
         # Set up comprehensive debug logging
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
 
@@ -95,7 +96,7 @@ class VisionActionExecutor(ActionExecutorBase):
             """Helper to write timestamped debug messages."""
             try:
                 with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] {msg}\n")
             except Exception:
                 pass

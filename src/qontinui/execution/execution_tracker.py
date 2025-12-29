@@ -9,6 +9,8 @@ Separation (CQS) pattern.
 from datetime import datetime
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 from .execution_types import ActionExecutionRecord, ActionStatus, ExecutionStatus
 
 
@@ -227,7 +229,7 @@ class ExecutionTracker:
         """
         if not self._start_time:
             return None
-        end = self._end_time or datetime.now()
+        end = self._end_time or utc_now()
         return (end - self._start_time).total_seconds() * 1000
 
     def get_progress_percentage(self, total_actions: int) -> float:

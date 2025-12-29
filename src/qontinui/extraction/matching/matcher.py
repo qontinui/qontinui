@@ -74,14 +74,15 @@ class DefaultStateMatcher:
         # RuntimeExtractionResult has: elements, states, transitions, screenshots
         # RuntimeExtractionSession needs: session_id, target, storage_dir, captures
         # Create a RuntimeStateCapture from the runtime result
-        from datetime import datetime
         from pathlib import Path
+
+        from qontinui_schemas.common import utc_now
 
         from ..runtime.types import RuntimeExtractionSession, RuntimeStateCapture
 
         capture = RuntimeStateCapture(
             capture_id="runtime_capture_0001",
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             elements=runtime.elements if hasattr(runtime, "elements") else [],
             states=runtime.states if hasattr(runtime, "states") else [],
             screenshot_path=(

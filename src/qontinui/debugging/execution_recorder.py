@@ -6,9 +6,10 @@ a detailed history of action executions for analysis and debugging.
 
 import json
 import threading
-from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 from .types import ExecutionRecord
 
@@ -73,7 +74,7 @@ class ExecutionRecorder:
         if not self._recording_enabled:
             # Return a dummy record
             return ExecutionRecord(
-                timestamp=datetime.now(),
+                timestamp=utc_now(),
                 action_id=action_id,
                 action_type=action_type,
                 action_description=action_description,
@@ -82,7 +83,7 @@ class ExecutionRecorder:
             )
 
         record = ExecutionRecord(
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             action_id=action_id,
             action_type=action_type,
             action_description=action_description,
@@ -235,7 +236,7 @@ class ExecutionRecorder:
 
         if format == "json":
             data = {
-                "exported_at": datetime.now().isoformat(),
+                "exported_at": utc_now().isoformat(),
                 "record_count": len(records),
                 "session_id": session_id,
                 "records": [r.to_dict() for r in records],
@@ -244,7 +245,7 @@ class ExecutionRecorder:
 
         else:  # text format
             lines = [
-                f"Execution History Export - {datetime.now().isoformat()}",
+                f"Execution History Export - {utc_now().isoformat()}",
                 f"Records: {len(records)}",
                 f"Session: {session_id or 'all'}",
                 "",

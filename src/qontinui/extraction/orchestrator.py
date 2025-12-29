@@ -122,9 +122,9 @@ class ExtractionOrchestrator:
                 logger.info("Using hybrid extraction mode...")
                 await self._run_hybrid_extraction(config, result)
                 # Mark completion
-                import datetime
+                from qontinui_schemas.common import utc_now
 
-                result.completed_at = datetime.datetime.now()
+                result.completed_at = utc_now()
                 logger.info(
                     f"Hybrid extraction complete. States: {len(result.states)}, "
                     f"Transitions: {len(result.transitions)}"
@@ -202,9 +202,9 @@ class ExtractionOrchestrator:
                     )
 
             # Mark completion
-            import datetime
+            from qontinui_schemas.common import utc_now
 
-            result.completed_at = datetime.datetime.now()
+            result.completed_at = utc_now()
 
             logger.info(
                 f"Extraction complete. States: {len(result.states)}, "

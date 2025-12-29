@@ -8,11 +8,11 @@ reusing the existing web extraction components.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
+from qontinui_schemas.common import utc_now
 
 from ...models.base import BoundingBox as BaseBoundingBox
 from ...web.element_classifier import ElementClassifier
@@ -243,7 +243,7 @@ class PlaywrightExtractor(RuntimeExtractor):
 
             capture = RuntimeStateCapture(
                 capture_id=capture_id,
-                timestamp=datetime.now(),
+                timestamp=utc_now(),
                 elements=elements,
                 states=states,
                 screenshot_path=screenshot_path,
@@ -458,7 +458,7 @@ class PlaywrightExtractor(RuntimeExtractor):
                 id=screenshot_id,
                 path=path,
                 viewport=viewport,
-                timestamp=datetime.now().isoformat(),
+                timestamp=utc_now().isoformat(),
             )
 
             logger.debug(f"Screenshot saved to {path}")

@@ -22,10 +22,10 @@ _DEBUG_LOG_PATH = os.path.join(tempfile.gettempdir(), "qontinui_navigation_debug
 def _debug_print(msg: str) -> None:
     """Write debug message to file to ensure visibility when logging is disabled."""
     try:
-        from datetime import datetime
+        from qontinui_schemas.common import utc_now
 
         with open(_DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             f.write(f"[{timestamp}] [TRANSITION_EXECUTOR] {msg}\n")
             f.flush()
     except Exception:

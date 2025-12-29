@@ -22,6 +22,8 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any, cast
 
+from qontinui_schemas.common import utc_now
+
 from .base import BaseWrapper
 
 logger = logging.getLogger(__name__)
@@ -114,7 +116,7 @@ class TimeWrapper(BaseWrapper):
             return cast(datetime, self.mock_time.now())
         else:
             logger.debug("TimeWrapper.now (REAL)")
-            return datetime.now()
+            return utc_now()
 
     def wait_until(
         self,

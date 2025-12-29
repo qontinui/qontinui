@@ -12,6 +12,8 @@ from datetime import datetime
 from enum import Enum, auto
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 from .....model.action.action_history import ActionHistory
 from .....model.action.action_record import ActionRecordBuilder
 from ....action_config import ActionConfig
@@ -351,7 +353,7 @@ class ActionExecutor:
         timestamp = (
             datetime.fromtimestamp(context.start_time)
             if context.start_time is not None
-            else datetime.now()
+            else utc_now()
         )
         record = (
             builder.with_text(context.action.__class__.__name__)

@@ -10,6 +10,8 @@ from datetime import datetime
 from enum import Enum, IntEnum, auto
 from typing import Any, cast
 
+from qontinui_schemas.common import utc_now
+
 from ....action_config import ActionConfig
 from ....action_interface import ActionInterface
 
@@ -146,7 +148,7 @@ class ActionLifecycle:
             self._fire_event(LifecycleEvent.ON_CREATE)
 
             # Perform initialization
-            self.state.initialized_at = datetime.now()
+            self.state.initialized_at = utc_now()
 
             # Initialize action if it has init method
             if hasattr(self.action, "initialize"):
@@ -241,7 +243,7 @@ class ActionLifecycle:
         try:
             self._transition_to(LifecycleStage.EXECUTING)
             self.state.is_executing = True
-            self.state.started_at = datetime.now()
+            self.state.started_at = utc_now()
 
             self._fire_event(LifecycleEvent.ON_EXECUTE)
 
@@ -279,7 +281,7 @@ class ActionLifecycle:
             return True
 
         try:
-            self.state.completed_at = datetime.now()
+            self.state.completed_at = utc_now()
             self.state.is_complete = True
 
             self._transition_to(LifecycleStage.COMPLETED)
@@ -326,7 +328,7 @@ class ActionLifecycle:
             self.cleanup()
 
         try:
-            self.state.destroyed_at = datetime.now()
+            self.state.destroyed_at = utc_now()
 
             self._transition_to(LifecycleStage.DESTROYED)
             self._fire_event(LifecycleEvent.ON_DESTROY)

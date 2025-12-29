@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Any, cast
 
 import numpy as np
+from qontinui_schemas.common import utc_now
 
 
 class ElementType(Enum):
@@ -177,7 +178,7 @@ class State:
     def __post_init__(self):
         """Initialize state properties."""
         if self.timestamp is None:
-            self.timestamp = datetime.now()
+            self.timestamp = utc_now()
 
         # Build element lookup
         self._element_lookup = {elem.id: elem for elem in self.elements}

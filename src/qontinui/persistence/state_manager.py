@@ -4,9 +4,10 @@ This module provides specialized storage for application states with
 metadata tracking and versioning support.
 """
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 from ..logging import get_logger
 from .file_storage import FileStorage
@@ -53,7 +54,7 @@ class StateManager:
         # Inject metadata
         enriched_data = {
             **state_data,
-            "_saved_at": datetime.now().isoformat(),
+            "_saved_at": utc_now().isoformat(),
             "_name": state_name,
         }
 

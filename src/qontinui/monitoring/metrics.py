@@ -7,13 +7,13 @@ Prometheus metrics and health checks.
 import time
 import traceback
 from collections.abc import Callable
-from datetime import datetime
 from threading import Thread
 from typing import Any, TypedDict, cast
 
 import psutil
 from prometheus_client import REGISTRY, Counter, Gauge, Histogram, Summary, generate_latest
 from prometheus_client import start_http_server as prometheus_start_server
+from qontinui_schemas.common import utc_now
 
 from ..config import get_settings
 from ..logging import get_logger
@@ -416,7 +416,7 @@ class HealthCheck:
         """
         results: dict[str, Any] = {
             "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "checks": {},
             "uptime": metrics_collector.get_uptime(),
         }

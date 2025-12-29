@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from qontinui_schemas.common import utc_now
+
 if TYPE_CHECKING:
     from ...actions.action_config import ActionConfig
     from ..match.match import Match
@@ -49,7 +51,7 @@ class ActionRecord:
     match_list: list[Match] = field(default_factory=list)
     text: str = ""
     duration: float = 0.0
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=utc_now)
     action_success: bool = False  # Action was successfully performed
     result_success: bool = False  # Result was successful (app-defined)
     state_name: str = "NULL"  # State where match occurred
@@ -318,7 +320,7 @@ class ActionRecordBuilder:
             match_list=self.match_list.copy(),
             text=self.text,
             duration=self.duration,
-            timestamp=self.timestamp or datetime.now(),
+            timestamp=self.timestamp or utc_now(),
             action_success=self.action_success,
             result_success=self.result_success,
             state_name=self.state_name,

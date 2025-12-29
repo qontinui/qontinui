@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from PIL import Image
+from qontinui_schemas.common import utc_now
 
 from ..logging import get_logger
 from .embeddings import HybridImageEmbedder, TextDescriptionGenerator, TextEmbedder
@@ -197,7 +198,7 @@ class ConfigExportPipeline:
             # Create metadata
             metadata = ConfigMetadata(
                 project_id=project_id,
-                export_timestamp=datetime.utcnow(),
+                export_timestamp=utc_now(),
                 embedding_versions=self._get_model_versions(),
                 element_count=len(config.get("elements", [])),
                 elements_embedded=len(elements_to_embed),

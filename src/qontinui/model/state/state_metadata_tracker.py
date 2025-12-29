@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,8 +18,8 @@ logger = logging.getLogger(__name__)
 class StateMetadata:
     """Metadata about a stored state."""
 
-    created_at: datetime = field(default_factory=datetime.now)
-    last_accessed: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=utc_now)
+    last_accessed: datetime = field(default_factory=utc_now)
     access_count: int = 0
     transition_count: int = 0
     average_duration: float = 0.0
@@ -67,7 +69,7 @@ class StateMetadataTracker:
         """
         with self._lock:
             if name in self._metadata:
-                self._metadata[name].last_accessed = datetime.now()
+                self._metadata[name].last_accessed = utc_now()
                 self._metadata[name].access_count += 1
 
     def record_transition(self, name: str, duration: float | None = None) -> None:

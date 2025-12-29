@@ -13,8 +13,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
-from datetime import datetime
 from typing import TYPE_CHECKING
+
+from qontinui_schemas.common import utc_now
 
 from ..config import Workflow
 from ..state_execution_api import StateExecutionAPI
@@ -95,7 +96,7 @@ class ExecutionController:
             workflow=workflow,
             options=options,
             status=ExecutionStatus.STARTING,
-            start_time=datetime.now(),
+            start_time=utc_now(),
             total_actions=len(workflow.actions),
         )
 
@@ -296,7 +297,7 @@ class ExecutionController:
             event_id=str(uuid.uuid4()),
             type=event_type,
             execution_id=context.execution_id,
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             action_id=action_id,
             action_type=action_type,
             data=data,

@@ -9,6 +9,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 
 class TaskPriority(Enum):
     """Task priority levels."""
@@ -128,14 +130,14 @@ class ScheduledTask:
             return False
 
         self.status = TaskStatus.RUNNING
-        self.started_at = datetime.now()
+        self.started_at = utc_now()
 
         try:
             success = self.task_function()
 
             if success:
                 self.status = TaskStatus.COMPLETED
-                self.completed_at = datetime.now()
+                self.completed_at = utc_now()
                 self.retry_count = 0
             else:
                 self.status = TaskStatus.FAILED

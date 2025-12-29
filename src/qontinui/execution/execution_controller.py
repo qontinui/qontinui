@@ -8,6 +8,8 @@ It implements the Command side of Command-Query Separation (CQS) pattern.
 from datetime import datetime
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 from .execution_types import ActionExecutionRecord, ActionStatus, ExecutionStatus, PendingAction
 
 
@@ -104,12 +106,12 @@ class ExecutionController:
     def start(self) -> None:
         """Mark execution as started."""
         self.status = ExecutionStatus.RUNNING
-        self.start_time = datetime.now()
+        self.start_time = utc_now()
 
     def complete(self) -> None:
         """Mark execution as completed."""
         self.status = ExecutionStatus.COMPLETED
-        self.end_time = datetime.now()
+        self.end_time = utc_now()
 
     def fail(self, error: str) -> None:
         """
@@ -119,15 +121,13 @@ class ExecutionController:
             error: Error message
         """
         self.status = ExecutionStatus.FAILED
-        self.end_time = datetime.now()
-        self._errors.append(
-            {"time": datetime.now(), "error": error, "action": self._current_action}
-        )
+        self.end_time = utc_now()
+        self._errors.append({"time": utc_now(), "error": error, "action": self._current_action})
 
     def cancel(self) -> None:
         """Mark execution as cancelled."""
         self.status = ExecutionStatus.CANCELLED
-        self.end_time = datetime.now()
+        self.end_time = utc_now()
 
     def pause(self) -> None:
         """Pause execution."""
@@ -234,7 +234,7 @@ class ExecutionController:
             action_id=action_id,
             action_type=action_type,
             status=ActionStatus.RUNNING,
-            start_time=datetime.now(),
+            start_time=utc_now(),
         )
 
         if self.enable_history:

@@ -1,12 +1,18 @@
 """Monitor manager - ported from Qontinui framework.
 
 Manages multi-monitor support for the automation framework.
+
+Note: This module uses a local MonitorInfo dataclass for internal operations.
+The schema types (Monitor, VirtualDesktop) from qontinui-schemas are available
+for configuration and serialization purposes via the coordinates package.
 """
 
 import logging
 import tkinter as tk
 from dataclasses import dataclass
-from typing import Optional
+from typing import Literal, Optional
+
+from qontinui_schemas.config.models.monitors import Monitor as SchemaMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +22,9 @@ class MonitorInfo:
     """Information about a monitor.
 
     Port of MonitorInfo from Qontinui framework inner class.
+
+    This is a local dataclass for internal monitor operations.
+    For configuration/serialization, use SchemaMonitor from qontinui-schemas.
     """
 
     index: int
@@ -35,6 +44,9 @@ class MonitorInfo:
 
     device_id: str
     """Device identifier."""
+
+    is_primary: bool = False
+    """Whether this is the primary monitor."""
 
     @property
     def bounds(self) -> tuple[int, int, int, int]:
@@ -56,6 +68,46 @@ class MonitorInfo:
             True if point is within bounds
         """
         return self.x <= x < self.x + self.width and self.y <= y < self.y + self.height
+
+    def to_schema(self, position: Literal["left", "center", "right"] = "center") -> SchemaMonitor:
+        """Convert to schema Monitor type.
+
+        Args:
+            position: Spatial position for the monitor (left/center/right)
+
+        Returns:
+            SchemaMonitor instance
+        """
+        return SchemaMonitor(
+            index=self.index,
+            x=self.x,
+            y=self.y,
+            width=self.width,
+            height=self.height,
+            position=position,
+            is_primary=self.is_primary,
+            name=self.device_id,
+        )
+
+    @classmethod
+    def from_schema(cls, schema_monitor: SchemaMonitor) -> "MonitorInfo":
+        """Create MonitorInfo from schema Monitor type.
+
+        Args:
+            schema_monitor: SchemaMonitor instance
+
+        Returns:
+            MonitorInfo instance
+        """
+        return cls(
+            index=schema_monitor.index,
+            x=schema_monitor.x,
+            y=schema_monitor.y,
+            width=schema_monitor.width,
+            height=schema_monitor.height,
+            device_id=schema_monitor.name or f"monitor-{schema_monitor.index}",
+            is_primary=schema_monitor.is_primary,
+        )
 
 
 class MonitorManager:

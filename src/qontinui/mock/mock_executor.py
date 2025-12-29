@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 from .snapshot import ActionHistory, ActionRecord
 from .state_screenshot import ActionVisualization, StateScreenshotRegistry
 
@@ -108,7 +110,7 @@ class MockExecutor:
         logger.info(f"Starting mock execution: {process_name} (ID: {process_id})")
         logger.info(f"Initial states: {initial_states}")
 
-        start_time = datetime.now()
+        start_time = utc_now()
         self.current_states = initial_states.copy()
 
         result = MockExecutionResult(
@@ -127,7 +129,7 @@ class MockExecutor:
             self._update_states_from_action(action_viz)
 
         # Finalize result
-        end_time = datetime.now()
+        end_time = utc_now()
         result.end_time = end_time
         result.total_duration_ms = (end_time - start_time).total_seconds() * 1000
         result.final_states = self.current_states.copy()
@@ -264,7 +266,7 @@ class MockExecutor:
             action_location=action_location,
             success=action_record.action_success if action_record else True,
             active_states=self.current_states.copy(),
-            timestamp=action_record.timestamp if action_record else datetime.now(),
+            timestamp=action_record.timestamp if action_record else utc_now(),
             duration_ms=action_record.duration * 1000 if action_record else 50.0,
         )
 
@@ -294,7 +296,7 @@ class MockExecutor:
             text=text,
             success=action_record.action_success if action_record else True,
             active_states=self.current_states.copy(),
-            timestamp=action_record.timestamp if action_record else datetime.now(),
+            timestamp=action_record.timestamp if action_record else utc_now(),
             duration_ms=action_record.duration * 1000 if action_record else 200.0,
         )
 

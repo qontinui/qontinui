@@ -88,16 +88,15 @@ def create_executor(action_type: str, context: ExecutionContext) -> ActionExecut
     # DEBUG: Log registry lookup
     import os
     import tempfile
-    from datetime import datetime
+
+    from qontinui_schemas.common import utc_now
 
     debug_file = os.path.join(tempfile.gettempdir(), "registry_debug.log")
     with open(debug_file, "a", encoding="utf-8") as f:
-        f.write(f"[{datetime.now().isoformat()}] create_executor called\n")
-        f.write(f"[{datetime.now().isoformat()}]   action_type: {action_type}\n")
-        f.write(f"[{datetime.now().isoformat()}]   executor_class: {executor_class}\n")
-        f.write(
-            f"[{datetime.now().isoformat()}]   registry keys: {list(_executor_registry.keys())}\n"
-        )
+        f.write(f"[{utc_now().isoformat()}] create_executor called\n")
+        f.write(f"[{utc_now().isoformat()}]   action_type: {action_type}\n")
+        f.write(f"[{utc_now().isoformat()}]   executor_class: {executor_class}\n")
+        f.write(f"[{utc_now().isoformat()}]   registry keys: {list(_executor_registry.keys())}\n")
 
     if executor_class is None:
         raise ActionExecutionError(

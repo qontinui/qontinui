@@ -86,13 +86,13 @@ class MouseOperations(IMouseController):
                 self._mouse.position = (x, y)
 
             # Debug: Verify actual position after move
-            import datetime
+            from qontinui_schemas.common import utc_now
 
             debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
             try:
                 actual_pos = self._mouse.position
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] HAL mouse_move() target=({x}, {y}), actual_after_move={actual_pos}\n"
                     )
@@ -190,12 +190,12 @@ class MouseOperations(IMouseController):
             InputControlError: If mouse down fails
         """
         # Debug logging to file for troubleshooting
-        import datetime
+        from qontinui_schemas.common import utc_now
 
         debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
         try:
             with open(debug_log_path, "a") as f:
-                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(f"[{ts}] HAL mouse_down() called: x={x}, y={y}, button={button}\n")
         except Exception:
             pass
@@ -210,7 +210,7 @@ class MouseOperations(IMouseController):
             # Debug: log pynput call
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] HAL mouse_down() calling pynput press with button={pynput_button}\n"
                     )
@@ -222,7 +222,7 @@ class MouseOperations(IMouseController):
             # Debug: log success
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] HAL mouse_down() pynput press completed successfully\n")
             except Exception:
                 pass
@@ -234,7 +234,7 @@ class MouseOperations(IMouseController):
             # Debug: log exception
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] HAL mouse_down() EXCEPTION: {type(e).__name__}: {e}\n")
             except Exception:
                 pass
@@ -261,12 +261,12 @@ class MouseOperations(IMouseController):
             InputControlError: If mouse up fails
         """
         # Debug logging to file for troubleshooting
-        import datetime
+        from qontinui_schemas.common import utc_now
 
         debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_hal_mouse_debug.log"
         try:
             with open(debug_log_path, "a") as f:
-                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(f"[{ts}] HAL mouse_up() called: x={x}, y={y}, button={button}\n")
         except Exception:
             pass
@@ -281,7 +281,7 @@ class MouseOperations(IMouseController):
             # Debug: log pynput call
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] HAL mouse_up() calling pynput release with button={pynput_button}\n"
                     )
@@ -293,7 +293,7 @@ class MouseOperations(IMouseController):
             # Debug: log success
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] HAL mouse_up() pynput release completed successfully\n")
             except Exception:
                 pass
@@ -305,7 +305,7 @@ class MouseOperations(IMouseController):
             # Debug: log exception
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] HAL mouse_up() EXCEPTION: {type(e).__name__}: {e}\n")
             except Exception:
                 pass

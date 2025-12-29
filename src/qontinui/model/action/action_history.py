@@ -7,8 +7,10 @@ import random
 import statistics
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 from .action_record import ActionRecord
 
@@ -176,7 +178,7 @@ class ActionHistory:
         Returns:
             List of failure pattern information
         """
-        cutoff_time = datetime.now() - timedelta(minutes=window_minutes)
+        cutoff_time = utc_now() - timedelta(minutes=window_minutes)
         recent_records = [r for r in self.records if r.timestamp > cutoff_time]
 
         patterns = []

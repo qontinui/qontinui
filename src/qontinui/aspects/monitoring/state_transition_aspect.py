@@ -11,6 +11,8 @@ from datetime import datetime
 from functools import wraps
 from typing import Any, cast
 
+from qontinui_schemas.common import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -294,7 +296,7 @@ class StateTransitionAspect:
         else:
             stats.failed_transitions += 1
 
-        stats.last_transition_time = datetime.now()
+        stats.last_transition_time = utc_now()
 
         # Add to history
         self._transition_history.append(
@@ -303,7 +305,7 @@ class StateTransitionAspect:
                 "to": to_state,
                 "success": success,
                 "duration_ms": duration_ms,
-                "timestamp": datetime.now(),
+                "timestamp": utc_now(),
             }
         )
 

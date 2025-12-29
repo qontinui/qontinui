@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from qontinui_schemas.common import utc_now
+
 if TYPE_CHECKING:
     from ..model.match.match import Match
 
@@ -55,7 +57,7 @@ class ActionRecord:
     match_list: list[Match] = field(default_factory=list)
     text: str = ""
     duration: float = 0.0
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=utc_now)
     active_states: set[str] = field(default_factory=set)  # S_Ξ^h - Set of active states
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -123,7 +125,7 @@ class ActionRecord:
             "timestamp": (
                 match.timestamp.isoformat()
                 if hasattr(match, "timestamp") and match.timestamp
-                else datetime.now().isoformat()
+                else utc_now().isoformat()
             ),
         }
 
@@ -225,7 +227,7 @@ class ActionHistory:
             action_success=True,
             match_list=[Match(...), Match(...)],
             duration=0.25,
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             state_name="login_screen"
         )
         history.add_record(record)
@@ -405,7 +407,7 @@ class ActionHistory:
             "times_searched": self.times_searched,
             "times_found": self.times_found,
             "count": len(self.snapshots),
-            "created": datetime.now().isoformat(),
+            "created": utc_now().isoformat(),
         }
 
         with open(filepath, "w") as f:

@@ -6,8 +6,9 @@ and execution flow of a single debugging session.
 
 import threading
 import uuid
-from datetime import datetime
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 from .types import ExecutionState, StepMode, VariableSnapshot
 
@@ -28,7 +29,7 @@ class DebugSession:
         """
         self.id = str(uuid.uuid4())
         self.name = name or f"Session-{self.id[:8]}"
-        self.created_at = datetime.now()
+        self.created_at = utc_now()
 
         self._state = ExecutionState.IDLE
         self._step_mode: StepMode | None = None
@@ -108,7 +109,7 @@ class DebugSession:
         """
         with self._lock:
             snapshot = VariableSnapshot(
-                timestamp=datetime.now(),
+                timestamp=utc_now(),
                 action_id=action_id,
                 variables=variables.copy(),
             )

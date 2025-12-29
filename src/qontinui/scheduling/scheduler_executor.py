@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, cast
 
 from croniter import croniter  # type: ignore[import-untyped]
+from qontinui_schemas.common import utc_now
 
 from .schedule_config import ExecutionRecord, ScheduleConfig, TriggerType
 from .state_aware_scheduler import StateAwareScheduler
@@ -114,7 +115,7 @@ class SchedulerExecutor:
                 result = self.runner.run(schedule.process_id)
 
                 # Update last executed time
-                schedule.last_executed = datetime.now()
+                schedule.last_executed = utc_now()
 
                 return cast(bool, result)
             except Exception as e:
@@ -143,7 +144,7 @@ class SchedulerExecutor:
                     f"Executing process '{schedule.process_id}' for interval schedule '{schedule.name}'"
                 )
                 result = self.runner.run(schedule.process_id)
-                schedule.last_executed = datetime.now()
+                schedule.last_executed = utc_now()
                 return cast(bool, result)
             except Exception as e:
                 logger.error(f"Error in interval schedule '{schedule.name}': {e}")
@@ -174,7 +175,7 @@ class SchedulerExecutor:
             return
 
         try:
-            cron = croniter(schedule.cron_expression, datetime.now())
+            cron = croniter(schedule.cron_expression, utc_now())
         except Exception as e:
             logger.error(f"Invalid cron expression for schedule '{schedule.name}': {e}")
             return
@@ -185,7 +186,7 @@ class SchedulerExecutor:
                     f"Executing process '{schedule.process_id}' for time-based schedule '{schedule.name}'"
                 )
                 result = self.runner.run(schedule.process_id)
-                schedule.last_executed = datetime.now()
+                schedule.last_executed = utc_now()
                 return cast(bool, result)
             except Exception as e:
                 logger.error(f"Error in time-based schedule '{schedule.name}': {e}")
@@ -201,7 +202,7 @@ class SchedulerExecutor:
                 schedule.next_execution = next_run
 
                 # Wait until next execution
-                wait_seconds = (next_run - datetime.now()).total_seconds()
+                wait_seconds = (next_run - utc_now()).total_seconds()
                 if wait_seconds > 0:
                     time.sleep(wait_seconds)
 
@@ -210,7 +211,7 @@ class SchedulerExecutor:
                     break
 
                 # Check end time
-                if schedule.end_time and datetime.now() > schedule.end_time:
+                if schedule.end_time and utc_now() > schedule.end_time:
                     logger.info(f"Schedule '{schedule.name}' reached end time, stopping")
                     break
 

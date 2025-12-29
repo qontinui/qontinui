@@ -23,8 +23,9 @@ Example:
 
 import logging
 from collections.abc import Callable
-from datetime import datetime
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -184,4 +185,4 @@ class StateEventEmitter:
         Returns:
             ISO format timestamp string
         """
-        return datetime.now().isoformat()
+        return utc_now().isoformat()

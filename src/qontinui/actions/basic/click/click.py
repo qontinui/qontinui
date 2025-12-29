@@ -84,14 +84,15 @@ class Click(ActionInterface):
         """
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         # Create debug log file
         debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_click_debug.log")
 
         def log_debug(msg: str):
             """Write to both logger and debug file."""
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             log_line = f"[{timestamp}] {msg}\n"
             logger.debug("[CLICK_DEBUG] %s", msg)
             try:

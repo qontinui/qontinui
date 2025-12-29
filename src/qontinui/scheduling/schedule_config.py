@@ -8,6 +8,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 
 class TriggerType(Enum):
     """Types of schedule triggers."""
@@ -195,14 +197,12 @@ class ScheduleConfig:
             retry_delay_seconds=data.get("retryDelaySeconds", 5),
             project_name=data.get("projectName", ""),
             created_at=(
-                datetime.fromisoformat(data["createdAt"])
-                if data.get("createdAt")
-                else datetime.now()
+                datetime.fromisoformat(data["createdAt"]) if data.get("createdAt") else utc_now()
             ),
             last_modified=(
                 datetime.fromisoformat(data["lastModified"])
                 if data.get("lastModified")
-                else datetime.now()
+                else utc_now()
             ),
             last_executed=(
                 datetime.fromisoformat(data["lastExecuted"]) if data.get("lastExecuted") else None

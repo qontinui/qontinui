@@ -11,8 +11,9 @@ This module provides the ExecutionOrchestrator class that handles:
 import asyncio
 import logging
 import uuid
-from datetime import datetime
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 from ..actions.internal.execution.action_executor import ActionExecutor
 from ..execution.graph_executor import GraphExecutor
@@ -199,7 +200,7 @@ class OrchestrationHook:
             event_id=str(uuid.uuid4()),
             type=event_type,
             execution_id=self.context.execution_id,
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             action_id=action_id,
             action_type=action_type,
             data=data,
@@ -302,7 +303,7 @@ class ExecutionOrchestrator:
                 }
                 logger.warning(f"Execution {context.execution_id} failed")
 
-            context.end_time = datetime.now()
+            context.end_time = utc_now()
 
             # Step 7: Emit completion event
             await self._emit_event(
@@ -330,7 +331,7 @@ class ExecutionOrchestrator:
             # Handle cancellation
             logger.info(f"Execution {context.execution_id} cancelled")
             context.status = ExecutionStatus.CANCELLED
-            context.end_time = datetime.now()
+            context.end_time = utc_now()
             await self.history.add_record(context)
             raise
 
@@ -341,10 +342,10 @@ class ExecutionOrchestrator:
                 exc_info=True,
             )
             context.status = ExecutionStatus.FAILED
-            context.end_time = datetime.now()
+            context.end_time = utc_now()
             context.error = {
                 "message": str(e),
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": utc_now().isoformat(),
             }
 
             # Emit error event
@@ -383,7 +384,7 @@ class ExecutionOrchestrator:
             event_id=str(uuid.uuid4()),
             type=event_type,
             execution_id=context.execution_id,
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             action_id=action_id,
             action_type=action_type,
             data=data,

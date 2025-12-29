@@ -9,6 +9,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 
 class ExecutionStatus(str, Enum):
     """Status of workflow execution."""
@@ -57,7 +59,7 @@ class ActionExecutionRecord:
             output_type: The output type taken
             output_index: The output index
         """
-        self.end_time = datetime.now()
+        self.end_time = utc_now()
         self.duration_ms = (self.end_time - self.start_time).total_seconds() * 1000
         self.status = ActionStatus.COMPLETED
         self.result = result
@@ -71,7 +73,7 @@ class ActionExecutionRecord:
         Args:
             error: Error message
         """
-        self.end_time = datetime.now()
+        self.end_time = utc_now()
         self.duration_ms = (self.end_time - self.start_time).total_seconds() * 1000
         self.status = ActionStatus.FAILED
         self.error = error
@@ -83,7 +85,7 @@ class ActionExecutionRecord:
         Args:
             reason: Reason for skipping
         """
-        self.end_time = datetime.now()
+        self.end_time = utc_now()
         self.duration_ms = 0
         self.status = ActionStatus.SKIPPED
         self.error = reason

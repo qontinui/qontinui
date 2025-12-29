@@ -11,11 +11,11 @@ import json
 import logging
 import subprocess
 import uuid
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
+from qontinui_schemas.common import utc_now
 
 from .base import (
     BoundingBox,
@@ -199,7 +199,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
             transitions = await self._extract_transitions(config, static_data, states)
             result.transitions = transitions
 
-            result.completed_at = datetime.now()
+            result.completed_at = utc_now()
             logger.info(
                 f"Extraction complete: {len(states)} states, "
                 f"{len(state_images)} images, {len(transitions)} transitions"

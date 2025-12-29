@@ -7,6 +7,8 @@ existence probability, and stochastic testing modifiers.
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from qontinui_schemas.common import utc_now
+
 from ....model.element.scene import Scene
 from ...element.region import Region
 from ..action_history import ActionHistory
@@ -50,7 +52,7 @@ class StateMetricsManager:
     def add_visit(self) -> None:
         """Increment visit counter and update last accessed time."""
         self.times_visited += 1
-        self.last_accessed = datetime.now()
+        self.last_accessed = utc_now()
 
     def get_visit_count(self) -> int:
         """Get the number of times this state has been visited.

@@ -7,10 +7,10 @@ separated from the Pattern class to follow the Single Responsibility Principle.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from qontinui_schemas.common import utc_now
 
 if TYPE_CHECKING:
     from .pattern import Pattern
@@ -171,7 +171,7 @@ class PatternFactory:
             mask_type="imported",
             tags=state_image.tags if hasattr(state_image, "tags") else [],
             created_at=(
-                state_image.created_at if hasattr(state_image, "created_at") else datetime.now()
+                state_image.created_at if hasattr(state_image, "created_at") else utc_now()
             ),
         )
 

@@ -3,11 +3,27 @@
 The virtual desktop is the combined coordinate space spanning all monitors.
 This module provides utilities for working with the virtual desktop coordinate
 system, which is critical for multi-monitor automation.
+
+Note: The schema types (Monitor, VirtualDesktop) from qontinui-schemas are also
+re-exported here for convenience. The local VirtualDesktopInfo class is used
+internally for coordinate translation operations, while the schema types are
+used in configuration files.
 """
 
 from dataclasses import dataclass
+from typing import Literal
+
+from qontinui_schemas.config.models.monitors import Monitor as SchemaMonitor
+from qontinui_schemas.config.models.monitors import VirtualDesktop as SchemaVirtualDesktop
 
 from .types import MonitorInfo
+
+__all__ = [
+    "VirtualDesktopInfo",
+    # Schema types for configuration
+    "SchemaMonitor",
+    "SchemaVirtualDesktop",
+]
 
 
 @dataclass(frozen=True)
@@ -140,6 +156,77 @@ class VirtualDesktopInfo:
 
         # Fallback to first monitor
         return self.monitors[0] if self.monitors else None
+
+    def to_schema(self) -> SchemaVirtualDesktop:
+        """Convert to schema VirtualDesktop type.
+
+        Creates a qontinui-schemas VirtualDesktop instance from this
+        VirtualDesktopInfo. Useful when you need to serialize or pass
+        to APIs that expect the schema type.
+
+        Returns:
+            SchemaVirtualDesktop instance with the same monitor configuration
+        """
+        schema_monitors = []
+        sorted_monitors = sorted(self.monitors, key=lambda m: m.x)
+
+        for i, mon in enumerate(sorted_monitors):
+            # Determine position based on index in sorted order
+            if len(sorted_monitors) == 1:
+                position: Literal["left", "center", "right"] = "center"
+            elif i == 0:
+                position = "left"
+            elif i == len(sorted_monitors) - 1:
+                position = "right"
+            else:
+                position = "center"
+
+            schema_monitors.append(
+                SchemaMonitor(
+                    index=mon.index,
+                    x=mon.x,
+                    y=mon.y,
+                    width=mon.width,
+                    height=mon.height,
+                    position=position,
+                    is_primary=mon.is_primary,
+                )
+            )
+
+        return SchemaVirtualDesktop(monitors=schema_monitors)
+
+    @classmethod
+    def from_schema(cls, schema_vd: SchemaVirtualDesktop) -> "VirtualDesktopInfo":
+        """Create VirtualDesktopInfo from schema VirtualDesktop type.
+
+        Creates a VirtualDesktopInfo instance from a qontinui-schemas
+        VirtualDesktop. Useful when loading from configuration.
+
+        Args:
+            schema_vd: SchemaVirtualDesktop instance
+
+        Returns:
+            VirtualDesktopInfo with the same monitor configuration
+        """
+        monitor_infos = []
+        for mon in schema_vd.monitors:
+            info = MonitorInfo(
+                index=mon.index,
+                x=mon.x,
+                y=mon.y,
+                width=mon.width,
+                height=mon.height,
+                is_primary=mon.is_primary,
+            )
+            monitor_infos.append(info)
+
+        return cls(
+            origin_x=schema_vd.min_x,
+            origin_y=schema_vd.min_y,
+            width=schema_vd.width,
+            height=schema_vd.height,
+            monitors=tuple(monitor_infos),
+        )
 
     def __repr__(self) -> str:
         """Developer-friendly representation."""

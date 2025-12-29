@@ -130,12 +130,13 @@ class RealFindImplementation:
         # File-based debug logging at ENTRY point
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         debug_log = os.path.join(tempfile.gettempdir(), "qontinui_event_emission.log")
         try:
             with open(debug_log, "a", encoding="utf-8") as f:
-                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(f"[{ts}] RealFindImplementation.execute() ENTRY\n")
                 f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
                 f.write(f"[{ts}]   pattern.pixel_data is None: {pattern.pixel_data is None}\n")
@@ -324,12 +325,13 @@ class RealFindImplementation:
         # File-based debug logging (works even when console logging is disabled)
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         debug_log = os.path.join(tempfile.gettempdir(), "qontinui_event_emission.log")
         try:
             with open(debug_log, "a", encoding="utf-8") as f:
-                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(f"[{ts}] _emit_image_recognition_event CALLED\n")
                 f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
                 f.write(f"[{ts}]   matches count={len(matches)}\n")
@@ -458,7 +460,7 @@ class RealFindImplementation:
         # File-based debug logging
         try:
             with open(debug_log, "a", encoding="utf-8") as f:
-                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(f"[{ts}] About to call emit_event(EventType.MATCH_ATTEMPTED, ...)\n")
                 f.write(f"[{ts}]   EventType.MATCH_ATTEMPTED={EventType.MATCH_ATTEMPTED}\n")
                 f.write(f"[{ts}]   event_data keys={list(event_data.keys())}\n")
@@ -470,7 +472,7 @@ class RealFindImplementation:
         # File-based debug logging
         try:
             with open(debug_log, "a", encoding="utf-8") as f:
-                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(f"[{ts}] emit_event() call completed successfully\n")
         except Exception:
             pass

@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Protocol
 
+from qontinui_schemas.common import utc_now
+
 
 @dataclass
 class SessionMetadata:
@@ -35,7 +37,7 @@ class SessionMetadata:
         self.session_id = session_id
         self.name = name
         self.application = application
-        self.start_time = datetime.now() if session_id else None
+        self.start_time = utc_now() if session_id else None
         self.end_time = None
         self.total_actions = 0
         self.successful_actions = 0

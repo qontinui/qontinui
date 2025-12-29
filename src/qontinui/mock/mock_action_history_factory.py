@@ -5,7 +5,9 @@ realistic ActionHistory for common UI patterns.
 """
 
 import random
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from qontinui_schemas.common import utc_now
 
 from ..model.action import ActionHistory, ActionRecord
 from ..model.element import Location, Region
@@ -291,7 +293,7 @@ class MockActionHistoryBuilder:
         history = ActionHistory()
 
         # Generate records based on configuration
-        base_time = datetime.now() - timedelta(hours=1)
+        base_time = utc_now() - timedelta(hours=1)
 
         for i in range(self._record_count):
             # Determine if this record is successful

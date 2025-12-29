@@ -9,11 +9,11 @@ import asyncio
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+from qontinui_schemas.common import utc_now
 
 from .config import ExtractionConfig
 from .element_classifier import ElementClassifier
@@ -132,7 +132,7 @@ class WebExtractor:
                     await self._extract_url(url)
 
                 # Complete
-                self.result.completed_at = datetime.now()
+                self.result.completed_at = utc_now()
                 await self._emit_progress(
                     {
                         "status": "complete",

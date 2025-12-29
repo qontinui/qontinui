@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 
 @dataclass
 class RouteRecord:
@@ -19,7 +21,7 @@ class RouteRecord:
     from_action: str
     to_action: str
     output_type: str
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=utc_now)
     input_index: int = 0
     execution_result: dict | None = None
 
@@ -35,7 +37,7 @@ class PathSegment:
     action_id: str
     entry_output: str = "main"
     exit_output: str | None = None
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=utc_now)
 
 
 class RoutingContext:
@@ -53,7 +55,7 @@ class RoutingContext:
         self.visited_actions: set[str] = set()
         self.action_visit_count: dict[str, int] = defaultdict(int)
         self.output_usage: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
-        self.start_time: datetime = datetime.now()
+        self.start_time: datetime = utc_now()
         self.end_time: datetime | None = None
 
     def record_route(
@@ -239,7 +241,7 @@ class RoutingContext:
 
     def finalize(self) -> None:
         """Mark execution as complete."""
-        self.end_time = datetime.now()
+        self.end_time = utc_now()
 
     def get_execution_duration(self) -> float | None:
         """

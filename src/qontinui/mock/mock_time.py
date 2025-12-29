@@ -16,6 +16,8 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,7 +55,7 @@ class MockTime:
         self.time_scale = time_scale
 
         # Virtual clock starts at initialization time
-        self.virtual_time = datetime.now()
+        self.virtual_time = utc_now()
         self.start_time = self.virtual_time
 
         logger.debug(f"MockTime initialized (instant_mode={instant_mode}, time_scale={time_scale})")

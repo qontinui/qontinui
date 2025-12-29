@@ -9,9 +9,10 @@ Exports extraction results to ML training data formats:
 
 import json
 import logging
-from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 from ..models import ElementType, ExtractionResult, StateType
 
@@ -93,8 +94,8 @@ class TrainingDataExporter:
             "info": {
                 "description": "GUI Element Detection Dataset",
                 "version": "1.0",
-                "year": datetime.now().year,
-                "date_created": datetime.now().isoformat(),
+                "year": utc_now().year,
+                "date_created": utc_now().isoformat(),
                 "extraction_id": result.extraction_id,
             },
             "licenses": [],

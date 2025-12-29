@@ -44,14 +44,15 @@ class PatternLoader:
         """
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
                 debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
                 with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] PATTERN_LOADER: {msg}\n")
             except Exception:
                 pass
@@ -139,14 +140,15 @@ class PatternLoader:
         """
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
                 debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
                 with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] PATTERN_LOADER: {msg}\n")
             except Exception:
                 pass

@@ -5,9 +5,10 @@ versioning, backups, and multiple serialization formats.
 """
 
 import shutil
-from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 from ..config import get_settings
 from ..logging import get_logger
@@ -249,7 +250,7 @@ class FileStorage:
             Complete filename
         """
         if version:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = utc_now().strftime("%Y%m%d_%H%M%S")
             return f"{key}_{timestamp}{extension}"
         return f"{key}{extension}"
 
@@ -262,7 +263,7 @@ class FileStorage:
         Returns:
             Backup path
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = utc_now().strftime("%Y%m%d_%H%M%S")
         backup_name = f"{path.stem}_backup_{timestamp}{path.suffix}"
         backup_path = self.backups_path / backup_name
 

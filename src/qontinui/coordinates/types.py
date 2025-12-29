@@ -9,9 +9,33 @@ used in Qontinui's multi-monitor automation:
 
 These types provide type safety and clarity when working with coordinates
 across different systems.
+
+Note: Schema types (CoordinateSystem, Coordinates, Region) are re-exported from
+qontinui-schemas in the parent package for configuration purposes. The point types
+here are used internally for coordinate translation operations.
 """
 
 from dataclasses import dataclass
+
+# Re-export schema types for coordinate configuration
+# These are Pydantic models used in configuration files
+from qontinui_schemas.config.models.geometry import (
+    Coordinates,
+    CoordinateSystem,
+    Region,
+)
+
+__all__ = [
+    # Local point types for coordinate translation
+    "ScreenPoint",
+    "VirtualPoint",
+    "MonitorPoint",
+    "MonitorInfo",
+    # Schema types for configuration
+    "CoordinateSystem",
+    "Coordinates",
+    "Region",
+]
 
 
 @dataclass(frozen=True)

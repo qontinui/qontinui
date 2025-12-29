@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 
 @dataclass
 class ExecutionStatistics:
@@ -345,7 +347,7 @@ class ExecutionContext:
             Protected by lock for concurrent access.
         """
         with self._lock:
-            self._statistics.start_time = datetime.now()
+            self._statistics.start_time = utc_now()
 
     def complete_workflow(self) -> None:
         """Mark the completion of workflow execution.
@@ -354,7 +356,7 @@ class ExecutionContext:
             Protected by lock for concurrent access.
         """
         with self._lock:
-            self._statistics.end_time = datetime.now()
+            self._statistics.end_time = utc_now()
 
     def set_metadata(self, key: str, value: Any) -> None:
         """Set metadata value.

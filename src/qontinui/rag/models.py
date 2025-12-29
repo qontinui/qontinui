@@ -5,6 +5,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 
 class ElementType(str, Enum):
     """Types of GUI elements that can be detected and stored."""
@@ -264,13 +266,13 @@ class GUIElementChunk:
         if isinstance(created_at, str):
             created_at = datetime.fromisoformat(created_at)
         elif created_at is None:
-            created_at = datetime.now()
+            created_at = utc_now()
 
         updated_at = data.get("updated_at")
         if isinstance(updated_at, str):
             updated_at = datetime.fromisoformat(updated_at)
         elif updated_at is None:
-            updated_at = datetime.now()
+            updated_at = utc_now()
 
         # Handle element type
         element_type_val = data.get("element_type", "unknown")

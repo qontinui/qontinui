@@ -11,6 +11,8 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
+from qontinui_schemas.common import utc_now
+
 if TYPE_CHECKING:
     from ..hal.interfaces.input_controller import IInputController
 
@@ -77,12 +79,10 @@ class Mouse:
         is_mock = MockModeManager.is_mock_mode()
 
         # Debug logging to file for troubleshooting
-        import datetime
-
         debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
         try:
             with open(debug_log_path, "a") as f:
-                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(
                     f"[{ts}] Mouse.move() called: x={x}, y={y}, duration={duration}, is_mock={is_mock}\n"
                 )
@@ -97,7 +97,7 @@ class Mouse:
             # Debug: log controller info
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] Mouse.move() calling controller.mouse_move(), controller type: {type(controller).__name__}\n"
                     )
@@ -106,7 +106,7 @@ class Mouse:
             result = controller.mouse_move(x, y, duration)
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] Mouse.move() controller.mouse_move() returned: {result}\n")
             except Exception:
                 pass
@@ -245,12 +245,10 @@ class Mouse:
             True if successful
         """
         # Debug logging to file for troubleshooting
-        import datetime
-
         debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
         try:
             with open(debug_log_path, "a") as f:
-                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 is_mock = MockModeManager.is_mock_mode()
                 f.write(
                     f"[{ts}] Mouse.down() called: x={x}, y={y}, button={button}, is_mock={is_mock}\n"
@@ -265,7 +263,7 @@ class Mouse:
             # Debug: log controller info
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] Mouse.down() calling controller.mouse_down(), controller type: {type(controller).__name__}\n"
                     )
@@ -274,7 +272,7 @@ class Mouse:
             result = controller.mouse_down(x, y, button)
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] Mouse.down() controller.mouse_down() returned: {result}\n")
             except Exception:
                 pass
@@ -298,12 +296,10 @@ class Mouse:
             True if successful
         """
         # Debug logging to file for troubleshooting
-        import datetime
-
         debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
         try:
             with open(debug_log_path, "a") as f:
-                ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 is_mock = MockModeManager.is_mock_mode()
                 f.write(
                     f"[{ts}] Mouse.up() called: x={x}, y={y}, button={button}, is_mock={is_mock}\n"
@@ -318,7 +314,7 @@ class Mouse:
             # Debug: log controller info
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] Mouse.up() calling controller.mouse_up(), controller type: {type(controller).__name__}\n"
                     )
@@ -327,7 +323,7 @@ class Mouse:
             result = controller.mouse_up(x, y, button)
             try:
                 with open(debug_log_path, "a") as f:
-                    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] Mouse.up() controller.mouse_up() returned: {result}\n")
             except Exception:
                 pass

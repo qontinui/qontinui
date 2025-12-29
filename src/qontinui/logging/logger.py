@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import structlog
+from qontinui_schemas.common import utc_now
 
 from ..config import get_settings
 
@@ -142,7 +143,7 @@ def _ensure_logging_initialized() -> None:
     try:
         settings = get_settings()
         if hasattr(settings, "log_path") and hasattr(settings, "debug_mode"):
-            log_file = settings.log_path / f"qontinui_{datetime.now().strftime('%Y%m%d')}.log"
+            log_file = settings.log_path / f"qontinui_{utc_now().strftime('%Y%m%d')}.log"
             setup_logging(
                 level="DEBUG" if settings.debug_mode else "INFO",
                 log_file=log_file,
@@ -220,7 +221,7 @@ class ActionLogger:
         context = {
             "action_type": action_type,
             "target": str(target),
-            "start_time": datetime.utcnow().isoformat(),
+            "start_time": utc_now().isoformat(),
             **kwargs,
         }
 
@@ -243,7 +244,7 @@ class ActionLogger:
             result: Action result
             error: Optional error
         """
-        end_time = datetime.utcnow()
+        end_time = utc_now()
         start_time = datetime.fromisoformat(context["start_time"])
         duration = (end_time - start_time).total_seconds()
 

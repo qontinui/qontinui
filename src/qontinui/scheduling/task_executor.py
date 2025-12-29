@@ -6,8 +6,9 @@ Executes scheduled tasks with proper error handling and monitoring.
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
-from datetime import datetime
 from typing import Any
+
+from qontinui_schemas.common import utc_now
 
 from .scheduled_task import ScheduledTask, TaskStatus
 
@@ -64,7 +65,7 @@ class TaskExecutor:
 
         # Update task status
         task.status = TaskStatus.RUNNING
-        task.started_at = datetime.now()
+        task.started_at = utc_now()
 
         # Submit task to executor
         future = self.executor.submit(self._execute_task_function, task)
@@ -78,7 +79,7 @@ class TaskExecutor:
             if success:
                 self.total_succeeded += 1
                 task.status = TaskStatus.COMPLETED
-                task.completed_at = datetime.now()
+                task.completed_at = utc_now()
                 logger.info(f"Task '{task.name}' completed successfully")
             else:
                 self.total_failed += 1

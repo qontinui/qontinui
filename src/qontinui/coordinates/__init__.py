@@ -22,6 +22,16 @@ Qontinui uses three coordinate systems:
    - Always has a monitor_index
    - Example: `MonitorPoint(x=100, y=200, monitor=1)`
 
+## Schema Types
+
+The package also re-exports schema types from qontinui-schemas for configuration:
+
+- `CoordinateSystem` - Enum for coordinate system identification
+- `Coordinates` - Pydantic model for x,y coordinates with optional system
+- `Region` - Pydantic model for rectangular regions
+- `Monitor` (as SchemaMonitor) - Pydantic model for monitor configuration
+- `VirtualDesktop` (as SchemaVirtualDesktop) - Pydantic model for virtual desktop
+
 ## Virtual Desktop
 
 The virtual desktop is the bounding box containing all monitors. Its origin
@@ -97,17 +107,30 @@ This package exports:
 - `ScreenPoint` - Absolute screen coordinates type
 - `VirtualPoint` - Virtual desktop relative coordinates type
 - `MonitorPoint` - Monitor-relative coordinates type
-- `MonitorInfo` - Monitor information type
-- `VirtualDesktopInfo` - Virtual desktop information
+- `MonitorInfo` - Monitor information type (local dataclass)
+- `VirtualDesktopInfo` - Virtual desktop information (local dataclass)
 - `CoordinateService` - Singleton service for coordinate translations
+- `CoordinateSystem` - Schema enum for coordinate system types
+- `Coordinates` - Schema model for x,y coordinates
+- `Region` - Schema model for rectangular regions
+- `SchemaMonitor` - Schema model for monitor configuration (alias for Monitor)
+- `SchemaVirtualDesktop` - Schema model for virtual desktop (alias for VirtualDesktop)
 """
 
 from .service import CoordinateService
-from .types import MonitorInfo, MonitorPoint, ScreenPoint, VirtualPoint
-from .virtual_desktop import VirtualDesktopInfo
+from .types import (
+    Coordinates,
+    CoordinateSystem,
+    MonitorInfo,
+    MonitorPoint,
+    Region,
+    ScreenPoint,
+    VirtualPoint,
+)
+from .virtual_desktop import SchemaMonitor, SchemaVirtualDesktop, VirtualDesktopInfo
 
 __all__ = [
-    # Types
+    # Local point types for coordinate translation
     "ScreenPoint",
     "VirtualPoint",
     "MonitorPoint",
@@ -116,4 +139,10 @@ __all__ = [
     "VirtualDesktopInfo",
     # Service
     "CoordinateService",
+    # Schema types (from qontinui-schemas)
+    "CoordinateSystem",
+    "Coordinates",
+    "Region",
+    "SchemaMonitor",
+    "SchemaVirtualDesktop",
 ]

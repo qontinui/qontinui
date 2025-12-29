@@ -15,6 +15,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from qontinui_schemas.common import utc_now
 
 from ..element.anchors import Anchors
 from ..element.image import Image
@@ -658,7 +659,7 @@ class MatchBuilder:
             state_object_data=self.state_object_data,
             scene=self.scene,
             histogram=self.histogram,
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
         )
 
         # Create match

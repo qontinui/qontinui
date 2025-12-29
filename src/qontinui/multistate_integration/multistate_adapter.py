@@ -19,10 +19,10 @@ _DEBUG_LOG_PATH = os.path.join(tempfile.gettempdir(), "qontinui_navigation_debug
 def _debug_print(msg: str) -> None:
     """Write debug message to file to ensure visibility when logging is disabled."""
     try:
-        from datetime import datetime
+        from qontinui_schemas.common import utc_now
 
         with open(_DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             f.write(f"[{timestamp}] [MULTISTATE_ADAPTER] {msg}\n")
             f.flush()
     except Exception:
@@ -39,9 +39,7 @@ from multistate.pathfinding.multi_target import SearchStrategy  # noqa: E402
 from multistate.transitions.transition import Transition as MultiTransition  # noqa: E402
 
 from qontinui.model.state.state import State as QontinuiState  # noqa: E402
-from qontinui.model.transition.enhanced_state_transition import (  # noqa: E402
-    TaskSequenceStateTransition,
-)
+from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
 from qontinui.model.transition.enhanced_state_transition import (
     TaskSequenceStateTransition as StateTransition,
 )

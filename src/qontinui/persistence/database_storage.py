@@ -5,10 +5,10 @@ multiple database backends (SQLite, PostgreSQL, MySQL).
 """
 
 from contextlib import contextmanager
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from qontinui_schemas.common import utc_now
 from sqlalchemy import Column, MetaData, String, Table, create_engine, text
 from sqlalchemy import DateTime as SQLDateTime
 from sqlalchemy.exc import SQLAlchemyError
@@ -128,14 +128,14 @@ class DatabaseStorage:
             Column(
                 "created_at",
                 SQLDateTime,  # type: ignore[arg-type]
-                default=lambda: datetime.utcnow(),
+                default=lambda: utc_now(),
             )
         )
         cols.append(
             Column(
                 "updated_at",
                 SQLDateTime,  # type: ignore[arg-type]
-                onupdate=lambda: datetime.utcnow(),
+                onupdate=lambda: utc_now(),
             )
         )
 

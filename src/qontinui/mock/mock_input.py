@@ -4,7 +4,8 @@ Based on Brobot's mock pattern - simulates input operations instantly.
 """
 
 import logging
-from datetime import datetime
+
+from qontinui_schemas.common import utc_now
 
 from ..hal.interfaces.input_controller import IInputController, Key, MouseButton, MousePosition
 
@@ -27,7 +28,7 @@ class MockInput(IInputController):
 
     def _record_action(self, action_type: str, **kwargs) -> None:
         """Record action for history tracking."""
-        self._action_history.append({"type": action_type, "timestamp": datetime.now(), **kwargs})
+        self._action_history.append({"type": action_type, "timestamp": utc_now(), **kwargs})
 
     # Mouse operations
 

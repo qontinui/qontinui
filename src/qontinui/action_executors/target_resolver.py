@@ -58,14 +58,15 @@ class TargetResolver:
         """
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
                 debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
                 with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
             except Exception:
                 pass
@@ -116,7 +117,8 @@ class TargetResolver:
         """
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         from qontinui import registry
 
@@ -130,7 +132,7 @@ class TargetResolver:
             try:
                 debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
                 with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
             except Exception:
                 pass
@@ -597,14 +599,15 @@ class TargetResolver:
         """
         import os
         import tempfile
-        from datetime import datetime
+
+        from qontinui_schemas.common import utc_now
 
         def log_debug(msg: str) -> None:
             """Helper to write timestamped debug messages."""
             try:
                 debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
                 with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
             except Exception:
                 pass

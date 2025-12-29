@@ -1,11 +1,11 @@
 """Checkpoint service for capturing automation state with screenshots and OCR."""
 
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from PIL import Image
+from qontinui_schemas.common import utc_now
 
 from ..exceptions import ScreenCaptureException
 from ..hal.interfaces.ocr_engine import IOCREngine
@@ -94,7 +94,7 @@ class CheckpointService:
         Raises:
             ScreenCaptureException: If screenshot capture fails
         """
-        timestamp = datetime.now()
+        timestamp = utc_now()
 
         logger.debug(
             "capturing_checkpoint",
@@ -177,7 +177,7 @@ class CheckpointService:
         """
         try:
             # Generate filename with timestamp
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            timestamp = utc_now().strftime("%Y%m%d_%H%M%S_%f")
             filename = f"{name}_{timestamp}.png"
             filepath = self._output_dir / filename
 

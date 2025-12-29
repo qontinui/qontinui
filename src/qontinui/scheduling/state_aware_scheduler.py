@@ -10,8 +10,9 @@ import threading
 import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
-from datetime import datetime
 from typing import Any, cast
+
+from qontinui_schemas.common import utc_now
 
 from .schedule_config import CheckMode, ExecutionRecord, ScheduleConfig, StateCheckResult
 
@@ -123,10 +124,10 @@ class StateAwareScheduler:
 
             # Create execution record
             record = ExecutionRecord(
-                id=f"{schedule.id}_{datetime.now().timestamp()}",
+                id=f"{schedule.id}_{utc_now().timestamp()}",
                 schedule_id=schedule.id,
                 process_id=schedule.process_id,
-                start_time=datetime.now(),
+                start_time=utc_now(),
             )
 
             try:
@@ -139,7 +140,7 @@ class StateAwareScheduler:
                                 f"Reached maximum iterations ({max_iterations}) for schedule '{schedule.name}', stopping"
                             )
                             record.status = "completed"
-                            record.end_time = datetime.now()
+                            record.end_time = utc_now()
                             record.iteration_count = iteration_count - 1
                             break
 
@@ -154,13 +155,13 @@ class StateAwareScheduler:
                             )
                             record.status = "skipped"
                             record.error_message = state_check_result.error_message
-                            record.end_time = datetime.now()
+                            record.end_time = utc_now()
                             break
                         else:
                             logger.error(f"State check failed for '{schedule.name}'")
                             record.status = "failed"
                             record.error_message = "State check failed"
-                            record.end_time = datetime.now()
+                            record.end_time = utc_now()
                             break
 
                     # Execute task
@@ -170,13 +171,13 @@ class StateAwareScheduler:
                             logger.warning(f"Task for schedule '{schedule.name}' returned False")
                             record.status = "failed"
                             record.error_message = "Task returned False"
-                            record.end_time = datetime.now()
+                            record.end_time = utc_now()
                             break
                     except Exception as e:
                         logger.error(f"Error executing task for '{schedule.name}': {e}")
                         record.status = "failed"
                         record.error_message = str(e)
-                        record.end_time = datetime.now()
+                        record.end_time = utc_now()
                         break
 
                     # For interval-based schedules, sleep
@@ -185,7 +186,7 @@ class StateAwareScheduler:
                     else:
                         # Single execution
                         record.status = "success"
-                        record.end_time = datetime.now()
+                        record.end_time = utc_now()
                         record.iteration_count = iteration_count
                         break
 
@@ -193,7 +194,7 @@ class StateAwareScheduler:
                 logger.error(f"Unexpected error in scheduled task '{schedule.name}': {e}")
                 record.status = "failed"
                 record.error_message = f"Unexpected error: {e}"
-                record.end_time = datetime.now()
+                record.end_time = utc_now()
 
             finally:
                 # Store execution record
@@ -225,7 +226,7 @@ class StateAwareScheduler:
         Returns:
             StateCheckResult with check details
         """
-        timestamp = datetime.now()
+        timestamp = utc_now()
         active_states = self._get_active_states()
         active_state_set = set(active_states)
 

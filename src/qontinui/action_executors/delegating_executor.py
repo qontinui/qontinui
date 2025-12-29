@@ -263,12 +263,13 @@ class DelegatingActionExecutor:
                 # DEBUG: Log delegator result
                 import os
                 import tempfile
-                from datetime import datetime
+
+                from qontinui_schemas.common import utc_now
 
                 debug_log = os.path.join(tempfile.gettempdir(), "qontinui_action_success_trace.log")
                 try:
                     with open(debug_log, "a", encoding="utf-8") as f:
-                        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                        ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                         f.write(
                             f"[{ts}] DELEGATING EXECUTOR: action={action.type} id={action.id}\n"
                         )

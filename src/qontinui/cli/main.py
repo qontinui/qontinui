@@ -271,7 +271,7 @@ def run(
         duration = time.time() - start_time
 
         # Format and output results
-        summary = result.get_summary()
+        summary = result["summary"]
         summary["duration"] = duration
 
         if output_dir:
@@ -375,7 +375,7 @@ def test(
                 graph_executor = GraphExecutor(wf, executor)
 
                 result = graph_executor.execute()
-                summary = result.get_summary()
+                summary = result["summary"]
 
                 results.append(
                     {
@@ -564,7 +564,7 @@ def integration_test(
         duration_ms = (time.time() - start_time) * 1000
 
         # Build summary
-        exec_summary = result.get_summary()
+        exec_summary = result["summary"]
         summary: dict[str, Any] = {
             "workflow_id": target_workflow.id,
             "workflow_name": target_workflow.name,

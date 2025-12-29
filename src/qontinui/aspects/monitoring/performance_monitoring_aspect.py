@@ -14,6 +14,8 @@ from functools import wraps
 from threading import Lock
 from typing import Any, cast
 
+from qontinui_schemas.common import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -87,7 +89,7 @@ class MethodPerformanceStats:
         self.min_time_ms = min(self.min_time_ms, duration_ms)
         self.max_time_ms = max(self.max_time_ms, duration_ms)
         self.recent_times.append(duration_ms)
-        self.last_call_time = datetime.now()
+        self.last_call_time = utc_now()
 
         if not success:
             self.error_count += 1
@@ -135,7 +137,7 @@ class PerformanceMonitoringAspect:
         self._stats_lock = Lock()
 
         # Report tracking
-        self._last_report_time = datetime.now()
+        self._last_report_time = utc_now()
 
         # Trend detection
         self._performance_trends: dict[str, deque[float]] = {}
@@ -235,7 +237,7 @@ class PerformanceMonitoringAspect:
 
     def _check_report_interval(self) -> None:
         """Check if it's time to generate a performance report."""
-        now = datetime.now()
+        now = utc_now()
         if (now - self._last_report_time).seconds >= self.report_interval_seconds:
             self.generate_report()
             self._last_report_time = now
@@ -315,7 +317,7 @@ class PerformanceMonitoringAspect:
         report_lines = [
             "=" * 60,
             "PERFORMANCE REPORT",
-            f"Generated: {datetime.now().isoformat()}",
+            f"Generated: {utc_now().isoformat()}",
             "=" * 60,
             "",
         ]

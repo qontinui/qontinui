@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any
 
 import numpy as np
+from qontinui_schemas.common import utc_now
 from transitions import Machine
 from transitions.extensions import HierarchicalMachine
 
@@ -143,7 +144,7 @@ class QontinuiStateManager:
         if self.state_evidence[state_name] > self.activation_threshold:
             if state_name not in self.active_states:
                 self.active_states.add(state_name)
-                self.activation_history.append((state_name, evidence_score, datetime.now()))
+                self.activation_history.append((state_name, evidence_score, utc_now()))
 
                 # Trigger state machine transition if possible
                 try:

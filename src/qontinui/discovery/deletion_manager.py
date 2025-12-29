@@ -2,8 +2,9 @@
 
 import json
 import logging
-from datetime import datetime
 from typing import Any, cast
+
+from qontinui_schemas.common import utc_now
 
 from .models import DeleteOptions, DeleteResult, DeletionImpact, DiscoveredState, StateImage
 
@@ -341,7 +342,7 @@ class DeletionManager:
         if self.db:
             self.db.execute(
                 "UPDATE state_images SET deleted_at = ? WHERE id = ?",
-                (datetime.now(), state_image_id),
+                (utc_now(), state_image_id),
             )
         else:
             # Mock deletion
@@ -349,13 +350,13 @@ class DeletionManager:
 
     def _create_deletion_snapshot(self, state_image_id: str, impact: DeletionImpact) -> str:
         """Create snapshot for undo functionality."""
-        snapshot_id = f"undo_{state_image_id}_{datetime.now().timestamp()}"
+        snapshot_id = f"undo_{state_image_id}_{utc_now().timestamp()}"
 
         snapshot = {
             "id": snapshot_id,
             "state_image": impact.state_image.to_dict(),
             "affected_states": impact.affected_state_ids,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": utc_now().isoformat(),
         }
 
         # Store snapshot
@@ -396,14 +397,14 @@ class DeletionManager:
         if self.db:
             self.db.execute(
                 "UPDATE deletion_snapshots SET undone_at = ? WHERE id = ?",
-                (datetime.now(), undo_id),
+                (utc_now(), undo_id),
             )
 
     def _record_deletion(self, state_image_id: str, impact: DeletionImpact, undo_id: str):
         """Record deletion in history."""
         record = {
             "state_image_id": state_image_id,
-            "deleted_at": datetime.now().isoformat(),
+            "deleted_at": utc_now().isoformat(),
             "impact": impact.to_dict(),
             "undo_id": undo_id,
         }
@@ -415,7 +416,7 @@ class DeletionManager:
 
     def _begin_bulk_transaction(self, state_image_ids: list[str]) -> str:
         """Begin a bulk deletion transaction."""
-        transaction_id = f"bulk_{datetime.now().timestamp()}"
+        transaction_id = f"bulk_{utc_now().timestamp()}"
         # Store transaction details
         return transaction_id
 

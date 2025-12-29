@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
+from qontinui_schemas.common import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,7 +71,7 @@ class StateTracker:
         event = StateTransitionEvent(
             from_states=old_states,
             to_states=active_states,
-            timestamp=datetime.now(),
+            timestamp=utc_now(),
             success=True,
         )
         self._state_history.append(event)
@@ -167,7 +169,7 @@ class StateTracker:
             old_states: Previous active states
             new_states: New active states
         """
-        now = datetime.now()
+        now = utc_now()
 
         # Update duration for exited states
         exited_states = old_states - new_states
@@ -190,7 +192,7 @@ class StateTracker:
             Dictionary of state statistics
         """
         stats = {}
-        now = datetime.now()
+        now = utc_now()
 
         for state in set(self._state_entry_count.keys()) | set(self._state_duration.keys()):
             state_stats = {
