@@ -185,4 +185,5 @@ class StateEventEmitter:
         Returns:
             ISO format timestamp string
         """
-        return utc_now().isoformat()
+        timestamp_value: str = utc_now().isoformat()
+        return timestamp_value

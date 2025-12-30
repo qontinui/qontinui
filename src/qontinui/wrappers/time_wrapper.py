@@ -116,7 +116,8 @@ class TimeWrapper(BaseWrapper):
             return cast(datetime, self.mock_time.now())
         else:
             logger.debug("TimeWrapper.now (REAL)")
-            return utc_now()
+            result: datetime = utc_now()
+            return result
 
     def wait_until(
         self,

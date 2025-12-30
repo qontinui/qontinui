@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+from qontinui_schemas.config.models import Category
 
 from ..config.schema import Workflow
 from .constants import DEFAULT_SIMILARITY_THRESHOLD
@@ -781,7 +782,7 @@ class QontinuiConfig(BaseModel):
     images: list[ImageAsset] = Field(default_factory=list)
     workflows: list[Workflow] = Field(default_factory=list)
     states: list[State] = Field(default_factory=list)
-    categories: list[str] = Field(default_factory=list)
+    categories: list[Category] = Field(default_factory=list)
     execution_settings: ExecutionSettings = Field(default_factory=ExecutionSettings)
     recognition_settings: RecognitionSettings = Field(default_factory=RecognitionSettings)
     schedules: list[Any] = Field(default_factory=list)  # List of ScheduleConfig objects
@@ -789,6 +790,37 @@ class QontinuiConfig(BaseModel):
         Annotated["OutgoingTransition | IncomingTransition", Field(discriminator="type")]
     ] = Field(default_factory=list)
     settings: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("categories", mode="before")
+    @classmethod
+    def normalize_categories(cls, v: Any) -> list[dict[str, Any]]:
+        """Accept both string array and Category object array formats.
+
+        For backward compatibility, converts simple strings to Category objects:
+        - ["Main", "Testing"] -> [{"name": "Main", "automationEnabled": true}, ...]
+
+        Uses the Category model from qontinui-schemas as the source of truth.
+        """
+        if not isinstance(v, list):
+            return []
+        result = []
+        for i, item in enumerate(v):
+            if isinstance(item, str):
+                # Convert string to Category dict
+                # First category (usually "Main") defaults to enabled
+                result.append(
+                    {
+                        "name": item,
+                        "automationEnabled": i == 0,
+                    }
+                )
+            elif isinstance(item, dict):
+                # Already a Category-like dict, pass through
+                result.append(item)
+            elif hasattr(item, "model_dump"):
+                # Already a Pydantic model
+                result.append(item.model_dump())
+        return result
 
     # Runtime data
     image_directory: Path | None = None

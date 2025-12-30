@@ -55,8 +55,8 @@ class MockTime:
         self.time_scale = time_scale
 
         # Virtual clock starts at initialization time
-        self.virtual_time = utc_now()
-        self.start_time = self.virtual_time
+        self.virtual_time: datetime = utc_now()
+        self.start_time: datetime = self.virtual_time
 
         logger.debug(f"MockTime initialized (instant_mode={instant_mode}, time_scale={time_scale})")
 
@@ -96,7 +96,8 @@ class MockTime:
             current = time.now()
         """
         logger.debug(f"MockTime.now: {self.virtual_time}")
-        return self.virtual_time
+        result: datetime = self.virtual_time
+        return result
 
     def timestamp(self) -> float:
         """Get current virtual timestamp.
@@ -108,7 +109,8 @@ class MockTime:
             time = MockTime()
             ts = time.timestamp()
         """
-        return self.virtual_time.timestamp()
+        result: float = self.virtual_time.timestamp()
+        return result
 
     def wait_until(
         self,
@@ -229,7 +231,8 @@ class MockTime:
             elapsed = time.get_elapsed_time()
             assert elapsed.seconds == 10
         """
-        return self.virtual_time - self.start_time
+        result: timedelta = self.virtual_time - self.start_time
+        return result
 
     def set_instant_mode(self, instant: bool) -> None:
         """Set instant mode.

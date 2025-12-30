@@ -187,7 +187,7 @@ class ExtractionOrchestrator:
             # Handle BLACK_BOX mode - convert runtime results to CorrelatedState
             elif config.mode == ExtractionMode.BLACK_BOX and result.runtime_extraction:
                 logger.info("=" * 50)
-                logger.info("BLACK_BOX MODE: CONVERTING RUNTIME STATES")
+                logger.info("BLACK_BOX MODE: CONVERTING RUNTIME STATES AND TRANSITIONS")
                 logger.info("=" * 50)
                 logger.info(
                     f"Converting {len(result.runtime_extraction.states)} runtime states to CorrelatedState..."
@@ -199,6 +199,16 @@ class ExtractionOrchestrator:
                 for i, state in enumerate(result.states):
                     logger.info(
                         f"  CorrelatedState {i}: id={state.id}, name={state.name}, confidence={state.confidence}"
+                    )
+
+                # Convert runtime transitions
+                if result.runtime_extraction.transitions:
+                    logger.info(
+                        f"Converting {len(result.runtime_extraction.transitions)} runtime transitions..."
+                    )
+                    result.transitions = self._transitions_from_runtime(result.runtime_extraction)
+                    logger.info(
+                        f"Conversion complete: {len(result.transitions)} transitions created"
                     )
 
             # Mark completion
@@ -861,6 +871,54 @@ class ExtractionOrchestrator:
 
         logger.info(f"Converted {len(states)} runtime states to CorrelatedState")
         return states
+
+    def _transitions_from_runtime(
+        self, runtime: RuntimeExtractionResult
+    ) -> list[InferredTransition]:
+        """
+        Convert runtime extraction transitions to InferredTransition objects.
+
+        This is used for BLACK_BOX mode where transitions are discovered
+        during page crawling.
+
+        Args:
+            runtime: Runtime extraction results
+
+        Returns:
+            List of InferredTransition objects derived from runtime transitions
+        """
+        transitions: list[InferredTransition] = []
+
+        logger.info(f"Converting runtime transitions: {len(runtime.transitions)} transitions")
+
+        for i, extracted_trans in enumerate(runtime.transitions):
+            # Handle both InferredTransition objects and dict-like objects
+            if isinstance(extracted_trans, InferredTransition):
+                # Already the right type, just add it
+                transitions.append(extracted_trans)
+            else:
+                # Extract transition attributes
+                trans_id = getattr(extracted_trans, "id", f"runtime_trans_{i:04d}")
+                from_state_id = getattr(extracted_trans, "from_state_id", "")
+                to_state_id = getattr(extracted_trans, "to_state_id", "")
+                trigger_type = getattr(extracted_trans, "trigger_type", "click")
+                target_element = getattr(extracted_trans, "target_element", None)
+                confidence = getattr(extracted_trans, "confidence", 0.8)
+                metadata = getattr(extracted_trans, "metadata", {}) or {}
+
+                transition = InferredTransition(
+                    id=trans_id,
+                    from_state_id=from_state_id,
+                    to_state_id=to_state_id,
+                    trigger_type=trigger_type,
+                    target_element=target_element,
+                    confidence=confidence,
+                    metadata=metadata,
+                )
+                transitions.append(transition)
+
+        logger.info(f"Converted {len(transitions)} runtime transitions to InferredTransition")
+        return transitions
 
     def _transitions_from_static(self, static: StaticAnalysisResult) -> list[InferredTransition]:
         """

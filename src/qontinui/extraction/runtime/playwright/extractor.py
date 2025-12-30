@@ -694,12 +694,97 @@ class PlaywrightExtractor(RuntimeExtractor):
         if self.session:
             self.session.captures.append(capture)
 
+    async def _discover_links(self) -> list[dict[str, Any]]:
+        """
+        Discover all internal links on the current page with element info.
+
+        Returns:
+            List of link info dicts with url, selector, text, and element details.
+        """
+        if not self.page:
+            return []
+
+        try:
+            # Get the current page's origin for filtering
+            current_url = self.page.url
+            from urllib.parse import urlparse
+
+            parsed = urlparse(current_url)
+            origin = f"{parsed.scheme}://{parsed.netloc}"
+
+            # Find all anchor elements with href and extract element info
+            links = await self.page.evaluate(
+                """() => {
+                const anchors = document.querySelectorAll('a[href]');
+                const results = [];
+                for (const a of anchors) {
+                    const href = a.href;
+                    if (href && !href.startsWith('javascript:') && !href.startsWith('#') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+                        // Get bounding box
+                        const rect = a.getBoundingClientRect();
+
+                        // Check if it contains an image
+                        const img = a.querySelector('img');
+                        const hasImage = !!img;
+                        const imgSrc = img ? img.src : null;
+                        const imgAlt = img ? img.alt : null;
+
+                        // Build a selector for this element
+                        let selector = '';
+                        if (a.id) {
+                            selector = '#' + a.id;
+                        } else if (a.className) {
+                            selector = 'a.' + a.className.split(' ').join('.');
+                        } else {
+                            selector = `a[href="${a.getAttribute('href')}"]`;
+                        }
+
+                        results.push({
+                            url: href,
+                            selector: selector,
+                            text: a.innerText.trim().substring(0, 100),
+                            hasImage: hasImage,
+                            imgSrc: imgSrc,
+                            imgAlt: imgAlt,
+                            bbox: {
+                                x: rect.x,
+                                y: rect.y,
+                                width: rect.width,
+                                height: rect.height
+                            }
+                        });
+                    }
+                }
+                return results;
+            }"""
+            )
+
+            # Filter to same-origin links only and deduplicate
+            same_origin_links = []
+            seen_urls = set()
+            for link in links:
+                url = link["url"]
+                if url.startswith(origin):
+                    # Normalize the URL (remove trailing slashes, fragments)
+                    normalized = url.split("#")[0].rstrip("/")
+                    if normalized and normalized not in seen_urls:
+                        seen_urls.add(normalized)
+                        link["url"] = normalized
+                        same_origin_links.append(link)
+
+            logger.info(f"  Discovered {len(same_origin_links)} same-origin links on {current_url}")
+            return same_origin_links
+
+        except Exception as e:
+            logger.warning(f"Failed to discover links: {e}")
+            return []
+
     async def extract(self, target: ExtractionTarget, config: Any = None) -> Any:
         """
         Extract state from the target application (orchestrator API).
 
         This is the main entry point called by the orchestrator. It wraps
-        the lower-level extraction methods.
+        the lower-level extraction methods and implements page crawling.
 
         Args:
             target: ExtractionTarget specifying what to extract from.
@@ -713,6 +798,7 @@ class PlaywrightExtractor(RuntimeExtractor):
         """
         import uuid
         from pathlib import Path
+        from urllib.parse import urlparse
 
         from ...models.base import RuntimeExtractionResult
         from ..types import RuntimeExtractionSession
@@ -721,6 +807,14 @@ class PlaywrightExtractor(RuntimeExtractor):
         logger.info("PLAYWRIGHT EXTRACTOR: extract() called")
         logger.info("=" * 60)
         logger.info(f"  Target URL: {target.url}")
+
+        # Get extraction limits from config
+        max_pages = 100  # Default
+        max_depth = 5  # Default
+        if config is not None:
+            max_pages = getattr(config, "max_pages", None) or 100
+            max_depth = getattr(config, "max_interaction_depth", None) or 5
+        logger.info(f"  Max pages: {max_pages}, Max depth: {max_depth}")
 
         # Get viewport from config (ExtractionConfig.viewports) or target or default
         viewport = (1920, 1080)  # Default
@@ -747,7 +841,7 @@ class PlaywrightExtractor(RuntimeExtractor):
         try:
             # Create session
             session_id = str(uuid.uuid4())
-            storage_dir = Path.cwd() / ".qontinui" / "extraction" / session_id
+            storage_dir = Path.home() / ".qontinui" / "extraction" / session_id
             storage_dir.mkdir(parents=True, exist_ok=True)
             logger.info(f"  Session ID: {session_id}")
 
@@ -763,12 +857,134 @@ class PlaywrightExtractor(RuntimeExtractor):
             await self.connect(target)
             logger.info("  Connected successfully")
 
-            # Extract current state
-            logger.info("  Extracting current state...")
-            capture = await self.extract_current_state()
-            logger.info(
-                f"  Capture complete: {len(capture.states)} states, {len(capture.elements)} elements"
-            )
+            # Initialize crawling state
+            all_elements: list[Any] = []
+            all_states: list[Any] = []
+            all_screenshots: list[str] = []
+            all_transitions: list[Any] = []
+            visited_urls: set[str] = set()
+            # (url, depth, source_url, link_info)
+            urls_to_visit: list[tuple[str, int, str | None, dict | None]] = []
+
+            # Map URL to state ID for transition tracking
+            url_to_state_id: dict[str, str] = {}
+
+            # Normalize and add the starting URL
+            start_url = target.url
+            if start_url:
+                parsed = urlparse(start_url)
+                normalized_start = f"{parsed.scheme}://{parsed.netloc}{parsed.path}".rstrip("/")
+                urls_to_visit.append((normalized_start, 0, None, None))
+
+            pages_visited = 0
+            errors: list[str] = []
+            transition_counter = 0
+
+            while urls_to_visit and pages_visited < max_pages:
+                current_url, current_depth, source_url, link_info = urls_to_visit.pop(0)
+
+                # Skip if already visited
+                normalized_current = current_url.split("#")[0].rstrip("/")
+                if normalized_current in visited_urls:
+                    continue
+
+                visited_urls.add(normalized_current)
+
+                logger.info("=" * 40)
+                logger.info(
+                    f"  Crawling page {pages_visited + 1}/{max_pages}: {current_url} (depth={current_depth})"
+                )
+
+                try:
+                    # Navigate to the URL (skip navigation for the first page)
+                    if pages_visited > 0:
+                        await self.page.goto(current_url, wait_until="networkidle")
+                        await self.wait_for_stability()
+
+                    # Extract current state
+                    capture = await self.extract_current_state()
+
+                    # Collect results
+                    all_elements.extend(capture.elements)
+                    all_states.extend(capture.states)
+                    if capture.screenshot_path:
+                        all_screenshots.append(str(capture.screenshot_path))
+
+                    # Map this URL to its primary state (usually the page-level state)
+                    if capture.states:
+                        primary_state = capture.states[0]
+                        primary_state_id = getattr(primary_state, "id", f"state_{pages_visited}")
+                        url_to_state_id[normalized_current] = primary_state_id
+
+                        # Create transition from source page to this page
+                        if source_url and source_url in url_to_state_id:
+                            from ...models.base import InferredTransition
+
+                            source_state_id = url_to_state_id[source_url]
+                            transition_counter += 1
+
+                            # Build trigger info from link
+                            trigger_selector = link_info.get("selector", "") if link_info else ""
+                            trigger_text = link_info.get("text", "") if link_info else ""
+                            has_image = link_info.get("hasImage", False) if link_info else False
+                            img_src = link_info.get("imgSrc") if link_info else None
+
+                            transition = InferredTransition(
+                                id=f"trans_{transition_counter:04d}",
+                                from_state_id=source_state_id,
+                                to_state_id=primary_state_id,
+                                trigger_type="click",
+                                target_element=trigger_selector,
+                                confidence=0.9,
+                                metadata={
+                                    "source_url": source_url,
+                                    "target_url": normalized_current,
+                                    "has_image": has_image,
+                                    "trigger_text": trigger_text if not has_image else None,
+                                    "trigger_image": img_src if has_image else None,
+                                    "link_info": link_info,
+                                },
+                            )
+                            all_transitions.append(transition)
+                            logger.info(
+                                f"  --> Created transition: {source_state_id} -> {primary_state_id} "
+                                f"(click on {'image' if has_image else 'link'})"
+                            )
+
+                    pages_visited += 1
+                    logger.info(
+                        f"  --> Extracted {len(capture.states)} states, {len(capture.elements)} elements"
+                    )
+
+                    # Discover links if we haven't reached max depth
+                    if current_depth < max_depth:
+                        discovered_links = await self._discover_links()
+                        for link in discovered_links:
+                            link_url = link["url"]
+                            normalized_link = link_url.split("#")[0].rstrip("/")
+                            if normalized_link not in visited_urls:
+                                # Check if already in queue
+                                if not any(
+                                    url == normalized_link for url, _, _, _ in urls_to_visit
+                                ):
+                                    urls_to_visit.append(
+                                        (
+                                            normalized_link,
+                                            current_depth + 1,
+                                            normalized_current,
+                                            link,
+                                        )
+                                    )
+
+                        logger.info(
+                            f"  --> Queue size: {len(urls_to_visit)} URLs, Visited: {len(visited_urls)}"
+                        )
+
+                except Exception as e:
+                    error_msg = f"Failed to extract {current_url}: {e}"
+                    logger.warning(error_msg)
+                    errors.append(error_msg)
+                    continue
 
             # Disconnect
             logger.info("  Disconnecting...")
@@ -777,24 +993,34 @@ class PlaywrightExtractor(RuntimeExtractor):
             # Convert to RuntimeExtractionResult
             logger.info("  Creating RuntimeExtractionResult...")
             result = RuntimeExtractionResult(
-                elements=capture.elements,
-                states=capture.states,
-                transitions=[],
-                screenshots=([str(capture.screenshot_path)] if capture.screenshot_path else []),
-                pages_visited=1,
+                elements=all_elements,
+                states=all_states,
+                transitions=all_transitions,
+                screenshots=all_screenshots,
+                pages_visited=pages_visited,
                 extraction_duration_ms=0.0,
-                errors=[],
+                errors=errors,
             )
 
             logger.info("=" * 60)
             logger.info("PLAYWRIGHT EXTRACTOR: RESULT")
             logger.info("=" * 60)
+            logger.info(f"  Pages visited: {result.pages_visited}")
             logger.info(f"  Elements: {len(result.elements)}")
             logger.info(f"  States: {len(result.states)}")
-            for i, state in enumerate(result.states):
+            logger.info(f"  Transitions: {len(result.transitions)}")
+            for i, state in enumerate(result.states[:10]):  # Log first 10 states
                 state_name = getattr(state, "name", "Unknown")
                 state_id = getattr(state, "id", f"state_{i}")
                 logger.info(f"    State {i}: id={state_id}, name={state_name}")
+            if len(result.states) > 10:
+                logger.info(f"    ... and {len(result.states) - 10} more states")
+            for i, trans in enumerate(result.transitions[:5]):  # Log first 5 transitions
+                from_id = getattr(trans, "from_state_id", "?")
+                to_id = getattr(trans, "to_state_id", "?")
+                logger.info(f"    Transition {i}: {from_id} -> {to_id}")
+            if len(result.transitions) > 5:
+                logger.info(f"    ... and {len(result.transitions) - 5} more transitions")
 
             return result
 

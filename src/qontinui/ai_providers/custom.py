@@ -2,6 +2,11 @@
 
 This provider allows users to define their own commands for AI analysis,
 enabling integration with any AI system via custom scripts or commands.
+
+Security:
+    When shell=True, placeholder values are escaped using shlex.quote() to
+    prevent command injection attacks. When shell=False, shlex.split() is
+    used for proper argument parsing that handles quoted strings correctly.
 """
 
 import asyncio
@@ -204,7 +209,7 @@ class CustomCommandProvider(AIProvider):
         """
         cmd = self._command
 
-        # Prepare replacement values
+        # Replace placeholders with properly escaped values when using shell
         replacements = {
             "{prompt}": request.prompt,
             "{working_directory}": request.working_directory or "",
@@ -212,12 +217,13 @@ class CustomCommandProvider(AIProvider):
             "{timeout}": str(request.timeout_seconds),
         }
 
-        # Apply shell escaping when using shell mode to prevent injection
-        if self._shell:
-            replacements = {k: shlex.quote(v) for k, v in replacements.items()}
-
         for placeholder, value in replacements.items():
-            cmd = cmd.replace(placeholder, value)
+            # Escape values when shell=True to prevent command injection
+            if self._shell:
+                escaped_value = shlex.quote(value)
+            else:
+                escaped_value = value
+            cmd = cmd.replace(placeholder, escaped_value)
 
         return cmd
 

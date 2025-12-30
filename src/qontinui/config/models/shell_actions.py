@@ -131,16 +131,16 @@ class ShellActionConfig(BaseModel):
 class AIPromptActionConfig(BaseModel):
     """AI_PROMPT action configuration.
 
-    Execute a single AI prompt with optional fresh context.
+    Execute a single AI prompt via the qontinui-runner API.
     This action is designed to invoke AI assistants for various tasks.
 
     The action:
-    1. Optionally reads context from .automation-results/latest/
-    2. Invokes the configured AI provider with the specified prompt
-    3. The AI executes the prompt and returns the result
+    1. POSTs to the qontinui-runner /prompts/run API
+    2. Polls for completion via GET /task-runs/{id}
+    3. Returns the accumulated output_log from the task
 
     Supported providers:
-        - claude: Claude Code CLI (default)
+        - claude: Claude Code via qontinui-runner (default)
         - (future providers can be added here)
 
     Example config:
@@ -149,20 +149,23 @@ class AIPromptActionConfig(BaseModel):
             "config": {
                 "provider": "claude",
                 "prompt": "Analyze the automation results and fix any issues",
-                "freshContext": true,
+                "name": "ai-analysis",
+                "maxSessions": 1,
                 "timeout": 600000
             }
         }
 
     Prerequisites:
-        - For Claude: Claude Code CLI must be installed
-        - On Windows: Claude Code should be installed in WSL with MCP configured
+        - qontinui-runner must be running (default: http://localhost:9876)
+        - Claude CLI must be configured in the runner settings
     """
 
     # AI provider to use for analysis
     provider: Literal["claude"] | None = Field(
         "claude",
-        description=("AI provider to use for analysis:\n" "- claude: Claude Code CLI (default)"),
+        description=(
+            "AI provider to use for analysis:\n" "- claude: Claude Code via runner (default)"
+        ),
     )
 
     # Prompt or command to send to the AI
@@ -175,6 +178,47 @@ class AIPromptActionConfig(BaseModel):
             "- Any text that will be passed to the AI\n\n"
             "IMPORTANT: The AI runs with bypassed permissions when executing this prompt."
         ),
+    )
+
+    # Task name for the runner
+    name: str | None = Field(
+        "ai-analysis",
+        description="Name for the task (used in runner UI and logs)",
+    )
+
+    # Maximum sessions (1 = one-shot, None = unlimited)
+    max_sessions: int | None = Field(
+        1,
+        alias="maxSessions",
+        description="Maximum number of sessions. 1 for one-shot, None for unlimited auto-continuation.",
+    )
+
+    # Runner API URL
+    runner_url: str | None = Field(
+        "http://localhost:9876",
+        alias="runnerUrl",
+        description="URL of the qontinui-runner API",
+    )
+
+    # Image paths for analysis
+    image_paths: list[str] | None = Field(
+        None,
+        alias="imagePaths",
+        description="Paths to images for the AI to analyze",
+    )
+
+    # Video paths for analysis
+    video_paths: list[str] | None = Field(
+        None,
+        alias="videoPaths",
+        description="Paths to videos for frame extraction and analysis",
+    )
+
+    # Trace path for Playwright traces
+    trace_path: str | None = Field(
+        None,
+        alias="tracePath",
+        description="Path to Playwright trace file for analysis",
     )
 
     # Timeout in milliseconds (default: 10 minutes for analysis)

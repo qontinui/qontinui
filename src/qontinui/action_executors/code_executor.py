@@ -857,8 +857,12 @@ class CodeExecutor(ActionExecutorBase):
         Returns:
             dict: Result with success and error keys
         """
+        # SIGALRM is only available on Unix systems
+        if not hasattr(signal, "SIGALRM"):
+            # Fall back to thread-based timeout on Windows
+            return self._execute_with_thread_timeout(code, exec_globals, exec_locals, timeout)
 
-        def timeout_handler(signum, frame):
+        def timeout_handler(signum: int, frame: Any) -> None:
             raise TimeoutError(f"Code execution exceeded {timeout}s timeout")
 
         try:

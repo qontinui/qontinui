@@ -16,7 +16,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import click
 
@@ -70,14 +70,14 @@ def load_config_file(config_path: str) -> dict[str, Any] | None:
                 try:
                     import yaml
 
-                    return yaml.safe_load(f)
+                    return cast(dict[str, Any] | None, yaml.safe_load(f))
                 except ImportError:
                     click.echo(
                         "Error: PyYAML not installed. Install with: pip install pyyaml", err=True
                     )
                     return None
             else:
-                return json.load(f)
+                return cast(dict[str, Any] | None, json.load(f))
     except json.JSONDecodeError as e:
         click.echo(f"Error: Invalid JSON in {config_path}: {e}", err=True)
         return None
@@ -103,7 +103,7 @@ def load_history_file(history_path: str) -> dict[str, Any] | None:
 
     try:
         with open(path) as f:
-            return json.load(f)
+            return cast(dict[str, Any] | None, json.load(f))
     except Exception as e:
         click.echo(f"Error loading history file: {e}", err=True)
         return None

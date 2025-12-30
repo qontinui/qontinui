@@ -1,35 +1,61 @@
 """Claude Code AI provider implementation.
 
-This provider invokes the Claude Code CLI to analyze automation results.
-It handles platform-specific invocation (Windows via WSL, Unix directly).
+This provider invokes Claude Code via the qontinui-runner API.
+It handles submitting prompts and polling for task completion.
 """
 
 import asyncio
 import logging
-import os
-import platform
-import shutil
-import subprocess
-import tempfile
 import time
 from collections.abc import AsyncIterator
-from pathlib import Path
+from typing import Any
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 from .base import AIProvider, AnalysisRequest, AnalysisResult
 
 logger = logging.getLogger(__name__)
 
+# Default runner URL
+DEFAULT_RUNNER_URL = "http://localhost:9876"
+
+# Default polling interval in seconds
+DEFAULT_POLL_INTERVAL = 1.0
+
+
+def _json_dumps(obj: Any) -> str:
+    """Simple JSON serialization without external dependency."""
+    import json
+
+    return json.dumps(obj)
+
+
+def _json_loads(data: str) -> Any:
+    """Simple JSON deserialization without external dependency."""
+    import json
+
+    return json.loads(data)
+
 
 class ClaudeCodeProvider(AIProvider):
-    """AI provider that uses Claude Code CLI.
+    """AI provider that uses Claude Code via qontinui-runner.
 
-    This provider invokes the `claude` CLI command to perform analysis.
-    On Windows, it invokes via WSL where Claude Code has MCP configured.
-    On Unix systems, it invokes directly.
+    This provider submits prompts to the qontinui-runner's /prompts/run API
+    and polls for completion via /task-runs/{id}.
 
     Configuration via environment variables:
-        CLAUDE_CODE_PATH: Path to claude executable (default: auto-detect)
+        QONTINUI_RUNNER_URL: URL of the runner API (default: http://localhost:9876)
     """
+
+    def __init__(self, runner_url: str | None = None) -> None:
+        """Initialize the provider.
+
+        Args:
+            runner_url: URL of the qontinui-runner API. Defaults to localhost:9876.
+        """
+        import os
+
+        self._runner_url = runner_url or os.environ.get("QONTINUI_RUNNER_URL", DEFAULT_RUNNER_URL)
 
     @property
     def name(self) -> str:
@@ -39,420 +65,337 @@ class ClaudeCodeProvider(AIProvider):
     @property
     def description(self) -> str:
         """Get provider description."""
-        return "Claude Code CLI via WSL (Windows) or direct invocation (Unix)"
+        return f"Claude Code via qontinui-runner ({self._runner_url})"
 
     def is_available(self) -> bool:
-        """Check if Claude Code CLI is available.
+        """Check if qontinui-runner is available.
 
         Returns:
-            True if claude command can be executed
+            True if runner API is reachable
         """
-        system = platform.system()
+        try:
+            url = f"{self._runner_url}/health"
+            request = Request(url, method="GET")
+            request.add_header("Accept", "application/json")
 
-        if system == "Windows":
-            # On Windows, check if we can invoke via WSL
-            try:
-                result = subprocess.run(
-                    ["wsl.exe", "which", "claude"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-                return result.returncode == 0
-            except Exception:
-                return False
-        else:
-            # On Unix, check directly
-            if custom_path := os.environ.get("CLAUDE_CODE_PATH"):
-                return Path(custom_path).exists()
-            return shutil.which("claude") is not None
+            with urlopen(request, timeout=5) as response:
+                return bool(response.status == 200)
+        except Exception as e:
+            logger.debug(f"Runner not available: {e}")
+            return False
 
-    def analyze(self, request: AnalysisRequest) -> AnalysisResult:
-        """Run analysis synchronously.
+    def analyze(
+        self,
+        request: AnalysisRequest,
+        *,
+        task_name: str | None = None,
+        max_sessions: int | None = 1,
+        image_paths: list[str] | None = None,
+        video_paths: list[str] | None = None,
+        trace_path: str | None = None,
+    ) -> AnalysisResult:
+        """Run analysis synchronously via the runner API.
 
         Args:
             request: The analysis request
+            task_name: Name for the task in the runner UI
+            max_sessions: Maximum Claude sessions (1 = one-shot, None = unlimited)
+            image_paths: Paths to images to include in the prompt
+            video_paths: Paths to videos for frame extraction
+            trace_path: Path to Playwright trace file
 
         Returns:
             The analysis result
         """
-        system = platform.system()
         result = AnalysisResult(success=False, provider=self.name)
 
         try:
-            # Build command based on platform
-            cmd = self._build_command(request)
-            cwd = request.working_directory
+            # Submit the prompt
+            task_run_id = self._submit_prompt(
+                prompt=request.prompt,
+                task_name=task_name or "ai-analysis",
+                max_sessions=max_sessions,
+                timeout_seconds=request.timeout_seconds,
+                image_paths=image_paths,
+                video_paths=video_paths,
+                trace_path=trace_path,
+            )
 
-            logger.info(f"Executing Claude Code analysis (timeout: {request.timeout_seconds}s)")
-            logger.debug(f"Command: {cmd}")
+            if not task_run_id:
+                result.error = "Failed to submit prompt to runner"
+                return result
 
-            if system == "Windows":
-                # On Windows, use special handling for WSL
-                output, error = self._execute_windows(cmd, request)
-            else:
-                # On Unix, execute directly
-                proc = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=request.timeout_seconds,
-                    cwd=cwd,
-                )
-                output = proc.stdout
-                error = proc.stderr if proc.returncode != 0 else ""
+            logger.info(f"Task submitted: {task_run_id} (timeout: {request.timeout_seconds}s)")
+
+            # Poll for completion
+            output, error = self._poll_task_completion(task_run_id, request.timeout_seconds)
 
             if error:
                 result.error = error
-                result.metadata["stderr"] = error
-                logger.error(f"Claude Code analysis failed: {error}")
+                result.metadata["task_run_id"] = task_run_id
+                logger.error(f"Task {task_run_id} failed: {error}")
             else:
                 result.success = True
                 result.output = output
-                logger.info("Claude Code analysis completed successfully")
+                result.metadata["task_run_id"] = task_run_id
+                logger.info(f"Task {task_run_id} completed successfully")
 
-        except subprocess.TimeoutExpired:
+        except TimeoutError:
             result.error = f"Analysis timed out after {request.timeout_seconds} seconds"
             logger.error(result.error)
 
+        except URLError as e:
+            result.error = f"Failed to connect to runner: {e}"
+            logger.error(result.error)
+
         except Exception as e:
-            result.error = f"Failed to invoke Claude Code: {e}"
+            result.error = f"Failed to run analysis: {e}"
             logger.error(result.error, exc_info=True)
 
         return result
 
-    async def stream_analyze(self, request: AnalysisRequest) -> AsyncIterator[str]:
+    async def stream_analyze(
+        self,
+        request: AnalysisRequest,
+        *,
+        task_name: str | None = None,
+        max_sessions: int | None = 1,
+        image_paths: list[str] | None = None,
+        video_paths: list[str] | None = None,
+        trace_path: str | None = None,
+    ) -> AsyncIterator[str]:
         """Stream analysis output asynchronously.
 
         Args:
             request: The analysis request
+            task_name: Name for the task in the runner UI
+            max_sessions: Maximum Claude sessions (1 = one-shot, None = unlimited)
+            image_paths: Paths to images to include in the prompt
+            video_paths: Paths to videos for frame extraction
+            trace_path: Path to Playwright trace file
 
         Yields:
-            Lines of output from Claude Code
+            Lines of output from the task
         """
-        system = platform.system()
-
         try:
-            cmd = self._build_command(request)
-            cwd = request.working_directory
+            # Submit the prompt
+            task_run_id = self._submit_prompt(
+                prompt=request.prompt,
+                task_name=task_name or "ai-analysis",
+                max_sessions=max_sessions,
+                timeout_seconds=request.timeout_seconds,
+                image_paths=image_paths,
+                video_paths=video_paths,
+                trace_path=trace_path,
+            )
 
-            logger.info("Starting streaming Claude Code analysis")
+            if not task_run_id:
+                yield "[ERROR: Failed to submit prompt to runner]\n"
+                return
 
-            if system == "Windows":
-                # On Windows, use file-based streaming
-                async for line in self._stream_windows(cmd, request):
-                    yield line
-            else:
-                # On Unix, use process stdout streaming
-                process = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT,
-                    cwd=cwd,
-                )
+            logger.info(f"Streaming task: {task_run_id}")
 
-                if process.stdout:
-                    async for line in self._read_stream(process.stdout):
-                        yield line
-
-                await process.wait()
+            # Poll and stream output
+            async for chunk in self._poll_task_output_async(task_run_id, request.timeout_seconds):
+                yield chunk
 
         except TimeoutError:
             yield f"\n[ERROR: Analysis timed out after {request.timeout_seconds}s]\n"
             logger.error("Streaming analysis timed out")
 
+        except URLError as e:
+            yield f"\n[ERROR: Failed to connect to runner: {e}]\n"
+            logger.error(f"Runner connection error: {e}")
+
         except Exception as e:
             yield f"\n[ERROR: {e}]\n"
             logger.error(f"Streaming analysis failed: {e}", exc_info=True)
 
-    def _build_command(self, request: AnalysisRequest) -> list[str]:
-        """Build the Claude Code command based on platform and request.
+    def _submit_prompt(
+        self,
+        prompt: str,
+        task_name: str,
+        max_sessions: int | None,
+        timeout_seconds: int,
+        image_paths: list[str] | None = None,
+        video_paths: list[str] | None = None,
+        trace_path: str | None = None,
+    ) -> str | None:
+        """Submit a prompt to the runner API.
 
         Args:
-            request: The analysis request
+            prompt: The prompt content
+            task_name: Name for the task
+            max_sessions: Maximum sessions to spawn
+            timeout_seconds: Timeout for the request
+            image_paths: Optional image paths
+            video_paths: Optional video paths
+            trace_path: Optional trace path
 
         Returns:
-            Command as list of arguments
+            Task run ID or None if failed
         """
-        system = platform.system()
-        prompt = request.prompt
+        url = f"{self._runner_url}/prompts/run"
 
-        if system == "Windows":
-            # On Windows, invoke via WSL
-            wsl_working_dir = self._to_wsl_path(request.working_directory)
+        # Build request body
+        body: dict[str, Any] = {
+            "name": task_name,
+            "content": prompt,
+            "timeout_seconds": timeout_seconds,
+        }
 
-            # Escape prompt for shell
-            escaped_prompt = prompt.replace('"', '\\"').replace("'", "'\\''")
+        if max_sessions is not None:
+            body["max_sessions"] = max_sessions
 
-            # Build bash command with PATH setup for npm globals
-            npm_paths = "$HOME/.npm-global/lib/bin:$HOME/.npm-global/bin:$HOME/.local/bin"
-            path_setup = f'export PATH="{npm_paths}:$PATH"'
-            env_setup = "export CI=true TERM=dumb FORCE_COLOR=0"
+        if image_paths:
+            body["image_paths"] = image_paths
 
-            if wsl_working_dir:
-                bash_cmd = (
-                    f'{path_setup}; cd "{wsl_working_dir}" && '
-                    f'{env_setup}; claude -p "{escaped_prompt}" '
-                    f"--output-format {request.output_format} "
-                    f"--permission-mode bypassPermissions --print < /dev/null 2>&1"
-                )
+        if video_paths:
+            body["video_paths"] = video_paths
+
+        if trace_path:
+            body["trace_path"] = trace_path
+
+        # Make POST request
+        request_data = _json_dumps(body).encode("utf-8")
+        request = Request(url, data=request_data, method="POST")
+        request.add_header("Content-Type", "application/json")
+        request.add_header("Accept", "application/json")
+
+        logger.debug(f"Submitting prompt to {url}")
+
+        with urlopen(request, timeout=30) as response:
+            response_data = response.read().decode("utf-8")
+            result = _json_loads(response_data)
+
+            # The API returns {"success": true, "data": {"task_run_id": "..."}}
+            if result.get("success"):
+                data = result.get("data", {})
+                task_run_id = data.get("task_run_id")
+                return str(task_run_id) if task_run_id else None
             else:
-                bash_cmd = (
-                    f'{path_setup}; {env_setup}; claude -p "{escaped_prompt}" '
-                    f"--output-format {request.output_format} "
-                    f"--permission-mode bypassPermissions --print < /dev/null 2>&1"
-                )
+                error = result.get("error", "Unknown error")
+                logger.error(f"Failed to submit prompt: {error}")
+                return None
 
-            return ["wsl.exe", "bash", "-lc", bash_cmd]
-
-        else:
-            # On Unix, invoke directly
-            claude_path = os.environ.get("CLAUDE_CODE_PATH", "claude")
-            return [
-                claude_path,
-                "-p",
-                prompt,
-                "--output-format",
-                request.output_format,
-                "--permission-mode",
-                "bypassPermissions",
-            ]
-
-    def _execute_windows(self, cmd: list[str], request: AnalysisRequest) -> tuple[str, str]:
-        """Execute command on Windows with special WSL handling.
+    def _poll_task_completion(
+        self,
+        task_run_id: str,
+        timeout_seconds: int,
+    ) -> tuple[str, str]:
+        """Poll for task completion.
 
         Args:
-            cmd: Command to execute
-            request: Analysis request
+            task_run_id: The task run ID to poll
+            timeout_seconds: Maximum time to wait
 
         Returns:
-            Tuple of (stdout, stderr)
+            Tuple of (output, error)
         """
-        # Create temp file for output
-        output_file = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False, encoding="utf-8"
-        )
-        output_file_path = output_file.name
-        output_file.close()
-
-        try:
-            # Modify command to redirect output to file
-            wsl_output_path = self._to_wsl_path(output_file_path)
-
-            # Build command with file redirection and completion marker
-            original_cmd_str = cmd[3]  # The bash -lc argument
-            modified_cmd_str = original_cmd_str.replace(" 2>&1", "")
-            modified_cmd_str += f' >> "{wsl_output_path}" 2>&1'
-            modified_cmd_str += f'; echo "___QONTINUI_DONE_$$___" >> "{wsl_output_path}"'
-
-            modified_cmd = ["wsl.exe", "bash", "-lc", modified_cmd_str]
-
-            # Start process with hidden console
-            creationflags = subprocess.CREATE_NEW_CONSOLE
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            startupinfo.wShowWindow = subprocess.SW_HIDE
-
-            process = subprocess.Popen(
-                modified_cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                stdin=subprocess.DEVNULL,
-                creationflags=creationflags,
-                startupinfo=startupinfo,
-            )
-
-            logger.debug(f"Started WSL process (pid: {process.pid})")
-
-            # Poll output file for completion
-            output = self._poll_output_file(output_file_path, request.timeout_seconds)
-
-            return output, ""
-
-        finally:
-            # Clean up temp file
-            try:
-                os.unlink(output_file_path)
-            except Exception:
-                pass
-
-    async def _stream_windows(self, cmd: list[str], request: AnalysisRequest) -> AsyncIterator[str]:
-        """Stream output from Windows/WSL process.
-
-        Args:
-            cmd: Command to execute
-            request: Analysis request
-
-        Yields:
-            Lines of output
-        """
-        # Create temp file for output
-        output_file = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False, encoding="utf-8"
-        )
-        output_file_path = output_file.name
-        output_file.close()
-
-        try:
-            # Modify command for file output
-            wsl_output_path = self._to_wsl_path(output_file_path)
-
-            original_cmd_str = cmd[3]
-            modified_cmd_str = original_cmd_str.replace(" 2>&1", "")
-            modified_cmd_str += f' >> "{wsl_output_path}" 2>&1'
-            modified_cmd_str += f'; echo "___QONTINUI_DONE_$$___" >> "{wsl_output_path}"'
-
-            modified_cmd = ["wsl.exe", "bash", "-lc", modified_cmd_str]
-
-            # Start process
-            creationflags = subprocess.CREATE_NEW_CONSOLE
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            startupinfo.wShowWindow = subprocess.SW_HIDE
-
-            subprocess.Popen(
-                modified_cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                stdin=subprocess.DEVNULL,
-                creationflags=creationflags,
-                startupinfo=startupinfo,
-            )
-
-            # Stream output file
-            async for line in self._poll_output_file_async(
-                output_file_path, request.timeout_seconds
-            ):
-                yield line
-
-        finally:
-            try:
-                os.unlink(output_file_path)
-            except Exception:
-                pass
-
-    def _poll_output_file(self, file_path: str, timeout: int) -> str:
-        """Poll output file until completion marker found.
-
-        Args:
-            file_path: Path to output file
-            timeout: Timeout in seconds
-
-        Returns:
-            Complete output from file
-        """
+        url = f"{self._runner_url}/task-runs/{task_run_id}"
         start_time = time.time()
-        last_position = 0
-        output_lines = []
-        completion_marker = "___QONTINUI_DONE_"
 
         while True:
-            if time.time() - start_time > timeout:
-                raise subprocess.TimeoutExpired(cmd=[], timeout=timeout)
-
-            try:
-                with open(file_path, encoding="utf-8", errors="replace") as f:
-                    f.seek(last_position)
-                    new_content = f.read()
-
-                    if new_content:
-                        last_position = f.tell()
-                        output_lines.append(new_content)
-
-                        # Check for completion marker
-                        if completion_marker in new_content:
-                            break
-
-            except FileNotFoundError:
-                pass  # File not created yet
-
-            time.sleep(0.1)
-
-        # Join all output and remove completion marker
-        full_output = "".join(output_lines)
-        if completion_marker in full_output:
-            full_output = full_output[: full_output.find(completion_marker)]
-
-        return full_output.strip()
-
-    async def _poll_output_file_async(self, file_path: str, timeout: int) -> AsyncIterator[str]:
-        """Asynchronously poll output file and yield lines.
-
-        Args:
-            file_path: Path to output file
-            timeout: Timeout in seconds
-
-        Yields:
-            Lines from the file
-        """
-        start_time = time.time()
-        last_position = 0
-        completion_marker = "___QONTINUI_DONE_"
-
-        while True:
-            if time.time() - start_time > timeout:
+            elapsed = time.time() - start_time
+            if elapsed > timeout_seconds:
                 raise TimeoutError()
 
-            try:
-                with open(file_path, encoding="utf-8", errors="replace") as f:
-                    f.seek(last_position)
-                    new_content = f.read()
+            # Fetch task status
+            request = Request(url, method="GET")
+            request.add_header("Accept", "application/json")
 
-                    if new_content:
-                        last_position = f.tell()
+            with urlopen(request, timeout=10) as response:
+                response_data = response.read().decode("utf-8")
+                task = _json_loads(response_data)
 
-                        # Check for completion
-                        if completion_marker in new_content:
-                            # Remove marker and yield final content
-                            final_content = new_content[: new_content.find(completion_marker)]
-                            if final_content:
-                                yield final_content
-                            break
-                        else:
-                            yield new_content
+            if task is None:
+                return "", f"Task not found: {task_run_id}"
 
-            except FileNotFoundError:
-                pass
+            status = task.get("status", "")
+            output_log = task.get("output_log", "")
 
-            await asyncio.sleep(0.1)
+            if status == "complete":
+                return output_log, ""
+            elif status == "failed":
+                error_message = task.get("error_message", "Task failed")
+                return output_log, error_message
+            elif status == "stopped":
+                return output_log, "Task was stopped"
+            elif status == "running":
+                time.sleep(DEFAULT_POLL_INTERVAL)
+            else:
+                logger.warning(f"Unknown task status: {status}")
+                time.sleep(DEFAULT_POLL_INTERVAL)
 
-    async def _read_stream(self, stream: asyncio.StreamReader) -> AsyncIterator[str]:
-        """Read lines from async stream.
+    async def _poll_task_output_async(
+        self,
+        task_run_id: str,
+        timeout_seconds: int,
+    ) -> AsyncIterator[str]:
+        """Poll task and yield output incrementally.
 
         Args:
-            stream: Async stream reader
+            task_run_id: The task run ID to poll
+            timeout_seconds: Maximum time to wait
 
         Yields:
-            Lines from the stream
+            New output chunks as they become available
         """
-        while True:
-            try:
-                line = await stream.readline()
-                if not line:
-                    break
-                yield line.decode("utf-8", errors="replace")
-            except Exception as e:
-                logger.error(f"Error reading stream: {e}")
-                break
+        url = f"{self._runner_url}/task-runs/{task_run_id}"
+        start_time = time.time()
+        last_output_len = 0
 
-    def _to_wsl_path(self, windows_path: str | None) -> str | None:
-        """Convert Windows path to WSL path.
+        while True:
+            elapsed = time.time() - start_time
+            if elapsed > timeout_seconds:
+                raise TimeoutError()
+
+            # Fetch task status (sync call in async context)
+            task = await asyncio.get_event_loop().run_in_executor(None, self._fetch_task, url)
+
+            if task is None:
+                yield f"[ERROR: Task not found: {task_run_id}]\n"
+                return
+
+            status = task.get("status", "")
+            output_log = task.get("output_log", "")
+
+            # Yield any new output
+            if len(output_log) > last_output_len:
+                new_output = output_log[last_output_len:]
+                last_output_len = len(output_log)
+                yield new_output
+
+            if status == "complete":
+                return
+            elif status == "failed":
+                error_message = task.get("error_message", "Task failed")
+                yield f"\n[ERROR: {error_message}]\n"
+                return
+            elif status == "stopped":
+                yield "\n[Task was stopped]\n"
+                return
+            elif status == "running":
+                await asyncio.sleep(DEFAULT_POLL_INTERVAL)
+            else:
+                logger.warning(f"Unknown task status: {status}")
+                await asyncio.sleep(DEFAULT_POLL_INTERVAL)
+
+    def _fetch_task(self, url: str) -> dict[str, Any] | None:
+        """Fetch task from the runner API (sync helper for async polling).
 
         Args:
-            windows_path: Windows path (e.g., C:\\Users\\...)
+            url: The task URL
 
         Returns:
-            WSL path (e.g., /mnt/c/Users/...) or None
+            Task data or None
         """
-        if not windows_path:
+        request = Request(url, method="GET")
+        request.add_header("Accept", "application/json")
+
+        with urlopen(request, timeout=10) as response:
+            response_data = response.read().decode("utf-8")
+            result = _json_loads(response_data)
+            if isinstance(result, dict):
+                return result
             return None
-
-        path = windows_path.replace("\\", "/")
-
-        # C:/... -> /mnt/c/...
-        if len(path) >= 2 and path[1] == ":" and path[0].isalpha():
-            drive = path[0].lower()
-            rest = path[2:].lstrip("/")
-            return f"/mnt/{drive}/{rest}"
-
-        return path

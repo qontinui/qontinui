@@ -267,6 +267,7 @@ class ExtractionConfig:
     capture_focus_states: bool = True
     capture_scroll_states: bool = True
     max_interaction_depth: int = 3  # How many levels of interactions to explore
+    max_pages: int = 100  # Maximum number of pages to crawl
 
     # Static analysis settings
     include_tests: bool = False
