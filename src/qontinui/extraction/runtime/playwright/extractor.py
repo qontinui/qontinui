@@ -898,6 +898,8 @@ class PlaywrightExtractor(RuntimeExtractor):
                 try:
                     # Navigate to the URL (skip navigation for the first page)
                     if pages_visited > 0:
+                        if self.page is None:
+                            raise RuntimeError("Page not available for navigation")
                         await self.page.goto(current_url, wait_until="networkidle")
                         await self.wait_for_stability()
 
