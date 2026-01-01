@@ -817,7 +817,7 @@ class QontinuiConfig(BaseModel):
         """Convert None to empty list for schedules field."""
         if v is None:
             return []
-        return v
+        return list(v) if not isinstance(v, list) else v
 
     # Runtime data
     image_directory: Path | None = None

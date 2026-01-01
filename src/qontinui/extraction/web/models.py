@@ -220,7 +220,7 @@ class ExtractedState:
     bbox: BoundingBox
     state_type: StateType
     element_ids: list[str]  # Elements within this state
-    screenshot_id: str  # Reference to local screenshot file
+    screenshot_id: str | None = None  # Reference to local screenshot file (set after capture)
 
     # Detection info
     detection_method: str = "visibility_cluster"  # visibility_cluster, semantic, manual
