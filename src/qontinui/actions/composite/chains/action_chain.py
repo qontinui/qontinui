@@ -15,7 +15,13 @@ from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from .action_builders import ClickBuilder, DragBuilder, TypeBuilder
 from .chain_action import ChainAction
-from .chain_modes import BaseChainMode, ConditionalMode, ContinueMode, RetryMode, SequentialMode
+from .chain_modes import (
+    BaseChainMode,
+    ConditionalMode,
+    ContinueMode,
+    RetryMode,
+    SequentialMode,
+)
 
 
 class ChainMode(Enum):

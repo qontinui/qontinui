@@ -11,7 +11,12 @@ Provides extractors for live applications across different runtime environments:
 from .base import RuntimeExtractor
 from .playwright import PlaywrightExtractor
 from .tauri import TauriExtractor
-from .types import ExtractionTarget, RuntimeExtractionSession, RuntimeStateCapture, RuntimeType
+from .types import (
+    ExtractionTarget,
+    RuntimeExtractionSession,
+    RuntimeStateCapture,
+    RuntimeType,
+)
 
 __all__ = [
     # Base classes

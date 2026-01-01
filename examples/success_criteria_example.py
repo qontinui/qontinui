@@ -204,7 +204,15 @@ def example_checkpoint_criteria():
                     "main": [[{"action": "enter_password", "type": "main", "index": 0}]]
                 },
                 "enter_password": {
-                    "main": [[{"action": "verify_login_checkpoint", "type": "main", "index": 0}]]
+                    "main": [
+                        [
+                            {
+                                "action": "verify_login_checkpoint",
+                                "type": "main",
+                                "index": 0,
+                            }
+                        ]
+                    ]
                 },
             }
         ),

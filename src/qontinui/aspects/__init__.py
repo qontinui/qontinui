@@ -30,7 +30,12 @@ from .aspect_registry import (
 )
 
 # Core aspects
-from .core import ActionContext, ActionLifecycleAspect, get_lifecycle_aspect, with_lifecycle
+from .core import (
+    ActionContext,
+    ActionLifecycleAspect,
+    get_lifecycle_aspect,
+    with_lifecycle,
+)
 
 # Monitoring aspects
 from .monitoring import (

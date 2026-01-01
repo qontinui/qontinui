@@ -9,7 +9,11 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from qontinui.extraction.static.models import ConditionalRender, EventHandler, StateVariable
+from qontinui.extraction.static.models import (
+    ConditionalRender,
+    EventHandler,
+    StateVariable,
+)
 
 from . import handlers as handler_module
 from . import jsx as jsx_module

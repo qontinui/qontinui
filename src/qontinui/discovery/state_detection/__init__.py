@@ -32,7 +32,10 @@ from .detector import (
     StateSignature,
     TransitionDetector,
 )
-from .differential_consistency_detector import DifferentialConsistencyDetector, StateRegion
+from .differential_consistency_detector import (
+    DifferentialConsistencyDetector,
+    StateRegion,
+)
 
 __all__ = [
     # Core detectors

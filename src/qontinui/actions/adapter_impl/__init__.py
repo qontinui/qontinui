@@ -10,7 +10,11 @@ Also exports the main facade adapters from parent module.
 """
 
 from .adapter_result import AdapterResult
-from .keyboard_adapter import HALKeyboardAdapter, KeyboardAdapter, SeleniumKeyboardAdapter
+from .keyboard_adapter import (
+    HALKeyboardAdapter,
+    KeyboardAdapter,
+    SeleniumKeyboardAdapter,
+)
 from .mouse_adapter import HALMouseAdapter, MouseAdapter, SeleniumMouseAdapter
 from .screen_adapter import HALScreenAdapter, ScreenAdapter, SeleniumScreenAdapter
 

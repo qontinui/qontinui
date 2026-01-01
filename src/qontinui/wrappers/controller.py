@@ -27,7 +27,11 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ..config.execution_mode import ExecutionModeConfig, get_execution_mode, set_execution_mode
+from ..config.execution_mode import (
+    ExecutionModeConfig,
+    get_execution_mode,
+    set_execution_mode,
+)
 from .capture_wrapper import CaptureWrapper
 from .find_wrapper import FindWrapper
 from .input_wrapper import KeyboardWrapper, MouseWrapper

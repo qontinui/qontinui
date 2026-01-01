@@ -9,7 +9,13 @@ import cv2
 import numpy as np
 from qontinui_schemas.common import utc_now
 
-from ..models import AnalysisConfig, AnalysisResult, DiscoveredState, StateImage, StateTransition
+from ..models import (
+    AnalysisConfig,
+    AnalysisResult,
+    DiscoveredState,
+    StateImage,
+    StateTransition,
+)
 from .merge_components import merge_nearby_components
 
 logger = logging.getLogger(__name__)

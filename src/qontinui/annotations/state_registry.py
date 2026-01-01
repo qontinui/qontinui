@@ -20,7 +20,10 @@ from qontinui.model.transition.enhanced_state_transition import (
     CodeStateTransition,
     TaskSequenceStateTransition,
 )
-from qontinui.state_exceptions import StateAlreadyExistsException, StateNotFoundException
+from qontinui.state_exceptions import (
+    StateAlreadyExistsException,
+    StateNotFoundException,
+)
 
 from .enhanced_state import get_state_metadata, is_state
 from .transition_set import (

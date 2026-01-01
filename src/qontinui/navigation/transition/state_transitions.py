@@ -7,7 +7,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Optional
 
-from ...model.transition.state_transition import StateTransition, StaysVisible, TaskSequence
+from ...model.transition.state_transition import (
+    StateTransition,
+    StaysVisible,
+    TaskSequence,
+)
 
 
 @dataclass

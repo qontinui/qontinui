@@ -138,7 +138,10 @@ class StateImage:
             Matches object with all found matches
         """
         from ...actions.find import FindAction
-        from ...actions.find.find_options_builder import CascadeContext, build_find_options
+        from ...actions.find.find_options_builder import (
+            CascadeContext,
+            build_find_options,
+        )
 
         pattern = self.get_pattern()
         action = FindAction()
@@ -169,7 +172,10 @@ class StateImage:
             True if image found on screen
         """
         from ...actions.find import FindAction
-        from ...actions.find.find_options_builder import CascadeContext, build_find_options
+        from ...actions.find.find_options_builder import (
+            CascadeContext,
+            build_find_options,
+        )
 
         pattern = self.get_pattern()
         action = FindAction()
@@ -203,7 +209,10 @@ class StateImage:
             True if image appeared
         """
         from ...actions.find import FindAction
-        from ...actions.find.find_options_builder import CascadeContext, build_find_options
+        from ...actions.find.find_options_builder import (
+            CascadeContext,
+            build_find_options,
+        )
 
         pattern = self.get_pattern()
         action = FindAction()

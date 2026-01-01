@@ -10,7 +10,12 @@ from typing import Any
 
 from qontinui_schemas.common import utc_now
 
-from .execution_types import ActionExecutionRecord, ActionStatus, ExecutionStatus, PendingAction
+from .execution_types import (
+    ActionExecutionRecord,
+    ActionStatus,
+    ExecutionStatus,
+    PendingAction,
+)
 
 
 class ExecutionController:

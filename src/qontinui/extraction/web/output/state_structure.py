@@ -9,7 +9,12 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from ..models import ExtractedElement, ExtractedState, ExtractedTransition, ExtractionResult
+from ..models import (
+    ExtractedElement,
+    ExtractedState,
+    ExtractedTransition,
+    ExtractionResult,
+)
 
 logger = logging.getLogger(__name__)
 

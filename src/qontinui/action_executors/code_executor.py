@@ -23,7 +23,10 @@ from typing import Any
 
 from ..actions.action_result import ActionResultBuilder
 from ..config.models.action import Action
-from ..config.models.code_actions import CodeBlockActionConfig, CustomFunctionActionConfig
+from ..config.models.code_actions import (
+    CodeBlockActionConfig,
+    CustomFunctionActionConfig,
+)
 from ..util.common.file_loader import PythonFileLoader
 from .base import ActionExecutorBase
 from .registry import register_executor
@@ -935,7 +938,10 @@ class CodeExecutor(ActionExecutorBase):
                     # Check if thread raised an exception
                     if thread_exception[0] is not None:
                         e = thread_exception[0]
-                        return {"success": False, "error": f"{type(e).__name__}: {str(e)}"}
+                        return {
+                            "success": False,
+                            "error": f"{type(e).__name__}: {str(e)}",
+                        }
 
                     return {"success": True, "error": None}
 

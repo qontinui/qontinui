@@ -895,7 +895,7 @@ class MouseActionExecutor(ActionExecutorBase):
                     "button": button.value,
                     "clicks": click_count,
                     "click_type": "double" if click_count > 1 else "single",
-                    "target_type": typed_config.target.type if typed_config.target else "unknown",
+                    "target_type": (typed_config.target.type if typed_config.target else "unknown"),
                     "timestamp": time.time(),
                     "action_id": action.id,
                 },

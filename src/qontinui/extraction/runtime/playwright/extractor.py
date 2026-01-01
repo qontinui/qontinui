@@ -11,7 +11,13 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
+from playwright.async_api import (
+    Browser,
+    BrowserContext,
+    Page,
+    Playwright,
+    async_playwright,
+)
 from qontinui_schemas.common import utc_now
 
 from ...models.base import BoundingBox as BaseBoundingBox
@@ -947,7 +953,7 @@ class PlaywrightExtractor(RuntimeExtractor):
                                     "source_url": source_url,
                                     "target_url": normalized_current,
                                     "has_image": has_image,
-                                    "trigger_text": trigger_text if not has_image else None,
+                                    "trigger_text": (trigger_text if not has_image else None),
                                     "trigger_image": img_src if has_image else None,
                                     "link_info": link_info,
                                 },

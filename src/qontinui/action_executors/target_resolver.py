@@ -123,7 +123,10 @@ class TargetResolver:
         from qontinui import registry
 
         from ..actions.find import FindAction
-        from ..actions.find.find_options_builder import CascadeContext, build_find_options
+        from ..actions.find.find_options_builder import (
+            CascadeContext,
+            build_find_options,
+        )
         from ..config.settings import QontinuiSettings
         from ..model.element import Pattern
 
@@ -176,7 +179,9 @@ class TargetResolver:
                 if state_image_monitors is None:
                     state_image_meta = registry.get_image_metadata(image_id)
                     logger.debug(
-                        "[TARGET_RESOLVER] StateImage %s metadata: %s", image_id, state_image_meta
+                        "[TARGET_RESOLVER] StateImage %s metadata: %s",
+                        image_id,
+                        state_image_meta,
                     )
                     if state_image_meta and state_image_meta.get("monitors"):
                         state_image_monitors = state_image_meta.get("monitors")

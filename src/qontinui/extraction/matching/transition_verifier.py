@@ -12,7 +12,11 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
-from ..models.correlated import InferredTransition, VerificationDiscrepancy, VerifiedTransition
+from ..models.correlated import (
+    InferredTransition,
+    VerificationDiscrepancy,
+    VerifiedTransition,
+)
 from ..models.static import EventHandler
 from ..runtime.types import RuntimeStateCapture
 from ..web.models import ExtractedElement

@@ -233,7 +233,10 @@ class TemplateMatchEngine:
         return action_result
 
     def _run_async_find(
-        self, patterns: list[Pattern], threshold: float, image_ids: list[str] | None = None
+        self,
+        patterns: list[Pattern],
+        threshold: float,
+        image_ids: list[str] | None = None,
     ) -> list[tuple[Pattern, int, Any]]:
         """Run async pattern finding for multiple patterns.
 

@@ -11,7 +11,14 @@ from threading import Thread
 from typing import Any, TypedDict, cast
 
 import psutil
-from prometheus_client import REGISTRY, Counter, Gauge, Histogram, Summary, generate_latest
+from prometheus_client import (
+    REGISTRY,
+    Counter,
+    Gauge,
+    Histogram,
+    Summary,
+    generate_latest,
+)
 from prometheus_client import start_http_server as prometheus_start_server
 from qontinui_schemas.common import utc_now
 

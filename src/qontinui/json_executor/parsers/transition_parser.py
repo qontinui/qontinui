@@ -6,7 +6,12 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from ..config_parser import IncomingTransition, OutgoingTransition, QontinuiConfig, Transition
+    from ..config_parser import (
+        IncomingTransition,
+        OutgoingTransition,
+        QontinuiConfig,
+        Transition,
+    )
 
 logger = logging.getLogger(__name__)
 

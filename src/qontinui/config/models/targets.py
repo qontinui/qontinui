@@ -5,9 +5,9 @@ This module provides discriminated union models for different types of
 targets that actions can operate on (images, regions, text, coordinates, etc.).
 """
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from .geometry import Coordinates, Region
 from .search import SearchOptions, TextSearchOptions
@@ -235,12 +235,44 @@ class StateImageTarget(BaseModel):
     """
 
     type: Literal["stateImage"] = "stateImage"
-    state_id: str = Field(alias="stateId")
-    image_ids: list[str] = Field(alias="imageIds")
+    state_id: str = Field(default="", alias="stateId")
+    image_ids: list[str] = Field(default_factory=list, alias="imageIds")
     state_name: str | None = Field(None, alias="stateName")
     image_names: list[str] | None = Field(None, alias="imageNames")
 
     model_config = {"populate_by_name": True}
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_legacy_format(cls, data: Any) -> Any:
+        """Normalize legacy StateImage target format to new format.
+
+        Legacy format used:
+        - type: "StateImage" (uppercase S)
+        - imageId (singular, string)
+
+        New format uses:
+        - type: "stateImage" (lowercase s)
+        - stateId (state reference)
+        - imageIds (plural, list)
+        """
+        if isinstance(data, dict):
+            data = data.copy()
+
+            # Normalize type casing: "StateImage" -> "stateImage"
+            if data.get("type") == "StateImage":
+                data["type"] = "stateImage"
+
+            # Convert singular imageId to plural imageIds list
+            if "imageId" in data and "imageIds" not in data:
+                image_id = data.pop("imageId")
+                data["imageIds"] = [image_id]
+
+            # If stateId is missing, use empty string (will be filled from context)
+            if "stateId" not in data:
+                data["stateId"] = ""
+
+        return data
 
 
 # Union type for all target configurations

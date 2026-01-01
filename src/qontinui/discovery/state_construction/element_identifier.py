@@ -16,11 +16,15 @@ import numpy as np
 from qontinui.discovery.models import StateImage
 
 if TYPE_CHECKING:
-    from qontinui.discovery.state_construction.element_classifier import ElementClassifier
+    from qontinui.discovery.state_construction.element_classifier import (
+        ElementClassifier,
+    )
     from qontinui.discovery.state_construction.grid_detector import GridDetector
     from qontinui.discovery.state_construction.panel_detector import PanelDetector
     from qontinui.discovery.state_construction.spatial_analyzer import SpatialAnalyzer
-    from qontinui.discovery.state_construction.title_bar_detector import TitleBarDetector
+    from qontinui.discovery.state_construction.title_bar_detector import (
+        TitleBarDetector,
+    )
 
 
 class ElementType(Enum):
@@ -158,11 +162,17 @@ class ElementIdentifier:
     def __init__(self) -> None:
         """Initialize the element identifier with default parameters."""
         # Import specialized detectors
-        from qontinui.discovery.state_construction.element_classifier import ElementClassifier
+        from qontinui.discovery.state_construction.element_classifier import (
+            ElementClassifier,
+        )
         from qontinui.discovery.state_construction.grid_detector import GridDetector
         from qontinui.discovery.state_construction.panel_detector import PanelDetector
-        from qontinui.discovery.state_construction.spatial_analyzer import SpatialAnalyzer
-        from qontinui.discovery.state_construction.title_bar_detector import TitleBarDetector
+        from qontinui.discovery.state_construction.spatial_analyzer import (
+            SpatialAnalyzer,
+        )
+        from qontinui.discovery.state_construction.title_bar_detector import (
+            TitleBarDetector,
+        )
 
         # Detection thresholds (for backward compatibility)
         self.min_region_size = (20, 20)

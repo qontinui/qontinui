@@ -43,7 +43,12 @@ from .runtime import (
     ScreenSegmenter,
     SearchSession,
 )
-from .segment_vectorizer import MatchingStrategy, RAGMatch, SegmentVector, SegmentVectorizer
+from .segment_vectorizer import (
+    MatchingStrategy,
+    RAGMatch,
+    SegmentVector,
+    SegmentVectorizer,
+)
 from .vector_db import QdrantLocalDB, RAGIndex
 
 __all__ = [

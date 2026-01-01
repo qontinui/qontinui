@@ -6,7 +6,13 @@ from typing import Any, cast
 
 from qontinui_schemas.common import utc_now
 
-from .models import DeleteOptions, DeleteResult, DeletionImpact, DiscoveredState, StateImage
+from .models import (
+    DeleteOptions,
+    DeleteResult,
+    DeletionImpact,
+    DiscoveredState,
+    StateImage,
+)
 
 logger = logging.getLogger(__name__)
 

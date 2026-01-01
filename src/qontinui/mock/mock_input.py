@@ -7,7 +7,12 @@ import logging
 
 from qontinui_schemas.common import utc_now
 
-from ..hal.interfaces.input_controller import IInputController, Key, MouseButton, MousePosition
+from ..hal.interfaces.input_controller import (
+    IInputController,
+    Key,
+    MouseButton,
+    MousePosition,
+)
 
 logger = logging.getLogger(__name__)
 

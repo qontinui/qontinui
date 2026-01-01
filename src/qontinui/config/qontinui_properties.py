@@ -11,7 +11,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 # Import individual config classes from property groups
 from .property_groups.core_properties import AutomationConfig, CoreConfig, StartupConfig
-from .property_groups.debug_properties import ConsoleActionConfig, GuiAccessConfig, TestingConfig
+from .property_groups.debug_properties import (
+    ConsoleActionConfig,
+    GuiAccessConfig,
+    TestingConfig,
+)
 from .property_groups.display_properties import (
     CaptureConfig,
     DpiConfig,
@@ -21,9 +25,17 @@ from .property_groups.display_properties import (
 )
 from .property_groups.input_properties import MouseConfig, SikuliConfig
 from .property_groups.logging_properties import LoggingConfig
-from .property_groups.output_properties import DatasetConfig, RecordingConfig, ScreenshotConfig
+from .property_groups.output_properties import (
+    DatasetConfig,
+    RecordingConfig,
+    ScreenshotConfig,
+)
 from .property_groups.timing_properties import MockConfig
-from .property_groups.vision_properties import AnalysisConfig, AutoScalingConfig, ImageDebugConfig
+from .property_groups.vision_properties import (
+    AnalysisConfig,
+    AutoScalingConfig,
+    ImageDebugConfig,
+)
 
 
 class QontinuiProperties(BaseModel):

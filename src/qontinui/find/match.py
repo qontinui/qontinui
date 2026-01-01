@@ -154,7 +154,10 @@ class Match:
 
         from ..actions import Action
         from ..actions.basic.click.click_options import ClickOptionsBuilder
-        from ..actions.basic.mouse.mouse_press_options import MouseButton, MousePressOptions
+        from ..actions.basic.mouse.mouse_press_options import (
+            MouseButton,
+            MousePressOptions,
+        )
         from ..actions.object_collection import ObjectCollectionBuilder
         from ..model.element import Location
 

@@ -20,7 +20,12 @@ from ..logging import get_logger
 from .embeddings import CLIPEmbedder, DINOv2Embedder
 from .embeddings.text import TextEmbedder
 from .models import BoundingBox, SearchResult
-from .segment_vectorizer import MatchingStrategy, RAGMatch, SegmentVector, SegmentVectorizer
+from .segment_vectorizer import (
+    MatchingStrategy,
+    RAGMatch,
+    SegmentVector,
+    SegmentVectorizer,
+)
 from .vector_db import QdrantLocalDB, RAGIndex
 
 logger = get_logger(__name__)

@@ -65,7 +65,12 @@ from .actions import (
 )
 
 # Checkpointing System
-from .checkpointing import CheckpointData, CheckpointService, CheckpointTrigger, TextRegionData
+from .checkpointing import (
+    CheckpointData,
+    CheckpointService,
+    CheckpointTrigger,
+    TextRegionData,
+)
 from .discovery import (
     DifferentialConsistencyDetector,
     ElementIdentifier,
@@ -131,7 +136,9 @@ from .primitives import (
     MouseWheel,
     TypeText,
 )
-from .startup import PhysicalResolutionInitializer  # noqa: F401 - documented for user reference
+from .startup import (  # noqa: F401 - documented for user reference
+    PhysicalResolutionInitializer,
+)
 from .state_management import QontinuiStateManager
 from .state_management.models import Element, StateGraph, Transition
 from .state_management.traversal import StateTraversal

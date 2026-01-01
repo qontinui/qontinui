@@ -32,9 +32,13 @@ from qontinui.discovery.state_analysis.models import (
     ProcessingStep,
     Transition,
 )
-from qontinui.discovery.state_analysis.state_boundary_detector import StateBoundaryConfig
+from qontinui.discovery.state_analysis.state_boundary_detector import (
+    StateBoundaryConfig,
+)
 from qontinui.discovery.state_analysis.state_extractor import StateExtractor
-from qontinui.discovery.state_analysis.transition_analyzer_stage import TransitionAnalyzerStage
+from qontinui.discovery.state_analysis.transition_analyzer_stage import (
+    TransitionAnalyzerStage,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)

@@ -73,7 +73,8 @@ def load_config_file(config_path: str) -> dict[str, Any] | None:
                     return cast(dict[str, Any] | None, yaml.safe_load(f))
                 except ImportError:
                     click.echo(
-                        "Error: PyYAML not installed. Install with: pip install pyyaml", err=True
+                        "Error: PyYAML not installed. Install with: pip install pyyaml",
+                        err=True,
                     )
                     return None
             else:
@@ -224,7 +225,11 @@ def run(
     try:
         # Set execution mode
         if mock:
-            from ..config.execution_mode import ExecutionModeConfig, MockMode, set_execution_mode
+            from ..config.execution_mode import (
+                ExecutionModeConfig,
+                MockMode,
+                set_execution_mode,
+            )
 
             set_execution_mode(ExecutionModeConfig(mode=MockMode.MOCK))
 
@@ -383,7 +388,7 @@ def test(
                         "workflow_name": wf.name,
                         "success": summary.get("failed", 0) == 0,
                         "duration": time.time() - wf_start,
-                        "error": None if summary.get("failed", 0) == 0 else "Actions failed",
+                        "error": (None if summary.get("failed", 0) == 0 else "Actions failed"),
                         "start_time": wf_start,
                     }
                 )
@@ -444,7 +449,10 @@ def test(
 @click.argument("config_path", type=click.Path(exists=True))
 @click.option("--workflow", "-w", help="Workflow name or ID to test")
 @click.option("--history", type=click.Path(), help="Path to history JSON file (optional)")
-@click.option("--history-url", help="URL to fetch historical data from (default: QONTINUI_WEB_URL)")
+@click.option(
+    "--history-url",
+    help="URL to fetch historical data from (default: QONTINUI_WEB_URL)",
+)
 @click.option("--project-id", help="Project ID for fetching historical data")
 @click.option("--expect-success", is_flag=True, help="Exit with error if any step fails")
 @click.option("--expect-states", help="Comma-separated list of expected final states")
@@ -497,7 +505,11 @@ def integration_test(
 
     try:
         # Configure mock mode
-        from ..config.execution_mode import ExecutionModeConfig, MockMode, set_execution_mode
+        from ..config.execution_mode import (
+            ExecutionModeConfig,
+            MockMode,
+            set_execution_mode,
+        )
 
         set_execution_mode(ExecutionModeConfig(mode=MockMode.MOCK))
 

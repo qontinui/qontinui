@@ -22,7 +22,10 @@ class ScreenSegmenter:
 
         if use_sam:
             try:
-                from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
+                from segment_anything import (
+                    SamAutomaticMaskGenerator,
+                    sam_model_registry,
+                )
 
                 # Default to base model if no checkpoint specified
                 model_type = "vit_b"

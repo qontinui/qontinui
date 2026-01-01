@@ -16,7 +16,12 @@ sys.path.insert(0, str(src_path))
 from qontinui.coordinates.service import CoordinateService
 
 # Now import the coordinates module directly (bypassing qontinui.__init__)
-from qontinui.coordinates.types import MonitorInfo, MonitorPoint, ScreenPoint, VirtualPoint
+from qontinui.coordinates.types import (
+    MonitorInfo,
+    MonitorPoint,
+    ScreenPoint,
+    VirtualPoint,
+)
 from qontinui.coordinates.virtual_desktop import VirtualDesktopInfo
 
 

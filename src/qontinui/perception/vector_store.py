@@ -13,7 +13,11 @@ import faiss
 import numpy as np
 
 from ..config import get_settings
-from ..exceptions import StorageReadException, StorageWriteException, VectorDatabaseException
+from ..exceptions import (
+    StorageReadException,
+    StorageWriteException,
+    VectorDatabaseException,
+)
 from ..logging import get_logger
 
 logger = get_logger(__name__)
