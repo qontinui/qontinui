@@ -188,6 +188,14 @@ class PlaywrightExtractor(RuntimeExtractor):
             states = await self._regions_to_states(regions, elements)
             logger.info(f"  --> Converted to {len(states)} states")
 
+            # Capture screenshot FIRST so we have the correct screenshot_id
+            screenshot_path = None
+            screenshot_id_for_states = None
+            if self.session and self.session.storage_dir:
+                screenshot = await self.capture_screenshot()
+                screenshot_path = screenshot.path
+                screenshot_id_for_states = screenshot.id
+
             # If no semantic regions were found, create a page-level state
             # This ensures we always have at least one state per page
             if not states:
@@ -208,7 +216,7 @@ class PlaywrightExtractor(RuntimeExtractor):
                     bbox=WebBoundingBox(x=0, y=0, width=width, height=height),
                     state_type=StateType.PAGE,
                     element_ids=[e.id for e in elements],
-                    screenshot_id=f"screenshot_{self._screenshot_counter:04d}",
+                    screenshot_id=screenshot_id_for_states,
                     detection_method="page_fallback",
                     confidence=1.0,
                     semantic_role="main",
@@ -220,14 +228,12 @@ class PlaywrightExtractor(RuntimeExtractor):
                 logger.info(
                     f"  --> Created page-level fallback state with {len(elements)} elements"
                 )
+            else:
+                # Update existing states with the correct screenshot_id
+                for state in states:
+                    state.screenshot_id = screenshot_id_for_states
 
             logger.info(f"  FINAL: Returning {len(states)} states, {len(elements)} elements")
-
-            # Capture screenshot
-            screenshot_path = None
-            if self.session and self.session.storage_dir:
-                screenshot = await self.capture_screenshot()
-                screenshot_path = screenshot.path
 
             # Get current URL and title
             url = self.page.url
@@ -362,8 +368,7 @@ class PlaywrightExtractor(RuntimeExtractor):
             # Generate name from region
             name = region.name or f"{region.region_type.replace('_', ' ').title()}"
 
-            # Generate screenshot ID (placeholder for now)
-            screenshot_id = f"screenshot_{self._screenshot_counter:04d}"
+            # screenshot_id will be set by extract_current_state after screenshot capture
 
             # Convert region_type string back to StateType enum
             try:
@@ -382,7 +387,7 @@ class PlaywrightExtractor(RuntimeExtractor):
                 ),
                 state_type=state_type,
                 element_ids=contained_elements,
-                screenshot_id=screenshot_id,
+                screenshot_id=None,  # Will be set by extract_current_state after capture
                 detection_method="semantic",
                 confidence=region.confidence,
                 semantic_role=None,
@@ -1002,6 +1007,7 @@ class PlaywrightExtractor(RuntimeExtractor):
                 pages_visited=pages_visited,
                 extraction_duration_ms=0.0,
                 errors=errors,
+                extraction_id=session_id,  # Pass session_id as extraction_id for screenshot retrieval
             )
 
             logger.info("=" * 60)

@@ -794,33 +794,30 @@ class QontinuiConfig(BaseModel):
     @field_validator("categories", mode="before")
     @classmethod
     def normalize_categories(cls, v: Any) -> list[dict[str, Any]]:
-        """Accept both string array and Category object array formats.
+        """Accept Category object array format only.
 
-        For backward compatibility, converts simple strings to Category objects:
-        - ["Main", "Testing"] -> [{"name": "Main", "automationEnabled": true}, ...]
-
-        Uses the Category model from qontinui-schemas as the source of truth.
+        NOTE: String format is NOT supported. Categories must be objects with
+        {name, automationEnabled} format. Use qontinui-schemas as the source of truth.
         """
-        if not isinstance(v, list):
+        if v is None or not isinstance(v, list):
             return []
         result = []
-        for i, item in enumerate(v):
-            if isinstance(item, str):
-                # Convert string to Category dict
-                # First category (usually "Main") defaults to enabled
-                result.append(
-                    {
-                        "name": item,
-                        "automationEnabled": i == 0,
-                    }
-                )
-            elif isinstance(item, dict):
-                # Already a Category-like dict, pass through
+        for item in v:
+            if isinstance(item, dict):
                 result.append(item)
             elif hasattr(item, "model_dump"):
                 # Already a Pydantic model
                 result.append(item.model_dump())
+            # String format is not supported - ignore invalid items
         return result
+
+    @field_validator("schedules", mode="before")
+    @classmethod
+    def normalize_schedules(cls, v: Any) -> list[Any]:
+        """Convert None to empty list for schedules field."""
+        if v is None:
+            return []
+        return v
 
     # Runtime data
     image_directory: Path | None = None

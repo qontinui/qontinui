@@ -330,6 +330,9 @@ class RuntimeExtractionResult:
     extraction_duration_ms: float = 0.0
     errors: list[str] = field(default_factory=list)
 
+    # Screenshot storage location (extraction_id where screenshots are saved)
+    extraction_id: str | None = None
+
 
 @dataclass
 class CorrelatedState:

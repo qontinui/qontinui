@@ -153,6 +153,11 @@ class ExtractionOrchestrator:
                     f"Runtime extraction returned {len(result.runtime_extraction.states)} states, "
                     f"{len(result.runtime_extraction.elements)} elements"
                 )
+
+                # Use runtime extractor's extraction_id if available (for screenshot retrieval)
+                if result.runtime_extraction.extraction_id:
+                    result.extraction_id = result.runtime_extraction.extraction_id
+                    logger.info(f"Using runtime extraction_id: {result.extraction_id}")
                 # Log state details
                 for i, state in enumerate(result.runtime_extraction.states):
                     state_name = getattr(state, "name", "Unknown")
