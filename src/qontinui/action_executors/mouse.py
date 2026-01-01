@@ -122,11 +122,9 @@ class MouseActionExecutor(ActionExecutorBase):
 
         from qontinui_schemas.common import utc_now
 
-        # Try multiple log paths
+        # Use temp directory for debug logs
         debug_paths = [
-            "/tmp/qontinui_mouse_executor_debug.log",
             os.path.join(tempfile.gettempdir(), "qontinui_mouse_executor_debug.log"),
-            "/mnt/c/Users/jspin/Documents/qontinui_parent/mouse_executor_debug.log",
         ]
 
         timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
