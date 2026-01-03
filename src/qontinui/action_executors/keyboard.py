@@ -52,7 +52,7 @@ class KeyboardActionExecutor(ActionExecutorBase):
         """
         return ["KEY_DOWN", "KEY_UP", "KEY_PRESS", "TYPE"]
 
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute a keyboard action with validated configuration.
 
         Args:

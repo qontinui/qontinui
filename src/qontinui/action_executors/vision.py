@@ -49,7 +49,7 @@ class VisionActionExecutor(ActionExecutorBase):
         """
         return ["FIND", "VANISH"]
 
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute vision action with validated configuration.
 
         Args:
@@ -65,16 +65,16 @@ class VisionActionExecutor(ActionExecutorBase):
         logger.debug(f"Executing vision action: {action.type}")
 
         if action.type == "FIND":
-            return self._execute_find(action, typed_config)
+            return await self._execute_find(action, typed_config)
         elif action.type == "VANISH":
-            return self._execute_vanish(action, typed_config)
+            return await self._execute_vanish(action, typed_config)
         else:
             raise ActionExecutionError(
                 action_type=action.type,
                 reason=f"Unknown vision action type: {action.type}",
             )
 
-    def _execute_find(self, action: Action, typed_config: FindActionConfig) -> bool:
+    async def _execute_find(self, action: Action, typed_config: FindActionConfig) -> bool:
         """Execute FIND action - locate image and store ActionResult.
 
         Args:
@@ -116,7 +116,7 @@ class VisionActionExecutor(ActionExecutorBase):
             log_debug(f"  Target config being passed: {typed_config.target}")
 
             # Resolve target to ActionResult
-            result = self.target_resolver.resolve(typed_config.target)
+            result = await self.target_resolver.resolve(typed_config.target)
 
             log_debug("STEP 2: Target resolution completed")
             log_debug(f"  Result is None: {result is None}")
@@ -172,7 +172,7 @@ class VisionActionExecutor(ActionExecutorBase):
             log_debug("=" * 80 + "\n")
             return False
 
-    def _execute_vanish(self, action: Action, typed_config: VanishActionConfig) -> bool:
+    async def _execute_vanish(self, action: Action, typed_config: VanishActionConfig) -> bool:
         """Execute VANISH action - wait for image to disappear.
 
         Args:
@@ -199,7 +199,7 @@ class VisionActionExecutor(ActionExecutorBase):
 
             while elapsed < timeout_seconds:
                 # Check if target still exists
-                result = self.target_resolver.resolve(typed_config.target)
+                result = await self.target_resolver.resolve(typed_config.target)
 
                 if result is None or not result.success:
                     logger.info(f"VANISH action succeeded: element vanished after {elapsed:.2f}s")

@@ -234,8 +234,14 @@ class WebExtractor:
             }
         )
 
-        # Capture screenshot
+        # Capture screenshot (full page)
         screenshot_id = await self._capture_screenshot()
+
+        # Get actual page dimensions for full-page screenshot
+        page_width = await self.page.evaluate("document.body.scrollWidth")
+        page_height = await self.page.evaluate("document.body.scrollHeight")
+        # Use page dimensions as the effective viewport for the screenshot
+        effective_viewport = (page_width, page_height) if page_width and page_height else viewport
 
         # Extract elements
         elements = await self.element_classifier.extract_all_elements(
@@ -262,11 +268,11 @@ class WebExtractor:
             trigger_action=f"navigate:{url}",
         )
 
-        # Create page extraction
+        # Create page extraction with effective viewport (page dimensions for full-page screenshot)
         page_extraction = PageExtraction(
             url=url,
             title=title,
-            viewport=viewport,
+            viewport=effective_viewport,
             elements=elements,
             states=states,
             screenshot_ids=[screenshot_id],
@@ -704,7 +710,8 @@ class WebExtractor:
                 },
             )
         else:
-            await self.page.screenshot(path=str(filepath), full_page=False)
+            # Capture full page screenshot to include all states
+            await self.page.screenshot(path=str(filepath), full_page=True)
 
         return screenshot_id
 

@@ -72,7 +72,7 @@ class Action:
         self.action_service = action_service or ActionService()
         self.action_chain_executor = action_chain_executor
 
-    def perform(
+    async def perform(
         self, action_config: ActionConfig, *object_collections: ObjectCollection
     ) -> ActionResult:
         """Execute a GUI automation action with the specified configuration and target objects.
@@ -86,9 +86,9 @@ class Action:
         Returns:
             An ActionResult containing all results from the action execution
         """
-        return self.perform_with_description("", action_config, *object_collections)
+        return await self.perform_with_description("", action_config, *object_collections)
 
-    def perform_with_description(
+    async def perform_with_description(
         self,
         action_description: str,
         action_config: ActionConfig,
@@ -116,7 +116,7 @@ class Action:
         if subsequent_actions:
             # Execute the chain
             if self.action_chain_executor:
-                return self.action_chain_executor.execute_chain(
+                return await self.action_chain_executor.execute_chain(
                     action_config, ActionResultBuilder().build(), object_collections
                 )
             else:
@@ -130,11 +130,11 @@ class Action:
             return ActionResultBuilder().build()
 
         # Always use action execution for lifecycle management
-        return self.action_execution.perform(
+        return await self.action_execution.perform(
             action, action_description, action_config, object_collections
         )
 
-    def find(self, *state_images: StateImage) -> ActionResult:
+    async def find(self, *state_images: StateImage) -> ActionResult:
         """Perform a Find action with default options on the specified images.
 
         This convenience method simplifies the common case of searching for images
@@ -152,9 +152,9 @@ class Action:
 
         collection = ObjectCollectionBuilder().with_images(*state_images).build()
         config = PatternFindOptionsBuilder().build()
-        return self.perform(config, collection)
+        return await self.perform(config, collection)
 
-    def click(self, *targets) -> ActionResult:
+    async def click(self, *targets) -> ActionResult:
         """Perform a Click action with default options on the specified targets.
 
         This convenience method chains Find and Click for StateImages, or directly
@@ -192,7 +192,7 @@ class Action:
             # First, find the images
             image_collection = ObjectCollectionBuilder().with_images(*state_images).build()
             find_config = PatternFindOptionsBuilder().build()
-            find_result = self.perform(find_config, image_collection)
+            find_result = await self.perform(find_config, image_collection)
 
             if not find_result.success or not find_result.matches:
                 # Find failed, return the find result
@@ -211,7 +211,7 @@ class Action:
 
             click_collection = click_builder.build()
             click_config = ClickOptionsBuilder().build()
-            return self.perform(click_config, click_collection)
+            return await self.perform(click_config, click_collection)
         else:
             # No StateImages, just direct click on locations/regions
             builder = ObjectCollectionBuilder()
@@ -222,7 +222,7 @@ class Action:
 
             collection = builder.build()
             config = ClickOptionsBuilder().build()
-            return self.perform(config, collection)
+            return await self.perform(config, collection)
 
     def type_text(self, text: str) -> ActionResult:
         """Type the specified text using keyboard input.
@@ -283,7 +283,7 @@ class Action:
 class ActionChainExecutor:
     """Placeholder for ActionChainExecutor class."""
 
-    def execute_chain(
+    async def execute_chain(
         self, config: ActionConfig, result: ActionResult, collections: tuple[Any, ...]
     ) -> ActionResult:
         return result

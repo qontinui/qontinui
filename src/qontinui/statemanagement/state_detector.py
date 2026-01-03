@@ -49,7 +49,7 @@ class StateDetector:
     total_searches: int = 0
     successful_searches: int = 0
 
-    def check_for_active_states(self, state_ids: set[int] | None = None) -> bool:
+    async def check_for_active_states(self, state_ids: set[int] | None = None) -> bool:
         """Verify current active states are still visible.
 
         Checks if the states marked as active in StateMemory are still
@@ -82,7 +82,7 @@ class StateDetector:
                 continue
 
             # Search for state's visual patterns
-            if self._is_state_visible(state):
+            if await self._is_state_visible(state):
                 logger.debug(f"State {state.name} ({state_id}) confirmed visible")
             else:
                 logger.debug(f"State {state.name} ({state_id}) no longer visible")
@@ -98,7 +98,7 @@ class StateDetector:
 
         return all_visible
 
-    def rebuild_active_states(self) -> set[int]:
+    async def rebuild_active_states(self) -> set[int]:
         """Complete discovery when context is lost.
 
         Searches for all known states to rebuild the active state set
@@ -116,7 +116,7 @@ class StateDetector:
         found_states = set()
 
         for state in all_states:
-            if self._is_state_visible(state) and state.id is not None:
+            if await self._is_state_visible(state) and state.id is not None:
                 found_states.add(state.id)
                 self.state_memory.add_active_state(state.id, state)
                 logger.info(f"Found active state: {state.name} ({state.id})")
@@ -124,7 +124,7 @@ class StateDetector:
         logger.info(f"Rebuild complete. Found {len(found_states)} active states")
         return found_states
 
-    def search_all_images_for_current_states(self) -> dict[int, list[Match]]:
+    async def search_all_images_for_current_states(self) -> dict[int, list[Match]]:
         """Comprehensive state search across all images.
 
         Searches for all state images of all states and returns
@@ -142,7 +142,7 @@ class StateDetector:
             if not state.state_images or state.id is None:
                 continue
 
-            matches = self._search_state_images(state)
+            matches = await self._search_state_images(state)
             if matches:
                 results[state.id] = matches
                 # Update state memory if matches found
@@ -151,7 +151,7 @@ class StateDetector:
 
         return results
 
-    def find_state(self, state_identifier: Any) -> State | None:
+    async def find_state(self, state_identifier: Any) -> State | None:
         """Search for a specific state by name or ID.
 
         Args:
@@ -174,14 +174,14 @@ class StateDetector:
             return None
 
         # Check if visible
-        if self._is_state_visible(state):
+        if await self._is_state_visible(state):
             if state.id is not None:
                 self.state_memory.add_active_state(state.id, state)
             return cast(State | None, state)
 
         return None
 
-    def refresh_active_states(self) -> set[int]:
+    async def refresh_active_states(self) -> set[int]:
         """Complete reset and rediscovery.
 
         Clears all active states and performs fresh discovery.
@@ -191,9 +191,9 @@ class StateDetector:
         """
         logger.info("Refreshing all active states")
         self.state_memory.remove_all_states()
-        return self.rebuild_active_states()
+        return await self.rebuild_active_states()
 
-    def find_expected_states(
+    async def find_expected_states(
         self, expected_state_ids: set[int], timeout: float | None = None
     ) -> bool:
         """Wait for expected states to appear.
@@ -224,7 +224,7 @@ class StateDetector:
             for state_id in expected_state_ids:
                 if state_id not in self.state_memory.active_states:
                     state = self.state_store.get(state_id)
-                    if state and self._is_state_visible(state):
+                    if state and await self._is_state_visible(state):
                         self.state_memory.add_active_state(state_id, state)
                     else:
                         found_all = False
@@ -238,7 +238,7 @@ class StateDetector:
         logger.warning(f"Timeout waiting for states {expected_state_ids}")
         return False
 
-    def _is_state_visible(self, state: State) -> bool:
+    async def _is_state_visible(self, state: State) -> bool:
         """Check if a state is currently visible.
 
         Args:
@@ -255,10 +255,10 @@ class StateDetector:
             return False
 
         # Search for state images
-        matches = self._search_state_images(state)
+        matches = await self._search_state_images(state)
         return len(matches) > 0
 
-    def _search_state_images(self, state: State) -> list[Match]:
+    async def _search_state_images(self, state: State) -> list[Match]:
         """Search for a state's visual patterns.
 
         Args:
@@ -279,7 +279,7 @@ class StateDetector:
         # Perform find operation
         try:
             result = ActionResult()  # type: ignore[call-arg]
-            self.find_action.perform(result, collection)
+            await self.find_action.perform(result, collection)
             if result and not result.is_empty():  # type: ignore[attr-defined]
                 return cast(list[Match], result.get_match_list())  # type: ignore[attr-defined]
         except Exception as e:

@@ -28,6 +28,7 @@ from .models import (
     FilterActionConfig,
     FilterCondition,
     FindActionConfig,
+    FindStateActionConfig,
     FindStateImageActionConfig,
     GetVariableActionConfig,
     GoToStateActionConfig,
@@ -151,6 +152,7 @@ __all__ = [
     "TypeActionConfig",
     # Find actions
     "FindActionConfig",
+    "FindStateActionConfig",
     "FindStateImageActionConfig",
     "VanishActionConfig",
     "WaitActionConfig",

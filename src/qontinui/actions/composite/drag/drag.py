@@ -68,7 +68,9 @@ class Drag(ActionInterface):
         """
         return ActionType.DRAG
 
-    def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(
+        self, action_result: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the drag operation using action chaining.
 
         Creates a chain of actions that:
@@ -107,7 +109,7 @@ class Drag(ActionInterface):
         chain_options = self._build_action_chain(drag_options, source_collection, target_collection)
 
         # Execute the chain
-        chain_result = self.action_chain_executor.execute_chain(
+        chain_result = await self.action_chain_executor.execute_chain(
             chain_options, action_result, source_collection, target_collection
         )
 

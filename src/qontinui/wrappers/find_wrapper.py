@@ -54,7 +54,7 @@ class FindWrapper(BaseWrapper):
             logger.debug("FindAction initialized")
         return self._find_action
 
-    def find(
+    async def find(
         self,
         pattern: Pattern,
         search_region: Region | None = None,
@@ -84,9 +84,9 @@ class FindWrapper(BaseWrapper):
             )
 
         logger.debug(f"FindWrapper.find: {pattern.name}")
-        return self.find_action.find(pattern, options)
+        return await self.find_action.find(pattern, options)
 
-    def find_all(
+    async def find_all(
         self,
         pattern: Pattern,
         search_region: Region | None = None,
@@ -116,10 +116,10 @@ class FindWrapper(BaseWrapper):
             )
 
         logger.debug(f"FindWrapper.find_all: {pattern.name}")
-        result = self.find_action.find(pattern, options)
+        result = await self.find_action.find(pattern, options)
         return result.matches.to_list()
 
-    def wait_for(
+    async def wait_for(
         self,
         pattern: Pattern,
         timeout: float = 5.0,
@@ -139,6 +139,7 @@ class FindWrapper(BaseWrapper):
         Returns:
             Match if found within timeout, None otherwise
         """
+        import asyncio
         import time
 
         options = FindOptions(
@@ -158,15 +159,15 @@ class FindWrapper(BaseWrapper):
         poll_interval = 0.5
 
         while time.time() - start_time < timeout:
-            result = self.find_action.find(pattern, options)
+            result = await self.find_action.find(pattern, options)
             if result.found and result.best_match:
                 return result.best_match
-            time.sleep(poll_interval)
+            await asyncio.sleep(poll_interval)
 
         logger.debug(f"Timeout waiting for pattern {pattern.name} after {timeout}s")
         return None
 
-    def exists(
+    async def exists(
         self,
         pattern: Pattern,
         search_region: Region | None = None,
@@ -182,10 +183,10 @@ class FindWrapper(BaseWrapper):
         Returns:
             True if pattern is found, False otherwise
         """
-        result = self.find(pattern, search_region, similarity)
+        result = await self.find(pattern, search_region, similarity)
         return result.found
 
-    async def find_async(
+    async def find_patterns(
         self,
         patterns: list[Pattern],
         search_region: Region | None = None,
@@ -214,5 +215,5 @@ class FindWrapper(BaseWrapper):
                 find_all=False,
             )
 
-        logger.debug(f"FindWrapper.find_async: {len(patterns)} patterns")
-        return await self.find_action.find_async(patterns, options, max_concurrent)
+        logger.debug(f"FindWrapper.find_patterns: {len(patterns)} patterns")
+        return await self.find_action.find(patterns, options, max_concurrent)

@@ -42,7 +42,7 @@ class ActionExecution:
         self._failure_count = 0
         logger.debug("ActionExecution initialized")
 
-    def perform(
+    async def perform(
         self,
         action: ActionInterface,
         action_description: str,
@@ -89,7 +89,7 @@ class ActionExecution:
 
             # Execute the action
             self._execution_count += 1
-            action.perform(result, *object_collections)
+            await action.perform(result, *object_collections)
 
             # Check success
             if result.success:

@@ -59,6 +59,7 @@ from .execution import BaseActionSettings, ExecutionSettings, RepetitionOptions
 from .find_actions import (
     ExistsActionConfig,
     FindActionConfig,
+    FindStateActionConfig,
     FindStateImageActionConfig,
     VanishActionConfig,
     WaitActionConfig,
@@ -205,6 +206,7 @@ __all__ = [
     # Find actions
     "ExistsActionConfig",
     "FindActionConfig",
+    "FindStateActionConfig",
     "FindStateImageActionConfig",
     "VanishActionConfig",
     "WaitActionConfig",

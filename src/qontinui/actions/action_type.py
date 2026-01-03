@@ -20,6 +20,9 @@ class ActionType(Enum):
     FIND = auto()
     """Finds patterns, text, or regions on the screen"""
 
+    FIND_STATE = auto()
+    """Checks which states are currently active on screen by finding their images"""
+
     CLICK = auto()
     """Performs mouse click on found elements (left/right/middle/double)"""
 

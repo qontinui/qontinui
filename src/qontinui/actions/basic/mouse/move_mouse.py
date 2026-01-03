@@ -9,6 +9,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 from ....actions.find import FindAction, FindOptions
+from ....coordinates import CoordinateService
 from ....model.element.location import Location
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
@@ -80,7 +81,7 @@ class MoveMouse(ActionInterface):
         """
         return ActionType.MOVE
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Move mouse to locations specified in object collections.
 
         Args:
@@ -129,17 +130,33 @@ class MoveMouse(ActionInterface):
             # Only use find if we have images/patterns to search for
             state_images = obj_coll.state_images
             if state_images:
+                # Collect all patterns for parallel search
+                patterns_with_info = []
                 for state_image in state_images:
                     pattern = state_image.get_pattern()
                     if pattern:
-                        options = FindOptions(similarity=0.8)
-                        result = self.find_action.find(pattern, options)
+                        monitor_index = getattr(state_image, "monitors", None)
+                        if monitor_index and isinstance(monitor_index, list):
+                            monitor_index = monitor_index[0] if monitor_index else None
+                        patterns_with_info.append((pattern, monitor_index))
 
+                if patterns_with_info:
+                    patterns = [p[0] for p in patterns_with_info]
+                    options = FindOptions(similarity=0.8)
+                    results = await self.find_action.find(patterns, options)
+
+                    service = CoordinateService.get_instance()
+                    for result, (_, monitor_index) in zip(
+                        results, patterns_with_info, strict=False
+                    ):
                         if result.found and result.best_match:
-                            location = Location(
+                            # Translate coordinates to screen space
+                            screen_point = service.to_screen(
                                 result.best_match.center.x,
                                 result.best_match.center.y,
+                                monitor_index,
                             )
+                            location = Location(screen_point.x, screen_point.y)
                             if self.move_mouse_wrapper:
                                 self.move_mouse_wrapper.move(location)
                             matches.add_match_location(location)  # type: ignore[attr-defined]

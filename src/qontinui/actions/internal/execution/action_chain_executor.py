@@ -42,7 +42,7 @@ class ActionChainExecutor:
         self.action_execution = action_execution
         self.action_service = action_service
 
-    def execute_chain(
+    async def execute_chain(
         self,
         chain_options: ActionChainOptions,
         initial_result: ActionResult,
@@ -69,7 +69,7 @@ class ActionChainExecutor:
         result_builder = ActionResultBuilder()
 
         # Execute the initial action
-        current_result = self._execute_action(
+        current_result = await self._execute_action(
             chain_options.get_initial_action(), initial_result, object_collections
         )
 
@@ -83,7 +83,7 @@ class ActionChainExecutor:
 
         # Execute subsequent actions based on strategy
         for next_action in chain_options.get_chained_actions():
-            current_result = self._execute_next_in_chain(
+            current_result = await self._execute_next_in_chain(
                 chain_options.get_strategy(),
                 current_result,
                 next_action,
@@ -112,7 +112,7 @@ class ActionChainExecutor:
 
         return result_builder.build()
 
-    def _execute_next_in_chain(
+    async def _execute_next_in_chain(
         self,
         strategy: ChainingStrategy,
         previous_result: ActionResult,
@@ -131,15 +131,15 @@ class ActionChainExecutor:
             Result of executing the next action
         """
         if strategy == ChainingStrategy.NESTED:
-            return self._execute_nested_action(previous_result, next_action)
+            return await self._execute_nested_action(previous_result, next_action)
         elif strategy == ChainingStrategy.CONFIRM:
-            return self._execute_confirming_action(
+            return await self._execute_confirming_action(
                 previous_result, next_action, original_collections
             )
         else:
             raise ValueError(f"Unknown chaining strategy: {strategy}")
 
-    def _execute_nested_action(
+    async def _execute_nested_action(
         self, previous_result: ActionResult, next_action: ActionConfig
     ) -> ActionResult:
         """Execute an action in NESTED mode where it searches within previous results.
@@ -163,9 +163,9 @@ class ActionChainExecutor:
         # Update the action configuration to search within these regions
         # This is a simplified approach - in full implementation would modify search regions
         # For now, execute with the original configuration
-        return self._execute_action(next_action, ActionResultBuilder().build())
+        return await self._execute_action(next_action, ActionResultBuilder().build())
 
-    def _execute_confirming_action(
+    async def _execute_confirming_action(
         self,
         previous_result: ActionResult,
         next_action: ActionConfig,
@@ -183,11 +183,11 @@ class ActionChainExecutor:
         """
         # Execute the action with original collections
         # The action should confirm the previous results
-        return self._execute_action(
+        return await self._execute_action(
             next_action, ActionResultBuilder().build(), original_collections
         )
 
-    def _execute_action(
+    async def _execute_action(
         self,
         action_config: ActionConfig,
         result: ActionResult,
@@ -207,12 +207,12 @@ class ActionChainExecutor:
             action = self.action_service.get_action(action_config)
             if action:
                 if self.action_execution:
-                    return self.action_execution.perform(
+                    return await self.action_execution.perform(
                         action, "", action_config, object_collections
                     )
                 else:
                     # Direct execution
-                    action.perform(result, *object_collections)
+                    await action.perform(result, *object_collections)
                     return result
 
         # No action found or service not available
@@ -241,7 +241,7 @@ class ActionExecution:
     Handles action lifecycle and execution.
     """
 
-    def perform(
+    async def perform(
         self,
         action: ActionInterface,
         description: str,
@@ -262,5 +262,5 @@ class ActionExecution:
         builder = ActionResultBuilder(config)
         builder.with_description(description)
         result = builder.build()
-        action.perform(result, *collections)
+        await action.perform(result, *collections)
         return result

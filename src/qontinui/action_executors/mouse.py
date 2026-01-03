@@ -103,7 +103,7 @@ class MouseActionExecutor(ActionExecutorBase):
             "HIGHLIGHT",
         ]
 
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute mouse action with validated configuration.
 
         Args:
@@ -144,23 +144,23 @@ class MouseActionExecutor(ActionExecutorBase):
 
         try:
             if action_type == "MOUSE_MOVE":
-                return self._execute_mouse_move(action, typed_config)
+                return await self._execute_mouse_move(action, typed_config)
             elif action_type == "MOUSE_DOWN":
-                return self._execute_mouse_down(action, typed_config)
+                return await self._execute_mouse_down(action, typed_config)
             elif action_type == "MOUSE_UP":
-                return self._execute_mouse_up(action, typed_config)
+                return await self._execute_mouse_up(action, typed_config)
             elif action_type in ("MOUSE_SCROLL", "SCROLL"):
-                return self._execute_scroll(action, typed_config)
+                return await self._execute_scroll(action, typed_config)
             elif action_type == "CLICK":
-                return self._execute_click(action, typed_config)
+                return await self._execute_click(action, typed_config)
             elif action_type == "DOUBLE_CLICK":
-                return self._execute_double_click(action, typed_config)
+                return await self._execute_double_click(action, typed_config)
             elif action_type == "RIGHT_CLICK":
-                return self._execute_right_click(action, typed_config)
+                return await self._execute_right_click(action, typed_config)
             elif action_type == "DRAG":
-                return self._execute_drag(action, typed_config)
+                return await self._execute_drag(action, typed_config)
             elif action_type == "HIGHLIGHT":
-                return self._execute_highlight(action, typed_config)
+                return await self._execute_highlight(action, typed_config)
             else:
                 raise ActionExecutionError(
                     action_type=action_type,
@@ -177,7 +177,7 @@ class MouseActionExecutor(ActionExecutorBase):
 
     # Helper methods
 
-    def _get_target_location(self, target: TargetConfig | None) -> tuple[int, int] | None:
+    async def _get_target_location(self, target: TargetConfig | None) -> tuple[int, int] | None:
         """Get target location from TargetConfig.
 
         Handles different target types:
@@ -298,13 +298,22 @@ class MouseActionExecutor(ActionExecutorBase):
 
                 # Use FindAction to find the pattern
                 find_action = FindAction()
-                result = find_action.find(pattern, options)
+                result = await find_action.find(pattern, options)
 
                 if result.found and result.best_match:
-                    # Return center coordinates of the match
-                    location = (result.best_match.center.x, result.best_match.center.y)
-                    logger.debug(f"Found image at {location}")
-                    return location
+                    # Get raw match coordinates (relative to capture context)
+                    match_x = result.best_match.center.x
+                    match_y = result.best_match.center.y
+
+                    # Translate to absolute screen coordinates using CoordinateService
+                    service = CoordinateService.get_instance()
+                    screen_point = service.to_screen(match_x, match_y, monitor_index)
+                    logger.debug(
+                        f"ImageTarget: Translated ({match_x}, {match_y}) with "
+                        f"monitor_index={monitor_index} to screen ({screen_point.x}, {screen_point.y})"
+                    )
+
+                    return (screen_point.x, screen_point.y)
                 else:
                     logger.warning(f"Image {image_id} not found on screen")
                     return None
@@ -520,9 +529,9 @@ class MouseActionExecutor(ActionExecutorBase):
 
         The transformation depends on how the screenshot was captured:
         - If a specific monitor was captured (monitor_index is not None):
-          Match coordinates are monitor-relative, use monitor_to_screen()
+          Match coordinates are monitor-relative
         - If virtual desktop was captured (monitor_index is None):
-          Match coordinates are virtual-desktop-relative, use match_to_screen()
+          Match coordinates are virtual-desktop-relative
 
         Args:
             match_x: X coordinate from FIND match result
@@ -531,10 +540,7 @@ class MouseActionExecutor(ActionExecutorBase):
         Returns:
             ScreenPoint with absolute screen coordinates
         """
-        service = CoordinateService.get_instance()
-
-        # Check if last_action_result has monitor_index set
-        # This tells us which coordinate system the FIND result used
+        # Get monitor_index from last_action_result if available
         monitor_index = None
         if (
             hasattr(self.context, "last_action_result")
@@ -543,23 +549,20 @@ class MouseActionExecutor(ActionExecutorBase):
         ):
             monitor_index = self.context.last_action_result.monitor_index
 
-        if monitor_index is not None:
-            # FIND captured a specific monitor - coordinates are monitor-relative
-            # Use monitor_to_screen to add that monitor's absolute offset
-            logger.debug(
-                f"Converting monitor-relative coords ({match_x}, {match_y}) "
-                f"for monitor {monitor_index}"
-            )
-            return service.monitor_to_screen(match_x, match_y, monitor_index)
-        else:
-            # FIND captured virtual desktop - coordinates are virtual-desktop-relative
-            # Use match_to_screen to add virtual desktop origin offset
-            logger.debug(f"Converting virtual-desktop-relative coords ({match_x}, {match_y})")
-            return service.match_to_screen(match_x, match_y)
+        # Use unified to_screen() method from CoordinateService
+        service = CoordinateService.get_instance()
+        screen_point = service.to_screen(match_x, match_y, monitor_index)
+        logger.debug(
+            f"Translated ({match_x}, {match_y}) with monitor_index={monitor_index} "
+            f"to screen ({screen_point.x}, {screen_point.y})"
+        )
+        return screen_point
 
     # Pure action executors
 
-    def _execute_mouse_move(self, action: Action, typed_config: MouseMoveActionConfig) -> bool:
+    async def _execute_mouse_move(
+        self, action: Action, typed_config: MouseMoveActionConfig
+    ) -> bool:
         """Execute MOUSE_MOVE action (pure) - move mouse to position.
 
         Args:
@@ -594,7 +597,7 @@ class MouseActionExecutor(ActionExecutorBase):
 
         try:
             log_debug("About to call _get_target_location()")
-            location = self._get_target_location(typed_config.target)
+            location = await self._get_target_location(typed_config.target)
             log_debug(f"_get_target_location() returned: {location}")
         except Exception as e:
             log_debug(f"EXCEPTION in _get_target_location(): {type(e).__name__}: {e}")
@@ -632,7 +635,9 @@ class MouseActionExecutor(ActionExecutorBase):
         log_debug(f"Debug log written to: {debug_log_path}")
         return success  # type: ignore[no-any-return]
 
-    def _execute_mouse_down(self, action: Action, typed_config: MouseDownActionConfig) -> bool:
+    async def _execute_mouse_down(
+        self, action: Action, typed_config: MouseDownActionConfig
+    ) -> bool:
         """Execute MOUSE_DOWN action (pure) - press and hold mouse button.
 
         Args:
@@ -650,7 +655,7 @@ class MouseActionExecutor(ActionExecutorBase):
         # Get optional position
         location = None
         if typed_config.target:
-            location = self._get_target_location(typed_config.target)
+            location = await self._get_target_location(typed_config.target)
         elif typed_config.coordinates:
             location = (typed_config.coordinates.x, typed_config.coordinates.y)
 
@@ -668,7 +673,7 @@ class MouseActionExecutor(ActionExecutorBase):
 
         return success  # type: ignore[no-any-return]
 
-    def _execute_mouse_up(self, action: Action, typed_config: MouseUpActionConfig) -> bool:
+    async def _execute_mouse_up(self, action: Action, typed_config: MouseUpActionConfig) -> bool:
         """Execute MOUSE_UP action (pure) - release mouse button.
 
         Args:
@@ -686,7 +691,7 @@ class MouseActionExecutor(ActionExecutorBase):
         # Get optional position
         location = None
         if typed_config.target:
-            location = self._get_target_location(typed_config.target)
+            location = await self._get_target_location(typed_config.target)
         elif typed_config.coordinates:
             location = (typed_config.coordinates.x, typed_config.coordinates.y)
 
@@ -704,7 +709,7 @@ class MouseActionExecutor(ActionExecutorBase):
 
         return success  # type: ignore[no-any-return]
 
-    def _execute_scroll(self, action: Action, typed_config: ScrollActionConfig) -> bool:
+    async def _execute_scroll(self, action: Action, typed_config: ScrollActionConfig) -> bool:
         """Execute SCROLL/MOUSE_SCROLL action - scroll mouse wheel.
 
         Args:
@@ -724,7 +729,7 @@ class MouseActionExecutor(ActionExecutorBase):
         # Get optional target location
         location = None
         if typed_config.target:
-            location = self._get_target_location(typed_config.target)
+            location = await self._get_target_location(typed_config.target)
             if location:
                 # Move to location before scrolling
                 self.context.mouse.move(location[0], location[1], 0.0)
@@ -741,7 +746,7 @@ class MouseActionExecutor(ActionExecutorBase):
 
     # Combined action executors
 
-    def _execute_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
+    async def _execute_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
         """Execute CLICK action - combined move + down + up with timing.
 
         This is a COMBINED action that orchestrates pure actions.
@@ -780,7 +785,7 @@ class MouseActionExecutor(ActionExecutorBase):
         location = None
         if typed_config.target and typed_config.target.type != "currentPosition":
             debug_write(f"Getting target location for: {typed_config.target}")
-            location = self._get_target_location(typed_config.target)
+            location = await self._get_target_location(typed_config.target)
             debug_write(f"Got location: {location}")
             if not location:
                 logger.error("Failed to get target location for CLICK")
@@ -906,7 +911,7 @@ class MouseActionExecutor(ActionExecutorBase):
         debug_write(f"SUCCESS: Completed {click_count} {button.value}-click(s)")
         return True
 
-    def _execute_double_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
+    async def _execute_double_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
         """Execute DOUBLE_CLICK action - convenience wrapper for CLICK with count=2.
 
         Args:
@@ -930,9 +935,9 @@ class MouseActionExecutor(ActionExecutorBase):
             pause_after_release=(typed_config.pause_after_release if typed_config else None),
         )
 
-        return self._execute_click(action, double_click_config)
+        return await self._execute_click(action, double_click_config)
 
-    def _execute_right_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
+    async def _execute_right_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
         """Execute RIGHT_CLICK action - convenience wrapper for CLICK with button=right.
 
         Args:
@@ -956,9 +961,9 @@ class MouseActionExecutor(ActionExecutorBase):
             pause_after_release=(typed_config.pause_after_release if typed_config else None),
         )
 
-        return self._execute_click(action, right_click_config)
+        return await self._execute_click(action, right_click_config)
 
-    def _execute_drag(self, action: Action, typed_config: DragActionConfig) -> bool:
+    async def _execute_drag(self, action: Action, typed_config: DragActionConfig) -> bool:
         """Execute DRAG action - move + down + move + up.
 
         This is a COMBINED action using pure actions:
@@ -977,7 +982,7 @@ class MouseActionExecutor(ActionExecutorBase):
         logger.info("[COMBINED ACTION: DRAG] Starting drag action")
 
         # Get start location
-        start = self._get_target_location(typed_config.source)
+        start = await self._get_target_location(typed_config.source)
         if not start:
             logger.error("Failed to get start location for DRAG")
             return False
@@ -991,7 +996,7 @@ class MouseActionExecutor(ActionExecutorBase):
             end = (end_x, end_y)
         else:
             # It's a TargetConfig - get location
-            end = self._get_target_location(typed_config.destination)  # type: ignore[arg-type]
+            end = await self._get_target_location(typed_config.destination)  # type: ignore[arg-type]
 
         if not end:
             logger.error("Failed to get destination location for DRAG")
@@ -1038,7 +1043,7 @@ class MouseActionExecutor(ActionExecutorBase):
         logger.info("[COMBINED ACTION: DRAG] Completed")
         return True
 
-    def _execute_highlight(self, action: Action, typed_config: HighlightActionConfig) -> bool:
+    async def _execute_highlight(self, action: Action, typed_config: HighlightActionConfig) -> bool:
         """Execute HIGHLIGHT action - visually highlight a screen region.
 
         Args:
@@ -1051,7 +1056,7 @@ class MouseActionExecutor(ActionExecutorBase):
         from .highlight_overlay import HighlightOverlay
 
         # Get target location
-        location = self._get_target_location(typed_config.target)
+        location = await self._get_target_location(typed_config.target)
         if not location:
             logger.error("Failed to get target location for HIGHLIGHT")
             return False

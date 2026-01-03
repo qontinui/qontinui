@@ -122,36 +122,87 @@ def _load_single_state(state_def: dict[str, Any], state_service: StateService) -
     # Create State using StateBuilder
     builder = StateBuilder(name).with_description(description)
 
-    # Process identifying images
-    identifying_images = state_def.get("identifyingImages", [])
-    if not isinstance(identifying_images, list):
-        logger.error(
-            f"State '{state_id}': identifyingImages must be a list, got {type(identifying_images)}"
-        )
-        return False
-
+    # Process images - support both legacy "identifyingImages" and new "stateImages" format
     image_count = 0
-    for image_id in identifying_images:
-        if not isinstance(image_id, str):
-            logger.warning(f"State '{state_id}': skipping non-string image ID: {image_id}")
-            continue
 
-        # Look up image in registry
-        image = registry.get_image(image_id)
-        if image is None:
-            logger.error(f"State '{state_id}': image '{image_id}' not found in registry")
-            # Continue loading other images instead of failing completely
-            continue
+    # Try new stateImages format first (v2.x)
+    state_images_list = state_def.get("stateImages", [])
+    if state_images_list and isinstance(state_images_list, list):
+        logger.debug(f"State '{state_id}': processing {len(state_images_list)} stateImages")
+        for si in state_images_list:
+            if not isinstance(si, dict):
+                logger.warning(f"State '{state_id}': skipping non-dict stateImage: {si}")
+                continue
 
-        # Create StateImage and add to builder
-        state_image = StateImage(image=image, name=image_id)
-        builder.with_images(state_image)
-        image_count += 1
+            si_id = si.get("id")
+            si_name = si.get("name", si_id)
+            patterns = si.get("patterns", [])
 
-    if image_count == 0 and len(identifying_images) > 0:
-        logger.warning(
-            f"State '{state_id}': no valid images found (requested {len(identifying_images)})"
-        )
+            if not patterns:
+                logger.warning(f"State '{state_id}': stateImage '{si_id}' has no patterns")
+                continue
+
+            # Use first pattern's image as the primary image for this StateImage
+            for pattern in patterns:
+                pattern_image_id = pattern.get("imageId") or pattern.get("image")
+                if not pattern_image_id:
+                    continue
+
+                # Look up image in registry
+                image = registry.get_image(pattern_image_id)
+                if image is None and si_id is not None:
+                    # Try the state image ID itself (might be registered under that)
+                    image = registry.get_image(str(si_id))
+
+                if image is None:
+                    logger.debug(
+                        f"State '{state_id}': image '{pattern_image_id}' not found in registry"
+                    )
+                    continue
+
+                # Create StateImage and add to builder
+                state_image = StateImage(image=image, name=si_name or pattern_image_id)
+                builder.with_images(state_image)
+                image_count += 1
+                logger.debug(
+                    f"State '{state_id}': added stateImage '{si_name}' from pattern image '{pattern_image_id}'"
+                )
+                break  # Only use first valid pattern image for this StateImage
+
+    # Fall back to legacy identifyingImages format
+    else:
+        identifying_images = state_def.get("identifyingImages", [])
+        if not isinstance(identifying_images, list):
+            logger.error(
+                f"State '{state_id}': identifyingImages must be a list, got {type(identifying_images)}"
+            )
+            return False
+
+        for image_id in identifying_images:
+            if not isinstance(image_id, str):
+                logger.warning(f"State '{state_id}': skipping non-string image ID: {image_id}")
+                continue
+
+            # Look up image in registry
+            image = registry.get_image(image_id)
+            if image is None:
+                logger.error(f"State '{state_id}': image '{image_id}' not found in registry")
+                # Continue loading other images instead of failing completely
+                continue
+
+            # Create StateImage and add to builder
+            state_image = StateImage(image=image, name=image_id)
+            builder.with_images(state_image)
+            image_count += 1
+
+    if image_count == 0:
+        state_images_count = len(state_def.get("stateImages", []))
+        identifying_images_count = len(state_def.get("identifyingImages", []))
+        if state_images_count > 0 or identifying_images_count > 0:
+            logger.warning(
+                f"State '{state_id}': no valid images found "
+                f"(stateImages={state_images_count}, identifyingImages={identifying_images_count})"
+            )
 
     # Build the State object
     state = builder.build()

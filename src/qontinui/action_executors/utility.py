@@ -51,7 +51,7 @@ class UtilityActionExecutor(ActionExecutorBase):
         """
         return ["WAIT", "SCREENSHOT"]
 
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute utility action with validated configuration.
 
         Args:

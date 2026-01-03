@@ -18,7 +18,7 @@ class ClickBuilder:
         """Initialize click builder."""
         self.action = Click()
 
-    def execute(self, target: Any) -> bool:
+    async def execute(self, target: Any) -> bool:
         """Execute click action on target.
 
         Args:
@@ -27,4 +27,4 @@ class ClickBuilder:
         Returns:
             True if click succeeded
         """
-        return self.action.execute(target)
+        return await self.action.execute(target)

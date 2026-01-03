@@ -60,7 +60,9 @@ class RunProcess(ActionInterface):
         """
         return ActionType.RUN_PROCESS
 
-    def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(
+        self, action_result: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the workflow with optional repetition.
 
         Args:

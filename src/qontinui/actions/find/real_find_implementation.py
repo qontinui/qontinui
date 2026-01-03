@@ -113,12 +113,57 @@ class RealFindImplementation:
 
         return new_pattern
 
-    def execute(
+    async def execute(
+        self,
+        patterns: list[Pattern],
+        options: FindOptions,
+        max_concurrent: int = 15,
+    ) -> list[FindResult]:
+        """Execute real find operations for multiple patterns.
+
+        Args:
+            patterns: List of patterns to find
+            options: Find configuration
+            max_concurrent: Maximum concurrent pattern searches
+
+        Returns:
+            List of FindResults for each pattern
+        """
+        import asyncio
+
+        logger.info(f"Executing find for {len(patterns)} patterns")
+
+        # Create tasks for each pattern
+        tasks = [asyncio.to_thread(self._execute_single, pattern, options) for pattern in patterns]
+
+        # Execute all searches concurrently
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Convert exceptions to empty FindResults
+        final_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Error finding pattern {patterns[i].name}: {result}")
+                final_results.append(
+                    FindResult(
+                        matches=Matches(),
+                        found=False,
+                        pattern_name=patterns[i].name,
+                        duration_ms=0.0,
+                        debug_data={"error": str(result)},
+                    )
+                )
+            else:
+                final_results.append(result)  # type: ignore[arg-type]
+
+        return final_results
+
+    def _execute_single(
         self,
         pattern: Pattern,
         options: FindOptions,
     ) -> FindResult:
-        """Execute real find operation.
+        """Execute real find operation for a single pattern.
 
         Args:
             pattern: Pattern to find
@@ -696,48 +741,3 @@ class RealFindImplementation:
         except Exception as e:
             logger.error(f"Failed to encode matched region: {e}")
             return None
-
-    async def execute_async(
-        self,
-        patterns: list[Pattern],
-        options: FindOptions,
-        max_concurrent: int = 15,
-    ) -> list[FindResult]:
-        """Execute async find operations for multiple patterns.
-
-        Args:
-            patterns: List of patterns to find
-            options: Find configuration
-            max_concurrent: Maximum concurrent pattern searches
-
-        Returns:
-            List of FindResults for each pattern
-        """
-        import asyncio
-
-        logger.info(f"Executing async find for {len(patterns)} patterns")
-
-        # Create tasks for each pattern
-        tasks = [asyncio.to_thread(self.execute, pattern, options) for pattern in patterns]
-
-        # Execute all searches concurrently
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # Convert exceptions to empty FindResults
-        final_results = []
-        for i, result in enumerate(results):
-            if isinstance(result, Exception):
-                logger.error(f"Error finding pattern {patterns[i].name}: {result}")
-                final_results.append(
-                    FindResult(
-                        matches=Matches(),
-                        found=False,
-                        pattern_name=patterns[i].name,
-                        duration_ms=0.0,
-                        debug_data={"error": str(result)},
-                    )
-                )
-            else:
-                final_results.append(result)  # type: ignore[arg-type]
-
-        return final_results

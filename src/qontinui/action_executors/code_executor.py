@@ -172,7 +172,7 @@ class CodeExecutor(ActionExecutorBase):
         """Get list of action types this executor handles."""
         return ["CODE_BLOCK", "CUSTOM_FUNCTION"]
 
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute code block or custom function.
 
         Args:

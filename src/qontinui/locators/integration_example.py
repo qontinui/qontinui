@@ -240,7 +240,7 @@ def example_healing_stats() -> None:
     print(f"Patterns updated: {stats['patterns_updated']}")
 
 
-def example_with_existing_actions() -> None:
+async def example_with_existing_actions() -> None:
     """Example: Integrating with existing Actions class."""
     from ..actions import Actions
     from ..model.element import Pattern
@@ -254,7 +254,7 @@ def example_with_existing_actions() -> None:
     pattern = Pattern.from_file("path/to/element.png")
 
     # Try standard first
-    result = standard_actions.find(pattern)
+    result = await standard_actions.find(pattern)
 
     if not result.success:
         # Fall back to healing
@@ -266,6 +266,8 @@ def example_with_existing_actions() -> None:
 
 
 if __name__ == "__main__":
+    import asyncio
+
     # Run examples
     print("=== Basic Usage ===")
     example_basic_usage()
@@ -283,4 +285,4 @@ if __name__ == "__main__":
     example_healing_stats()
 
     print("\n=== Integration with Existing Actions ===")
-    example_with_existing_actions()
+    asyncio.run(example_with_existing_actions())

@@ -47,7 +47,7 @@ class TargetResolver:
         self.context = context
         self.template_matcher = template_matcher
 
-    def resolve(self, target_config: Any) -> ActionResult | None:
+    async def resolve(self, target_config: Any) -> ActionResult | None:
         """Resolve target configuration to ActionResult.
 
         Args:
@@ -76,7 +76,7 @@ class TargetResolver:
 
         if isinstance(target_config, ImageTarget):
             log_debug("  Routing to _resolve_image_target()")
-            return self._resolve_image_target(target_config)
+            return await self._resolve_image_target(target_config)
         elif isinstance(target_config, CoordinatesTarget):
             log_debug("  Routing to _resolve_coordinates_target()")
             return self._resolve_coordinates_target(target_config)
@@ -94,13 +94,13 @@ class TargetResolver:
             return self._resolve_state_location_target(target_config)
         elif isinstance(target_config, StateImageTarget):
             log_debug("  Routing to _resolve_state_image_target()")
-            return self._resolve_state_image_target(target_config)
+            return await self._resolve_state_image_target(target_config)
         else:
             log_debug("  ERROR: Unsupported target type")
             logger.error(f"Unsupported target type: {type(target_config)}")
             return None
 
-    def _resolve_image_target(self, target: ImageTarget) -> ActionResult | None:
+    async def _resolve_image_target(self, target: ImageTarget) -> ActionResult | None:
         """Resolve ImageTarget using registry with full options cascade.
 
         Uses the builder pattern to properly cascade all options from:
@@ -283,7 +283,7 @@ class TargetResolver:
                     f"    Finding pattern {pattern.name} with similarity={options.similarity}, monitor={options.monitor_index}"
                 )
 
-                find_result = action.find(pattern, options)
+                find_result = await action.find(pattern, options)
                 if find_result.found and find_result.matches:
                     score = find_result.matches[0].score
                     log_debug(f"    Pattern {pattern.name}: score={score}")
@@ -336,7 +336,7 @@ class TargetResolver:
                     f"      Using cascaded options: similarity={options.similarity}, timeout={options.timeout}, monitor={options.monitor_index}"
                 )
 
-                find_result = action.find(pattern, options)
+                find_result = await action.find(pattern, options)
 
                 if find_result.found and find_result.matches:
                     log_debug(
@@ -589,7 +589,7 @@ class TargetResolver:
         self.context.update_last_action_result(result)
         return result
 
-    def _resolve_state_image_target(self, target: StateImageTarget) -> ActionResult | None:
+    async def _resolve_state_image_target(self, target: StateImageTarget) -> ActionResult | None:
         """Resolve StateImageTarget by converting to ImageTarget and using same logic.
 
         StateImageTarget is used by navigation systems to verify state by finding
@@ -634,4 +634,4 @@ class TargetResolver:
         log_debug(f"  Converted to ImageTarget: {image_target}")
 
         # Use the existing image target resolution which handles StateImage expansion
-        return self._resolve_image_target(image_target)
+        return await self._resolve_image_target(image_target)

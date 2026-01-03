@@ -56,25 +56,50 @@ class MockFindImplementation:
                 self._state_management = None
         return self._state_management
 
-    def execute(
+    async def execute(
         self,
-        pattern: Pattern,
+        patterns: list[Pattern],
         options: FindOptions,
-    ) -> FindResult:
-        """Execute mock find operation.
+    ) -> list[FindResult]:
+        """Execute mock find operation for multiple patterns.
 
         Returns matches from ActionHistory, API, or generates mock matches.
 
         Args:
+            patterns: List of patterns to find
+            options: Find configuration
+
+        Returns:
+            List of FindResults for each pattern
+        """
+        import asyncio
+
+        # Get active states for context (shared across all patterns)
+        active_states = self._get_active_states()
+
+        # Process all patterns concurrently
+        tasks = [
+            asyncio.to_thread(self._execute_single, pattern, options, active_states)
+            for pattern in patterns
+        ]
+        return await asyncio.gather(*tasks)
+
+    def _execute_single(
+        self,
+        pattern: Pattern,
+        options: FindOptions,
+        active_states: set[str],
+    ) -> FindResult:
+        """Execute mock find for a single pattern.
+
+        Args:
             pattern: Pattern to find
             options: Find configuration
+            active_states: Currently active states
 
         Returns:
             FindResult with historical or generated matches
         """
-        # Get active states for context
-        active_states = self._get_active_states()
-
         # 1. Try to get matches from local ActionHistory
         if hasattr(pattern, "match_history") and not pattern.match_history.is_empty():
             matches = self._get_matches_from_history(pattern, active_states)
@@ -271,30 +296,3 @@ class MockFindImplementation:
 
         logger.debug(f"Generated mock match at ({x}, {y})")
         return [match]
-
-    async def execute_async(
-        self,
-        patterns: list[Pattern],
-        options: FindOptions,
-        max_concurrent: int = 15,
-    ) -> list[FindResult]:
-        """Execute async mock find operations for multiple patterns.
-
-        Args:
-            patterns: List of patterns to find
-            options: Find configuration
-            max_concurrent: Maximum concurrent pattern searches (ignored in mock)
-
-        Returns:
-            List of FindResults for each pattern
-        """
-        import asyncio
-
-        logger.info(f"[MOCK] Executing async find for {len(patterns)} patterns")
-
-        # Execute synchronously in mock mode (fast anyway)
-        # But wrap in asyncio.to_thread to simulate async behavior
-        tasks = [asyncio.to_thread(self.execute, pattern, options) for pattern in patterns]
-
-        results = await asyncio.gather(*tasks)
-        return results

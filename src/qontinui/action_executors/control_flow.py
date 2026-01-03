@@ -109,7 +109,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
         """
         return ["LOOP", "IF", "SWITCH", "TRY_CATCH", "BREAK", "CONTINUE"]
 
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute control flow action with validated configuration.
 
         Delegates to the wrapped ControlFlowExecutor after synchronizing

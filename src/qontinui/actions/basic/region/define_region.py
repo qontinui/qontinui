@@ -49,7 +49,7 @@ class DefineWithMatch:
 
     find_action: FindAction = field(default_factory=FindAction)
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define region relative to matches.
 
         Args:
@@ -62,19 +62,22 @@ class DefineWithMatch:
 
         options = matches.action_config
 
-        # Find matches first using FindAction
+        # Collect all patterns for parallel search
+        patterns = []
         if object_collections:
             for obj_coll in object_collections:
                 for state_image in obj_coll.state_images:
                     pattern = state_image.get_pattern()
                     if pattern:
-                        find_options = FindOptions(similarity=0.8)
-                        result = self.find_action.find(pattern, find_options)
-                        if result.found and result.best_match:
-                            # Add match to results
-                            matches.add_match(result.best_match)
-                            break
-                if matches.matches:
+                        patterns.append(pattern)
+
+        # Find matches using parallel FindAction
+        if patterns:
+            find_options = FindOptions(similarity=0.8)
+            results = await self.find_action.find(patterns, find_options)
+            for result in results:
+                if result.found and result.best_match:
+                    matches.add_match(result.best_match)
                     break
 
         if not matches.matches:
@@ -140,24 +143,30 @@ class DefineInsideAnchors:
 
     find_action: FindAction = field(default_factory=FindAction)
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define smallest region containing all anchors.
 
         Args:
             matches: Action result to populate
             object_collections: Anchor objects
         """
-        # Find all anchors using FindAction
+        # Collect all patterns for parallel search
+        patterns = []
         if object_collections:
             for obj_coll in object_collections:
                 for state_image in obj_coll.state_images:
                     pattern = state_image.get_pattern()
                     if pattern:
-                        find_options = FindOptions(similarity=0.8, find_all=True)
-                        result = self.find_action.find(pattern, find_options)
-                        if result.found:
-                            for match in result.matches:
-                                matches.add_match(match)
+                        patterns.append(pattern)
+
+        # Find all anchors using parallel FindAction
+        if patterns:
+            find_options = FindOptions(similarity=0.8, find_all=True)
+            results = await self.find_action.find(patterns, find_options)
+            for result in results:
+                if result.found:
+                    for match in result.matches:
+                        matches.add_match(match)
 
         if not matches.matches:
             logger.warning("No anchors found for region definition")
@@ -191,24 +200,30 @@ class DefineOutsideAnchors:
 
     find_action: FindAction = field(default_factory=FindAction)
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define largest region containing all anchors.
 
         Args:
             matches: Action result to populate
             object_collections: Anchor objects
         """
-        # Similar to inside anchors but with padding - find all anchors using FindAction
+        # Collect all patterns for parallel search
+        patterns = []
         if object_collections:
             for obj_coll in object_collections:
                 for state_image in obj_coll.state_images:
                     pattern = state_image.get_pattern()
                     if pattern:
-                        find_options = FindOptions(similarity=0.8, find_all=True)
-                        result = self.find_action.find(pattern, find_options)
-                        if result.found:
-                            for match in result.matches:
-                                matches.add_match(match)
+                        patterns.append(pattern)
+
+        # Find all anchors using parallel FindAction
+        if patterns:
+            find_options = FindOptions(similarity=0.8, find_all=True)
+            results = await self.find_action.find(patterns, find_options)
+            for result in results:
+                if result.found:
+                    for match in result.matches:
+                        matches.add_match(match)
 
         if not matches.matches:
             logger.warning("No anchors found for region definition")
@@ -251,24 +266,30 @@ class DefineIncludingMatches:
 
     find_action: FindAction = field(default_factory=FindAction)
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Define region including all matches.
 
         Args:
             matches: Action result to populate
             object_collections: Objects to find and include
         """
-        # Find all objects using FindAction
+        # Collect all patterns for parallel search
+        patterns = []
         if object_collections:
             for obj_coll in object_collections:
                 for state_image in obj_coll.state_images:
                     pattern = state_image.get_pattern()
                     if pattern:
-                        find_options = FindOptions(similarity=0.8, find_all=True)
-                        result = self.find_action.find(pattern, find_options)
-                        if result.found:
-                            for match in result.matches:
-                                matches.add_match(match)
+                        patterns.append(pattern)
+
+        # Find all objects using parallel FindAction
+        if patterns:
+            find_options = FindOptions(similarity=0.8, find_all=True)
+            results = await self.find_action.find(patterns, find_options)
+            for result in results:
+                if result.found:
+                    for match in result.matches:
+                        matches.add_match(match)
 
         if not matches.matches:
             logger.warning("No matches found for region definition")
@@ -341,7 +362,7 @@ class DefineRegion(ActionInterface):
         """
         return "DEFINE"
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Perform region definition.
 
         Args:
@@ -360,6 +381,10 @@ class DefineRegion(ActionInterface):
         # Delegate to appropriate strategy
         strategy = self._strategies.get(define_as)
         if strategy:
-            strategy.perform(matches, *object_collections)
+            # Handle both sync (DefineWithWindow) and async strategies
+            if hasattr(strategy, "perform"):
+                result = strategy.perform(matches, *object_collections)
+                if hasattr(result, "__await__"):
+                    await result
         else:
             raise ValueError(f"No strategy registered for DefineAs: {define_as}")

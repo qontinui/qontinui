@@ -359,7 +359,7 @@ class MultipleActions(ActionInterface):
         # Default to FIND as a generic action type
         return ActionType.FIND
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute multiple actions using the Qontinui framework pattern.
 
         Args:

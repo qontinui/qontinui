@@ -32,6 +32,7 @@ from .execution import BaseActionSettings, ExecutionSettings
 from .find_actions import (
     ExistsActionConfig,
     FindActionConfig,
+    FindStateActionConfig,
     FindStateImageActionConfig,
     VanishActionConfig,
     WaitActionConfig,
@@ -85,6 +86,7 @@ class Action(BaseModel):
 ACTION_CONFIG_MAP = {
     # Find actions
     "FIND": FindActionConfig,
+    "FIND_STATE": FindStateActionConfig,
     "FIND_STATE_IMAGE": FindStateImageActionConfig,
     "EXISTS": ExistsActionConfig,
     "VANISH": VanishActionConfig,

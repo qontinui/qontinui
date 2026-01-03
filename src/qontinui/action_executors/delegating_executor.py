@@ -158,7 +158,7 @@ class DelegatingActionExecutor:
             ),
         )
 
-    def execute_action(self, action: Action) -> bool:
+    async def execute_action(self, action: Action) -> bool:
         """Execute a single automation action with retry logic.
 
         Handles the complete lifecycle of action execution including:
@@ -257,7 +257,7 @@ class DelegatingActionExecutor:
             logger.debug(f"Retry attempt {attempt + 1}/{total_attempts}")
             try:
                 # Delegate to specialized executor via registry
-                result = self._delegate_to_executor(action, typed_config)
+                result = await self._delegate_to_executor(action, typed_config)
                 logger.debug(f"Executor returned: {result}")
 
                 # DEBUG: Log delegator result
@@ -358,7 +358,7 @@ class DelegatingActionExecutor:
         )
         return False
 
-    def _delegate_to_executor(self, action: Action, typed_config: Any) -> bool:
+    async def _delegate_to_executor(self, action: Action, typed_config: Any) -> bool:
         """Delegate action execution to the appropriate specialized executor.
 
         This is the core delegation method that:
@@ -382,7 +382,7 @@ class DelegatingActionExecutor:
 
         # Delegate execution to specialized executor
         logger.debug(f"Delegating to {executor.__class__.__name__}")
-        result = executor.execute(action, typed_config)
+        result = await executor.execute(action, typed_config)
 
         return result
 

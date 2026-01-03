@@ -7,7 +7,7 @@ action executors, replacing the monolithic ActionExecutor god class.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -51,7 +51,7 @@ class ExecutionContext:
 
     # Workflow execution (for RUN_WORKFLOW action and navigation)
     workflow_executor: Any | None  # Reference to main workflow executor
-    execute_action: Callable[[Action], bool]  # Callback to execute nested actions
+    execute_action: Callable[[Action], Awaitable[bool]]  # Callback to execute nested actions
 
     # Event emission functions
     emit_event: Callable[[str, dict], None]
@@ -123,7 +123,7 @@ class ActionExecutorBase(ABC):
         self.context = context
 
     @abstractmethod
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute the action with validated configuration.
 
         This method contains the core logic for executing a specific action type.

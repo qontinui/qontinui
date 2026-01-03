@@ -22,7 +22,7 @@ class ClickWithModifiers:
     """
 
     @staticmethod
-    def shift_click(target: Any, options: ClickOptions | None = None) -> bool:
+    async def shift_click(target: Any, options: ClickOptions | None = None) -> bool:
         """Perform a click while holding the Shift key.
 
         Args:
@@ -37,19 +37,19 @@ class ClickWithModifiers:
         key_up = KeyUp(KeyUpOptionsBuilder().add_key("SHIFT").build())
 
         # Execute atomic actions in sequence
-        if not key_down.execute():
+        if not await key_down.execute():
             return False
 
         try:
-            result: bool = click.execute(target)
+            result: bool = await click.execute(target)
         finally:
             # Always release the key
-            key_up.execute()
+            await key_up.execute()
 
         return result
 
     @staticmethod
-    def ctrl_click(target: Any, options: ClickOptions | None = None) -> bool:
+    async def ctrl_click(target: Any, options: ClickOptions | None = None) -> bool:
         """Perform a click while holding the Ctrl key.
 
         Args:
@@ -64,19 +64,19 @@ class ClickWithModifiers:
         key_up = KeyUp(KeyUpOptionsBuilder().add_key("CTRL").build())
 
         # Execute atomic actions in sequence
-        if not key_down.execute():
+        if not await key_down.execute():
             return False
 
         try:
-            result: bool = click.execute(target)
+            result: bool = await click.execute(target)
         finally:
             # Always release the key
-            key_up.execute()
+            await key_up.execute()
 
         return result
 
     @staticmethod
-    def alt_click(target: Any, options: ClickOptions | None = None) -> bool:
+    async def alt_click(target: Any, options: ClickOptions | None = None) -> bool:
         """Perform a click while holding the Alt key.
 
         Args:
@@ -91,19 +91,19 @@ class ClickWithModifiers:
         key_up = KeyUp(KeyUpOptionsBuilder().add_key("ALT").build())
 
         # Execute atomic actions in sequence
-        if not key_down.execute():
+        if not await key_down.execute():
             return False
 
         try:
-            result: bool = click.execute(target)
+            result: bool = await click.execute(target)
         finally:
             # Always release the key
-            key_up.execute()
+            await key_up.execute()
 
         return result
 
     @staticmethod
-    def ctrl_shift_click(target: Any, options: ClickOptions | None = None) -> bool:
+    async def ctrl_shift_click(target: Any, options: ClickOptions | None = None) -> bool:
         """Perform a click while holding Ctrl and Shift keys.
 
         Args:
@@ -118,19 +118,19 @@ class ClickWithModifiers:
         key_up = KeyUp(KeyUpOptionsBuilder().add_key("SHIFT").add_key("CTRL").build())
 
         # Execute atomic actions in sequence
-        if not key_down.execute():
+        if not await key_down.execute():
             return False
 
         try:
-            result: bool = click.execute(target)
+            result: bool = await click.execute(target)
         finally:
             # Always release keys in reverse order
-            key_up.execute()
+            await key_up.execute()
 
         return result
 
     @staticmethod
-    def meta_click(target: Any, options: ClickOptions | None = None) -> bool:
+    async def meta_click(target: Any, options: ClickOptions | None = None) -> bool:
         """Perform a click while holding the Meta/Windows/Command key.
 
         Args:
@@ -145,14 +145,14 @@ class ClickWithModifiers:
         key_up = KeyUp(KeyUpOptionsBuilder().add_key("META").build())
 
         # Execute atomic actions in sequence
-        if not key_down.execute():
+        if not await key_down.execute():
             return False
 
         try:
-            result: bool = click.execute(target)
+            result: bool = await click.execute(target)
         finally:
             # Always release the key
-            key_up.execute()
+            await key_up.execute()
 
         return result
 
@@ -214,7 +214,7 @@ class FluentClickWithModifiers:
             self.modifiers.append("META")
         return self
 
-    def execute(self) -> bool:
+    async def execute(self) -> bool:
         """Execute the click with all specified modifiers.
 
         Returns:
@@ -222,7 +222,7 @@ class FluentClickWithModifiers:
         """
         if not self.modifiers:
             # No modifiers, just do a regular click
-            return cast(bool, Click(self.options).execute(self.target))
+            return cast(bool, await Click(self.options).execute(self.target))
 
         # Create key down action with all modifiers using builder
         key_down_builder = KeyDownOptionsBuilder()
@@ -237,14 +237,14 @@ class FluentClickWithModifiers:
         key_up = KeyUp(key_up_options_builder.build())
 
         # Execute atomic actions in sequence
-        if not key_down.execute():
+        if not await key_down.execute():
             return False
 
         try:
-            result = Click(self.options).execute(self.target)
+            result = await Click(self.options).execute(self.target)
         finally:
             # Always release the keys
-            key_up.execute()
+            await key_up.execute()
 
         return cast(bool, result)
 

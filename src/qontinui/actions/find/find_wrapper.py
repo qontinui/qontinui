@@ -54,44 +54,13 @@ class FindWrapper:
             self._real_impl = RealFindImplementation()
         return self._real_impl
 
-    def find(
-        self,
-        pattern: Pattern,
-        options: FindOptions,
-    ) -> FindResult:
-        """Find image using appropriate implementation.
-
-        Checks ExecutionMode and routes to mock or real.
-
-        Args:
-            pattern: Pattern to find
-            options: Find configuration
-
-        Returns:
-            FindResult (identical format from both implementations)
-        """
-        settings = FrameworkSettings.get_instance()
-        is_mock = settings.core.mock
-
-        logger.debug(
-            f"FindWrapper.find: pattern={pattern.name}, mode={'MOCK' if is_mock else 'REAL'}"
-        )
-
-        if is_mock:
-            result = self.mock_implementation.execute(pattern, options)
-        else:
-            result = self.real_implementation.execute(pattern, options)
-
-        logger.debug(f"FindWrapper.find: found={result.found}, matches={len(result.matches)}")
-        return result
-
-    async def find_async(
+    async def find(
         self,
         patterns: list[Pattern],
         options: FindOptions,
         max_concurrent: int = 15,
     ) -> list[FindResult]:
-        """Find multiple images asynchronously using appropriate implementation.
+        """Find images using appropriate implementation.
 
         Checks ExecutionMode and routes to mock or real.
 
@@ -106,9 +75,15 @@ class FindWrapper:
         settings = FrameworkSettings.get_instance()
         is_mock = settings.core.mock
 
+        logger.debug(
+            f"FindWrapper.find: {len(patterns)} patterns, mode={'MOCK' if is_mock else 'REAL'}"
+        )
+
         if is_mock:
-            logger.debug(f"[MOCK] Finding {len(patterns)} patterns async")
-            return await self.mock_implementation.execute_async(patterns, options, max_concurrent)  # type: ignore[no-any-return]
+            results = await self.mock_implementation.execute(patterns, options)
         else:
-            logger.debug(f"[REAL] Finding {len(patterns)} patterns async")
-            return await self.real_implementation.execute_async(patterns, options, max_concurrent)  # type: ignore[no-any-return]
+            results = await self.real_implementation.execute(patterns, options, max_concurrent)
+
+        found_count = sum(1 for r in results if r.found)
+        logger.debug(f"FindWrapper.find: {found_count}/{len(results)} patterns found")
+        return results

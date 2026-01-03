@@ -8,6 +8,8 @@ from dataclasses import dataclass
 
 from ...actions.find import FindAction
 from ...actions.find import FindOptions as NewFindOptions
+from ...coordinates import CoordinateService
+from ...model.element.location import Location
 from ..action_config import ActionConfig, ActionConfigBuilder
 from ..action_interface import ActionInterface
 from ..action_result import ActionResult
@@ -178,7 +180,7 @@ class FindAndClick(ActionInterface):
         """
         return ActionType.FIND_AND_CLICK  # type: ignore[no-any-return, attr-defined]
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Find element and click on it.
 
         Executes:
@@ -201,17 +203,57 @@ class FindAndClick(ActionInterface):
 
         # Step 1: Find the target using FindAction
         found_matches = []
+        service = CoordinateService.get_instance()
+
+        # Collect all patterns for parallel search
+        patterns_with_info = []  # List of (pattern, state_image, monitor_index)
         for obj_coll in object_collections:
             for state_image in obj_coll.state_images:
                 pattern = state_image.get_pattern()
                 if pattern:
-                    find_opts = NewFindOptions(
-                        similarity=find_options_config.similarity,
-                        find_all=True,
-                    )
-                    result = self.find_action.find(pattern, find_opts)
-                    if result.found:
-                        for match in result.matches:
+                    # Get monitor_index from StateImage if available
+                    monitor_index = getattr(state_image, "monitors", None)
+                    if monitor_index and isinstance(monitor_index, list):
+                        monitor_index = monitor_index[0] if monitor_index else None
+                    patterns_with_info.append((pattern, state_image, monitor_index))
+
+        if patterns_with_info:
+            # For now, use the first monitor_index (could be enhanced to group by monitor)
+            first_monitor = patterns_with_info[0][2] if patterns_with_info else None
+            patterns = [p[0] for p in patterns_with_info]
+
+            find_opts = NewFindOptions(
+                similarity=find_options_config.similarity,
+                find_all=True,
+                monitor_index=first_monitor,
+            )
+            results = await self.find_action.find(patterns, find_opts)
+
+            for result, (_, _, monitor_index) in zip(results, patterns_with_info, strict=False):
+                if result.found:
+                    for match in result.matches:
+                        # Translate match coordinates to screen space
+                        if match.target:
+                            screen_point = service.to_screen(
+                                match.target.x, match.target.y, monitor_index
+                            )
+                            # Create a new match with translated coordinates
+                            from ....find.match import Match as FindMatch
+                            from ....model.match import Match as ModelMatch
+
+                            translated_location = Location(
+                                x=screen_point.x,
+                                y=screen_point.y,
+                                region=match.region,  # Keep original region
+                            )
+                            translated_match_obj = ModelMatch(
+                                target=translated_location,
+                                score=match.similarity,
+                            )
+                            translated_match = FindMatch(match_object=translated_match_obj)
+                            found_matches.append(translated_match)
+                            matches.add_match(translated_match)  # type: ignore[attr-defined]
+                        else:
                             found_matches.append(match)
                             matches.add_match(match)  # type: ignore[attr-defined]
 
@@ -227,7 +269,7 @@ class FindAndClick(ActionInterface):
         for match in found_matches:
             click_collection.add_match(match)  # type: ignore[attr-defined]
 
-        self.click.perform(click_result, click_collection)
+        await self.click.perform(click_result, click_collection)
 
         # Update success status
         object.__setattr__(matches, "success", click_result.success)

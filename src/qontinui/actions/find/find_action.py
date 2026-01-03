@@ -10,6 +10,8 @@ Following model-based GUI automation:
 - Implementation classes (MockFindImplementation, RealFindImplementation)
 """
 
+from typing import cast, overload
+
 from ...model.element import Pattern
 from .find_options import FindOptions
 from .find_result import FindResult
@@ -30,15 +32,19 @@ class FindAction:
     6. Library defaults (action_defaults)
 
     Usage:
-        # Simple usage with cascade
+        # Single pattern
         from qontinui.actions.find import FindAction
         from qontinui.model.element import Pattern
 
         pattern = Pattern.from_file("button.png")
         action = FindAction()
-        result = action.find(pattern)  # Uses cascade: project config → library default
+        result = await action.find(pattern)  # Returns FindResult
 
-        # JSON action with full cascade
+        # Multiple patterns (parallel)
+        patterns = [Pattern.from_file(f"icon{i}.png") for i in range(5)]
+        results = await action.find(patterns)  # Returns list[FindResult]
+
+        # With options from cascade
         from qontinui.actions.find.find_options_builder import CascadeContext, build_find_options
 
         ctx = CascadeContext(
@@ -47,11 +53,7 @@ class FindAction:
             project_config=QontinuiSettings(),
         )
         options = build_find_options(ctx)
-        result = action.find(pattern, options)
-
-        # Async finding
-        patterns = [Pattern.from_file(f"icon{i}.png") for i in range(5)]
-        results = await action.find_async(patterns, options)
+        result = await action.find(pattern, options)
     """
 
     def __init__(self):
@@ -60,38 +62,44 @@ class FindAction:
 
         self._wrapper = FindWrapper()
 
-    def find(
+    @overload
+    async def find(
         self,
         pattern: Pattern,
         options: FindOptions | None = None,
-    ) -> FindResult:
-        """Find an image on screen.
+        max_concurrent: int = 15,
+    ) -> FindResult: ...
 
-        Args:
-            pattern: Pattern to find (includes image + optional mask)
-            options: Find configuration (uses defaults if None)
-
-        Returns:
-            FindResult with matches (works identically for mock and real)
-        """
-        options = options or FindOptions()
-        return self._wrapper.find(pattern, options)  # type: ignore[no-any-return]
-
-    async def find_async(
+    @overload
+    async def find(
         self,
-        patterns: list[Pattern],
+        pattern: list[Pattern],
         options: FindOptions | None = None,
         max_concurrent: int = 15,
-    ) -> list[FindResult]:
-        """Find multiple images asynchronously with parallel pattern matching.
+    ) -> list[FindResult]: ...
+
+    async def find(
+        self,
+        pattern: Pattern | list[Pattern],
+        options: FindOptions | None = None,
+        max_concurrent: int = 15,
+    ) -> FindResult | list[FindResult]:
+        """Find image(s) on screen.
 
         Args:
-            patterns: List of patterns to find
+            pattern: Pattern or list of patterns to find
             options: Find configuration (uses defaults if None)
             max_concurrent: Maximum concurrent pattern searches
 
         Returns:
-            List of FindResults, one per pattern
+            FindResult for single pattern, list[FindResult] for multiple
         """
         options = options or FindOptions()
-        return await self._wrapper.find_async(patterns, options, max_concurrent)  # type: ignore[no-any-return]
+
+        # Handle single pattern
+        if isinstance(pattern, Pattern):
+            results = await self._wrapper.find([pattern], options, max_concurrent)
+            return cast(FindResult, results[0])
+
+        # Handle multiple patterns
+        return cast(list[FindResult], await self._wrapper.find(pattern, options, max_concurrent))

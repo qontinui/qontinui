@@ -59,7 +59,7 @@ class InitialStates:
         initial_states.add_state_set(10, "MainMenu")   # 10% chance
 
         # Find which states are actually active
-        initial_states.find_initial_states()
+        await initial_states.find_initial_states()
 
     In the model-based approach, InitialStates embodies the framework's adaptability to
     uncertain starting conditions. Unlike rigid scripts that assume fixed entry points,
@@ -157,7 +157,7 @@ class InitialStates:
             if valid_ids:
                 self.potential_active_states[frozenset(valid_ids)] = self.sum_of_probabilities
 
-    def find_initial_states(self) -> None:
+    async def find_initial_states(self) -> None:
         """Discover and activate the initial states for automation.
 
         Main entry point that determines which states are currently active.
@@ -175,7 +175,7 @@ class InitialStates:
         if FrameworkSettings.get_instance().mock:
             self._mock_initial_states()
         else:
-            self._search_for_initial_states()
+            await self._search_for_initial_states()
 
     def _mock_initial_states(self) -> None:
         """Simulate initial state selection for testing without GUI interaction.
@@ -221,7 +221,7 @@ class InitialStates:
         # This should never happen if potential_active_states is properly populated
         logger.error("Failed to select any initial states")
 
-    def _search_for_initial_states(self) -> None:
+    async def _search_for_initial_states(self) -> None:
         """Search for initial states on the actual screen.
 
         Attempts to find active states by searching for predefined potential
@@ -229,7 +229,7 @@ class InitialStates:
         known states individually. This two-phase approach balances efficiency
         with completeness.
         """
-        self._search_for_states(self.potential_active_states)
+        await self._search_for_states(self.potential_active_states)
 
         if self.state_memory and not self.state_memory.active_states:
             # Fall back to searching all states
@@ -237,9 +237,9 @@ class InitialStates:
                 potential = {}
                 for state_id in self.all_states_in_project_service.get_all_state_ids():
                     potential[frozenset([state_id])] = 1
-                self._search_for_states(potential)
+                await self._search_for_states(potential)
 
-    def _search_for_states(
+    async def _search_for_states(
         self, potential_active_states_and_probabilities: dict[frozenset[int], int]
     ) -> None:
         """Execute state searches for all states in the provided sets.
@@ -259,7 +259,7 @@ class InitialStates:
             all_potential_states.update(state_ids)
 
         for state_id in all_potential_states:
-            self.state_finder.find_state(state_id)
+            await self.state_finder.find_state(state_id)
 
 
 class StateService:

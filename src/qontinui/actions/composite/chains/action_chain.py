@@ -143,7 +143,7 @@ class ActionChain(ActionInterface):
         # Default to FIND as a generic action type
         return ActionType.FIND
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the action chain using the Qontinui framework pattern.
 
         Args:

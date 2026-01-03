@@ -49,7 +49,7 @@ class ConditionEvaluator:
         self.context = context
         logger.debug("ConditionEvaluator initialized with context")
 
-    def evaluate_condition(self, condition: ConditionConfig) -> bool:
+    async def evaluate_condition(self, condition: ConditionConfig) -> bool:
         """Evaluate a condition and return boolean result.
 
         Supports multiple condition types:
@@ -77,10 +77,10 @@ class ConditionEvaluator:
             return self._evaluate_expression_condition(condition)
 
         elif condition.type == "image_exists":
-            return self._evaluate_image_exists_condition(condition)
+            return await self._evaluate_image_exists_condition(condition)
 
         elif condition.type == "image_vanished":
-            return not self._evaluate_image_exists_condition(condition)
+            return not await self._evaluate_image_exists_condition(condition)
 
         elif condition.type == "text_exists":
             return self._evaluate_text_exists_condition(condition)
@@ -198,7 +198,7 @@ class ConditionEvaluator:
             logger.error("Expression division by zero: %s", str(e))
             raise ValueError(f"Invalid expression '{expression}': {e}") from e
 
-    def _evaluate_image_exists_condition(self, condition: ConditionConfig) -> bool:
+    async def _evaluate_image_exists_condition(self, condition: ConditionConfig) -> bool:
         """Evaluate image-exists condition using FindAction.
 
         Args:
@@ -271,7 +271,7 @@ class ConditionEvaluator:
 
         # Use FindAction (single entry point)
         action = FindAction()
-        result = action.find(pattern, options)
+        result = await action.find(pattern, options)
 
         logger.debug(
             "Image exists check result: image_id=%s, exists=%s",
@@ -370,9 +370,9 @@ class ConditionEvaluator:
         )
         options = build_find_options(ctx)
 
-        # Use FindAction async method to search all patterns concurrently
+        # Use FindAction to search all patterns concurrently
         action = FindAction()
-        find_results = await action.find_async(patterns, options)
+        find_results = await action.find(patterns, options)
 
         # Map results back to action IDs
         results = {}

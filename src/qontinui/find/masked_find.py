@@ -147,7 +147,7 @@ class MaskedFind(FindImage):
         similarity = 1.0 - avg_diff
         return float(similarity)
 
-    def find(self) -> Match | None:
+    async def find(self) -> Match | None:
         """Find single best match using masked pattern matching.
 
         Returns:
@@ -159,9 +159,9 @@ class MaskedFind(FindImage):
             return matches[0] if matches else None
         else:
             # Fall back to standard matching
-            return super().find()
+            return await super().find()
 
-    def find_all_matches(self) -> Matches:
+    async def find_all_matches(self) -> Matches:
         """Find all matches using masked pattern matching.
 
         Returns:
@@ -173,7 +173,7 @@ class MaskedFind(FindImage):
             return Matches(matches)
         else:
             # Fall back to standard matching
-            return super().find_all_matches()
+            return await super().find_all_matches()
 
     def _find_with_mask(self, find_all: bool = False) -> list[Match]:
         """Internal method to find matches using mask.

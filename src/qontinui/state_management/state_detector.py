@@ -91,7 +91,7 @@ class StateDetector:
         self._max_concurrent = max_concurrent
         self._screenshot_cache = ScreenshotCache(ttl_seconds=screenshot_cache_ttl)
 
-    def check_for_active_states(self) -> None:
+    async def check_for_active_states(self) -> None:
         """Verify that currently active states are still visible on screen.
 
         Iterates through all states marked as active in StateMemory and checks
@@ -111,7 +111,7 @@ class StateDetector:
 
         states_no_longer_visible = set()
         for state_id in current_active_states:
-            if not self.find_state(state_id):
+            if not await self.find_state(state_id):
                 states_no_longer_visible.add(state_id)
 
         for state_id in states_no_longer_visible:
@@ -129,7 +129,7 @@ class StateDetector:
                 f"{', '.join(state_names)}"
             )
 
-    def rebuild_active_states(self) -> None:
+    async def rebuild_active_states(self) -> None:
         """Rebuild the active state list when context is lost or uncertain.
 
         First attempts to verify existing active states. If no states remain
@@ -143,7 +143,7 @@ class StateDetector:
         3. Default to UNKNOWN if nothing found
         """
         logger.info("Rebuilding active states")
-        self.check_for_active_states()
+        await self.check_for_active_states()
 
         if self.state_memory and self.state_memory.active_states:
             logger.info(
@@ -153,7 +153,7 @@ class StateDetector:
             return
 
         logger.info("No active states found, performing comprehensive search")
-        self.search_all_images_for_current_states()
+        await self.search_all_images_for_current_states()
 
         if self.state_memory:
             if not self.state_memory.active_states:
@@ -164,7 +164,7 @@ class StateDetector:
             else:
                 logger.info(f"Rebuilt active states: {self.state_memory.get_active_state_names()}")
 
-    def search_all_images_for_current_states(self) -> None:
+    async def search_all_images_for_current_states(self) -> None:
         """Perform comprehensive search for all defined states on the current screen.
 
         Searches for every state in the project (except UNKNOWN) to build a
@@ -193,12 +193,12 @@ class StateDetector:
         found = 0
 
         for state_name in all_state_names:
-            if self.find_state_by_name(state_name):
+            if await self.find_state_by_name(state_name):
                 found += 1
 
         logger.info(f"Comprehensive search complete: found {found} of {total_states} states")
 
-    def find_state_by_name(self, state_name: str) -> bool:
+    async def find_state_by_name(self, state_name: str) -> bool:
         """Search for a specific state by name on the current screen.
 
         Attempts to find visual patterns associated with the named state.
@@ -227,7 +227,7 @@ class StateDetector:
 
         collection = ObjectCollectionBuilder().with_non_shared_images(state).build()
         config = PatternFindOptionsBuilder().build()
-        result = self.action.perform(config, collection)
+        result = await self.action.perform(config, collection)
 
         found = result.is_success
 
@@ -236,7 +236,7 @@ class StateDetector:
 
         return cast(bool, found)
 
-    def find_state(self, state_id: int) -> bool:
+    async def find_state(self, state_id: int) -> bool:
         """Search for a specific state by ID on the current screen.
 
         Attempts to find visual patterns associated with the state ID.
@@ -267,7 +267,7 @@ class StateDetector:
 
         collection = ObjectCollectionBuilder().with_non_shared_images(state).build()
         config = PatternFindOptionsBuilder().build()
-        result = self.action.perform(config, collection)
+        result = await self.action.perform(config, collection)
 
         found = result.is_success
 
@@ -276,7 +276,7 @@ class StateDetector:
 
         return cast(bool, found)
 
-    def refresh_active_states(self) -> set[int]:
+    async def refresh_active_states(self) -> set[int]:
         """Completely reset and rediscover all active states.
 
         Clears all existing active state information and performs a fresh
@@ -296,7 +296,7 @@ class StateDetector:
         if self.state_memory:
             self.state_memory.clear_active_states()
 
-        self.search_all_images_for_current_states()
+        await self.search_all_images_for_current_states()
 
         if self.state_memory:
             active_states = self.state_memory.active_states
@@ -406,15 +406,13 @@ class StateDetector:
             logger.warning(f"State '{state_name}' not found in service")
             return False
 
-        # Run the synchronous action in a thread pool to avoid blocking
-        # the event loop during template matching
         from ..actions.basic.find.pattern_find_options import PatternFindOptionsBuilder
 
         collection = ObjectCollectionBuilder().with_non_shared_images(state).build()
         config = PatternFindOptionsBuilder().build()
 
-        # Execute the action in a thread pool
-        result = await asyncio.to_thread(self.action.perform, config, collection)
+        # Execute the async action directly
+        result = await self.action.perform(config, collection)
 
         found = result.is_success
 

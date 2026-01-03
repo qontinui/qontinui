@@ -7,6 +7,7 @@ import time
 from typing import Any
 
 from ....actions.find import FindAction, FindOptions
+from ....coordinates import CoordinateService
 from ....model.element.location import Location
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
@@ -34,7 +35,9 @@ class Scroll(ActionInterface):
         """
         self.find_action = find_action or FindAction()
 
-    def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(
+        self, action_result: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the scroll operation.
 
         First finds the target location using Find, then performs the
@@ -51,7 +54,7 @@ class Scroll(ActionInterface):
         scroll_options = action_result.action_config
 
         # Find the location to scroll at
-        location = self._find_scroll_location(action_result, object_collections)
+        location = await self._find_scroll_location(action_result, object_collections)
         if not location:
             object.__setattr__(action_result, "success", False)
             object.__setattr__(action_result, "output_text", "Could not find location to scroll")
@@ -74,7 +77,7 @@ class Scroll(ActionInterface):
                 f"Scrolled {scroll_options.get_direction().name} {scroll_options.get_clicks()} times",
             )
 
-    def _find_scroll_location(
+    async def _find_scroll_location(
         self, action_result: ActionResult, object_collections: tuple[Any, ...]
     ) -> Location | None:
         """Find the location to scroll at.
@@ -90,21 +93,32 @@ class Scroll(ActionInterface):
             # No specific location, use screen center
             return Location(640, 360)  # Default center position
 
-        # Use FindAction to locate the target
+        # Collect all patterns for parallel search
+        patterns_with_info = []
         for obj_coll in object_collections:
-            # Extract patterns from state images
             for state_image in obj_coll.state_images:
                 pattern = state_image.get_pattern()
                 if pattern:
-                    options = FindOptions(similarity=0.8)
-                    result = self.find_action.find(pattern, options)
+                    monitor_index = getattr(state_image, "monitors", None)
+                    if monitor_index and isinstance(monitor_index, list):
+                        monitor_index = monitor_index[0] if monitor_index else None
+                    patterns_with_info.append((pattern, monitor_index))
 
-                    if result.found and result.best_match:
-                        # Return location from match center
-                        return Location(
-                            result.best_match.center.x,
-                            result.best_match.center.y,
-                        )
+        if patterns_with_info:
+            patterns = [p[0] for p in patterns_with_info]
+            options = FindOptions(similarity=0.8)
+            results = await self.find_action.find(patterns, options)
+
+            service = CoordinateService.get_instance()
+            for result, (_, monitor_index) in zip(results, patterns_with_info, strict=False):
+                if result.found and result.best_match:
+                    # Translate coordinates to screen space
+                    screen_point = service.to_screen(
+                        result.best_match.center.x,
+                        result.best_match.center.y,
+                        monitor_index,
+                    )
+                    return Location(screen_point.x, screen_point.y)
 
         return None
 

@@ -362,6 +362,16 @@ class MultiStateAdapter:
         # Convert path to Qontinui transitions
         # MultiState returns transition objects - we need to extract IDs and look up Qontinui transitions
         _debug_print(f"Found path with {len(path.transitions_sequence)} transitions")
+
+        # Check if target is already reached (path with 0 transitions)
+        if len(path.transitions_sequence) == 0:
+            logger.info(
+                f"GO_TO_STATE: Target states {target_state_ids} already active - "
+                f"transition skipped (no actions needed)"
+            )
+            _debug_print("Target states already reached - returning empty transition list")
+            return []
+
         logger.info(f"Found path with {len(path.transitions_sequence)} transitions")
 
         qontinui_transitions = []

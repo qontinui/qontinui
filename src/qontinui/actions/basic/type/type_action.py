@@ -132,7 +132,7 @@ class TypeAction(ActionInterface):
         """
         return ActionType.TYPE
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the type action using the Qontinui framework pattern.
 
         Args:

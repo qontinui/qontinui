@@ -37,7 +37,7 @@ class TemplateMatchEngine:
         self.context = context
         self.pattern_loader = pattern_loader
 
-    def find_images(
+    async def find_images(
         self, image_ids: list[str], similarity: float, strategy: str = "FIRST"
     ) -> ActionResult | None:
         """Find images on screen by loading patterns and matching.
@@ -86,7 +86,7 @@ class TemplateMatchEngine:
 
         log_debug("  Calling find_patterns()...")
         # Find patterns on screen
-        result = self.find_patterns(
+        result = await self.find_patterns(
             patterns=patterns,
             threshold=similarity,
             image_ids=image_ids,
@@ -95,7 +95,7 @@ class TemplateMatchEngine:
         log_debug(f"  find_patterns() returned: {result}")
         return result
 
-    def find_patterns(
+    async def find_patterns(
         self,
         patterns: list[Pattern],
         threshold: float,
@@ -113,9 +113,9 @@ class TemplateMatchEngine:
         Returns:
             ActionResult with matches or None if not found
         """
-        # Single pattern: use synchronous path
+        # Single pattern: use async path
         if len(patterns) == 1:
-            return self._find_single_pattern(
+            return await self._find_single_pattern(
                 pattern=patterns[0],
                 threshold=threshold,
                 image_id=image_ids[0] if image_ids else None,
@@ -124,7 +124,7 @@ class TemplateMatchEngine:
         # Multiple patterns: use async execution
         logger.debug(f"Finding {len(patterns)} patterns with strategy={strategy}")
 
-        async_results = self._run_async_find(patterns, threshold, image_ids)
+        async_results = await self._run_async_find(patterns, threshold, image_ids)
 
         if not async_results:
             return None
@@ -140,10 +140,10 @@ class TemplateMatchEngine:
 
         return action_result
 
-    def _find_single_pattern(
+    async def _find_single_pattern(
         self, pattern: Pattern, threshold: float, image_id: str | None = None
     ) -> ActionResult | None:
-        """Find single pattern on screen synchronously.
+        """Find single pattern on screen.
 
         Args:
             pattern: Pattern to find
@@ -193,7 +193,7 @@ class TemplateMatchEngine:
             log_debug(f"  Using monitor_index from context: {monitor_index}")
 
         log_debug("  Calling FindAction.find()...")
-        find_result = action.find(
+        find_result = await action.find(
             pattern=pattern,
             options=FindOptions(similarity=threshold, find_all=False, monitor_index=monitor_index),
         )
@@ -232,7 +232,7 @@ class TemplateMatchEngine:
         logger.debug(f"Found {len(action_result.matches)} matches for pattern {pattern.name}")
         return action_result
 
-    def _run_async_find(
+    async def _run_async_find(
         self,
         patterns: list[Pattern],
         threshold: float,
@@ -263,46 +263,34 @@ class TemplateMatchEngine:
                 monitor_index = default_monitor_index
             pattern_monitors.append(monitor_index)
 
-        # Get or create event loop
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        action = FindAction()
+        tasks = []
 
-        async def find_all_patterns():
-            """Find all patterns using async parallelism."""
-            action = FindAction()
-            tasks = []
-
-            for i, pattern in enumerate(patterns):
-                task = asyncio.create_task(
-                    asyncio.to_thread(
-                        action.find,
-                        pattern=pattern,
-                        options=FindOptions(
-                            similarity=threshold,
-                            find_all=False,
-                            monitor_index=pattern_monitors[i],
-                        ),
-                    )
+        for i, pattern in enumerate(patterns):
+            task = asyncio.create_task(
+                action.find(
+                    pattern=pattern,
+                    options=FindOptions(
+                        similarity=threshold,
+                        find_all=False,
+                        monitor_index=pattern_monitors[i],
+                    ),
                 )
-                tasks.append((pattern, i, task))
+            )
+            tasks.append((pattern, i, task))
 
-            # Gather all results
-            results = []
-            for pattern, idx, task in tasks:
-                try:
-                    result = await task
-                    if result.found and result.matches:
-                        results.append((pattern, idx, result))
-                except Exception as e:
-                    logger.warning(f"Pattern {pattern.name} search failed: {e}")
-                    continue
+        # Gather all results
+        results = []
+        for pattern, idx, task in tasks:
+            try:
+                result = await task
+                if result.found and result.matches:
+                    results.append((pattern, idx, result))
+            except Exception as e:
+                logger.warning(f"Pattern {pattern.name} search failed: {e}")
+                continue
 
-            return results
-
-        return loop.run_until_complete(find_all_patterns())
+        return results
 
     def _build_result_with_strategy(
         self,

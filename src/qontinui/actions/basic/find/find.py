@@ -76,7 +76,7 @@ class Find(ActionInterface):
         """
         return ActionType.FIND
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the find operation to locate GUI elements on screen.
 
         This method now delegates to FindAction for actual pattern matching.
@@ -105,20 +105,26 @@ class Find(ActionInterface):
 
         find_options_config = action_config
 
-        # Use FindAction for pattern matching
+        # Collect all patterns from all object collections
+        patterns = []
         for obj_coll in object_collections:
             for state_image in obj_coll.state_images:
                 pattern = state_image.get_pattern()
                 if pattern:
-                    options = NewFindOptions(
-                        similarity=find_options_config.similarity,
-                        find_all=True,
-                    )
-                    result = self.find_action.find(pattern, options)
+                    patterns.append(pattern)
 
-                    if result.found:
-                        for match in result.matches:
-                            matches.add_match(match)  # type: ignore[attr-defined]
+        if patterns:
+            options = NewFindOptions(
+                similarity=find_options_config.similarity,
+                find_all=True,
+            )
+            # Use async find for all patterns in parallel
+            results = await self.find_action.find(patterns, options)
+
+            for result in results:
+                if result.found:
+                    for match in result.matches:
+                        matches.add_match(match)  # type: ignore[attr-defined]
 
         # Set success based on whether matches were found
         if matches.matches:

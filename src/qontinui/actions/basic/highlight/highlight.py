@@ -7,6 +7,7 @@ import time
 from typing import Any
 
 from ....actions.find import FindAction, FindOptions
+from ....coordinates import CoordinateService
 from ....model.element.region import Region
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult
@@ -33,7 +34,9 @@ class Highlight(ActionInterface):
         """
         self.find_action = find_action or FindAction()
 
-    def perform(self, action_result: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(
+        self, action_result: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the highlight operation.
 
         Finds target regions and displays visual highlights around them.
@@ -49,7 +52,7 @@ class Highlight(ActionInterface):
         highlight_options = action_result.action_config
 
         # Find regions to highlight
-        regions = self._find_regions_to_highlight(action_result, object_collections)
+        regions = await self._find_regions_to_highlight(action_result, object_collections)
         if not regions:
             object.__setattr__(action_result, "success", False)
             object.__setattr__(action_result, "output_text", "No regions found to highlight")
@@ -71,7 +74,7 @@ class Highlight(ActionInterface):
                 action_result, "output_text", f"Highlighted {len(regions)} region(s)"
             )
 
-    def _find_regions_to_highlight(
+    async def _find_regions_to_highlight(
         self, action_result: ActionResult, object_collections: tuple[Any, ...]
     ) -> list[Region]:
         """Find regions to highlight.
@@ -88,19 +91,41 @@ class Highlight(ActionInterface):
         if not object_collections:
             return regions
 
-        # Use FindAction to locate targets
+        # Collect all patterns for parallel search
+        patterns_with_info = []  # List of (pattern, state_image, monitor_index)
         for obj_coll in object_collections:
             for state_image in obj_coll.state_images:
                 pattern = state_image.get_pattern()
                 if pattern:
-                    options = FindOptions(similarity=0.8, find_all=True)
-                    result = self.find_action.find(pattern, options)
+                    monitor_index = getattr(state_image, "monitors", None)
+                    if monitor_index and isinstance(monitor_index, list):
+                        monitor_index = monitor_index[0] if monitor_index else None
+                    patterns_with_info.append((pattern, state_image, monitor_index))
 
-                    if result.found:
-                        # Extract regions from all matches
-                        for match in result.matches:
-                            if match.region:
-                                regions.append(match.region)
+        if patterns_with_info:
+            patterns = [p[0] for p in patterns_with_info]
+            options = FindOptions(similarity=0.8, find_all=True)
+            results = await self.find_action.find(patterns, options)
+
+            service = CoordinateService.get_instance()
+            for result, (_, _, monitor_index) in zip(results, patterns_with_info, strict=False):
+                if result.found:
+                    # Extract and translate regions from all matches
+                    for match in result.matches:
+                        if match.region:
+                            # Translate region to screen coordinates
+                            screen_point = service.to_screen(
+                                match.region.x,
+                                match.region.y,
+                                monitor_index,
+                            )
+                            translated_region = Region(
+                                x=screen_point.x,
+                                y=screen_point.y,
+                                width=match.region.width,
+                                height=match.region.height,
+                            )
+                            regions.append(translated_region)
 
         return regions
 

@@ -455,14 +455,22 @@ class PlaywrightExtractor(RuntimeExtractor):
                 )
                 viewport = Viewport(width=region.width, height=region.height)
             else:
-                await self.page.screenshot(path=str(path), full_page=False)
-                viewport_size = self.page.viewport_size
-                if viewport_size:
-                    viewport = Viewport(
-                        width=viewport_size["width"], height=viewport_size["height"]
-                    )
+                # Capture full page screenshot to include all states
+                await self.page.screenshot(path=str(path), full_page=True)
+                # Get actual page dimensions for the viewport info
+                page_width = await self.page.evaluate("document.body.scrollWidth")
+                page_height = await self.page.evaluate("document.body.scrollHeight")
+                # Fall back to viewport if page dimensions unavailable
+                if page_width and page_height:
+                    viewport = Viewport(width=page_width, height=page_height)
                 else:
-                    viewport = Viewport(width=1920, height=1080)
+                    viewport_size = self.page.viewport_size
+                    if viewport_size:
+                        viewport = Viewport(
+                            width=viewport_size["width"], height=viewport_size["height"]
+                        )
+                    else:
+                        viewport = Viewport(width=1920, height=1080)
 
             # Create Screenshot object
             screenshot = Screenshot(

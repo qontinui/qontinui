@@ -9,7 +9,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from ...find import Matches
 from ..element import Image, Pattern, Region
 from ..search_regions import SearchRegions
 from .action_history import ActionHistory
@@ -130,111 +129,6 @@ class StateImage:
             pattern = pattern.with_search_region(self._search_region)
 
         return pattern
-
-    def find(self) -> Matches:
-        """Find this state image using FindAction with proper cascade.
-
-        Returns:
-            Matches object with all found matches
-        """
-        from ...actions.find import FindAction
-        from ...actions.find.find_options_builder import (
-            CascadeContext,
-            build_find_options,
-        )
-
-        pattern = self.get_pattern()
-        action = FindAction()
-
-        # Build options with full cascade
-        try:
-            from ...config.settings import QontinuiSettings
-
-            project_config = QontinuiSettings()
-        except Exception:
-            project_config = None
-
-        ctx = CascadeContext(
-            search_options=None,  # StateImage doesn't have SearchOptions
-            pattern=pattern,
-            state_image=self,
-            project_config=project_config,
-        )
-        options = build_find_options(ctx, explicit_find_all=True)
-
-        result = action.find(pattern=pattern, options=options)
-        return Matches(result.matches)  # type: ignore[arg-type]
-
-    def exists(self) -> bool:
-        """Check if this state image exists using FindAction with proper cascade.
-
-        Returns:
-            True if image found on screen
-        """
-        from ...actions.find import FindAction
-        from ...actions.find.find_options_builder import (
-            CascadeContext,
-            build_find_options,
-        )
-
-        pattern = self.get_pattern()
-        action = FindAction()
-
-        # Build options with full cascade
-        try:
-            from ...config.settings import QontinuiSettings
-
-            project_config = QontinuiSettings()
-        except Exception:
-            project_config = None
-
-        ctx = CascadeContext(
-            search_options=None,  # StateImage doesn't have SearchOptions
-            pattern=pattern,
-            state_image=self,
-            project_config=project_config,
-        )
-        options = build_find_options(ctx)
-
-        result = action.find(pattern=pattern, options=options)
-        return result.found
-
-    def wait_for(self, timeout: float = 5.0) -> bool:
-        """Wait for image to appear with proper cascade.
-
-        Args:
-            timeout: Maximum wait time (default: 5.0 seconds)
-
-        Returns:
-            True if image appeared
-        """
-        from ...actions.find import FindAction
-        from ...actions.find.find_options_builder import (
-            CascadeContext,
-            build_find_options,
-        )
-
-        pattern = self.get_pattern()
-        action = FindAction()
-
-        # Build options with full cascade
-        try:
-            from ...config.settings import QontinuiSettings
-
-            project_config = QontinuiSettings()
-        except Exception:
-            project_config = None
-
-        ctx = CascadeContext(
-            search_options=None,
-            pattern=pattern,
-            state_image=self,
-            project_config=project_config,
-        )
-        options = build_find_options(ctx, explicit_timeout=timeout)
-
-        result = action.find(pattern=pattern, options=options)
-        return result.found
 
     def set_fixed(self, fixed: bool = True) -> StateImage:
         """Set whether image is fixed in position (fluent).

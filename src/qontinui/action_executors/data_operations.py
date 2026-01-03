@@ -67,7 +67,7 @@ class DataOperationsExecutorAdapter(ActionExecutorBase):
             "MATH_OPERATION",
         ]
 
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute data operation action with validated configuration.
 
         This method delegates to the wrapped DataOperationsExecutor, adapting

@@ -98,7 +98,7 @@ class Match:
             return False
         return self.similarity > 0
 
-    def click(self) -> ActionResult:
+    async def click(self) -> ActionResult:
         """Click on this match.
 
         Returns:
@@ -112,12 +112,17 @@ class Match:
 
         # Use Action system to click at the target location
         from ..actions import Action
+        from ..actions.basic.click.click_options import ClickOptionsBuilder
+        from ..actions.object_collection import ObjectCollectionBuilder
         from ..model.element import Location
 
+        location = Location(x=self.target.x, y=self.target.y)
+        collection = ObjectCollectionBuilder().with_locations(location).build()
+        click_options = ClickOptionsBuilder().build()
         action = Action()
-        return action.click(Location(x=self.target.x, y=self.target.y))
+        return await action.perform(click_options, collection)
 
-    def double_click(self) -> ActionResult:
+    async def double_click(self) -> ActionResult:
         """Double-click on this match.
 
         Returns:
@@ -138,9 +143,9 @@ class Match:
         collection = ObjectCollectionBuilder().with_locations(location).build()
         click_options = ClickOptionsBuilder().set_number_of_clicks(2).build()
         action = Action()
-        return action.perform(click_options, collection)
+        return await action.perform(click_options, collection)
 
-    def right_click(self) -> ActionResult:
+    async def right_click(self) -> ActionResult:
         """Right-click on this match.
 
         Returns:
@@ -166,9 +171,9 @@ class Match:
         mouse_press = MousePressOptions.builder().set_button(MouseButton.RIGHT).build()
         click_options = ClickOptionsBuilder().set_press_options(mouse_press).build()
         action = Action()
-        return action.perform(click_options, collection)
+        return await action.perform(click_options, collection)
 
-    def hover(self) -> ActionResult:
+    async def hover(self) -> ActionResult:
         """Move mouse to this match.
 
         Returns:
@@ -189,9 +194,9 @@ class Match:
         collection = ObjectCollectionBuilder().with_locations(location).build()
         move_options = MouseMoveOptionsBuilder().build()
         action = Action()
-        return action.perform(move_options, collection)
+        return await action.perform(move_options, collection)
 
-    def drag_to(self, target: "Match") -> ActionResult:
+    async def drag_to(self, target: "Match") -> ActionResult:
         """Drag from this match to another.
 
         Args:
@@ -222,9 +227,9 @@ class Match:
         target_collection = ObjectCollectionBuilder().with_locations(target_loc).build()
         drag_options = DragOptionsBuilder().build()
         action = Action()
-        return action.perform(drag_options, source_collection, target_collection)
+        return await action.perform(drag_options, source_collection, target_collection)
 
-    def type_text(self, text: str) -> ActionResult:
+    async def type_text(self, text: str) -> ActionResult:
         """Type text at this match location.
 
         Args:
@@ -240,7 +245,7 @@ class Match:
             return result
 
         # Click first to focus
-        click_result = self.click()
+        click_result = await self.click()
         if not click_result.success:
             return click_result
 

@@ -54,7 +54,7 @@ class Actions:
             else:
                 logger.info("Actions initialized in LIVE mode")
 
-    def find(self, target: Pattern, region: Region | None = None) -> ActionResult:
+    async def find(self, target: Pattern, region: Region | None = None) -> ActionResult:
         """Find a pattern on screen.
 
         Args:
@@ -68,7 +68,7 @@ class Actions:
 
         # FindAction handles mock/real routing internally
         options = FindOptions(search_region=region, find_all=False)
-        find_result = self.find_action.find(target, options)
+        find_result = await self.find_action.find(target, options)
 
         # Convert FindResult to ActionResult for compatibility
         # Wrap model.Match into find.Match (which has action methods)
@@ -79,7 +79,7 @@ class Actions:
                 builder.add_match(wrapped_match)
         return builder.build()
 
-    def click(self, target: Any, button: str = "left") -> ActionResult:
+    async def click(self, target: Any, button: str = "left") -> ActionResult:
         """Click on a target.
 
         Args:
@@ -102,7 +102,7 @@ class Actions:
             if isinstance(target, Pattern):
 
                 # Find pattern first, then click
-                find_result = self.find(target)
+                find_result = await self.find(target)
                 if find_result.success and find_result.matches:
                     match = find_result.matches[0]
                     location = match.center
@@ -132,7 +132,7 @@ class Actions:
                     .build()
                 )
 
-    def type(self, text: str, target: Any | None = None) -> ActionResult:
+    async def type(self, text: str, target: Any | None = None) -> ActionResult:
         """Type text, optionally at a target location.
 
         Args:
@@ -153,7 +153,7 @@ class Actions:
         else:
             # Live implementation
             if target:
-                click_result = self.click(target)
+                click_result = await self.click(target)
                 if not click_result.success:
                     return click_result
 
@@ -208,7 +208,7 @@ class Actions:
 
             return cast(ActionResult, self.pure.wait(seconds))
 
-    def wait_for(self, target: Pattern, timeout: float = 5.0) -> ActionResult:
+    async def wait_for(self, target: Pattern, timeout: float = 5.0) -> ActionResult:
         """Wait for a pattern to appear.
 
         Args:
@@ -223,7 +223,7 @@ class Actions:
 
         if MockModeManager.is_mock_mode():
             # In mock mode, check if pattern would be found
-            find_result = self.find(target)
+            find_result = await self.find(target)
             return ActionResultBuilder().with_success(find_result.success).build()
         else:
             # Live implementation would poll for pattern
@@ -232,7 +232,7 @@ class Actions:
             start_time = time.time()
 
             while time.time() - start_time < timeout:
-                find_result = self.find(target)
+                find_result = await self.find(target)
                 if find_result.success:
                     return ActionResultBuilder().with_success(True).build()
                 time.sleep(0.5)
@@ -244,7 +244,7 @@ class Actions:
                 .build()
             )
 
-    def wait_vanish(self, target: Pattern, timeout: float = 30.0) -> ActionResult:
+    async def wait_vanish(self, target: Pattern, timeout: float = 30.0) -> ActionResult:
         """Wait for a pattern to disappear.
 
         Args:
@@ -268,7 +268,7 @@ class Actions:
             start_time = time.time()
 
             while time.time() - start_time < timeout:
-                find_result = self.find(target)
+                find_result = await self.find(target)
                 if not find_result.success:
                     return ActionResultBuilder().with_success(True).build()
                 time.sleep(0.5)
@@ -280,7 +280,7 @@ class Actions:
                 .build()
             )
 
-    def drag(self, from_target: Any, to_target: Any, duration: float = 1.0) -> ActionResult:
+    async def drag(self, from_target: Any, to_target: Any, duration: float = 1.0) -> ActionResult:
         """Drag from one target to another.
 
         Args:
@@ -302,8 +302,8 @@ class Actions:
         else:
             # Live implementation
             # Convert targets to locations
-            from_loc = self._get_location(from_target)
-            to_loc = self._get_location(to_target)
+            from_loc = await self._get_location(from_target)
+            to_loc = await self._get_location(to_target)
 
             if not from_loc or not to_loc:
                 return (
@@ -320,7 +320,7 @@ class Actions:
                 self.pure.mouse_drag(from_loc.x, from_loc.y, to_loc.x, to_loc.y, duration),  # type: ignore[attr-defined]
             )
 
-    def _get_location(self, target: Any) -> Location | None:
+    async def _get_location(self, target: Any) -> Location | None:
         """Convert various target types to Location.
 
         Args:
@@ -335,7 +335,7 @@ class Actions:
             return target.get_center()
         elif isinstance(target, Pattern):
 
-            find_result = self.find(target)
+            find_result = await self.find(target)
             if find_result.success and find_result.matches:
                 return cast(Location, find_result.matches[0].center)
         elif isinstance(target, tuple | list) and len(target) == 2:

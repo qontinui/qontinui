@@ -211,34 +211,34 @@ class FindImage(Find):
         self.search_region(search_region)
         return self
 
-    def best_match(self) -> Match | None:
+    async def best_match(self) -> Match | None:
         """Find the best match by similarity.
 
         Returns:
             Best match or None
         """
-        results = self.execute()
+        results = await self.execute()
         return results.best_match
 
-    def all_matches(self) -> list[Match]:
+    async def all_matches(self) -> list[Match]:
         """Find all matches as a list.
 
         Returns:
             List of all matches
         """
-        results = self.find_all(True).execute()
+        results = await self.find_all(True).execute()
         return results.matches.to_list()
 
-    def count_matches(self) -> int:
+    async def count_matches(self) -> int:
         """Count number of matches.
 
         Returns:
             Number of matches found
         """
-        results = self.find_all(True).execute()
+        results = await self.find_all(True).execute()
         return results.count
 
-    def execute(self) -> FindResults:
+    async def execute(self) -> FindResults:
         """Execute the find operation with image variant options.
 
         MIGRATION: This method overrides Find.execute() to add image
@@ -278,7 +278,7 @@ class FindImage(Find):
         )
 
         # Delegate to FindAction
-        result = self._find_action.find(self._target, options)
+        result = await self._find_action.find(self._target, options)
 
         # Convert new Match objects to old Match wrapper objects
         old_matches = self._convert_matches(result.matches.to_list())
@@ -318,7 +318,7 @@ class FindImage(Find):
             method=self._method,
         )
 
-    def highlight_matches(self, duration: float = 2.0) -> "FindImage":
+    async def highlight_matches(self, duration: float = 2.0) -> "FindImage":
         """Highlight all found matches on screen.
 
         Args:
@@ -327,37 +327,38 @@ class FindImage(Find):
         Returns:
             Self for chaining
         """
-        results = self.execute()
+        results = await self.execute()
         for match in results.matches:
             match.highlight(duration)
         return self
 
-    def click_best(self) -> bool:
+    async def click_best(self) -> bool:
         """Click on the best match.
 
         Returns:
             True if clicked successfully
         """
-        match = self.best_match()
+        match = await self.best_match()
         if match:
-            result = match.click()
+            result = await match.click()
             return result.success
         return False
 
-    def click_all(self) -> int:
+    async def click_all(self) -> int:
         """Click on all matches.
 
         Returns:
             Number of successful clicks
         """
-        matches = self.all_matches()
+        matches = await self.all_matches()
         successful = 0
         for match in matches:
-            if match.click().success:
+            result = await match.click()
+            if result.success:
                 successful += 1
         return successful
 
-    def wait_and_click(self, timeout: float = 10.0) -> bool:
+    async def wait_and_click(self, timeout: float = 10.0) -> bool:
         """Wait for image to appear and click it.
 
         Args:
@@ -366,9 +367,9 @@ class FindImage(Find):
         Returns:
             True if found and clicked
         """
-        match = self.wait_until_exists(timeout)
+        match = await self.wait_until_exists(timeout)
         if match:
-            result = match.click()
+            result = await match.click()
             return result.success
         return False
 

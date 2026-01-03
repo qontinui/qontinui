@@ -73,7 +73,7 @@ class Click(ActionInterface):
         """
         return ActionType.CLICK
 
-    def execute(self, target: Any = None) -> bool:
+    async def execute(self, target: Any = None) -> bool:
         """Convenience method to execute a click action.
 
         Args:
@@ -115,7 +115,7 @@ class Click(ActionInterface):
         # Convert target to ObjectCollection if needed
         if isinstance(target, ObjectCollection):
             log_debug("Target is ObjectCollection, calling perform()")
-            self.perform(matches, target)
+            await self.perform(matches, target)
         else:
             # Create ObjectCollection from target
             from ...object_collection import ObjectCollectionBuilder
@@ -134,13 +134,13 @@ class Click(ActionInterface):
 
             obj_coll = builder.build()
             log_debug("Built ObjectCollection, calling perform()")
-            self.perform(matches, obj_coll)
+            await self.perform(matches, obj_coll)
 
         log_debug(f"execute() returning success={matches.success}")
         log_debug(f"Debug log written to: {debug_log_path}")
         return matches.success
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute click operations on provided locations, regions, or existing matches.
 
         Click is an ATOMIC action that only performs mouse clicks. It does NOT search

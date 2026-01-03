@@ -36,6 +36,30 @@ class FindStateImageActionConfig(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class FindStateActionConfig(BaseModel):
+    """FIND_STATE action configuration.
+
+    Checks which states are currently active on screen by searching for
+    images associated with each state. Performs a single FIND ALL operation
+    on all images from selected states, then maps found images back to
+    their owning states.
+
+    Returns a list of state IDs that have at least one visible image.
+    This is useful for detecting current application state before navigation.
+    """
+
+    state_ids: list[str] = Field(alias="stateIds", min_length=1)
+    """List of state IDs to check for visibility"""
+
+    search_options: SearchOptions | None = Field(None, alias="searchOptions")
+    """Optional search options for image matching"""
+
+    output_variable: str | None = Field(None, alias="outputVariable")
+    """Variable name to store the array of active state IDs"""
+
+    model_config = {"populate_by_name": True}
+
+
 class VanishActionConfig(BaseModel):
     """VANISH action configuration."""
 

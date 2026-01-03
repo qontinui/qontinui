@@ -58,7 +58,7 @@ class ActionInterface(Protocol):
         ...
 
     @abstractmethod
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Execute the action with the provided configuration and target objects.
 
         This method is the core execution point for all GUI automation actions in Qontinui.

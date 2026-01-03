@@ -213,11 +213,122 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         return False
 
 
+def _find_active_states_visually(states: list[Any]) -> set[int]:
+    """Find which states are currently visible on screen by searching for their StateImages.
+
+    Collects all StateImages from all target states and performs a parallel
+    find_async operation, then maps found patterns back to their owning states.
+
+    This uses async parallel pattern matching for efficient multi-StateImage search.
+
+    Args:
+        states: List of State objects to check
+
+    Returns:
+        Set of state IDs that are currently active (have visible StateImages)
+    """
+    import asyncio
+
+    from qontinui.actions.find import FindAction
+    from qontinui.actions.find.find_options_builder import CascadeContext, build_find_options
+    from qontinui.model.element import Pattern
+
+    active_state_ids: set[int] = set()
+
+    # Collect all StateImages with their owning state IDs
+    # Structure: list of (state_id, state_name, state_image, pattern)
+    all_state_images: list[tuple[int, str, Any, Pattern]] = []
+
+    for state in states:
+        state_id = state.id
+        if state_id is None:
+            continue
+
+        _debug_print(f"Collecting StateImages for state '{state.name}' (ID: {state_id})")
+        _debug_print(f"  State has {len(state.state_images)} StateImages")
+
+        for idx, state_image in enumerate(state.state_images):
+            image_name = state_image.name or f"image_{idx}"
+            try:
+                pattern = state_image.get_pattern()
+                all_state_images.append((state_id, state.name, state_image, pattern))
+                _debug_print(f"  Added StateImage '{image_name}'")
+            except Exception as e:
+                _debug_print(f"  Error getting pattern for '{image_name}': {e}")
+
+    if not all_state_images:
+        _debug_print("No StateImages found for any target states")
+        logger.warning("FIND_STATE check: No StateImages found for target states")
+        return active_state_ids
+
+    _debug_print(
+        f"Performing find_async on {len(all_state_images)} StateImages from {len(states)} states..."
+    )
+
+    # Get project config for cascade
+    try:
+        from qontinui.config.settings import QontinuiSettings
+
+        project_config = QontinuiSettings()
+    except Exception:
+        project_config = None
+
+    find_action = FindAction()
+
+    # Extract patterns for parallel find
+    patterns = [item[3] for item in all_state_images]
+
+    # Build find options (using first state image for cascade context)
+    ctx = CascadeContext(
+        search_options=None,
+        pattern=patterns[0] if patterns else None,
+        state_image=all_state_images[0][2] if all_state_images else None,
+        project_config=project_config,
+        monitor_index=None,
+    )
+    options = build_find_options(ctx)
+
+    try:
+        # Run async find in a new event loop (since we're in sync context)
+        async def run_find_async() -> list[Any]:
+            return await find_action.find(patterns, options)
+
+        # Check if we're already in an async context
+        try:
+            loop = asyncio.get_running_loop()
+            # We're in an async context, need to use run_coroutine_threadsafe
+
+            future = asyncio.run_coroutine_threadsafe(run_find_async(), loop)
+            results = future.result(timeout=30.0)
+        except RuntimeError:
+            # No running event loop, create one
+            results = asyncio.run(run_find_async())
+
+        # Map results back to states
+        for i, result in enumerate(results):
+            state_id, state_name, state_image, pattern = all_state_images[i]
+            image_name = state_image.name or f"image_{i}"
+
+            if result.found:
+                _debug_print(f"  FOUND! State '{state_name}' is active (StateImage '{image_name}')")
+                logger.info(f"State '{state_name}' is active (found StateImage '{image_name}')")
+                active_state_ids.add(state_id)
+            else:
+                _debug_print(f"  StateImage '{image_name}' not found on screen")
+
+    except Exception as e:
+        _debug_print(f"Error in find: {e}")
+        logger.warning(f"Error in parallel find operation: {e}")
+
+    _debug_print(f"FIND_STATE check complete: {len(active_state_ids)}/{len(states)} states active")
+    logger.info(f"FIND_STATE check: {len(active_state_ids)}/{len(states)} states visible on screen")
+    return active_state_ids
+
+
 def open_state(state_name: str) -> bool:
     """Navigate to the specified state by name.
 
-    This is the main entry point for the runner to request state navigation.
-    The library handles all pathfinding, state detection, and transition execution.
+    This is a convenience wrapper around open_states() for single state navigation.
 
     Args:
         state_name: Name of the state to navigate to
@@ -225,42 +336,14 @@ def open_state(state_name: str) -> bool:
     Returns:
         True if navigation succeeded, False otherwise
     """
-    if not _initialized:
-        logger.error("Navigation system not initialized - call load_configuration() first")
-        return False
-
-    if not _navigator:
-        logger.error("Navigator not available")
-        return False
-
-    if not _state_service:
-        logger.error(
-            "State service not available - state/transition loading from config not yet implemented"
-        )
-        return False
-
-    # Look up state ID from name
-    state = _state_service.get_state_by_name(state_name)
-    if not state or not state.id:
-        logger.error(f"State '{state_name}' not found in state service")
-        return False
-
-    state_id = state.id
-    logger.info(f"Navigating to state '{state_name}' (ID: {state_id})")
-
-    # Navigate using PathfindingNavigator
-    context = _navigator.navigate_to_states([state_id], execute=True)
-
-    if context and context.targets_reached == context.path.target_states:
-        logger.info(f"Successfully navigated to state '{state_name}'")
-        return True
-    else:
-        logger.warning(f"Failed to navigate to state '{state_name}'")
-        return False
+    return open_states([state_name])
 
 
 def open_states(state_identifiers: list[str | int]) -> bool:
     """Navigate to multiple specified states.
+
+    First performs a FIND_STATE check to see if all target states are already
+    visible on screen. If so, returns success without navigation.
 
     This function finds a path that activates ALL specified target states.
     The library handles all pathfinding, state detection, and transition execution.
@@ -299,8 +382,9 @@ def open_states(state_identifiers: list[str | int]) -> bool:
         logger.error("No state identifiers provided")
         return False
 
-    # Convert all identifiers to state IDs
+    # Convert all identifiers to state IDs and collect State objects
     target_state_ids = []
+    target_states = []
     for identifier in state_identifiers:
         if isinstance(identifier, int):
             state_id = identifier
@@ -323,15 +407,35 @@ def open_states(state_identifiers: list[str | int]) -> bool:
             return False
 
         target_state_ids.append(state_id)
+        target_states.append(state)
 
     _debug_print(f"Target state IDs: {target_state_ids}")
     logger.info(f"Navigating to states: {state_identifiers} (IDs: {target_state_ids})")
 
+    # FIND_STATE check: Visually verify if all target states are already active
+    _debug_print("Performing FIND_STATE check for target states...")
+    logger.info("Performing FIND_STATE check for target states")
+    active_states_found = _find_active_states_visually(target_states)
+
+    if active_states_found and all(s.id in active_states_found for s in target_states):
+        state_names = [s.name for s in target_states]
+        _debug_print(f"All target states already visible on screen: {state_names}")
+        logger.info(
+            f"All target states already active on screen: {state_names} - skipping navigation"
+        )
+        return True
+
+    # Log which states are missing
+    missing_states = [s for s in target_states if s.id not in active_states_found]
+    missing_names = [s.name for s in missing_states]
+    _debug_print(f"States not yet visible: {missing_names}. Proceeding with navigation.")
+    logger.info(f"States not yet active: {missing_names}. Initiating navigation.")
+
     # Get current active states for debugging
     active_states = _state_memory.get_active_state_names() if _state_memory else []
     active_state_ids = list(_state_memory.active_states) if _state_memory else []
-    _debug_print(f"Current active states: {active_states} (IDs: {active_state_ids})")
-    logger.info(f"Current active states: {active_states}")
+    _debug_print(f"Current active states (from memory): {active_states} (IDs: {active_state_ids})")
+    logger.info(f"Current active states (from memory): {active_states}")
 
     # Navigate using PathfindingNavigator with multiple targets
     context = _navigator.navigate_to_states(target_state_ids, execute=True)

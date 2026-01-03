@@ -226,7 +226,7 @@ class Find:
         self._use_cache = use
         return self
 
-    def execute(self) -> FindResults:
+    async def execute(self) -> FindResults:
         """Execute the find operation by delegating to FindAction.
 
         MIGRATION: This method now delegates to the new FindAction system.
@@ -257,7 +257,7 @@ class Find:
         )
 
         # Delegate to FindAction
-        result = self._find_action.find(self._target, options)
+        result = await self._find_action.find(self._target, options)
 
         # Convert new Match objects to old Match wrapper objects
         old_matches = self._convert_matches(result.matches.to_list())
@@ -308,34 +308,34 @@ class Find:
         """
         return [Match(match_object=m) for m in model_matches]
 
-    def find(self) -> Match | None:
+    async def find(self) -> Match | None:
         """Find first/best match.
 
         Returns:
             First match or None
         """
-        results = self.find_all(False).execute()
+        results = await self.find_all(False).execute()
         return results.first_match
 
-    def find_all_matches(self) -> Matches:
+    async def find_all_matches(self) -> Matches:
         """Find all matches.
 
         Returns:
             Matches collection
         """
-        results = self.find_all(True).execute()
+        results = await self.find_all(True).execute()
         return results.matches
 
-    def exists(self) -> bool:
+    async def exists(self) -> bool:
         """Check if pattern exists.
 
         Returns:
             True if pattern is found
         """
-        match = self.find()
+        match = await self.find()
         return match is not None and match.exists()
 
-    def wait_until_exists(self, timeout: float = 10.0) -> Match | None:
+    async def wait_until_exists(self, timeout: float = 10.0) -> Match | None:
         """Wait until pattern appears.
 
         Args:
@@ -344,18 +344,20 @@ class Find:
         Returns:
             Match when found or None if timeout
         """
+        import asyncio
+
         start_time = time.time()
         check_interval = 0.5
 
         while time.time() - start_time < timeout:
-            match = self.find()
+            match = await self.find()
             if match and match.exists():
                 return match
-            time.sleep(check_interval)
+            await asyncio.sleep(check_interval)
 
         return None
 
-    def wait_until_vanishes(self, timeout: float = 10.0) -> bool:
+    async def wait_until_vanishes(self, timeout: float = 10.0) -> bool:
         """Wait until pattern disappears.
 
         Args:
@@ -364,13 +366,15 @@ class Find:
         Returns:
             True if pattern vanished, False if timeout
         """
+        import asyncio
+
         start_time = time.time()
         check_interval = 0.5
 
         while time.time() - start_time < timeout:
-            if not self.exists():
+            if not await self.exists():
                 return True
-            time.sleep(check_interval)
+            await asyncio.sleep(check_interval)
 
         return False
 

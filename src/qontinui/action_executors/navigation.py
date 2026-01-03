@@ -52,7 +52,7 @@ class NavigationActionExecutor(ActionExecutorBase):
         """
         return ["GO_TO_STATE", "RUN_WORKFLOW"]
 
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute navigation action with validated configuration.
 
         Args:
@@ -71,9 +71,9 @@ class NavigationActionExecutor(ActionExecutorBase):
         logger.debug(f"Executing navigation action: {action.type}")
 
         if action.type == "GO_TO_STATE":
-            return self._execute_go_to_state(action, typed_config)
+            return await self._execute_go_to_state(action, typed_config)
         elif action.type == "RUN_WORKFLOW":
-            return self._execute_run_workflow(action, typed_config)
+            return await self._execute_run_workflow(action, typed_config)
         else:
             logger.error(f"Unknown navigation action type: {action.type}")
             raise ActionExecutionError(
@@ -82,11 +82,18 @@ class NavigationActionExecutor(ActionExecutorBase):
                 action_id=action.id,
             )
 
-    def _execute_go_to_state(self, action: Action, typed_config: GoToStateActionConfig) -> bool:
+    async def _execute_go_to_state(
+        self, action: Action, typed_config: GoToStateActionConfig
+    ) -> bool:
         """Execute GO_TO_STATE action - navigate to target states.
 
-        Navigates to one or more target states using the qontinui library's
-        pathfinding (which uses the multistate library for multi-target pathfinding).
+        First performs a FIND_STATE check to see if target states are already
+        active on screen. If all target states are visible, returns success
+        without navigation.
+
+        If not all states are visible, navigates to target states using the
+        qontinui library's pathfinding (which uses the multistate library for
+        multi-target pathfinding).
 
         The multistate library will find the optimal path to reach ALL specified states.
         Note: Transitions may activate additional states beyond the targets. For example,
@@ -132,23 +139,29 @@ class NavigationActionExecutor(ActionExecutorBase):
                 raise StateNotFoundException(state_id, action_id=action.id)
             target_states.append(self.context.config.state_map[state_id])
 
-        # Check if already at all target states
-        current_state_id = self.context.state_executor.current_state
-        logger.debug(f"Current state: {current_state_id}")
+        target_names = [st.name for st in target_states]
 
-        if all(current_state_id == sid for sid in state_ids):
-            target_names = [self.context.config.state_map[sid].name for sid in state_ids]
-            logger.info(f"Already at target state(s): {', '.join(target_names)}")
+        # FIND_STATE check: Visually verify if all target states are already active
+        logger.debug("Performing FIND_STATE check for target states")
+        active_states = await self._find_active_states(state_ids)
 
+        if active_states and all(sid in active_states for sid in state_ids):
+            logger.info(f"All target state(s) already active on screen: {', '.join(target_names)}")
             self._emit_action_success(
                 action,
                 {
                     "state_ids": state_ids,
                     "state_names": target_names,
                     "already_at_target": True,
+                    "verified_visually": True,
                 },
             )
             return True
+
+        # Log which states are missing
+        missing_states = [sid for sid in state_ids if sid not in active_states]
+        missing_names = [self.context.config.state_map[sid].name for sid in missing_states]
+        logger.info(f"States not yet active: {', '.join(missing_names)}. Initiating navigation.")
 
         # Delegate to qontinui library's pathfinding (which uses multistate)
         logger.debug("Initiating navigation via navigation_api")
@@ -201,7 +214,113 @@ class NavigationActionExecutor(ActionExecutorBase):
                 action_id=action.id,
             ) from e
 
-    def _execute_run_workflow(self, action: Action, typed_config: RunWorkflowActionConfig) -> bool:
+    async def _find_active_states(self, state_ids: list[str]) -> set[str]:
+        """Find which of the given states are currently active on screen.
+
+        Performs image matching for all images associated with the given states
+        and returns the set of states that have at least one visible image.
+
+        Args:
+            state_ids: List of state IDs to check
+
+        Returns:
+            Set of state IDs that are currently active (have visible images)
+        """
+        from qontinui import registry
+
+        from ..actions.find import FindAction
+        from ..actions.find.find_options_builder import CascadeContext, build_find_options
+        from ..config.settings import QontinuiSettings
+        from ..model.element import Pattern
+
+        active_states: set[str] = set()
+
+        # Get project config for cascade
+        try:
+            project_config = QontinuiSettings()
+        except Exception:
+            project_config = None
+
+        # Get monitor from context if available
+        monitor_index = getattr(self.context, "monitor_index", None)
+
+        find_action = FindAction()
+
+        # Collect all images from all states, tracking ownership
+        for state_id in state_ids:
+            state = self.context.config.state_map.get(state_id)
+            if not state:
+                continue
+
+            # Check each StateImage for this state
+            for state_image in state.state_images:
+                # Skip if state already found active
+                if state_id in active_states:
+                    break
+
+                # Get image ID from StateImage
+                image_id = getattr(state_image, "id", None)
+                if not image_id:
+                    # Try using name
+                    image_id = state_image.name or getattr(state_image.image, "name", None)
+
+                if not image_id:
+                    continue
+
+                # Check for multi-pattern StateImage
+                pattern_ids = registry.get_state_image_pattern_ids(image_id)
+                image_ids_to_check = pattern_ids if pattern_ids else [image_id]
+
+                for img_id in image_ids_to_check:
+                    # Skip if state already found active
+                    if state_id in active_states:
+                        break
+
+                    # Get image from registry
+                    image = registry.get_image(img_id)
+                    if image is None:
+                        continue
+
+                    metadata = registry.get_image_metadata(img_id)
+                    if metadata is None:
+                        continue
+
+                    file_path = metadata.get("file_path")
+                    if not file_path:
+                        continue
+
+                    # Create pattern
+                    pattern = Pattern.from_file(
+                        img_path=file_path,
+                        name=metadata.get("name", img_id),
+                    )
+
+                    # Build find options
+                    ctx = CascadeContext(
+                        search_options=None,
+                        pattern=pattern,
+                        state_image=None,
+                        project_config=project_config,
+                        monitor_index=monitor_index,
+                    )
+                    options = build_find_options(ctx)
+
+                    # Perform find
+                    find_result = await find_action.find(pattern, options)
+
+                    if find_result.found:
+                        logger.debug(f"State '{state_id}' is active (found image '{img_id}')")
+                        active_states.add(state_id)
+                        break
+
+        logger.debug(
+            f"FIND_STATE check result: {len(active_states)}/{len(state_ids)} states active"
+        )
+        return active_states
+
+    async def _execute_run_workflow(
+        self, action: Action, typed_config: RunWorkflowActionConfig
+    ) -> bool:
         """Execute RUN_WORKFLOW action - run nested workflow with optional repetition.
 
         This method executes a nested workflow by looking it up in the config's
@@ -250,7 +369,7 @@ class NavigationActionExecutor(ActionExecutorBase):
         if not repetition_enabled:
             # No repetition - execute once
             logger.debug("Executing workflow once (no repetition)")
-            return self._execute_workflow_once(workflow, workflow_id, 1, 1)
+            return await self._execute_workflow_once(workflow, workflow_id, 1, 1)
 
         # Repetition enabled
         max_repeats = repetition_config.get("maxRepeats", 10)
@@ -267,7 +386,9 @@ class NavigationActionExecutor(ActionExecutorBase):
         if until_success:
             # Mode: Repeat until success or max repeats
             for run_num in range(1, total_runs + 1):
-                success = self._execute_workflow_once(workflow, workflow_id, run_num, total_runs)
+                success = await self._execute_workflow_once(
+                    workflow, workflow_id, run_num, total_runs
+                )
 
                 if success:
                     logger.info(f"Workflow succeeded on run {run_num}/{total_runs}, stopping early")
@@ -285,7 +406,9 @@ class NavigationActionExecutor(ActionExecutorBase):
             # Mode: Run fixed count, aggregate results
             results = []
             for run_num in range(1, total_runs + 1):
-                success = self._execute_workflow_once(workflow, workflow_id, run_num, total_runs)
+                success = await self._execute_workflow_once(
+                    workflow, workflow_id, run_num, total_runs
+                )
                 results.append(success)
 
                 # Delay before next run (if not the last run)
@@ -299,7 +422,7 @@ class NavigationActionExecutor(ActionExecutorBase):
             logger.info(f"Completed {total_runs} runs, {success_count} succeeded")
             return overall_success
 
-    def _execute_workflow_once(
+    async def _execute_workflow_once(
         self, workflow: Any, workflow_id: str, run_num: int, total_runs: int
     ) -> bool:
         """Execute a workflow once and emit events.
@@ -351,7 +474,7 @@ class NavigationActionExecutor(ActionExecutorBase):
                     logger.warning(f"No entry points found in workflow '{workflow.name}'")
                     # Fallback to array order if no entry points
                     for nested_action in workflow.actions:
-                        action_success = self.context.execute_action(nested_action)
+                        action_success = await self.context.execute_action(nested_action)
                         if not action_success:
                             logger.warning(
                                 f"Nested action failed in workflow '{workflow.name}': "
@@ -375,7 +498,7 @@ class NavigationActionExecutor(ActionExecutorBase):
                             continue
 
                         # Execute the action
-                        action_success = self.context.execute_action(nested_action)
+                        action_success = await self.context.execute_action(nested_action)
                         executed_set.add(action_id)
                         executed_count += 1
 
@@ -399,14 +522,14 @@ class NavigationActionExecutor(ActionExecutorBase):
                     "Executing 'parallel' workflow sequentially (threading not implemented)"
                 )
                 for nested_action in workflow.actions:
-                    self.context.execute_action(nested_action)
+                    await self.context.execute_action(nested_action)
                     executed_count += 1
 
             else:
                 logger.warning(f"Unknown workflow type: {workflow.type}, executing sequentially")
                 for nested_action in workflow.actions:
                     # Model-based GUI automation principle: always continue, never stop on failure
-                    action_success = self.context.execute_action(nested_action)
+                    action_success = await self.context.execute_action(nested_action)
                     if not action_success:
                         success = False
                     executed_count += 1

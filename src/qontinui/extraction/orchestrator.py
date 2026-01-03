@@ -847,8 +847,33 @@ class ExtractionOrchestrator:
             detection_method = getattr(extracted_state, "detection_method", "runtime")
             metadata = getattr(extracted_state, "metadata", {}) or {}
 
+            # Get bbox for state visualization
+            bbox = getattr(extracted_state, "bbox", None)
+            bbox_dict = None
+            if bbox:
+                # BoundingBox may have a to_dict() method or be a dataclass
+                if hasattr(bbox, "to_dict"):
+                    bbox_dict = bbox.to_dict()
+                elif hasattr(bbox, "x"):
+                    bbox_dict = {
+                        "x": bbox.x,
+                        "y": bbox.y,
+                        "width": bbox.width,
+                        "height": bbox.height,
+                    }
+
             # Build visible elements list from element_ids
             visible_elements = element_ids if isinstance(element_ids, list) else []
+
+            # Build metadata with bbox included for visualization
+            state_metadata = {
+                "state_type": state_type_value,
+                "detection_method": detection_method,
+                "element_count": len(visible_elements),
+                **metadata,
+            }
+            if bbox_dict:
+                state_metadata["bbox"] = bbox_dict
 
             state = CorrelatedState(
                 id=state_id,
@@ -865,12 +890,7 @@ class ExtractionOrchestrator:
                 visible_elements=visible_elements,
                 correlation_method=detection_method,
                 correlation_score=state_confidence,
-                metadata={
-                    "state_type": state_type_value,
-                    "detection_method": detection_method,
-                    "element_count": len(visible_elements),
-                    **metadata,
-                },
+                metadata=state_metadata,
             )
             states.append(state)
 

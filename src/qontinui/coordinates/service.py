@@ -271,6 +271,76 @@ class CoordinateService:
         vd = self.get_virtual_desktop()
         return len(vd.monitors)
 
+    def to_screen(self, x: int, y: int, monitor_index: int | None = None) -> ScreenPoint:
+        """Convert coordinates to absolute screen coordinates.
+
+        This is the primary method for coordinate translation. It handles both
+        virtual-desktop-relative coordinates (when monitor_index is None) and
+        monitor-relative coordinates (when monitor_index is specified).
+
+        Use this method when translating FIND results to click positions:
+        - If FIND captured the entire virtual desktop (monitor_index=None),
+          coordinates are relative to the virtual desktop origin.
+        - If FIND captured a specific monitor (monitor_index=N),
+          coordinates are relative to that monitor's origin.
+
+        Args:
+            x: X coordinate to translate
+            y: Y coordinate to translate
+            monitor_index: If None, treats (x, y) as virtual-desktop-relative.
+                          If specified, treats (x, y) as monitor-relative.
+
+        Returns:
+            ScreenPoint with absolute screen coordinates for pyautogui/input
+
+        Example:
+            >>> service = CoordinateService.get_instance()
+            >>>
+            >>> # FIND captured virtual desktop - match at (65, 1372)
+            >>> screen = service.to_screen(65, 1372)  # Uses virtual desktop origin
+            >>>
+            >>> # FIND captured monitor 1 - match at (200, 300)
+            >>> screen = service.to_screen(200, 300, monitor_index=1)  # Uses monitor offset
+        """
+        if monitor_index is not None:
+            return self.monitor_to_screen(x, y, monitor_index)
+        else:
+            return self.match_to_screen(x, y)
+
+    def from_screen(
+        self, screen_x: int, screen_y: int, monitor_index: int | None = None
+    ) -> VirtualPoint | MonitorPoint:
+        """Convert absolute screen coordinates to relative coordinates.
+
+        This is the inverse of to_screen(). It converts absolute screen
+        coordinates to either virtual-desktop-relative or monitor-relative
+        coordinates based on the monitor_index parameter.
+
+        Args:
+            screen_x: Absolute screen X coordinate
+            screen_y: Absolute screen Y coordinate
+            monitor_index: If None, returns virtual-desktop-relative coordinates.
+                          If specified, returns monitor-relative coordinates.
+
+        Returns:
+            VirtualPoint if monitor_index is None, MonitorPoint otherwise
+
+        Example:
+            >>> service = CoordinateService.get_instance()
+            >>>
+            >>> # Convert to virtual desktop coordinates
+            >>> virtual = service.from_screen(-1855, 1372)
+            >>> print(f"Virtual: ({virtual.x}, {virtual.y})")
+            >>>
+            >>> # Convert to monitor 0 coordinates
+            >>> monitor = service.from_screen(-1855, 1372, monitor_index=0)
+            >>> print(f"Monitor 0: ({monitor.x}, {monitor.y})")
+        """
+        if monitor_index is not None:
+            return self.screen_to_monitor(screen_x, screen_y, monitor_index)
+        else:
+            return self.screen_to_match(screen_x, screen_y)
+
     def __repr__(self) -> str:
         """Developer-friendly representation."""
         if self._virtual_desktop is None:

@@ -36,13 +36,15 @@ class WaitVanish(ActionInterface):
         """
         return "VANISH"
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Perform vanish wait.
 
         Args:
             matches: Action result to populate
             object_collections: Objects to wait for vanishing
         """
+        import asyncio
+
         # Get configuration
         config = matches.action_config
         timeout = 10.0  # Default timeout
@@ -56,6 +58,17 @@ class WaitVanish(ActionInterface):
 
         first_collection = object_collections[0]
 
+        # Collect all patterns for batch searching
+        patterns = []
+        for state_image in first_collection.state_images:
+            pattern = state_image.get_pattern()
+            if pattern:
+                patterns.append(pattern)
+
+        if not patterns:
+            matches.success = True
+            return
+
         # Keep checking until objects vanish or timeout
         start_time = time.time()
 
@@ -63,16 +76,12 @@ class WaitVanish(ActionInterface):
             # Clear previous matches for fresh search
             matches.clear_matches()
 
-            # Search for objects using FindAction
-            found_any = False
-            for state_image in first_collection.state_images:
-                pattern = state_image.get_pattern()
-                if pattern:
-                    options = FindOptions(similarity=0.8)
-                    result = self.find_action.find(pattern, options)
-                    if result.found:
-                        found_any = True
-                        break
+            # Search for all objects using FindAction in parallel
+            options = FindOptions(similarity=0.8)
+            results = await self.find_action.find(patterns, options)
+
+            # Check if any patterns were found
+            found_any = any(result.found for result in results)
 
             # If nothing found, objects have vanished - success!
             if not found_any:
@@ -86,7 +95,7 @@ class WaitVanish(ActionInterface):
                 break
 
             # Brief pause before next check
-            time.sleep(0.1)
+            await asyncio.sleep(0.1)
 
         if not matches.success:
             logger.debug(f"Vanish timeout after {timeout} seconds")

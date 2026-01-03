@@ -75,7 +75,7 @@ class TypeText(ActionInterface):
         """
         return ActionType.TYPE
 
-    def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
         """Type text strings from the object collections.
 
         Args:

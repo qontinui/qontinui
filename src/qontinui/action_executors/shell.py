@@ -67,7 +67,7 @@ class ShellActionExecutor(ActionExecutorBase):
         """
         return ["SHELL", "SHELL_SCRIPT", "AI_PROMPT"]
 
-    def execute(self, action: Action, typed_config: Any) -> bool:
+    async def execute(self, action: Action, typed_config: Any) -> bool:
         """Execute a shell action with validated configuration.
 
         Args:
