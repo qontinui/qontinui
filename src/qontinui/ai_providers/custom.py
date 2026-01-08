@@ -111,7 +111,7 @@ class CustomCommandProvider(AIProvider):
 
         # Emit security warning when shell=True
         if shell:
-            warnings.warn(_SHELL_WARNING, SecurityWarning, stacklevel=2)
+            warnings.warn(_SHELL_WARNING, UserWarning, stacklevel=2)
             logger.warning(_SHELL_WARNING)
 
     @property
