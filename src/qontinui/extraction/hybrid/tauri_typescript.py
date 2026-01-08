@@ -808,7 +808,7 @@ class TauriTypeScriptExtractor(TechStackExtractor):
             screenshot_bytes = await element.screenshot()
 
             # Generate hash
-            pixel_hash = hashlib.md5(screenshot_bytes).hexdigest()
+            pixel_hash = hashlib.md5(screenshot_bytes, usedforsecurity=False).hexdigest()
 
             # For now, we don't save individual patterns to disk
             # In a full implementation, you'd save these to the screenshots dir

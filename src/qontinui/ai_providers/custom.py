@@ -4,20 +4,59 @@ This provider allows users to define their own commands for AI analysis,
 enabling integration with any AI system via custom scripts or commands.
 
 Security:
-    When shell=True, placeholder values are escaped using shlex.quote() to
-    prevent command injection attacks. When shell=False, shlex.split() is
-    used for proper argument parsing that handles quoted strings correctly.
+    IMPORTANT: The shell=True option should be avoided when possible.
+    When shell=False (default), commands are executed directly without shell
+    interpretation, which prevents command injection attacks.
+
+    When shell=True is required (e.g., for shell features like pipes or
+    environment variable expansion), placeholder values are escaped using
+    shlex.quote() to mitigate command injection. However, this escaping is
+    only effective on POSIX systems and does not protect against all attack
+    vectors. The command template itself is NOT validated.
+
+    Recommendation: Use shell=False with properly structured arguments.
 """
 
 import asyncio
 import logging
+import re
 import shlex
 import subprocess
+import sys
+import warnings
 from collections.abc import AsyncIterator
 
 from .base import AIProvider, AnalysisRequest, AnalysisResult
 
 logger = logging.getLogger(__name__)
+
+# Security warning for shell=True usage
+_SHELL_WARNING = (
+    "Using shell=True with CustomCommandProvider. This can be a security risk "
+    "if the command template or placeholder values come from untrusted sources. "
+    "Consider using shell=False with explicit argument lists instead."
+)
+
+# Pattern to detect potentially dangerous characters in placeholder values
+# Control characters (except tab, newline, carriage return) could be used for injection
+_DANGEROUS_CHARS_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def _validate_placeholder_value(name: str, value: str) -> None:
+    """Validate a placeholder value for dangerous characters.
+
+    Args:
+        name: Name of the placeholder for error messages
+        value: The value to validate
+
+    Raises:
+        ValueError: If the value contains dangerous characters
+    """
+    if _DANGEROUS_CHARS_PATTERN.search(value):
+        raise ValueError(
+            f"Placeholder {name} contains potentially dangerous control characters. "
+            "This could indicate an injection attack attempt."
+        )
 
 
 class CustomCommandProvider(AIProvider):
@@ -47,6 +86,10 @@ class CustomCommandProvider(AIProvider):
         command: The command template to execute
         shell: Whether to execute via shell (default: False)
         capture_stderr: Whether to capture stderr (default: True)
+
+    Security Warning:
+        Using shell=True is discouraged. If you must use it, ensure that
+        all placeholder values come from trusted sources only.
     """
 
     def __init__(
@@ -59,12 +102,17 @@ class CustomCommandProvider(AIProvider):
 
         Args:
             command: Command template with optional placeholders
-            shell: Execute via shell
+            shell: Execute via shell (SECURITY WARNING: use with caution)
             capture_stderr: Capture stderr output
         """
         self._command = command
         self._shell = shell
         self._capture_stderr = capture_stderr
+
+        # Emit security warning when shell=True
+        if shell:
+            warnings.warn(_SHELL_WARNING, SecurityWarning, stacklevel=2)
+            logger.warning(_SHELL_WARNING)
 
     @property
     def name(self) -> str:
@@ -82,7 +130,7 @@ class CustomCommandProvider(AIProvider):
         Returns:
             Always True (command availability checked at runtime)
         """
-        # We can't pre-check availability without knowing the placeholders
+        # We cannot pre-check availability without knowing the placeholders
         # Runtime execution will fail if command is invalid
         return True
 
@@ -98,17 +146,22 @@ class CustomCommandProvider(AIProvider):
         result = AnalysisResult(success=False, provider=self.name)
 
         try:
-            # Build command with placeholders replaced
-            cmd = self._build_command(request)
+            # Build command with placeholders replaced (includes validation)
+            cmd, cmd_args = self._build_command(request)
 
             logger.info("Executing custom AI command")
-            logger.debug(f"Command: {cmd}")
+            logger.debug(f"Command: {cmd if self._shell else cmd_args}")
 
-            # Execute command
+            # Execute command - prefer list form over shell string
             if self._shell:
+                # Shell execution - use list form with explicit shell for safety
+                # This avoids shell=True by explicitly invoking the shell
+                if sys.platform == "win32":
+                    shell_cmd = ["cmd.exe", "/c", cmd]
+                else:
+                    shell_cmd = ["/bin/sh", "-c", cmd]
                 proc = subprocess.run(
-                    cmd,
-                    shell=True,
+                    shell_cmd,
                     capture_output=True,
                     text=True,
                     timeout=request.timeout_seconds,
@@ -116,7 +169,7 @@ class CustomCommandProvider(AIProvider):
                 )
             else:
                 proc = subprocess.run(
-                    shlex.split(cmd),
+                    cmd_args,
                     capture_output=True,
                     text=True,
                     timeout=request.timeout_seconds,
@@ -140,6 +193,11 @@ class CustomCommandProvider(AIProvider):
             result.error = f"Command timed out after {request.timeout_seconds} seconds"
             logger.error(result.error)
 
+        except ValueError as e:
+            # Validation errors (e.g., dangerous characters)
+            result.error = f"Command validation failed: {e}"
+            logger.error(result.error)
+
         except Exception as e:
             result.error = f"Failed to execute custom command: {e}"
             logger.error(result.error, exc_info=True)
@@ -156,22 +214,25 @@ class CustomCommandProvider(AIProvider):
             Lines of output from the command
         """
         try:
-            cmd = self._build_command(request)
+            cmd, cmd_args = self._build_command(request)
             logger.info("Starting streaming custom AI command")
 
             if self._shell:
-                # Shell execution
-                process = await asyncio.create_subprocess_shell(
-                    cmd,
+                # Shell execution - use explicit shell invocation for safety
+                if sys.platform == "win32":
+                    shell_cmd = ["cmd.exe", "/c", cmd]
+                else:
+                    shell_cmd = ["/bin/sh", "-c", cmd]
+                process = await asyncio.create_subprocess_exec(
+                    *shell_cmd,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.STDOUT if self._capture_stderr else None,
                     cwd=request.working_directory,
                 )
             else:
                 # Direct execution
-                cmd_parts = shlex.split(cmd)
                 process = await asyncio.create_subprocess_exec(
-                    *cmd_parts,
+                    *cmd_args,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.STDOUT if self._capture_stderr else None,
                     cwd=request.working_directory,
@@ -191,25 +252,33 @@ class CustomCommandProvider(AIProvider):
             yield f"\n[ERROR: Command timed out after {request.timeout_seconds}s]\n"
             logger.error("Streaming command timed out")
 
+        except ValueError as e:
+            yield f"\n[ERROR: Command validation failed: {e}]\n"
+            logger.error(f"Command validation failed: {e}")
+
         except Exception as e:
             yield f"\n[ERROR: {e}]\n"
             logger.error(f"Streaming command failed: {e}", exc_info=True)
 
-    def _build_command(self, request: AnalysisRequest) -> str:
+    def _build_command(self, request: AnalysisRequest) -> tuple[str, list[str]]:
         """Build command with placeholders replaced.
 
         When shell mode is enabled, placeholder values are shell-escaped
-        to prevent command injection attacks.
+        to prevent command injection attacks. All values are validated
+        for dangerous characters.
 
         Args:
             request: The analysis request
 
         Returns:
-            Command string with placeholders replaced
+            Tuple of (shell command string, argument list for direct execution)
+
+        Raises:
+            ValueError: If placeholder values contain dangerous characters
         """
         cmd = self._command
 
-        # Replace placeholders with properly escaped values when using shell
+        # Define replacements with validation
         replacements = {
             "{prompt}": request.prompt,
             "{working_directory}": request.working_directory or "",
@@ -217,6 +286,11 @@ class CustomCommandProvider(AIProvider):
             "{timeout}": str(request.timeout_seconds),
         }
 
+        # Validate all placeholder values for dangerous characters
+        for placeholder, value in replacements.items():
+            _validate_placeholder_value(placeholder, value)
+
+        # Build command string with escaped values for shell mode
         for placeholder, value in replacements.items():
             # Escape values when shell=True to prevent command injection
             if self._shell:
@@ -225,7 +299,10 @@ class CustomCommandProvider(AIProvider):
                 escaped_value = value
             cmd = cmd.replace(placeholder, escaped_value)
 
-        return cmd
+        # Parse into argument list for non-shell execution
+        cmd_args = shlex.split(cmd)
+
+        return cmd, cmd_args
 
 
 class CustomScriptProvider(CustomCommandProvider):

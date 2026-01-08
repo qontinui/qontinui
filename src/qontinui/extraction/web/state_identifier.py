@@ -226,7 +226,7 @@ class StateIdentifier:
             fp.content_hash,
         ]
 
-        return hashlib.md5("|".join(parts).encode()).hexdigest()[:12]
+        return hashlib.md5("|".join(parts).encode(), usedforsecurity=False).hexdigest()[:12]
 
     def _build_canonical_map(
         self,

@@ -54,7 +54,7 @@ class StateScreenshot:
         # Sort states for consistent hashing
         sorted_states = sorted(active_states)
         state_str = "|".join(sorted_states)
-        return hashlib.md5(state_str.encode()).hexdigest()
+        return hashlib.md5(state_str.encode(), usedforsecurity=False).hexdigest()
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""

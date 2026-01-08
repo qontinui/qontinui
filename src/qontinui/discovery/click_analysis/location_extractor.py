@@ -120,7 +120,7 @@ class ClickLocationExtractor:
             # Create pixel hash from image data
             from hashlib import md5
 
-            pixel_hash = md5(extracted.tobytes()).hexdigest()
+            pixel_hash = md5(extracted.tobytes(), usedforsecurity=False).hexdigest()
 
             # Create StateImage
             state_image = StateImage(

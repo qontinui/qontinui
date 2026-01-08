@@ -790,7 +790,7 @@ class NextJSExtractor(TechStackExtractor):
             screenshot_bytes = await element.screenshot()
 
             # Generate hash
-            pixel_hash = hashlib.md5(screenshot_bytes).hexdigest()
+            pixel_hash = hashlib.md5(screenshot_bytes, usedforsecurity=False).hexdigest()
 
             # Save to file if directory provided
             if raw_pixels_dir:

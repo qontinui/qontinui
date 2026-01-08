@@ -667,4 +667,4 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
         except ImportError:
             # Fallback: use MD5 of downsampled pixels
             small = image[::8, ::8] if image.size > 64 else image
-            return hashlib.md5(small.tobytes()).hexdigest()[:16]
+            return hashlib.md5(small.tobytes(), usedforsecurity=False).hexdigest()[:16]

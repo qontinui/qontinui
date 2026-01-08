@@ -173,7 +173,7 @@ class TemplateEngine:
         gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
 
         # Simple hash based on pixel values
-        return hashlib.md5(gray.tobytes()).hexdigest()[:16]
+        return hashlib.md5(gray.tobytes(), usedforsecurity=False).hexdigest()[:16]
 
     async def find_template(
         self,

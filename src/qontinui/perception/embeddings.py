@@ -452,12 +452,12 @@ class EmbeddingGenerator:
         """Generate cache key for image."""
         # Hash image bytes
         img_bytes = image.tobytes()
-        img_hash = hashlib.md5(img_bytes).hexdigest()
+        img_hash = hashlib.md5(img_bytes, usedforsecurity=False).hexdigest()
         return f"img_{img_hash}"
 
     def _get_text_cache_key(self, text: str) -> str:
         """Generate cache key for text."""
-        text_hash = hashlib.md5(text.encode()).hexdigest()
+        text_hash = hashlib.md5(text.encode(), usedforsecurity=False).hexdigest()
         return f"txt_{text_hash}"
 
     def _update_cache(self, key: str, embedding: np.ndarray[Any, Any]):

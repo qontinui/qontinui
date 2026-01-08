@@ -246,7 +246,7 @@ class ElementFingerprintGenerator:
         ]
 
         content = "|".join(parts)
-        return hashlib.md5(content.encode()).hexdigest()[:16]
+        return hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:16]
 
     def _crop_element(
         self,

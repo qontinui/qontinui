@@ -283,7 +283,7 @@ class PixelStabilityMatrixAnalyzer:
         mask_3channel = np.stack([mask] * 3, axis=2) if len(region.shape) == 3 else mask
         masked_region = (masked_region * mask_3channel).astype(np.uint8)
 
-        pixel_hash = hashlib.md5(masked_region.tobytes()).hexdigest()
+        pixel_hash = hashlib.md5(masked_region.tobytes(), usedforsecurity=False).hexdigest()
 
         # Calculate pixel statistics
         dark_pct, light_pct, avg_brightness = self._calculate_pixel_percentages(masked_region, mask)
