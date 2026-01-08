@@ -6,11 +6,23 @@ This package handles all state-related functionality including:
 - State transitions and navigation
 - Initial state determination
 - High-level state automation
+- Building state machines from extraction data
 """
 
 from .active_state_set import ActiveStateSet
 from .adjacent_states import AdjacentStates
 from .initial_states import InitialStates
+
+# Lazy import for builders to avoid import issues when used standalone
+try:
+    from .builders import (
+        StateMachineBuilder,
+        build_state_machine_from_extraction,
+    )
+except ImportError:
+    # Builders may not be available in minimal configurations
+    StateMachineBuilder = None  # type: ignore
+    build_state_machine_from_extraction = None  # type: ignore
 from .manager import QontinuiStateManager
 from .search_region_dependency_initializer import SearchRegionDependencyInitializer
 from .state_automator import StateAutomator
@@ -43,4 +55,7 @@ __all__ = [
     "Element",
     "State",
     "Transition",
+    # Builders
+    "StateMachineBuilder",
+    "build_state_machine_from_extraction",
 ]

@@ -139,7 +139,11 @@ from .primitives import (
 from .startup import (  # noqa: F401 - documented for user reference
     PhysicalResolutionInitializer,
 )
-from .state_management import QontinuiStateManager
+from .state_management import (
+    QontinuiStateManager,
+    StateMachineBuilder,
+    build_state_machine_from_extraction,
+)
 from .state_management.models import Element, StateGraph, Transition
 from .state_management.traversal import StateTraversal
 
@@ -161,6 +165,9 @@ __all__ = [
     "Transition",
     "StateGraph",
     "StateTraversal",
+    # State Machine Builders
+    "StateMachineBuilder",
+    "build_state_machine_from_extraction",
     # Checkpointing System
     "CheckpointService",
     "CheckpointData",
