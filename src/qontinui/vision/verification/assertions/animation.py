@@ -79,8 +79,7 @@ class StabilityDetector:
         Returns:
             Threshold (0.0-1.0) for change detection.
         """
-        if self._config is not None:
-            return self._config.wait.stability_threshold
+        # Note: WaitConfig doesn't have stability_threshold, using default
         return 0.001  # 0.1% change allowed
 
     def _get_default_duration(self) -> int:
@@ -90,7 +89,7 @@ class StabilityDetector:
             Duration in ms that must be stable.
         """
         if self._config is not None:
-            return self._config.wait.stability_duration_ms
+            return self._config.wait.stability_duration
         return 500
 
     def _get_poll_interval(self) -> int:
@@ -100,7 +99,7 @@ class StabilityDetector:
             Interval in ms between captures.
         """
         if self._config is not None:
-            return self._config.wait.poll_interval_ms
+            return self._config.wait.polling_interval
         return 100
 
     def calculate_change(
@@ -302,7 +301,7 @@ class AnimationDetector:
             Interval in ms.
         """
         if self._config is not None:
-            return self._config.wait.poll_interval_ms
+            return self._config.wait.polling_interval
         return 50  # Faster for animation detection
 
     async def detect_animation(

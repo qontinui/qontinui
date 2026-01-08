@@ -72,7 +72,7 @@ class VisibilityAssertion:
         if timeout_ms is not None:
             return timeout_ms
         if self._config is not None:
-            return self._config.wait.default_timeout_ms
+            return self._config.wait.default_timeout
         return 5000
 
     def _get_poll_interval(self) -> int:
@@ -82,7 +82,7 @@ class VisibilityAssertion:
             Poll interval in milliseconds.
         """
         if self._config is not None:
-            return self._config.wait.poll_interval_ms
+            return self._config.wait.polling_interval
         return 100
 
     async def to_be_visible(

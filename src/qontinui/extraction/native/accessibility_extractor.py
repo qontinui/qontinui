@@ -55,7 +55,7 @@ class AccessibilityExtractor(AbstractExtractor):
     def __init__(self) -> None:
         """Initialize the accessibility extractor."""
         self._platform = sys.platform
-        self._api = None  # Lazy loaded platform API
+        self._api: "PlatformAccessibilityAPI | None" = None  # Lazy loaded platform API
         self._element_counter = 0
 
     async def extract(
@@ -291,6 +291,9 @@ class AccessibilityExtractor(AbstractExtractor):
     ) -> list[ExtractedElement]:
         """Recursively traverse accessibility tree."""
         if depth > config.max_depth:
+            return []
+
+        if self._api is None:
             return []
 
         elements: list[ExtractedElement] = []
