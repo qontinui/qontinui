@@ -235,23 +235,23 @@ class AttributeAssertion:
         h, w = region.shape[:2]
 
         # Sample border pixels
-        border_pixels = []
+        border_pixels_list: list[np.ndarray] = []
 
         # Top edge
-        border_pixels.extend(region[:border_width, :].reshape(-1, 3))
+        border_pixels_list.extend(region[:border_width, :].reshape(-1, 3))
         # Bottom edge
-        border_pixels.extend(region[-border_width:, :].reshape(-1, 3))
+        border_pixels_list.extend(region[-border_width:, :].reshape(-1, 3))
         # Left edge
-        border_pixels.extend(region[:, :border_width].reshape(-1, 3))
+        border_pixels_list.extend(region[:, :border_width].reshape(-1, 3))
         # Right edge
-        border_pixels.extend(region[:, -border_width:].reshape(-1, 3))
+        border_pixels_list.extend(region[:, -border_width:].reshape(-1, 3))
 
-        if not border_pixels:
+        if not border_pixels_list:
             return self._get_average_color(region)
 
-        border_pixels = np.array(border_pixels)
+        border_pixels = np.array(border_pixels_list)
         avg = border_pixels.mean(axis=0).astype(int)
-        return Color.from_bgr(tuple(avg))
+        return Color.from_bgr((int(avg[0]), int(avg[1]), int(avg[2])))
 
     async def to_have_color(
         self,

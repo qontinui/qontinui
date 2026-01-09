@@ -93,6 +93,14 @@ class ScreenshotConfig(BaseModel):
         ".dev-logs/screenshots",
         description="Directory for saving screenshots",
     )
+    baseline_dir: str = Field(
+        ".dev-logs/baselines",
+        description="Directory for baseline screenshots",
+    )
+    diff_dir: str = Field(
+        ".dev-logs/diffs",
+        description="Directory for diff screenshots",
+    )
     annotation_color: tuple[int, int, int] = Field(
         (0, 0, 255),
         description="BGR color for annotations (default: red)",
@@ -109,6 +117,18 @@ class ScreenshotConfig(BaseModel):
 
 class ComparisonConfig(BaseModel):
     """Configuration for visual comparison."""
+
+    # Default comparison settings
+    default_threshold: float = Field(
+        0.95,
+        ge=0.0,
+        le=1.0,
+        description="Default similarity threshold for comparisons",
+    )
+    default_method: str = Field(
+        "ssim",
+        description="Default comparison method: 'pixel', 'ssim', 'phash', 'feature'",
+    )
 
     # SSIM settings
     ssim_threshold: float = Field(
