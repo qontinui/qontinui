@@ -108,19 +108,26 @@ class ElementVerifier:
         """Assert element is visible."""
         from qontinui.vision.verification.assertions.visibility import VisibilityAssertion
 
-        assertion = VisibilityAssertion(
-            config=self._verifier._config,
-            environment=self._verifier._environment,
-        )
-
         screenshot = await self._verifier._get_screenshot()
         locator = self._verifier._resolve_target(self._target)
 
-        result = await assertion.to_be_visible(
-            screenshot=screenshot,
+        assertion = VisibilityAssertion(
             locator=locator,
-            timeout=self._timeout,
-            threshold=confidence,
+            config=self._verifier._config,
+        )
+
+        timeout_ms = int(self._timeout * 1000) if self._timeout is not None else None
+        assertion_result = await assertion.to_be_visible(
+            screenshot=screenshot,
+            timeout_ms=timeout_ms,
+        )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
         )
 
         if self._negated:
@@ -128,7 +135,7 @@ class ElementVerifier:
                 passed=not result.passed,
                 message=f"Expected element NOT to be visible: {result.message}",
                 expected="not visible",
-                actual="visible" if result.passed else "not visible",
+                actual="visible" if not result.passed else "not visible",
             )
 
         return self._handle_result(result)
@@ -142,18 +149,25 @@ class ElementVerifier:
         """Assert element appears enabled."""
         from qontinui.vision.verification.assertions.state import StateAssertion
 
+        screenshot = await self._verifier._get_screenshot()
+        locator = self._verifier._resolve_target(self._target)
+
         assertion = StateAssertion(
+            locator=locator,
             config=self._verifier._config,
             environment=self._verifier._environment,
         )
 
-        screenshot = await self._verifier._get_screenshot()
-        locator = self._verifier._resolve_target(self._target)
-
-        result = await assertion.to_be_enabled(
+        assertion_result = await assertion.to_be_enabled(
             screenshot=screenshot,
-            locator=locator,
-            timeout=self._timeout,
+        )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
         )
 
         if self._negated:
@@ -161,7 +175,7 @@ class ElementVerifier:
                 passed=not result.passed,
                 message=f"Expected element NOT to be enabled: {result.message}",
                 expected="not enabled",
-                actual="enabled" if result.passed else "not enabled",
+                actual="enabled" if not result.passed else "not enabled",
             )
 
         return self._handle_result(result)
@@ -175,20 +189,26 @@ class ElementVerifier:
         """Assert element is above another element."""
         from qontinui.vision.verification.assertions.spatial import SpatialAssertion
 
-        assertion = SpatialAssertion(
-            config=self._verifier._config,
-            environment=self._verifier._environment,
-        )
-
         screenshot = await self._verifier._get_screenshot()
         source_locator = self._verifier._resolve_target(self._target)
         target_locator = self._verifier._resolve_target(other)
 
-        result = await assertion.to_be_above(
+        assertion = SpatialAssertion(
+            locator=source_locator,
+            config=self._verifier._config,
+        )
+
+        assertion_result = await assertion.to_be_above(
+            reference=target_locator,
             screenshot=screenshot,
-            source=source_locator,
-            target=target_locator,
-            timeout=self._timeout,
+        )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
         )
 
         if self._negated:
@@ -203,20 +223,26 @@ class ElementVerifier:
         """Assert element is below another element."""
         from qontinui.vision.verification.assertions.spatial import SpatialAssertion
 
-        assertion = SpatialAssertion(
-            config=self._verifier._config,
-            environment=self._verifier._environment,
-        )
-
         screenshot = await self._verifier._get_screenshot()
         source_locator = self._verifier._resolve_target(self._target)
         target_locator = self._verifier._resolve_target(other)
 
-        result = await assertion.to_be_below(
+        assertion = SpatialAssertion(
+            locator=source_locator,
+            config=self._verifier._config,
+        )
+
+        assertion_result = await assertion.to_be_below(
+            reference=target_locator,
             screenshot=screenshot,
-            source=source_locator,
-            target=target_locator,
-            timeout=self._timeout,
+        )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
         )
 
         if self._negated:
@@ -231,20 +257,26 @@ class ElementVerifier:
         """Assert element is to the left of another element."""
         from qontinui.vision.verification.assertions.spatial import SpatialAssertion
 
-        assertion = SpatialAssertion(
-            config=self._verifier._config,
-            environment=self._verifier._environment,
-        )
-
         screenshot = await self._verifier._get_screenshot()
         source_locator = self._verifier._resolve_target(self._target)
         target_locator = self._verifier._resolve_target(other)
 
-        result = await assertion.to_be_left_of(
+        assertion = SpatialAssertion(
+            locator=source_locator,
+            config=self._verifier._config,
+        )
+
+        assertion_result = await assertion.to_be_left_of(
+            reference=target_locator,
             screenshot=screenshot,
-            source=source_locator,
-            target=target_locator,
-            timeout=self._timeout,
+        )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
         )
 
         if self._negated:
@@ -259,20 +291,26 @@ class ElementVerifier:
         """Assert element is to the right of another element."""
         from qontinui.vision.verification.assertions.spatial import SpatialAssertion
 
-        assertion = SpatialAssertion(
-            config=self._verifier._config,
-            environment=self._verifier._environment,
-        )
-
         screenshot = await self._verifier._get_screenshot()
         source_locator = self._verifier._resolve_target(self._target)
         target_locator = self._verifier._resolve_target(other)
 
-        result = await assertion.to_be_right_of(
+        assertion = SpatialAssertion(
+            locator=source_locator,
+            config=self._verifier._config,
+        )
+
+        assertion_result = await assertion.to_be_right_of(
+            reference=target_locator,
             screenshot=screenshot,
-            source=source_locator,
-            target=target_locator,
-            timeout=self._timeout,
+        )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
         )
 
         if self._negated:
@@ -287,28 +325,38 @@ class ElementVerifier:
         """Assert element contains or matches text."""
         from qontinui.vision.verification.assertions.text import TextAssertion
 
+        screenshot = await self._verifier._get_screenshot()
+        locator = self._verifier._resolve_target(self._target)
+
         assertion = TextAssertion(
+            locator=locator,
             config=self._verifier._config,
             environment=self._verifier._environment,
         )
 
-        screenshot = await self._verifier._get_screenshot()
-        locator = self._verifier._resolve_target(self._target)
+        timeout_ms = int(self._timeout * 1000) if self._timeout is not None else None
 
         if exact:
-            result = await assertion.to_have_text(
+            assertion_result = await assertion.to_have_text(
+                expected_text=expected,
                 screenshot=screenshot,
-                locator=locator,
-                expected=expected,
-                timeout=self._timeout,
+                timeout_ms=timeout_ms,
+                exact=True,
             )
         else:
-            result = await assertion.to_contain_text(
+            assertion_result = await assertion.to_contain_text(
+                expected_text=expected,
                 screenshot=screenshot,
-                locator=locator,
-                expected=expected,
-                timeout=self._timeout,
+                timeout_ms=timeout_ms,
             )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
+        )
 
         if self._negated:
             result = VerificationResult(
@@ -331,25 +379,32 @@ class ElementVerifier:
             Color,
         )
 
+        screenshot = await self._verifier._get_screenshot()
+        locator = self._verifier._resolve_target(self._target)
+
         assertion = AttributeAssertion(
+            locator=locator,
             config=self._verifier._config,
             environment=self._verifier._environment,
         )
-
-        screenshot = await self._verifier._get_screenshot()
-        locator = self._verifier._resolve_target(self._target)
 
         if isinstance(expected, str):
             color = Color.from_hex(expected)
         else:
             color = Color(r=expected[0], g=expected[1], b=expected[2])
 
-        result = await assertion.to_have_color(
+        assertion_result = await assertion.to_have_color(
+            expected_color=color,
             screenshot=screenshot,
-            locator=locator,
-            expected=color,
             tolerance=tolerance,
-            timeout=self._timeout,
+        )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
         )
 
         if self._negated:
@@ -406,24 +461,31 @@ class TextVerifier:
     async def exists(self, confidence: float = 0.8) -> VerificationResult:
         """Assert text exists on screen."""
         from qontinui.vision.verification.assertions.text import TextAssertion
-        from qontinui.vision.verification.locators import TextLocator
-
-        assertion = TextAssertion(
-            config=self._verifier._config,
-            environment=self._verifier._environment,
-        )
 
         screenshot = await self._verifier._get_screenshot()
-        _locator = TextLocator(  # noqa: F841 - prepared for future use
-            text=self._text,
+
+        # TextAssertion without a locator will search the entire screenshot
+        assertion = TextAssertion(
+            locator=None,
             config=self._verifier._config,
             environment=self._verifier._environment,
         )
 
-        result = await assertion.text_exists(
+        timeout_ms = int(self._timeout * 1000) if self._timeout is not None else None
+
+        # Use to_contain_text to check if text exists anywhere on screen
+        assertion_result = await assertion.to_contain_text(
+            expected_text=self._text,
             screenshot=screenshot,
-            text=self._text,
-            timeout=self._timeout,
+            timeout_ms=timeout_ms,
+        )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
         )
 
         if self._negated:
@@ -431,7 +493,7 @@ class TextVerifier:
                 passed=not result.passed,
                 message=f"Expected text '{self._text}' NOT to exist: {result.message}",
                 expected="not present",
-                actual="present" if result.passed else "not present",
+                actual="present" if not result.passed else "not present",
             )
 
         return self._handle_result(result)
@@ -545,21 +607,24 @@ class RegionVerifier:
             config=self._verifier._config,
         )
 
-        _screenshot = await self._verifier._get_screenshot()  # noqa: F841 - triggers capture
-        stability = await detector.check_stability(
+        stability_duration_ms = int(for_seconds * 1000)
+        stability = await detector.wait_for_stability(
             screenshot_callback=self._verifier._get_screenshot,
             region=self._region,
-            duration=for_seconds,
+            stability_duration_ms=stability_duration_ms,
         )
 
         passed = stability.is_stable
 
         result = VerificationResult(
             passed=passed,
-            message=f"Region stability: {stability.stability_score:.2f}",
+            message=f"Region stability: max change {stability.max_change_detected:.2%}",
             expected="stable",
             actual="stable" if passed else "unstable",
-            details={"stability_score": stability.stability_score},
+            details={
+                "max_change_detected": stability.max_change_detected,
+                "stability_duration_ms": stability.stability_duration_ms,
+            },
         )
 
         if self._negated:
@@ -577,6 +642,8 @@ class RegionVerifier:
         tolerance: int = 1,
     ) -> VerificationResult:
         """Assert region contains a grid layout."""
+        import cv2
+
         from qontinui.vision.verification.analysis.layout import LayoutAnalyzer
 
         analyzer = LayoutAnalyzer(
@@ -585,7 +652,44 @@ class RegionVerifier:
         )
 
         screenshot = await self._verifier._get_screenshot()
-        structure = await analyzer.analyze_structure(screenshot, self._region)
+
+        # Extract the region from the screenshot
+        region_img = screenshot[
+            self._region.y : self._region.y + self._region.height,
+            self._region.x : self._region.x + self._region.width,
+        ]
+
+        # Detect elements in the region using contour detection
+        gray = cv2.cvtColor(region_img, cv2.COLOR_BGR2GRAY)
+        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Convert contours to BoundingBox list (filter small noise)
+        elements = []
+        min_area = 100  # Minimum area to be considered an element
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            if w * h >= min_area:
+                elements.append(
+                    BoundingBox(
+                        x=self._region.x + x,
+                        y=self._region.y + y,
+                        width=w,
+                        height=h,
+                    )
+                )
+
+        if len(elements) < 2:
+            result = VerificationResult(
+                passed=False,
+                message=f"Not enough elements detected for grid analysis ({len(elements)} found)",
+                expected=f"{columns}x{rows}" if columns and rows else "grid",
+                actual="insufficient elements",
+            )
+            return self._handle_result(result)
+
+        # Analyze the layout using the detected elements
+        structure = analyzer.analyze_layout(elements)
 
         grid = structure.grid
         if grid is None:
@@ -706,12 +810,27 @@ class ScreenshotVerifier:
 
         screenshot = await self._verifier._get_screenshot()
 
-        result = await assertion.to_match_screenshot(
-            screenshot=screenshot,
+        # Crop to region if specified
+        actual = screenshot
+        if self._region is not None:
+            actual = screenshot[
+                self._region.y : self._region.y + self._region.height,
+                self._region.x : self._region.x + self._region.width,
+            ]
+
+        assertion_result = await assertion.to_match_screenshot(
+            actual=actual,
             baseline_name=name,
-            region=self._region,
             threshold=threshold,
             method=method,
+        )
+
+        # Convert AssertionResult to VerificationResult
+        result = VerificationResult(
+            passed=assertion_result.status.value == "passed",
+            message=assertion_result.message,
+            expected=assertion_result.expected_value,
+            actual=assertion_result.actual_value,
         )
 
         return self._handle_result(result)
@@ -1007,7 +1126,8 @@ class Verifier:
         result = self._screenshot_callback()
         if asyncio.iscoroutine(result):
             return await result
-        return result
+        # When not a coroutine, result is the NDArray directly
+        return result  # type: ignore[return-value]
 
     def set_screenshot(self, screenshot: NDArray[np.uint8]) -> None:
         """Set a screenshot to use instead of callback.
@@ -1033,10 +1153,9 @@ class Verifier:
             return target  # type: ignore
 
         if isinstance(target, BoundingBox):
-            return RegionLocator(
-                region=target,
+            return RegionLocator.from_bounds(
+                bounds=target,
                 config=self._config,
-                environment=self._environment,
             )
 
         if isinstance(target, Path) or (
