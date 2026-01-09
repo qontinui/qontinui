@@ -110,7 +110,9 @@ class PatternFactory:
         from .pattern import Pattern
 
         if pattern_id is None:
-            pattern_id = f"pattern_{hashlib.md5(str(match).encode(), usedforsecurity=False).hexdigest()[:8]}"
+            pattern_id = (
+                f"pattern_{hashlib.md5(str(match).encode(), usedforsecurity=False).hexdigest()[:8]}"
+            )
 
         # Extract pixel data from match
         pixel_data = (
