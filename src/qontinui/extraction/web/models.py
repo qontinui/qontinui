@@ -869,6 +869,17 @@ class SemanticRegion:
             "element_count": self.element_count,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SemanticRegion":
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            bbox=BoundingBox.from_dict(data["bbox"]),
+            region_type=data["region_type"],
+            aria_label=data.get("aria_label"),
+            element_count=data.get("element_count", 0),
+        )
+
 
 @dataclass
 class ExtractedPageV2:
@@ -931,7 +942,9 @@ class ExtractedPageV2:
             element_functions=[
                 ElementFunction.from_dict(ef) for ef in data.get("element_functions", [])
             ],
-            semantic_regions=[],  # TODO: Add from_dict for SemanticRegion
+            semantic_regions=[
+                SemanticRegion.from_dict(sr) for sr in data.get("semantic_regions", [])
+            ],
             state_signature=data.get("state_signature", ""),
         )
 
