@@ -9,10 +9,10 @@ import numpy as np
 import pytest
 
 from qontinui.state_management.builders.state_machine_builder import (
-    ImageMatch,
     ImageMatchingStateMachineBuilder,
     TrackedImage,
 )
+
 
 class TestImageMatchingStateMachineBuilder:
     @pytest.fixture
@@ -66,31 +66,31 @@ class TestImageMatchingStateMachineBuilder:
         """
         # Texture for both to pass extraction variance filter
         textured_data = np.random.randint(0, 255, (20, 20, 3), dtype=np.uint8)
-        
+
         builder.screenshots["screen1"] = np.ones((100, 100, 3), dtype=np.uint8) * 128
         builder.screenshots["screen2"] = np.ones((100, 100, 3), dtype=np.uint8) * 128
-        
+
         # Embed EXACT same texture in both screenshots
         builder.screenshots["screen1"][10:30, 10:30] = textured_data
         builder.screenshots["screen2"][10:30, 10:30] = textured_data
-        
+
         elements = {
             "screen1": [{"id": "btn1", "name": "ButtonS1", "bbox": {"x": 10, "y": 10, "width": 20, "height": 20}}],
             "screen2": [{"id": "btn2", "name": "ButtonS2", "bbox": {"x": 10, "y": 10, "width": 20, "height": 20}}]
         }
-        
+
         with patch('cv2.matchTemplate') as mock_match, patch('cv2.minMaxLoc') as mock_loc, patch('cv2.resize') as mock_resize:
             # Mock perfect visual match
             mock_match.return_value = np.array([[1.0]])
             mock_loc.return_value = (0, 1.0, (0, 0), (0, 0))
             mock_resize.side_effect = lambda img, size: img
-            
+
             builder.extract_and_track_images(elements)
             assert len(builder.tracked_images) == 2
-            
+
             # Pure comparison deduplication
             builder.deduplicate_tracked_images()
-            
+
         # Should now be 1 tracked image because they were visually identical
         assert len(builder.tracked_images) == 1
         assert "screen1" in builder.tracked_images[0].screens_found
@@ -101,7 +101,7 @@ class TestImageMatchingStateMachineBuilder:
         Verify that deduplicate_tracked_images consolidates identical images.
         """
         textured_data = np.random.randint(0, 255, (20, 20, 3), dtype=np.uint8)
-        
+
         btn1 = TrackedImage(
             id="btn1",
             name="Button1",
@@ -110,7 +110,7 @@ class TestImageMatchingStateMachineBuilder:
             image_data=textured_data,
             screens_found={"screen1"}
         )
-        
+
         btn2 = TrackedImage(
             id="btn2",
             name="Button2",
@@ -119,16 +119,16 @@ class TestImageMatchingStateMachineBuilder:
             image_data=textured_data,
             screens_found={"screen2"}
         )
-        
+
         builder.tracked_images = [btn1, btn2]
-        
+
         with patch('cv2.matchTemplate') as mock_match, patch('cv2.minMaxLoc') as mock_loc, patch('cv2.resize') as mock_resize:
             mock_match.return_value = np.array([[1.0]])
             mock_loc.return_value = (0, 1.0, (0, 0), (0, 0))
             mock_resize.side_effect = lambda img, size: img
-            
+
             builder.deduplicate_tracked_images()
-        
+
         assert len(builder.tracked_images) == 1
         assert set(builder.tracked_images[0].screens_found) == {"screen1", "screen2"}
 
@@ -136,7 +136,7 @@ class TestImageMatchingStateMachineBuilder:
         """Verify that uniform regions are skipped during extraction."""
         # Mock screenshot - all same color (0 variance)
         builder.screenshots["screen1"] = np.ones((100, 100, 3), dtype=np.uint8) * 200
-        
+
         elements = {
             "screen1": [
                 {
@@ -145,7 +145,7 @@ class TestImageMatchingStateMachineBuilder:
                 }
             ]
         }
-        
+
         builder.extract_and_track_images(elements)
         assert len(builder.tracked_images) == 0
 
@@ -156,7 +156,7 @@ class TestImageMatchingStateMachineBuilder:
         # Low variance data
         low_v_data = np.ones((20, 20, 3), dtype=np.uint8) * 100
         low_v_data[0,0] = 101
-        
+
         e1 = TrackedImage(
             id="real_button",
             name="RealButton",
@@ -165,7 +165,7 @@ class TestImageMatchingStateMachineBuilder:
             image_data=high_v_data,
             screens_found={"screen1"}
         )
-        
+
         e2 = TrackedImage(
             id="faded_button",
             name="FadedButton",
@@ -174,16 +174,16 @@ class TestImageMatchingStateMachineBuilder:
             image_data=low_v_data,
             screens_found={"screen2"}
         )
-        
+
         builder.tracked_images = [e1, e2]
-        
+
         with patch('cv2.matchTemplate') as mock_match, patch('cv2.minMaxLoc') as mock_loc, patch('cv2.resize') as mock_resize:
             mock_match.return_value = np.array([[0.95]])
             mock_loc.return_value = (0, 0.95, (0, 0), (0, 0))
             mock_resize.side_effect = lambda img, size: img
-            
+
             builder.deduplicate_tracked_images()
-            
+
         assert len(builder.tracked_images) == 1
         # Should pick high variance e1
         assert builder.tracked_images[0].id == "real_button"

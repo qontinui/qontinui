@@ -9,7 +9,7 @@ Extracts typography information from screenshots using:
 
 import logging
 from collections import defaultdict
-from typing import Any, cast
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray

@@ -18,13 +18,14 @@ from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
-    AssertionType,
     BoundingBox,
 )
 
 if TYPE_CHECKING:
     from qontinui_schemas.testing.environment import (
         ElementState as SchemaElementState,
+    )
+    from qontinui_schemas.testing.environment import (
         GUIEnvironment,
         VisualStates,
     )

@@ -16,7 +16,6 @@ from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
-    AssertionType,
     BoundingBox,
     LocatorType,
     VisionLocatorMatch,

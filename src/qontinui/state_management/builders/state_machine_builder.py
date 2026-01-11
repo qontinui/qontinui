@@ -764,7 +764,7 @@ class ImageMatchingStateMachineBuilder:
     def deduplicate_tracked_images(self) -> None:
         """
         Deduplicate tracked images that represent the same visual element.
-        
+
         Using a Pure Comparison Model: Compare all extracted images pairwise
         to find visual matches. If Image A (Screen 1) matches Image B (Screen 2),
         they are merged. co-occurrence is based solely on actual Playwright extractions.
@@ -773,7 +773,7 @@ class ImageMatchingStateMachineBuilder:
             return
 
         logger.info(f"Deduplicating {len(self.tracked_images)} tracked images")
-        
+
         # Use Union-Find to group identical images
         parent = {tracked.id: tracked.id for tracked in self.tracked_images}
 
@@ -794,7 +794,7 @@ class ImageMatchingStateMachineBuilder:
             for j in range(i + 1, len(self.tracked_images)):
                 tracked = self.tracked_images[i]
                 other_tracked = self.tracked_images[j]
-                
+
                 # Skip if already in the same group
                 if find(tracked.id) == find(other_tracked.id):
                     continue
@@ -811,10 +811,10 @@ class ImageMatchingStateMachineBuilder:
                             t2_resized = self._cv2.resize(t2, (w, h))
                         else:
                             t2_resized = t2
-                        
+
                         res = self._cv2.matchTemplate(t1, t2_resized, self._cv2.TM_CCOEFF_NORMED)
                         _, max_v, _, _ = self._cv2.minMaxLoc(res)
-                        
+
                         if max_v >= self.similarity_threshold:
                             # They are the same element!
                             union(tracked.id, other_tracked.id)
@@ -829,7 +829,7 @@ class ImageMatchingStateMachineBuilder:
             groups[root_id].append(tracked)
 
         new_tracked_images = []
-        for root_id, group in groups.items():
+        for _root_id, group in groups.items():
             if len(group) == 1:
                 new_tracked_images.append(group[0])
                 continue
@@ -849,14 +849,14 @@ class ImageMatchingStateMachineBuilder:
                 return (variance, category_score, screen_index_penalty)
 
             representative = max(group, key=sorting_key)
-            
+
             for other in group:
                 if other.id == representative.id:
                     continue
-                
+
                 # Merge screens_found
                 representative.screens_found.update(other.screens_found)
-                
+
                 # Merge matches (keeping the one with higher confidence if duplicate)
                 for sid, match in other.matches.items():
                     if sid not in representative.matches or (match.found and not representative.matches[sid].found):
@@ -867,7 +867,7 @@ class ImageMatchingStateMachineBuilder:
                         repr_conf = float(representative.matches[sid].confidence or 0.0)
                         if other_conf > repr_conf:
                             representative.matches[sid] = match
-            
+
             new_tracked_images.append(representative)
             logger.debug(f"Merged {len(group)} images into one: {representative.name} ({representative.id})")
 
