@@ -11,11 +11,13 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
+from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
     AssertionType,
     BoundingBox,
+    LocatorType,
     VisionLocatorMatch,
 )
 
@@ -103,6 +105,7 @@ class VisibilityAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         timeout = self._get_timeout(timeout_ms)
         poll_interval = self._get_poll_interval()
 
@@ -117,7 +120,7 @@ class VisibilityAssertion:
             try:
                 # Find matches
                 if region is not None:
-                    self._locator.inside(region)
+                    self._locator.with_region(region)
 
                 matches = await self._locator.find_all(current_screenshot)
 
@@ -126,24 +129,28 @@ class VisibilityAssertion:
                     elapsed_ms = int((time.monotonic() - start_time) * 1000)
 
                     best_match = max(matches, key=lambda m: m.confidence)
+                    center_x = best_match.bounds.x + best_match.bounds.width // 2
+                    center_y = best_match.bounds.y + best_match.bounds.height // 2
 
+                    completed_at = utc_now()
                     return AssertionResult(
                         assertion_id="visibility_visible",
-                        locator_value=self._locator._value,
-                        assertion_type=AssertionType.VISIBILITY,
                         assertion_method="to_be_visible",
                         status=AssertionStatus.PASSED,
-                        message=f"Element is visible ({len(matches)} match(es) found)",
+                        started_at=started_at,
+                        completed_at=completed_at,
                         expected_value=True,
                         actual_value=True,
                         matches_found=len(matches),
                         best_match=VisionLocatorMatch(
                             bounds=best_match.bounds,
                             confidence=best_match.confidence,
+                            center=(center_x, center_y),
                             text=best_match.text,
+                            locator_type=LocatorType.IMAGE,
                         ),
                         duration_ms=elapsed_ms,
-                        attempts=attempts,
+                        retry_count=attempts - 1,
                     )
 
                 last_error = "No matches found"
@@ -157,18 +164,19 @@ class VisibilityAssertion:
             if now >= deadline:
                 elapsed_ms = int((now - start_time) * 1000)
 
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="visibility_visible",
-                    locator_value=self._locator._value,
-                    assertion_type=AssertionType.VISIBILITY,
                     assertion_method="to_be_visible",
                     status=AssertionStatus.FAILED,
-                    message=f"Element not visible after {elapsed_ms}ms: {last_error}",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    error_message=f"Element not visible after {elapsed_ms}ms: {last_error}",
                     expected_value=True,
                     actual_value=False,
                     matches_found=0,
                     duration_ms=elapsed_ms,
-                    attempts=attempts,
+                    retry_count=attempts - 1,
                 )
 
             # Wait and get fresh screenshot
@@ -198,6 +206,7 @@ class VisibilityAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         timeout = self._get_timeout(timeout_ms)
         poll_interval = self._get_poll_interval()
 
@@ -211,7 +220,7 @@ class VisibilityAssertion:
             try:
                 # Find matches
                 if region is not None:
-                    self._locator.inside(region)
+                    self._locator.with_region(region)
 
                 matches = await self._locator.find_all(current_screenshot)
 
@@ -219,36 +228,36 @@ class VisibilityAssertion:
                     # Element is hidden
                     elapsed_ms = int((time.monotonic() - start_time) * 1000)
 
+                    completed_at = utc_now()
                     return AssertionResult(
                         assertion_id="visibility_hidden",
-                        locator_value=self._locator._value,
-                        assertion_type=AssertionType.VISIBILITY,
                         assertion_method="to_be_hidden",
                         status=AssertionStatus.PASSED,
-                        message="Element is hidden (not found)",
+                        started_at=started_at,
+                        completed_at=completed_at,
                         expected_value=False,
                         actual_value=False,
                         matches_found=0,
                         duration_ms=elapsed_ms,
-                        attempts=attempts,
+                        retry_count=attempts - 1,
                     )
 
             except Exception:
                 # Exception during search means element not found = hidden
                 elapsed_ms = int((time.monotonic() - start_time) * 1000)
 
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="visibility_hidden",
-                    locator_value=self._locator._value,
-                    assertion_type=AssertionType.VISIBILITY,
                     assertion_method="to_be_hidden",
                     status=AssertionStatus.PASSED,
-                    message="Element is hidden (search failed)",
+                    started_at=started_at,
+                    completed_at=completed_at,
                     expected_value=False,
                     actual_value=False,
                     matches_found=0,
                     duration_ms=elapsed_ms,
-                    attempts=attempts,
+                    retry_count=attempts - 1,
                 )
 
             # Check timeout
@@ -257,24 +266,29 @@ class VisibilityAssertion:
                 elapsed_ms = int((now - start_time) * 1000)
 
                 best_match = max(matches, key=lambda m: m.confidence)
+                center_x = best_match.bounds.x + best_match.bounds.width // 2
+                center_y = best_match.bounds.y + best_match.bounds.height // 2
 
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="visibility_hidden",
-                    locator_value=self._locator._value,
-                    assertion_type=AssertionType.VISIBILITY,
                     assertion_method="to_be_hidden",
                     status=AssertionStatus.FAILED,
-                    message=f"Element still visible after {elapsed_ms}ms ({len(matches)} match(es))",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    error_message=f"Element still visible after {elapsed_ms}ms ({len(matches)} match(es))",
                     expected_value=False,
                     actual_value=True,
                     matches_found=len(matches),
                     best_match=VisionLocatorMatch(
                         bounds=best_match.bounds,
                         confidence=best_match.confidence,
+                        center=(center_x, center_y),
                         text=best_match.text,
+                        locator_type=LocatorType.IMAGE,
                     ),
                     duration_ms=elapsed_ms,
-                    attempts=attempts,
+                    retry_count=attempts - 1,
                 )
 
             # Wait and get fresh screenshot

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
+from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
@@ -136,7 +137,7 @@ class SpatialAssertion:
         vertical_gap = max(top_gap, bottom_gap, 0)
 
         # Euclidean distance
-        return np.sqrt(horizontal_gap**2 + vertical_gap**2)
+        return float(np.sqrt(horizontal_gap**2 + vertical_gap**2))
 
     def _calculate_overlap_area(self, b1: BoundingBox, b2: BoundingBox) -> int:
         """Calculate overlap area between bounding boxes.
@@ -156,7 +157,7 @@ class SpatialAssertion:
             0,
             min(b1.y + b1.height, b2.y + b2.height) - max(b1.y, b2.y),
         )
-        return x_overlap * y_overlap
+        return int(x_overlap * y_overlap)
 
     def _get_spatial_relation(
         self,
@@ -223,6 +224,7 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         target_match = await self._locator.find(screenshot)
@@ -230,13 +232,14 @@ class SpatialAssertion:
 
         if target_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_above",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_above",
                 status=AssertionStatus.FAILED,
-                message="Target element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Target element not found",
                 expected_value="above reference",
                 actual_value="target not found",
                 matches_found=0,
@@ -245,13 +248,14 @@ class SpatialAssertion:
 
         if ref_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_above",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_above",
                 status=AssertionStatus.FAILED,
-                message="Reference element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Reference element not found",
                 expected_value="above reference",
                 actual_value="reference not found",
                 matches_found=0,
@@ -267,15 +271,15 @@ class SpatialAssertion:
         has_min_gap = gap >= min_gap
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if is_above and has_min_gap:
             return AssertionResult(
                 assertion_id="spatial_above",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_above",
                 status=AssertionStatus.PASSED,
-                message=f"Element is above reference (gap: {gap}px)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="above reference",
                 actual_value=f"above by {gap}px",
                 matches_found=1,
@@ -286,11 +290,11 @@ class SpatialAssertion:
             r_center = self._get_center(r)
             return AssertionResult(
                 assertion_id="spatial_above",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_above",
                 status=AssertionStatus.FAILED,
-                message=f"Element not above reference (target y: {t_center[1]}, ref y: {r_center[1]})",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Element not above reference (target y: {t_center[1]}, ref y: {r_center[1]})",
                 expected_value="above reference",
                 actual_value="not above",
                 matches_found=0,
@@ -313,6 +317,7 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         target_match = await self._locator.find(screenshot)
@@ -320,13 +325,14 @@ class SpatialAssertion:
 
         if target_match is None or ref_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_below",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_below",
                 status=AssertionStatus.FAILED,
-                message="Element(s) not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element(s) not found",
                 expected_value="below reference",
                 actual_value="not found",
                 matches_found=0,
@@ -341,15 +347,15 @@ class SpatialAssertion:
         has_min_gap = gap >= min_gap
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if is_below and has_min_gap:
             return AssertionResult(
                 assertion_id="spatial_below",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_below",
                 status=AssertionStatus.PASSED,
-                message=f"Element is below reference (gap: {gap}px)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="below reference",
                 actual_value=f"below by {gap}px",
                 matches_found=1,
@@ -358,11 +364,11 @@ class SpatialAssertion:
         else:
             return AssertionResult(
                 assertion_id="spatial_below",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_below",
                 status=AssertionStatus.FAILED,
-                message="Element not below reference",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not below reference",
                 expected_value="below reference",
                 actual_value="not below",
                 matches_found=0,
@@ -385,6 +391,7 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         target_match = await self._locator.find(screenshot)
@@ -392,13 +399,14 @@ class SpatialAssertion:
 
         if target_match is None or ref_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_left_of",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_left_of",
                 status=AssertionStatus.FAILED,
-                message="Element(s) not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element(s) not found",
                 expected_value="left of reference",
                 actual_value="not found",
                 matches_found=0,
@@ -413,15 +421,15 @@ class SpatialAssertion:
         has_min_gap = gap >= min_gap
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if is_left and has_min_gap:
             return AssertionResult(
                 assertion_id="spatial_left_of",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_left_of",
                 status=AssertionStatus.PASSED,
-                message=f"Element is left of reference (gap: {gap}px)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="left of reference",
                 actual_value=f"left by {gap}px",
                 matches_found=1,
@@ -430,11 +438,11 @@ class SpatialAssertion:
         else:
             return AssertionResult(
                 assertion_id="spatial_left_of",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_left_of",
                 status=AssertionStatus.FAILED,
-                message="Element not left of reference",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not left of reference",
                 expected_value="left of reference",
                 actual_value="not left",
                 matches_found=0,
@@ -457,6 +465,7 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         target_match = await self._locator.find(screenshot)
@@ -464,13 +473,14 @@ class SpatialAssertion:
 
         if target_match is None or ref_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_right_of",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_right_of",
                 status=AssertionStatus.FAILED,
-                message="Element(s) not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element(s) not found",
                 expected_value="right of reference",
                 actual_value="not found",
                 matches_found=0,
@@ -485,15 +495,15 @@ class SpatialAssertion:
         has_min_gap = gap >= min_gap
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if is_right and has_min_gap:
             return AssertionResult(
                 assertion_id="spatial_right_of",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_right_of",
                 status=AssertionStatus.PASSED,
-                message=f"Element is right of reference (gap: {gap}px)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="right of reference",
                 actual_value=f"right by {gap}px",
                 matches_found=1,
@@ -502,11 +512,11 @@ class SpatialAssertion:
         else:
             return AssertionResult(
                 assertion_id="spatial_right_of",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_right_of",
                 status=AssertionStatus.FAILED,
-                message="Element not right of reference",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not right of reference",
                 expected_value="right of reference",
                 actual_value="not right",
                 matches_found=0,
@@ -531,6 +541,7 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         if isinstance(alignment, str):
@@ -541,13 +552,14 @@ class SpatialAssertion:
 
         if target_match is None or ref_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_aligned",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_aligned_with",
                 status=AssertionStatus.FAILED,
-                message="Element(s) not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element(s) not found",
                 expected_value=f"aligned {alignment.value}",
                 actual_value="not found",
                 matches_found=0,
@@ -562,37 +574,37 @@ class SpatialAssertion:
         r_center = self._get_center(r)
 
         aligned = False
-        actual_diff = 0
+        actual_diff: float = 0.0
 
         if alignment == Alignment.LEFT:
-            actual_diff = abs(t.x - r.x)
+            actual_diff = float(abs(t.x - r.x))
             aligned = actual_diff <= tolerance
         elif alignment == Alignment.RIGHT:
-            actual_diff = abs((t.x + t.width) - (r.x + r.width))
+            actual_diff = float(abs((t.x + t.width) - (r.x + r.width)))
             aligned = actual_diff <= tolerance
         elif alignment == Alignment.CENTER:
-            actual_diff = abs(t_center[0] - r_center[0])
+            actual_diff = float(abs(t_center[0] - r_center[0]))
             aligned = actual_diff <= tolerance
         elif alignment == Alignment.TOP:
-            actual_diff = abs(t.y - r.y)
+            actual_diff = float(abs(t.y - r.y))
             aligned = actual_diff <= tolerance
         elif alignment == Alignment.BOTTOM:
-            actual_diff = abs((t.y + t.height) - (r.y + r.height))
+            actual_diff = float(abs((t.y + t.height) - (r.y + r.height)))
             aligned = actual_diff <= tolerance
         elif alignment == Alignment.MIDDLE:
-            actual_diff = abs(t_center[1] - r_center[1])
+            actual_diff = float(abs(t_center[1] - r_center[1]))
             aligned = actual_diff <= tolerance
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if aligned:
             return AssertionResult(
                 assertion_id="spatial_aligned",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_aligned_with",
                 status=AssertionStatus.PASSED,
-                message=f"Aligned {alignment.value} (diff: {actual_diff}px)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=f"aligned {alignment.value}",
                 actual_value=f"diff {actual_diff}px",
                 matches_found=1,
@@ -601,11 +613,11 @@ class SpatialAssertion:
         else:
             return AssertionResult(
                 assertion_id="spatial_aligned",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_aligned_with",
                 status=AssertionStatus.FAILED,
-                message=f"Not aligned {alignment.value} (diff: {actual_diff}px)",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Not aligned {alignment.value} (diff: {actual_diff}px)",
                 expected_value=f"aligned {alignment.value}",
                 actual_value=f"diff {actual_diff}px",
                 matches_found=0,
@@ -664,6 +676,7 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         target_match = await self._locator.find(screenshot)
@@ -671,13 +684,14 @@ class SpatialAssertion:
 
         if target_match is None or ref_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_near",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_near",
                 status=AssertionStatus.FAILED,
-                message="Element(s) not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element(s) not found",
                 expected_value=f"within {max_distance}px",
                 actual_value="not found",
                 matches_found=0,
@@ -688,15 +702,15 @@ class SpatialAssertion:
         is_near = distance <= max_distance
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if is_near:
             return AssertionResult(
                 assertion_id="spatial_near",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_near",
                 status=AssertionStatus.PASSED,
-                message=f"Element is near reference ({distance:.0f}px)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=f"within {max_distance}px",
                 actual_value=f"{distance:.0f}px",
                 matches_found=1,
@@ -705,11 +719,11 @@ class SpatialAssertion:
         else:
             return AssertionResult(
                 assertion_id="spatial_near",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_be_near",
                 status=AssertionStatus.FAILED,
-                message=f"Element too far from reference ({distance:.0f}px > {max_distance}px)",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Element too far from reference ({distance:.0f}px > {max_distance}px)",
                 expected_value=f"within {max_distance}px",
                 actual_value=f"{distance:.0f}px",
                 matches_found=0,
@@ -732,6 +746,7 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         target_match = await self._locator.find(screenshot)
@@ -739,13 +754,14 @@ class SpatialAssertion:
 
         if target_match is None or other_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_overlap",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_overlap_with",
                 status=AssertionStatus.FAILED,
-                message="Element(s) not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element(s) not found",
                 expected_value="overlapping",
                 actual_value="not found",
                 matches_found=0,
@@ -756,15 +772,15 @@ class SpatialAssertion:
         overlaps = overlap_area >= min_overlap_area
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if overlaps:
             return AssertionResult(
                 assertion_id="spatial_overlap",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_overlap_with",
                 status=AssertionStatus.PASSED,
-                message=f"Elements overlap ({overlap_area}px²)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="overlapping",
                 actual_value=f"{overlap_area}px²",
                 matches_found=1,
@@ -773,11 +789,11 @@ class SpatialAssertion:
         else:
             return AssertionResult(
                 assertion_id="spatial_overlap",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_overlap_with",
                 status=AssertionStatus.FAILED,
-                message="Elements do not overlap",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Elements do not overlap",
                 expected_value="overlapping",
                 actual_value="no overlap",
                 matches_found=0,
@@ -798,6 +814,7 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         target_match = await self._locator.find(screenshot)
@@ -805,13 +822,14 @@ class SpatialAssertion:
 
         if target_match is None or other_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_no_overlap",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_not_overlap_with",
                 status=AssertionStatus.FAILED,
-                message="Element(s) not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element(s) not found",
                 expected_value="not overlapping",
                 actual_value="not found",
                 matches_found=0,
@@ -822,15 +840,15 @@ class SpatialAssertion:
         no_overlap = overlap_area == 0
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if no_overlap:
             return AssertionResult(
                 assertion_id="spatial_no_overlap",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_not_overlap_with",
                 status=AssertionStatus.PASSED,
-                message="Elements do not overlap",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="not overlapping",
                 actual_value="no overlap",
                 matches_found=1,
@@ -839,11 +857,11 @@ class SpatialAssertion:
         else:
             return AssertionResult(
                 assertion_id="spatial_no_overlap",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_not_overlap_with",
                 status=AssertionStatus.FAILED,
-                message=f"Elements overlap ({overlap_area}px²)",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Elements overlap ({overlap_area}px²)",
                 expected_value="not overlapping",
                 actual_value=f"{overlap_area}px²",
                 matches_found=0,
@@ -864,6 +882,7 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         target_match = await self._locator.find(screenshot)
@@ -871,13 +890,14 @@ class SpatialAssertion:
 
         if target_match is None or child_match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="spatial_contains",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_contain",
                 status=AssertionStatus.FAILED,
-                message="Element(s) not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element(s) not found",
                 expected_value="contains child",
                 actual_value="not found",
                 matches_found=0,
@@ -895,15 +915,15 @@ class SpatialAssertion:
         )
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if contains:
             return AssertionResult(
                 assertion_id="spatial_contains",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_contain",
                 status=AssertionStatus.PASSED,
-                message="Element contains child",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="contains child",
                 actual_value="contained",
                 matches_found=1,
@@ -912,11 +932,11 @@ class SpatialAssertion:
         else:
             return AssertionResult(
                 assertion_id="spatial_contains",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.SPATIAL,
                 assertion_method="to_contain",
                 status=AssertionStatus.FAILED,
-                message="Element does not fully contain child",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element does not fully contain child",
                 expected_value="contains child",
                 actual_value="not contained",
                 matches_found=0,

@@ -8,13 +8,22 @@ improved accuracy and performance.
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import cv2
 import numpy as np
 from numpy.typing import NDArray
 from qontinui_schemas.testing.assertions import BoundingBox
 from qontinui_schemas.testing.environment import GUIEnvironment, Typography
+
+
+class BoundsLike(Protocol):
+    """Protocol for objects with bounding box properties."""
+
+    x: int
+    y: int
+    width: int
+    height: int
 
 if TYPE_CHECKING:
     from qontinui.vision.verification.config import VisionConfig
@@ -107,7 +116,7 @@ class OCREngine:
         """
         # Check environment first
         if self._typography is not None and self._typography.languages_detected:
-            return self._typography.languages_detected[0]
+            return str(self._typography.languages_detected[0])
 
         if self._config is not None:
             return self._config.detection.ocr_language
@@ -207,13 +216,13 @@ class OCREngine:
                 # Convert to grayscale
                 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 # Invert
-                gray = 255 - gray
+                gray = cv2.bitwise_not(gray)
                 # Convert back to BGR for consistency
-                image = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+                image = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR).astype(np.uint8)
 
         # Apply slight sharpening
-        kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-        image = cv2.filter2D(image, -1, kernel)
+        kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]], dtype=np.float32)
+        image = cv2.filter2D(image, -1, kernel).astype(np.uint8)
 
         return image
 
@@ -422,7 +431,7 @@ class OCREngine:
                 closest = min(known_sizes, key=lambda s: abs(s - base_estimate))
                 # If close enough, use the known size
                 if abs(closest - base_estimate) < 4:
-                    return closest
+                    return int(closest)
 
         return base_estimate
 
@@ -460,7 +469,7 @@ class OCREngine:
 
         return filtered
 
-    def _bounds_overlap(self, a: BoundingBox, b: BoundingBox) -> bool:
+    def _bounds_overlap(self, a: BoundsLike, b: BoundsLike) -> bool:
         """Check if two bounding boxes overlap.
 
         Args:

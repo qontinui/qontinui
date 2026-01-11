@@ -12,11 +12,13 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
+from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
     AssertionType,
     BoundingBox,
+    LocatorType,
     VisionLocatorMatch,
 )
 
@@ -211,6 +213,7 @@ class TextAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         timeout = self._get_timeout(timeout_ms)
         poll_interval = self._get_poll_interval()
 
@@ -241,33 +244,41 @@ class TextAssertion:
                     # Build match from region
                     best_match = None
                     if search_region is not None:
+                        center_x = search_region.x + search_region.width // 2
+                        center_y = search_region.y + search_region.height // 2
                         best_match = VisionLocatorMatch(
                             bounds=search_region,
                             confidence=1.0,
+                            center=(center_x, center_y),
                             text=actual_text,
+                            locator_type=LocatorType.TEXT,
                         )
                     elif ocr_results:
                         # Use bounds of first result
                         first = ocr_results[0]
+                        center_x = first.bounds.x + first.bounds.width // 2
+                        center_y = first.bounds.y + first.bounds.height // 2
                         best_match = VisionLocatorMatch(
                             bounds=first.bounds,
                             confidence=first.confidence,
+                            center=(center_x, center_y),
                             text=actual_text,
+                            locator_type=LocatorType.TEXT,
                         )
 
+                    completed_at = utc_now()
                     return AssertionResult(
                         assertion_id="text_have_text",
-                        locator_value=self._locator._value if self._locator else "region",
-                        assertion_type=AssertionType.TEXT,
                         assertion_method="to_have_text",
                         status=AssertionStatus.PASSED,
-                        message=f"Text matches: '{actual_text}'",
+                        started_at=started_at,
+                        completed_at=completed_at,
                         expected_value=expected_text,
                         actual_value=actual_text,
                         matches_found=len(ocr_results),
                         best_match=best_match,
                         duration_ms=elapsed_ms,
-                        attempts=attempts,
+                        retry_count=attempts - 1,
                     )
 
             except Exception as e:
@@ -278,18 +289,19 @@ class TextAssertion:
             if now >= deadline:
                 elapsed_ms = int((now - start_time) * 1000)
 
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="text_have_text",
-                    locator_value=self._locator._value if self._locator else "region",
-                    assertion_type=AssertionType.TEXT,
                     assertion_method="to_have_text",
                     status=AssertionStatus.FAILED,
-                    message=f"Text mismatch: expected '{expected_text}', got '{last_actual_text}'",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    error_message=f"Text mismatch: expected '{expected_text}', got '{last_actual_text}'",
                     expected_value=expected_text,
                     actual_value=last_actual_text,
                     matches_found=0,
                     duration_ms=elapsed_ms,
-                    attempts=attempts,
+                    retry_count=attempts - 1,
                 )
 
             # Wait and get fresh screenshot

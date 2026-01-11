@@ -28,18 +28,14 @@ Usage:
 # Unified extraction architecture (new)
 from .abstract_extractor import (
     AbstractExtractor,
+    ExtractionContext,
+    ExtractionError,
+    ScreenshotError,
 )
 from .abstract_extractor import ExtractedElement as UnifiedExtractedElement
 from .abstract_extractor import ExtractedState as UnifiedExtractedState
 from .abstract_extractor import ExtractedTransition as UnifiedExtractedTransition
-from .abstract_extractor import (
-    ExtractionContext,
-    ExtractionError,
-)
 from .abstract_extractor import ExtractionResult as UnifiedExtractionResult
-from .abstract_extractor import (
-    ScreenshotError,
-)
 from .extractor_config import (
     AccessibilityConfig,
     ConfidenceThreshold,

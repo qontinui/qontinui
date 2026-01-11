@@ -9,9 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from qontinui_schemas.common import utc_now
-from sqlalchemy import Column
+from sqlalchemy import Column, MetaData, String, Table, create_engine, text
 from sqlalchemy import DateTime as SQLDateTime
-from sqlalchemy import MetaData, String, Table, create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker
 

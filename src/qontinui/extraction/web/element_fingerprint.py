@@ -322,8 +322,9 @@ class ElementFingerprintGenerator:
 
             # K-means to find dominant colors (k=3)
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+            initial_labels = np.zeros(pixels.shape[0], dtype=np.int32)
             _, labels, centers = cv2.kmeans(
-                pixels, 3, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
+                pixels, 3, initial_labels, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
             )
 
             # Find most common cluster
@@ -488,7 +489,7 @@ def compute_hash_similarity(hash1: str, hash2: str) -> float:
         b2 = bin(int(hash2, 16))[2:].zfill(len(hash2) * 4)
 
         # Hamming distance
-        distance = sum(c1 != c2 for c1, c2 in zip(b1, b2))
+        distance = sum(c1 != c2 for c1, c2 in zip(b1, b2, strict=False))
 
         # Normalize to similarity
         return 1.0 - (distance / len(b1))
@@ -525,7 +526,7 @@ def compute_position_similarity(
     # Max distance is sqrt(2) (corner to corner)
     position_sim = 1.0 - (distance / 1.414)
 
-    return (region_sim + position_sim) / 2
+    return float((region_sim + position_sim) / 2)
 
 
 def compute_size_similarity(

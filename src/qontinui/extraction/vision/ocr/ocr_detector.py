@@ -159,6 +159,7 @@ class OCRDetector:
         results: list[OCRResult] = []
 
         # Run OCR
+        assert self._ocr_engine is not None, "EasyOCR engine not loaded"
         ocr_results = self._ocr_engine.readtext(image_rgb)
 
         for bbox_points, text, confidence in ocr_results:
@@ -199,6 +200,7 @@ class OCRDetector:
         pil_image = Image.fromarray(image_rgb)
 
         # Get detailed OCR data
+        assert self._ocr_engine is not None, "Tesseract engine not loaded"
         data = self._ocr_engine.image_to_data(
             pil_image,
             output_type=self._ocr_engine.Output.DICT,

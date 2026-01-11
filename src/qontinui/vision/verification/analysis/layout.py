@@ -79,17 +79,17 @@ class AlignmentGroup:
             Edge position.
         """
         if self.edge == AlignmentEdge.LEFT:
-            return bounds.x
+            return int(bounds.x)
         elif self.edge == AlignmentEdge.RIGHT:
-            return bounds.x + bounds.width
+            return int(bounds.x + bounds.width)
         elif self.edge == AlignmentEdge.TOP:
-            return bounds.y
+            return int(bounds.y)
         elif self.edge == AlignmentEdge.BOTTOM:
-            return bounds.y + bounds.height
+            return int(bounds.y + bounds.height)
         elif self.edge == AlignmentEdge.CENTER_H:
-            return bounds.x + bounds.width // 2
+            return int(bounds.x + bounds.width // 2)
         elif self.edge == AlignmentEdge.CENTER_V:
-            return bounds.y + bounds.height // 2
+            return int(bounds.y + bounds.height // 2)
         return 0
 
 
@@ -129,7 +129,7 @@ class GridAnalysis:
             np.std(self.column_widths) / np.mean(self.column_widths) if self.column_widths else 0
         )
 
-        return row_variance < 0.1 and col_variance < 0.1
+        return bool(row_variance < 0.1 and col_variance < 0.1)
 
     def get_cell(self, row: int, column: int) -> GridCell | None:
         """Get cell at position.
@@ -300,17 +300,17 @@ class LayoutAnalyzer:
             Edge position.
         """
         if edge == AlignmentEdge.LEFT:
-            return bounds.x
+            return int(bounds.x)
         elif edge == AlignmentEdge.RIGHT:
-            return bounds.x + bounds.width
+            return int(bounds.x + bounds.width)
         elif edge == AlignmentEdge.TOP:
-            return bounds.y
+            return int(bounds.y)
         elif edge == AlignmentEdge.BOTTOM:
-            return bounds.y + bounds.height
+            return int(bounds.y + bounds.height)
         elif edge == AlignmentEdge.CENTER_H:
-            return bounds.x + bounds.width // 2
+            return int(bounds.x + bounds.width // 2)
         elif edge == AlignmentEdge.CENTER_V:
-            return bounds.y + bounds.height // 2
+            return int(bounds.y + bounds.height // 2)
         return 0
 
     def detect_grid(

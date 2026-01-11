@@ -8,11 +8,12 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import cv2
 import numpy as np
 from numpy.typing import NDArray
+from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
@@ -150,10 +151,11 @@ class ScreenshotComparator:
 
         # Resize if needed
         if actual_masked.shape != expected_masked.shape:
-            expected_masked = cv2.resize(
+            resized = cv2.resize(
                 expected_masked,
                 (actual_masked.shape[1], actual_masked.shape[0]),
             )
+            expected_masked = cast(NDArray[np.uint8], resized)
 
         # Run comparison
         if method == "pixel":
@@ -186,8 +188,18 @@ class ScreenshotComparator:
         if self._environment.typography:
             for region in self._environment.typography.common_text_regions:
                 # Check if region is marked as dynamic
-                if region.role in ("timestamp", "counter", "status", "notification"):
-                    masks.append(region.bounds)
+                # Access role attribute safely as it may not exist on all schema versions
+                region_role = getattr(region, "role", None)
+                if region_role in ("timestamp", "counter", "status", "notification"):
+                    # Convert from environment BoundingBox to assertions BoundingBox
+                    masks.append(
+                        BoundingBox(
+                            x=region.bounds.x,
+                            y=region.bounds.y,
+                            width=region.bounds.width,
+                            height=region.bounds.height,
+                        )
+                    )
 
         return masks
 
@@ -235,20 +247,27 @@ class ScreenshotComparator:
         """
         # Calculate absolute difference
         diff = cv2.absdiff(actual, expected)
-        gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) if len(diff.shape) == 3 else diff
+        gray_diff: NDArray[np.uint8]
+        if len(diff.shape) == 3:
+            gray_diff = np.asarray(
+                cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
+        else:
+            gray_diff = np.asarray(diff, dtype=np.uint8)
 
         # Count different pixels
-        _, thresh = cv2.threshold(gray_diff, 10, 255, cv2.THRESH_BINARY)
-        diff_pixels = np.count_nonzero(thresh)
-        total_pixels = thresh.size
+        _, thresh_result = cv2.threshold(gray_diff, 10, 255, cv2.THRESH_BINARY)
+        thresh_uint8: NDArray[np.uint8] = np.asarray(thresh_result, dtype=np.uint8)
+        diff_pixels = np.count_nonzero(thresh_uint8)
+        total_pixels = thresh_uint8.size
 
         similarity = 1.0 - (diff_pixels / total_pixels)
 
         # Find diff regions using contours
-        diff_regions = self._find_diff_regions(thresh)
+        diff_regions = self._find_diff_regions(thresh_uint8)
 
         # Create diff visualization
-        diff_image = self._create_diff_image(actual, expected, thresh)
+        diff_image = self._create_diff_image(actual, expected, thresh_uint8)
 
         return ComparisonResult(
             matches=similarity >= threshold,
@@ -279,9 +298,11 @@ class ScreenshotComparator:
             Comparison result.
         """
         # Convert to grayscale
+        actual_gray: NDArray[np.uint8]
+        expected_gray: NDArray[np.uint8]
         if len(actual.shape) == 3:
-            actual_gray = cv2.cvtColor(actual, cv2.COLOR_BGR2GRAY)
-            expected_gray = cv2.cvtColor(expected, cv2.COLOR_BGR2GRAY)
+            actual_gray = np.asarray(cv2.cvtColor(actual, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
+            expected_gray = np.asarray(cv2.cvtColor(expected, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
         else:
             actual_gray = actual
             expected_gray = expected
@@ -298,15 +319,17 @@ class ScreenshotComparator:
             )
 
             # Convert diff map to uint8
-            diff_map = (255 - diff_map * 255).astype(np.uint8)
-            _, thresh = cv2.threshold(diff_map, 50, 255, cv2.THRESH_BINARY)
+            diff_map_uint8 = (255 - diff_map * 255).astype(np.uint8)
+            _, thresh = cv2.threshold(diff_map_uint8, 50, 255, cv2.THRESH_BINARY)
 
         except ImportError:
             # Fall back to manual SSIM approximation
-            score, thresh = self._manual_ssim(actual_gray, expected_gray)
+            score, thresh_result = self._manual_ssim(actual_gray, expected_gray)
+            diff_map_uint8 = thresh_result
 
-        diff_regions = self._find_diff_regions(thresh)
-        diff_image = self._create_diff_image(actual, expected, thresh)
+        thresh_uint8: NDArray[np.uint8] = np.asarray(diff_map_uint8, dtype=np.uint8)
+        diff_regions = self._find_diff_regions(thresh_uint8)
+        diff_image = self._create_diff_image(actual, expected, thresh_uint8)
 
         return ComparisonResult(
             matches=score >= threshold,
@@ -359,7 +382,8 @@ class ScreenshotComparator:
 
         # Create diff threshold
         diff = cv2.absdiff(actual, expected)
-        _, thresh = cv2.threshold(diff, 10, 255, cv2.THRESH_BINARY)
+        _, thresh_result = cv2.threshold(diff, 10, 255, cv2.THRESH_BINARY)
+        thresh: NDArray[np.uint8] = np.asarray(thresh_result, dtype=np.uint8)
 
         return score, thresh
 
@@ -391,11 +415,18 @@ class ScreenshotComparator:
 
         # For diff visualization, fall back to pixel diff
         diff = cv2.absdiff(actual, expected)
-        gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) if len(diff.shape) == 3 else diff
-        _, thresh = cv2.threshold(gray_diff, 10, 255, cv2.THRESH_BINARY)
+        gray_diff_phash: NDArray[np.uint8]
+        if len(diff.shape) == 3:
+            gray_diff_phash = np.asarray(
+                cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
+        else:
+            gray_diff_phash = np.asarray(diff, dtype=np.uint8)
+        _, thresh_result = cv2.threshold(gray_diff_phash, 10, 255, cv2.THRESH_BINARY)
 
-        diff_regions = self._find_diff_regions(thresh)
-        diff_image = self._create_diff_image(actual, expected, thresh)
+        thresh_uint8: NDArray[np.uint8] = np.asarray(thresh_result, dtype=np.uint8)
+        diff_regions = self._find_diff_regions(thresh_uint8)
+        diff_image = self._create_diff_image(actual, expected, thresh_uint8)
 
         return ComparisonResult(
             matches=similarity >= threshold,
@@ -457,18 +488,26 @@ class ScreenshotComparator:
             Comparison result.
         """
         # Convert to grayscale
+        actual_gray_feature: NDArray[np.uint8]
+        expected_gray_feature: NDArray[np.uint8]
         if len(actual.shape) == 3:
-            actual_gray = cv2.cvtColor(actual, cv2.COLOR_BGR2GRAY)
-            expected_gray = cv2.cvtColor(expected, cv2.COLOR_BGR2GRAY)
+            actual_gray_feature = np.asarray(
+                cv2.cvtColor(actual, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
+            expected_gray_feature = np.asarray(
+                cv2.cvtColor(expected, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
         else:
-            actual_gray = actual
-            expected_gray = expected
+            actual_gray_feature = actual
+            expected_gray_feature = expected
 
         # Detect ORB features
-        orb = cv2.ORB_create(nfeatures=500)
+        orb = cv2.ORB.create(nfeatures=500)
 
-        kp1, desc1 = orb.detectAndCompute(actual_gray, None)
-        kp2, desc2 = orb.detectAndCompute(expected_gray, None)
+        # Create empty mask arrays for detectAndCompute (None is not accepted by mypy)
+        empty_mask: NDArray[np.uint8] = np.array([], dtype=np.uint8)
+        kp1, desc1 = orb.detectAndCompute(actual_gray_feature, empty_mask)
+        kp2, desc2 = orb.detectAndCompute(expected_gray_feature, empty_mask)
 
         if desc1 is None or desc2 is None or len(desc1) == 0 or len(desc2) == 0:
             # No features found, fall back to pixel comparison
@@ -485,11 +524,18 @@ class ScreenshotComparator:
 
         # For diff visualization
         diff = cv2.absdiff(actual, expected)
-        gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) if len(diff.shape) == 3 else diff
-        _, thresh = cv2.threshold(gray_diff, 10, 255, cv2.THRESH_BINARY)
+        gray_diff_feature: NDArray[np.uint8]
+        if len(diff.shape) == 3:
+            gray_diff_feature = np.asarray(
+                cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
+        else:
+            gray_diff_feature = np.asarray(diff, dtype=np.uint8)
+        _, thresh_result = cv2.threshold(gray_diff_feature, 10, 255, cv2.THRESH_BINARY)
 
-        diff_regions = self._find_diff_regions(thresh)
-        diff_image = self._create_diff_image(actual, expected, thresh)
+        thresh_uint8: NDArray[np.uint8] = np.asarray(thresh_result, dtype=np.uint8)
+        diff_regions = self._find_diff_regions(thresh_uint8)
+        diff_image = self._create_diff_image(actual, expected, thresh_uint8)
 
         return ComparisonResult(
             matches=similarity >= threshold,
@@ -650,37 +696,43 @@ class ScreenshotAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         # Determine baseline
         expected: NDArray[np.uint8] | None = None
 
+        baseline_path_resolved: Path | None = None
         if baseline_image is not None:
             expected = baseline_image
         elif baseline_path is not None:
-            baseline_path = Path(baseline_path)
-            if baseline_path.exists():
-                expected = cv2.imread(str(baseline_path))
+            baseline_path_resolved = Path(baseline_path)
+            if baseline_path_resolved.exists():
+                loaded = cv2.imread(str(baseline_path_resolved))
+                if loaded is not None:
+                    expected = loaded.astype(np.uint8)
         elif baseline_name is not None:
-            baseline_path = self._get_baseline_dir() / f"{baseline_name}.png"
-            if baseline_path.exists():
-                expected = cv2.imread(str(baseline_path))
+            baseline_path_resolved = self._get_baseline_dir() / f"{baseline_name}.png"
+            if baseline_path_resolved.exists():
+                loaded = cv2.imread(str(baseline_path_resolved))
+                if loaded is not None:
+                    expected = loaded.astype(np.uint8)
 
         # Handle missing baseline
         if expected is None:
-            if update_baseline and baseline_path is not None:
+            if update_baseline and baseline_path_resolved is not None:
                 # Create baseline
-                baseline_path.parent.mkdir(parents=True, exist_ok=True)
-                cv2.imwrite(str(baseline_path), actual)
+                baseline_path_resolved.parent.mkdir(parents=True, exist_ok=True)
+                cv2.imwrite(str(baseline_path_resolved), actual)
 
                 elapsed_ms = int((time.monotonic() - start_time) * 1000)
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="screenshot_match",
-                    locator_value=str(baseline_path),
-                    assertion_type=AssertionType.SCREENSHOT,
                     assertion_method="to_match_screenshot",
                     status=AssertionStatus.PASSED,
-                    message=f"Baseline created: {baseline_path}",
+                    started_at=started_at,
+                    completed_at=completed_at,
                     expected_value="new baseline",
                     actual_value="baseline created",
                     matches_found=1,
@@ -688,13 +740,14 @@ class ScreenshotAssertion:
                 )
             else:
                 elapsed_ms = int((time.monotonic() - start_time) * 1000)
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="screenshot_match",
-                    locator_value=str(baseline_path) if baseline_path else "unknown",
-                    assertion_type=AssertionType.SCREENSHOT,
                     assertion_method="to_match_screenshot",
                     status=AssertionStatus.FAILED,
-                    message="Baseline not found",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    error_message="Baseline not found",
                     expected_value="baseline image",
                     actual_value="not found",
                     matches_found=0,
@@ -724,14 +777,14 @@ class ScreenshotAssertion:
             diff_path = str(diff_dir / f"{diff_name}_diff_{timestamp}.png")
             cv2.imwrite(diff_path, result.diff_image)
 
+        completed_at = utc_now()
         if result.matches:
             return AssertionResult(
                 assertion_id="screenshot_match",
-                locator_value=str(baseline_path) if baseline_path else "image",
-                assertion_type=AssertionType.SCREENSHOT,
                 assertion_method="to_match_screenshot",
                 status=AssertionStatus.PASSED,
-                message=f"Screenshot matches ({result.similarity_score:.1%} similarity)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="baseline",
                 actual_value=f"{result.similarity_score:.1%} match",
                 matches_found=1,
@@ -740,11 +793,11 @@ class ScreenshotAssertion:
         else:
             return AssertionResult(
                 assertion_id="screenshot_match",
-                locator_value=str(baseline_path) if baseline_path else "image",
-                assertion_type=AssertionType.SCREENSHOT,
                 assertion_method="to_match_screenshot",
                 status=AssertionStatus.FAILED,
-                message=f"Screenshot differs ({result.similarity_score:.1%} similarity, {len(result.diff_regions)} regions)",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Screenshot differs ({result.similarity_score:.1%} similarity, {len(result.diff_regions)} regions)",
                 expected_value="baseline",
                 actual_value=f"{result.similarity_score:.1%} match",
                 matches_found=0,

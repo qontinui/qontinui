@@ -448,8 +448,6 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
             Tuple of (has_glow, glow_color_hex).
         """
         try:
-            import cv2
-
             h, w = image.shape[:2]
 
             # Check if outer edges are brighter/different from background

@@ -132,7 +132,7 @@ class ScreenshotManager:
                 img = np.array(screenshot)
 
                 # Convert BGRA to BGR
-                img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+                img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR).astype(np.uint8)
 
                 return img
 

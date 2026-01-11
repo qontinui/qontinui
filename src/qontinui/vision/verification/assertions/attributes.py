@@ -7,11 +7,12 @@ visual attributes of elements.
 import logging
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import cv2
 import numpy as np
 from numpy.typing import NDArray
+from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
@@ -90,7 +91,7 @@ class Color:
         Returns:
             Distance (0-441.67 for RGB space).
         """
-        return np.sqrt((self.r - other.r) ** 2 + (self.g - other.g) ** 2 + (self.b - other.b) ** 2)
+        return float(np.sqrt((self.r - other.r) ** 2 + (self.g - other.g) ** 2 + (self.b - other.b) ** 2))
 
 
 @dataclass
@@ -127,7 +128,7 @@ class Position:
         Returns:
             Euclidean distance.
         """
-        return np.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
+        return float(np.sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2))
 
 
 class AttributeAssertion:
@@ -199,12 +200,17 @@ class AttributeAssertion:
         pixels = region.reshape(-1, 3)
 
         # Use k-means to find dominant color
-        pixels = np.float32(pixels)
+        # Ensure contiguous array for OpenCV kmeans
+        pixels_f32: NDArray[np.float32] = np.ascontiguousarray(pixels, dtype=np.float32)
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-        _, _, centers = cv2.kmeans(pixels, 1, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+        # Create a labels array for kmeans output (required by OpenCV)
+        labels = np.zeros((pixels_f32.shape[0], 1), dtype=np.int32)
+        _, _, centers = cv2.kmeans(
+            pixels_f32, 1, labels, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
+        )
 
         dominant = centers[0].astype(int)
-        return Color.from_bgr(tuple(dominant))
+        return Color.from_bgr((int(dominant[0]), int(dominant[1]), int(dominant[2])))
 
     def _get_average_color(self, region: NDArray[np.uint8]) -> Color:
         """Get average color in region.
@@ -216,7 +222,7 @@ class AttributeAssertion:
             Average color.
         """
         avg = cv2.mean(region)[:3]
-        return Color.from_bgr(tuple(int(c) for c in avg))
+        return Color.from_bgr(cast(tuple[int, int, int], tuple(int(c) for c in avg)))
 
     def _get_border_color(
         self,
@@ -269,6 +275,7 @@ class AttributeAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         if isinstance(expected_color, str):
@@ -280,13 +287,14 @@ class AttributeAssertion:
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="attribute_color",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_color",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value=expected.to_hex(),
                 actual_value="not found",
                 matches_found=0,
@@ -302,15 +310,15 @@ class AttributeAssertion:
         matches = distance <= tolerance
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if matches:
             return AssertionResult(
                 assertion_id="attribute_color",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_color",
                 status=AssertionStatus.PASSED,
-                message=f"Color matches: {actual.to_hex()} (distance: {distance:.0f})",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=expected.to_hex(),
                 actual_value=actual.to_hex(),
                 matches_found=1,
@@ -319,11 +327,11 @@ class AttributeAssertion:
         else:
             return AssertionResult(
                 assertion_id="attribute_color",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_color",
                 status=AssertionStatus.FAILED,
-                message=f"Color mismatch: expected {expected.to_hex()}, got {actual.to_hex()} (distance: {distance:.0f})",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Color mismatch: expected {expected.to_hex()}, got {actual.to_hex()} (distance: {distance:.0f})",
                 expected_value=expected.to_hex(),
                 actual_value=actual.to_hex(),
                 matches_found=0,
@@ -348,6 +356,7 @@ class AttributeAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         if isinstance(expected_color, str):
@@ -359,13 +368,14 @@ class AttributeAssertion:
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="attribute_bg_color",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_background_color",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value=expected.to_hex(),
                 actual_value="not found",
                 matches_found=0,
@@ -388,15 +398,15 @@ class AttributeAssertion:
         matches = distance <= tolerance
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if matches:
             return AssertionResult(
                 assertion_id="attribute_bg_color",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_background_color",
                 status=AssertionStatus.PASSED,
-                message=f"Background color matches: {actual.to_hex()}",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=expected.to_hex(),
                 actual_value=actual.to_hex(),
                 matches_found=1,
@@ -405,11 +415,11 @@ class AttributeAssertion:
         else:
             return AssertionResult(
                 assertion_id="attribute_bg_color",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_background_color",
                 status=AssertionStatus.FAILED,
-                message=f"Background color mismatch: expected {expected.to_hex()}, got {actual.to_hex()}",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Background color mismatch: expected {expected.to_hex()}, got {actual.to_hex()}",
                 expected_value=expected.to_hex(),
                 actual_value=actual.to_hex(),
                 matches_found=0,
@@ -432,6 +442,7 @@ class AttributeAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         if isinstance(expected_color, str):
@@ -442,13 +453,14 @@ class AttributeAssertion:
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="attribute_border_color",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_border_color",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value=expected.to_hex(),
                 actual_value="not found",
                 matches_found=0,
@@ -461,15 +473,15 @@ class AttributeAssertion:
         matches = distance <= tolerance
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if matches:
             return AssertionResult(
                 assertion_id="attribute_border_color",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_border_color",
                 status=AssertionStatus.PASSED,
-                message=f"Border color matches: {actual.to_hex()}",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=expected.to_hex(),
                 actual_value=actual.to_hex(),
                 matches_found=1,
@@ -478,11 +490,11 @@ class AttributeAssertion:
         else:
             return AssertionResult(
                 assertion_id="attribute_border_color",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_border_color",
                 status=AssertionStatus.FAILED,
-                message=f"Border color mismatch: expected {expected.to_hex()}, got {actual.to_hex()}",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Border color mismatch: expected {expected.to_hex()}, got {actual.to_hex()}",
                 expected_value=expected.to_hex(),
                 actual_value=actual.to_hex(),
                 matches_found=0,
@@ -507,18 +519,20 @@ class AttributeAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="attribute_size",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_size",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value=f"{expected_width}x{expected_height}",
                 actual_value="not found",
                 matches_found=0,
@@ -533,15 +547,15 @@ class AttributeAssertion:
         matches = width_matches and height_matches
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if matches:
             return AssertionResult(
                 assertion_id="attribute_size",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_size",
                 status=AssertionStatus.PASSED,
-                message=f"Size matches: {actual_width}x{actual_height}",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=f"{expected_width}x{expected_height}",
                 actual_value=f"{actual_width}x{actual_height}",
                 matches_found=1,
@@ -550,11 +564,11 @@ class AttributeAssertion:
         else:
             return AssertionResult(
                 assertion_id="attribute_size",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_size",
                 status=AssertionStatus.FAILED,
-                message=f"Size mismatch: expected {expected_width}x{expected_height}, got {actual_width}x{actual_height}",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Size mismatch: expected {expected_width}x{expected_height}, got {actual_width}x{actual_height}",
                 expected_value=f"{expected_width}x{expected_height}",
                 actual_value=f"{actual_width}x{actual_height}",
                 matches_found=0,
@@ -577,18 +591,20 @@ class AttributeAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="attribute_width",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_width",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value=expected_width,
                 actual_value="not found",
                 matches_found=0,
@@ -599,15 +615,15 @@ class AttributeAssertion:
         matches = abs(actual_width - expected_width) <= tolerance
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if matches:
             return AssertionResult(
                 assertion_id="attribute_width",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_width",
                 status=AssertionStatus.PASSED,
-                message=f"Width matches: {actual_width}px",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=expected_width,
                 actual_value=actual_width,
                 matches_found=1,
@@ -616,11 +632,11 @@ class AttributeAssertion:
         else:
             return AssertionResult(
                 assertion_id="attribute_width",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_width",
                 status=AssertionStatus.FAILED,
-                message=f"Width mismatch: expected {expected_width}px, got {actual_width}px",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Width mismatch: expected {expected_width}px, got {actual_width}px",
                 expected_value=expected_width,
                 actual_value=actual_width,
                 matches_found=0,
@@ -643,18 +659,20 @@ class AttributeAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="attribute_height",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_height",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value=expected_height,
                 actual_value="not found",
                 matches_found=0,
@@ -665,15 +683,15 @@ class AttributeAssertion:
         matches = abs(actual_height - expected_height) <= tolerance
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if matches:
             return AssertionResult(
                 assertion_id="attribute_height",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_height",
                 status=AssertionStatus.PASSED,
-                message=f"Height matches: {actual_height}px",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=expected_height,
                 actual_value=actual_height,
                 matches_found=1,
@@ -682,11 +700,11 @@ class AttributeAssertion:
         else:
             return AssertionResult(
                 assertion_id="attribute_height",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_height",
                 status=AssertionStatus.FAILED,
-                message=f"Height mismatch: expected {expected_height}px, got {actual_height}px",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Height mismatch: expected {expected_height}px, got {actual_height}px",
                 expected_value=expected_height,
                 actual_value=actual_height,
                 matches_found=0,
@@ -711,18 +729,20 @@ class AttributeAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="attribute_position",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_position",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value=f"({expected_x}, {expected_y})",
                 actual_value="not found",
                 matches_found=0,
@@ -737,15 +757,15 @@ class AttributeAssertion:
         matches = x_matches and y_matches
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if matches:
             return AssertionResult(
                 assertion_id="attribute_position",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_position",
                 status=AssertionStatus.PASSED,
-                message=f"Position matches: ({actual_x}, {actual_y})",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=f"({expected_x}, {expected_y})",
                 actual_value=f"({actual_x}, {actual_y})",
                 matches_found=1,
@@ -754,11 +774,11 @@ class AttributeAssertion:
         else:
             return AssertionResult(
                 assertion_id="attribute_position",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_have_position",
                 status=AssertionStatus.FAILED,
-                message=f"Position mismatch: expected ({expected_x}, {expected_y}), got ({actual_x}, {actual_y})",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Position mismatch: expected ({expected_x}, {expected_y}), got ({actual_x}, {actual_y})",
                 expected_value=f"({expected_x}, {expected_y})",
                 actual_value=f"({actual_x}, {actual_y})",
                 matches_found=0,
@@ -779,18 +799,20 @@ class AttributeAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="attribute_within_bounds",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_be_within_bounds",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value=f"within ({container.x}, {container.y}, {container.width}, {container.height})",
                 actual_value="not found",
                 matches_found=0,
@@ -808,15 +830,15 @@ class AttributeAssertion:
         )
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if within:
             return AssertionResult(
                 assertion_id="attribute_within_bounds",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_be_within_bounds",
                 status=AssertionStatus.PASSED,
-                message="Element is within bounds",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=f"within ({container.x}, {container.y}, {container.width}, {container.height})",
                 actual_value=f"at ({b.x}, {b.y}, {b.width}, {b.height})",
                 matches_found=1,
@@ -825,11 +847,11 @@ class AttributeAssertion:
         else:
             return AssertionResult(
                 assertion_id="attribute_within_bounds",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.ATTRIBUTE,
                 assertion_method="to_be_within_bounds",
                 status=AssertionStatus.FAILED,
-                message="Element extends outside container bounds",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element extends outside container bounds",
                 expected_value=f"within ({container.x}, {container.y}, {container.width}, {container.height})",
                 actual_value=f"at ({b.x}, {b.y}, {b.width}, {b.height})",
                 matches_found=0,

@@ -137,8 +137,14 @@ class EnvironmentLocator(BaseLocator):
         layout_region = env.layout.regions[self._name]
 
         # Create region locator and delegate
+        # Convert environment.BoundingBox to assertions.BoundingBox
         region_locator = RegionLocator.from_bounds(
-            layout_region.bounds,
+            BoundingBox(
+                x=layout_region.bounds.x,
+                y=layout_region.bounds.y,
+                width=layout_region.bounds.width,
+                height=layout_region.bounds.height,
+            ),
             config=self._config,
             name=self._name,
         )

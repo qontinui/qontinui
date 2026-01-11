@@ -364,6 +364,10 @@ class VisionExtractor(AbstractExtractor):
                     logger.warning(f"OCR engine {config.ocr_engine} not supported")
                     return []
 
+            # Ensure OCR engine is available
+            if self._ocr_engine is None:
+                return []
+
             # Convert BGR to RGB for OCR
             rgb = cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB)
 

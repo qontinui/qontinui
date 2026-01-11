@@ -10,7 +10,7 @@ Detects and classifies UI element patterns including:
 import hashlib
 import logging
 from collections import defaultdict
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -165,21 +165,14 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
         Returns:
             List of detected elements or None if unavailable.
         """
-        # Try to use ultralytics YOLO if available
-        try:
-            from ultralytics import YOLO
+        # TODO: Use ultralytics YOLO if available with UI-specific model
+        # For now, return None to use heuristics
+        if self._detector is None:
+            return None
 
-            if self._detector is None:
-                # Would need a UI-specific model
-                # For now, return None to use heuristics
-                return None
-
-            # This would use a fine-tuned model for UI elements
-            # results = self._detector(screenshot)
-            # ...process results...
-
-        except ImportError:
-            pass
+        # Would need a fine-tuned model for UI elements
+        # results = self._detector(screenshot)
+        # ...process results...
 
         return None
 
@@ -232,8 +225,10 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
                 # Classify element type
                 element_type = self._classify_element(region, cw, ch, aspect_ratio)
 
-                # Detect shape
-                shape = self._detect_shape(contour, region)
+                # Detect shape - cast contour to expected type for mypy
+                shape = self._detect_shape(
+                    cast(NDArray[np.int32], contour), region
+                )
 
                 # Get dominant color
                 dominant_color = self._get_dominant_color(region)
@@ -516,7 +511,9 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
         height_range = SizeRange(min=min(heights), max=max(heights))
 
         # Get typical colors
-        colors = [e.get("color") for e in elements if e.get("color")]
+        colors: list[str] = [
+            c for e in elements if (c := e.get("color")) is not None and isinstance(c, str)
+        ]
         color_counts: dict[str, int] = defaultdict(int)
         for c in colors:
             color_counts[c] += 1

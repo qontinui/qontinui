@@ -14,10 +14,10 @@ from typing import TYPE_CHECKING, Any
 import cv2
 import numpy as np
 from numpy.typing import NDArray
+from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
-    AssertionType,
     BoundingBox,
 )
 
@@ -131,7 +131,7 @@ class StabilityDetector:
 
         # Ensure same size
         if frame1.shape != frame2.shape:
-            frame2 = cv2.resize(frame2, (frame1.shape[1], frame1.shape[0]))
+            frame2 = cv2.resize(frame2, (frame1.shape[1], frame1.shape[0])).astype(np.uint8)
 
         # Convert to grayscale for comparison
         if len(frame1.shape) == 3:
@@ -473,6 +473,7 @@ class AnimationAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         result = await self._animation_detector.wait_for_animation_end(
@@ -482,15 +483,15 @@ class AnimationAssertion:
         )
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if result.animation_stopped:
             return AssertionResult(
                 assertion_id="animation_stopped",
-                locator_value="screen" if region is None else f"region({region.x},{region.y})",
-                assertion_type=AssertionType.ANIMATION,
                 assertion_method="to_stop_animating",
                 status=AssertionStatus.PASSED,
-                message=f"Animation stopped after {result.duration_ms}ms",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="no animation",
                 actual_value="stable",
                 matches_found=1,
@@ -499,15 +500,15 @@ class AnimationAssertion:
         else:
             return AssertionResult(
                 assertion_id="animation_stopped",
-                locator_value="screen" if region is None else f"region({region.x},{region.y})",
-                assertion_type=AssertionType.ANIMATION,
                 assertion_method="to_stop_animating",
                 status=AssertionStatus.FAILED,
-                message=f"Animation still running ({result.change_rate:.1f} changes/sec)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="no animation",
                 actual_value=f"{result.change_rate:.1f} changes/sec",
                 matches_found=0,
                 duration_ms=elapsed_ms,
+                error_message=f"Animation still running ({result.change_rate:.1f} changes/sec)",
             )
 
     async def to_be_stable(
@@ -530,6 +531,7 @@ class AnimationAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         result = await self._stability_detector.wait_for_stability(
@@ -541,15 +543,15 @@ class AnimationAssertion:
         )
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if result.is_stable:
             return AssertionResult(
                 assertion_id="ui_stable",
-                locator_value="screen" if region is None else f"region({region.x},{region.y})",
-                assertion_type=AssertionType.ANIMATION,
                 assertion_method="to_be_stable",
                 status=AssertionStatus.PASSED,
-                message=f"UI stable for {result.stability_duration_ms}ms",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="stable",
                 actual_value="stable",
                 matches_found=1,
@@ -558,15 +560,15 @@ class AnimationAssertion:
         else:
             return AssertionResult(
                 assertion_id="ui_stable",
-                locator_value="screen" if region is None else f"region({region.x},{region.y})",
-                assertion_type=AssertionType.ANIMATION,
                 assertion_method="to_be_stable",
                 status=AssertionStatus.FAILED,
-                message=f"UI not stable (max change: {result.max_change_detected:.2%})",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="stable",
                 actual_value=f"{len(result.unstable_regions)} unstable regions",
                 matches_found=0,
                 duration_ms=elapsed_ms,
+                error_message=f"UI not stable (max change: {result.max_change_detected:.2%})",
             )
 
     async def to_be_animating(
@@ -583,6 +585,7 @@ class AnimationAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         result = await self._animation_detector.detect_animation(
@@ -591,15 +594,15 @@ class AnimationAssertion:
         )
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if result.animation_detected:
             return AssertionResult(
                 assertion_id="animation_active",
-                locator_value="screen" if region is None else f"region({region.x},{region.y})",
-                assertion_type=AssertionType.ANIMATION,
                 assertion_method="to_be_animating",
                 status=AssertionStatus.PASSED,
-                message=f"Animation detected ({result.change_rate:.1f} changes/sec)",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="animating",
                 actual_value=f"{result.change_rate:.1f} changes/sec",
                 matches_found=1,
@@ -608,15 +611,15 @@ class AnimationAssertion:
         else:
             return AssertionResult(
                 assertion_id="animation_active",
-                locator_value="screen" if region is None else f"region({region.x},{region.y})",
-                assertion_type=AssertionType.ANIMATION,
                 assertion_method="to_be_animating",
                 status=AssertionStatus.FAILED,
-                message="No animation detected",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="animating",
                 actual_value="static",
                 matches_found=0,
                 duration_ms=elapsed_ms,
+                error_message="No animation detected",
             )
 
 

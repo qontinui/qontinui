@@ -40,7 +40,7 @@ class LocatorMatch:
     @property
     def area(self) -> int:
         """Get area of the match."""
-        return self.bounds.width * self.bounds.height
+        return int(self.bounds.width * self.bounds.height)
 
     def to_schema(self, locator_type: LocatorType, index: int = 0) -> VisionLocatorMatch:
         """Convert to schema model.

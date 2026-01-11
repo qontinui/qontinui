@@ -434,7 +434,7 @@ class ColorPaletteAnalyzer(BaseAnalyzer[ColorPalette]):
         """
         associations: dict[str, list[str]] = {k: [] for k in SEMANTIC_KEYWORDS}
 
-        for screenshot, ocr_result in zip(screenshots, ocr_results):
+        for screenshot, ocr_result in zip(screenshots, ocr_results, strict=False):
             screenshot = self._ensure_bgr(screenshot)
 
             for item in ocr_result:

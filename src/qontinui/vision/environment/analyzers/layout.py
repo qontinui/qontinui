@@ -276,11 +276,13 @@ class LayoutAnalyzer(BaseAnalyzer[Layout]):
         ]
 
         for region in regions:
-            x, y, rw, rh = region["bounds"]
-            region_img = screenshot[y : y + rh, x : x + rw]
-            region["characteristics"] = self._analyze_region_characteristics(
-                region_img, screenshot, region["bounds"]
-            )
+            bounds = region["bounds"]
+            if isinstance(bounds, tuple) and len(bounds) == 4:
+                x, y, rw, rh = int(bounds[0]), int(bounds[1]), int(bounds[2]), int(bounds[3])
+                region_img = screenshot[y : y + rh, x : x + rw]
+                region["characteristics"] = self._analyze_region_characteristics(
+                    region_img, screenshot, (x, y, rw, rh)
+                )
 
         return regions
 

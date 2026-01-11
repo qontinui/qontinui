@@ -128,8 +128,9 @@ class SAM3Segmenter:
                 return False
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._sam_model = sam_model_registry[self.config.model_type](checkpoint=checkpoint)
-            self._sam_model.to(device)
+            sam_model = sam_model_registry[self.config.model_type](checkpoint=checkpoint)
+            sam_model.to(device)
+            self._sam_model = sam_model
 
             self._mask_generator = SamAutomaticMaskGenerator(
                 self._sam_model,
@@ -239,6 +240,7 @@ class SAM3Segmenter:
 
     def _segment_with_sam3(self, image_rgb: np.ndarray) -> list[dict[str, Any]]:
         """Segment using SAM3."""
+        assert self._mask_generator is not None, "SAM3 mask generator not loaded"
         pil_image = Image.fromarray(image_rgb)
         self._mask_generator.set_image(pil_image)
 
@@ -257,6 +259,7 @@ class SAM3Segmenter:
                 y = step_y * j + step_y // 2
 
                 try:
+                    assert self._mask_generator is not None
                     results = self._mask_generator.segment_from_point(x, y)
 
                     if results and "masks" in results and len(results["masks"]) > 0:
@@ -292,7 +295,8 @@ class SAM3Segmenter:
 
     def _segment_with_sam(self, image_rgb: np.ndarray) -> list[dict[str, Any]]:
         """Segment using original SAM."""
-        masks = self._mask_generator.generate(image_rgb)
+        assert self._mask_generator is not None, "SAM mask generator not loaded"
+        masks: list[dict[str, Any]] = self._mask_generator.generate(image_rgb)
         return masks
 
     def _encode_mask_rle(self, mask: np.ndarray | None) -> dict[str, Any] | None:

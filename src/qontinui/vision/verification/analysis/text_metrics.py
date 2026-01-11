@@ -230,9 +230,9 @@ class TextMetricsAnalyzer:
 
         if bottom_content > main_content_end + 3:
             # Has descenders, baseline is at main_content_end
-            return main_content_end
+            return int(main_content_end)
         else:
-            return bottom_content
+            return int(bottom_content)
 
     def detect_cap_height(
         self,
@@ -261,10 +261,10 @@ class TextMetricsAnalyzer:
             return region.shape[0]
 
         # Cap height is from top of content to baseline
-        top = content_rows[0]
+        top = int(content_rows[0])
         bottom = int(np.percentile(content_rows, 85))
 
-        return bottom - top
+        return int(bottom - top)
 
     def detect_x_height(
         self,

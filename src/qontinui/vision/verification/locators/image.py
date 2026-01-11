@@ -106,9 +106,9 @@ class ImageLocator(BaseLocator):
         if template is None:
             raise ValueError(f"Failed to load template image: {self._image_path}")
 
-        self._template = template
+        self._template = template.astype(np.uint8)
         self._template_loaded = True
-        return template
+        return self._template
 
     def _get_threshold(self) -> float:
         """Get the match threshold.
@@ -162,9 +162,9 @@ class ImageLocator(BaseLocator):
         # Convert to grayscale if needed
         if self._grayscale:
             if len(search_area.shape) == 3:
-                search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY)
+                search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY).astype(np.uint8)
             if len(template.shape) == 3:
-                template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+                template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY).astype(np.uint8)
 
         # Find matches
         if self._multi_scale:
@@ -220,7 +220,10 @@ class ImageLocator(BaseLocator):
 
         # Group nearby matches (non-maximum suppression)
         if len(locations[0]) > 0:
-            matches = self._non_max_suppression(result, locations, w, h, threshold)
+            # Cast result to float64 and locations to proper tuple type
+            result_f64 = result.astype(np.float64)
+            locations_tuple = (locations[0], locations[1])
+            matches = self._non_max_suppression(result_f64, locations_tuple, w, h, threshold)
 
         return matches
 
@@ -259,7 +262,7 @@ class ImageLocator(BaseLocator):
 
             scaled_template = cv2.resize(
                 template, (scaled_w, scaled_h), interpolation=cv2.INTER_AREA
-            )
+            ).astype(np.uint8)
 
             # Find matches at this scale
             matches = self._find_single_scale(search_area, scaled_template, threshold, method)

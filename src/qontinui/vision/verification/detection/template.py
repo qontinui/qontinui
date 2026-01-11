@@ -60,7 +60,7 @@ class TemplateMatch:
     @property
     def area(self) -> int:
         """Get area of match."""
-        return self.bounds.width * self.bounds.height
+        return int(self.bounds.width * self.bounds.height)
 
 
 class TemplateEngine:
@@ -156,8 +156,8 @@ class TemplateEngine:
         if template is None:
             raise ValueError(f"Failed to load template: {path}")
 
-        self._template_cache[path_str] = template
-        return template
+        self._template_cache[path_str] = template.astype(np.uint8)
+        return self._template_cache[path_str]
 
     def _compute_template_hash(self, template: NDArray[np.uint8]) -> str:
         """Compute perceptual hash of template.
@@ -275,7 +275,9 @@ class TemplateEngine:
             return []
 
         # Apply non-maximum suppression
-        return self._non_max_suppression(result, locations, w, h, threshold)
+        result_float = result.astype(np.float64)
+        locations_tuple = (locations[0], locations[1])
+        return self._non_max_suppression(result_float, locations_tuple, w, h, threshold)
 
     def _find_multi_scale(
         self,
@@ -311,8 +313,9 @@ class TemplateEngine:
                 continue
 
             scaled_template = cv2.resize(template, (new_w, new_h), interpolation=cv2.INTER_AREA)
+            scaled_template_uint8: NDArray[np.uint8] = scaled_template.astype(np.uint8)
 
-            matches = self._find_single_scale(search_area, scaled_template, threshold)
+            matches = self._find_single_scale(search_area, scaled_template_uint8, threshold)
 
             # Add scale info
             for match in matches:
@@ -326,7 +329,7 @@ class TemplateEngine:
     def _non_max_suppression(
         self,
         result: NDArray[np.float64],
-        locations: tuple[NDArray[np.intp], NDArray[np.intp]],
+        locations: tuple[NDArray[Any], NDArray[Any]],
         width: int,
         height: int,
         threshold: float,

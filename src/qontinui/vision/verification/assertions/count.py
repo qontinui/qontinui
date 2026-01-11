@@ -11,11 +11,13 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
+from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
     AssertionType,
     BoundingBox,
+    LocatorType,
     VisionLocatorMatch,
 )
 
@@ -108,6 +110,7 @@ class CountAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         timeout = self._get_timeout(timeout_ms)
         poll_interval = self._get_poll_interval()
 
@@ -122,7 +125,7 @@ class CountAssertion:
             try:
                 # Find matches
                 if region is not None:
-                    self._locator.inside(region)
+                    self._locator.with_region(region)
 
                 matches = await self._locator.find_all(current_screenshot)
                 last_count = len(matches)
@@ -133,25 +136,29 @@ class CountAssertion:
                     best_match = None
                     if matches:
                         best = max(matches, key=lambda m: m.confidence)
+                        center_x = best.bounds.x + best.bounds.width // 2
+                        center_y = best.bounds.y + best.bounds.height // 2
                         best_match = VisionLocatorMatch(
                             bounds=best.bounds,
                             confidence=best.confidence,
+                            center=(center_x, center_y),
                             text=best.text,
+                            locator_type=LocatorType.IMAGE,
                         )
 
+                    completed_at = utc_now()
                     return AssertionResult(
                         assertion_id="count_exact",
-                        locator_value=self._locator._value,
-                        assertion_type=AssertionType.COUNT,
                         assertion_method="to_have_count",
                         status=AssertionStatus.PASSED,
-                        message=f"Found exactly {last_count} element(s)",
+                        started_at=started_at,
+                        completed_at=completed_at,
                         expected_value=expected_count,
                         actual_value=last_count,
                         matches_found=last_count,
                         best_match=best_match,
                         duration_ms=elapsed_ms,
-                        attempts=attempts,
+                        retry_count=attempts - 1,
                     )
 
             except Exception as e:
@@ -162,18 +169,19 @@ class CountAssertion:
             if now >= deadline:
                 elapsed_ms = int((now - start_time) * 1000)
 
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="count_exact",
-                    locator_value=self._locator._value,
-                    assertion_type=AssertionType.COUNT,
                     assertion_method="to_have_count",
                     status=AssertionStatus.FAILED,
-                    message=f"Count mismatch: expected {expected_count}, found {last_count}",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    error_message=f"Count mismatch: expected {expected_count}, found {last_count}",
                     expected_value=expected_count,
                     actual_value=last_count,
                     matches_found=last_count,
                     duration_ms=elapsed_ms,
-                    attempts=attempts,
+                    retry_count=attempts - 1,
                 )
 
             # Wait and get fresh screenshot
@@ -205,6 +213,7 @@ class CountAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         timeout = self._get_timeout(timeout_ms)
         poll_interval = self._get_poll_interval()
 
@@ -218,7 +227,7 @@ class CountAssertion:
             attempts += 1
             try:
                 if region is not None:
-                    self._locator.inside(region)
+                    self._locator.with_region(region)
 
                 matches = await self._locator.find_all(current_screenshot)
                 last_count = len(matches)
@@ -229,25 +238,29 @@ class CountAssertion:
                     best_match = None
                     if matches:
                         best = max(matches, key=lambda m: m.confidence)
+                        center_x = best.bounds.x + best.bounds.width // 2
+                        center_y = best.bounds.y + best.bounds.height // 2
                         best_match = VisionLocatorMatch(
                             bounds=best.bounds,
                             confidence=best.confidence,
+                            center=(center_x, center_y),
                             text=best.text,
+                            locator_type=LocatorType.IMAGE,
                         )
 
+                    completed_at = utc_now()
                     return AssertionResult(
                         assertion_id="count_at_least",
-                        locator_value=self._locator._value,
-                        assertion_type=AssertionType.COUNT,
                         assertion_method="to_have_count_at_least",
                         status=AssertionStatus.PASSED,
-                        message=f"Found {last_count} element(s), at least {min_count} required",
+                        started_at=started_at,
+                        completed_at=completed_at,
                         expected_value=f">={min_count}",
                         actual_value=last_count,
                         matches_found=last_count,
                         best_match=best_match,
                         duration_ms=elapsed_ms,
-                        attempts=attempts,
+                        retry_count=attempts - 1,
                     )
 
             except Exception as e:
@@ -258,18 +271,19 @@ class CountAssertion:
             if now >= deadline:
                 elapsed_ms = int((now - start_time) * 1000)
 
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="count_at_least",
-                    locator_value=self._locator._value,
-                    assertion_type=AssertionType.COUNT,
                     assertion_method="to_have_count_at_least",
                     status=AssertionStatus.FAILED,
-                    message=f"Found {last_count} element(s), expected at least {min_count}",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    error_message=f"Found {last_count} element(s), expected at least {min_count}",
                     expected_value=f">={min_count}",
                     actual_value=last_count,
                     matches_found=last_count,
                     duration_ms=elapsed_ms,
-                    attempts=attempts,
+                    retry_count=attempts - 1,
                 )
 
             await asyncio.sleep(poll_interval / 1000.0)
@@ -300,6 +314,7 @@ class CountAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         timeout = self._get_timeout(timeout_ms)
         poll_interval = self._get_poll_interval()
 
@@ -313,7 +328,7 @@ class CountAssertion:
             attempts += 1
             try:
                 if region is not None:
-                    self._locator.inside(region)
+                    self._locator.with_region(region)
 
                 matches = await self._locator.find_all(current_screenshot)
                 last_count = len(matches)
@@ -324,25 +339,29 @@ class CountAssertion:
                     best_match = None
                     if matches:
                         best = max(matches, key=lambda m: m.confidence)
+                        center_x = best.bounds.x + best.bounds.width // 2
+                        center_y = best.bounds.y + best.bounds.height // 2
                         best_match = VisionLocatorMatch(
                             bounds=best.bounds,
                             confidence=best.confidence,
+                            center=(center_x, center_y),
                             text=best.text,
+                            locator_type=LocatorType.IMAGE,
                         )
 
+                    completed_at = utc_now()
                     return AssertionResult(
                         assertion_id="count_at_most",
-                        locator_value=self._locator._value,
-                        assertion_type=AssertionType.COUNT,
                         assertion_method="to_have_count_at_most",
                         status=AssertionStatus.PASSED,
-                        message=f"Found {last_count} element(s), at most {max_count} allowed",
+                        started_at=started_at,
+                        completed_at=completed_at,
                         expected_value=f"<={max_count}",
                         actual_value=last_count,
                         matches_found=last_count,
                         best_match=best_match,
                         duration_ms=elapsed_ms,
-                        attempts=attempts,
+                        retry_count=attempts - 1,
                     )
 
             except Exception as e:
@@ -353,18 +372,19 @@ class CountAssertion:
             if now >= deadline:
                 elapsed_ms = int((now - start_time) * 1000)
 
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="count_at_most",
-                    locator_value=self._locator._value,
-                    assertion_type=AssertionType.COUNT,
                     assertion_method="to_have_count_at_most",
                     status=AssertionStatus.FAILED,
-                    message=f"Found {last_count} element(s), expected at most {max_count}",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    error_message=f"Found {last_count} element(s), expected at most {max_count}",
                     expected_value=f"<={max_count}",
                     actual_value=last_count,
                     matches_found=last_count,
                     duration_ms=elapsed_ms,
-                    attempts=attempts,
+                    retry_count=attempts - 1,
                 )
 
             await asyncio.sleep(poll_interval / 1000.0)
@@ -397,6 +417,7 @@ class CountAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         timeout = self._get_timeout(timeout_ms)
         poll_interval = self._get_poll_interval()
 
@@ -410,7 +431,7 @@ class CountAssertion:
             attempts += 1
             try:
                 if region is not None:
-                    self._locator.inside(region)
+                    self._locator.with_region(region)
 
                 matches = await self._locator.find_all(current_screenshot)
                 last_count = len(matches)
@@ -421,25 +442,29 @@ class CountAssertion:
                     best_match = None
                     if matches:
                         best = max(matches, key=lambda m: m.confidence)
+                        center_x = best.bounds.x + best.bounds.width // 2
+                        center_y = best.bounds.y + best.bounds.height // 2
                         best_match = VisionLocatorMatch(
                             bounds=best.bounds,
                             confidence=best.confidence,
+                            center=(center_x, center_y),
                             text=best.text,
+                            locator_type=LocatorType.IMAGE,
                         )
 
+                    completed_at = utc_now()
                     return AssertionResult(
                         assertion_id="count_between",
-                        locator_value=self._locator._value,
-                        assertion_type=AssertionType.COUNT,
                         assertion_method="to_have_count_between",
                         status=AssertionStatus.PASSED,
-                        message=f"Found {last_count} element(s), expected {min_count}-{max_count}",
+                        started_at=started_at,
+                        completed_at=completed_at,
                         expected_value=f"{min_count}-{max_count}",
                         actual_value=last_count,
                         matches_found=last_count,
                         best_match=best_match,
                         duration_ms=elapsed_ms,
-                        attempts=attempts,
+                        retry_count=attempts - 1,
                     )
 
             except Exception as e:
@@ -450,18 +475,19 @@ class CountAssertion:
             if now >= deadline:
                 elapsed_ms = int((now - start_time) * 1000)
 
+                completed_at = utc_now()
                 return AssertionResult(
                     assertion_id="count_between",
-                    locator_value=self._locator._value,
-                    assertion_type=AssertionType.COUNT,
                     assertion_method="to_have_count_between",
                     status=AssertionStatus.FAILED,
-                    message=f"Found {last_count} element(s), expected {min_count}-{max_count}",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    error_message=f"Found {last_count} element(s), expected {min_count}-{max_count}",
                     expected_value=f"{min_count}-{max_count}",
                     actual_value=last_count,
                     matches_found=last_count,
                     duration_ms=elapsed_ms,
-                    attempts=attempts,
+                    retry_count=attempts - 1,
                 )
 
             await asyncio.sleep(poll_interval / 1000.0)
@@ -503,10 +529,8 @@ class CountAssertion:
         # Update method name
         result.assertion_method = "to_be_empty"
         result.assertion_id = "count_empty"
-        if result.status == AssertionStatus.PASSED:
-            result.message = "No elements found (empty)"
-        else:
-            result.message = f"Expected empty, found {result.actual_value} element(s)"
+        if result.status != AssertionStatus.PASSED:
+            result.error_message = f"Expected empty, found {result.actual_value} element(s)"
 
         return result
 
@@ -541,10 +565,8 @@ class CountAssertion:
         # Update method name
         result.assertion_method = "to_not_be_empty"
         result.assertion_id = "count_not_empty"
-        if result.status == AssertionStatus.PASSED:
-            result.message = f"Found {result.actual_value} element(s) (not empty)"
-        else:
-            result.message = "No elements found (empty)"
+        if result.status != AssertionStatus.PASSED:
+            result.error_message = "No elements found (empty)"
 
         return result
 

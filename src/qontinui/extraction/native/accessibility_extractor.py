@@ -55,7 +55,7 @@ class AccessibilityExtractor(AbstractExtractor):
     def __init__(self) -> None:
         """Initialize the accessibility extractor."""
         self._platform = sys.platform
-        self._api: "PlatformAccessibilityAPI | None" = None  # Lazy loaded platform API
+        self._api: PlatformAccessibilityAPI | None = None  # Lazy loaded platform API
         self._element_counter = 0
 
     async def extract(
@@ -529,7 +529,6 @@ class MacOSAccessibilityAPI(PlatformAccessibilityAPI):
         """Initialize macOS Accessibility."""
         self._ax = None
         try:
-            import AppKit
             import ApplicationServices
 
             self._ax = ApplicationServices

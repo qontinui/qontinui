@@ -133,7 +133,7 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
         Returns:
             List of always-changing DynamicRegion objects.
         """
-        regions = []
+        regions: list[DynamicRegion] = []
 
         if len(frames) < 2:
             return regions
@@ -190,7 +190,7 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
 
         # Compute variance across frames for each pixel
         # Average across color channels
-        variance = np.var(stacked, axis=0).mean(axis=2)
+        variance: NDArray[np.float64] = np.var(stacked, axis=0).mean(axis=2)
 
         return variance
 
@@ -209,8 +209,8 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
         regions = []
 
         # Threshold variance
-        threshold = np.percentile(variance_map, 95)  # Top 5% variance
-        threshold = max(threshold, self.variance_threshold * 255)
+        percentile_threshold = float(np.percentile(variance_map, 95))  # Top 5% variance
+        threshold = max(percentile_threshold, self.variance_threshold * 255)
 
         binary = (variance_map > threshold).astype(np.uint8)
 
@@ -219,7 +219,7 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
 
             # Dilate to connect nearby pixels
             kernel = np.ones((5, 5), np.uint8)
-            binary = cv2.dilate(binary, kernel, iterations=2)
+            binary = cv2.dilate(binary, kernel, iterations=2).astype(np.uint8)
 
             # Find contours
             contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -430,7 +430,7 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
         Returns:
             List of AnimationRegion objects.
         """
-        animations = []
+        animations: list[AnimationRegion] = []
 
         if len(idle_frames) < 5:
             return animations

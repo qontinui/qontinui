@@ -732,25 +732,25 @@ class VisionExpect:
 
         if state_name == "disabled":
             # Disabled elements typically have low saturation
-            return saturation < 50 and brightness < 200
+            return bool(saturation < 50 and brightness < 200)
 
         elif state_name == "enabled":
             # Enabled elements typically have normal saturation
-            return saturation >= 50 or brightness >= 200
+            return bool(saturation >= 50 or brightness >= 200)
 
         elif state_name == "focused":
             # Check for focus ring (bright border)
             gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
             edges = cv2.Canny(gray, 100, 200)
             edge_ratio = edges.sum() / (region.shape[0] * region.shape[1] * 255)
-            return edge_ratio > 0.1
+            return bool(edge_ratio > 0.1)
 
         elif state_name == "checked":
             # Check for interior fill
             gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
             _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
             fill_ratio = thresh.sum() / (region.shape[0] * region.shape[1] * 255)
-            return fill_ratio > 0.3
+            return bool(fill_ratio > 0.3)
 
         return False
 

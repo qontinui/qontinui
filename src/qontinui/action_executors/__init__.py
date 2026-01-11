@@ -39,16 +39,18 @@ Usage:
 """
 
 # Import executor modules to trigger @register_executor decorator
-from . import code_executor  # noqa: F401
-from . import control_flow  # noqa: F401
-from . import data_operations  # noqa: F401
-from . import find_state  # noqa: F401
-from . import keyboard  # noqa: F401
-from . import mouse  # noqa: F401
-from . import navigation  # noqa: F401
-from . import shell  # noqa: F401
-from . import utility  # noqa: F401
-from . import vision  # noqa: F401
+from . import (
+    code_executor,  # noqa: F401
+    control_flow,  # noqa: F401
+    data_operations,  # noqa: F401
+    find_state,  # noqa: F401
+    keyboard,  # noqa: F401
+    mouse,  # noqa: F401
+    navigation,  # noqa: F401
+    shell,  # noqa: F401
+    utility,  # noqa: F401
+    vision,  # noqa: F401
+)
 from .base import ActionExecutorBase, ExecutionContext
 from .delegating_executor import DelegatingActionExecutor
 from .registry import (

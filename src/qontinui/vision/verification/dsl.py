@@ -125,7 +125,7 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -165,7 +165,7 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -206,7 +206,7 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -240,7 +240,7 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -274,7 +274,7 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -308,7 +308,7 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -353,7 +353,7 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -402,7 +402,7 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -483,7 +483,7 @@ class TextVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -828,7 +828,7 @@ class ScreenshotVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.message,
+            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )

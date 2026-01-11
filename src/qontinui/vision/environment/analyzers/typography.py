@@ -9,7 +9,7 @@ Extracts typography information from screenshots using:
 
 import logging
 from collections import defaultdict
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -99,7 +99,10 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
         detected_fonts = self._create_font_samples(all_detections, screenshots)
 
         # Identify common text regions
-        text_regions = self._identify_text_regions(all_detections, screenshots[0].shape[:2])
+        shape = screenshots[0].shape[:2]
+        text_regions = self._identify_text_regions(
+            all_detections, (int(shape[0]), int(shape[1]))
+        )
 
         # Detect languages
         languages = self._detect_languages(all_detections)
@@ -219,7 +222,7 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
         """
         detections = []
 
-        for idx, (_screenshot, ocr_result) in enumerate(zip(screenshots, ocr_results)):
+        for idx, (_screenshot, ocr_result) in enumerate(zip(screenshots, ocr_results, strict=False)):
             for item in ocr_result:
                 bbox = item.get("bbox")
                 if not bbox:
@@ -309,7 +312,7 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
         )
 
         # Also sort by size for heading detection
-        sizes_by_height = sorted(clusters.keys(), reverse=True)
+        sizes_by_height: list[int] = sorted(clusters.keys(), reverse=True)
 
         text_sizes = TextSizes()
 
@@ -492,7 +495,7 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
             # Serif fonts have more edge detail at extremes
             if middle_edges > 0:
                 ratio = (top_edges + bottom_edges) / middle_edges
-                return ratio > 1.5
+                return bool(ratio > 1.5)
 
         except ImportError:
             pass

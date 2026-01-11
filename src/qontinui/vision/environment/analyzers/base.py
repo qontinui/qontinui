@@ -6,7 +6,7 @@ logging, progress tracking, and confidence calculation.
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 import numpy as np
 from numpy.typing import NDArray
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class BaseAnalyzer(ABC, Generic[T]):
+class BaseAnalyzer[T](ABC):
     """Abstract base class for environment analyzers.
 
     Each analyzer extracts specific visual characteristics from screenshots.
@@ -171,6 +171,6 @@ class BaseAnalyzer(ABC, Generic[T]):
             c_norm = c / 255.0
             if c_norm <= 0.03928:
                 return c_norm / 12.92
-            return ((c_norm + 0.055) / 1.055) ** 2.4
+            return float(((c_norm + 0.055) / 1.055) ** 2.4)
 
-        return 0.2126 * adjust(r) + 0.7152 * adjust(g) + 0.0722 * adjust(b)
+        return float(0.2126 * adjust(r) + 0.7152 * adjust(g) + 0.0722 * adjust(b))

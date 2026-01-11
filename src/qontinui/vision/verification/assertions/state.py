@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 import cv2
 import numpy as np
 from numpy.typing import NDArray
+from qontinui_schemas.common import utc_now
 from qontinui_schemas.testing.assertions import (
     AssertionResult,
     AssertionStatus,
@@ -22,7 +23,11 @@ from qontinui_schemas.testing.assertions import (
 )
 
 if TYPE_CHECKING:
-    from qontinui_schemas.testing.environment import GUIEnvironment, VisualState
+    from qontinui_schemas.testing.environment import (
+        ElementState as SchemaElementState,
+        GUIEnvironment,
+        VisualStates,
+    )
 
     from qontinui.vision.verification.config import VisionConfig
     from qontinui.vision.verification.locators.base import BaseLocator
@@ -106,20 +111,27 @@ class StateDetector:
             bounds.x : bounds.x + bounds.width,
         ]
 
-    def _get_visual_states(self) -> list["VisualState"]:
+    def _get_visual_states(self) -> list["SchemaElementState"]:
         """Get visual states from environment.
 
         Returns:
-            List of learned visual states.
+            List of learned visual states (flattened from all element types).
         """
         if self._environment is None:
             return []
-        return self._environment.visual_states or []
+        visual_states: VisualStates | None = self._environment.visual_states
+        if visual_states is None:
+            return []
+        # Flatten all element states from all element types
+        result: list[SchemaElementState] = []
+        for element_type_states in visual_states.element_states.values():
+            result.extend(element_type_states.states.values())
+        return result
 
     def _match_visual_signature(
         self,
         region: NDArray[np.uint8],
-        state: "VisualState",
+        state: "SchemaElementState",
     ) -> float:
         """Match region against a visual state signature.
 
@@ -130,32 +142,39 @@ class StateDetector:
         Returns:
             Match confidence (0.0-1.0).
         """
-        # Check color match if defined
+        # Check color match if defined via visual_signature
         confidence = 0.0
         checks = 0
+        sig = state.visual_signature
 
-        if state.primary_color:
-            avg_color = cv2.mean(region)[:3]
-            expected = state.primary_color
+        # Check color profile if defined (background is a hex string like "#RRGGBB")
+        if sig and sig.color_profile and sig.color_profile.background:
+            avg_color = cv2.mean(region)[:3]  # BGR format
+            bg_hex = sig.color_profile.background
+            # Parse hex color to RGB
+            r = int(bg_hex[1:3], 16)
+            g = int(bg_hex[3:5], 16)
+            b = int(bg_hex[5:7], 16)
 
-            # Calculate color distance
+            # Calculate color distance (avg_color is BGR)
             distance = np.sqrt(
-                (avg_color[2] - expected.r) ** 2
-                + (avg_color[1] - expected.g) ** 2
-                + (avg_color[0] - expected.b) ** 2
+                (avg_color[2] - r) ** 2
+                + (avg_color[1] - g) ** 2
+                + (avg_color[0] - b) ** 2
             )
 
             # Normalize to 0-1 (max distance is ~441)
-            color_match = 1.0 - min(distance / 200, 1.0)
+            color_match = 1.0 - min(float(distance) / 200, 1.0)
             confidence += color_match
             checks += 1
 
-        # Check saturation if relevant
-        if state.state_type in ["disabled", "enabled"]:
+        # Check saturation if relevant (state_type is ElementStateType enum)
+        state_type_value = state.state_type.value if state.state_type else ""
+        if state_type_value in ["disabled", "enabled"]:
             hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
             saturation = hsv[:, :, 1].mean()
 
-            if state.state_type == "disabled":
+            if state_type_value == "disabled":
                 # Disabled typically has low saturation
                 sat_match = 1.0 - min(saturation / 100, 1.0)
             else:
@@ -166,7 +185,7 @@ class StateDetector:
             checks += 1
 
         # Check brightness
-        if state.state_type in ["focused", "selected", "hovered"]:
+        if state_type_value in ["focused", "selected", "hovered"]:
             gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
             brightness = gray.mean()
 
@@ -215,7 +234,10 @@ class StateDetector:
                 if confidence > best_confidence:
                     best_confidence = confidence
                     try:
-                        best_match = ElementState(vs.state_type)
+                        # vs.state_type is ElementStateType enum, get its value
+                        state_value = vs.state_type.value if vs.state_type else None
+                        if state_value:
+                            best_match = ElementState(state_value)
                     except ValueError:
                         pass
 
@@ -450,18 +472,20 @@ class StateAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="state_enabled",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_enabled",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value="enabled",
                 actual_value="not found",
                 matches_found=0,
@@ -471,15 +495,15 @@ class StateAssertion:
         is_enabled, confidence = self._detector.is_enabled(match.bounds, screenshot)
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if is_enabled:
             return AssertionResult(
                 assertion_id="state_enabled",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_enabled",
                 status=AssertionStatus.PASSED,
-                message=f"Element appears enabled (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="enabled",
                 actual_value="enabled",
                 matches_found=1,
@@ -488,11 +512,11 @@ class StateAssertion:
         else:
             return AssertionResult(
                 assertion_id="state_enabled",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_enabled",
                 status=AssertionStatus.FAILED,
-                message=f"Element appears disabled (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Element appears disabled (confidence: {confidence:.0%})",
                 expected_value="enabled",
                 actual_value="disabled",
                 matches_found=0,
@@ -511,18 +535,20 @@ class StateAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="state_disabled",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_disabled",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value="disabled",
                 actual_value="not found",
                 matches_found=0,
@@ -532,15 +558,15 @@ class StateAssertion:
         is_disabled, confidence = self._detector.is_disabled(match.bounds, screenshot)
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if is_disabled:
             return AssertionResult(
                 assertion_id="state_disabled",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_disabled",
                 status=AssertionStatus.PASSED,
-                message=f"Element appears disabled (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="disabled",
                 actual_value="disabled",
                 matches_found=1,
@@ -549,11 +575,11 @@ class StateAssertion:
         else:
             return AssertionResult(
                 assertion_id="state_disabled",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_disabled",
                 status=AssertionStatus.FAILED,
-                message=f"Element appears enabled (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Element appears enabled (confidence: {confidence:.0%})",
                 expected_value="disabled",
                 actual_value="enabled",
                 matches_found=0,
@@ -572,18 +598,20 @@ class StateAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="state_focused",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_focused",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value="focused",
                 actual_value="not found",
                 matches_found=0,
@@ -593,15 +621,15 @@ class StateAssertion:
         is_focused, confidence = self._detector.is_focused(match.bounds, screenshot)
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if is_focused:
             return AssertionResult(
                 assertion_id="state_focused",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_focused",
                 status=AssertionStatus.PASSED,
-                message=f"Element appears focused (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="focused",
                 actual_value="focused",
                 matches_found=1,
@@ -610,11 +638,11 @@ class StateAssertion:
         else:
             return AssertionResult(
                 assertion_id="state_focused",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_focused",
                 status=AssertionStatus.FAILED,
-                message=f"Element does not appear focused (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Element does not appear focused (confidence: {confidence:.0%})",
                 expected_value="focused",
                 actual_value="not focused",
                 matches_found=0,
@@ -633,18 +661,20 @@ class StateAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="state_checked",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_checked",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value="checked",
                 actual_value="not found",
                 matches_found=0,
@@ -654,15 +684,15 @@ class StateAssertion:
         is_checked, confidence = self._detector.is_checked(match.bounds, screenshot)
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if is_checked:
             return AssertionResult(
                 assertion_id="state_checked",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_checked",
                 status=AssertionStatus.PASSED,
-                message=f"Element appears checked (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="checked",
                 actual_value="checked",
                 matches_found=1,
@@ -671,11 +701,11 @@ class StateAssertion:
         else:
             return AssertionResult(
                 assertion_id="state_checked",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_checked",
                 status=AssertionStatus.FAILED,
-                message=f"Element appears unchecked (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Element appears unchecked (confidence: {confidence:.0%})",
                 expected_value="checked",
                 actual_value="unchecked",
                 matches_found=0,
@@ -694,18 +724,20 @@ class StateAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="state_unchecked",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_unchecked",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value="unchecked",
                 actual_value="not found",
                 matches_found=0,
@@ -715,15 +747,15 @@ class StateAssertion:
         is_checked, confidence = self._detector.is_checked(match.bounds, screenshot)
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if not is_checked:
             return AssertionResult(
                 assertion_id="state_unchecked",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_unchecked",
                 status=AssertionStatus.PASSED,
-                message=f"Element appears unchecked (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value="unchecked",
                 actual_value="unchecked",
                 matches_found=1,
@@ -732,11 +764,11 @@ class StateAssertion:
         else:
             return AssertionResult(
                 assertion_id="state_unchecked",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_be_unchecked",
                 status=AssertionStatus.FAILED,
-                message=f"Element appears checked (confidence: {confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Element appears checked (confidence: {confidence:.0%})",
                 expected_value="unchecked",
                 actual_value="checked",
                 matches_found=0,
@@ -757,6 +789,7 @@ class StateAssertion:
         Returns:
             Assertion result.
         """
+        started_at = utc_now()
         start_time = time.monotonic()
 
         if isinstance(expected_state, str):
@@ -765,13 +798,14 @@ class StateAssertion:
         match = await self._locator.find(screenshot)
         if match is None:
             elapsed_ms = int((time.monotonic() - start_time) * 1000)
+            completed_at = utc_now()
             return AssertionResult(
                 assertion_id="state_has_state",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_have_state",
                 status=AssertionStatus.FAILED,
-                message="Element not found",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message="Element not found",
                 expected_value=expected_state.value,
                 actual_value="not found",
                 matches_found=0,
@@ -781,15 +815,15 @@ class StateAssertion:
         result = self._detector.detect_state(match.bounds, screenshot)
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
+        completed_at = utc_now()
 
         if result.detected_state == expected_state:
             return AssertionResult(
                 assertion_id="state_has_state",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_have_state",
                 status=AssertionStatus.PASSED,
-                message=f"Element has state '{expected_state.value}' (confidence: {result.confidence:.0%})",
+                started_at=started_at,
+                completed_at=completed_at,
                 expected_value=expected_state.value,
                 actual_value=expected_state.value,
                 matches_found=1,
@@ -799,11 +833,11 @@ class StateAssertion:
             actual = result.detected_state.value if result.detected_state else "unknown"
             return AssertionResult(
                 assertion_id="state_has_state",
-                locator_value=self._locator._value,
-                assertion_type=AssertionType.STATE,
                 assertion_method="to_have_state",
                 status=AssertionStatus.FAILED,
-                message=f"Expected state '{expected_state.value}', got '{actual}'",
+                started_at=started_at,
+                completed_at=completed_at,
+                error_message=f"Expected state '{expected_state.value}', got '{actual}'",
                 expected_value=expected_state.value,
                 actual_value=actual,
                 matches_found=0,

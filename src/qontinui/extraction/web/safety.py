@@ -369,7 +369,8 @@ class ConfirmationDialogHandler:
     async def check_for_dialog(self, page: Page) -> bool:
         """Check if a dialog has been detected."""
         try:
-            return await page.evaluate("() => window.__qontinui_dialog_detected || false")
+            result = await page.evaluate("() => window.__qontinui_dialog_detected || false")
+            return bool(result)
         except Exception:
             return False
 

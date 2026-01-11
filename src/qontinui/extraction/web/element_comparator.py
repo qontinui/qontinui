@@ -7,7 +7,7 @@ elements across pages. Uses Strategy Pattern to allow swapping algorithms.
 
 import logging
 from dataclasses import dataclass, field
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 import cv2
 import numpy as np
@@ -32,7 +32,7 @@ class MatchResult:
     similarity: float
     is_match: bool
     component_scores: dict[str, float] = field(default_factory=dict)
-    metadata: dict[str, any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -266,8 +266,8 @@ class TemplateMatchComparator:
                 # Swap
                 template, search = search, template
 
-            result = cv2.matchTemplate(search, template, self.method)
-            _, max_val, _, _ = cv2.minMaxLoc(result)
+            match_result = cv2.matchTemplate(search, template, self.method)
+            _, max_val, _, _ = cv2.minMaxLoc(match_result)
 
             # Normalize similarity to 0-1 range
             similarity = float(max_val)
@@ -285,10 +285,10 @@ class TemplateMatchComparator:
 
         except Exception as e:
             logger.warning(f"Template matching failed: {e}")
-            result = self.fallback.compare(fp_a, fp_b)
-            result.metadata["fallback"] = True
-            result.metadata["error"] = str(e)
-            return result
+            fallback_result = self.fallback.compare(fp_a, fp_b)
+            fallback_result.metadata["fallback"] = True
+            fallback_result.metadata["error"] = str(e)
+            return fallback_result
 
 
 class CompositeComparator:

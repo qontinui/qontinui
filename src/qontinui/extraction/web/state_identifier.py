@@ -133,9 +133,9 @@ class StateIdentifier:
 
         for state_id, group in state_groups.items():
             # Get all elements for this state
-            state_element_ids = set()
-            page_urls = []
-            screenshot_ids = []
+            state_element_ids: set[str] = set()
+            page_urls: list[str] = []
+            screenshot_ids: list[str] = []
 
             for page_url, screenshot_id, _sig in group:
                 page_urls.append(page_url)

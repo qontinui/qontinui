@@ -7,11 +7,19 @@ of graph-format workflows using the GraphTraverser and ConnectionRouter componen
 import logging
 import time
 from collections import deque
-from typing import Any
+from typing import TYPE_CHECKING, Any, Union
 
 from ..config import Action, Workflow
 from .connection_router import ConnectionRouter
 from .graph_traverser import GraphTraverser, TraversalState
+
+if TYPE_CHECKING:
+    from qontinui_schemas.config.models.action import Action as SchemaAction
+    from qontinui_schemas.config.models.workflow import Workflow as SchemaWorkflow
+
+# Accept both local and qontinui_schemas types
+WorkflowType = Union[Workflow, "SchemaWorkflow"]
+ActionType = Union[Action, "SchemaAction"]
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +27,11 @@ logger = logging.getLogger(__name__)
 class ExecutionState:
     """Tracks state during workflow execution."""
 
-    def __init__(self, workflow: Workflow) -> None:
+    def __init__(self, workflow: WorkflowType) -> None:
         """Initialize execution state.
 
         Args:
-            workflow: The workflow being executed
+            workflow: The workflow being executed (local or schema type)
         """
         self.workflow = workflow
         self.context: dict[str, Any] = {}
@@ -123,11 +131,11 @@ class GraphExecutor:
         execution_state: Current execution state
     """
 
-    def __init__(self, workflow: Workflow, action_executor: Any) -> None:
+    def __init__(self, workflow: WorkflowType, action_executor: Any) -> None:
         """Initialize graph executor.
 
         Args:
-            workflow: The workflow to execute
+            workflow: The workflow to execute (local or schema type)
             action_executor: ActionExecutor instance for running actions
         """
         self.workflow = workflow
@@ -326,7 +334,7 @@ class GraphExecutor:
                         f"Action '{action_id}' failed with no error path, continuing execution"
                     )
 
-    def _execute_action(self, action: Action) -> dict[str, Any]:
+    def _execute_action(self, action: ActionType) -> dict[str, Any]:
         """Execute a single action.
 
         This method:
@@ -336,7 +344,7 @@ class GraphExecutor:
         4. Returns the result
 
         Args:
-            action: The action to execute
+            action: The action to execute (local or schema type)
 
         Returns:
             Execution result dictionary
@@ -394,12 +402,12 @@ class GraphExecutor:
             raise
 
     def _route_to_next_actions(
-        self, action: Action, result: dict[str, Any]
+        self, action: ActionType, result: dict[str, Any]
     ) -> list[tuple[str, int]]:
         """Determine next actions to execute based on result.
 
         Args:
-            action: The action that just executed
+            action: The action that just executed (local or schema type)
             result: Execution result
 
         Returns:

@@ -160,7 +160,7 @@ class GUIEnvironmentDiscovery:
                 img = cv2.imread(str(path))
                 if img is None:
                     raise ValueError(f"Failed to load image: {path}")
-                return img
+                return img.astype(np.uint8)
 
             # Try base64 decode
             if isinstance(source, str) and len(source) > 1000:
@@ -171,7 +171,7 @@ class GUIEnvironmentDiscovery:
                     img_arr = np.frombuffer(img_bytes, dtype=np.uint8)
                     img = cv2.imdecode(img_arr, cv2.IMREAD_COLOR)
                     if img is not None:
-                        return img
+                        return img.astype(np.uint8)
                 except Exception:
                     pass
 
@@ -419,7 +419,7 @@ class GUIEnvironmentDiscovery:
                     action_pairs=list(
                         zip(
                             [p[0] for p in action_pairs],
-                            [p[1] for p in action_pairs],
+                            [p[1] for p in action_pairs], strict=False,
                         )
                     ),
                     actions=actions,

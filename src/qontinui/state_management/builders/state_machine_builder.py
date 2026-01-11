@@ -7,28 +7,52 @@ The key insight is that states are defined by image co-occurrence across screens
 - States = clusters of images that appear together across screens
 - Transitions = actions that change which states are visible
 
-Example:
-    Screen 1: images a, b, c, d -> states {state1: a,b}, {state2: c,d}
-    Screen 2: images a, b, c, d -> states {state1: a,b}, {state2: c,d}
-    Screen 3: images a, b, e    -> states {state1: a,b}, {state3: e}
+The algorithm:
+1. Extract elements from each screenshot with their bounding boxes
+2. For each element, crop its image region from the source screenshot
+3. Search for that image on ALL other screenshots using template matching
+4. Record which screenshots contain each image
+5. Group images by co-occurrence (same set of screenshots = same state)
 
-    Transition: click on c (from state2) navigates from screen 2 to screen 3
-                This removes state2 and makes state3 active.
+Example:
+    Screen 1: images a, b, c, d
+    Screen 2: images a, b, c, d
+    Screen 3: images a, b, e
+
+    After cross-screenshot matching:
+    Image    Screens
+    a        1,2,3
+    b        1,2,3
+    c        1,2
+    d        1,2
+    e        3
+
+    States (grouped by screen set):
+    State 1: {a, b} - appears on screens 1,2,3
+    State 2: {c, d} - appears on screens 1,2
+    State 3: {e}    - appears on screen 3
 
 Usage:
-    from qontinui.state_management.builders import build_state_machine_from_extraction
+    from qontinui.state_management.builders import build_state_machine_from_extraction_result
 
-    states, transitions = build_state_machine_from_extraction(
-        annotations,  # List of extraction annotation dicts
-        transitions   # Optional list of inferred transition dicts
+    states, transitions = build_state_machine_from_extraction_result(
+        extraction_result,  # ExtractionResult from orchestrator
+        screenshots_dir     # Path to screenshots directory
     )
 """
 
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
+
+# Note: cv2 and numpy are imported lazily inside ImageMatchingStateMachineBuilder
+# to avoid import errors when cv2 DLLs are not available
+
+if TYPE_CHECKING:
+    from qontinui.extraction.models import ExtractionResult
 
 logger = logging.getLogger(__name__)
 
@@ -572,3 +596,549 @@ def build_state_machine_from_extraction(
     """
     builder = StateMachineBuilder(annotations, transitions)
     return builder.build()
+
+
+@dataclass
+class ImageMatch:
+    """Result of searching for an image on a screenshot."""
+
+    screenshot_id: str
+    found: bool
+    bbox: dict[str, float] | None = None  # Where it was found (may differ from original)
+    confidence: float = 0.0
+
+
+@dataclass
+class TrackedImage:
+    """An image tracked across multiple screenshots."""
+
+    id: str
+    name: str
+    source_screenshot_id: str  # Screenshot where this image was first found
+    source_bbox: dict[str, float]  # Original bounding box
+    image_data: Any = None  # Cropped image data (np.ndarray, lazy import)
+    screens_found: set[str] = field(default_factory=set)  # Screenshots where this image appears
+    matches: dict[str, ImageMatch] = field(default_factory=dict)  # screenshot_id -> match result
+    element_type: str = "unknown"
+    text: str | None = None
+    selector: str | None = None
+    extraction_category: str = ""
+
+
+class ImageMatchingStateMachineBuilder:
+    """
+    Builds a State Machine using actual image matching across screenshots.
+
+    Unlike the signature-based approach, this:
+    1. Crops actual image regions from screenshots
+    2. Uses template matching to find images on other screenshots
+    3. Only records presence when visually confirmed
+    4. Groups by actual visual co-occurrence
+    """
+
+    def __init__(
+        self,
+        screenshots_dir: Path,
+        similarity_threshold: float = 0.8,
+    ):
+        """
+        Initialize the builder.
+
+        Args:
+            screenshots_dir: Directory containing screenshot images
+            similarity_threshold: Minimum similarity score for template matching (0-1)
+        """
+        # Lazy import cv2 and numpy to avoid import errors when DLLs are not available
+        import cv2
+        import numpy as np
+
+        self._cv2 = cv2
+        self._np = np
+
+        self.screenshots_dir = Path(screenshots_dir)
+        self.similarity_threshold = similarity_threshold
+        self.screenshots: dict[str, Any] = {}  # screenshot_id -> image array (np.ndarray)
+        self.candidate_elements: dict[str, list[dict[str, Any]]] = {}  # screenshot_id -> list of elements
+        self.tracked_images: list[TrackedImage] = []
+        self.states: list[dict[str, Any]] = []
+
+    def load_screenshots(self, screenshot_ids: list[str]) -> None:
+        """Load screenshot images from disk."""
+        for screenshot_id in screenshot_ids:
+            # Try different possible filenames
+            possible_paths = [
+                self.screenshots_dir / f"{screenshot_id}.png",
+                self.screenshots_dir / f"{screenshot_id}.jpg",
+                self.screenshots_dir / screenshot_id,
+            ]
+
+            for path in possible_paths:
+                if path.exists():
+                    img = self._cv2.imread(str(path))
+                    if img is not None:
+                        self.screenshots[screenshot_id] = img
+                        logger.debug(f"Loaded screenshot {screenshot_id}: {img.shape}")
+                        break
+            else:
+                logger.warning(f"Could not load screenshot: {screenshot_id}")
+
+        logger.info(f"Loaded {len(self.screenshots)} screenshots")
+
+    def extract_and_track_images(
+        self,
+        elements_by_screenshot: dict[str, list[dict[str, Any]]],
+    ) -> None:
+        """
+        Extract image regions and track them across screenshots.
+
+        Args:
+            elements_by_screenshot: Dict mapping screenshot_id to list of element dicts
+        """
+        # Store for restricted search
+        self.candidate_elements = elements_by_screenshot
+
+        # First, extract all images from their source screenshots
+        for screenshot_id, elements in elements_by_screenshot.items():
+            if screenshot_id not in self.screenshots:
+                logger.warning(f"Screenshot {screenshot_id} not loaded, skipping elements")
+                continue
+
+            screenshot = self.screenshots[screenshot_id]
+            img_height, img_width = screenshot.shape[:2]
+
+            for elem in elements:
+                bbox = elem.get("bbox", {})
+                x = int(bbox.get("x", 0))
+                y = int(bbox.get("y", 0))
+                width = int(bbox.get("width", 0))
+                height = int(bbox.get("height", 0))
+
+                # Skip invalid bboxes (negative pos or too small)
+                if x < 0 or y < 0 or width < 10 or height < 10:
+                    continue
+
+                # Clamp to image bounds
+                x = max(0, min(x, img_width - 1))
+                y = max(0, min(y, img_height - 1))
+                x2 = min(x + width, img_width)
+                y2 = min(y + height, img_height)
+
+                if x2 - x < 10 or y2 - y < 10:
+                    continue
+
+                # Crop the image region
+                cropped = screenshot[y:y2, x:x2].copy()
+
+                # Visual Filter: Skip if image is too uniform (likely background)
+                if cropped.size > 0:
+                    std_dev = self._np.std(cropped)
+                    if std_dev < 2.0:  # Very uniform background
+                        logger.debug(f"Skipping low-variance element {elem.get('id')} (std={std_dev:.2f})")
+                        continue
+
+                tracked = TrackedImage(
+                    id=elem.get("id", str(uuid4())),
+                    name=elem.get("name") or elem.get("text") or elem.get("element_type", "unknown"),
+                    source_screenshot_id=screenshot_id,
+                    source_bbox={"x": x, "y": y, "width": x2 - x, "height": y2 - y},
+                    image_data=cropped,
+                    screens_found={screenshot_id},  # Found on source screen
+                    element_type=elem.get("element_type", "unknown"),
+                    text=elem.get("text"),
+                    selector=elem.get("selector"),
+                    extraction_category=elem.get("extraction_category", ""),
+                )
+
+                # Record match on source screenshot
+                tracked.matches[screenshot_id] = ImageMatch(
+                    screenshot_id=screenshot_id,
+                    found=True,
+                    bbox=tracked.source_bbox,
+                    confidence=1.0,
+                )
+
+                self.tracked_images.append(tracked)
+
+        logger.info(f"Extracted {len(self.tracked_images)} images from screenshots")
+
+    def deduplicate_tracked_images(self) -> None:
+        """
+        Deduplicate tracked images that represent the same visual element.
+        
+        Using a Pure Comparison Model: Compare all extracted images pairwise
+        to find visual matches. If Image A (Screen 1) matches Image B (Screen 2),
+        they are merged. co-occurrence is based solely on actual Playwright extractions.
+        """
+        if not self.tracked_images:
+            return
+
+        logger.info(f"Deduplicating {len(self.tracked_images)} tracked images")
+        
+        # Use Union-Find to group identical images
+        parent = {tracked.id: tracked.id for tracked in self.tracked_images}
+
+        def find(i_id):
+            if parent[i_id] == i_id:
+                return i_id
+            parent[i_id] = find(parent[i_id])
+            return parent[i_id]
+
+        def union(i_id, j_id):
+            root_i = find(i_id)
+            root_j = find(j_id)
+            if root_i != root_j:
+                parent[root_i] = root_j
+
+        # Pairwise comparison to find identical elements across (or within) screens
+        for i in range(len(self.tracked_images)):
+            for j in range(i + 1, len(self.tracked_images)):
+                tracked = self.tracked_images[i]
+                other_tracked = self.tracked_images[j]
+                
+                # Skip if already in the same group
+                if find(tracked.id) == find(other_tracked.id):
+                    continue
+
+                # VISUAL CHECK: Merge if they are visually similar
+                try:
+                    t1 = tracked.image_data
+                    t2 = other_tracked.image_data
+                    if t1 is not None and t2 is not None:
+                        # Ensure same size for comparison
+                        if t1.shape != t2.shape:
+                            # Resize to common size (t1's size)
+                            h, w = t1.shape[:2]
+                            t2_resized = self._cv2.resize(t2, (w, h))
+                        else:
+                            t2_resized = t2
+                        
+                        res = self._cv2.matchTemplate(t1, t2_resized, self._cv2.TM_CCOEFF_NORMED)
+                        _, max_v, _, _ = self._cv2.minMaxLoc(res)
+                        
+                        if max_v >= self.similarity_threshold:
+                            # They are the same element!
+                            union(tracked.id, other_tracked.id)
+                except Exception as e:
+                    logger.debug(f"Visual deduplication check failed: {e}")
+                    continue
+
+        # Merge groups
+        groups: dict[str, list[TrackedImage]] = defaultdict(list)
+        for tracked in self.tracked_images:
+            root_id = find(tracked.id)
+            groups[root_id].append(tracked)
+
+        new_tracked_images = []
+        for root_id, group in groups.items():
+            if len(group) == 1:
+                new_tracked_images.append(group[0])
+                continue
+
+            # Merge multiple TrackedImages into one
+            # Pick the best representative:
+            # 1. Highest variance (most "interesting" pixels, avoids background)
+            # 2. Interactive category is better
+            # 3. Prefer earlier screenshots
+            def sorting_key(x, _group=group):
+                # Variance (std dev) is primary indicator of "realness"
+                variance = self._np.std(x.image_data) if x.image_data is not None else 0
+                # Interactive category is better
+                category_score = 100 if x.extraction_category == "interactive" else 0
+                # Lower screenshot index is slightly better (heuristic)
+                screen_index_penalty = -_group.index(x)
+                return (variance, category_score, screen_index_penalty)
+
+            representative = max(group, key=sorting_key)
+            
+            for other in group:
+                if other.id == representative.id:
+                    continue
+                
+                # Merge screens_found
+                representative.screens_found.update(other.screens_found)
+                
+                # Merge matches (keeping the one with higher confidence if duplicate)
+                for sid, match in other.matches.items():
+                    if sid not in representative.matches or (match.found and not representative.matches[sid].found):
+                        representative.matches[sid] = match
+                    elif match.found and representative.matches[sid].found:
+                        # Ensure we have numbers to compare
+                        other_conf = float(match.confidence or 0.0)
+                        repr_conf = float(representative.matches[sid].confidence or 0.0)
+                        if other_conf > repr_conf:
+                            representative.matches[sid] = match
+            
+            new_tracked_images.append(representative)
+            logger.debug(f"Merged {len(group)} images into one: {representative.name} ({representative.id})")
+
+        logger.info(f"Deduplication complete: {len(self.tracked_images)} -> {len(new_tracked_images)}")
+        self.tracked_images = new_tracked_images
+
+    def cluster_into_states(self) -> list[dict[str, Any]]:
+        """
+        Cluster images into states based on co-occurrence.
+
+        Images that appear on the exact same set of screenshots belong to the same state.
+        """
+        # Group images by their screen set
+        screen_set_to_images: dict[frozenset[str], list[TrackedImage]] = defaultdict(list)
+
+        for tracked in self.tracked_images:
+            screen_set = frozenset(tracked.screens_found)
+            screen_set_to_images[screen_set].append(tracked)
+
+        # Create states from clusters
+        states_config = []
+        state_index = 1
+
+        for screen_set, images in screen_set_to_images.items():
+            if not images:
+                continue
+
+            # Generate state name based on screens
+            screen_list = sorted(screen_set)
+            if len(screen_list) <= 3:
+                screens_str = ", ".join(screen_list)
+            else:
+                screens_str = f"{', '.join(screen_list[:3])} (+{len(screen_list) - 3} more)"
+
+            state_id = str(uuid4())
+            state_name = f"State {state_index}"
+
+            # Build stateImages for this state
+            state_images = []
+            for img in images:
+                # Use the source screenshot's bbox for search regions
+                search_regions = [
+                    {
+                        "id": str(uuid4()),
+                        "name": f"Region for {img.name}",
+                        "x": int(img.source_bbox.get("x", 0)),
+                        "y": int(img.source_bbox.get("y", 0)),
+                        "width": int(img.source_bbox.get("width", 1)),
+                        "height": int(img.source_bbox.get("height", 1)),
+                        "offsetX": 0,
+                        "offsetY": 0,
+                    }
+                ]
+
+                # Check if position is fixed across all found screenshots
+                is_fixed = True
+                if len(img.matches) > 1:
+                    positions = [
+                        (m.bbox.get("x", 0), m.bbox.get("y", 0))
+                        for m in img.matches.values()
+                        if m.found and m.bbox
+                    ]
+                    if len(positions) > 1:
+                        first_pos = positions[0]
+                        is_fixed = all(
+                            abs(p[0] - first_pos[0]) < 10 and abs(p[1] - first_pos[1]) < 10
+                            for p in positions
+                        )
+
+                state_image = {
+                    "id": str(uuid4()),
+                    "name": img.name or f"Image {img.id[:8]}",
+                    "patterns": [
+                        {
+                            "id": str(uuid4()),
+                            "name": "Default pattern",
+                            "imageId": None,
+                            "searchRegions": search_regions,
+                            "fixed": is_fixed,
+                            "similarity": 0.8,
+                        }
+                    ],
+                    "shared": False,
+                    "source": "web-extraction",
+                    "searchMode": "default",
+                    "searchRegions": search_regions,
+                    "screenshotId": img.source_screenshot_id,
+                    "screensFound": list(img.screens_found),  # Which screenshots have this image
+                    "extractionCategory": img.extraction_category,
+                }
+                state_images.append(state_image)
+
+            state_config = {
+                "id": state_id,
+                "name": state_name,
+                "description": f"{len(images)} images appearing on {len(screen_set)} screenshots: {screens_str}",
+                "stateImages": state_images,
+                "screensFound": list(screen_set),  # Which screenshots this state appears on
+                "regions": [],
+                "locations": [],
+                "strings": [],
+                "position": {"x": (state_index - 1) % 3 * 250 + 100, "y": (state_index - 1) // 3 * 200 + 100},
+                "initial": state_index == 1,
+                "isFinal": False,
+            }
+            states_config.append(state_config)
+            state_index += 1
+
+        logger.info(f"Clustered {len(self.tracked_images)} images into {len(states_config)} states")
+        return states_config
+
+    def build(
+        self,
+        elements_by_screenshot: dict[str, list[dict[str, Any]]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """
+        Build the state machine.
+
+        Args:
+            elements_by_screenshot: Dict mapping screenshot_id to list of element dicts
+
+        Returns:
+            Tuple of (states_config, transitions_config)
+        """
+        print("[IMAGE_MATCHING_DEBUG] ImageMatchingStateMachineBuilder.build() called", flush=True)
+        print(f"[IMAGE_MATCHING_DEBUG] elements_by_screenshot has {len(elements_by_screenshot)} screenshots", flush=True)
+
+        # Load screenshots
+        screenshot_ids = list(elements_by_screenshot.keys())
+        print(f"[IMAGE_MATCHING_DEBUG] Loading screenshots: {screenshot_ids}", flush=True)
+        self.load_screenshots(screenshot_ids)
+
+        if not self.screenshots:
+            print("[IMAGE_MATCHING_DEBUG] No screenshots loaded!", flush=True)
+            logger.error("No screenshots loaded, cannot build state machine")
+            return [], []
+        print(f"[IMAGE_MATCHING_DEBUG] Loaded {len(self.screenshots)} screenshots", flush=True)
+
+        # Extract images from each screenshot
+        print("[IMAGE_MATCHING_DEBUG] Extracting images from screenshots...", flush=True)
+        self.extract_and_track_images(elements_by_screenshot)
+
+        if not self.tracked_images:
+            print("[IMAGE_MATCHING_DEBUG] No images extracted!", flush=True)
+            logger.warning("No images extracted, returning empty state machine")
+            return [], []
+        print(f"[IMAGE_MATCHING_DEBUG] Extracted {len(self.tracked_images)} images", flush=True)
+
+        # Deduplicate images that represent the same visual element
+        print("[IMAGE_MATCHING_DEBUG] Deduplicating images...", flush=True)
+        self.deduplicate_tracked_images()
+
+        # Log which images were found on which screenshots
+        print("[IMAGE_MATCHING_DEBUG] Image search results:", flush=True)
+        for tracked in self.tracked_images[:20]:  # Limit output
+            print(f"[IMAGE_MATCHING_DEBUG]   '{tracked.name}' found on: {sorted(tracked.screens_found)}", flush=True)
+        if len(self.tracked_images) > 20:
+            print(f"[IMAGE_MATCHING_DEBUG]   ... and {len(self.tracked_images) - 20} more images", flush=True)
+
+        # Cluster into states based on co-occurrence
+        print("[IMAGE_MATCHING_DEBUG] Clustering images into states...", flush=True)
+        states_config = self.cluster_into_states()
+        print(f"[IMAGE_MATCHING_DEBUG] Created {len(states_config)} states", flush=True)
+        for state in states_config:
+            print(f"[IMAGE_MATCHING_DEBUG]   State '{state.get('name')}': {len(state.get('stateImages', []))} images, screensFound={state.get('screensFound', [])}", flush=True)
+
+        # TODO: Derive transitions from navigation data
+        transitions_config: list[dict[str, Any]] = []
+
+        return states_config, transitions_config
+
+
+def build_state_machine_from_extraction_result(
+    extraction_result: "ExtractionResult",
+    screenshots_dir: Path | str,
+    similarity_threshold: float = 0.8,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """
+    Build a state machine from an ExtractionResult using image matching.
+
+    This is the recommended entry point for creating a state machine from extraction data.
+    It uses actual image matching (template matching) to find elements across screenshots,
+    then groups them by co-occurrence.
+
+    The algorithm:
+    1. Load screenshots from disk
+    2. For each element, crop its image region from the source screenshot
+    3. Search for that image on ALL other screenshots using template matching
+    4. Record which screenshots contain each image
+    5. Group images by co-occurrence (same set of screenshots = same state)
+
+    Args:
+        extraction_result: ExtractionResult from the extraction orchestrator
+        screenshots_dir: Path to directory containing screenshot images
+        similarity_threshold: Minimum similarity score for template matching (0-1)
+
+    Returns:
+        Tuple of (states_config, transitions_config) ready for project configuration.
+    """
+    print("[IMAGE_MATCHING_DEBUG] build_state_machine_from_extraction_result called", flush=True)
+    print(f"[IMAGE_MATCHING_DEBUG] screenshots_dir: {screenshots_dir}", flush=True)
+    print(f"[IMAGE_MATCHING_DEBUG] similarity_threshold: {similarity_threshold}", flush=True)
+
+    screenshots_dir = Path(screenshots_dir)
+    print(f"[IMAGE_MATCHING_DEBUG] screenshots_dir exists: {screenshots_dir.exists()}", flush=True)
+    if screenshots_dir.exists():
+        files = list(screenshots_dir.iterdir())
+        print(f"[IMAGE_MATCHING_DEBUG] screenshots_dir contains {len(files)} files: {[f.name for f in files[:10]]}", flush=True)
+
+    # Build elements_by_screenshot from RuntimeExtractionResult
+    elements_by_screenshot: dict[str, list[dict[str, Any]]] = {}
+
+    runtime_result = extraction_result.runtime_extraction
+    print(f"[IMAGE_MATCHING_DEBUG] runtime_result: {runtime_result}", flush=True)
+    if runtime_result and runtime_result.states:
+        print(f"[IMAGE_MATCHING_DEBUG] Found {len(runtime_result.states)} RuntimeStateCaptures", flush=True)
+        for runtime_state in runtime_result.states:
+            # Get screenshot_id
+            screenshot_id = (
+                runtime_state.screenshot.id
+                if runtime_state.screenshot
+                else runtime_state.id
+            )
+            print(f"[IMAGE_MATCHING_DEBUG] Processing state with screenshot_id: {screenshot_id}", flush=True)
+            print(f"[IMAGE_MATCHING_DEBUG]   Has {len(runtime_state.elements)} elements", flush=True)
+
+            elements = []
+            for elem in runtime_state.elements:
+                elem_dict = {
+                    "id": elem.id,
+                    "name": elem.name or elem.text_content,
+                    "text": elem.text_content,
+                    "element_type": elem.element_type.value if hasattr(elem.element_type, "value") else str(elem.element_type),
+                    "bbox": elem.bbox.to_dict() if hasattr(elem.bbox, "to_dict") else {
+                        "x": elem.bbox.x,
+                        "y": elem.bbox.y,
+                        "width": elem.bbox.width,
+                        "height": elem.bbox.height,
+                    },
+                    "selector": elem.selector,
+                    "extraction_category": getattr(elem, "extraction_category", ""),
+                }
+                elements.append(elem_dict)
+
+            elements_by_screenshot[screenshot_id] = elements
+            logger.info(f"Screenshot {screenshot_id}: {len(elements)} elements")
+            print(f"[IMAGE_MATCHING_DEBUG] Added {len(elements)} elements for screenshot {screenshot_id}", flush=True)
+    else:
+        print("[IMAGE_MATCHING_DEBUG] No RuntimeStateCaptures in extraction result!", flush=True)
+        logger.warning("No RuntimeStateCaptures in extraction result")
+
+    print(f"[IMAGE_MATCHING_DEBUG] Total screenshots with elements: {len(elements_by_screenshot)}", flush=True)
+    if not elements_by_screenshot:
+        print("[IMAGE_MATCHING_DEBUG] No elements found, returning empty state machine", flush=True)
+        logger.error("No elements found in extraction result")
+        return [], []
+
+    # Build state machine using image matching
+    print("[IMAGE_MATCHING_DEBUG] Creating ImageMatchingStateMachineBuilder...", flush=True)
+    try:
+        builder = ImageMatchingStateMachineBuilder(
+            screenshots_dir=screenshots_dir,
+            similarity_threshold=similarity_threshold,
+        )
+        print("[IMAGE_MATCHING_DEBUG] Builder created successfully", flush=True)
+    except Exception as e:
+        print(f"[IMAGE_MATCHING_DEBUG] Failed to create builder: {e}", flush=True)
+        logger.error(f"Failed to create ImageMatchingStateMachineBuilder: {e}")
+        return [], []
+
+    print("[IMAGE_MATCHING_DEBUG] Calling builder.build()...", flush=True)
+    result = builder.build(elements_by_screenshot)
+    print(f"[IMAGE_MATCHING_DEBUG] builder.build() returned {len(result[0])} states, {len(result[1])} transitions", flush=True)
+    return result
