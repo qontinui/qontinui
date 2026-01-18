@@ -31,7 +31,12 @@ from .schemas import (
     ActionStartedData,
     EventData,
     EventDataType,
+    HealingAttemptData,
+    HealingCacheEventData,
+    HealingMetricsData,
     MatchAttemptedData,
+    ReliabilityChangeData,
+    VisualValidationData,
 )
 
 __all__ = [
@@ -50,5 +55,11 @@ __all__ = [
     "ActionStartedData",
     "ActionCompletedData",
     "ActionFailedData",
+    # Healing event schemas
+    "HealingCacheEventData",
+    "HealingAttemptData",
+    "HealingMetricsData",
+    "VisualValidationData",
+    "ReliabilityChangeData",
     "EventDataType",
 ]

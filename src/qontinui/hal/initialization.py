@@ -9,7 +9,13 @@ from typing import cast
 
 from .config import HALConfig
 from .container import HALContainer
-from .interfaces import IOCREngine, IPatternMatcher, IPlatformSpecific, IScreenCapture
+from .interfaces import (
+    IAccessibilityCapture,
+    IOCREngine,
+    IPatternMatcher,
+    IPlatformSpecific,
+    IScreenCapture,
+)
 from .interfaces.keyboard_controller import IKeyboardController
 from .interfaces.mouse_controller import IMouseController
 
@@ -438,3 +444,61 @@ def _create_platform_specific(config: HALConfig) -> IPlatformSpecific:
 
     else:
         raise ValueError(f"Unsupported platform: {platform}")
+
+
+def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | None:
+    """Create accessibility capture implementation.
+
+    Args:
+        config: HAL configuration
+
+    Returns:
+        Accessibility capture implementation or None if disabled
+
+    Raises:
+        ImportError: If backend is not available
+        ValueError: If backend is not supported
+    """
+    backend = config.accessibility_backend.lower()
+
+    if backend == "none":
+        return None
+
+    elif backend == "cdp":
+        from qontinui_schemas.accessibility import AccessibilityConfig as SchemaConfig
+
+        from .implementations.accessibility import CDPAccessibilityCapture
+
+        schema_config = SchemaConfig(
+            cdp_host=config.accessibility_cdp_host,
+            cdp_port=config.accessibility_cdp_port,
+        )
+        return CDPAccessibilityCapture(schema_config)
+
+    elif backend == "auto":
+        # Auto-detect: default to CDP for now
+        from qontinui_schemas.accessibility import AccessibilityConfig as SchemaConfig
+
+        from .implementations.accessibility import CDPAccessibilityCapture
+
+        schema_config = SchemaConfig(
+            cdp_host=config.accessibility_cdp_host,
+            cdp_port=config.accessibility_cdp_port,
+        )
+        return CDPAccessibilityCapture(schema_config)
+
+    elif backend == "uia":
+        # Windows UI Automation
+        if _detect_platform(config) != "windows":
+            raise ValueError("UIA accessibility backend is only available on Windows")
+
+        from .implementations.accessibility.uia_capture import UIAAccessibilityCapture
+
+        return UIAAccessibilityCapture()
+
+    elif backend == "atspi":
+        # Linux AT-SPI2 - not yet implemented
+        raise NotImplementedError("Linux AT-SPI2 accessibility capture is not yet implemented")
+
+    else:
+        raise ValueError(f"Unsupported accessibility backend: {backend}")

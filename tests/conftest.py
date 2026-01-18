@@ -2,6 +2,7 @@
 
 import os
 import sys
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,10 +10,19 @@ import pytest
 # Set up headless display for GUI tests
 os.environ.setdefault("DISPLAY", ":99")
 
-# Mock PyAutoGUI for headless testing
+# Mock modules that may not be available or have DLL issues
+# This allows accessibility tests to run without full qontinui dependencies
 sys.modules["pyautogui"] = MagicMock()
 sys.modules["mouseinfo"] = MagicMock()
 sys.modules["pyscreeze"] = MagicMock()
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Configure custom pytest markers."""
+    config.addinivalue_line(
+        "markers",
+        "cdp_required: marks tests as requiring CDP (Chrome DevTools Protocol)",
+    )
 
 
 @pytest.fixture(autouse=True)

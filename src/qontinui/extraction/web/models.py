@@ -141,6 +141,9 @@ class InteractiveElement:
     aria_label: str | None = None
     aria_role: str | None = None
 
+    # Shadow DOM context (if extracted from shadow root)
+    shadow_path: str | None = None  # e.g., "shadow >> shadow" for nested
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
@@ -153,6 +156,7 @@ class InteractiveElement:
             "href": self.href,
             "aria_label": self.aria_label,
             "aria_role": self.aria_role,
+            "shadow_path": self.shadow_path,
         }
 
     @classmethod
@@ -168,6 +172,7 @@ class InteractiveElement:
             href=data.get("href"),
             aria_label=data.get("aria_label"),
             aria_role=data.get("aria_role"),
+            shadow_path=data.get("shadow_path"),
         )
 
 

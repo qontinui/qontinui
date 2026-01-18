@@ -407,8 +407,483 @@ class ActionFailedData:
         )
 
 
+# =============================================================================
+# Healing Event Data Schemas
+# =============================================================================
+
+
+@dataclass
+class HealingCacheEventData:
+    """Event data for healing cache events (hit/miss/invalidated).
+
+    Emitted when cache operations occur during element lookup.
+
+    Attributes:
+        pattern_id: Unique identifier of the cached pattern
+        pattern_name: Human-readable pattern name (if available)
+        cache_hit: Whether this was a cache hit (True) or miss (False)
+        cache_size: Current number of items in cache
+        hit_rate: Overall cache hit rate (0.0-1.0)
+        total_hits: Total cache hits since start
+        total_misses: Total cache misses since start
+        timestamp: Event timestamp
+        version: Schema version for backwards compatibility
+    """
+
+    pattern_id: str
+    """Unique identifier of the cached pattern."""
+
+    cache_hit: bool
+    """Whether this was a cache hit (True) or miss (False)."""
+
+    timestamp: float
+    """Event timestamp in seconds since epoch."""
+
+    pattern_name: str | None = None
+    """Human-readable pattern name (if available)."""
+
+    cache_size: int = 0
+    """Current number of items in cache."""
+
+    hit_rate: float = 0.0
+    """Overall cache hit rate (0.0-1.0)."""
+
+    total_hits: int = 0
+    """Total cache hits since start."""
+
+    total_misses: int = 0
+    """Total cache misses since start."""
+
+    version: str = "1.0"
+    """Schema version for backwards compatibility."""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert event data to dictionary for serialization.
+
+        Returns:
+            Dictionary representation of event data
+        """
+        return {
+            "pattern_id": self.pattern_id,
+            "pattern_name": self.pattern_name,
+            "cache_hit": self.cache_hit,
+            "cache_size": self.cache_size,
+            "hit_rate": self.hit_rate,
+            "total_hits": self.total_hits,
+            "total_misses": self.total_misses,
+            "timestamp": self.timestamp,
+            "version": self.version,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> HealingCacheEventData:
+        """Create event data from dictionary.
+
+        Args:
+            data: Dictionary containing event data
+
+        Returns:
+            Typed HealingCacheEventData instance
+        """
+        return cls(
+            pattern_id=data["pattern_id"],
+            pattern_name=data.get("pattern_name"),
+            cache_hit=data["cache_hit"],
+            cache_size=data.get("cache_size", 0),
+            hit_rate=data.get("hit_rate", 0.0),
+            total_hits=data.get("total_hits", 0),
+            total_misses=data.get("total_misses", 0),
+            timestamp=data["timestamp"],
+            version=data.get("version", "1.0"),
+        )
+
+
+@dataclass
+class HealingAttemptData:
+    """Event data for healing attempt events (started/succeeded/failed).
+
+    Emitted when a healing operation is attempted.
+
+    Attributes:
+        pattern_id: ID of pattern being healed
+        pattern_name: Human-readable pattern name
+        strategy: Strategy being used (visual_search, llm_vision, etc.)
+        success: Whether the healing attempt succeeded
+        confidence: Match confidence if successful (0.0-1.0)
+        duration_ms: Time taken for the healing attempt
+        error_message: Error message if failed
+        location_x: X coordinate if element found
+        location_y: Y coordinate if element found
+        timestamp: Event timestamp
+        context_id: Optional context identifier
+        version: Schema version
+    """
+
+    pattern_id: str
+    """ID of pattern being healed."""
+
+    strategy: str
+    """Strategy being used (visual_search, llm_vision, etc.)."""
+
+    success: bool
+    """Whether the healing attempt succeeded."""
+
+    timestamp: float
+    """Event timestamp in seconds since epoch."""
+
+    pattern_name: str | None = None
+    """Human-readable pattern name."""
+
+    confidence: float = 0.0
+    """Match confidence if successful (0.0-1.0)."""
+
+    duration_ms: float = 0.0
+    """Time taken for the healing attempt in milliseconds."""
+
+    error_message: str | None = None
+    """Error message if failed."""
+
+    location_x: int | None = None
+    """X coordinate if element found."""
+
+    location_y: int | None = None
+    """Y coordinate if element found."""
+
+    context_id: str | None = None
+    """Optional context identifier for grouping."""
+
+    version: str = "1.0"
+    """Schema version for backwards compatibility."""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert event data to dictionary for serialization.
+
+        Returns:
+            Dictionary representation of event data
+        """
+        return {
+            "pattern_id": self.pattern_id,
+            "pattern_name": self.pattern_name,
+            "strategy": self.strategy,
+            "success": self.success,
+            "confidence": self.confidence,
+            "duration_ms": self.duration_ms,
+            "error_message": self.error_message,
+            "location_x": self.location_x,
+            "location_y": self.location_y,
+            "timestamp": self.timestamp,
+            "context_id": self.context_id,
+            "version": self.version,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> HealingAttemptData:
+        """Create event data from dictionary.
+
+        Args:
+            data: Dictionary containing event data
+
+        Returns:
+            Typed HealingAttemptData instance
+        """
+        return cls(
+            pattern_id=data["pattern_id"],
+            pattern_name=data.get("pattern_name"),
+            strategy=data["strategy"],
+            success=data["success"],
+            confidence=data.get("confidence", 0.0),
+            duration_ms=data.get("duration_ms", 0.0),
+            error_message=data.get("error_message"),
+            location_x=data.get("location_x"),
+            location_y=data.get("location_y"),
+            timestamp=data["timestamp"],
+            context_id=data.get("context_id"),
+            version=data.get("version", "1.0"),
+        )
+
+
+@dataclass
+class HealingMetricsData:
+    """Event data for aggregate healing metrics updates.
+
+    Emitted periodically or on significant metric changes.
+
+    Attributes:
+        total_attempts: Total healing attempts
+        successful_heals: Number of successful heals
+        failed_heals: Number of failed heals
+        healing_rate: Success rate (0.0-1.0)
+        avg_healing_time_ms: Average healing time
+        patterns_updated: Number of patterns auto-updated
+        llm_calls: Number of LLM healing calls
+        cache_hit_rate: Cache hit rate (0.0-1.0)
+        timestamp: Event timestamp
+        version: Schema version
+    """
+
+    total_attempts: int
+    """Total healing attempts."""
+
+    successful_heals: int
+    """Number of successful heals."""
+
+    failed_heals: int
+    """Number of failed heals."""
+
+    healing_rate: float
+    """Success rate (0.0-1.0)."""
+
+    timestamp: float
+    """Event timestamp in seconds since epoch."""
+
+    avg_healing_time_ms: float = 0.0
+    """Average healing time in milliseconds."""
+
+    patterns_updated: int = 0
+    """Number of patterns auto-updated."""
+
+    llm_calls: int = 0
+    """Number of LLM healing calls."""
+
+    cache_hit_rate: float = 0.0
+    """Cache hit rate (0.0-1.0)."""
+
+    version: str = "1.0"
+    """Schema version for backwards compatibility."""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert event data to dictionary for serialization.
+
+        Returns:
+            Dictionary representation of event data
+        """
+        return {
+            "total_attempts": self.total_attempts,
+            "successful_heals": self.successful_heals,
+            "failed_heals": self.failed_heals,
+            "healing_rate": self.healing_rate,
+            "avg_healing_time_ms": self.avg_healing_time_ms,
+            "patterns_updated": self.patterns_updated,
+            "llm_calls": self.llm_calls,
+            "cache_hit_rate": self.cache_hit_rate,
+            "timestamp": self.timestamp,
+            "version": self.version,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> HealingMetricsData:
+        """Create event data from dictionary.
+
+        Args:
+            data: Dictionary containing event data
+
+        Returns:
+            Typed HealingMetricsData instance
+        """
+        return cls(
+            total_attempts=data["total_attempts"],
+            successful_heals=data["successful_heals"],
+            failed_heals=data["failed_heals"],
+            healing_rate=data["healing_rate"],
+            avg_healing_time_ms=data.get("avg_healing_time_ms", 0.0),
+            patterns_updated=data.get("patterns_updated", 0),
+            llm_calls=data.get("llm_calls", 0),
+            cache_hit_rate=data.get("cache_hit_rate", 0.0),
+            timestamp=data["timestamp"],
+            version=data.get("version", "1.0"),
+        )
+
+
+@dataclass
+class VisualValidationData:
+    """Event data for visual validation events.
+
+    Emitted when visual validation is performed to verify element state.
+
+    Attributes:
+        validation_type: Type of validation performed
+        expected_state: Expected state identifier
+        actual_state: Actually detected state
+        confidence: Validation confidence (0.0-1.0)
+        threshold: Confidence threshold used
+        passed: Whether validation passed
+        pattern_id: ID of pattern validated
+        screenshot_reference: Reference to screenshot used
+        timestamp: Event timestamp
+        version: Schema version
+    """
+
+    validation_type: str
+    """Type of validation performed."""
+
+    passed: bool
+    """Whether validation passed."""
+
+    confidence: float
+    """Validation confidence (0.0-1.0)."""
+
+    threshold: float
+    """Confidence threshold used."""
+
+    timestamp: float
+    """Event timestamp in seconds since epoch."""
+
+    expected_state: str | None = None
+    """Expected state identifier."""
+
+    actual_state: str | None = None
+    """Actually detected state."""
+
+    pattern_id: str | None = None
+    """ID of pattern validated."""
+
+    screenshot_reference: str | None = None
+    """Reference to screenshot used."""
+
+    version: str = "1.0"
+    """Schema version for backwards compatibility."""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert event data to dictionary for serialization.
+
+        Returns:
+            Dictionary representation of event data
+        """
+        return {
+            "validation_type": self.validation_type,
+            "expected_state": self.expected_state,
+            "actual_state": self.actual_state,
+            "confidence": self.confidence,
+            "threshold": self.threshold,
+            "passed": self.passed,
+            "pattern_id": self.pattern_id,
+            "screenshot_reference": self.screenshot_reference,
+            "timestamp": self.timestamp,
+            "version": self.version,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> VisualValidationData:
+        """Create event data from dictionary.
+
+        Args:
+            data: Dictionary containing event data
+
+        Returns:
+            Typed VisualValidationData instance
+        """
+        return cls(
+            validation_type=data["validation_type"],
+            expected_state=data.get("expected_state"),
+            actual_state=data.get("actual_state"),
+            confidence=data["confidence"],
+            threshold=data["threshold"],
+            passed=data["passed"],
+            pattern_id=data.get("pattern_id"),
+            screenshot_reference=data.get("screenshot_reference"),
+            timestamp=data["timestamp"],
+            version=data.get("version", "1.0"),
+        )
+
+
+@dataclass
+class ReliabilityChangeData:
+    """Event data for reliability score changes.
+
+    Emitted when a pattern's reliability score changes significantly.
+
+    Attributes:
+        pattern_id: ID of the pattern
+        pattern_name: Human-readable pattern name
+        new_score: New reliability score (0.0-1.0)
+        old_score: Previous reliability score (0.0-1.0)
+        change_amount: Absolute change in score
+        total_uses: Total times this pattern was used
+        successful_uses: Successful matches for this pattern
+        timestamp: Event timestamp
+        version: Schema version
+    """
+
+    pattern_id: str
+    """ID of the pattern."""
+
+    new_score: float
+    """New reliability score (0.0-1.0)."""
+
+    old_score: float
+    """Previous reliability score (0.0-1.0)."""
+
+    timestamp: float
+    """Event timestamp in seconds since epoch."""
+
+    pattern_name: str | None = None
+    """Human-readable pattern name."""
+
+    change_amount: float = 0.0
+    """Absolute change in score."""
+
+    total_uses: int = 0
+    """Total times this pattern was used."""
+
+    successful_uses: int = 0
+    """Successful matches for this pattern."""
+
+    version: str = "1.0"
+    """Schema version for backwards compatibility."""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert event data to dictionary for serialization.
+
+        Returns:
+            Dictionary representation of event data
+        """
+        return {
+            "pattern_id": self.pattern_id,
+            "pattern_name": self.pattern_name,
+            "new_score": self.new_score,
+            "old_score": self.old_score,
+            "change_amount": self.change_amount,
+            "total_uses": self.total_uses,
+            "successful_uses": self.successful_uses,
+            "timestamp": self.timestamp,
+            "version": self.version,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ReliabilityChangeData:
+        """Create event data from dictionary.
+
+        Args:
+            data: Dictionary containing event data
+
+        Returns:
+            Typed ReliabilityChangeData instance
+        """
+        return cls(
+            pattern_id=data["pattern_id"],
+            pattern_name=data.get("pattern_name"),
+            new_score=data["new_score"],
+            old_score=data["old_score"],
+            change_amount=data.get("change_amount", abs(data["new_score"] - data["old_score"])),
+            total_uses=data.get("total_uses", 0),
+            successful_uses=data.get("successful_uses", 0),
+            timestamp=data["timestamp"],
+            version=data.get("version", "1.0"),
+        )
+
+
 # Type aliases for convenience
-EventDataType = MatchAttemptedData | ActionStartedData | ActionCompletedData | ActionFailedData
+EventDataType = (
+    MatchAttemptedData
+    | ActionStartedData
+    | ActionCompletedData
+    | ActionFailedData
+    | HealingCacheEventData
+    | HealingAttemptData
+    | HealingMetricsData
+    | VisualValidationData
+    | ReliabilityChangeData
+)
 
 __all__ = [
     "EventData",
@@ -416,5 +891,11 @@ __all__ = [
     "ActionStartedData",
     "ActionCompletedData",
     "ActionFailedData",
+    # Healing event schemas
+    "HealingCacheEventData",
+    "HealingAttemptData",
+    "HealingMetricsData",
+    "VisualValidationData",
+    "ReliabilityChangeData",
     "EventDataType",
 ]

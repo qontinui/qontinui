@@ -3,6 +3,7 @@
 These interfaces define the contracts that all HAL implementations must follow.
 """
 
+from .accessibility_capture import IAccessibilityCapture
 from .input_controller import IInputController, Key, MouseButton, MousePosition
 from .keyboard_controller import IKeyboardController
 from .mouse_controller import IMouseController
@@ -12,6 +13,7 @@ from .platform_specific import IPlatformSpecific
 from .screen_capture import IScreenCapture
 
 __all__ = [
+    "IAccessibilityCapture",
     "IScreenCapture",
     "IPatternMatcher",
     "IInputController",

@@ -2,6 +2,8 @@
 
 Manages automatic healing when primary locators fail, learns which strategies work,
 and optionally updates stored patterns after successful healing.
+
+This module emits healing events for monitoring and metrics in qontinui-runner.
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from typing import Any
 
 from ..model.element import Pattern
 from ..reporting.events import EventType, emit_event
+from ..reporting.schemas import HealingAttemptData, HealingMetricsData, ReliabilityChangeData
 from .multi_strategy import MultiStrategyLocator, MultiStrategyResult
 from .strategies import MatchResult, ScreenContext
 
@@ -197,8 +200,14 @@ class HealingManager:
                 updated = self._update_pattern(target, result.match_result, context)
                 healing_attempt.updated_pattern = updated
 
-            # Emit success event
+            # Emit success event with location data
             if self.config.emit_events:
+                location_x = None
+                location_y = None
+                if result.match_result and result.match_result.region:
+                    location_x = result.match_result.region.x + result.match_result.region.width // 2
+                    location_y = result.match_result.region.y + result.match_result.region.height // 2
+
                 self._emit_event(
                     HealingEventType.HEALING_SUCCEEDED,
                     {
@@ -206,8 +215,14 @@ class HealingManager:
                         "strategy": result.successful_strategy,
                         "confidence": result.confidence,
                         "updated_pattern": healing_attempt.updated_pattern,
+                        "duration_ms": healing_attempt.duration * 1000,
+                        "location_x": location_x,
+                        "location_y": location_y,
                     },
                 )
+                # Also emit aggregate metrics periodically
+                if len(self._healing_history) % 10 == 0:
+                    self._emit_metrics_event()
 
         elif not result.found:
             logger.warning(f"Healing failed for pattern {pattern_id} - no strategy succeeded")
@@ -219,8 +234,13 @@ class HealingManager:
                     {
                         "pattern_id": pattern_id,
                         "attempts": len(result.attempts),
+                        "duration_ms": healing_attempt.duration * 1000,
+                        "error": "All strategies failed",
                     },
                 )
+                # Also emit aggregate metrics periodically
+                if len(self._healing_history) % 10 == 0:
+                    self._emit_metrics_event()
 
         # Record in history
         self._healing_history.append(healing_attempt)
@@ -410,23 +430,98 @@ class HealingManager:
             data: Event data
         """
         try:
-            # Map healing event to generic event type
-            if event_type == HealingEventType.HEALING_SUCCEEDED:
-                generic_type = EventType.ACTION_COMPLETED
-            elif event_type == HealingEventType.HEALING_FAILED:
-                generic_type = EventType.ACTION_FAILED
-            else:
-                generic_type = EventType.ACTION_STARTED
+            # Map healing event to specific event type
+            event_type_map = {
+                HealingEventType.HEALING_ATTEMPTED: EventType.HEALING_STARTED,
+                HealingEventType.HEALING_SUCCEEDED: EventType.HEALING_SUCCEEDED,
+                HealingEventType.HEALING_FAILED: EventType.HEALING_FAILED,
+                HealingEventType.STRATEGY_LEARNED: EventType.HEALING_STRATEGY_SUCCEEDED,
+                HealingEventType.PATTERN_UPDATED: EventType.HEALING_PATTERN_UPDATED,
+            }
 
-            emit_event(
-                generic_type,
-                data={
-                    "healing_event": event_type.value,
-                    **data,
-                },
-            )
+            generic_type = event_type_map.get(event_type, EventType.HEALING_STARTED)
+
+            # Create typed event data for healing attempts
+            if event_type in (
+                HealingEventType.HEALING_SUCCEEDED,
+                HealingEventType.HEALING_FAILED,
+            ):
+                event_data = HealingAttemptData(
+                    pattern_id=data.get("pattern_id", "unknown"),
+                    pattern_name=data.get("pattern_name"),
+                    strategy=data.get("strategy", "unknown"),
+                    success=event_type == HealingEventType.HEALING_SUCCEEDED,
+                    confidence=data.get("confidence", 0.0),
+                    duration_ms=data.get("duration_ms", 0.0),
+                    error_message=data.get("error"),
+                    location_x=data.get("location_x"),
+                    location_y=data.get("location_y"),
+                    timestamp=time.time(),
+                )
+                emit_event(generic_type, data=event_data.to_dict())
+            else:
+                emit_event(
+                    generic_type,
+                    data={
+                        "healing_event": event_type.value,
+                        "timestamp": time.time(),
+                        **data,
+                    },
+                )
         except Exception as e:
             logger.error(f"Failed to emit healing event: {e}", exc_info=True)
+
+    def _emit_metrics_event(self) -> None:
+        """Emit aggregate healing metrics event."""
+        try:
+            stats = self.get_healing_stats()
+            metrics_data = HealingMetricsData(
+                total_attempts=stats["total_attempts"],
+                successful_heals=stats["healing_successes"],
+                failed_heals=stats["healing_failures"],
+                healing_rate=stats["healing_rate"],
+                patterns_updated=stats["patterns_updated"],
+                timestamp=time.time(),
+            )
+            emit_event(EventType.HEALING_METRICS_UPDATED, data=metrics_data.to_dict())
+        except Exception as e:
+            logger.error(f"Failed to emit healing metrics event: {e}", exc_info=True)
+
+    def _emit_reliability_change_event(
+        self,
+        pattern_id: str,
+        old_score: float,
+        new_score: float,
+        total_uses: int,
+        successful_uses: int,
+    ) -> None:
+        """Emit reliability score change event.
+
+        Args:
+            pattern_id: ID of the pattern
+            old_score: Previous reliability score
+            new_score: New reliability score
+            total_uses: Total times pattern was used
+            successful_uses: Successful matches
+        """
+        try:
+            # Only emit if change is significant (> 5%)
+            change_amount = abs(new_score - old_score)
+            if change_amount >= 0.05:
+                reliability_data = ReliabilityChangeData(
+                    pattern_id=pattern_id,
+                    new_score=new_score,
+                    old_score=old_score,
+                    change_amount=change_amount,
+                    total_uses=total_uses,
+                    successful_uses=successful_uses,
+                    timestamp=time.time(),
+                )
+                emit_event(
+                    EventType.HEALING_RELIABILITY_CHANGED, data=reliability_data.to_dict()
+                )
+        except Exception as e:
+            logger.error(f"Failed to emit reliability change event: {e}", exc_info=True)
 
     @classmethod
     def create_with_defaults(cls) -> HealingManager:

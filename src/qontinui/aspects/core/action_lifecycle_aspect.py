@@ -10,11 +10,12 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import wraps
 from threading import local
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ...action_interface import ActionInterface
-from ...action_result import ActionResult
-from ...object_collection import ObjectCollection
+if TYPE_CHECKING:
+    from ...actions.action_interface import ActionInterface
+    from ...actions.action_result import ActionResult
+    from ...actions.object_collection import ObjectCollection
 
 logger = logging.getLogger(__name__)
 
@@ -123,9 +124,9 @@ class ActionLifecycleAspect:
 
         @wraps(func)
         def wrapper(
-            action_instance: ActionInterface,
-            action_result: ActionResult,
-            *object_collections: ObjectCollection,
+            action_instance: "ActionInterface",
+            action_result: "ActionResult",
+            *object_collections: "ObjectCollection",
         ) -> Any:
 
             # Create action context
@@ -177,8 +178,8 @@ class ActionLifecycleAspect:
     def _pre_execution(
         self,
         context: ActionContext,
-        action: ActionInterface,
-        action_result: ActionResult,
+        action: "ActionInterface",
+        action_result: "ActionResult",
         object_collections: tuple[Any, ...],
     ) -> None:
         """Handle pre-execution tasks.
@@ -206,8 +207,8 @@ class ActionLifecycleAspect:
     def _post_execution(
         self,
         context: ActionContext,
-        action: ActionInterface,
-        action_result: ActionResult,
+        action: "ActionInterface",
+        action_result: "ActionResult",
         success: bool,
     ) -> None:
         """Handle post-execution tasks.

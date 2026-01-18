@@ -4,6 +4,11 @@ Safe Playwright-based state collector for building State Machines.
 This module provides automated web crawling with safety mechanisms to prevent
 clicking dangerous buttons (delete, purchase, etc.) while collecting
 state machine data from web applications.
+
+Enhanced capabilities:
+- Shadow DOM extraction (via InteractiveElementExtractor)
+- Iframe traversal (via FrameManager)
+- DOM stability waiting (via DOMStabilityWaiter)
 """
 
 import io
@@ -16,6 +21,7 @@ import numpy as np
 from PIL import Image as PILImage
 from playwright.async_api import Browser, BrowserContext, ElementHandle, Page, async_playwright
 
+from .interactive_element_extractor import ExtractionOptions, InteractiveElementExtractor
 from .safety import (
     ActionRisk,
     ConfirmationDialogHandler,
@@ -29,6 +35,22 @@ from .verification import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class CollectorConfig:
+    """Configuration for the state collector."""
+
+    # Extraction options
+    include_shadow_dom: bool = True
+    include_iframes: bool = False  # Off by default for backward compat
+    wait_for_stability: bool = False  # Off by default for backward compat
+    stability_ms: int = 500
+    max_stability_wait_ms: int = 5000
+
+    # Extraction size limits
+    min_element_width: int = 10
+    min_element_height: int = 10
 
 
 # CSS selectors for clickable elements
@@ -101,6 +123,11 @@ class SafePlaywrightStateCollector:
     - Screenshot capture for visual verification
     - Transition recording (before/after states)
     - Pattern matching verification for extracted elements
+
+    Enhanced capabilities (via CollectorConfig):
+    - Shadow DOM extraction
+    - Iframe traversal
+    - DOM stability waiting before extraction
     """
 
     def __init__(
@@ -108,6 +135,7 @@ class SafePlaywrightStateCollector:
         safety_config: SafetyConfig | None = None,
         verify_extractions: bool = True,
         verification_threshold: float = 0.85,
+        collector_config: CollectorConfig | None = None,
     ):
         """Initialize the collector.
 
@@ -115,12 +143,22 @@ class SafePlaywrightStateCollector:
             safety_config: Safety configuration for risk analysis
             verify_extractions: Whether to verify extracted elements with pattern matching
             verification_threshold: Minimum similarity for verification
+            collector_config: Configuration for extraction capabilities
         """
         self.safety = safety_config or SafetyConfig()
         self.analyzer = ElementSafetyAnalyzer(self.safety)
         self.dialog_handler = ConfirmationDialogHandler()
         self.verify_extractions = verify_extractions
         self.verification_threshold = verification_threshold
+        self.collector_config = collector_config or CollectorConfig()
+
+        # Set up enhanced extractor with config
+        extraction_options = ExtractionOptions(
+            min_width=self.collector_config.min_element_width,
+            min_height=self.collector_config.min_element_height,
+            include_shadow_dom=self.collector_config.include_shadow_dom,
+        )
+        self._extractor = InteractiveElementExtractor(options=extraction_options)
 
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
@@ -578,6 +616,7 @@ async def collect_web_states(
     safety_config: SafetyConfig | None = None,
     verify: bool = True,
     on_progress: Callable[[str, int], None] | None = None,
+    collector_config: CollectorConfig | None = None,
 ) -> CollectionResult:
     """Convenience function to collect states from a website.
 
@@ -588,6 +627,7 @@ async def collect_web_states(
         safety_config: Safety configuration
         verify: Whether to verify extractions
         on_progress: Progress callback
+        collector_config: Configuration for extraction capabilities
 
     Returns:
         CollectionResult with extracted data
@@ -595,6 +635,7 @@ async def collect_web_states(
     collector = SafePlaywrightStateCollector(
         safety_config=safety_config,
         verify_extractions=verify,
+        collector_config=collector_config,
     )
     return await collector.collect(
         url=url,
@@ -602,3 +643,73 @@ async def collect_web_states(
         max_elements_per_page=max_elements_per_page,
         on_progress=on_progress,
     )
+
+
+async def collect_with_enhanced_extraction(
+    url: str,
+    include_shadow_dom: bool = True,
+    include_iframes: bool = True,
+    wait_for_stability: bool = True,
+    stability_ms: int = 500,
+    max_stability_wait_ms: int = 5000,
+) -> list:
+    """
+    Convenience function for enhanced extraction with all capabilities.
+
+    This uses the InteractiveElementExtractor directly with shadow DOM,
+    iframe, and stability features enabled.
+
+    Args:
+        url: URL to extract from
+        include_shadow_dom: Whether to extract from shadow DOMs
+        include_iframes: Whether to extract from iframes
+        wait_for_stability: Whether to wait for DOM stability
+        stability_ms: Time without mutations for stability
+        max_stability_wait_ms: Maximum wait time for stability
+
+    Returns:
+        List of extracted elements (InteractiveElement or FrameAwareElement)
+    """
+    from .dom_stability import wait_for_stable_extraction
+    from .frame_manager import extract_across_frames
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(viewport={"width": 1920, "height": 1080})
+        page = await context.new_page()
+
+        await page.goto(url)
+        await page.wait_for_load_state("networkidle")
+
+        # Wait for stability if requested
+        if wait_for_stability:
+            result = await wait_for_stable_extraction(
+                page,
+                stability_ms=stability_ms,
+                max_wait_ms=max_stability_wait_ms,
+            )
+            logger.info(
+                f"Stability: stable={result.stable}, "
+                f"wait={result.wait_time_ms:.0f}ms, "
+                f"mutations={result.mutation_count}"
+            )
+
+        # Extract with appropriate method
+        if include_iframes:
+            frame_result = await extract_across_frames(
+                page,
+                screenshot_id="enhanced_extract",
+                include_shadow_dom=include_shadow_dom,
+            )
+            elements = frame_result.elements
+        else:
+            extractor = InteractiveElementExtractor(
+                options=ExtractionOptions(include_shadow_dom=include_shadow_dom)
+            )
+            elements = await extractor.extract_interactive_elements(
+                page, "enhanced_extract"
+            )
+
+        await browser.close()
+
+        return elements

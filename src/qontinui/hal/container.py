@@ -4,10 +4,16 @@ This module provides a container for HAL component instances, replacing
 the global factory pattern with explicit dependency injection.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .config import HALConfig
-from .interfaces import IOCREngine, IPatternMatcher, IPlatformSpecific, IScreenCapture
+from .interfaces import (
+    IAccessibilityCapture,
+    IOCREngine,
+    IPatternMatcher,
+    IPlatformSpecific,
+    IScreenCapture,
+)
 from .interfaces.keyboard_controller import IKeyboardController
 from .interfaces.mouse_controller import IMouseController
 
@@ -33,6 +39,7 @@ class HALContainer:
         pattern_matcher: Image pattern matching implementation
         ocr_engine: OCR text recognition implementation
         platform_specific: Platform-specific utilities implementation
+        accessibility_capture: Optional accessibility tree capture implementation
         config: HAL configuration used to create these components
 
     Example:
@@ -51,6 +58,7 @@ class HALContainer:
     ocr_engine: IOCREngine
     platform_specific: IPlatformSpecific
     config: HALConfig
+    accessibility_capture: IAccessibilityCapture | None = field(default=None)
 
     @classmethod
     def create_from_config(cls, config: HALConfig) -> "HALContainer":
@@ -81,6 +89,7 @@ class HALContainer:
         """
         # Import the initialization module
         from .initialization import (
+            _create_accessibility_capture,
             _create_keyboard_controller,
             _create_mouse_controller,
             _create_ocr_engine,
@@ -96,6 +105,7 @@ class HALContainer:
         pattern_matcher = _create_pattern_matcher(config)
         ocr_engine = _create_ocr_engine(config)
         platform_specific = _create_platform_specific(config)
+        accessibility_capture = _create_accessibility_capture(config)
 
         return cls(
             keyboard_controller=keyboard_controller,
@@ -105,6 +115,7 @@ class HALContainer:
             ocr_engine=ocr_engine,
             platform_specific=platform_specific,
             config=config,
+            accessibility_capture=accessibility_capture,
         )
 
     def cleanup(self) -> None:
@@ -121,6 +132,26 @@ class HALContainer:
             ... finally:
             ...     hal.cleanup()
         """
-        # Most HAL components don't need explicit cleanup, but we provide
-        # this hook for future use and for components that do need it
-        pass
+        # Clean up accessibility capture if present (it has async disconnect)
+        # Note: For proper async cleanup, use shutdown_hal_async() instead
+        if self.accessibility_capture is not None:
+            # Accessibility capture has async disconnect - we can't await here
+            # The caller should handle async cleanup separately if needed
+            pass
+
+    async def cleanup_async(self) -> None:
+        """Async cleanup for components that need it.
+
+        Use this method when you need to properly clean up async components
+        like accessibility capture.
+
+        Example:
+            >>> hal = initialize_hal(config)
+            >>> try:
+            ...     # Use hal
+            ...     pass
+            ... finally:
+            ...     await hal.cleanup_async()
+        """
+        if self.accessibility_capture is not None:
+            await self.accessibility_capture.disconnect()

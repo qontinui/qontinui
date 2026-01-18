@@ -40,6 +40,33 @@ class EventType(Enum):
     STATE_TRANSITION_STARTED = "state.transition.started"
     STATE_TRANSITION_COMPLETED = "state.transition.completed"
 
+    # Healing events - cache operations
+    HEALING_CACHE_HIT = "healing.cache.hit"
+    HEALING_CACHE_MISS = "healing.cache.miss"
+    HEALING_CACHE_INVALIDATED = "healing.cache.invalidated"
+
+    # Healing events - healing operations
+    HEALING_STARTED = "healing.started"
+    HEALING_SUCCEEDED = "healing.succeeded"
+    HEALING_FAILED = "healing.failed"
+
+    # Healing events - strategy operations
+    HEALING_STRATEGY_ATTEMPTED = "healing.strategy.attempted"
+    HEALING_STRATEGY_SUCCEEDED = "healing.strategy.succeeded"
+    HEALING_STRATEGY_FAILED = "healing.strategy.failed"
+
+    # Healing events - visual validation
+    HEALING_VISUAL_VALIDATION_STARTED = "healing.validation.started"
+    HEALING_VISUAL_VALIDATION_PASSED = "healing.validation.passed"
+    HEALING_VISUAL_VALIDATION_FAILED = "healing.validation.failed"
+
+    # Healing events - pattern/reliability
+    HEALING_PATTERN_UPDATED = "healing.pattern.updated"
+    HEALING_RELIABILITY_CHANGED = "healing.reliability.changed"
+
+    # Healing events - aggregate metrics
+    HEALING_METRICS_UPDATED = "healing.metrics.updated"
+
 
 @dataclass
 class Event:

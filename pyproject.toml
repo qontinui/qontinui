@@ -51,13 +51,20 @@ prometheus-client = "^0.19"
 psutil = ">=5.9,<8.0"
 sqlalchemy = "^2.0"
 pydantic = "^2.11.9"
-qontinui-schemas = "^0.1.0"
+qontinui-schemas = { path = "../qontinui-schemas", develop = true }
 croniter = "^5.0"
 playwright = "^1.56.0"
 selenium = "^4.38.0"
 webdriver-manager = "^4.0.2"
 click = "^8.1"
 httpx = "^0.28"
+aiohttp = "^3.9"  # CDP WebSocket for accessibility capture
+
+# Optional: UI-TARS quantization support (for local inference on consumer GPUs)
+bitsandbytes = { version = "^0.45", optional = true }
+
+[tool.poetry.extras]
+uitars = ["bitsandbytes"]  # Enable: poetry install -E uitars
 
 [tool.poetry.scripts]
 qontinui = "qontinui.cli.main:main"
@@ -88,6 +95,7 @@ types-pyyaml = "^6.0.12.20250915"
 # Poetry extras removed since SAM3 cannot be installed via poetry
 types-requests = "^2.32.4.20250913"
 bandit = "^1.9.2"
+respx = "^0.22"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

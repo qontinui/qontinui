@@ -148,7 +148,11 @@ class ExtractionOrchestrator:
                 logger.info("=" * 50)
                 logger.info("PHASE 2: RUNTIME EXTRACTION")
                 logger.info("=" * 50)
+                start_runtime = time.time()
+                logger.info("[PERF_DEBUG] Starting _run_runtime_extraction()")
                 result.runtime_extraction = await self._run_runtime_extraction(config)
+                duration_runtime = time.time() - start_runtime
+                logger.info(f"[PERF_DEBUG] _run_runtime_extraction() finished in {duration_runtime:.2f}s")
                 logger.info(
                     f"Runtime extraction returned {len(result.runtime_extraction.states)} states, "
                     f"{len(result.runtime_extraction.elements)} elements"
@@ -1192,6 +1196,27 @@ class ExtractionOrchestrator:
             self.register_runtime_extractor(TauriExtractor)  # type: ignore[arg-type]
         except ImportError:
             logger.warning("TauriExtractor not available")
+
+        try:
+            from .runtime.awas.extractor import AwasRuntimeExtractor
+
+            self.register_runtime_extractor(AwasRuntimeExtractor)  # type: ignore[arg-type]
+        except ImportError:
+            logger.warning("AwasRuntimeExtractor not available")
+
+        # Register UI-TARS explorer for desktop/native app exploration
+        try:
+            from .runtime.uitars import HAS_UITARS
+
+            if HAS_UITARS:
+                from .runtime.uitars.explorer import UITARSExplorer
+
+                self.register_runtime_extractor(UITARSExplorer)  # type: ignore[arg-type]
+                logger.info("UITARSExplorer registered for native/desktop exploration")
+            else:
+                logger.info("UI-TARS dependencies not available, UITARSExplorer not registered")
+        except ImportError:
+            logger.warning("UITARSExplorer not available")
 
         # Register state matchers
         try:

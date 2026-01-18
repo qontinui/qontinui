@@ -64,6 +64,16 @@ from .actions import (
     WaitOptions,
 )
 
+# Action Cache System
+from .cache import (
+    ActionCache,
+    CacheEntry,
+    CacheResult,
+    CacheStats,
+    get_action_cache,
+    set_action_cache,
+)
+
 # Checkpointing System
 from .checkpointing import (
     CheckpointData,
@@ -88,6 +98,25 @@ from .dsl import QontinuiDSLParser
 
 # Find System (Brobot-style)
 from .find import Find, FindImage, FindResults, Match, Matches
+from .find.matchers import CachedTemplateMatcher, ImageMatcher, TemplateMatcher
+
+# Self-Healing System
+from .healing import (
+    ElementNotFoundError,
+    HealingConfig,
+    HealingContext,
+    HealingRecoveryHandler,
+    HealingResult,
+    HealingStrategy,
+    LLMMode,
+    MatchNotFoundError,
+    VisionHealer,
+    configure_healing,
+    create_healing_handler,
+    enable_healing_recovery,
+    get_vision_healer,
+    set_vision_healer,
+)
 
 # Perception Pipeline
 # NOTE: Perception modules require AI dependencies (faiss-cpu, torch, transformers)
@@ -123,6 +152,15 @@ from .model.state import State as BrobotState
 # Transition System (Brobot-style)
 from .model.transition import StateTransition, StateTransitions, TransitionType
 
+# Navigation Reliability
+from .navigation import (
+    ReliabilityAwarePathFinder,
+    TransitionReliability,
+    create_reliability_aware_pathfinder,
+    get_transition_reliability,
+    set_transition_reliability,
+)
+
 # Primitives (Brobot-style)
 from .primitives import (
     KeyDown,
@@ -146,6 +184,15 @@ from .state_management import (
 )
 from .state_management.models import Element, StateGraph, Transition
 from .state_management.traversal import StateTraversal
+
+# Visual Validation
+from .validation import (
+    ChangeType,
+    ExpectedChange,
+    ValidationResult,
+    VisualDiff,
+    VisualValidator,
+)
 
 # Initialize DPI awareness after all imports
 # NOTE: Commented out automatic initialization to prevent blocking in headless environments
@@ -249,4 +296,43 @@ __all__ = [
     # Tools
     # "BrobotConverter",  # NOTE: Requires AI dependencies (faiss-cpu, torch, transformers)
     "QontinuiDSLParser",
+    # Action Cache System
+    "ActionCache",
+    "CacheEntry",
+    "CacheResult",
+    "CacheStats",
+    "get_action_cache",
+    "set_action_cache",
+    # Self-Healing System
+    "HealingConfig",
+    "HealingContext",
+    "HealingResult",
+    "HealingStrategy",
+    "LLMMode",
+    "VisionHealer",
+    "configure_healing",
+    "get_vision_healer",
+    "set_vision_healer",
+    # Recovery integration
+    "HealingRecoveryHandler",
+    "ElementNotFoundError",
+    "MatchNotFoundError",
+    "create_healing_handler",
+    "enable_healing_recovery",
+    # Navigation Reliability
+    "TransitionReliability",
+    "ReliabilityAwarePathFinder",
+    "create_reliability_aware_pathfinder",
+    "get_transition_reliability",
+    "set_transition_reliability",
+    # Visual Validation
+    "VisualValidator",
+    "ValidationResult",
+    "ExpectedChange",
+    "ChangeType",
+    "VisualDiff",
+    # Enhanced Matchers
+    "ImageMatcher",
+    "TemplateMatcher",
+    "CachedTemplateMatcher",
 ]

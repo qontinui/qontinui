@@ -39,6 +39,23 @@ class OCRBackend(Enum):
     NONE = "none"
 
 
+class AccessibilityBackend(Enum):
+    """Available accessibility capture backends.
+
+    AUTO: Automatically select based on platform and target
+    CDP: Chrome DevTools Protocol (web browsers, Electron, Tauri)
+    UIA: Windows UI Automation (native Windows apps)
+    ATSPI: AT-SPI2 (Linux desktop accessibility)
+    NONE: Disabled
+    """
+
+    AUTO = "auto"
+    CDP = "cdp"
+    UIA = "uia"
+    ATSPI = "atspi"
+    NONE = "none"
+
+
 class PlatformOverride(Enum):
     """Platform override options."""
 
@@ -73,6 +90,19 @@ class HALConfig:
     )
     platform_override: str = field(
         default_factory=lambda: os.getenv("QONTINUI_PLATFORM_OVERRIDE", PlatformOverride.AUTO.value)
+    )
+    accessibility_backend: str = field(
+        default_factory=lambda: os.getenv(
+            "QONTINUI_ACCESSIBILITY_BACKEND", AccessibilityBackend.NONE.value
+        )
+    )
+
+    # Accessibility settings
+    accessibility_cdp_host: str = field(
+        default_factory=lambda: os.getenv("QONTINUI_ACCESSIBILITY_CDP_HOST", "localhost")
+    )
+    accessibility_cdp_port: int = field(
+        default_factory=lambda: int(os.getenv("QONTINUI_ACCESSIBILITY_CDP_PORT", "9222"))
     )
 
     # Performance settings
@@ -146,6 +176,9 @@ class HALConfig:
         if self.platform_override not in [p.value for p in PlatformOverride]:
             raise ValueError(f"Invalid platform override: {self.platform_override}")
 
+        if self.accessibility_backend not in [b.value for b in AccessibilityBackend]:
+            raise ValueError(f"Invalid accessibility backend: {self.accessibility_backend}")
+
         # Validate numeric settings
         if self.capture_cache_ttl < 0:
             raise ValueError("Cache TTL must be non-negative")
@@ -167,6 +200,9 @@ class HALConfig:
             "matcher_backend": self.matcher_backend,
             "ocr_backend": self.ocr_backend,
             "platform_override": self.platform_override,
+            "accessibility_backend": self.accessibility_backend,
+            "accessibility_cdp_host": self.accessibility_cdp_host,
+            "accessibility_cdp_port": self.accessibility_cdp_port,
             "capture_cache_enabled": self.capture_cache_enabled,
             "capture_cache_ttl": self.capture_cache_ttl,
             "matcher_threads": self.matcher_threads,

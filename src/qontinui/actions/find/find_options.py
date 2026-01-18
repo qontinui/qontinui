@@ -19,7 +19,10 @@ TODO: Expand this class or create conversion utility to support:
 These would all follow the same cascade priority as similarity.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
+from typing import Any
 
 from ...model.element import Region
 
@@ -95,3 +98,30 @@ class FindOptions:
 
     color_tolerance: int = 0
     """Tolerance for color differences (0-255). 0 means exact match."""
+
+    # Self-healing options
+    enable_healing: bool = False
+    """Enable self-healing when pattern matching fails."""
+
+    healing_context_description: str = ""
+    """Description of element for healing context (e.g., 'login button')."""
+
+    state_id: str | None = None
+    """Current state machine state ID for cache key generation."""
+
+    action_type: str | None = None
+    """Type of action (click, type, etc.) for cache key and healing context."""
+
+    # Caching options
+    use_cache: bool = False
+    """Check action cache before template matching."""
+
+    store_in_cache: bool = False
+    """Store successful matches in action cache."""
+
+    # Validation options
+    enable_validation: bool = False
+    """Enable visual validation after successful match."""
+
+    pre_screenshot: Any = None
+    """Pre-action screenshot for validation (captured before action). numpy.ndarray or None."""

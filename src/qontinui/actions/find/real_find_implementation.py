@@ -2,11 +2,18 @@
 
 This is the real execution implementation in model-based GUI automation.
 It performs actual image finding using OpenCV template matching.
+
+Self-Healing Integration:
+When template matching fails and healing is enabled, this implementation:
+1. First checks the action cache for previously healed locations
+2. If cache miss, triggers VisionHealer for visual search + optional LLM healing
+3. Stores successful healed locations in cache for future use
+4. Optionally validates successful actions with VisualValidator
 """
 
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import cv2
 import numpy as np
@@ -14,12 +21,16 @@ import numpy as np
 from ...config.framework_settings import FrameworkSettings
 from ...find.matchers.template_matcher import TemplateMatcher
 from ...find.screenshot.pure_actions_provider import PureActionsScreenshotProvider
-from ...model.element import Pattern
+from ...model.element import Pattern, Region
+from ...model.match import Match as ModelMatch
 from ...reporting.events import EventType, emit_event
 from .find_options import FindOptions
 from .find_result import FindResult
 from .matches import Matches
 from .visual_debug import VisualDebugGenerator
+
+if TYPE_CHECKING:
+    from ...validation import ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +176,13 @@ class RealFindImplementation:
     ) -> FindResult:
         """Execute real find operation for a single pattern.
 
+        This method integrates:
+        1. Cache lookup - Check for cached location before expensive template matching
+        2. Template matching - Standard OpenCV matching
+        3. Self-healing - Fallback when template matching fails
+        4. Cache storage - Store successful matches for future use
+        5. Validation - Optional visual validation of results
+
         Args:
             pattern: Pattern to find
             options: Find configuration
@@ -190,6 +208,10 @@ class RealFindImplementation:
                 f.write(
                     f"[{ts}]   FindOptions: similarity={options.similarity}, find_all={options.find_all}\n"
                 )
+                f.write(
+                    f"[{ts}]   Self-healing: enable_healing={options.enable_healing}, "
+                    f"use_cache={options.use_cache}, store_in_cache={options.store_in_cache}\n"
+                )
         except Exception:
             pass
 
@@ -201,6 +223,10 @@ class RealFindImplementation:
             logger.debug(f"[FIND_DEBUG] Pattern pixel_data shape: {pattern.pixel_data.shape}")
         logger.debug(
             f"[FIND_DEBUG] FindOptions: similarity={options.similarity}, find_all={options.find_all}"
+        )
+        logger.debug(
+            f"[FIND_DEBUG] Self-healing: enable_healing={options.enable_healing}, "
+            f"use_cache={options.use_cache}, store_in_cache={options.store_in_cache}"
         )
 
         start_time = time.time()
@@ -232,49 +258,90 @@ class RealFindImplementation:
                 f"[TIMING] Screenshot capture took {screenshot_duration:.3f}s ({screenshot_duration*1000:.1f}ms) for pattern {pattern.name}"
             )
 
-            # Apply image preprocessing if any variant options are enabled
-            preprocessed_screenshot = screenshot
-            preprocessed_pattern = pattern
+            # Convert screenshot to numpy array for cache/healing operations
+            screenshot_array: np.ndarray
+            if hasattr(screenshot, "__array__"):
+                screenshot_array = np.array(screenshot)
+            else:
+                screenshot_array = screenshot
 
-            if options.grayscale or options.edge_detection or options.color_tolerance > 0:
-                logger.debug(
-                    f"[FIND_DEBUG] Applying preprocessing: grayscale={options.grayscale}, "
-                    f"edge_detection={options.edge_detection}, color_tolerance={options.color_tolerance}"
+            # ================================================================
+            # STEP 1: Try cache lookup first (if enabled)
+            # ================================================================
+            matches: list[ModelMatch] = []
+            debug_data: dict[str, Any] | None = None
+            cache_hit = False
+            healed = False
+
+            if options.use_cache:
+                matches, cache_hit = self._try_cache_lookup(pattern, screenshot_array, options)
+                if cache_hit:
+                    logger.info(f"[FIND] Cache hit for pattern {pattern.name}")
+                    debug_data = {"source": "cache"}
+
+            # ================================================================
+            # STEP 2: Template matching (if no cache hit)
+            # ================================================================
+            if not cache_hit:
+                # Apply image preprocessing if any variant options are enabled
+                preprocessed_screenshot = screenshot
+                preprocessed_pattern = pattern
+
+                if options.grayscale or options.edge_detection or options.color_tolerance > 0:
+                    logger.debug(
+                        f"[FIND_DEBUG] Applying preprocessing: grayscale={options.grayscale}, "
+                        f"edge_detection={options.edge_detection}, color_tolerance={options.color_tolerance}"
+                    )
+                    # Ensure BGR format
+                    if len(screenshot_array.shape) == 3 and screenshot_array.shape[2] == 4:
+                        screenshot_array = screenshot_array[:, :, :3]
+
+                    preprocessed_screenshot = self._preprocess_image(screenshot_array, options)
+                    preprocessed_pattern = self._preprocess_pattern(pattern, options)
+
+                # Perform template matching with debug support
+                logger.debug("[FIND_DEBUG] Calling template_matcher.find_matches_with_debug()")
+                matching_start_time = time.time()
+                matches, debug_data = self.template_matcher.find_matches_with_debug(
+                    screenshot=preprocessed_screenshot,
+                    pattern=preprocessed_pattern,
+                    find_all=options.find_all,
+                    similarity=options.similarity,
+                    search_region=options.search_region,
+                    collect_debug=collect_debug,
                 )
-                # Convert screenshot to numpy array if needed
-                if hasattr(screenshot, "__array__"):
-                    screenshot_array = np.array(screenshot)
-                else:
-                    screenshot_array = screenshot
+                matching_end_time = time.time()
+                matching_duration = matching_end_time - matching_start_time
 
-                # Ensure BGR format
-                if len(screenshot_array.shape) == 3 and screenshot_array.shape[2] == 4:
-                    screenshot_array = screenshot_array[:, :, :3]
+                logger.debug(
+                    f"[FIND_DEBUG] Template matching returned {len(matches) if matches else 0} matches"
+                )
+                # Log matching timing
+                logger.debug(
+                    f"[TIMING] Template matching took {matching_duration:.3f}s ({matching_duration*1000:.1f}ms) for pattern {pattern.name}"
+                )
 
-                preprocessed_screenshot = self._preprocess_image(screenshot_array, options)
-                preprocessed_pattern = self._preprocess_pattern(pattern, options)
+                # ================================================================
+                # STEP 3: Self-healing fallback (if template matching failed)
+                # ================================================================
+                if not matches and options.enable_healing:
+                    logger.info(
+                        f"[FIND] Template matching failed for {pattern.name}, attempting healing"
+                    )
+                    healed_matches = self._try_healing(pattern, screenshot_array, options)
+                    if healed_matches:
+                        matches = healed_matches
+                        healed = True
+                        if debug_data is None:
+                            debug_data = {}
+                        debug_data["source"] = "healing"
+                        logger.info(f"[FIND] Healing succeeded for pattern {pattern.name}")
 
-            # Perform template matching with debug support
-            logger.debug("[FIND_DEBUG] Calling template_matcher.find_matches_with_debug()")
-            matching_start_time = time.time()
-            matches, debug_data = self.template_matcher.find_matches_with_debug(
-                screenshot=preprocessed_screenshot,
-                pattern=preprocessed_pattern,
-                find_all=options.find_all,
-                similarity=options.similarity,
-                search_region=options.search_region,
-                collect_debug=collect_debug,
-            )
-            matching_end_time = time.time()
-            matching_duration = matching_end_time - matching_start_time
-
-            logger.debug(
-                f"[FIND_DEBUG] Template matching returned {len(matches) if matches else 0} matches"
-            )
-            # Log matching timing
-            logger.debug(
-                f"[TIMING] Template matching took {matching_duration:.3f}s ({matching_duration*1000:.1f}ms) for pattern {pattern.name}"
-            )
+                # ================================================================
+                # STEP 4: Store successful matches in cache (if enabled)
+                # ================================================================
+                if matches and options.store_in_cache and not cache_hit:
+                    self._store_in_cache(pattern, matches[0], options)
 
             duration_ms = (time.time() - start_time) * 1000
 
@@ -285,7 +352,7 @@ class RealFindImplementation:
 
             # Generate visual debug image if debug mode is enabled
             visual_debug_image = None
-            if collect_debug and debug_data:
+            if collect_debug and debug_data and not cache_hit:
                 logger.info("[REAL_FIND] Generating visual debug image")
                 visual_debug_image = self.visual_debug.generate_debug_image(
                     screenshot=screenshot,
@@ -297,6 +364,21 @@ class RealFindImplementation:
                     logger.info("[REAL_FIND] Visual debug image generated successfully")
                 else:
                     logger.warning("[REAL_FIND] Visual debug image generation returned None")
+
+            # ================================================================
+            # STEP 5: Optional visual validation
+            # ================================================================
+            validation_result = None
+            if matches and options.enable_validation:
+                validation_result = self._validate_match(
+                    options.pre_screenshot, screenshot_array, options
+                )
+                if validation_result and debug_data:
+                    debug_data["validation"] = {
+                        "success": validation_result.success,
+                        "message": validation_result.message,
+                        "change_percentage": validation_result.actual_change_percentage,
+                    }
 
             # Emit IMAGE_RECOGNITION event (this makes debug work everywhere!)
             logger.debug("[FIND_DEBUG] Calling _emit_image_recognition_event()")
@@ -311,6 +393,15 @@ class RealFindImplementation:
                 screenshot=screenshot,
             )
             logger.debug("[FIND_DEBUG] _emit_image_recognition_event() completed")
+
+            # Add source info to debug_data for transparency
+            if debug_data:
+                if cache_hit:
+                    debug_data["match_source"] = "cache"
+                elif healed:
+                    debug_data["match_source"] = "healing"
+                else:
+                    debug_data["match_source"] = "template_matching"
 
             return FindResult(
                 matches=Matches(matches),
@@ -740,4 +831,253 @@ class RealFindImplementation:
 
         except Exception as e:
             logger.error(f"Failed to encode matched region: {e}")
+            return None
+
+    # ========================================================================
+    # Self-Healing Integration Methods
+    # ========================================================================
+
+    def _try_cache_lookup(
+        self,
+        pattern: Pattern,
+        screenshot: np.ndarray,
+        options: FindOptions,
+    ) -> tuple[list[ModelMatch], bool]:
+        """Try to get cached location before template matching.
+
+        Args:
+            pattern: Pattern to look up
+            screenshot: Current screenshot for cache validation
+            options: Find options with cache settings
+
+        Returns:
+            Tuple of (matches_list, cache_hit). If cache_hit is True,
+            the matches_list contains the cached match. If False, list is empty.
+        """
+        if not options.use_cache:
+            return [], False
+
+        try:
+            from ...cache import get_action_cache
+
+            cache = get_action_cache()
+
+            # Build cache key
+            key = cache.build_key(
+                pattern=pattern,
+                state_id=options.state_id,
+                action_type=options.action_type,
+            )
+
+            # Try to get cached entry
+            result = cache.try_get(key, screenshot, pattern)
+
+            if result.hit and result.entry:
+                logger.info(
+                    f"[CACHE_HIT] Found cached location for pattern {pattern.name} "
+                    f"at ({result.entry.coordinates.x}, {result.entry.coordinates.y})"
+                )
+
+                # Convert cached coordinates to Match object
+                from ...model.element.location import Location
+
+                coords = result.entry.coordinates
+                region = Region(
+                    x=coords.region_x,
+                    y=coords.region_y,
+                    width=coords.region_width,
+                    height=coords.region_height,
+                )
+
+                # Create match using cached data - Match uses score and target (Location)
+                match = ModelMatch(
+                    score=result.entry.confidence,
+                    target=Location(region=region),
+                )
+
+                return [match], True
+
+            logger.debug(f"[CACHE_MISS] No valid cache entry for pattern {pattern.name}")
+            return [], False
+
+        except Exception as e:
+            logger.warning(f"[CACHE_ERROR] Failed to check cache: {e}")
+            return [], False
+
+    def _try_healing(
+        self,
+        pattern: Pattern,
+        screenshot: np.ndarray,
+        options: FindOptions,
+    ) -> list[ModelMatch]:
+        """Try self-healing when template matching fails.
+
+        Args:
+            pattern: Pattern that failed to match
+            screenshot: Current screenshot
+            options: Find options with healing settings
+
+        Returns:
+            List of matches from healing (empty if healing failed)
+        """
+        if not options.enable_healing:
+            return []
+
+        try:
+            from ...healing import HealingContext, get_vision_healer
+
+            healer = get_vision_healer()
+
+            # Build healing context
+            description = options.healing_context_description or pattern.name
+            context = HealingContext(
+                original_description=description,
+                action_type=options.action_type,
+                failure_reason="Template matching failed - no matches above threshold",
+                state_id=options.state_id,
+            )
+
+            # Get pattern pixel data for visual search
+            pattern_pixels = pattern.pixel_data if pattern.pixel_data is not None else None
+
+            # Attempt healing
+            logger.info(f"[HEALING] Attempting to heal failed lookup for '{description}'")
+            result = healer.heal(screenshot, context, pattern_pixels)
+
+            if result.success and result.location:
+                logger.info(
+                    f"[HEALING_SUCCESS] Found element via {result.strategy.value} "
+                    f"at ({result.location.x}, {result.location.y}) "
+                    f"confidence={result.location.confidence:.3f}"
+                )
+
+                # Convert healed location to Match
+                from ...model.element.location import Location
+
+                loc = result.location
+                region = Region(
+                    x=loc.region[0] if loc.region else loc.x,
+                    y=loc.region[1] if loc.region else loc.y,
+                    width=loc.region[2] if loc.region else 1,
+                    height=loc.region[3] if loc.region else 1,
+                )
+
+                # Create match - Match uses score and target (Location)
+                match = ModelMatch(
+                    score=loc.confidence,
+                    target=Location(region=region),
+                )
+
+                # Store in cache if enabled
+                if options.store_in_cache:
+                    self._store_in_cache(pattern, match, options)
+
+                return [match]
+
+            logger.warning(
+                f"[HEALING_FAILED] Could not heal lookup for '{description}': {result.message}"
+            )
+            return []
+
+        except Exception as e:
+            logger.error(f"[HEALING_ERROR] Healing failed with exception: {e}")
+            return []
+
+    def _store_in_cache(
+        self,
+        pattern: Pattern,
+        match: ModelMatch,
+        options: FindOptions,
+    ) -> None:
+        """Store successful match in action cache.
+
+        Args:
+            pattern: Pattern that was found
+            match: Match result to cache
+            options: Find options with cache settings
+        """
+        if not options.store_in_cache:
+            return
+
+        try:
+            from ...cache import get_action_cache
+
+            cache = get_action_cache()
+
+            # Match.region property can return None
+            region = match.region
+            if region is None:
+                logger.warning(
+                    f"[CACHE_STORE_ERROR] Cannot cache match without region for {pattern.name}"
+                )
+                return
+
+            # Build cache key
+            key = cache.build_key(
+                pattern=pattern,
+                state_id=options.state_id,
+                action_type=options.action_type,
+            )
+
+            # Get center coordinates
+            center_x = region.x + region.width // 2
+            center_y = region.y + region.height // 2
+
+            # Store in cache
+            success = cache.store(
+                key=key,
+                coordinates=(center_x, center_y),
+                region=region,
+                confidence=match.similarity,
+                pattern=pattern,
+            )
+
+            if success:
+                logger.info(
+                    f"[CACHE_STORE] Cached match for pattern {pattern.name} "
+                    f"at ({center_x}, {center_y})"
+                )
+
+        except Exception as e:
+            logger.warning(f"[CACHE_STORE_ERROR] Failed to store in cache: {e}")
+
+    def _validate_match(
+        self,
+        pre_screenshot: np.ndarray | None,
+        post_screenshot: np.ndarray,
+        options: FindOptions,
+    ) -> "ValidationResult | None":
+        """Validate that the action produced expected visual change.
+
+        Args:
+            pre_screenshot: Screenshot before action (from options)
+            post_screenshot: Screenshot after action
+            options: Find options with validation settings
+
+        Returns:
+            ValidationResult if validation was performed, None otherwise
+        """
+        if not options.enable_validation or pre_screenshot is None:
+            return None
+
+        try:
+            from ...validation import get_visual_validator
+
+            validator = get_visual_validator()
+
+            # Validate with default expectation (any change)
+            result = validator.validate(pre_screenshot, post_screenshot)
+
+            if result.success:
+                logger.debug(
+                    f"[VALIDATION_SUCCESS] Visual change detected: "
+                    f"{result.actual_change_percentage:.2f}%"
+                )
+            else:
+                logger.warning(f"[VALIDATION_WARNING] No visual change detected: {result.message}")
+
+            return result
+
+        except Exception as e:
+            logger.warning(f"[VALIDATION_ERROR] Validation failed: {e}")
             return None

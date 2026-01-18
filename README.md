@@ -133,12 +133,89 @@ qontinui/
 - ✅ Process and state machine execution modes
 - ✅ Cross-platform input control (PyAutoGUI, pynput)
 - ✅ Hardware abstraction layer for multiple backends
+- ✅ **Self-healing system** with action caching, visual validation, and optional LLM assistance
+- ✅ **AWAS integration** for structured web automation via AI action manifests
 
 ### Planned
 - 🔄 AI-enhanced visual recognition (SAM, CLIP)
 - 🔄 Domain-specific language (DSL)
 - 🔄 Advanced Brobot migration tools
 - 🔄 Cloud execution via qontinui-web
+
+## Self-Healing
+
+Qontinui includes an intelligent self-healing system that automatically recovers from element lookup failures:
+
+- **Action Caching** - Remembers successful element locations for instant replay
+- **Visual Search** - Finds elements at lower thresholds and multiple scales when exact matching fails
+- **LLM Assistance** - Optionally uses vision models (local Ollama or cloud APIs) to locate elements by description
+
+```python
+from qontinui.actions.find import FindAction, FindOptions
+from qontinui.healing import HealingConfig, configure_healing
+
+# Enable local LLM healing (optional)
+configure_healing(HealingConfig.with_ollama())
+
+# Find with self-healing enabled
+options = FindOptions(
+    similarity=0.85,
+    enable_healing=True,
+    healing_context_description="Submit button",
+    use_cache=True,
+    store_in_cache=True,
+)
+
+result = await FindAction().find(pattern, options)
+```
+
+See [Self-Healing Documentation](docs/self-healing.md) for complete configuration options and API reference.
+
+## AWAS (AI Web Action Standard)
+
+Qontinui includes AWAS support for structured web automation. AWAS enables websites to expose machine-readable action manifests that AI agents can discover and execute.
+
+### Key Components
+
+```
+qontinui/src/qontinui/awas/
+├── types.py       # Pydantic models for manifests and actions
+├── discovery.py   # Manifest discovery with caching
+├── executor.py    # HTTP action execution
+└── extractor.py   # Web extraction strategy
+```
+
+### Usage
+
+```python
+from qontinui.awas.discovery import AwasDiscoveryService
+from qontinui.awas.executor import AwasExecutor
+
+# Discover AWAS manifest
+discovery = AwasDiscoveryService()
+manifest = await discovery.discover("https://example.com")
+
+# List available actions
+for action in manifest.actions:
+    print(f"{action.method} {action.endpoint}: {action.intent}")
+
+# Execute an action
+executor = AwasExecutor()
+result = await executor.execute(
+    manifest=manifest,
+    action_id="list_items",
+    params={"limit": 10}
+)
+```
+
+### Benefits
+
+- **10-100x faster** than vision-based automation
+- **No visual templates** to maintain
+- **Typed parameters** with validation
+- **Structured responses** for reliable parsing
+
+See [AWAS Integration Guide](docs/awas-integration.md) for complete API reference.
 
 ## Testing
 
@@ -167,6 +244,7 @@ Qontinui is a faithful port of Brobot. When contributing, please preserve Brobot
 
 - **GitHub**: [github.com/qontinui/qontinui](https://github.com/qontinui/qontinui)
 - **Issues**: [GitHub Issues](https://github.com/qontinui/qontinui/issues)
+- **Self-Healing Guide**: [docs/self-healing.md](docs/self-healing.md)
 - **MultiState Docs**: [qontinui.github.io/multistate](https://qontinui.github.io/multistate/)
 - **Research Paper**: [Springer SoSyM](https://link.springer.com/article/10.1007/s10270-025-01319-9)
 

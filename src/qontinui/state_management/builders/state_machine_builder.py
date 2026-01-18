@@ -42,6 +42,7 @@ Usage:
 """
 
 import logging
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -639,7 +640,7 @@ class ImageMatchingStateMachineBuilder:
     def __init__(
         self,
         screenshots_dir: Path,
-        similarity_threshold: float = 0.8,
+        similarity_threshold: float = 0.7,
     ):
         """
         Initialize the builder.
@@ -790,6 +791,11 @@ class ImageMatchingStateMachineBuilder:
                 parent[root_i] = root_j
 
         # Pairwise comparison to find identical elements across (or within) screens
+        num_images = len(self.tracked_images)
+        total_comparisons = (num_images * (num_images - 1)) // 2
+        logger.info(f"[PERF_DEBUG] Starting pairwise comparison for {num_images} images ({total_comparisons} potential comparisons)")
+        start_dedup = time.time()
+
         for i in range(len(self.tracked_images)):
             for j in range(i + 1, len(self.tracked_images)):
                 tracked = self.tracked_images[i]
@@ -804,23 +810,63 @@ class ImageMatchingStateMachineBuilder:
                     t1 = tracked.image_data
                     t2 = other_tracked.image_data
                     if t1 is not None and t2 is not None:
-                        # Ensure same size for comparison
-                        if t1.shape != t2.shape:
-                            # Resize to common size (t1's size)
-                            h, w = t1.shape[:2]
-                            t2_resized = self._cv2.resize(t2, (w, h))
+                        # CONTAINMENT CHECK: Check if one image is contained within the other
+                        # This handles "Fixed Header" scenarios where the header width varies (e.g. scrollbar, viewport change)
+                        # but the content (logo, nav) is identical. Simple resizing distorts the text.
+
+                        h1, w1 = t1.shape[:2]
+                        h2, w2 = t2.shape[:2]
+
+                        # Determine big vs small
+                        if h1 * w1 > h2 * w2:
+                            big, small = t1, t2
+                            name_big, name_small = tracked.name, other_tracked.name
                         else:
-                            t2_resized = t2
+                            big, small = t2, t1
+                            name_big, name_small = other_tracked.name, tracked.name
 
-                        res = self._cv2.matchTemplate(t1, t2_resized, self._cv2.TM_CCOEFF_NORMED)
-                        _, max_v, _, _ = self._cv2.minMaxLoc(res)
+                        score = 0.0
+                        # Ensure small fits inside big
+                        if small.shape[0] <= big.shape[0] and small.shape[1] <= big.shape[1]:
+                             res = self._cv2.matchTemplate(big, small, self._cv2.TM_CCOEFF_NORMED)
+                             _, max_val, _, _ = self._cv2.minMaxLoc(res)
+                             score = float(max_val)
+                        else:
+                             # Fallback to resize if containment impossible (e.g. T1 tall/thin, T2 short/wide)
+                             # Resize T2 to match T1
+                             if t1.shape != t2.shape:
+                                 h, w = t1.shape[:2]
+                                 t2_resized = self._cv2.resize(t2, (w, h))
+                             else:
+                                 t2_resized = t2
 
-                        if max_v >= self.similarity_threshold:
-                            # They are the same element!
+                             res = self._cv2.matchTemplate(t2_resized, t1, self._cv2.TM_CCOEFF_NORMED)
+                             score = float(res[0][0])
+
+                        # LOGGING: Debug why potential matches fail
+                        if score < self.similarity_threshold and score > 0.4:
+                             logger.debug(
+                                 f"[DEDUP DEBUG] Failed match: {tracked.name} vs {other_tracked.name} "
+                                 f"Score={score:.4f} Threshold={self.similarity_threshold} "
+                                 f"Shapes: {t1.shape} vs {t2.shape}"
+                             )
+
+                        if score >= self.similarity_threshold:
                             union(tracked.id, other_tracked.id)
+                            # Store match info for later bbox alignment
+                            if tracked.matches.get(other_tracked.source_screenshot_id) is None:
+                                tracked.matches[other_tracked.source_screenshot_id] = ImageMatch(
+                                    screenshot_id=other_tracked.source_screenshot_id,
+                                    found=True,
+                                    confidence=score,
+                                    bbox=other_tracked.source_bbox
+                                )
                 except Exception as e:
-                    logger.debug(f"Visual deduplication check failed: {e}")
+                    logger.warning(f"Error comparing images {tracked.id} and {other_tracked.id}: {e}")
                     continue
+
+        duration_dedup = time.time() - start_dedup
+        logger.info(f"[PERF_DEBUG] Pairwise deduplication finished in {duration_dedup:.2f}s")
 
         # Merge groups
         groups: dict[str, list[TrackedImage]] = defaultdict(list)
@@ -907,58 +953,67 @@ class ImageMatchingStateMachineBuilder:
 
             # Build stateImages for this state
             state_images = []
+            # Build stateImages for this state
+            state_images = []
             for img in images:
-                # Use the source screenshot's bbox for search regions
-                search_regions = [
-                    {
-                        "id": str(uuid4()),
-                        "name": f"Region for {img.name}",
-                        "x": int(img.source_bbox.get("x", 0)),
-                        "y": int(img.source_bbox.get("y", 0)),
-                        "width": int(img.source_bbox.get("width", 1)),
-                        "height": int(img.source_bbox.get("height", 1)),
-                        "offsetX": 0,
-                        "offsetY": 0,
-                    }
-                ]
+                # Create a specialized stateImage for EACH screen this image was found on.
+                # This ensures that we use the specific bounding box for that screen,
+                # tackling the issue where elements move (e.g. footer) or reflow.
+                for sid in img.screens_found:
+                    # Determine BBox for this screen
+                    bbox = img.source_bbox
+                    # If this is the source screen, use source_bbox.
+                    # If it's a matched screen, try to find the match bbox.
+                    bbox_source = "default"
+                    if sid == img.source_screenshot_id:
+                        bbox = img.source_bbox
+                        bbox_source = "source"
+                    elif sid in img.matches and img.matches[sid].found and img.matches[sid].bbox:
+                        bbox = img.matches[sid].bbox
+                        bbox_source = "match"
 
-                # Check if position is fixed across all found screenshots
-                is_fixed = True
-                if len(img.matches) > 1:
-                    positions = [
-                        (m.bbox.get("x", 0), m.bbox.get("y", 0))
-                        for m in img.matches.values()
-                        if m.found and m.bbox
-                    ]
-                    if len(positions) > 1:
-                        first_pos = positions[0]
-                        is_fixed = all(
-                            abs(p[0] - first_pos[0]) < 10 and abs(p[1] - first_pos[1]) < 10
-                            for p in positions
-                        )
+                    # LOGGING: Trace why coord might be wrong
+                    logger.debug(f"[COORD DEBUG] StateImg for {img.name} on {sid}: Source={bbox_source}, BBox={bbox.get('x')},{bbox.get('y')} {bbox.get('width')}x{bbox.get('height')}")
 
-                state_image = {
-                    "id": str(uuid4()),
-                    "name": img.name or f"Image {img.id[:8]}",
-                    "patterns": [
+                    # Create search region for this specific instance
+                    search_regions = [
                         {
                             "id": str(uuid4()),
-                            "name": "Default pattern",
-                            "imageId": None,
-                            "searchRegions": search_regions,
-                            "fixed": is_fixed,
-                            "similarity": 0.8,
+                            "name": f"Region for {img.name} on {sid}",
+                            "x": int(bbox.get("x", 0)),
+                            "y": int(bbox.get("y", 0)),
+                            "width": int(bbox.get("width", 1)),
+                            "height": int(bbox.get("height", 1)),
+                            "offsetX": 0,
+                            "offsetY": 0,
                         }
-                    ],
-                    "shared": False,
-                    "source": "web-extraction",
-                    "searchMode": "default",
-                    "searchRegions": search_regions,
-                    "screenshotId": img.source_screenshot_id,
-                    "screensFound": list(img.screens_found),  # Which screenshots have this image
-                    "extractionCategory": img.extraction_category,
-                }
-                state_images.append(state_image)
+                    ]
+
+                    # Unique ID for this instance
+                    img_instance_id = str(uuid4())
+
+                    state_image = {
+                        "id": img_instance_id,
+                        "name": img.name or f"Image {img.id[:8]}",
+                        "patterns": [
+                            {
+                                "id": str(uuid4()),
+                                "name": "Default pattern",
+                                "imageId": None,
+                                "searchRegions": search_regions,
+                                "fixed": False, # Per-screen instance is fixed to its own region
+                                "similarity": self.similarity_threshold,
+                            }
+                        ],
+                        "shared": False,
+                        "source": "web-extraction",
+                        "searchMode": "default",
+                        "searchRegions": search_regions,
+                        "screenshotId": sid, # Crucial: Associate with specific screenshot
+                        "screensFound": [sid], # Only valid for this screen
+                        "extractionCategory": img.extraction_category,
+                    }
+                    state_images.append(state_image)
 
             state_config = {
                 "id": state_id,
@@ -1043,7 +1098,7 @@ class ImageMatchingStateMachineBuilder:
 def build_state_machine_from_extraction_result(
     extraction_result: "ExtractionResult",
     screenshots_dir: Path | str,
-    similarity_threshold: float = 0.8,
+    similarity_threshold: float = 0.7,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
     Build a state machine from an ExtractionResult using image matching.
