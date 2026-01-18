@@ -22,9 +22,10 @@ __all__ = [
 # Conditionally export UIA capture on Windows
 if platform.system() == "Windows":
     try:
-        from qontinui.hal.implementations.accessibility.uia_capture import (
+        from qontinui.hal.implementations.accessibility.uia_capture import (  # noqa: F401
             UIAAccessibilityCapture,
         )
+
         __all__.append("UIAAccessibilityCapture")
     except ImportError:
         # uiautomation module not installed

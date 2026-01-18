@@ -269,9 +269,7 @@ class IAccessibilityCapture(ABC):
                 state_strs.append("expanded")
 
             state_suffix = f" [{', '.join(state_strs)}]" if state_strs else ""
-            lines.append(
-                f"- {node.ref}: {node.role.value}{name_str}{value_str}{state_suffix}"
-            )
+            lines.append(f"- {node.ref}: {node.role.value}{name_str}{value_str}{state_suffix}")
             element_count += 1
 
             # Recurse into children

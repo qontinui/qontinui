@@ -304,8 +304,7 @@ class HealingHistory:
         if element:
             signature = self._compute_element_signature(element)
             candidates = [
-                (r, s * 2.0) if r.element_signature == signature else (r, s)
-                for r, s in candidates
+                (r, s * 2.0) if r.element_signature == signature else (r, s) for r, s in candidates
             ]
 
         # Sort by score (relevance)
@@ -336,9 +335,7 @@ class HealingHistory:
             # Running average
             n = stats[strategy]["total_uses"]
             old_avg = stats[strategy]["avg_confidence"]
-            stats[strategy]["avg_confidence"] = (
-                old_avg * (n - 1) + record.confidence
-            ) / n
+            stats[strategy]["avg_confidence"] = (old_avg * (n - 1) + record.confidence) / n
 
         return stats
 
@@ -377,10 +374,7 @@ class HealingHistory:
 
         for idx in self._selector_index[original]:
             record = self.records[idx]
-            if (
-                record.healed_selector == healed
-                and record.url_pattern == url_pattern
-            ):
+            if record.healed_selector == healed and record.url_pattern == url_pattern:
                 return record
 
         return None
@@ -400,6 +394,7 @@ class HealingHistory:
         """Extract domain from URL as pattern."""
         try:
             from urllib.parse import urlparse
+
             parsed = urlparse(url)
             return parsed.netloc or url
         except Exception:
@@ -543,9 +538,7 @@ class SelectorHealer:
             return healing_result
 
         # Strategy 1: Selector variations
-        result = await self._try_selector_variations(
-            broken_selector, page, attempts
-        )
+        result = await self._try_selector_variations(broken_selector, page, attempts)
         if result:
             healing_result = HealingResult(
                 success=True,
@@ -580,9 +573,7 @@ class SelectorHealer:
 
         # Strategy 3: Aria-label match
         if original_element.aria_label:
-            result = await self._try_aria_match(
-                original_element.aria_label, page, attempts
-            )
+            result = await self._try_aria_match(original_element.aria_label, page, attempts)
             if result:
                 healing_result = HealingResult(
                     success=True,
@@ -619,9 +610,7 @@ class SelectorHealer:
 
         # Strategy 5: LLM recovery
         if self.llm_client:
-            result = await self._try_llm_recovery(
-                original_element, page, attempts
-            )
+            result = await self._try_llm_recovery(original_element, page, attempts)
             if result:
                 healing_result = HealingResult(
                     success=True,
@@ -811,9 +800,7 @@ class SelectorHealer:
                     if dx <= self.position_tolerance and dy <= self.position_tolerance:
                         # Found element near original position
                         # Generate a selector for it
-                        selector = await self._generate_selector_for_element(
-                            element, page
-                        )
+                        selector = await self._generate_selector_for_element(element, page)
                         attempt.success = True
                         attempt.selector_tried = selector
                         attempts.append(attempt)
@@ -843,9 +830,7 @@ class SelectorHealer:
         try:
             # Extract current page elements
             extractor = InteractiveElementExtractor()
-            current_elements = await extractor.extract_interactive_elements(
-                page, "heal_screenshot"
-            )
+            current_elements = await extractor.extract_interactive_elements(page, "heal_screenshot")
 
             if not current_elements:
                 attempt.error = "No elements found on page"

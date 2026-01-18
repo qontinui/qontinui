@@ -344,8 +344,7 @@ class DOMStabilityWaiter:
                 time_since_mutation_ms = (time.time() - last_mutation_time) * 1000
                 if time_since_mutation_ms >= self.stability_threshold_ms:
                     logger.debug(
-                        f"DOM stable after {elapsed_ms:.0f}ms "
-                        f"({len(mutations)} mutations)"
+                        f"DOM stable after {elapsed_ms:.0f}ms " f"({len(mutations)} mutations)"
                     )
                     break
 
@@ -509,7 +508,7 @@ class LazyContentLoader:
         scroll_count = 0
         elements_loaded = 0
 
-        for i in range(self.max_scrolls):
+        for _ in range(self.max_scrolls):
             # Scroll
             if scroll_direction == "down":
                 await page.evaluate("window.scrollBy(0, window.innerHeight)")
@@ -525,9 +524,7 @@ class LazyContentLoader:
             # Check if we've reached the end
             current_snapshot = result.final_snapshot
             if current_snapshot:
-                new_elements = (
-                    current_snapshot.element_count - initial_snapshot.element_count
-                )
+                new_elements = current_snapshot.element_count - initial_snapshot.element_count
                 elements_loaded = max(elements_loaded, new_elements)
 
                 # Check if at bottom/top
@@ -553,9 +550,7 @@ class LazyContentLoader:
             "scroll_count": scroll_count,
             "elements_loaded": elements_loaded,
             "initial_element_count": initial_snapshot.element_count,
-            "final_element_count": (
-                current_snapshot.element_count if current_snapshot else 0
-            ),
+            "final_element_count": (current_snapshot.element_count if current_snapshot else 0),
         }
 
     async def click_load_more(
@@ -615,8 +610,7 @@ class LazyContentLoader:
             "click_count": click_count,
             "initial_element_count": initial_snapshot.element_count,
             "final_element_count": final_snapshot.element_count,
-            "elements_added": final_snapshot.element_count
-            - initial_snapshot.element_count,
+            "elements_added": final_snapshot.element_count - initial_snapshot.element_count,
         }
 
 
@@ -667,12 +661,8 @@ class ContentChangeDetector:
         current = await waiter._take_snapshot(page)
 
         # Calculate change metrics
-        element_diff = abs(
-            current.element_count - self.baseline_snapshot.element_count
-        )
-        element_change_ratio = element_diff / max(
-            self.baseline_snapshot.element_count, 1
-        )
+        element_diff = abs(current.element_count - self.baseline_snapshot.element_count)
+        element_change_ratio = element_diff / max(self.baseline_snapshot.element_count, 1)
 
         hash_changed = current.content_hash != self.baseline_snapshot.content_hash
 
@@ -683,9 +673,7 @@ class ContentChangeDetector:
             "content_hash_changed": hash_changed,
         }
 
-        has_changed = (
-            element_change_ratio >= self.change_threshold or hash_changed
-        )
+        has_changed = element_change_ratio >= self.change_threshold or hash_changed
 
         return has_changed, details
 

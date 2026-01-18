@@ -25,6 +25,7 @@ class BoundsLike(Protocol):
     width: int
     height: int
 
+
 if TYPE_CHECKING:
     from qontinui.vision.verification.config import VisionConfig
 

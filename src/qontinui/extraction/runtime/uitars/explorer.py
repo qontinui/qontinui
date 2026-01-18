@@ -300,7 +300,7 @@ class UITARSExplorer(RuntimeExtractor):
                 # Check for loops
                 if config.detect_loops:
                     state_hash = self._hash_screenshot(screenshot)
-                    recent_hashes = state_hashes[-config.loop_threshold:]
+                    recent_hashes = state_hashes[-config.loop_threshold :]
                     if state_hash in recent_hashes:
                         logger.info("Loop detected, breaking out")
                         trajectory.complete("loop_detected")
@@ -355,11 +355,13 @@ class UITARSExplorer(RuntimeExtractor):
                 if config.save_screenshots and config.output_dir:
                     step.screenshot_before_path = await self._save_screenshot(
                         screenshot,
-                        config.output_dir / f"step_{step_index:03d}_before.{self.settings.screenshot_format}",
+                        config.output_dir
+                        / f"step_{step_index:03d}_before.{self.settings.screenshot_format}",
                     )
                     step.screenshot_after_path = await self._save_screenshot(
                         screenshot_after,
-                        config.output_dir / f"step_{step_index:03d}_after.{self.settings.screenshot_format}",
+                        config.output_dir
+                        / f"step_{step_index:03d}_after.{self.settings.screenshot_format}",
                     )
 
                 trajectory.add_step(step)
@@ -382,16 +384,24 @@ class UITARSExplorer(RuntimeExtractor):
                 logger.error(f"Exploration step {step_index} failed: {e}")
                 step = UITARSStep(
                     step_index=step_index,
-                    thought=result.thought if "result" in dir() else UITARSStep(
-                        step_index=step_index,
-                        thought=type("Thought", (), {"reasoning": str(e)})(),
-                        action=type("Action", (), {"action_type": UITARSActionType.WAIT})(),
-                    ).thought,
-                    action=result.action if "result" in dir() else UITARSStep(
-                        step_index=step_index,
-                        thought=type("Thought", (), {"reasoning": str(e)})(),
-                        action=type("Action", (), {"action_type": UITARSActionType.WAIT})(),
-                    ).action,
+                    thought=(
+                        result.thought
+                        if "result" in dir()
+                        else UITARSStep(
+                            step_index=step_index,
+                            thought=type("Thought", (), {"reasoning": str(e)})(),
+                            action=type("Action", (), {"action_type": UITARSActionType.WAIT})(),
+                        ).thought
+                    ),
+                    action=(
+                        result.action
+                        if "result" in dir()
+                        else UITARSStep(
+                            step_index=step_index,
+                            thought=type("Thought", (), {"reasoning": str(e)})(),
+                            action=type("Action", (), {"action_type": UITARSActionType.WAIT})(),
+                        ).action
+                    ),
                     success=False,
                     error=str(e),
                 )
@@ -521,7 +531,13 @@ class UITARSExplorer(RuntimeExtractor):
                     pyautogui.hscroll(scroll_amt)
             elif action_type == "hover" and x is not None and y is not None:
                 pyautogui.moveTo(x, y)
-            elif action_type == "drag" and x is not None and y is not None and end_x is not None and end_y is not None:
+            elif (
+                action_type == "drag"
+                and x is not None
+                and y is not None
+                and end_x is not None
+                and end_y is not None
+            ):
                 pyautogui.moveTo(x, y)
                 pyautogui.drag(end_x - x, end_y - y)
             elif action_type == "hotkey" and keys:

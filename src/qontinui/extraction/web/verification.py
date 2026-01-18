@@ -238,8 +238,12 @@ class ClickableVerifier:
 
             if matches and len(matches) > 0:
                 match = matches[0]
-                match_x = match.region.x if hasattr(match, "region") and match.region is not None else 0
-                match_y = match.region.y if hasattr(match, "region") and match.region is not None else 0
+                match_x = (
+                    match.region.x if hasattr(match, "region") and match.region is not None else 0
+                )
+                match_y = (
+                    match.region.y if hasattr(match, "region") and match.region is not None else 0
+                )
                 confidence = match.similarity if hasattr(match, "similarity") else 0.0
 
                 # Calculate expected location from bounding box

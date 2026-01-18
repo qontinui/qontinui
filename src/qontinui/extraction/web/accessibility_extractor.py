@@ -153,9 +153,7 @@ class A11yNode:
             pressed=pw_node.get("pressed"),
             selected=pw_node.get("selected"),
             level=pw_node.get("level"),
-            children=[
-                cls.from_playwright(c) for c in pw_node.get("children", [])
-            ],
+            children=[cls.from_playwright(c) for c in pw_node.get("children", [])],
         )
 
 
@@ -198,9 +196,7 @@ class A11yTree:
             self._find_by_role_recursive(self.root, role, results)
         return results
 
-    def _find_by_role_recursive(
-        self, node: A11yNode, role: str, results: list[A11yNode]
-    ) -> None:
+    def _find_by_role_recursive(self, node: A11yNode, role: str, results: list[A11yNode]) -> None:
         if node.role == role:
             results.append(node)
         for child in node.children:
@@ -220,9 +216,9 @@ class A11yTree:
         if node.name:
             parts.append(f'"{node.name}"')
         if node.description:
-            parts.append(f'({node.description})')
+            parts.append(f"({node.description})")
         if node.value is not None:
-            parts.append(f'value={node.value}')
+            parts.append(f"value={node.value}")
         if node.checked is not None:
             parts.append("checked" if node.checked else "unchecked")
         if node.expanded is not None:
@@ -403,8 +399,6 @@ class AccessibilityExtractor:
         """
         Extract accessibility tree with retry logic.
         """
-        last_error: Exception | None = None
-
         for attempt in range(self._max_retries + 1):
             client = None
             should_detach = not self._cache_cdp_session
@@ -426,7 +420,6 @@ class AccessibilityExtractor:
                 return tree
 
             except Exception as e:
-                last_error = e
                 # Invalidate cache on error
                 if self._cache_cdp_session:
                     self._cached_client = None
@@ -688,8 +681,7 @@ class AccessibilityExtractor:
 
         matched_count = sum(1 for e in enriched if e.match_confidence > 0)
         logger.info(
-            f"Enriched {len(elements)} elements with a11y data "
-            f"({matched_count} matched)"
+            f"Enriched {len(elements)} elements with a11y data " f"({matched_count} matched)"
         )
 
         return enriched

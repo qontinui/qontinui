@@ -149,7 +149,5 @@ async def with_timeout(
     """
     try:
         return await asyncio.wait_for(coro, timeout=timeout_seconds)
-    except TimeoutError:
-        raise ExtractionTimeoutError(
-            f"{operation_name} timed out after {timeout_seconds}s"
-        )
+    except TimeoutError as e:
+        raise ExtractionTimeoutError(f"{operation_name} timed out after {timeout_seconds}s") from e

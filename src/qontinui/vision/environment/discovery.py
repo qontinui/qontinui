@@ -419,7 +419,8 @@ class GUIEnvironmentDiscovery:
                     action_pairs=list(
                         zip(
                             [p[0] for p in action_pairs],
-                            [p[1] for p in action_pairs], strict=False,
+                            [p[1] for p in action_pairs],
+                            strict=False,
                         )
                     ),
                     actions=actions,

@@ -100,9 +100,7 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
 
         # Identify common text regions
         shape = screenshots[0].shape[:2]
-        text_regions = self._identify_text_regions(
-            all_detections, (int(shape[0]), int(shape[1]))
-        )
+        text_regions = self._identify_text_regions(all_detections, (int(shape[0]), int(shape[1])))
 
         # Detect languages
         languages = self._detect_languages(all_detections)
@@ -222,7 +220,9 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
         """
         detections = []
 
-        for idx, (_screenshot, ocr_result) in enumerate(zip(screenshots, ocr_results, strict=False)):
+        for idx, (_screenshot, ocr_result) in enumerate(
+            zip(screenshots, ocr_results, strict=False)
+        ):
             for item in ocr_result:
                 bbox = item.get("bbox")
                 if not bbox:

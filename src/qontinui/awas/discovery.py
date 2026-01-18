@@ -218,7 +218,7 @@ class AwasDiscoveryService:
 
         # Find all elements with data-awas-* attributes
         # This regex finds opening tags with data-awas attributes
-        awas_pattern = r'<(\w+)[^>]*\bdata-awas-(?:element|action)[^>]*>'
+        awas_pattern = r"<(\w+)[^>]*\bdata-awas-(?:element|action)[^>]*>"
 
         for match in re.finditer(awas_pattern, html, re.IGNORECASE):
             tag_html = match.group(0)

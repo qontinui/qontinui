@@ -117,9 +117,7 @@ class DeepLocatorResolver:
             logger.error(f"Error resolving frame {frame_selector}: {e}")
             return None
 
-    async def resolve_frame_chain(
-        self, frame_selectors: list[str]
-    ) -> Frame | None:
+    async def resolve_frame_chain(self, frame_selectors: list[str]) -> Frame | None:
         """
         Resolve a chain of frame selectors to the deepest frame.
 
@@ -139,16 +137,12 @@ class DeepLocatorResolver:
             try:
                 iframe_element = await current_frame.query_selector(frame_selector)
                 if not iframe_element:
-                    logger.warning(
-                        f"Frame not found in chain: {frame_selector}"
-                    )
+                    logger.warning(f"Frame not found in chain: {frame_selector}")
                     return None
 
                 next_frame = await iframe_element.content_frame()
                 if not next_frame:
-                    logger.warning(
-                        f"No content frame for: {frame_selector}"
-                    )
+                    logger.warning(f"No content frame for: {frame_selector}")
                     return None
 
                 current_frame = next_frame
@@ -188,9 +182,7 @@ class DeepLocatorResolver:
             logger.error(f"Error resolving deep locator {deep_locator}: {e}")
             return None
 
-    async def resolve_to_element(
-        self, deep_locator: str
-    ) -> ElementHandle | None:
+    async def resolve_to_element(self, deep_locator: str) -> ElementHandle | None:
         """
         Resolve a deep locator to an ElementHandle.
 

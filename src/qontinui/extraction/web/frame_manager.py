@@ -172,12 +172,8 @@ class FrameExtractionResult:
     errors: list[str] = field(default_factory=list)
 
     # Lookup maps for fast access
-    _element_by_encoded_id: dict[str, FrameAwareElement] = field(
-        default_factory=dict, repr=False
-    )
-    _elements_by_frame: dict[int, list[FrameAwareElement]] = field(
-        default_factory=dict, repr=False
-    )
+    _element_by_encoded_id: dict[str, FrameAwareElement] = field(default_factory=dict, repr=False)
+    _elements_by_frame: dict[int, list[FrameAwareElement]] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         self._build_indexes()
@@ -411,8 +407,6 @@ async def _extract_from_frame_with_retry(
 
     frame_manager = FrameManager()
 
-    last_error: Exception | None = None
-
     for attempt in range(max_retries + 1):
         try:
             # Extract elements from this frame
@@ -487,7 +481,6 @@ async def _extract_from_frame_with_retry(
             return frame_elements
 
         except Exception as e:
-            last_error = e
             if attempt == max_retries:
                 logger.warning(
                     f"Failed to extract from frame {frame_id} after "
@@ -586,7 +579,8 @@ def _get_extraction_script(include_shadow_dom: bool) -> str:
     This is a modified version of the script from InteractiveElementExtractor
     that supports shadow DOM extraction.
     """
-    shadow_dom_code = """
+    shadow_dom_code = (
+        """
         // Shadow DOM extraction helper
         function extractFromShadowRoot(shadowRoot, results, scrollX, scrollY, shadowPath) {
             for (const el of shadowRoot.querySelectorAll('*')) {
@@ -604,14 +598,21 @@ def _get_extraction_script(include_shadow_dom: bool) -> str:
                 }
             }
         }
-    """ if include_shadow_dom else ""
+    """
+        if include_shadow_dom
+        else ""
+    )
 
-    shadow_dom_call = """
+    shadow_dom_call = (
+        """
                 // Extract from shadow DOM if present
                 if (el.shadowRoot) {
                     extractFromShadowRoot(el.shadowRoot, results, scrollX, scrollY, '/shadow');
                 }
-    """ if include_shadow_dom else ""
+    """
+        if include_shadow_dom
+        else ""
+    )
 
     return f"""
         (config) => {{

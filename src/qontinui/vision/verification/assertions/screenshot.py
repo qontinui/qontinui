@@ -248,9 +248,7 @@ class ScreenshotComparator:
         diff = cv2.absdiff(actual, expected)
         gray_diff: NDArray[np.uint8]
         if len(diff.shape) == 3:
-            gray_diff = np.asarray(
-                cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8
-            )
+            gray_diff = np.asarray(cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
         else:
             gray_diff = np.asarray(diff, dtype=np.uint8)
 
@@ -416,9 +414,7 @@ class ScreenshotComparator:
         diff = cv2.absdiff(actual, expected)
         gray_diff_phash: NDArray[np.uint8]
         if len(diff.shape) == 3:
-            gray_diff_phash = np.asarray(
-                cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8
-            )
+            gray_diff_phash = np.asarray(cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
         else:
             gray_diff_phash = np.asarray(diff, dtype=np.uint8)
         _, thresh_result = cv2.threshold(gray_diff_phash, 10, 255, cv2.THRESH_BINARY)
@@ -525,9 +521,7 @@ class ScreenshotComparator:
         diff = cv2.absdiff(actual, expected)
         gray_diff_feature: NDArray[np.uint8]
         if len(diff.shape) == 3:
-            gray_diff_feature = np.asarray(
-                cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8
-            )
+            gray_diff_feature = np.asarray(cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
         else:
             gray_diff_feature = np.asarray(diff, dtype=np.uint8)
         _, thresh_result = cv2.threshold(gray_diff_feature, 10, 255, cv2.THRESH_BINARY)

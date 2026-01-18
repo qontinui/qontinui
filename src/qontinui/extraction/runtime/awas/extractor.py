@@ -81,8 +81,7 @@ class AwasRuntimeExtractor(RuntimeExtractor):
 
             if self._manifest is None:
                 raise ConnectionError(
-                    f"No AWAS manifest found at {target.url}. "
-                    "The website does not support AWAS."
+                    f"No AWAS manifest found at {target.url}. " "The website does not support AWAS."
                 )
 
             self._target = target
@@ -193,9 +192,7 @@ class AwasRuntimeExtractor(RuntimeExtractor):
             tag_name="button" if action.side_effect else "a",
             element_type=element_type,
             text=action.name,
-            bbox=WebBoundingBox(
-                x=0, y=index * 50, width=200, height=40  # Placeholder bounds
-            ),
+            bbox=WebBoundingBox(x=0, y=index * 50, width=200, height=40),  # Placeholder bounds
             is_visible=True,
             is_interactive=True,
             selector=selector,
@@ -315,9 +312,7 @@ class AwasRuntimeExtractor(RuntimeExtractor):
                 action_id = action.target_element_id[len("awas_elem_") :]
 
         if not action_id:
-            return StateChange(
-                metadata={"error": "No AWAS action ID provided"}
-            )
+            return StateChange(metadata={"error": "No AWAS action ID provided"})
 
         # Extract parameters from action value or metadata
         params = action.metadata.get("awas_params", {})

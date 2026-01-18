@@ -659,7 +659,9 @@ class ImageMatchingStateMachineBuilder:
         self.screenshots_dir = Path(screenshots_dir)
         self.similarity_threshold = similarity_threshold
         self.screenshots: dict[str, Any] = {}  # screenshot_id -> image array (np.ndarray)
-        self.candidate_elements: dict[str, list[dict[str, Any]]] = {}  # screenshot_id -> list of elements
+        self.candidate_elements: dict[str, list[dict[str, Any]]] = (
+            {}
+        )  # screenshot_id -> list of elements
         self.tracked_images: list[TrackedImage] = []
         self.states: list[dict[str, Any]] = []
 
@@ -734,12 +736,16 @@ class ImageMatchingStateMachineBuilder:
                 if cropped.size > 0:
                     std_dev = self._np.std(cropped)
                     if std_dev < 2.0:  # Very uniform background
-                        logger.debug(f"Skipping low-variance element {elem.get('id')} (std={std_dev:.2f})")
+                        logger.debug(
+                            f"Skipping low-variance element {elem.get('id')} (std={std_dev:.2f})"
+                        )
                         continue
 
                 tracked = TrackedImage(
                     id=elem.get("id", str(uuid4())),
-                    name=elem.get("name") or elem.get("text") or elem.get("element_type", "unknown"),
+                    name=elem.get("name")
+                    or elem.get("text")
+                    or elem.get("element_type", "unknown"),
                     source_screenshot_id=screenshot_id,
                     source_bbox={"x": x, "y": y, "width": x2 - x, "height": y2 - y},
                     image_data=cropped,
@@ -793,7 +799,9 @@ class ImageMatchingStateMachineBuilder:
         # Pairwise comparison to find identical elements across (or within) screens
         num_images = len(self.tracked_images)
         total_comparisons = (num_images * (num_images - 1)) // 2
-        logger.info(f"[PERF_DEBUG] Starting pairwise comparison for {num_images} images ({total_comparisons} potential comparisons)")
+        logger.info(
+            f"[PERF_DEBUG] Starting pairwise comparison for {num_images} images ({total_comparisons} potential comparisons)"
+        )
         start_dedup = time.time()
 
         for i in range(len(self.tracked_images)):
@@ -820,36 +828,36 @@ class ImageMatchingStateMachineBuilder:
                         # Determine big vs small
                         if h1 * w1 > h2 * w2:
                             big, small = t1, t2
-                            name_big, name_small = tracked.name, other_tracked.name
                         else:
                             big, small = t2, t1
-                            name_big, name_small = other_tracked.name, tracked.name
 
                         score = 0.0
                         # Ensure small fits inside big
                         if small.shape[0] <= big.shape[0] and small.shape[1] <= big.shape[1]:
-                             res = self._cv2.matchTemplate(big, small, self._cv2.TM_CCOEFF_NORMED)
-                             _, max_val, _, _ = self._cv2.minMaxLoc(res)
-                             score = float(max_val)
+                            res = self._cv2.matchTemplate(big, small, self._cv2.TM_CCOEFF_NORMED)
+                            _, max_val, _, _ = self._cv2.minMaxLoc(res)
+                            score = float(max_val)
                         else:
-                             # Fallback to resize if containment impossible (e.g. T1 tall/thin, T2 short/wide)
-                             # Resize T2 to match T1
-                             if t1.shape != t2.shape:
-                                 h, w = t1.shape[:2]
-                                 t2_resized = self._cv2.resize(t2, (w, h))
-                             else:
-                                 t2_resized = t2
+                            # Fallback to resize if containment impossible (e.g. T1 tall/thin, T2 short/wide)
+                            # Resize T2 to match T1
+                            if t1.shape != t2.shape:
+                                h, w = t1.shape[:2]
+                                t2_resized = self._cv2.resize(t2, (w, h))
+                            else:
+                                t2_resized = t2
 
-                             res = self._cv2.matchTemplate(t2_resized, t1, self._cv2.TM_CCOEFF_NORMED)
-                             score = float(res[0][0])
+                            res = self._cv2.matchTemplate(
+                                t2_resized, t1, self._cv2.TM_CCOEFF_NORMED
+                            )
+                            score = float(res[0][0])
 
                         # LOGGING: Debug why potential matches fail
                         if score < self.similarity_threshold and score > 0.4:
-                             logger.debug(
-                                 f"[DEDUP DEBUG] Failed match: {tracked.name} vs {other_tracked.name} "
-                                 f"Score={score:.4f} Threshold={self.similarity_threshold} "
-                                 f"Shapes: {t1.shape} vs {t2.shape}"
-                             )
+                            logger.debug(
+                                f"[DEDUP DEBUG] Failed match: {tracked.name} vs {other_tracked.name} "
+                                f"Score={score:.4f} Threshold={self.similarity_threshold} "
+                                f"Shapes: {t1.shape} vs {t2.shape}"
+                            )
 
                         if score >= self.similarity_threshold:
                             union(tracked.id, other_tracked.id)
@@ -859,10 +867,12 @@ class ImageMatchingStateMachineBuilder:
                                     screenshot_id=other_tracked.source_screenshot_id,
                                     found=True,
                                     confidence=score,
-                                    bbox=other_tracked.source_bbox
+                                    bbox=other_tracked.source_bbox,
                                 )
                 except Exception as e:
-                    logger.warning(f"Error comparing images {tracked.id} and {other_tracked.id}: {e}")
+                    logger.warning(
+                        f"Error comparing images {tracked.id} and {other_tracked.id}: {e}"
+                    )
                     continue
 
         duration_dedup = time.time() - start_dedup
@@ -905,7 +915,9 @@ class ImageMatchingStateMachineBuilder:
 
                 # Merge matches (keeping the one with higher confidence if duplicate)
                 for sid, match in other.matches.items():
-                    if sid not in representative.matches or (match.found and not representative.matches[sid].found):
+                    if sid not in representative.matches or (
+                        match.found and not representative.matches[sid].found
+                    ):
                         representative.matches[sid] = match
                     elif match.found and representative.matches[sid].found:
                         # Ensure we have numbers to compare
@@ -915,9 +927,13 @@ class ImageMatchingStateMachineBuilder:
                             representative.matches[sid] = match
 
             new_tracked_images.append(representative)
-            logger.debug(f"Merged {len(group)} images into one: {representative.name} ({representative.id})")
+            logger.debug(
+                f"Merged {len(group)} images into one: {representative.name} ({representative.id})"
+            )
 
-        logger.info(f"Deduplication complete: {len(self.tracked_images)} -> {len(new_tracked_images)}")
+        logger.info(
+            f"Deduplication complete: {len(self.tracked_images)} -> {len(new_tracked_images)}"
+        )
         self.tracked_images = new_tracked_images
 
     def cluster_into_states(self) -> list[dict[str, Any]]:
@@ -973,7 +989,9 @@ class ImageMatchingStateMachineBuilder:
                         bbox_source = "match"
 
                     # LOGGING: Trace why coord might be wrong
-                    logger.debug(f"[COORD DEBUG] StateImg for {img.name} on {sid}: Source={bbox_source}, BBox={bbox.get('x')},{bbox.get('y')} {bbox.get('width')}x{bbox.get('height')}")
+                    logger.debug(
+                        f"[COORD DEBUG] StateImg for {img.name} on {sid}: Source={bbox_source}, BBox={bbox.get('x')},{bbox.get('y')} {bbox.get('width')}x{bbox.get('height')}"
+                    )
 
                     # Create search region for this specific instance
                     search_regions = [
@@ -1001,7 +1019,7 @@ class ImageMatchingStateMachineBuilder:
                                 "name": "Default pattern",
                                 "imageId": None,
                                 "searchRegions": search_regions,
-                                "fixed": False, # Per-screen instance is fixed to its own region
+                                "fixed": False,  # Per-screen instance is fixed to its own region
                                 "similarity": self.similarity_threshold,
                             }
                         ],
@@ -1009,8 +1027,8 @@ class ImageMatchingStateMachineBuilder:
                         "source": "web-extraction",
                         "searchMode": "default",
                         "searchRegions": search_regions,
-                        "screenshotId": sid, # Crucial: Associate with specific screenshot
-                        "screensFound": [sid], # Only valid for this screen
+                        "screenshotId": sid,  # Crucial: Associate with specific screenshot
+                        "screensFound": [sid],  # Only valid for this screen
                         "extractionCategory": img.extraction_category,
                     }
                     state_images.append(state_image)
@@ -1024,7 +1042,10 @@ class ImageMatchingStateMachineBuilder:
                 "regions": [],
                 "locations": [],
                 "strings": [],
-                "position": {"x": (state_index - 1) % 3 * 250 + 100, "y": (state_index - 1) // 3 * 200 + 100},
+                "position": {
+                    "x": (state_index - 1) % 3 * 250 + 100,
+                    "y": (state_index - 1) // 3 * 200 + 100,
+                },
                 "initial": state_index == 1,
                 "isFinal": False,
             }
@@ -1048,7 +1069,10 @@ class ImageMatchingStateMachineBuilder:
             Tuple of (states_config, transitions_config)
         """
         print("[IMAGE_MATCHING_DEBUG] ImageMatchingStateMachineBuilder.build() called", flush=True)
-        print(f"[IMAGE_MATCHING_DEBUG] elements_by_screenshot has {len(elements_by_screenshot)} screenshots", flush=True)
+        print(
+            f"[IMAGE_MATCHING_DEBUG] elements_by_screenshot has {len(elements_by_screenshot)} screenshots",
+            flush=True,
+        )
 
         # Load screenshots
         screenshot_ids = list(elements_by_screenshot.keys())
@@ -1078,16 +1102,25 @@ class ImageMatchingStateMachineBuilder:
         # Log which images were found on which screenshots
         print("[IMAGE_MATCHING_DEBUG] Image search results:", flush=True)
         for tracked in self.tracked_images[:20]:  # Limit output
-            print(f"[IMAGE_MATCHING_DEBUG]   '{tracked.name}' found on: {sorted(tracked.screens_found)}", flush=True)
+            print(
+                f"[IMAGE_MATCHING_DEBUG]   '{tracked.name}' found on: {sorted(tracked.screens_found)}",
+                flush=True,
+            )
         if len(self.tracked_images) > 20:
-            print(f"[IMAGE_MATCHING_DEBUG]   ... and {len(self.tracked_images) - 20} more images", flush=True)
+            print(
+                f"[IMAGE_MATCHING_DEBUG]   ... and {len(self.tracked_images) - 20} more images",
+                flush=True,
+            )
 
         # Cluster into states based on co-occurrence
         print("[IMAGE_MATCHING_DEBUG] Clustering images into states...", flush=True)
         states_config = self.cluster_into_states()
         print(f"[IMAGE_MATCHING_DEBUG] Created {len(states_config)} states", flush=True)
         for state in states_config:
-            print(f"[IMAGE_MATCHING_DEBUG]   State '{state.get('name')}': {len(state.get('stateImages', []))} images, screensFound={state.get('screensFound', [])}", flush=True)
+            print(
+                f"[IMAGE_MATCHING_DEBUG]   State '{state.get('name')}': {len(state.get('stateImages', []))} images, screensFound={state.get('screensFound', [])}",
+                flush=True,
+            )
 
         # TODO: Derive transitions from navigation data
         transitions_config: list[dict[str, Any]] = []
@@ -1130,7 +1163,10 @@ def build_state_machine_from_extraction_result(
     print(f"[IMAGE_MATCHING_DEBUG] screenshots_dir exists: {screenshots_dir.exists()}", flush=True)
     if screenshots_dir.exists():
         files = list(screenshots_dir.iterdir())
-        print(f"[IMAGE_MATCHING_DEBUG] screenshots_dir contains {len(files)} files: {[f.name for f in files[:10]]}", flush=True)
+        print(
+            f"[IMAGE_MATCHING_DEBUG] screenshots_dir contains {len(files)} files: {[f.name for f in files[:10]]}",
+            flush=True,
+        )
 
     # Build elements_by_screenshot from RuntimeExtractionResult
     elements_by_screenshot: dict[str, list[dict[str, Any]]] = {}
@@ -1138,16 +1174,22 @@ def build_state_machine_from_extraction_result(
     runtime_result = extraction_result.runtime_extraction
     print(f"[IMAGE_MATCHING_DEBUG] runtime_result: {runtime_result}", flush=True)
     if runtime_result and runtime_result.states:
-        print(f"[IMAGE_MATCHING_DEBUG] Found {len(runtime_result.states)} RuntimeStateCaptures", flush=True)
+        print(
+            f"[IMAGE_MATCHING_DEBUG] Found {len(runtime_result.states)} RuntimeStateCaptures",
+            flush=True,
+        )
         for runtime_state in runtime_result.states:
             # Get screenshot_id
             screenshot_id = (
-                runtime_state.screenshot.id
-                if runtime_state.screenshot
-                else runtime_state.id
+                runtime_state.screenshot.id if runtime_state.screenshot else runtime_state.id
             )
-            print(f"[IMAGE_MATCHING_DEBUG] Processing state with screenshot_id: {screenshot_id}", flush=True)
-            print(f"[IMAGE_MATCHING_DEBUG]   Has {len(runtime_state.elements)} elements", flush=True)
+            print(
+                f"[IMAGE_MATCHING_DEBUG] Processing state with screenshot_id: {screenshot_id}",
+                flush=True,
+            )
+            print(
+                f"[IMAGE_MATCHING_DEBUG]   Has {len(runtime_state.elements)} elements", flush=True
+            )
 
             elements = []
             for elem in runtime_state.elements:
@@ -1155,13 +1197,21 @@ def build_state_machine_from_extraction_result(
                     "id": elem.id,
                     "name": elem.name or elem.text_content,
                     "text": elem.text_content,
-                    "element_type": elem.element_type.value if hasattr(elem.element_type, "value") else str(elem.element_type),
-                    "bbox": elem.bbox.to_dict() if hasattr(elem.bbox, "to_dict") else {
-                        "x": elem.bbox.x,
-                        "y": elem.bbox.y,
-                        "width": elem.bbox.width,
-                        "height": elem.bbox.height,
-                    },
+                    "element_type": (
+                        elem.element_type.value
+                        if hasattr(elem.element_type, "value")
+                        else str(elem.element_type)
+                    ),
+                    "bbox": (
+                        elem.bbox.to_dict()
+                        if hasattr(elem.bbox, "to_dict")
+                        else {
+                            "x": elem.bbox.x,
+                            "y": elem.bbox.y,
+                            "width": elem.bbox.width,
+                            "height": elem.bbox.height,
+                        }
+                    ),
                     "selector": elem.selector,
                     "extraction_category": getattr(elem, "extraction_category", ""),
                 }
@@ -1169,12 +1219,18 @@ def build_state_machine_from_extraction_result(
 
             elements_by_screenshot[screenshot_id] = elements
             logger.info(f"Screenshot {screenshot_id}: {len(elements)} elements")
-            print(f"[IMAGE_MATCHING_DEBUG] Added {len(elements)} elements for screenshot {screenshot_id}", flush=True)
+            print(
+                f"[IMAGE_MATCHING_DEBUG] Added {len(elements)} elements for screenshot {screenshot_id}",
+                flush=True,
+            )
     else:
         print("[IMAGE_MATCHING_DEBUG] No RuntimeStateCaptures in extraction result!", flush=True)
         logger.warning("No RuntimeStateCaptures in extraction result")
 
-    print(f"[IMAGE_MATCHING_DEBUG] Total screenshots with elements: {len(elements_by_screenshot)}", flush=True)
+    print(
+        f"[IMAGE_MATCHING_DEBUG] Total screenshots with elements: {len(elements_by_screenshot)}",
+        flush=True,
+    )
     if not elements_by_screenshot:
         print("[IMAGE_MATCHING_DEBUG] No elements found, returning empty state machine", flush=True)
         logger.error("No elements found in extraction result")
@@ -1195,5 +1251,8 @@ def build_state_machine_from_extraction_result(
 
     print("[IMAGE_MATCHING_DEBUG] Calling builder.build()...", flush=True)
     result = builder.build(elements_by_screenshot)
-    print(f"[IMAGE_MATCHING_DEBUG] builder.build() returned {len(result[0])} states, {len(result[1])} transitions", flush=True)
+    print(
+        f"[IMAGE_MATCHING_DEBUG] builder.build() returned {len(result[0])} states, {len(result[1])} transitions",
+        flush=True,
+    )
     return result

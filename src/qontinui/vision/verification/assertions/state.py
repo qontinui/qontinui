@@ -22,9 +22,7 @@ from qontinui_schemas.testing.assertions import (
 )
 
 if TYPE_CHECKING:
-    from qontinui_schemas.testing.environment import (
-        ElementState as SchemaElementState,
-    )
+    from qontinui_schemas.testing.environment import ElementState as SchemaElementState
     from qontinui_schemas.testing.environment import (
         GUIEnvironment,
         VisualStates,
@@ -159,9 +157,7 @@ class StateDetector:
 
             # Calculate color distance (avg_color is BGR)
             distance = np.sqrt(
-                (avg_color[2] - r) ** 2
-                + (avg_color[1] - g) ** 2
-                + (avg_color[0] - b) ** 2
+                (avg_color[2] - r) ** 2 + (avg_color[1] - g) ** 2 + (avg_color[0] - b) ** 2
             )
 
             # Normalize to 0-1 (max distance is ~441)

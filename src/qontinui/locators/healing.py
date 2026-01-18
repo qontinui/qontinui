@@ -205,8 +205,12 @@ class HealingManager:
                 location_x = None
                 location_y = None
                 if result.match_result and result.match_result.region:
-                    location_x = result.match_result.region.x + result.match_result.region.width // 2
-                    location_y = result.match_result.region.y + result.match_result.region.height // 2
+                    location_x = (
+                        result.match_result.region.x + result.match_result.region.width // 2
+                    )
+                    location_y = (
+                        result.match_result.region.y + result.match_result.region.height // 2
+                    )
 
                 self._emit_event(
                     HealingEventType.HEALING_SUCCEEDED,
@@ -517,9 +521,7 @@ class HealingManager:
                     successful_uses=successful_uses,
                     timestamp=time.time(),
                 )
-                emit_event(
-                    EventType.HEALING_RELIABILITY_CHANGED, data=reliability_data.to_dict()
-                )
+                emit_event(EventType.HEALING_RELIABILITY_CHANGED, data=reliability_data.to_dict())
         except Exception as e:
             logger.error(f"Failed to emit reliability change event: {e}", exc_info=True)
 

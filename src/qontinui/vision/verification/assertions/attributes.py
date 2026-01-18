@@ -90,7 +90,9 @@ class Color:
         Returns:
             Distance (0-441.67 for RGB space).
         """
-        return float(np.sqrt((self.r - other.r) ** 2 + (self.g - other.g) ** 2 + (self.b - other.b) ** 2))
+        return float(
+            np.sqrt((self.r - other.r) ** 2 + (self.g - other.g) ** 2 + (self.b - other.b) ** 2)
+        )
 
 
 @dataclass
@@ -204,9 +206,7 @@ class AttributeAssertion:
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
         # Create a labels array for kmeans output (required by OpenCV)
         labels = np.zeros((pixels_f32.shape[0], 1), dtype=np.int32)
-        _, _, centers = cv2.kmeans(
-            pixels_f32, 1, labels, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
-        )
+        _, _, centers = cv2.kmeans(pixels_f32, 1, labels, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
 
         dominant = centers[0].astype(int)
         return Color.from_bgr((int(dominant[0]), int(dominant[1]), int(dominant[2])))

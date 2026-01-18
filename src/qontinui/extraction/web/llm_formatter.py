@@ -62,9 +62,7 @@ class FormattedElementList:
         """Get element by its numeric index."""
         return self._by_index.get(index)
 
-    def get_element_by_index(
-        self, index: int
-    ) -> InteractiveElement | FrameAwareElement | None:
+    def get_element_by_index(self, index: int) -> InteractiveElement | FrameAwareElement | None:
         """Get the underlying element by index."""
         indexed = self._by_index.get(index)
         return indexed.element if indexed else None

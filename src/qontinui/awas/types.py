@@ -74,7 +74,9 @@ class AwasParameter(BaseModel):
 
     name: str = Field(..., description="Parameter name")
     location: ParameterLocation = Field(..., description="Where to place the parameter")
-    type: str = Field(default="string", description="Parameter type (string, integer, boolean, etc.)")
+    type: str = Field(
+        default="string", description="Parameter type (string, integer, boolean, etc.)"
+    )
     required: bool = Field(default=False, description="Whether the parameter is required")
     description: str | None = Field(default=None, description="Parameter description")
     default: Any | None = Field(default=None, description="Default value if not provided")
@@ -90,21 +92,15 @@ class AwasAction(BaseModel):
     endpoint: str = Field(..., description="API endpoint path (relative to base_url)")
     intent: str = Field(..., description="Description of what this action does")
     side_effect: bool = Field(default=False, description="Whether this action modifies data")
-    parameters: list[AwasParameter] = Field(
-        default_factory=list, description="Action parameters"
-    )
+    parameters: list[AwasParameter] = Field(default_factory=list, description="Action parameters")
     input_schema: dict[str, Any] | None = Field(
         default=None, description="JSON Schema for request body validation"
     )
     output_schema: dict[str, Any] | None = Field(
         default=None, description="JSON Schema for response structure"
     )
-    required_scopes: list[str] = Field(
-        default_factory=list, description="Required OAuth2 scopes"
-    )
-    rate_limit: int | None = Field(
-        default=None, description="Rate limit in requests per minute"
-    )
+    required_scopes: list[str] = Field(default_factory=list, description="Required OAuth2 scopes")
+    rate_limit: int | None = Field(default=None, description="Rate limit in requests per minute")
 
     @property
     def is_read_only(self) -> bool:
@@ -133,9 +129,7 @@ class AwasManifest(BaseModel):
         alias="baseUrl",
         description="Base URL for all action endpoints",
     )
-    actions: list[AwasAction] = Field(
-        default_factory=list, description="Available actions"
-    )
+    actions: list[AwasAction] = Field(default_factory=list, description="Available actions")
     auth: AwasAuth | None = Field(default=None, description="Authentication configuration")
     conformance_level: ConformanceLevel = Field(
         alias="conformanceLevel",

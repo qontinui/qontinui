@@ -226,9 +226,7 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
                 element_type = self._classify_element(region, cw, ch, aspect_ratio)
 
                 # Detect shape - cast contour to expected type for mypy
-                shape = self._detect_shape(
-                    cast(NDArray[np.int32], contour), region
-                )
+                shape = self._detect_shape(cast(NDArray[np.int32], contour), region)
 
                 # Get dominant color
                 dominant_color = self._get_dominant_color(region)

@@ -134,9 +134,7 @@ class TrajectoryConverter:
             "final_status": trajectory.final_status,
             "started_at": trajectory.started_at.isoformat(),
             "completed_at": (
-                trajectory.completed_at.isoformat()
-                if trajectory.completed_at
-                else None
+                trajectory.completed_at.isoformat() if trajectory.completed_at else None
             ),
         }
 
@@ -300,13 +298,15 @@ class TrajectoryConverter:
 
         for state in states:
             if state.screenshot_path:
-                images.append({
-                    "id": f"img_{state.id}",
-                    "name": f"{state.name} screenshot",
-                    "path": str(state.screenshot_path),
-                    "state_id": state.id,
-                    "source": "uitars_exploration",
-                })
+                images.append(
+                    {
+                        "id": f"img_{state.id}",
+                        "name": f"{state.name} screenshot",
+                        "path": str(state.screenshot_path),
+                        "state_id": state.id,
+                        "source": "uitars_exploration",
+                    }
+                )
 
         return images
 
@@ -363,9 +363,9 @@ class TrajectoryConverter:
                     "from_state": t.from_state_id,
                     "to_state": t.to_state_id,
                     "action_type": t.action_type,
-                    "target": {"x": t.target_x, "y": t.target_y}
-                    if t.target_x is not None
-                    else None,
+                    "target": (
+                        {"x": t.target_x, "y": t.target_y} if t.target_x is not None else None
+                    ),
                     "action_value": t.action_value,
                     "thought": t.thought,
                     "confidence": t.confidence,

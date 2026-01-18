@@ -706,9 +706,7 @@ async def collect_with_enhanced_extraction(
             extractor = InteractiveElementExtractor(
                 options=ExtractionOptions(include_shadow_dom=include_shadow_dom)
             )
-            elements = await extractor.extract_interactive_elements(
-                page, "enhanced_extract"
-            )
+            elements = await extractor.extract_interactive_elements(page, "enhanced_extract")
 
         await browser.close()
 

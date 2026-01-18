@@ -94,9 +94,7 @@ class UITARSProviderBase(ABC):
             thought.reasoning = thought_match.group(1).strip()
 
         # Parse Action
-        action_match = re.search(
-            r"Action:\s*(\w+)\(([^)]*)\)", raw_output, re.IGNORECASE
-        )
+        action_match = re.search(r"Action:\s*(\w+)\(([^)]*)\)", raw_output, re.IGNORECASE)
         if action_match:
             action_type_str = action_match.group(1).lower()
             params_str = action_match.group(2).strip()
@@ -114,9 +112,7 @@ class UITARSProviderBase(ABC):
                 "wait": UITARSActionType.WAIT,
                 "done": UITARSActionType.DONE,
             }
-            action.action_type = action_type_map.get(
-                action_type_str, UITARSActionType.WAIT
-            )
+            action.action_type = action_type_map.get(action_type_str, UITARSActionType.WAIT)
 
             # Parse parameters based on action type
             action = self._parse_action_params(action, params_str)
@@ -470,10 +466,12 @@ class LocalTransformersProvider(UITARSProviderBase):
             # Build conversation (content can be str or list of dicts for multimodal)
             messages: list[dict[str, Any]] = []
             if request.system_prompt or self.settings.system_prompt:
-                messages.append({
-                    "role": "system",
-                    "content": request.system_prompt or self.settings.system_prompt,
-                })
+                messages.append(
+                    {
+                        "role": "system",
+                        "content": request.system_prompt or self.settings.system_prompt,
+                    }
+                )
 
             # Add history if present
             if request.history:
@@ -482,13 +480,15 @@ class LocalTransformersProvider(UITARSProviderBase):
                     messages.append({"role": "user", "content": observation})
 
             # Add current request
-            messages.append({
-                "role": "user",
-                "content": [
-                    {"type": "image", "image": pil_image},
-                    {"type": "text", "text": request.prompt},
-                ],
-            })
+            messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": pil_image},
+                        {"type": "text", "text": request.prompt},
+                    ],
+                }
+            )
 
             # Process inputs
             inputs = self._processor(
@@ -512,10 +512,8 @@ class LocalTransformersProvider(UITARSProviderBase):
                 )
 
             # Decode output
-            generated_ids = outputs[0][inputs["input_ids"].shape[1]:]
-            raw_output = self._processor.tokenizer.decode(
-                generated_ids, skip_special_tokens=True
-            )
+            generated_ids = outputs[0][inputs["input_ids"].shape[1] :]
+            raw_output = self._processor.tokenizer.decode(generated_ids, skip_special_tokens=True)
 
             inference_time = (time.time() - start_time) * 1000
             thought, action = self.parse_output(raw_output)
@@ -607,19 +605,26 @@ class VLLMProvider(UITARSProviderBase):
         # Build messages for chat completion (content can be str or list for multimodal)
         messages: list[dict[str, Any]] = []
         if request.system_prompt or self.settings.system_prompt:
-            messages.append({
-                "role": "system",
-                "content": request.system_prompt or self.settings.system_prompt,
-            })
+            messages.append(
+                {
+                    "role": "system",
+                    "content": request.system_prompt or self.settings.system_prompt,
+                }
+            )
 
         # Add current request with image
-        messages.append({
-            "role": "user",
-            "content": [
-                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_b64}"}},
-                {"type": "text", "text": request.prompt},
-            ],
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{image_b64}"},
+                    },
+                    {"type": "text", "text": request.prompt},
+                ],
+            }
+        )
 
         # Model name for vLLM
         model_name = self.settings.vllm_model_name or self.settings.get_model_id()

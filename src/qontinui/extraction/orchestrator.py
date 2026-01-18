@@ -152,7 +152,9 @@ class ExtractionOrchestrator:
                 logger.info("[PERF_DEBUG] Starting _run_runtime_extraction()")
                 result.runtime_extraction = await self._run_runtime_extraction(config)
                 duration_runtime = time.time() - start_runtime
-                logger.info(f"[PERF_DEBUG] _run_runtime_extraction() finished in {duration_runtime:.2f}s")
+                logger.info(
+                    f"[PERF_DEBUG] _run_runtime_extraction() finished in {duration_runtime:.2f}s"
+                )
                 logger.info(
                     f"Runtime extraction returned {len(result.runtime_extraction.states)} states, "
                     f"{len(result.runtime_extraction.elements)} elements"

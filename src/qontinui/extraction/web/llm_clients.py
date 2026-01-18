@@ -146,9 +146,7 @@ class LLMConfig:
             )
 
         if not isinstance(self.timeout, (int, float)) or self.timeout <= 0:
-            raise LLMConfigValidationError(
-                f"timeout must be a positive number, got {self.timeout}"
-            )
+            raise LLMConfigValidationError(f"timeout must be a positive number, got {self.timeout}")
 
         if not isinstance(self.extra_params, dict):
             raise LLMConfigValidationError(
@@ -260,10 +258,10 @@ class AnthropicClient(BaseLLMClient):
         if self._client is None:
             try:
                 from anthropic import AsyncAnthropic
-            except ImportError:
+            except ImportError as e:
                 raise ImportError(
                     "anthropic package not installed. Install with: pip install anthropic"
-                )
+                ) from e
             self._client = AsyncAnthropic(api_key=self.api_key)
         return self._client
 
@@ -336,9 +334,7 @@ class OpenAIClient(BaseLLMClient):
         """
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
-            raise ValueError(
-                "OpenAI API key required. Pass api_key or set OPENAI_API_KEY env var."
-            )
+            raise ValueError("OpenAI API key required. Pass api_key or set OPENAI_API_KEY env var.")
 
         if config:
             super().__init__(config)
@@ -355,10 +351,10 @@ class OpenAIClient(BaseLLMClient):
         if self._client is None:
             try:
                 from openai import AsyncOpenAI
-            except ImportError:
+            except ImportError as e:
                 raise ImportError(
                     "openai package not installed. Install with: pip install openai"
-                )
+                ) from e
             self._client = AsyncOpenAI(api_key=self.api_key)
         return self._client
 
@@ -449,10 +445,10 @@ class LiteLLMClient(BaseLLMClient):
         """Complete a prompt using LiteLLM."""
         try:
             import litellm
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "litellm package not installed. Install with: pip install litellm"
-            )
+            ) from e
 
         try:
             response = await litellm.acompletion(
@@ -592,7 +588,9 @@ def create_llm_client(
     provider = provider.lower()
 
     if provider == "anthropic":
-        return AnthropicClient(api_key=api_key, model=model or "claude-3-5-sonnet-20241022", **kwargs)
+        return AnthropicClient(
+            api_key=api_key, model=model or "claude-3-5-sonnet-20241022", **kwargs
+        )
     elif provider == "openai":
         return OpenAIClient(api_key=api_key, model=model or "gpt-4o", **kwargs)
     elif provider == "litellm":
@@ -601,6 +599,5 @@ def create_llm_client(
         return MockLLMClient(**kwargs)
     else:
         raise ValueError(
-            f"Unknown provider: {provider}. "
-            f"Supported: anthropic, openai, litellm, mock"
+            f"Unknown provider: {provider}. " f"Supported: anthropic, openai, litellm, mock"
         )
