@@ -4,14 +4,11 @@ Tests for natural_language_selector module.
 Tests AI-driven element selection by natural language description.
 """
 
-import pytest
-
+from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 from qontinui.extraction.web.natural_language_selector import (
     FallbackSelector,
-    NaturalLanguageSelector,
     SelectionResult,
 )
-from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 
 
 def create_test_element(

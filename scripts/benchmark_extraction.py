@@ -26,9 +26,10 @@ import logging
 import statistics
 import sys
 import time
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from playwright.async_api import Page, async_playwright
 
@@ -116,7 +117,7 @@ async def time_async(
     times: list[float] = []
     result = None
 
-    for i in range(iterations):
+    for _i in range(iterations):
         gc.collect()  # Clean up before each iteration
         start = time.perf_counter()
         result = await func()
@@ -126,9 +127,7 @@ async def time_async(
     return times, result
 
 
-async def benchmark_basic_extraction(
-    page: Page, iterations: int
-) -> BenchmarkResult:
+async def benchmark_basic_extraction(page: Page, iterations: int) -> BenchmarkResult:
     """Benchmark basic extraction without enhanced features."""
     options = ExtractionOptions(
         include_shadow_dom=False,
@@ -149,9 +148,7 @@ async def benchmark_basic_extraction(
     )
 
 
-async def benchmark_shadow_dom_extraction(
-    page: Page, iterations: int
-) -> BenchmarkResult:
+async def benchmark_shadow_dom_extraction(page: Page, iterations: int) -> BenchmarkResult:
     """Benchmark extraction with shadow DOM enabled."""
     options = ExtractionOptions(
         include_shadow_dom=True,
@@ -177,9 +174,7 @@ async def benchmark_shadow_dom_extraction(
     )
 
 
-async def benchmark_cursor_pointer_extraction(
-    page: Page, iterations: int
-) -> BenchmarkResult:
+async def benchmark_cursor_pointer_extraction(page: Page, iterations: int) -> BenchmarkResult:
     """Benchmark extraction with cursor:pointer detection."""
     options = ExtractionOptions(
         include_shadow_dom=False,
@@ -194,9 +189,7 @@ async def benchmark_cursor_pointer_extraction(
     times, elements = await time_async(run, iterations)
 
     # Count clickable elements found via cursor:pointer
-    clickable_count = sum(
-        1 for e in (elements or []) if "clickable_" in e.element_type
-    )
+    clickable_count = sum(1 for e in (elements or []) if "clickable_" in e.element_type)
 
     return BenchmarkResult(
         name="cursor_pointer_extraction",
@@ -206,9 +199,7 @@ async def benchmark_cursor_pointer_extraction(
     )
 
 
-async def benchmark_iframe_extraction(
-    page: Page, iterations: int
-) -> BenchmarkResult:
+async def benchmark_iframe_extraction(page: Page, iterations: int) -> BenchmarkResult:
     """Benchmark multi-frame extraction."""
 
     async def run():
@@ -231,9 +222,7 @@ async def benchmark_iframe_extraction(
     )
 
 
-async def benchmark_accessibility_extraction(
-    page: Page, iterations: int
-) -> BenchmarkResult:
+async def benchmark_accessibility_extraction(page: Page, iterations: int) -> BenchmarkResult:
     """Benchmark accessibility tree extraction."""
 
     async def run():
@@ -251,9 +240,7 @@ async def benchmark_accessibility_extraction(
     )
 
 
-async def benchmark_llm_formatting(
-    page: Page, iterations: int
-) -> BenchmarkResult:
+async def benchmark_llm_formatting(page: Page, iterations: int) -> BenchmarkResult:
     """Benchmark LLM formatting (extraction + formatting)."""
     options = ExtractionOptions(include_shadow_dom=False)
     extractor = InteractiveElementExtractor(options)
@@ -286,9 +273,7 @@ async def benchmark_llm_formatting(
     )
 
 
-async def benchmark_hybrid_extraction(
-    page: Page, iterations: int
-) -> BenchmarkResult:
+async def benchmark_hybrid_extraction(page: Page, iterations: int) -> BenchmarkResult:
     """Benchmark hybrid extraction (DOM + screenshot + a11y)."""
     extractor = HybridExtractor()
 
@@ -308,9 +293,7 @@ async def benchmark_hybrid_extraction(
     )
 
 
-async def benchmark_full_extraction(
-    page: Page, iterations: int
-) -> BenchmarkResult:
+async def benchmark_full_extraction(page: Page, iterations: int) -> BenchmarkResult:
     """Benchmark full extraction with all features enabled (optimized defaults)."""
     options = ExtractionOptions(
         include_shadow_dom=True,
@@ -349,9 +332,7 @@ async def benchmark_full_extraction(
     )
 
 
-async def benchmark_stability_waiting(
-    page: Page, iterations: int
-) -> BenchmarkResult:
+async def benchmark_stability_waiting(page: Page, iterations: int) -> BenchmarkResult:
     """Benchmark extraction with stability waiting (optimized defaults)."""
     options = ExtractionOptions(include_shadow_dom=False)
     extractor = InteractiveElementExtractor(options)
@@ -483,12 +464,12 @@ def print_comparison(all_results: list[PageBenchmarkResults]) -> None:
         print(f"  {'-'*50} {'-'*12} {'-'*10}")
 
         for page_result in all_results:
-            bench = next(
-                (b for b in page_result.benchmarks if b.name == bench_name), None
-            )
+            bench = next((b for b in page_result.benchmarks if b.name == bench_name), None)
             if bench:
                 # Truncate URL for display
-                url_display = page_result.url[:47] + "..." if len(page_result.url) > 50 else page_result.url
+                url_display = (
+                    page_result.url[:47] + "..." if len(page_result.url) > 50 else page_result.url
+                )
                 print(
                     f"  {url_display:<50} "
                     f"{bench.mean_ms:>10.1f}ms "
@@ -503,9 +484,7 @@ def calculate_overhead(all_results: list[PageBenchmarkResults]) -> None:
     print(f"{'='*80}")
 
     for page_result in all_results:
-        basic = next(
-            (b for b in page_result.benchmarks if b.name == "basic_extraction"), None
-        )
+        basic = next((b for b in page_result.benchmarks if b.name == "basic_extraction"), None)
         if not basic or basic.mean_ms == 0:
             continue
 
@@ -527,9 +506,7 @@ def calculate_overhead(all_results: list[PageBenchmarkResults]) -> None:
 
 
 async def main():
-    parser = argparse.ArgumentParser(
-        description="Benchmark DOM extraction performance"
-    )
+    parser = argparse.ArgumentParser(description="Benchmark DOM extraction performance")
     parser.add_argument(
         "--url",
         help="Single URL to benchmark",
@@ -595,9 +572,7 @@ async def main():
 
                 # Actual benchmark
                 print("  Running benchmarks...")
-                results = await run_benchmarks_on_page(
-                    page, url, args.iterations, args.benchmarks
-                )
+                results = await run_benchmarks_on_page(page, url, args.iterations, args.benchmarks)
                 all_results.append(results)
 
                 # Print results for this page
@@ -608,9 +583,7 @@ async def main():
                 all_results.append(
                     PageBenchmarkResults(
                         url=url,
-                        benchmarks=[
-                            BenchmarkResult(name="error", extra_data={"error": str(e)})
-                        ],
+                        benchmarks=[BenchmarkResult(name="error", extra_data={"error": str(e)})],
                     )
                 )
 

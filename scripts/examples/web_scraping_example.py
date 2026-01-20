@@ -32,10 +32,10 @@ from playwright.async_api import async_playwright
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from qontinui.extraction.web import (
-    InteractiveElementExtractor,
     ExtractionOptions,
-    format_for_llm,
     InteractiveElement,
+    InteractiveElementExtractor,
+    format_for_llm,
 )
 
 logging.basicConfig(
@@ -58,17 +58,19 @@ def format_links_as_json(elements: list[InteractiveElement]) -> list[dict]:
     links = []
     for elem in elements:
         if elem.element_type == "a" or "link" in elem.element_type:
-            links.append({
-                "text": elem.text or elem.aria_label or "(no text)",
-                "href": elem.href or "",
-                "selector": elem.selector,
-                "position": {
-                    "x": elem.bbox.x,
-                    "y": elem.bbox.y,
-                    "width": elem.bbox.width,
-                    "height": elem.bbox.height,
-                },
-            })
+            links.append(
+                {
+                    "text": elem.text or elem.aria_label or "(no text)",
+                    "href": elem.href or "",
+                    "selector": elem.selector,
+                    "position": {
+                        "x": elem.bbox.x,
+                        "y": elem.bbox.y,
+                        "width": elem.bbox.width,
+                        "height": elem.bbox.height,
+                    },
+                }
+            )
     return links
 
 
@@ -83,16 +85,18 @@ def format_buttons_as_json(elements: list[InteractiveElement]) -> list[dict]:
                 if not any(x in elem.selector.lower() for x in ["submit", "button"]):
                     continue
 
-            buttons.append({
-                "label": elem.text or elem.aria_label or "(no label)",
-                "type": elem.element_type,
-                "selector": elem.selector,
-                "aria_role": elem.aria_role,
-                "position": {
-                    "x": elem.bbox.x,
-                    "y": elem.bbox.y,
-                },
-            })
+            buttons.append(
+                {
+                    "label": elem.text or elem.aria_label or "(no label)",
+                    "type": elem.element_type,
+                    "selector": elem.selector,
+                    "aria_role": elem.aria_role,
+                    "position": {
+                        "x": elem.bbox.x,
+                        "y": elem.bbox.y,
+                    },
+                }
+            )
     return buttons
 
 
@@ -183,10 +187,10 @@ async def enhanced_extraction(url: str, headless: bool = True) -> dict:
 
         # Create extractor with custom options
         options = ExtractionOptions(
-            min_width=20,               # Smaller minimum size
+            min_width=20,  # Smaller minimum size
             min_height=20,
-            include_shadow_dom=True,    # Extract from shadow DOM
-            max_shadow_depth=5,         # Traverse up to 5 levels deep
+            include_shadow_dom=True,  # Extract from shadow DOM
+            max_shadow_depth=5,  # Traverse up to 5 levels deep
             include_cursor_pointer=True,  # Include clickable elements (React, Vue, etc.)
             max_cursor_pointer_text_length=50,  # Longer text for clickable
         )
@@ -254,8 +258,7 @@ async def extract_forms(url: str, headless: bool = True) -> dict:
         # Filter for form-related elements
         form_types = {"input", "select", "textarea", "button", "label"}
         form_elements = [
-            e for e in elements
-            if e.element_type in form_types or e.tag_name in form_types
+            e for e in elements if e.element_type in form_types or e.tag_name in form_types
         ]
 
         logger.info(f"Found {len(form_elements)} form-related elements")
@@ -267,22 +270,28 @@ async def extract_forms(url: str, headless: bool = True) -> dict:
 
         for elem in form_elements:
             if elem.tag_name == "input":
-                inputs.append({
-                    "type": elem.element_type,
-                    "selector": elem.selector,
-                    "aria_label": elem.aria_label,
-                    "placeholder": elem.text,
-                })
+                inputs.append(
+                    {
+                        "type": elem.element_type,
+                        "selector": elem.selector,
+                        "aria_label": elem.aria_label,
+                        "placeholder": elem.text,
+                    }
+                )
             elif elem.tag_name == "button" or elem.element_type == "button":
-                buttons.append({
-                    "text": elem.text or elem.aria_label,
-                    "selector": elem.selector,
-                })
+                buttons.append(
+                    {
+                        "text": elem.text or elem.aria_label,
+                        "selector": elem.selector,
+                    }
+                )
             elif elem.tag_name == "select":
-                selects.append({
-                    "aria_label": elem.aria_label,
-                    "selector": elem.selector,
-                })
+                selects.append(
+                    {
+                        "aria_label": elem.aria_label,
+                        "selector": elem.selector,
+                    }
+                )
 
         logger.info(f"  Inputs: {len(inputs)}")
         logger.info(f"  Buttons: {len(buttons)}")
@@ -300,9 +309,7 @@ async def extract_forms(url: str, headless: bool = True) -> dict:
 
 
 async def main():
-    parser = argparse.ArgumentParser(
-        description="Web scraping example using qontinui extraction"
-    )
+    parser = argparse.ArgumentParser(description="Web scraping example using qontinui extraction")
     parser.add_argument(
         "--url",
         default="https://github.com",

@@ -1,7 +1,5 @@
 """Tests for AWAS type definitions."""
 
-import pytest
-
 from qontinui.awas.types import (
     AwasAction,
     AwasAuth,

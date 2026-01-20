@@ -4,14 +4,12 @@ Tests for selector_healer module.
 Tests automatic selector repair when DOM changes.
 """
 
-import pytest
-
+from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 from qontinui.extraction.web.selector_healer import (
     HealingAttempt,
     HealingResult,
     SelectorHealer,
 )
-from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 
 
 class TestHealingAttempt:
@@ -148,9 +146,7 @@ class TestSelectorHealerVariations:
         """Test removing nth-child from selector."""
         healer = SelectorHealer()
 
-        variations = healer._generate_selector_variations(
-            "div.container > button:nth-child(2)"
-        )
+        variations = healer._generate_selector_variations("div.container > button:nth-child(2)")
 
         # Should include version without nth-child
         assert "div.container > button" in variations

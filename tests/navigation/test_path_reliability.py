@@ -4,8 +4,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-import pytest
-
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
@@ -162,9 +160,7 @@ class TestTransitionReliability:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             reliability = TransitionReliability(persistence_path=f.name)
 
-            reliability.record_attempt(
-                "A", "B", success=False, failure_reason="Element not found"
-            )
+            reliability.record_attempt("A", "B", success=False, failure_reason="Element not found")
 
             stats = reliability.get_stats("A", "B")
             assert stats is not None

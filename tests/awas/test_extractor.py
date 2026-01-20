@@ -10,19 +10,11 @@ import respx
 
 from qontinui.awas.discovery import AwasDiscoveryService, CacheEntry
 from qontinui.awas.types import (
-    AwasAction,
-    AwasAuth,
-    AwasAuthType,
     AwasManifest,
-    AwasParameter,
-    ConformanceLevel,
-    HttpMethod,
-    ParameterLocation,
 )
 from qontinui.extraction.runtime.awas.extractor import AwasRuntimeExtractor
 from qontinui.extraction.runtime.base import InteractionAction
 from qontinui.extraction.runtime.types import ExtractionTarget, RuntimeType
-
 
 # Sample manifest for testing
 SAMPLE_MANIFEST = {
@@ -661,9 +653,7 @@ class TestAwasRuntimeExtractorDirectExecution:
         )
         await extractor.connect(target)
 
-        result = await extractor.execute_action(
-            "get_item", params={"item_id": "xyz"}
-        )
+        result = await extractor.execute_action("get_item", params={"item_id": "xyz"})
 
         assert result["success"] is True
         assert result["response_body"]["id"] == "xyz"

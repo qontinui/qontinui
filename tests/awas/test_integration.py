@@ -4,8 +4,6 @@ Tests the full discovery -> execute flow with mocked HTTP responses.
 Uses respx for httpx mocking.
 """
 
-import json
-
 import httpx
 import pytest
 import respx
@@ -14,15 +12,12 @@ from qontinui.awas.discovery import AwasDiscoveryService, CacheEntry
 from qontinui.awas.executor import AwasExecutor
 from qontinui.awas.types import (
     AwasAction,
-    AwasAuth,
     AwasAuthType,
     AwasManifest,
-    AwasParameter,
     ConformanceLevel,
     HttpMethod,
     ParameterLocation,
 )
-
 
 # Sample manifest data for testing
 SAMPLE_MANIFEST_L1 = {
@@ -175,9 +170,7 @@ class TestIntegrationDiscoverAndExecute:
         )
 
         manifest = await discovery.discover("https://example.com")
-        result = await executor.execute(
-            manifest, "get_user", params={"user_id": "abc123"}
-        )
+        result = await executor.execute(manifest, "get_user", params={"user_id": "abc123"})
 
         assert result.success is True
         assert result.response_body["id"] == "abc123"
@@ -203,9 +196,7 @@ class TestIntegrationDiscoverAndExecute:
         manifest = await discovery.discover("https://example.com")
 
         # Without auth - should fail
-        result_no_auth = await executor.execute(
-            manifest, "get_user", params={"user_id": "user1"}
-        )
+        result_no_auth = await executor.execute(manifest, "get_user", params={"user_id": "user1"})
         assert result_no_auth.success is False
         assert result_no_auth.status_code == 401
 
@@ -233,9 +224,9 @@ class TestManifestCaching:
     async def test_manifest_is_cached(self, discovery):
         """Test that manifest is cached after first fetch."""
         # Mock manifest endpoint - should only be called once
-        manifest_route = respx.get(
-            "https://example.com/.well-known/ai-actions.json"
-        ).mock(return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L1))
+        manifest_route = respx.get("https://example.com/.well-known/ai-actions.json").mock(
+            return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L1)
+        )
 
         # First discovery
         manifest1 = await discovery.discover("https://example.com")
@@ -254,9 +245,9 @@ class TestManifestCaching:
         """Test that cache expires after TTL."""
         import asyncio
 
-        manifest_route = respx.get(
-            "https://example.com/.well-known/ai-actions.json"
-        ).mock(return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L1))
+        manifest_route = respx.get("https://example.com/.well-known/ai-actions.json").mock(
+            return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L1)
+        )
 
         # First discovery
         await discovery.discover("https://example.com")
@@ -510,9 +501,7 @@ class TestConformanceLevels:
         respx.get("https://l3.example.com/.well-known/ai-actions.json").mock(
             return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L3)
         )
-        respx.delete("https://api.example.com/users/del123").mock(
-            return_value=httpx.Response(204)
-        )
+        respx.delete("https://api.example.com/users/del123").mock(return_value=httpx.Response(204))
 
         manifest = await discovery.discover("https://l3.example.com")
 

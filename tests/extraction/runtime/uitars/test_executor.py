@@ -35,9 +35,7 @@ class MockLocalGrounder:
         self.found = True
         self.call_count = 0
 
-    async def find(
-        self, element_name: str, screenshot: np.ndarray
-    ) -> LocalGroundingResult:
+    async def find(self, element_name: str, screenshot: np.ndarray) -> LocalGroundingResult:
         self.call_count += 1
         return LocalGroundingResult(
             x=self.x,
@@ -68,9 +66,7 @@ class TestUITARSExecutor:
 
     def test_from_settings_creates_executor(self):
         """Test factory method creates executor."""
-        with patch(
-            "qontinui.extraction.runtime.uitars.executor.create_provider"
-        ) as mock_create:
+        with patch("qontinui.extraction.runtime.uitars.executor.create_provider") as mock_create:
             mock_create.return_value = MagicMock()
             executor = UITARSExecutor.from_settings()
 
@@ -152,9 +148,7 @@ class TestUITARSExecutor:
         mock_pyautogui = MagicMock()
 
         with patch.dict(sys.modules, {"pyautogui": mock_pyautogui}):
-            result = await self.executor.execute_action(
-                screenshot, "Click the submit button"
-            )
+            result = await self.executor.execute_action(screenshot, "Click the submit button")
 
             assert result.success is True
             assert result.thought == thought
@@ -289,9 +283,7 @@ class TestHybridGrounder:
 
         mock_executor = MagicMock()
         mock_executor.ground_element = AsyncMock()
-        mock_executor.ground_element.return_value = MagicMock(
-            x=300, y=400, confidence=0.85
-        )
+        mock_executor.ground_element.return_value = MagicMock(x=300, y=400, confidence=0.85)
 
         grounder = HybridGrounder(
             local_grounder=MockLocalGrounder(),
@@ -351,9 +343,7 @@ class TestHybridGrounder:
 
         mock_executor = MagicMock()
         mock_executor.ground_element = AsyncMock()
-        mock_executor.ground_element.return_value = MagicMock(
-            x=300, y=400, confidence=0.9
-        )
+        mock_executor.ground_element.return_value = MagicMock(x=300, y=400, confidence=0.9)
 
         grounder = HybridGrounder(
             local_grounder=local_grounder,

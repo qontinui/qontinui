@@ -33,14 +33,14 @@ from playwright.async_api import async_playwright
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from qontinui.extraction.web import (
+    FallbackSelector,
     InteractiveElementExtractor,
     NaturalLanguageSelector,
-    FallbackSelector,
     format_for_llm,
 )
 from qontinui.extraction.web.llm_clients import (
-    create_llm_client,
     MockLLMClient,
+    create_llm_client,
 )
 
 logging.basicConfig(
@@ -152,7 +152,9 @@ async def demo_fallback(url: str) -> None:
         for text in test_texts:
             result = fallback.find_by_text(text, elements)
             if result.found:
-                logger.info(f"  '{text}' -> Index {result.index} (confidence: {result.confidence:.2f})")
+                logger.info(
+                    f"  '{text}' -> Index {result.index} (confidence: {result.confidence:.2f})"
+                )
             else:
                 logger.info(f"  '{text}' -> No match")
 
@@ -162,7 +164,7 @@ async def demo_fallback(url: str) -> None:
             results = fallback.find_by_role(role, elements)
             logger.info(f"  Role '{role}': Found {len(results)} elements")
             for r in results[:3]:
-                inner = r.element.element if hasattr(r.element, 'element') else r.element
+                inner = r.element.element if hasattr(r.element, "element") else r.element
                 text = inner.text[:30] if inner.text else "(no text)"
                 logger.info(f"    [{r.index}] {text}")
 
@@ -198,12 +200,14 @@ async def run_demo(url: str, llm_client, provider_name: str) -> None:
         logger.info(f"\n--- Natural Language Selection ({provider_name}) ---")
 
         for query in DEMO_QUERIES:
-            logger.info(f"\nQuery: \"{query}\"")
+            logger.info(f'\nQuery: "{query}"')
 
             result = await selector.find_element(query, elements)
 
             if result.found:
-                inner = result.element.element if hasattr(result.element, 'element') else result.element
+                inner = (
+                    result.element.element if hasattr(result.element, "element") else result.element
+                )
                 text = inner.text[:40] if inner.text else "(no text)"
                 logger.info(f"  Found: [{result.index}] <{inner.tag_name}> {text}")
                 logger.info(f"  Confidence: {result.confidence:.2f}")
@@ -222,11 +226,13 @@ async def run_demo(url: str, llm_client, provider_name: str) -> None:
         ]
 
         for instruction in instructions:
-            logger.info(f"\nInstruction: \"{instruction}\"")
+            logger.info(f'\nInstruction: "{instruction}"')
             result, action = await selector.select_action(instruction, elements)
 
             if result.found:
-                inner = result.element.element if hasattr(result.element, 'element') else result.element
+                inner = (
+                    result.element.element if hasattr(result.element, "element") else result.element
+                )
                 logger.info(f"  Element: [{result.index}] <{inner.tag_name}>")
                 logger.info(f"  Action: {action}")
                 logger.info(f"  Confidence: {result.confidence:.2f}")
@@ -237,9 +243,7 @@ async def run_demo(url: str, llm_client, provider_name: str) -> None:
 
 
 async def main():
-    parser = argparse.ArgumentParser(
-        description="Demo LLM-powered element selection"
-    )
+    parser = argparse.ArgumentParser(description="Demo LLM-powered element selection")
     parser.add_argument(
         "--url",
         default="https://github.com",

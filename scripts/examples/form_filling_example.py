@@ -25,17 +25,17 @@ import logging
 import sys
 from pathlib import Path
 
-from playwright.async_api import async_playwright, Page
+from playwright.async_api import Page, async_playwright
 
 # Add src to path for development
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from qontinui.extraction.web import (
+    FallbackSelector,
+    InteractiveElement,
     InteractiveElementExtractor,
     NaturalLanguageSelector,
-    FallbackSelector,
     format_for_llm,
-    InteractiveElement,
 )
 from qontinui.extraction.web.llm_clients import MockLLMClient
 
@@ -197,7 +197,7 @@ ALTERNATIVES: none""",
             else:
                 await locator.first.click()
 
-            logger.info(f"  Clicked element")
+            logger.info("  Clicked element")
             return True
 
         except Exception as e:
@@ -297,7 +297,7 @@ async def demo_action_selection(demo: FormFillingDemo, url: str):
 
         logger.info("\n--- Action Selection Results ---")
         for instruction in instructions:
-            logger.info(f"\nInstruction: \"{instruction}\"")
+            logger.info(f'\nInstruction: "{instruction}"')
 
             result, action = await demo.selector.select_action(instruction, elements)
 
@@ -307,7 +307,7 @@ async def demo_action_selection(demo: FormFillingDemo, url: str):
                 logger.info(f"  Action: {action}")
                 logger.info(f"  Confidence: {result.confidence:.2f}")
             else:
-                logger.info(f"  Could not determine action")
+                logger.info("  Could not determine action")
                 logger.info(f"  Reason: {result.reasoning}")
 
         await browser.close()
@@ -345,7 +345,9 @@ async def demo_fallback_selection(demo: FormFillingDemo, url: str):
         for text in test_texts:
             result = demo.fallback.find_by_text(text, elements)
             if result.found:
-                logger.info(f"  '{text}' -> [{result.index}] <{result.element.tag_name}> (confidence: {result.confidence:.2f})")
+                logger.info(
+                    f"  '{text}' -> [{result.index}] <{result.element.tag_name}> (confidence: {result.confidence:.2f})"
+                )
             else:
                 logger.info(f"  '{text}' -> No match")
 
@@ -397,7 +399,7 @@ async def demo_find_multiple(demo: FormFillingDemo, url: str):
 
         logger.info("\n--- Finding Multiple Elements ---")
         for query in queries:
-            logger.info(f"\nQuery: \"{query}\"")
+            logger.info(f'\nQuery: "{query}"')
 
             results = await demo.selector.find_multiple(query, elements, max_results=5)
 

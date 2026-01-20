@@ -4,11 +4,7 @@ Tests for llm_formatter module.
 Tests LLM-friendly element formatting with numeric indices.
 """
 
-import pytest
-
 from qontinui.extraction.web.llm_formatter import (
-    FormattedElementList,
-    IndexedElement,
     LLMFormatter,
     format_for_llm,
     get_element_by_index,
@@ -81,11 +77,7 @@ class TestLLMFormatter:
     def test_format_with_aria_label(self) -> None:
         """Test formatting element with aria-label."""
         formatter = LLMFormatter()
-        elements = [
-            create_test_element(
-                "btn1", "button", text="X", aria_label="Close dialog"
-            )
-        ]
+        elements = [create_test_element("btn1", "button", text="X", aria_label="Close dialog")]
 
         result = formatter.format_elements(elements)
 

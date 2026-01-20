@@ -52,10 +52,7 @@ from qontinui.extraction.web import (
     format_for_llm,
 )
 from qontinui.extraction.web.llm_clients import (
-    AnthropicClient,
     BaseLLMClient,
-    MockLLMClient,
-    OpenAIClient,
     create_llm_client,
 )
 
@@ -70,9 +67,11 @@ logger = logging.getLogger(__name__)
 # Test Configurations
 # =============================================================================
 
+
 @dataclass
 class TestQuery:
     """A test query with expected behavior."""
+
     description: str
     category: str  # button, link, input, action, ambiguous
     expected_tags: list[str] = field(default_factory=list)  # Expected tag names
@@ -216,9 +215,11 @@ ACTION_QUERIES = [
 # Test Result Tracking
 # =============================================================================
 
+
 @dataclass
 class QueryResult:
     """Result of a single query test."""
+
     query: str
     category: str
     success: bool
@@ -236,6 +237,7 @@ class QueryResult:
 @dataclass
 class ActionResult:
     """Result of an action selection test."""
+
     instruction: str
     expected_action: str
     actual_action: str
@@ -249,6 +251,7 @@ class ActionResult:
 @dataclass
 class SiteTestResult:
     """Results for testing a single site."""
+
     url: str
     site_name: str
     element_count: int
@@ -261,6 +264,7 @@ class SiteTestResult:
 @dataclass
 class TestSummary:
     """Overall test summary."""
+
     provider: str
     model: str
     total_queries: int
@@ -289,6 +293,7 @@ class TestSummary:
 # =============================================================================
 # Test Runner
 # =============================================================================
+
 
 class LLMSelectorTester:
     """Tests NaturalLanguageSelector with real LLM providers."""
@@ -340,11 +345,13 @@ class LLMSelectorTester:
                 result.extraction_time_ms = (time.time() - extraction_start) * 1000
                 result.element_count = len(elements)
 
-                logger.info(f"Extracted {len(elements)} interactive elements in {result.extraction_time_ms:.0f}ms")
+                logger.info(
+                    f"Extracted {len(elements)} interactive elements in {result.extraction_time_ms:.0f}ms"
+                )
 
                 if self.verbose:
                     formatted = format_for_llm(elements)
-                    logger.info(f"\nExtracted elements (first 20):")
+                    logger.info("\nExtracted elements (first 20):")
                     for line in formatted.split("\n")[:20]:
                         logger.info(f"  {line}")
 
@@ -364,19 +371,21 @@ class LLMSelectorTester:
 
             except Exception as e:
                 logger.error(f"Error testing {site_name}: {e}")
-                result.query_results.append(QueryResult(
-                    query="<site load>",
-                    category="error",
-                    success=False,
-                    found_element=False,
-                    element_tag=None,
-                    element_text=None,
-                    element_index=None,
-                    confidence=0.0,
-                    reasoning="",
-                    response_time_ms=0.0,
-                    error=str(e),
-                ))
+                result.query_results.append(
+                    QueryResult(
+                        query="<site load>",
+                        category="error",
+                        success=False,
+                        found_element=False,
+                        element_tag=None,
+                        element_text=None,
+                        element_index=None,
+                        confidence=0.0,
+                        reasoning="",
+                        response_time_ms=0.0,
+                        error=str(e),
+                    )
+                )
 
             finally:
                 await browser.close()
@@ -390,7 +399,7 @@ class LLMSelectorTester:
         elements: list,
     ) -> QueryResult:
         """Test a single query."""
-        logger.info(f"\nQuery: \"{query.description}\" (category: {query.category})")
+        logger.info(f'\nQuery: "{query.description}" (category: {query.category})')
 
         start_time = time.time()
 
@@ -405,15 +414,19 @@ class LLMSelectorTester:
             meets_expectations = False
 
             if found:
-                inner = result.element.element if hasattr(result.element, 'element') else result.element
+                inner = (
+                    result.element.element if hasattr(result.element, "element") else result.element
+                )
                 element_tag = inner.tag_name.lower()
                 element_text = (inner.text or inner.aria_label or "")[:50]
 
                 # Check if meets expectations
-                tag_ok = not query.expected_tags or element_tag in [t.lower() for t in query.expected_tags]
+                tag_ok = not query.expected_tags or element_tag in [
+                    t.lower() for t in query.expected_tags
+                ]
                 text_ok = not query.expected_keywords or any(
-                    kw.lower() in (inner.text or "").lower() or
-                    kw.lower() in (inner.aria_label or "").lower()
+                    kw.lower() in (inner.text or "").lower()
+                    or kw.lower() in (inner.aria_label or "").lower()
                     for kw in query.expected_keywords
                 )
                 conf_ok = result.confidence >= query.min_confidence
@@ -424,14 +437,20 @@ class LLMSelectorTester:
             # Log result
             if found:
                 status = "PASS" if meets_expectations else "PARTIAL"
-                logger.info(f"  [{status}] Found: [{result.index}] <{element_tag}> \"{element_text}\"")
+                logger.info(
+                    f'  [{status}] Found: [{result.index}] <{element_tag}> "{element_text}"'
+                )
                 logger.info(f"  Confidence: {result.confidence:.2f} (min: {query.min_confidence})")
                 logger.info(f"  Reasoning: {result.reasoning[:80]}...")
                 logger.info(f"  Response time: {response_time_ms:.0f}ms")
 
                 if not meets_expectations:
-                    if query.expected_tags and element_tag not in [t.lower() for t in query.expected_tags]:
-                        logger.warning(f"    Expected tags: {query.expected_tags}, got: {element_tag}")
+                    if query.expected_tags and element_tag not in [
+                        t.lower() for t in query.expected_tags
+                    ]:
+                        logger.warning(
+                            f"    Expected tags: {query.expected_tags}, got: {element_tag}"
+                        )
             else:
                 logger.info(f"  [FAIL] Not found: {result.reasoning}")
                 logger.info(f"  Response time: {response_time_ms:.0f}ms")
@@ -474,7 +493,7 @@ class LLMSelectorTester:
         elements: list,
     ) -> ActionResult:
         """Test action selection."""
-        logger.info(f"\nAction: \"{instruction}\" (expected: {expected_action})")
+        logger.info(f'\nAction: "{instruction}" (expected: {expected_action})')
 
         start_time = time.time()
 
@@ -485,7 +504,9 @@ class LLMSelectorTester:
             action_correct = action.lower() == expected_action.lower()
 
             if result.found:
-                inner = result.element.element if hasattr(result.element, 'element') else result.element
+                inner = (
+                    result.element.element if hasattr(result.element, "element") else result.element
+                )
                 status = "PASS" if action_correct else "WRONG_ACTION"
                 logger.info(f"  [{status}] Element: [{result.index}] <{inner.tag_name}>")
                 logger.info(f"  Action: {action} (expected: {expected_action})")
@@ -593,6 +614,7 @@ class LLMSelectorTester:
 # Report Generation
 # =============================================================================
 
+
 def print_summary(summary: TestSummary) -> None:
     """Print a formatted summary to console."""
     print("\n" + "=" * 70)
@@ -603,36 +625,46 @@ def print_summary(summary: TestSummary) -> None:
     print(f"Model: {summary.model}")
     print(f"Timestamp: {summary.timestamp}")
 
-    print(f"\n--- Overall Results ---")
-    success_rate = (summary.successful_queries / summary.total_queries * 100) if summary.total_queries > 0 else 0
+    print("\n--- Overall Results ---")
+    success_rate = (
+        (summary.successful_queries / summary.total_queries * 100)
+        if summary.total_queries > 0
+        else 0
+    )
     print(f"Total Queries: {summary.total_queries}")
     print(f"Successful: {summary.successful_queries} ({success_rate:.1f}%)")
     print(f"Failed: {summary.failed_queries}")
 
-    print(f"\n--- Results by Category ---")
+    print("\n--- Results by Category ---")
     for category, results in summary.category_results.items():
         cat_success = (results["success"] / results["total"] * 100) if results["total"] > 0 else 0
-        cat_meets = (results["meets_expectations"] / results["total"] * 100) if results["total"] > 0 else 0
-        print(f"  {category}: {results['success']}/{results['total']} success ({cat_success:.0f}%), "
-              f"{results['meets_expectations']} meet expectations ({cat_meets:.0f}%)")
+        cat_meets = (
+            (results["meets_expectations"] / results["total"] * 100) if results["total"] > 0 else 0
+        )
+        print(
+            f"  {category}: {results['success']}/{results['total']} success ({cat_success:.0f}%), "
+            f"{results['meets_expectations']} meet expectations ({cat_meets:.0f}%)"
+        )
 
-    print(f"\n--- Response Times ---")
+    print("\n--- Response Times ---")
     print(f"Average: {summary.avg_response_time_ms:.0f}ms")
     print(f"Min: {summary.min_response_time_ms:.0f}ms")
     print(f"Max: {summary.max_response_time_ms:.0f}ms")
 
-    print(f"\n--- Confidence Distribution ---")
+    print("\n--- Confidence Distribution ---")
     print(f"Average confidence: {summary.avg_confidence:.2f}")
     for bucket, count in summary.confidence_buckets.items():
         print(f"  {bucket}: {count}")
 
-    print(f"\n--- Per-Site Results ---")
+    print("\n--- Per-Site Results ---")
     for site in summary.site_results:
         site_queries = [q for q in site.query_results if q.error is None]
         site_success = sum(1 for q in site_queries if q.success)
         site_rate = (site_success / len(site_queries) * 100) if site_queries else 0
-        print(f"  {site.site_name}: {site_success}/{len(site_queries)} ({site_rate:.0f}%) "
-              f"- {site.element_count} elements")
+        print(
+            f"  {site.site_name}: {site_success}/{len(site_queries)} ({site_rate:.0f}%) "
+            f"- {site.element_count} elements"
+        )
 
     print("\n" + "=" * 70)
 
@@ -646,7 +678,9 @@ def save_report(summary: TestSummary, output_path: str) -> None:
         "total_queries": summary.total_queries,
         "successful_queries": summary.successful_queries,
         "failed_queries": summary.failed_queries,
-        "success_rate": (summary.successful_queries / summary.total_queries) if summary.total_queries > 0 else 0,
+        "success_rate": (
+            (summary.successful_queries / summary.total_queries) if summary.total_queries > 0 else 0
+        ),
         "category_results": summary.category_results,
         "timing": {
             "avg_ms": summary.avg_response_time_ms,
@@ -706,6 +740,7 @@ def save_report(summary: TestSummary, output_path: str) -> None:
 # Main
 # =============================================================================
 
+
 def get_available_providers() -> list[tuple[str, str]]:
     """Check which LLM providers are available."""
     available = []
@@ -742,12 +777,14 @@ async def main():
         help="Test only this site",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show verbose output including element lists",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         help="Save results to JSON file",
     )
     args = parser.parse_args()
@@ -782,6 +819,7 @@ async def main():
 
                 def _default_config(self):
                     from qontinui.extraction.web.llm_clients import LLMConfig
+
                     return LLMConfig(model="mock")
 
                 async def complete(self, prompt: str) -> str:
@@ -849,7 +887,7 @@ ALTERNATIVES: none"""
         sites_to_test = TEST_SITES
 
     # Run tests
-    logger.info(f"\nStarting LLM Selector Tests")
+    logger.info("\nStarting LLM Selector Tests")
     logger.info(f"Provider: {provider}")
     logger.info(f"Model: {model or 'default'}")
     logger.info(f"Sites to test: {len(sites_to_test)}")

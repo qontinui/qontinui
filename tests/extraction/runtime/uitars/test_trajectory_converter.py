@@ -3,7 +3,6 @@
 import json
 import sys
 import tempfile
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -465,9 +464,7 @@ class TestTrajectoryConverterEdgeCases:
 
         # Check transitions preserve action details
         if result.transitions:
-            type_transitions = [
-                t for t in result.transitions if t.action_type == "type"
-            ]
+            type_transitions = [t for t in result.transitions if t.action_type == "type"]
             if type_transitions:
                 assert type_transitions[0].action_value == "hello"
 

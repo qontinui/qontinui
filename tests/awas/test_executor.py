@@ -148,9 +148,7 @@ class TestAwasExecutor:
 
     def test_build_auth_headers_bearer(self, executor, sample_manifest):
         """Test building bearer token auth headers."""
-        headers = executor._build_auth_headers(
-            sample_manifest, {"token": "my-secret-token"}
-        )
+        headers = executor._build_auth_headers(sample_manifest, {"token": "my-secret-token"})
 
         assert headers.get("Authorization") == "Bearer my-secret-token"
 
@@ -177,9 +175,7 @@ class TestAwasExecutor:
             auth=AwasAuth(type=AwasAuthType.BASIC),
         )
 
-        headers = executor._build_auth_headers(
-            manifest, {"username": "user", "password": "pass"}
-        )
+        headers = executor._build_auth_headers(manifest, {"username": "user", "password": "pass"})
 
         # Basic auth should be base64 encoded
         assert "Authorization" in headers

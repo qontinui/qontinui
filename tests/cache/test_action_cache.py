@@ -4,17 +4,14 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import numpy as np
-import pytest
 
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
 from qontinui.cache.action_cache import ActionCache, get_action_cache, set_action_cache
-from qontinui.cache.cache_types import CacheEntry, CachedCoordinates, CacheResult
 
 
 class MockPattern:

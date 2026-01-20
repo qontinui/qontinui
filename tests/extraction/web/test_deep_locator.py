@@ -4,11 +4,8 @@ Tests for deep_locator module.
 Tests cross-frame selector resolution and deep locator parsing.
 """
 
-import pytest
-
 from qontinui.extraction.web.deep_locator import (
     DeepLocatorParts,
-    DeepLocatorResolver,
     build_deep_locator,
     is_deep_locator,
 )
@@ -103,9 +100,7 @@ class TestBuildDeepLocator:
 
     def test_build_nested_frames(self) -> None:
         """Test building locator for nested frames."""
-        locator = build_deep_locator(
-            ["iframe#outer", "iframe#inner"], "button.submit"
-        )
+        locator = build_deep_locator(["iframe#outer", "iframe#inner"], "button.submit")
         assert locator == "iframe#outer >> iframe#inner >> button.submit"
 
 
@@ -143,18 +138,14 @@ class TestDeepLocatorEdgeCases:
     def test_complex_element_selector(self) -> None:
         """Test with complex element selector."""
         locator = build_deep_locator(
-            ["iframe#main"],
-            "div.container > form > button[type='submit']"
+            ["iframe#main"], "div.container > form > button[type='submit']"
         )
         assert locator == "iframe#main >> div.container > form > button[type='submit']"
         assert is_deep_locator(locator) is True
 
     def test_frame_selector_with_attributes(self) -> None:
         """Test frame selector with complex attributes."""
-        locator = build_deep_locator(
-            ['iframe[name="content"]', 'iframe[src*="widget"]'],
-            "button"
-        )
+        locator = build_deep_locator(['iframe[name="content"]', 'iframe[src*="widget"]'], "button")
         assert 'iframe[name="content"]' in locator
         assert 'iframe[src*="widget"]' in locator
         assert locator.count(" >> ") == 2

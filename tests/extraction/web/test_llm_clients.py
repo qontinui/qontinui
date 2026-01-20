@@ -89,9 +89,7 @@ class TestMockLLMClient:
     @pytest.mark.asyncio
     async def test_case_insensitive_matching(self) -> None:
         """Test that pattern matching is case-insensitive."""
-        client = MockLLMClient(
-            responses={"SUBMIT": "Found it!"}
-        )
+        client = MockLLMClient(responses={"SUBMIT": "Found it!"})
 
         response = await client.complete("find the submit button")
         assert response == "Found it!"
@@ -165,10 +163,10 @@ class TestLLMClientIntegration:
     @pytest.mark.asyncio
     async def test_mock_client_with_selector(self) -> None:
         """Test MockLLMClient works with NaturalLanguageSelector."""
+        from qontinui.extraction.web.models import BoundingBox, InteractiveElement
         from qontinui.extraction.web.natural_language_selector import (
             NaturalLanguageSelector,
         )
-        from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 
         # Create mock client with predictable response
         client = MockLLMClient(
@@ -214,10 +212,10 @@ ALTERNATIVES: none""",
     @pytest.mark.asyncio
     async def test_mock_client_action_selection(self) -> None:
         """Test MockLLMClient works with action selection."""
+        from qontinui.extraction.web.models import BoundingBox, InteractiveElement
         from qontinui.extraction.web.natural_language_selector import (
             NaturalLanguageSelector,
         )
-        from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 
         # Create mock client
         client = MockLLMClient(
@@ -251,10 +249,10 @@ REASONING: Clicking the button""",
     @pytest.mark.asyncio
     async def test_mock_client_multi_selection(self) -> None:
         """Test MockLLMClient works with multiple element selection."""
+        from qontinui.extraction.web.models import BoundingBox, InteractiveElement
         from qontinui.extraction.web.natural_language_selector import (
             NaturalLanguageSelector,
         )
-        from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 
         # Create mock client with multi-match response
         client = MockLLMClient(

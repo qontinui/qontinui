@@ -4,8 +4,6 @@ Tests for accessibility_extractor module.
 Tests accessibility tree extraction and merging with DOM data.
 """
 
-import pytest
-
 from qontinui.extraction.web.accessibility_extractor import (
     A11yNode,
     A11yTree,
@@ -51,9 +49,7 @@ class TestA11yNode:
             "name": "Click me",
             "description": "A button",
             "focused": True,
-            "children": [
-                {"role": "text", "name": "Click me", "description": ""}
-            ],
+            "children": [{"role": "text", "name": "Click me", "description": ""}],
         }
 
         node = A11yNode.from_playwright(pw_data)

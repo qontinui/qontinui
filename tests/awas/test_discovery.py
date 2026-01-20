@@ -15,14 +15,8 @@ class TestAwasDiscoveryService:
 
         assert discovery._normalize_base_url("https://example.com") == "https://example.com"
         assert discovery._normalize_base_url("https://example.com/") == "https://example.com"
-        assert (
-            discovery._normalize_base_url("https://example.com/path")
-            == "https://example.com"
-        )
-        assert (
-            discovery._normalize_base_url("http://localhost:3000/api")
-            == "http://localhost:3000"
-        )
+        assert discovery._normalize_base_url("https://example.com/path") == "https://example.com"
+        assert discovery._normalize_base_url("http://localhost:3000/api") == "http://localhost:3000"
 
     def test_extract_elements_basic(self):
         """Test extracting AWAS elements from HTML."""

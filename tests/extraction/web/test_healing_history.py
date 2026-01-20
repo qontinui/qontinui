@@ -4,11 +4,8 @@ Tests for selector healer's healing history and learning features.
 Tests persistent history, learning from past repairs, and strategy statistics.
 """
 
-import json
 import tempfile
 from pathlib import Path
-
-import pytest
 
 from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 from qontinui.extraction.web.selector_healer import (

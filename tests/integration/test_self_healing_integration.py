@@ -9,34 +9,28 @@ Tests the full flow of the self-healing system including:
 All tests use mocks for actual screen capture/input - no real GUI needed.
 """
 
-import tempfile
 import time
 from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, Mock, patch
 
 import cv2
 import numpy as np
 import pytest
 
-from qontinui.cache import ActionCache, CacheResult
+from qontinui.cache import ActionCache
 from qontinui.healing import (
     HealingConfig,
     HealingContext,
-    HealingResult,
     HealingStrategy,
     VisionHealer,
 )
 from qontinui.model.element.pattern import Pattern
 from qontinui.model.element.region import Region
-from qontinui.navigation import TransitionReliability, TransitionStats
+from qontinui.navigation import TransitionReliability
 from qontinui.validation import (
     ChangeType,
     ExpectedChange,
-    ValidationResult,
     VisualValidator,
 )
-
 
 # --- Test Fixtures ---
 
@@ -765,7 +759,9 @@ class TestVisualValidation:
         # Add two distinct, well-separated changes with high contrast
         # Use filled rectangles that are far apart to ensure separate detection
         cv2.rectangle(post_screenshot, (50, 50), (150, 150), (0, 0, 0), -1)  # Black, top-left area
-        cv2.rectangle(post_screenshot, (600, 450), (700, 550), (255, 255, 255), -1)  # White, bottom-right
+        cv2.rectangle(
+            post_screenshot, (600, 450), (700, 550), (255, 255, 255), -1
+        )  # White, bottom-right
 
         diff = visual_validator.compute_diff(pre_screenshot, post_screenshot)
 

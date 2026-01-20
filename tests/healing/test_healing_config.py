@@ -3,8 +3,6 @@
 import sys
 from pathlib import Path
 
-import pytest
-
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
@@ -93,7 +91,9 @@ class TestHealingConfig:
         # but it always returns None - test that it returns None
         from qontinui.healing.healing_types import HealingContext
 
-        result = client.find_element(b"fake_screenshot", HealingContext(original_description="test"))
+        result = client.find_element(
+            b"fake_screenshot", HealingContext(original_description="test")
+        )
         assert result is None
 
     def test_get_client_local(self):

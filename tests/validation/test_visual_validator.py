@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent / "src"

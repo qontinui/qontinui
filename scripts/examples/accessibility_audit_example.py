@@ -27,16 +27,16 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from playwright.async_api import async_playwright, Page
+from playwright.async_api import Page, async_playwright
 
 # Add src to path for development
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from qontinui.extraction.web import (
-    InteractiveElementExtractor,
-    AccessibilityExtractor,
-    A11yTree,
     A11yNode,
+    A11yTree,
+    AccessibilityExtractor,
+    InteractiveElementExtractor,
     enrich_with_accessibility,
 )
 
@@ -168,22 +168,20 @@ class AccessibilityAuditor:
             elem = item.element
             # Interactive elements should have accessible names
             if elem.element_type in ("button", "a", "aria_button", "aria_link"):
-                has_name = bool(
-                    elem.text
-                    or elem.aria_label
-                    or item.a11y_name
-                )
+                has_name = bool(elem.text or elem.aria_label or item.a11y_name)
                 if not has_name:
-                    issues.append(AccessibilityIssue(
-                        severity="error",
-                        category="missing-name",
-                        message=f"Interactive element <{elem.tag_name}> has no accessible name",
-                        element_info={
-                            "tag": elem.tag_name,
-                            "type": elem.element_type,
-                            "selector": elem.selector,
-                        },
-                    ))
+                    issues.append(
+                        AccessibilityIssue(
+                            severity="error",
+                            category="missing-name",
+                            message=f"Interactive element <{elem.tag_name}> has no accessible name",
+                            element_info={
+                                "tag": elem.tag_name,
+                                "type": elem.element_type,
+                                "selector": elem.selector,
+                            },
+                        )
+                    )
 
         return issues
 
@@ -197,29 +195,33 @@ class AccessibilityAuditor:
             # Check clickable divs/spans (might need button role)
             if elem.element_type.startswith("clickable_"):
                 if not elem.aria_role:
-                    issues.append(AccessibilityIssue(
-                        severity="warning",
-                        category="missing-role",
-                        message=f"Clickable <{elem.tag_name}> should have role='button'",
-                        element_info={
-                            "tag": elem.tag_name,
-                            "text": elem.text[:30] if elem.text else None,
-                            "selector": elem.selector,
-                        },
-                    ))
+                    issues.append(
+                        AccessibilityIssue(
+                            severity="warning",
+                            category="missing-role",
+                            message=f"Clickable <{elem.tag_name}> should have role='button'",
+                            element_info={
+                                "tag": elem.tag_name,
+                                "text": elem.text[:30] if elem.text else None,
+                                "selector": elem.selector,
+                            },
+                        )
+                    )
 
             # Check tabindex elements
             if elem.element_type.startswith("tabindex_"):
                 if not elem.aria_role:
-                    issues.append(AccessibilityIssue(
-                        severity="info",
-                        category="missing-role",
-                        message=f"Element with tabindex should have an ARIA role",
-                        element_info={
-                            "tag": elem.tag_name,
-                            "selector": elem.selector,
-                        },
-                    ))
+                    issues.append(
+                        AccessibilityIssue(
+                            severity="info",
+                            category="missing-role",
+                            message="Element with tabindex should have an ARIA role",
+                            element_info={
+                                "tag": elem.tag_name,
+                                "selector": elem.selector,
+                            },
+                        )
+                    )
 
         return issues
 
@@ -231,15 +233,17 @@ class AccessibilityAuditor:
 
         for img in images:
             if not img.name and not img.description:
-                issues.append(AccessibilityIssue(
-                    severity="error",
-                    category="missing-alt",
-                    message="Image element has no alt text",
-                    element_info={
-                        "role": img.role,
-                        "a11y_name": img.name or "(none)",
-                    },
-                ))
+                issues.append(
+                    AccessibilityIssue(
+                        severity="error",
+                        category="missing-alt",
+                        message="Image element has no alt text",
+                        element_info={
+                            "role": img.role,
+                            "a11y_name": img.name or "(none)",
+                        },
+                    )
+                )
 
         return issues
 
@@ -252,22 +256,20 @@ class AccessibilityAuditor:
 
             # Check input elements
             if elem.tag_name == "input":
-                has_label = bool(
-                    elem.aria_label
-                    or item.a11y_name
-                    or item.a11y_description
-                )
+                has_label = bool(elem.aria_label or item.a11y_name or item.a11y_description)
                 if not has_label:
-                    issues.append(AccessibilityIssue(
-                        severity="error",
-                        category="missing-label",
-                        message=f"Input element has no label",
-                        element_info={
-                            "tag": elem.tag_name,
-                            "type": elem.element_type,
-                            "selector": elem.selector,
-                        },
-                    ))
+                    issues.append(
+                        AccessibilityIssue(
+                            severity="error",
+                            category="missing-label",
+                            message="Input element has no label",
+                            element_info={
+                                "tag": elem.tag_name,
+                                "type": elem.element_type,
+                                "selector": elem.selector,
+                            },
+                        )
+                    )
 
         return issues
 
@@ -277,15 +279,17 @@ class AccessibilityAuditor:
 
         for item in enriched:
             if 0 < item.match_confidence < 0.5:
-                issues.append(AccessibilityIssue(
-                    severity="info",
-                    category="low-confidence",
-                    message=f"Element has low accessibility match confidence ({item.match_confidence:.2f})",
-                    element_info={
-                        "tag": item.element.tag_name,
-                        "text": item.element.text[:30] if item.element.text else None,
-                    },
-                ))
+                issues.append(
+                    AccessibilityIssue(
+                        severity="info",
+                        category="low-confidence",
+                        message=f"Element has low accessibility match confidence ({item.match_confidence:.2f})",
+                        element_info={
+                            "tag": item.element.tag_name,
+                            "text": item.element.text[:30] if item.element.text else None,
+                        },
+                    )
+                )
 
         return issues
 
@@ -399,7 +403,7 @@ async def demo_full_audit(page: Page, output_path: Path | None = None):
     report = await auditor.audit_page(page)
 
     # Print summary
-    logger.info(f"\n--- Audit Summary ---")
+    logger.info("\n--- Audit Summary ---")
     logger.info(f"URL: {report.url}")
     logger.info(f"Interactive elements: {report.total_elements}")
     logger.info(f"Accessibility nodes: {report.total_a11y_nodes}")
@@ -446,9 +450,7 @@ async def demo_full_audit(page: Page, output_path: Path | None = None):
 
 
 async def main():
-    parser = argparse.ArgumentParser(
-        description="Accessibility audit example using qontinui"
-    )
+    parser = argparse.ArgumentParser(description="Accessibility audit example using qontinui")
     parser.add_argument(
         "--url",
         default="https://github.com",

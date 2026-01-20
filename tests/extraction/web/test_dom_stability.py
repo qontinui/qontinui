@@ -4,8 +4,6 @@ Tests for dom_stability module.
 Tests DOM stability detection, lazy content loading, and change detection.
 """
 
-import pytest
-
 from qontinui.extraction.web.dom_stability import (
     ContentChangeDetector,
     DOMSnapshot,

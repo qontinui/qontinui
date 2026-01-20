@@ -21,7 +21,6 @@ from pathlib import Path
 from types import ModuleType
 
 import pytest
-
 from qontinui_schemas.accessibility import (
     AccessibilityBackend,
     AccessibilityCaptureOptions,
@@ -155,9 +154,7 @@ class TestCDPConnection:
         assert capture.is_connected() is False
 
     @pytest.mark.asyncio
-    async def test_disconnect_when_not_connected(
-        self, cdp_config: AccessibilityConfig
-    ) -> None:
+    async def test_disconnect_when_not_connected(self, cdp_config: AccessibilityConfig) -> None:
         """Disconnect is safe when not connected."""
         capture = CDPAccessibilityCapture(config=cdp_config)
         # Should not raise
@@ -188,9 +185,7 @@ class TestCDPCaptureTree:
             await capture.disconnect()
 
     @pytest.mark.asyncio
-    async def test_capture_tree_with_options(
-        self, cdp_config: AccessibilityConfig
-    ) -> None:
+    async def test_capture_tree_with_options(self, cdp_config: AccessibilityConfig) -> None:
         """Capture respects options."""
         capture = CDPAccessibilityCapture(config=cdp_config)
         try:
@@ -237,9 +232,7 @@ class TestCDPCaptureTree:
             await capture.disconnect()
 
     @pytest.mark.asyncio
-    async def test_capture_tree_not_connected_raises(
-        self, cdp_config: AccessibilityConfig
-    ) -> None:
+    async def test_capture_tree_not_connected_raises(self, cdp_config: AccessibilityConfig) -> None:
         """Capture raises when not connected."""
         capture = CDPAccessibilityCapture(config=cdp_config)
 
@@ -268,9 +261,7 @@ class TestCDPNodeLookup:
             await capture.disconnect()
 
     @pytest.mark.asyncio
-    async def test_get_node_by_ref_not_found(
-        self, cdp_config: AccessibilityConfig
-    ) -> None:
+    async def test_get_node_by_ref_not_found(self, cdp_config: AccessibilityConfig) -> None:
         """Returns None for non-existent ref."""
         capture = CDPAccessibilityCapture(config=cdp_config)
         try:
@@ -307,9 +298,7 @@ class TestCDPFindNodes:
             await capture.disconnect()
 
     @pytest.mark.asyncio
-    async def test_find_by_multiple_roles(
-        self, cdp_config: AccessibilityConfig
-    ) -> None:
+    async def test_find_by_multiple_roles(self, cdp_config: AccessibilityConfig) -> None:
         """Can find nodes matching any of multiple roles."""
         capture = CDPAccessibilityCapture(config=cdp_config)
         try:
@@ -350,9 +339,7 @@ class TestCDPFindNodes:
             await capture.connect(host=CDP_HOST, port=CDP_PORT)
             await capture.capture_tree()
 
-            selector = AccessibilitySelector(
-                name="ThisNameDoesNotExistAnywhere123456789"
-            )
+            selector = AccessibilitySelector(name="ThisNameDoesNotExistAnywhere123456789")
             nodes = await capture.find_nodes(selector)
 
             assert nodes == []
@@ -382,9 +369,7 @@ class TestCDPAIContext:
             await capture.disconnect()
 
     @pytest.mark.asyncio
-    async def test_to_ai_context_with_url(
-        self, cdp_config: AccessibilityConfig
-    ) -> None:
+    async def test_to_ai_context_with_url(self, cdp_config: AccessibilityConfig) -> None:
         """Context includes URL when available."""
         capture = CDPAccessibilityCapture(config=cdp_config)
         try:
@@ -401,9 +386,7 @@ class TestCDPAIContext:
             await capture.disconnect()
 
     @pytest.mark.asyncio
-    async def test_to_ai_context_truncation(
-        self, cdp_config: AccessibilityConfig
-    ) -> None:
+    async def test_to_ai_context_truncation(self, cdp_config: AccessibilityConfig) -> None:
         """Context respects max_elements limit."""
         capture = CDPAccessibilityCapture(config=cdp_config)
         try:

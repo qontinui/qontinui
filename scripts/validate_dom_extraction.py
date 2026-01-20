@@ -32,10 +32,9 @@ from qontinui.extraction.web import (
     format_for_llm,
 )
 from qontinui.extraction.web.accessibility_extractor import (
-    AccessibilityExtractor,
     extract_accessibility_tree,
 )
-from qontinui.extraction.web.frame_manager import FrameManager, extract_across_frames
+from qontinui.extraction.web.frame_manager import extract_across_frames
 from qontinui.extraction.web.hybrid_extractor import HybridExtractor
 
 logging.basicConfig(
@@ -115,7 +114,11 @@ async def test_basic_extraction(page, url: str) -> ValidationResult:
             details={
                 "element_types": element_types,
                 "sample_elements": [
-                    {"id": el.id, "type": el.element_type, "text": el.text[:50] if el.text else None}
+                    {
+                        "id": el.id,
+                        "type": el.element_type,
+                        "text": el.text[:50] if el.text else None,
+                    }
                     for el in elements[:10]
                 ],
             },
@@ -156,7 +159,8 @@ async def test_shadow_dom_extraction(page, url: str) -> ValidationResult:
         shadow_elements = [el for el in elements if el.shadow_path]
 
         # Also check for shadow roots on the page
-        shadow_root_count = await page.evaluate("""
+        shadow_root_count = await page.evaluate(
+            """
             () => {
                 let count = 0;
                 const checkShadow = (root) => {
@@ -170,7 +174,8 @@ async def test_shadow_dom_extraction(page, url: str) -> ValidationResult:
                 checkShadow(document);
                 return count;
             }
-        """)
+        """
+        )
 
         return ValidationResult(
             test_name=test_name,
@@ -183,7 +188,11 @@ async def test_shadow_dom_extraction(page, url: str) -> ValidationResult:
                 "shadow_roots_on_page": shadow_root_count,
                 "elements_from_shadow": len(shadow_elements),
                 "shadow_element_samples": [
-                    {"id": el.id, "shadow_path": el.shadow_path, "text": el.text[:30] if el.text else None}
+                    {
+                        "id": el.id,
+                        "shadow_path": el.shadow_path,
+                        "text": el.text[:30] if el.text else None,
+                    }
                     for el in shadow_elements[:5]
                 ],
             },
@@ -245,7 +254,11 @@ async def test_iframe_extraction(page, url: str) -> ValidationResult:
                 "frames_with_elements": len(result.frames),
                 "elements_per_frame": elements_per_frame,
                 "frame_info": [
-                    {"id": f.frame_id, "url": f.url[:50] if f.url else "about:blank", "name": f.name}
+                    {
+                        "id": f.frame_id,
+                        "url": f.url[:50] if f.url else "about:blank",
+                        "name": f.name,
+                    }
                     for f in result.frames[:5]
                 ],
             },
@@ -443,10 +456,7 @@ async def test_full_extraction(page, url: str) -> ValidationResult:
             elements = result
             frame_count = 1
 
-        shadow_elements = [
-            el for el in elements
-            if hasattr(el, "shadow_path") and el.shadow_path
-        ]
+        shadow_elements = [el for el in elements if hasattr(el, "shadow_path") and el.shadow_path]
 
         return ValidationResult(
             test_name=test_name,
@@ -541,7 +551,6 @@ def print_summary(results: list[ValidationResult]) -> None:
         print("-" * 40)
 
         passed = sum(1 for r in url_results if r.success)
-        failed = sum(1 for r in url_results if not r.success)
 
         for r in url_results:
             status = "PASS" if r.success else "FAIL"
@@ -553,7 +562,6 @@ def print_summary(results: list[ValidationResult]) -> None:
 
     # Overall stats
     total_passed = sum(1 for r in results if r.success)
-    total_failed = sum(1 for r in results if not r.success)
     print(f"\n{'='*60}")
     print(f"OVERALL: {total_passed}/{len(results)} tests passed")
     print("=" * 60)

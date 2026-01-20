@@ -9,8 +9,9 @@ Skip slow tests: poetry run pytest tests/extraction/web/test_integration_e2e.py 
 """
 
 import logging
+from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any
 
 import pytest
 import pytest_asyncio
@@ -32,9 +33,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
     )
-    config.addinivalue_line(
-        "markers", "network: marks tests as requiring network access"
-    )
+    config.addinivalue_line("markers", "network: marks tests as requiring network access")
     config.addinivalue_line(
         "markers", "cdp_required: marks tests as requiring CDP (Chrome DevTools Protocol)"
     )
@@ -318,9 +317,7 @@ class TestShadowDOMExtraction:
         assert len(shadow_elements) >= 1  # At least one element from shadow DOM
 
         # Verify the shadow button was found
-        shadow_button = next(
-            (e for e in elements if e.text and "Shadow Button" in e.text), None
-        )
+        shadow_button = next((e for e in elements if e.text and "Shadow Button" in e.text), None)
         assert shadow_button is not None
 
     async def test_shadow_dom_disabled(self, page) -> None:
@@ -618,11 +615,13 @@ class TestNaturalLanguageSelection:
 
         # Create dedicated mock with only the multi-response pattern
         # The generic mock fixture has patterns that may match the prompt's examples
-        multi_mock = MockLLMClient(responses={
-            "all links": """MATCH: 0, 0.95, First link
+        multi_mock = MockLLMClient(
+            responses={
+                "all links": """MATCH: 0, 0.95, First link
 MATCH: 1, 0.90, Second link
 MATCH: 2, 0.85, Third link"""
-        })
+            }
+        )
 
         selector = NaturalLanguageSelector(llm_client=multi_mock)
         results = await selector.find_multiple("all links", elements)
@@ -667,15 +666,15 @@ MATCH: 2, 0.85, Third link"""
         elements = await extractor.extract_interactive_elements(page, "test")
 
         # Configure mock for action selection
-        mock_llm_client.responses["click the submit"] = """INDEX: 0
+        mock_llm_client.responses[
+            "click the submit"
+        ] = """INDEX: 0
 ACTION: click
 CONFIDENCE: 0.95
 REASONING: User wants to click the submit button"""
 
         selector = NaturalLanguageSelector(llm_client=mock_llm_client)
-        result, action = await selector.select_action(
-            "click the submit button", elements
-        )
+        result, action = await selector.select_action("click the submit button", elements)
 
         assert result.found is True
         assert action in ["click", "type", "hover", "focus", "select"]
@@ -958,8 +957,6 @@ class TestNetworkErrorHandling:
     @pytest.mark.slow
     async def test_handle_unreachable_url(self, browser_context) -> None:
         """Test handling unreachable URL gracefully."""
-        from qontinui.extraction.web.config import ExtractionConfig
-        from qontinui.extraction.web.extractor import WebExtractor
 
         page = await browser_context.new_page()
 
@@ -997,9 +994,7 @@ class TestNetworkErrorHandling:
 
         # Extract should still work with timeout
         extractor = InteractiveElementExtractor()
-        elements = await extractor.extract_interactive_elements(
-            page, "timeout_test", timeout=10.0
-        )
+        elements = await extractor.extract_interactive_elements(page, "timeout_test", timeout=10.0)
 
         # Should still extract elements
         assert isinstance(elements, list)
@@ -1054,9 +1049,7 @@ class TestRealWebsiteIntegration:
         assert context.screenshot_base64 != ""
         assert len(context.elements) >= 1
 
-    async def test_example_com_natural_language_selection(
-        self, page, mock_llm_client
-    ) -> None:
+    async def test_example_com_natural_language_selection(self, page, mock_llm_client) -> None:
         """Test natural language selection on example.com."""
         from qontinui.extraction.web.interactive_element_extractor import (
             InteractiveElementExtractor,

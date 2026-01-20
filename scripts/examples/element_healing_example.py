@@ -20,26 +20,23 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import logging
 import sys
 import tempfile
 from pathlib import Path
 
-from playwright.async_api import async_playwright, Page
+from playwright.async_api import Page, async_playwright
 
 # Add src to path for development
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from qontinui.extraction.web import (
-    InteractiveElementExtractor,
-    SelectorHealer,
+    BoundingBox,
     HealingHistory,
     HealingResult,
     InteractiveElement,
-    BoundingBox,
+    SelectorHealer,
 )
-from qontinui.extraction.web.llm_clients import MockLLMClient
 
 logging.basicConfig(
     level=logging.INFO,
@@ -104,7 +101,7 @@ async def demo_selector_variations(page: Page):
 
     result = await healer.heal_selector(broken_selector, element, page)
 
-    logger.info(f"\nHealing result:")
+    logger.info("\nHealing result:")
     logger.info(f"  Success: {result.success}")
     logger.info(f"  Strategy used: {result.strategy_used}")
     logger.info(f"  Confidence: {result.confidence:.2f}")
@@ -146,7 +143,7 @@ async def demo_text_and_aria_healing(page: Page):
         page,
     )
 
-    logger.info(f"\nHealing result (text-based):")
+    logger.info("\nHealing result (text-based):")
     logger.info(f"  Success: {result.success}")
     logger.info(f"  Strategy: {result.strategy_used}")
     if result.healed_selector:
@@ -168,7 +165,7 @@ async def demo_text_and_aria_healing(page: Page):
         page,
     )
 
-    logger.info(f"\nHealing result (aria-based):")
+    logger.info("\nHealing result (aria-based):")
     logger.info(f"  Success: {result.success}")
     logger.info(f"  Strategy: {result.strategy_used}")
     if result.healed_selector:
