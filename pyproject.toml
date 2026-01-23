@@ -142,10 +142,16 @@ warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
+# For src-layout projects, use mypy_path to set the import root
+# IMPORTANT: Run mypy as `mypy -p qontinui` or `mypy src/qontinui`, NOT `mypy .`
+# Running `mypy .` causes "Source file found twice" due to path resolution conflicts
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
-# Specify the package to check (prevents duplicate module discovery when running `mypy .`)
+disable_error_code = ["import-untyped"]
+# Exclude everything except src/ to prevent "Source file found twice" when running `mypy .`
+exclude = ["tests", "docs", "scripts", "examples", "benchmarks"]
+# Only check the qontinui package
 packages = ["qontinui"]
 
 [[tool.mypy.overrides]]
