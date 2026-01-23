@@ -187,6 +187,7 @@ class StateMachineState:
             "name": self.name,
             "description": self.description,
             "stateImages": state_images,
+            "screensFound": list(self.screen_ids),  # Which screenshots this state appears on
             "regions": [],  # User-defined semantic areas
             "locations": [],  # User-defined click points
             "strings": [],  # User-defined text with special meaning
@@ -1100,15 +1101,18 @@ class ImageMatchingStateMachineBuilder:
         self.deduplicate_tracked_images()
 
         # Log which images were found on which screenshots
-        print("[IMAGE_MATCHING_DEBUG] Image search results:", flush=True)
-        for tracked in self.tracked_images[:20]:  # Limit output
+        print(
+            f"[IMAGE_MATCHING_DEBUG] Image search results: {len(self.tracked_images)} tracked images",
+            flush=True,
+        )
+        for i, tracked in enumerate(self.tracked_images[:10]):  # Limit output
             print(
-                f"[IMAGE_MATCHING_DEBUG]   '{tracked.name}' found on: {sorted(tracked.screens_found)}",
+                f"[IMAGE_MATCHING_DEBUG]   Image {i}: found on screens {sorted(tracked.screens_found)}",
                 flush=True,
             )
-        if len(self.tracked_images) > 20:
+        if len(self.tracked_images) > 10:
             print(
-                f"[IMAGE_MATCHING_DEBUG]   ... and {len(self.tracked_images) - 20} more images",
+                f"[IMAGE_MATCHING_DEBUG]   ... and {len(self.tracked_images) - 10} more images",
                 flush=True,
             )
 
@@ -1116,9 +1120,9 @@ class ImageMatchingStateMachineBuilder:
         print("[IMAGE_MATCHING_DEBUG] Clustering images into states...", flush=True)
         states_config = self.cluster_into_states()
         print(f"[IMAGE_MATCHING_DEBUG] Created {len(states_config)} states", flush=True)
-        for state in states_config:
+        for i, state in enumerate(states_config):
             print(
-                f"[IMAGE_MATCHING_DEBUG]   State '{state.get('name')}': {len(state.get('stateImages', []))} images, screensFound={state.get('screensFound', [])}",
+                f"[IMAGE_MATCHING_DEBUG]   State {i}: {len(state.get('stateImages', []))} images, screensFound={state.get('screensFound', [])}",
                 flush=True,
             )
 
@@ -1172,19 +1176,19 @@ def build_state_machine_from_extraction_result(
     elements_by_screenshot: dict[str, list[dict[str, Any]]] = {}
 
     runtime_result = extraction_result.runtime_extraction
-    print(f"[IMAGE_MATCHING_DEBUG] runtime_result: {runtime_result}", flush=True)
+    print(f"[IMAGE_MATCHING_DEBUG] runtime_result exists: {runtime_result is not None}", flush=True)
     if runtime_result and runtime_result.states:
         print(
             f"[IMAGE_MATCHING_DEBUG] Found {len(runtime_result.states)} RuntimeStateCaptures",
             flush=True,
         )
-        for runtime_state in runtime_result.states:
+        for i, runtime_state in enumerate(runtime_result.states):
             # Get screenshot_id
             screenshot_id = (
                 runtime_state.screenshot.id if runtime_state.screenshot else runtime_state.id
             )
             print(
-                f"[IMAGE_MATCHING_DEBUG] Processing state with screenshot_id: {screenshot_id}",
+                f"[IMAGE_MATCHING_DEBUG] Processing state {i}: screenshot_id length={len(str(screenshot_id))}",
                 flush=True,
             )
             print(

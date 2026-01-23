@@ -145,6 +145,8 @@ plugins = ["pydantic.mypy"]
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
+# Specify the package to check (prevents duplicate module discovery when running `mypy .`)
+packages = ["qontinui"]
 
 [[tool.mypy.overrides]]
 module = "pydantic"
