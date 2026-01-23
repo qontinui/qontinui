@@ -969,9 +969,7 @@ class ImageMatchingStateMachineBuilder:
             state_name = f"State {state_index}"
 
             # Build stateImages for this state
-            state_images = []
-            # Build stateImages for this state
-            state_images = []
+            state_images: list[dict[str, Any]] = []
             for img in images:
                 # Create a specialized stateImage for EACH screen this image was found on.
                 # This ensures that we use the specific bounding box for that screen,
@@ -986,7 +984,8 @@ class ImageMatchingStateMachineBuilder:
                         bbox = img.source_bbox
                         bbox_source = "source"
                     elif sid in img.matches and img.matches[sid].found and img.matches[sid].bbox:
-                        bbox = img.matches[sid].bbox
+                        # bbox is confirmed non-None by the condition check
+                        bbox = img.matches[sid].bbox  # type: ignore[assignment]
                         bbox_source = "match"
 
                     # LOGGING: Trace why coord might be wrong

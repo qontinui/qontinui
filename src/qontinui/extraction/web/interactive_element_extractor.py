@@ -285,11 +285,12 @@ class InteractiveElementExtractor:
             ExtractionTimeoutError: If extraction times out.
         """
         actual_timeout = timeout if timeout is not None else self.options.timeout_seconds
-        return await with_timeout(
+        result = await with_timeout(
             self._extract_interactive_elements_impl(page, screenshot_id, min_size),
             timeout_seconds=actual_timeout,
             operation_name="extract_interactive_elements",
         )
+        return result if isinstance(result, list) else []
 
     async def _extract_interactive_elements_impl(
         self,
@@ -682,16 +683,16 @@ class InteractiveElementExtractor:
                         },
                     )
 
-                    elements: list[InteractiveElement] = []
+                    fallback_elements: list[InteractiveElement] = []
                     for data in elements_data:
                         element = self._data_to_element(data, screenshot_id)
                         if element:
-                            elements.append(element)
+                            fallback_elements.append(element)
 
                     logger.info(
-                        f"Fallback extraction found {len(elements)} elements (without shadow DOM)"
+                        f"Fallback extraction found {len(fallback_elements)} elements (without shadow DOM)"
                     )
-                    return elements
+                    return fallback_elements
 
                 except Exception as fallback_error:
                     logger.error(f"Fallback extraction also failed: {fallback_error}")

@@ -372,7 +372,9 @@ class NextJSExtractor(TechStackExtractor):
         while asyncio.get_event_loop().time() - start_time < timeout:
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(url, timeout=2) as response:
+                    async with session.get(
+                        url, timeout=aiohttp.ClientTimeout(total=2)
+                    ) as response:
                         if response.status < 500:
                             return
             except Exception:

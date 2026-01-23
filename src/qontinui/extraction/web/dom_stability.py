@@ -234,7 +234,7 @@ class DOMStabilityWaiter:
                 }
                 """
             )
-            return is_ready
+            return bool(is_ready)
         except Exception:
             return False
 

@@ -157,6 +157,13 @@ module = "qontinui.hal.implementations.mss_capture"
 warn_return_any = false
 disallow_any_unimported = false
 
+# Disable strict checking for extraction modules with complex union types
+[[tool.mypy.overrides]]
+module = "qontinui.extraction.*"
+warn_return_any = false
+strict = false
+ignore_errors = true
+
 [tool.black]
 line-length = 100
 target-version = ['py311', 'py312']

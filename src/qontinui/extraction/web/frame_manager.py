@@ -368,7 +368,7 @@ async def extract_from_frame(
         List of FrameAwareElement objects.
     """
     try:
-        return await with_timeout(
+        result = await with_timeout(
             _extract_from_frame_with_retry(
                 frame=frame,
                 frame_id=frame_id,
@@ -382,6 +382,7 @@ async def extract_from_frame(
             timeout_seconds=timeout_seconds,
             operation_name=f"extract_from_frame_{frame_id}",
         )
+        return result if isinstance(result, list) else []
     except Exception as e:
         logger.warning(f"Frame {frame_id} extraction failed: {e}")
         return []

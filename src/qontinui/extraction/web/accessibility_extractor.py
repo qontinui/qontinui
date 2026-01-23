@@ -386,11 +386,12 @@ class AccessibilityExtractor:
         actual_timeout = timeout if timeout is not None else self._timeout_seconds
 
         try:
-            return await with_timeout(
+            result = await with_timeout(
                 self._extract_tree_with_retry(page),
                 timeout_seconds=actual_timeout,
                 operation_name="extract_accessibility_tree",
             )
+            return result if isinstance(result, A11yTree) else A11yTree()
         except ExtractionTimeoutError:
             logger.warning("Accessibility tree extraction timed out, returning empty tree")
             return A11yTree()

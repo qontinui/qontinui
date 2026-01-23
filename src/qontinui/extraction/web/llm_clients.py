@@ -280,7 +280,7 @@ class AnthropicClient(BaseLLMClient):
 
             # Extract text from response
             if response.content and len(response.content) > 0:
-                return response.content[0].text
+                return str(response.content[0].text)
             return ""
 
         except Exception as e:

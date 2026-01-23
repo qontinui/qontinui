@@ -20,6 +20,7 @@ from qontinui.awas.types import AwasAction, AwasElement, AwasManifest, HttpMetho
 from ...models.base import BoundingBox, Screenshot, Viewport
 from ...web.models import BoundingBox as WebBoundingBox
 from ...web.models import (
+    ElementType,
     ExtractedElement,
     ExtractedState,
     StateType,
@@ -136,7 +137,7 @@ class AwasRuntimeExtractor(RuntimeExtractor):
             screenshot_id=None,  # AWAS doesn't capture screenshots
             detection_method="awas_manifest",
             confidence=1.0,
-            source_url=self._target.url if self._target else None,
+            source_url=self._target.url if self._target else "",
             metadata={
                 "awas_app_name": self._manifest.app_name,
                 "awas_conformance": self._manifest.conformance_level.value,
@@ -146,7 +147,7 @@ class AwasRuntimeExtractor(RuntimeExtractor):
 
         return RuntimeStateCapture(
             capture_id=capture_id,
-            timestamp=None,
+            # timestamp uses default factory (datetime.now())
             url=self._target.url if self._target else None,
             elements=elements,
             states=[state],
@@ -189,17 +190,15 @@ class AwasRuntimeExtractor(RuntimeExtractor):
 
         return ExtractedElement(
             id=f"awas_elem_{action.id}",
-            tag_name="button" if action.side_effect else "a",
-            element_type=element_type,
-            text=action.name,
             bbox=WebBoundingBox(x=0, y=index * 50, width=200, height=40),  # Placeholder bounds
+            element_type=element_type,
+            selector=selector,
+            tag_name="button" if action.side_effect else "a",
+            text_content=action.name,
             is_visible=True,
             is_interactive=True,
-            selector=selector,
-            computed_role="button" if action.side_effect else "link",
-            confidence=1.0,  # AWAS provides definitive info
-            extraction_method="awas_manifest",
-            metadata={
+            semantic_role="button" if action.side_effect else "link",
+            attributes={
                 "awas_action_id": action.id,
                 "awas_intent": action.intent,
                 "awas_method": action.method.value,
@@ -208,18 +207,20 @@ class AwasRuntimeExtractor(RuntimeExtractor):
                 "awas_parameters": [p.model_dump() for p in action.parameters],
                 "awas_required_scopes": action.required_scopes,
                 "awas_rate_limit": action.rate_limit,
+                "extraction_method": "awas_manifest",
+                "confidence": 1.0,
             },
         )
 
-    def _infer_element_type(self, action: AwasAction) -> str:
+    def _infer_element_type(self, action: AwasAction) -> ElementType:
         """Infer HTML element type from AWAS action."""
         if action.method == HttpMethod.GET and not action.side_effect:
-            return "link"
+            return ElementType.LINK
         if action.method == HttpMethod.DELETE:
-            return "button"  # Destructive action
+            return ElementType.BUTTON  # Destructive action
         if action.method in (HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH):
-            return "button"  # Modifying action
-        return "button"
+            return ElementType.BUTTON  # Modifying action
+        return ElementType.BUTTON
 
     async def detect_regions(self) -> list[DetectedRegion]:
         """

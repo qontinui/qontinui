@@ -133,9 +133,10 @@ class LLMFormatter:
         for i, element in enumerate(elements):
             # Handle both InteractiveElement and FrameAwareElement
             if isinstance(element, FrameAwareElement):
-                inner_elem = element.element
+                inner_elem: InteractiveElement = element.element
             else:
-                inner_elem = element
+                # element is InteractiveElement
+                inner_elem = element  # type: ignore[assignment]
 
             formatted = self._format_single_element(i, inner_elem)
             lines.append(formatted)
@@ -143,7 +144,7 @@ class LLMFormatter:
             indexed_elements.append(
                 IndexedElement(
                     index=i,
-                    element=element,
+                    element=element,  # type: ignore[arg-type]
                     formatted=formatted,
                 )
             )
