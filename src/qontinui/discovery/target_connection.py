@@ -229,7 +229,7 @@ class ExplorationConfig:
     """Configuration for UI Bridge exploration.
 
     Attributes:
-        target_type: Type of target application ("web", "desktop", "mobile")
+        target_type: Type of target application ("web", "desktop", "mobile", "extension")
         connection_url: URL, local port, or device IP to connect to
         max_depth: Maximum navigation depth from starting page
         max_elements_per_page: Maximum elements to interact with per page
@@ -243,7 +243,7 @@ class ExplorationConfig:
         record_render_logs: Whether to record render logs for analysis
     """
 
-    target_type: Literal["web", "desktop", "mobile"]
+    target_type: Literal["web", "desktop", "mobile", "extension"]
     connection_url: str
     max_depth: int = 2
     max_elements_per_page: int = 20
@@ -992,8 +992,8 @@ class DesktopTargetConnection(TargetConnection):
                 error_detail = f"HTTP {response.status_code}"
                 if response.status_code == 503:
                     error_detail = (
-                        f"No desktop application connected to the runner. "
-                        f"Make sure your Tauri app is running and connected."
+                        "No desktop application connected to the runner. "
+                        "Make sure your Tauri app is running and connected."
                     )
                 raise RuntimeError(f"Failed to capture snapshot: {error_detail}")
 
@@ -1295,8 +1295,8 @@ class MobileTargetConnection(TargetConnection):
                     )
                 elif response.status_code == 503:
                     error_detail = (
-                        f"No mobile application connected to the runner. "
-                        f"Make sure your React Native app is running and connected."
+                        "No mobile application connected to the runner. "
+                        "Make sure your React Native app is running and connected."
                     )
                 return ActionResult(
                     success=False,
@@ -1396,8 +1396,8 @@ class MobileTargetConnection(TargetConnection):
                 error_detail = f"HTTP {response.status_code}"
                 if response.status_code == 503:
                     error_detail = (
-                        f"No mobile application connected to the runner. "
-                        f"Make sure your React Native app is running and connected."
+                        "No mobile application connected to the runner. "
+                        "Make sure your React Native app is running and connected."
                     )
                 raise RuntimeError(f"Failed to capture snapshot: {error_detail}")
 
@@ -1480,6 +1480,13 @@ def create_connection(config: ExplorationConfig) -> TargetConnection:
     elif config.target_type == "mobile":
         return MobileTargetConnection(
             connection_url=config.connection_url,
+            timeout_seconds=config.timeout_seconds,
+        )
+    elif config.target_type == "extension":
+        from .extension_connection import ExtensionTargetConnection
+
+        return ExtensionTargetConnection(
+            runner_url=config.connection_url,
             timeout_seconds=config.timeout_seconds,
         )
     else:
