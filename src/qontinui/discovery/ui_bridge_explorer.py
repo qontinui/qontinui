@@ -495,6 +495,24 @@ class UIBridgeExplorer:
             # Update discovered elements count
             self._elements_discovered = len(initial_snapshot.elements)
 
+            # Check if we found any elements - if not, provide helpful guidance
+            if self._elements_discovered == 0:
+                target_type = self._config.target_type
+                if target_type == "web":
+                    error_msg = (
+                        "No elements found. For web apps, the UI Bridge SDK server "
+                        "endpoints cannot access browser-side elements. "
+                        "Try using target type 'extension' instead, which uses the Chrome "
+                        "extension to access elements directly in the browser."
+                    )
+                else:
+                    error_msg = (
+                        "No elements found. Make sure the target application has "
+                        "UI Bridge elements registered (elements with data-ui-id attributes)."
+                    )
+                logger.warning(error_msg)
+                result.errors.append(error_msg)
+
             # Record initial state as first step
             initial_step = ExplorationStep(
                 step_id=str(uuid.uuid4()),

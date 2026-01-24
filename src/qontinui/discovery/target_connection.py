@@ -497,13 +497,14 @@ class WebTargetConnection(TargetConnection):
             raise RuntimeError("Not connected to target")
 
         try:
-            params = {}
+            payload: dict[str, Any] = {}
             if selector:
-                params["selector"] = selector
+                payload["selector"] = selector
 
-            response = await self._client.get(
-                self._get_api_url("find"),
-                params=params,
+            # Use POST to /control/discover as per UI Bridge API
+            response = await self._client.post(
+                self._get_api_url("control/discover"),
+                json=payload,
             )
 
             if not response.is_success:
@@ -513,7 +514,9 @@ class WebTargetConnection(TargetConnection):
             data = response.json()
             elements = []
 
-            for elem_data in data.get("elements", []):
+            # Handle API response format: {success: bool, data: {...}}
+            result_data = data.get("data", data)
+            for elem_data in result_data.get("elements", []):
                 elements.append(Element.from_dict(elem_data))
 
             logger.debug(f"Found {len(elements)} elements")
@@ -563,14 +566,14 @@ class WebTargetConnection(TargetConnection):
 
         try:
             payload: dict[str, Any] = {
-                "elementId": element_id,
                 "action": action,
             }
             if value is not None:
-                payload["value"] = value
+                payload["params"] = {"value": value}
 
+            # Use POST to /control/element/:id/action as per UI Bridge API
             response = await self._client.post(
-                self._get_api_url("execute"),
+                self._get_api_url(f"control/element/{element_id}/action"),
                 json=payload,
             )
 
@@ -661,8 +664,9 @@ class WebTargetConnection(TargetConnection):
         try:
             params = {"includeScreenshot": str(include_screenshot).lower()}
 
+            # Use GET to /control/snapshot as per UI Bridge API
             response = await self._client.get(
-                self._get_api_url("snapshot"),
+                self._get_api_url("control/snapshot"),
                 params=params,
             )
 
@@ -671,9 +675,12 @@ class WebTargetConnection(TargetConnection):
 
             data = response.json()
 
+            # Handle API response format: {success: bool, data: {...}}
+            result_data = data.get("data", data)
+
             # Parse elements from snapshot
             elements = []
-            for elem_data in data.get("elements", []):
+            for elem_data in result_data.get("elements", []):
                 elements.append(Element.from_dict(elem_data))
 
             return DOMSnapshot(
