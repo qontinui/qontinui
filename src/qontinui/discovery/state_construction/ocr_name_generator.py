@@ -29,7 +29,8 @@ try:
     import easyocr
 
     HAS_EASYOCR = True
-except ImportError:
+except (ImportError, OSError):
+    # OSError can happen when PyTorch DLLs fail to load on Windows
     HAS_EASYOCR = False
 
 

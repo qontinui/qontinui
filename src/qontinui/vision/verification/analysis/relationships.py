@@ -91,7 +91,7 @@ class Element:
     @property
     def area(self) -> int:
         """Get element area."""
-        return self.bounds.width * self.bounds.height
+        return int(self.bounds.width * self.bounds.height)
 
 
 @dataclass
@@ -469,7 +469,7 @@ class RelationshipAnalyzer:
             return False
 
         containment_ratio = overlap_area / inner_area
-        return containment_ratio >= self._containment_threshold
+        return bool(containment_ratio >= self._containment_threshold)
 
     def _containment_confidence(self, outer: BoundingBox, inner: BoundingBox) -> float:
         """Calculate containment confidence."""
@@ -497,7 +497,7 @@ class RelationshipAnalyzer:
         if inner_area == 0:
             return 0.0
 
-        return overlap_area / inner_area
+        return float(overlap_area / inner_area)
 
     def _edge_distance(self, a: BoundingBox, b: BoundingBox) -> float | None:
         """Calculate minimum edge-to-edge distance between bounds.

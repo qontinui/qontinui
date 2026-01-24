@@ -160,7 +160,7 @@ class QontinuiProperties(BaseModel):
         if path:
             path.write_text(yaml_str)
 
-        return yaml_str
+        return str(yaml_str)
 
     def to_env_file(self, path: Path | None = None) -> str:
         """Export configuration to .env format.

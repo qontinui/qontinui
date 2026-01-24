@@ -228,6 +228,128 @@ class TestStateMachineBuilder:
         assert states[0]["locations"] == []
         assert states[0]["strings"] == []
 
+    def test_three_screens_with_unique_content_creates_four_states(self):
+        """
+        Test case for the user's scenario:
+        - 3 screens with a common header
+        - Each screen has unique page-specific content
+        - Expected: 4 states (1 header + 3 page-specific)
+
+        This validates that the header elements appearing on ALL screens
+        are grouped into ONE state, not duplicated per screen.
+        """
+        annotations = [
+            {
+                "screenshot_id": "screen1",
+                "source_url": "http://example.com/page1",
+                "viewport_width": 1920,
+                "viewport_height": 1080,
+                "elements": [
+                    {
+                        "id": "header1",
+                        "elementType": "header",
+                        "text": "Site Logo",
+                        "bbox": {"x": 0, "y": 0, "width": 100, "height": 50},
+                    },
+                    {
+                        "id": "nav1",
+                        "elementType": "nav",
+                        "text": "Navigation Menu",
+                        "bbox": {"x": 100, "y": 0, "width": 200, "height": 50},
+                    },
+                    {
+                        "id": "unique1",
+                        "elementType": "div",
+                        "text": "Page 1 Unique Content",
+                        "bbox": {"x": 0, "y": 100, "width": 800, "height": 600},
+                    },
+                ],
+                "states": [],
+            },
+            {
+                "screenshot_id": "screen2",
+                "source_url": "http://example.com/page2",
+                "viewport_width": 1920,
+                "viewport_height": 1080,
+                "elements": [
+                    {
+                        "id": "header2",
+                        "elementType": "header",
+                        "text": "Site Logo",  # Same as screen1
+                        "bbox": {"x": 0, "y": 0, "width": 100, "height": 50},
+                    },
+                    {
+                        "id": "nav2",
+                        "elementType": "nav",
+                        "text": "Navigation Menu",  # Same as screen1
+                        "bbox": {"x": 100, "y": 0, "width": 200, "height": 50},
+                    },
+                    {
+                        "id": "unique2",
+                        "elementType": "section",
+                        "text": "Page 2 Unique Content",  # Different from screen1
+                        "bbox": {"x": 0, "y": 100, "width": 800, "height": 600},
+                    },
+                ],
+                "states": [],
+            },
+            {
+                "screenshot_id": "screen3",
+                "source_url": "http://example.com/page3",
+                "viewport_width": 1920,
+                "viewport_height": 1080,
+                "elements": [
+                    {
+                        "id": "header3",
+                        "elementType": "header",
+                        "text": "Site Logo",  # Same as screen1 and screen2
+                        "bbox": {"x": 0, "y": 0, "width": 100, "height": 50},
+                    },
+                    {
+                        "id": "nav3",
+                        "elementType": "nav",
+                        "text": "Navigation Menu",  # Same as screen1 and screen2
+                        "bbox": {"x": 100, "y": 0, "width": 200, "height": 50},
+                    },
+                    {
+                        "id": "unique3",
+                        "elementType": "article",
+                        "text": "Page 3 Unique Content",  # Different from screen1 and screen2
+                        "bbox": {"x": 0, "y": 100, "width": 800, "height": 600},
+                    },
+                ],
+                "states": [],
+            },
+        ]
+
+        states, transitions = build_state_machine_from_extraction(annotations)
+
+        # EXPECTED: 4 states
+        # - State 1: header "Site Logo" + nav "Navigation Menu" (appears on all 3 screens)
+        # - State 2: div "Page 1 Unique Content" (appears only on screen1)
+        # - State 3: section "Page 2 Unique Content" (appears only on screen2)
+        # - State 4: article "Page 3 Unique Content" (appears only on screen3)
+        #
+        # If we only get 3 states, it means the header is NOT being properly
+        # identified as appearing on all screens (BUG!)
+        assert len(states) == 4, (
+            f"Expected 4 states (1 header + 3 page-specific), got {len(states)}. "
+            "If only 3 states, the header elements are incorrectly grouped with page content."
+        )
+
+        # Additionally verify that ONE state appears on all 3 screens (the header)
+        states_on_all_screens = []
+        for state in states:
+            # Use screensFound field (list of screenshot IDs this state appears on)
+            screens_found = state.get("screensFound", [])
+            if len(screens_found) == 3:
+                states_on_all_screens.append(state)
+
+        assert len(states_on_all_screens) >= 1, (
+            f"Expected at least one state (header) to appear on all 3 screens. "
+            f"States: {[(s.get('name'), s.get('screensFound', [])) for s in states]}"
+        )
+
     def test_transition_derivation(self):
         """Test that transitions are derived from InferredTransitions."""
         annotations = [

@@ -53,12 +53,12 @@ class TextLine:
     @property
     def line_height(self) -> int:
         """Get total line height."""
-        return self.bounds.height
+        return int(self.bounds.height)
 
     @property
     def center_y(self) -> float:
         """Get vertical center of text."""
-        return self.bounds.y + self.bounds.height / 2
+        return float(self.bounds.y + self.bounds.height / 2)
 
 
 @dataclass
@@ -364,23 +364,23 @@ class TextMetricsAnalyzer:
         centers = [line.bounds.x + line.bounds.width / 2 for line in lines]
 
         # Check left alignment
-        left_variance = np.std(left_edges)
+        left_variance = float(np.std(left_edges))
         if left_variance <= tolerance:
             # Check if also right-aligned (justified)
-            right_variance = np.std(right_edges)
+            right_variance = float(np.std(right_edges))
             if right_variance <= tolerance and len(lines) > 1:
                 return TextAlignment.JUSTIFIED
             return TextAlignment.LEFT
 
         # Check right alignment
-        right_variance = np.std(right_edges)
+        right_variance = float(np.std(right_edges))
         if right_variance <= tolerance:
             return TextAlignment.RIGHT
 
         # Check center alignment
-        center_variance = np.std(centers)
+        center_variance = float(np.std(centers))
         expected_center = region_width / 2
-        center_offset = abs(np.mean(centers) - expected_center)
+        center_offset = float(abs(np.mean(centers) - expected_center))
 
         if center_variance <= tolerance and center_offset <= tolerance * 2:
             return TextAlignment.CENTER

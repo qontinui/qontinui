@@ -248,7 +248,7 @@ class GraphExecutor:
         Returns:
             Initialized context dictionary
         """
-        context = {}
+        context: dict[str, Any] = {}
 
         # Add workflow variables
         if self.workflow.variables:
@@ -277,7 +277,9 @@ class GraphExecutor:
         """
         # Queue of actions to execute: (action_id, from_action_id)
         # from_action_id is None for entry points
-        execution_queue = deque([(entry_id, None) for entry_id in entry_points])
+        execution_queue: deque[tuple[str, str | None]] = deque(
+            [(entry_id, None) for entry_id in entry_points]
+        )
 
         # Track which actions are queued to avoid duplicates
         queued_actions: set[str] = set(entry_points)

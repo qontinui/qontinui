@@ -101,6 +101,42 @@ from .state_detection import (
     TransitionDetector,
 )
 
+# UI Bridge exploration - automatic application exploration
+from .target_connection import (
+    ActionResult,
+    ActionType,
+    BoundingBox,
+    DesktopTargetConnection,
+    DOMSnapshot,
+    Element,
+    ElementRole,
+    ExplorationConfig,
+    MobileTargetConnection,
+    TargetConnection,
+    WebTargetConnection,
+    create_connection,
+)
+
+# UI Bridge adapter - state discovery from semantic render data
+from .ui_bridge_adapter import (
+    UIBridgeElement,
+    UIBridgeRender,
+    UIBridgeStateDiscoveryResult,
+    discover_states_from_renders,
+    extract_elements_from_render,
+    get_active_states_for_render,
+    get_elements_by_render,
+    get_state_elements,
+)
+from .ui_bridge_explorer import (
+    ElementPrioritizer,
+    ExplorationResult,
+    ExplorationStep,
+    SafetyFilter,
+    UIBridgeExplorer,
+    explore_application,
+)
+
 # Submodules available for import
 # from qontinui.discovery import element_detection
 # from qontinui.discovery import region_analysis
@@ -162,4 +198,34 @@ __all__ = [
     "experimental",
     "click_analysis",
     "background_removal",
+    # UI Bridge adapter
+    "UIBridgeElement",
+    "UIBridgeRender",
+    "UIBridgeStateDiscoveryResult",
+    "discover_states_from_renders",
+    "extract_elements_from_render",
+    "get_state_elements",
+    "get_elements_by_render",
+    "get_active_states_for_render",
+    # UI Bridge exploration
+    "UIBridgeExplorer",
+    "ExplorationConfig",
+    "ExplorationResult",
+    "ExplorationStep",
+    "SafetyFilter",
+    "ElementPrioritizer",
+    "explore_application",
+    # Target connections
+    "TargetConnection",
+    "WebTargetConnection",
+    "DesktopTargetConnection",
+    "MobileTargetConnection",
+    "create_connection",
+    # Target connection models
+    "Element",
+    "ElementRole",
+    "ActionResult",
+    "ActionType",
+    "DOMSnapshot",
+    "BoundingBox",
 ]
