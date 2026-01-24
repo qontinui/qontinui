@@ -7,7 +7,7 @@ visual attributes of elements.
 import logging
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
@@ -220,8 +220,12 @@ class AttributeAssertion:
         Returns:
             Average color.
         """
-        avg = cv2.mean(region)[:3]
-        return Color.from_bgr(cast(tuple[int, int, int], tuple(int(c) for c in avg)))
+        avg = cv2.mean(region)
+        # cv2.mean returns a tuple/sequence, cast to ensure type checker knows it's indexable
+        from typing import cast
+
+        avg_seq = cast(tuple[float, ...], avg)
+        return Color.from_bgr((int(avg_seq[0]), int(avg_seq[1]), int(avg_seq[2])))
 
     def _get_border_color(
         self,

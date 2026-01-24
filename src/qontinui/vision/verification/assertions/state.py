@@ -148,7 +148,12 @@ class StateDetector:
 
         # Check color profile if defined (background is a hex string like "#RRGGBB")
         if sig and sig.color_profile and sig.color_profile.background:
-            avg_color = cv2.mean(region)[:3]  # BGR format
+            avg_color_tuple = cv2.mean(region)
+            # cv2.mean returns a tuple/sequence, cast to ensure type checker knows it's indexable
+            from typing import cast
+
+            avg_color_seq = cast(tuple[float, ...], avg_color_tuple)
+            avg_color = (avg_color_seq[0], avg_color_seq[1], avg_color_seq[2])  # BGR format
             bg_hex = sig.color_profile.background
             # Parse hex color to RGB
             r = int(bg_hex[1:3], 16)
