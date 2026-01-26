@@ -850,7 +850,10 @@ class ImageMatchingStateMachineBuilder:
                             res = self._cv2.matchTemplate(
                                 t2_resized, t1, self._cv2.TM_CCOEFF_NORMED
                             )
-                            score = float(res[0][0])
+                            # When images are the same size, res is 1x1, so [0][0] is correct
+                            # Use minMaxLoc for consistency and to handle any edge cases
+                            _, max_val, _, _ = self._cv2.minMaxLoc(res)
+                            score = float(max_val)
 
                         # LOGGING: Debug why potential matches fail
                         if score < self.similarity_threshold and score > 0.4:
@@ -949,6 +952,20 @@ class ImageMatchingStateMachineBuilder:
         for tracked in self.tracked_images:
             screen_set = frozenset(tracked.screens_found)
             screen_set_to_images[screen_set].append(tracked)
+            logger.debug(
+                f"[CLUSTER] Image '{tracked.name}' (id={tracked.id[:8]}) "
+                f"screens_found={sorted(tracked.screens_found)}"
+            )
+
+        # Log grouping summary
+        logger.info(
+            f"[CLUSTER] Grouping {len(self.tracked_images)} images into {len(screen_set_to_images)} screen-set clusters"
+        )
+        for screen_set, images in screen_set_to_images.items():
+            logger.info(
+                f"[CLUSTER]   Screen set {sorted(screen_set)}: {len(images)} images "
+                f"({', '.join([img.name[:20] for img in images[:5]])}{'...' if len(images) > 5 else ''})"
+            )
 
         # Create states from clusters
         states_config = []
@@ -1178,28 +1195,44 @@ def build_state_machine_from_extraction_result(
     print(f"[IMAGE_MATCHING_DEBUG] runtime_result exists: {runtime_result is not None}", flush=True)
     if runtime_result and runtime_result.states:
         print(
-            f"[IMAGE_MATCHING_DEBUG] Found {len(runtime_result.states)} RuntimeStateCaptures",
+            f"[IMAGE_MATCHING_DEBUG] Found {len(runtime_result.states)} ExtractedStates",
             flush=True,
         )
+
+        # Build element lookup map from runtime_result.elements
+        all_elements = getattr(runtime_result, "elements", [])
+        element_map: dict[str, Any] = {elem.id: elem for elem in all_elements}
+        print(
+            f"[IMAGE_MATCHING_DEBUG] Built element map with {len(element_map)} elements",
+            flush=True,
+        )
+
         for i, runtime_state in enumerate(runtime_result.states):
-            # Get screenshot_id
-            screenshot_id = (
-                runtime_state.screenshot.id if runtime_state.screenshot else runtime_state.id
-            )
+            # Get screenshot_id - ExtractedState has screenshot_id directly (not screenshot.id)
+            screenshot_id = getattr(runtime_state, "screenshot_id", None) or runtime_state.id
             print(
-                f"[IMAGE_MATCHING_DEBUG] Processing state {i}: screenshot_id length={len(str(screenshot_id))}",
+                f"[IMAGE_MATCHING_DEBUG] Processing state {i}: screenshot_id={screenshot_id}",
                 flush=True,
             )
-            print(
-                f"[IMAGE_MATCHING_DEBUG]   Has {len(runtime_state.elements)} elements", flush=True
-            )
+
+            # Get elements - ExtractedState has element_ids, we look them up in element_map
+            element_ids = getattr(runtime_state, "element_ids", [])
+            print(f"[IMAGE_MATCHING_DEBUG]   Has {len(element_ids)} element_ids", flush=True)
 
             elements = []
-            for elem in runtime_state.elements:
+            for elem_id in element_ids:
+                elem = element_map.get(elem_id)
+                if elem is None:
+                    print(
+                        f"[IMAGE_MATCHING_DEBUG]   WARNING: Element {elem_id} not found in map",
+                        flush=True,
+                    )
+                    continue
+
                 elem_dict = {
                     "id": elem.id,
-                    "name": elem.name or elem.text_content,
-                    "text": elem.text_content,
+                    "name": getattr(elem, "name", None) or getattr(elem, "text_content", None),
+                    "text": getattr(elem, "text_content", None),
                     "element_type": (
                         elem.element_type.value
                         if hasattr(elem.element_type, "value")
@@ -1215,7 +1248,7 @@ def build_state_machine_from_extraction_result(
                             "height": elem.bbox.height,
                         }
                     ),
-                    "selector": elem.selector,
+                    "selector": getattr(elem, "selector", None),
                     "extraction_category": getattr(elem, "extraction_category", ""),
                 }
                 elements.append(elem_dict)
@@ -1227,8 +1260,8 @@ def build_state_machine_from_extraction_result(
                 flush=True,
             )
     else:
-        print("[IMAGE_MATCHING_DEBUG] No RuntimeStateCaptures in extraction result!", flush=True)
-        logger.warning("No RuntimeStateCaptures in extraction result")
+        print("[IMAGE_MATCHING_DEBUG] No ExtractedStates in extraction result!", flush=True)
+        logger.warning("No ExtractedStates in extraction result")
 
     print(
         f"[IMAGE_MATCHING_DEBUG] Total screenshots with elements: {len(elements_by_screenshot)}",
