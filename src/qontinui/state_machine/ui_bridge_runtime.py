@@ -827,7 +827,7 @@ class UIBridgeRuntime:
         base_cost = self._ui_transitions[transition_id].path_cost
 
         if self._reliability:
-            return self._reliability.get_dynamic_cost(transition_id, base_cost)
+            return float(self._reliability.get_dynamic_cost(transition_id, base_cost))
 
         return base_cost
 

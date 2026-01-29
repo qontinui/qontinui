@@ -10,7 +10,7 @@ import hashlib
 import tempfile
 from collections import OrderedDict
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -30,6 +30,8 @@ class EmbeddingCache:
         max_size: Maximum number of embeddings to cache in memory.
         cache_dir: Directory for disk persistence (None for memory-only).
     """
+
+    cache_dir: Path | None
 
     def __init__(
         self,
@@ -101,7 +103,7 @@ class EmbeddingCache:
             cache_file = self.cache_dir / f"{key}.npy"
             if cache_file.exists():
                 try:
-                    embedding = np.load(cache_file)
+                    embedding = cast("NDArray[np.float32]", np.load(cache_file))
                     # Add to memory cache
                     self._add_to_memory_cache(key, embedding)
                     self._hits += 1

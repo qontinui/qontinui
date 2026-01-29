@@ -7,7 +7,7 @@ the official OpenAI API and compatible third-party APIs.
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -111,7 +111,7 @@ class OpenAIProvider(EmbeddingProvider):
             The embedding vector as a numpy array.
         """
         embeddings = self.embed_batch([text])
-        return embeddings[0]
+        return cast("NDArray[np.float32]", embeddings[0])
 
     def embed_batch(self, texts: list[str]) -> NDArray[np.float32]:
         """Generate embeddings for multiple texts.

@@ -291,7 +291,7 @@ class SemanticSearchEngine:
         sorted_indices = np.argsort(similarities)[::-1]
 
         # Build results
-        results = []
+        results: list[SemanticSearchResult] = []
         rank = 1
         for idx in sorted_indices:
             if exclude_self and idx == ref_idx:
