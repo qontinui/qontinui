@@ -180,9 +180,7 @@ class SemanticSearchEngine:
     def _generate_missing_embeddings(self) -> None:
         """Generate embeddings for elements that don't have them."""
         # Find elements without embeddings
-        missing_indices = [
-            i for i, el in enumerate(self._elements) if el.embedding is None
-        ]
+        missing_indices = [i for i, el in enumerate(self._elements) if el.embedding is None]
 
         if not missing_indices:
             return
@@ -287,9 +285,7 @@ class SemanticSearchEngine:
         if self._embeddings is None:
             return []
 
-        similarities = self.provider.similarities_batch(
-            ref_element.embedding, self._embeddings
-        )
+        similarities = self.provider.similarities_batch(ref_element.embedding, self._embeddings)
 
         # Get indices sorted by similarity
         sorted_indices = np.argsort(similarities)[::-1]

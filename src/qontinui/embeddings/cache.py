@@ -158,9 +158,7 @@ class EmbeddingCache:
             except Exception:
                 pass  # Disk write failure is not critical
 
-    def set_batch(
-        self, texts: list[str], model: str, embeddings: NDArray[np.float32]
-    ) -> None:
+    def set_batch(self, texts: list[str], model: str, embeddings: NDArray[np.float32]) -> None:
         """Cache multiple embeddings.
 
         Args:

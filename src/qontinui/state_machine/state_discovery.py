@@ -403,7 +403,9 @@ class UIBridgeStateDiscovery:
         # Detect blocking states
         self._detect_blocking_states()
 
-        logger.info(f"Discovered {len(self._discovered_states)} states from {self._render_count} renders")
+        logger.info(
+            f"Discovered {len(self._discovered_states)} states from {self._render_count} renders"
+        )
         return self._discovered_states
 
     def _extract_elements(self, render: dict[str, Any]) -> list[str]:
@@ -649,7 +651,9 @@ class UIBridgeStateDiscovery:
 
             self._discovered_states.append(state)
 
-        logger.debug(f"Generated {len(self._discovered_states)} states from {len(self._element_groups)} groups")
+        logger.debug(
+            f"Generated {len(self._discovered_states)} states from {len(self._element_groups)} groups"
+        )
 
     def _generate_state_id(self, elements: set[str] | frozenset[str]) -> str:
         """Generate deterministic state ID from elements.
@@ -847,7 +851,8 @@ class UIBridgeStateDiscovery:
             "discovered_states": len(self._discovered_states),
             "blocking_states": sum(1 for s in self._discovered_states if s.is_blocking),
             "average_elements_per_state": (
-                sum(len(s.element_ids) for s in self._discovered_states) / len(self._discovered_states)
+                sum(len(s.element_ids) for s in self._discovered_states)
+                / len(self._discovered_states)
                 if self._discovered_states
                 else 0
             ),
@@ -880,9 +885,7 @@ class UIBridgeStateDiscovery:
         self._incremental_mode = False
         logger.info("Incremental learning mode disabled")
 
-    def process_render_incremental(
-        self, render: dict[str, Any]
-    ) -> list[DiscoveredUIState]:
+    def process_render_incremental(self, render: dict[str, Any]) -> list[DiscoveredUIState]:
         """Process a single render incrementally.
 
         This method updates states in real-time without requiring
@@ -946,9 +949,7 @@ class UIBridgeStateDiscovery:
             updated_states.append(best_match)
 
             if self.config.on_state_merged:
-                self.config.on_state_merged(
-                    best_match.id, self._generate_state_id(element_set)
-                )
+                self.config.on_state_merged(best_match.id, self._generate_state_id(element_set))
 
         # Create new state if no good match
         else:
@@ -1014,24 +1015,16 @@ class UIBridgeStateDiscovery:
         observation_score = min(1.0, math.log10(state.observation_count + 1) / 2)
 
         # Recency bonus (decays over 24 hours)
-        hours_since_observed = (
-            datetime.utcnow() - state.last_observed
-        ).total_seconds() / 3600
+        hours_since_observed = (datetime.utcnow() - state.last_observed).total_seconds() / 3600
         recency_score = max(0.0, 1.0 - hours_since_observed / 24)
 
         # Element consistency (more elements = higher confidence)
         element_score = min(1.0, len(state.element_ids) / 10)
 
         # Weighted combination
-        return (
-            observation_score * 0.5
-            + recency_score * 0.2
-            + element_score * 0.3
-        )
+        return observation_score * 0.5 + recency_score * 0.2 + element_score * 0.3
 
-    def _calculate_set_similarity(
-        self, set1: frozenset[str], set2: frozenset[str]
-    ) -> float:
+    def _calculate_set_similarity(self, set1: frozenset[str], set2: frozenset[str]) -> float:
         """Calculate Jaccard similarity between two sets.
 
         Args:
@@ -1093,9 +1086,7 @@ class UIBridgeStateDiscovery:
                     break
                 else:
                     new_state.merge_with(existing_state)
-                    new_state.confidence = self._calculate_incremental_confidence(
-                        new_state
-                    )
+                    new_state.confidence = self._calculate_incremental_confidence(new_state)
                     states_to_remove.append(existing_state)
 
                     if self.config.on_state_merged:
@@ -1116,9 +1107,7 @@ class UIBridgeStateDiscovery:
         self._discovered_states.sort(key=lambda s: s.confidence, reverse=True)
 
         # Keep top N
-        self._discovered_states = self._discovered_states[
-            : self.config.max_discovered_states
-        ]
+        self._discovered_states = self._discovered_states[: self.config.max_discovered_states]
 
         logger.debug(
             f"Pruned states to {len(self._discovered_states)} "
@@ -1134,9 +1123,7 @@ class UIBridgeStateDiscovery:
         Returns:
             Merged state or None if states not found
         """
-        states_to_merge = [
-            s for s in self._discovered_states if s.id in state_ids
-        ]
+        states_to_merge = [s for s in self._discovered_states if s.id in state_ids]
 
         if len(states_to_merge) < 2:
             logger.warning(f"Need at least 2 states to merge, found {len(states_to_merge)}")
