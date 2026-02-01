@@ -95,9 +95,7 @@ class ApplicationTuner:
             logger.info(f"Optimal color tolerance: {color_tolerance}")
 
             # Step 3: Rank detection strategies
-            strategy_rankings = self.rank_strategies(
-                screenshots, known_elements, click_locations
-            )
+            strategy_rankings = self.rank_strategies(screenshots, known_elements, click_locations)
             logger.info(f"Strategy rankings: {strategy_rankings[:3]}")
 
             # Step 4: Analyze element characteristics
@@ -212,8 +210,7 @@ class ApplicationTuner:
 
                 # Check for closed contours
                 closed_count = sum(
-                    1 for c in contours
-                    if cv2.arcLength(c, True) > 0 and cv2.contourArea(c) > 100
+                    1 for c in contours if cv2.arcLength(c, True) > 0 and cv2.contourArea(c) > 100
                 )
                 closed_ratio = closed_count / max(1, contour_count)
 
@@ -348,9 +345,7 @@ class ApplicationTuner:
                     continue
 
                 try:
-                    candidates = finder.find_boundaries(
-                        screenshot, (x, y), [strategy]
-                    )
+                    candidates = finder.find_boundaries(screenshot, (x, y), [strategy])
 
                     if candidates:
                         # Score based on confidence and rectangularity
@@ -423,9 +418,7 @@ class ApplicationTuner:
                     x = int((gx + 0.5) * w / 5)
                     y = int((gy + 0.5) * h / 5)
 
-                    candidates = finder.find_boundaries(
-                        screenshot, (x, y)
-                    )
+                    candidates = finder.find_boundaries(screenshot, (x, y))
 
                     for c in candidates[:1]:  # Just the best
                         widths.append(c.width)
@@ -433,9 +426,7 @@ class ApplicationTuner:
 
                         # Sample color at center
                         if c.pixel_data is not None and c.pixel_data.size > 0:
-                            center_color = c.pixel_data[
-                                c.height // 2, c.width // 2
-                            ]
+                            center_color = c.pixel_data[c.height // 2, c.width // 2]
                             if len(center_color.shape) == 0:
                                 center_color = [center_color] * 3
                             colors.append(tuple(center_color))
@@ -554,12 +545,8 @@ class ApplicationTuner:
             old_weight = min(0.7, profile.tuning_metrics.sample_count / 100)
             new_weight = 1 - old_weight
 
-            result.metrics.sample_count = (
-                profile.tuning_metrics.sample_count + len(new_screenshots)
-            )
-            result.metrics.tuning_iterations = (
-                profile.tuning_metrics.tuning_iterations + 1
-            )
+            result.metrics.sample_count = profile.tuning_metrics.sample_count + len(new_screenshots)
+            result.metrics.tuning_iterations = profile.tuning_metrics.tuning_iterations + 1
 
             # Weighted average of scores
             for attr in ["edge_score", "contour_score", "color_score", "flood_fill_score"]:
