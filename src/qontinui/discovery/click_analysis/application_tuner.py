@@ -205,8 +205,8 @@ class ApplicationTuner:
 
                 # Check edge density (prefer 5-15% edge pixels)
                 edge_density = np.sum(edges > 0) / edges.size
-                density_score = 1.0 - abs(edge_density - 0.10) / 0.10
-                density_score = max(0, min(1, density_score))
+                density_score_raw = 1.0 - abs(edge_density - 0.10) / 0.10
+                density_score = float(np.clip(density_score_raw, 0.0, 1.0))
 
                 # Check for closed contours
                 closed_count = sum(
@@ -214,7 +214,7 @@ class ApplicationTuner:
                 )
                 closed_ratio = closed_count / max(1, contour_count)
 
-                score = 0.3 * count_score + 0.3 * density_score + 0.4 * closed_ratio
+                score = float(0.3 * count_score + 0.3 * density_score + 0.4 * closed_ratio)
                 total_score += score
 
             avg_score = total_score / len(screenshots)
@@ -464,8 +464,9 @@ class ApplicationTuner:
 
         # Simple K-means clustering
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
+        best_labels = np.zeros((len(color_array), 1), dtype=np.int32)
         _, labels, centers = cv2.kmeans(
-            color_array, n_clusters, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
+            color_array, n_clusters, best_labels, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
         )
 
         # Build ranges around centers
@@ -475,8 +476,16 @@ class ApplicationTuner:
             if len(cluster_colors) == 0:
                 continue
 
-            low = tuple(int(max(0, np.percentile(cluster_colors[:, j], 5))) for j in range(3))
-            high = tuple(int(min(255, np.percentile(cluster_colors[:, j], 95))) for j in range(3))
+            low = (
+                int(max(0, np.percentile(cluster_colors[:, 0], 5))),
+                int(max(0, np.percentile(cluster_colors[:, 1], 5))),
+                int(max(0, np.percentile(cluster_colors[:, 2], 5))),
+            )
+            high = (
+                int(min(255, np.percentile(cluster_colors[:, 0], 95))),
+                int(min(255, np.percentile(cluster_colors[:, 1], 95))),
+                int(min(255, np.percentile(cluster_colors[:, 2], 95))),
+            )
             ranges.append((low, high))
 
         return ranges
