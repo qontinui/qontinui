@@ -3,6 +3,15 @@
 This module bridges UI Bridge's semantic element data with qontinui's
 co-occurrence analysis algorithm to discover application states.
 
+**NOTE: This module now delegates to the unified StateDiscoveryService.**
+The functions here are maintained for backward compatibility. For new code,
+use the StateDiscoveryService directly:
+
+    from qontinui.discovery.state_discovery import StateDiscoveryService
+
+    service = StateDiscoveryService()
+    result = service.discover_from_renders(renders)
+
 UI Bridge provides:
 - Registered elements (via useUIElement hook with data-ui-id attribute)
 - data-testid attributes from the component tree
@@ -13,6 +22,12 @@ across multiple renders into states.
 Supports two render log formats:
 1. DomSnapshotRenderLogEntry (from qontinui-web) - Full DOM snapshots
 2. Simple format (for testing) - {"elements": [...], "componentTree": {...}}
+
+For fingerprint-enhanced discovery:
+    from qontinui.discovery.state_discovery import StateDiscoveryService
+
+    service = StateDiscoveryService()
+    result = service.discover_from_export(cooccurrence_export)
 
 Example:
     renders = [
@@ -26,10 +41,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-import numpy as np
-
-from .models import DiscoveredState, StateImage
-from .pixel_analysis.analyzers.cooccurrence_analyzer import CooccurrenceAnalyzer
+from .models import DiscoveredState
+from .state_discovery import DiscoveryStrategyType, StateDiscoveryService
 
 
 @dataclass
@@ -240,6 +253,7 @@ def build_element_render_mapping(
 def discover_states_from_renders(
     renders: list[dict[str, Any]],
     include_html_ids: bool = False,
+    cooccurrence_export: dict[str, Any] | None = None,
 ) -> UIBridgeStateDiscoveryResult:
     """
     Discover states from UI Bridge render snapshots using co-occurrence analysis.
@@ -247,16 +261,22 @@ def discover_states_from_renders(
     Elements that appear in exactly the same set of renders are grouped into states.
     This identifies stable UI patterns across different application views.
 
+    **NEW:** If `cooccurrence_export` is provided with fingerprint data,
+    the enhanced fingerprint strategy will be used automatically.
+
     Args:
         renders: List of render log entries from UI Bridge. Each entry should have:
             - id: Unique render identifier
             - elements: List of registered UI Bridge elements
             - componentTree or tree: Component tree with data-testid attributes
+        include_html_ids: Whether to include HTML id attributes
+        cooccurrence_export: Optional co-occurrence export with fingerprint data.
+            If provided and contains fingerprint data, uses enhanced discovery.
 
     Returns:
         UIBridgeStateDiscoveryResult containing discovered states and element info
     """
-    if not renders:
+    if not renders and not cooccurrence_export:
         return UIBridgeStateDiscoveryResult(
             states=[],
             elements=[],
@@ -265,77 +285,56 @@ def discover_states_from_renders(
             unique_element_count=0,
         )
 
-    # Step 1: Build element -> render_ids mapping
-    element_to_renders, render_elements = build_element_render_mapping(renders, include_html_ids)
+    # Use the unified service
+    service = StateDiscoveryService()
 
-    if not element_to_renders:
-        return UIBridgeStateDiscoveryResult(
-            states=[],
-            elements=[],
-            element_to_renders={},
-            render_count=len(renders),
-            unique_element_count=0,
+    # If cooccurrence_export with fingerprints is provided, use AUTO to prefer fingerprints
+    if cooccurrence_export:
+        unified_result = service.discover_from_export(
+            cooccurrence_export,
+            strategy=DiscoveryStrategyType.AUTO,
+        )
+    else:
+        unified_result = service.discover_from_renders(
+            renders,
+            include_html_ids=include_html_ids,
+            strategy=DiscoveryStrategyType.LEGACY,
         )
 
-    # Step 2: Convert to StateImage format (minimal fields needed for algorithm)
-    state_images: list[StateImage] = []
-    for elem_id, render_ids in element_to_renders.items():
-        state_images.append(
-            StateImage(
-                id=elem_id,
-                name=elem_id,
-                x=0,
-                y=0,
-                x2=1,
-                y2=1,  # Placeholder coordinates (not used)
-                pixel_hash="",  # Not used for UI Bridge
-                frequency=len(render_ids) / len(renders),
-                screenshot_ids=sorted(render_ids),
+    # Convert unified result back to legacy format for backward compatibility
+    legacy_states = []
+    for state in unified_result.states:
+        legacy_states.append(
+            DiscoveredState(
+                id=state.id,
+                name=state.name,
+                state_image_ids=state.element_ids,
+                screenshot_ids=state.render_ids,
+                confidence=state.confidence,
+                metadata=state.metadata,
             )
         )
 
-    # Step 3: Run co-occurrence analysis
-    # Create dummy screenshot array (algorithm normalizes by length)
-    dummy_screenshots = [np.zeros((1, 1, 3), dtype=np.uint8) for _ in renders]
-
-    analyzer = CooccurrenceAnalyzer()
-    discovered_states = analyzer.analyze(state_images, dummy_screenshots)
-
-    # Step 4: Build UIBridgeElement list with details
-    elements = []
-    for elem_id, render_ids in element_to_renders.items():
-        # Determine element type from prefix
-        if elem_id.startswith("ui:"):
-            elem_type = "ui-id"
-        elif elem_id.startswith("testid:"):
-            elem_type = "testid"
-        elif elem_id.startswith("html:"):
-            elem_type = "html-id"
-        elif elem_id.startswith("reg:"):
-            elem_type = "registered"  # Backward compatibility
-        else:
-            elem_type = "unknown"
-
-        clean_name = elem_id.split(":", 1)[1] if ":" in elem_id else elem_id
-
-        elements.append(
+    legacy_elements = []
+    for elem in unified_result.elements:
+        legacy_elements.append(
             UIBridgeElement(
-                id=elem_id,
-                name=clean_name,
-                type=elem_type,
-                render_ids=sorted(render_ids),
+                id=elem.id,
+                name=elem.name,
+                type=elem.element_type,
+                render_ids=elem.render_ids,
+                tag_name=elem.tag_name,
+                text_content=elem.text_content,
+                component_name=elem.component_name,
             )
         )
-
-    # Convert set values to lists for JSON serialization
-    element_to_renders_serializable = {k: sorted(v) for k, v in element_to_renders.items()}
 
     return UIBridgeStateDiscoveryResult(
-        states=discovered_states,
-        elements=elements,
-        element_to_renders=element_to_renders_serializable,
-        render_count=len(renders),
-        unique_element_count=len(element_to_renders),
+        states=legacy_states,
+        elements=legacy_elements,
+        element_to_renders=unified_result.element_to_renders,
+        render_count=unified_result.render_count,
+        unique_element_count=unified_result.unique_element_count,
     )
 
 
@@ -394,3 +393,74 @@ def get_active_states_for_render(
         List of states that are active in the specified render
     """
     return [state for state in states if render_id in state.screenshot_ids]
+
+
+def convert_to_ui_bridge_states(
+    result: UIBridgeStateDiscoveryResult,
+) -> list[Any]:
+    """
+    Convert discovery results to UIBridgeState objects for state_machine module.
+
+    This bridges the discovery adapter with the state_machine runtime.
+
+    Args:
+        result: State discovery result from discover_states_from_renders
+
+    Returns:
+        List of UIBridgeState objects ready for runtime registration
+
+    Example:
+        renders = [...] # Render log entries
+        result = discover_states_from_renders(renders)
+        ui_states = convert_to_ui_bridge_states(result)
+
+        from qontinui.state_machine import UIBridgeRuntime
+        runtime = UIBridgeRuntime(client)
+        runtime.register_states(ui_states)
+    """
+    # Import here to avoid circular dependency
+    from qontinui.state_machine import UIBridgeState
+
+    ui_states: list[UIBridgeState] = []
+
+    for state in result.states:
+        # Determine if state is blocking (modal dialogs, etc.)
+        is_blocking = False
+        modal_indicators = ["modal", "dialog", "popup", "alert", "overlay"]
+        state_name_lower = state.name.lower()
+
+        for indicator in modal_indicators:
+            if indicator in state_name_lower:
+                is_blocking = True
+                break
+
+        # Determine group from element patterns
+        group = None
+        element_str = " ".join(state.state_image_ids).lower()
+        if "nav" in element_str or "header" in element_str:
+            group = "navigation"
+        elif "sidebar" in element_str:
+            group = "sidebar"
+        elif "modal" in element_str or "dialog" in element_str:
+            group = "modals"
+        elif "form" in element_str:
+            group = "forms"
+
+        ui_state = UIBridgeState(
+            id=state.id,
+            name=state.name,
+            element_ids=state.state_image_ids,
+            blocking=is_blocking,
+            blocks=[],  # Will be computed by runtime
+            group=group,
+            path_cost=1.0,
+            metadata={
+                "confidence": state.confidence,
+                "render_ids": state.screenshot_ids,
+                "discovery_metadata": state.metadata,
+            },
+        )
+
+        ui_states.append(ui_state)
+
+    return ui_states

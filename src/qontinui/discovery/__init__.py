@@ -101,6 +101,25 @@ from .state_detection import (
     TransitionDetector,
 )
 
+# Unified state discovery service
+from .state_discovery import (
+    DiscoveredElement,
+    DiscoveredTransition,
+    DiscoveryStrategyType,
+    FingerprintStrategy,
+    LegacyStrategy,
+    StateDiscoveryInput,
+    StateDiscoveryResult,
+    StateDiscoveryService,
+    StateDiscoveryStrategy,
+)
+from .state_discovery import (
+    DiscoveredState as UnifiedDiscoveredState,
+)
+from .state_discovery import (
+    discover_states as discover_states_unified,
+)
+
 # UI Bridge exploration - automatic application exploration
 from .target_connection import (
     ActionResult,
@@ -117,7 +136,7 @@ from .target_connection import (
     create_connection,
 )
 
-# UI Bridge adapter - state discovery from semantic render data
+# UI Bridge adapter - state discovery from semantic render data (legacy interface)
 from .ui_bridge_adapter import (
     UIBridgeElement,
     UIBridgeRender,
@@ -137,6 +156,15 @@ from .ui_bridge_explorer import (
     explore_application,
 )
 
+# Visual context for AI consumption
+from .visual_context import (
+    AnnotatedSnapshot,
+    ElementColorScheme,
+    InteractionHeatmap,
+    VisualContextGenerator,
+    VisualDiff,
+)
+
 # Submodules available for import
 # from qontinui.discovery import element_detection
 # from qontinui.discovery import region_analysis
@@ -146,7 +174,19 @@ from .ui_bridge_explorer import (
 # from qontinui.discovery import click_analysis
 
 __all__ = [
-    # Discovery facade - primary entry point
+    # Unified state discovery service - NEW primary entry point
+    "StateDiscoveryService",
+    "StateDiscoveryInput",
+    "StateDiscoveryResult",
+    "StateDiscoveryStrategy",
+    "DiscoveryStrategyType",
+    "LegacyStrategy",
+    "FingerprintStrategy",
+    "DiscoveredElement",
+    "UnifiedDiscoveredState",
+    "DiscoveredTransition",
+    "discover_states_unified",
+    # Discovery facade - legacy entry point for pixel analysis
     "StateDiscoveryFacade",
     "DiscoveryConfig",
     "DiscoveryResult",
@@ -228,4 +268,10 @@ __all__ = [
     "ActionType",
     "DOMSnapshot",
     "BoundingBox",
+    # Visual context for AI
+    "VisualContextGenerator",
+    "AnnotatedSnapshot",
+    "VisualDiff",
+    "InteractionHeatmap",
+    "ElementColorScheme",
 ]

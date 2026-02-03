@@ -46,7 +46,7 @@ else:
 # This ensures physical resolution capture on Windows
 # Actions (Brobot-style)
 # Navigation API
-from . import discovery, navigation_api, registry
+from . import discovery, embeddings, navigation_api, registry
 from .actions import (
     Action,
     ActionChain,
@@ -205,6 +205,8 @@ __all__ = [
     # Navigation API
     "navigation_api",
     "registry",
+    # Embeddings System
+    "embeddings",
     # Original State Management (from state_management)
     "QontinuiStateManager",
     "State",

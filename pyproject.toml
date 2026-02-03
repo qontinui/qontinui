@@ -63,8 +63,12 @@ aiohttp = "^3.9"  # CDP WebSocket for accessibility capture
 # Optional: UI-TARS quantization support (for local inference on consumer GPUs)
 bitsandbytes = { version = "^0.45", optional = true }
 
+# Optional: Sentence transformers for local embeddings
+sentence-transformers = { version = "^2.2", optional = true }
+
 [tool.poetry.extras]
 uitars = ["bitsandbytes"]  # Enable: poetry install -E uitars
+embeddings = ["sentence-transformers"]  # Enable: poetry install -E embeddings
 
 [tool.poetry.scripts]
 qontinui = "qontinui.cli.main:main"
