@@ -113,12 +113,8 @@ from .state_discovery import (
     StateDiscoveryService,
     StateDiscoveryStrategy,
 )
-from .state_discovery import (
-    DiscoveredState as UnifiedDiscoveredState,
-)
-from .state_discovery import (
-    discover_states as discover_states_unified,
-)
+from .state_discovery import DiscoveredState as UnifiedDiscoveredState
+from .state_discovery import discover_states as discover_states_unified
 
 # UI Bridge exploration - automatic application exploration
 from .target_connection import (
