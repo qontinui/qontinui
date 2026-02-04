@@ -123,7 +123,9 @@ class OCRTextDetector(BaseRegionAnalyzer):
         """Detect text regions in a single image."""
         # Get OCR data
         data = pytesseract.image_to_data(
-            image, output_type=pytesseract.Output.DICT, config="--psm 11"  # Sparse text
+            image,
+            output_type=pytesseract.Output.DICT,
+            config="--psm 11",  # Sparse text
         )
 
         regions = []

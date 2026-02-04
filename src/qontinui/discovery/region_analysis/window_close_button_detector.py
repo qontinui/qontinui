@@ -240,7 +240,6 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
                         and h >= self.min_button_size
                         and h <= self.max_button_size
                     ):
-
                         # Should be roughly square
                         if abs(w - h) < w * 0.3:
                             x = min_x + offset_x
@@ -281,9 +280,7 @@ class WindowCloseButtonDetector(BaseRegionAnalyzer):
 
         return ccw(x1, y1, x3, y3, x4, y4) != ccw(x2, y2, x3, y3, x4, y4) and ccw(  # type: ignore[no-any-return]
             x1, y1, x2, y2, x3, y3
-        ) != ccw(
-            x1, y1, x2, y2, x4, y4
-        )
+        ) != ccw(x1, y1, x2, y2, x4, y4)
 
     def _remove_duplicates(self, buttons: list[tuple]) -> list[tuple]:
         """Remove duplicate detections (nearby buttons)."""

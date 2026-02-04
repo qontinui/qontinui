@@ -639,8 +639,7 @@ class ExtractionOrchestrator:
         extractor = self._get_runtime_extractor(config.target)
         if not extractor:
             raise RuntimeError(
-                "No runtime extractor available for target. "
-                "Runtime extraction cannot be performed."
+                "No runtime extractor available for target. Runtime extraction cannot be performed."
             )
 
         start_time = time.time()

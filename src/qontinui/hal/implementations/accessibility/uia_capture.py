@@ -134,7 +134,7 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
             return True
         except ImportError:
             logger.error(
-                "uiautomation module not available. " "Install with: pip install uiautomation"
+                "uiautomation module not available. Install with: pip install uiautomation"
             )
             return False
 

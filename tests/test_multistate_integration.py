@@ -341,7 +341,8 @@ def test_integrated_scenario():
     # Multi-target navigation
     print("\n6. Navigate to open all panels...")
     context = navigator.navigate_to_states(
-        target_state_ids=[20, 21, 22], execute=False  # Just compute, don't execute
+        target_state_ids=[20, 21, 22],
+        execute=False,  # Just compute, don't execute
     )
 
     if context and context.path:

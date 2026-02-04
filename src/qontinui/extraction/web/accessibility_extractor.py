@@ -681,9 +681,7 @@ class AccessibilityExtractor:
             enriched.append(enriched_elem)
 
         matched_count = sum(1 for e in enriched if e.match_confidence > 0)
-        logger.info(
-            f"Enriched {len(elements)} elements with a11y data " f"({matched_count} matched)"
-        )
+        logger.info(f"Enriched {len(elements)} elements with a11y data ({matched_count} matched)")
 
         return enriched
 

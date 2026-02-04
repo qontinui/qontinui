@@ -180,4 +180,4 @@ class OverlappingGrids:
 
     def __repr__(self) -> str:
         """Developer representation."""
-        return f"OverlappingGrids(grid={self.grid!r}, " f"inner_grid={self.inner_grid!r})"
+        return f"OverlappingGrids(grid={self.grid!r}, inner_grid={self.inner_grid!r})"

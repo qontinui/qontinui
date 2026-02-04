@@ -193,7 +193,9 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
                 states_with_transitions += 1
                 _debug_print(f"    State '{state.name}' has {len(state.transitions)} transitions")
             for transition in state.transitions:
-                _debug_print(f"    Registering transition: {transition.id} from state '{state.name}'")  # type: ignore[attr-defined]
+                _debug_print(
+                    f"    Registering transition: {transition.id} from state '{state.name}'"
+                )  # type: ignore[attr-defined]
                 _navigator.multistate_adapter.register_qontinui_transition(transition)  # type: ignore[arg-type]
                 transition_count += 1
 

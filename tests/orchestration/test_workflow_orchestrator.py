@@ -237,7 +237,8 @@ class TestWorkflowOrchestrator:
 
         actions = [MockAction("action1")]
         result = orchestrator.execute_with_condition(
-            actions, condition=lambda ctx: True  # Always execute
+            actions,
+            condition=lambda ctx: True,  # Always execute
         )
 
         assert result.success
@@ -250,7 +251,8 @@ class TestWorkflowOrchestrator:
 
         actions = [MockAction("action1")]
         result = orchestrator.execute_with_condition(
-            actions, condition=lambda ctx: False  # Never execute
+            actions,
+            condition=lambda ctx: False,  # Never execute
         )
 
         assert result.success

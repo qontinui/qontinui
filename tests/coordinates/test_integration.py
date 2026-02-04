@@ -41,9 +41,7 @@ class TestIntegrationRealMonitors:
         primary = desktop.get_primary_monitor()
         assert primary is not None
         assert primary.is_primary is True
-        print(
-            f"\nPrimary monitor: {primary.width}x{primary.height} " f"at ({primary.x}, {primary.y})"
-        )
+        print(f"\nPrimary monitor: {primary.width}x{primary.height} at ({primary.x}, {primary.y})")
 
     def test_virtual_desktop_bounds(self) -> None:
         """Test that virtual desktop bounds are calculated correctly."""
@@ -104,15 +102,15 @@ class TestIntegrationRealMonitors:
             center_y = monitor.y + monitor.height // 2
 
             detected_idx = service.get_monitor_at_point(center_x, center_y)
-            assert (
-                detected_idx == monitor.index
-            ), f"Failed to detect monitor {monitor.index} at its center"
+            assert detected_idx == monitor.index, (
+                f"Failed to detect monitor {monitor.index} at its center"
+            )
 
             # Test top-left corner
             detected_idx = service.get_monitor_at_point(monitor.x, monitor.y)
-            assert (
-                detected_idx == monitor.index
-            ), f"Failed to detect monitor {monitor.index} at its top-left"
+            assert detected_idx == monitor.index, (
+                f"Failed to detect monitor {monitor.index} at its top-left"
+            )
 
             print(f"\nMonitor {monitor.index} detection: OK")
 
@@ -233,9 +231,9 @@ class TestIntegrationMultiMonitorScenarios:
                 monitor.x + monitor.width, monitor.y + monitor.height // 2
             )
             # Could be on another monitor or None
-            assert (
-                detected != i or detected is None
-            ), f"Point outside monitor {i} incorrectly detected as on monitor {i}"
+            assert detected != i or detected is None, (
+                f"Point outside monitor {i} incorrectly detected as on monitor {i}"
+            )
 
             print(f"Monitor {i} boundaries: OK")
 

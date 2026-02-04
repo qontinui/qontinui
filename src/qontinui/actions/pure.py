@@ -58,7 +58,10 @@ class UnifiedInputController:
     def click_at(self, x: int, y: int, button: MouseButton | str, clicks: int = 1) -> None:
         """Click at coordinates."""
         self._mouse.mouse_click(
-            x, y, button if isinstance(button, MouseButton) else MouseButton[button.upper()], clicks  # type: ignore[arg-type]
+            x,
+            y,
+            button if isinstance(button, MouseButton) else MouseButton[button.upper()],
+            clicks,  # type: ignore[arg-type]
         )
 
     def scroll(self, clicks: int) -> None:

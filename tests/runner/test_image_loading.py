@@ -357,9 +357,9 @@ class TestMissingImageReferenceWarning:
         warning_messages = [
             record.message for record in caplog.records if record.levelname == "WARNING"
         ]
-        assert any(
-            "references missing image" in msg for msg in warning_messages
-        ), f"Expected warning about missing image. Got: {warning_messages}"
+        assert any("references missing image" in msg for msg in warning_messages), (
+            f"Expected warning about missing image. Got: {warning_messages}"
+        )
 
     def test_missing_reference_not_in_image_map(
         self, config_with_missing_image_reference: dict[str, Any]

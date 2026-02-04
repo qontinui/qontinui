@@ -423,7 +423,7 @@ class MouseActionExecutor(ActionExecutorBase):
             if target.index < 0 or target.index >= len(matches):
                 logger.error(
                     f"ResultIndexTarget index {target.index} out of bounds "
-                    f"(available: 0-{len(matches)-1})"
+                    f"(available: 0-{len(matches) - 1})"
                 )
                 return None
 
@@ -860,8 +860,8 @@ class MouseActionExecutor(ActionExecutorBase):
         )
         debug_write(f"Step 2: Starting {click_count} click(s) at {click_location}")
         for i in range(click_count):
-            logger.info(f"[CLICK DEBUG] Click {i+1}/{click_count} - Pressing {button}")
-            debug_write(f"  Click {i+1}/{click_count}")
+            logger.info(f"[CLICK DEBUG] Click {i + 1}/{click_count} - Pressing {button}")
+            debug_write(f"  Click {i + 1}/{click_count}")
 
             # Sub-action: MOUSE_DOWN
             logger.info(f"[CLICK DEBUG] Calling mouse.down with button={button}")

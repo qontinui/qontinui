@@ -164,7 +164,7 @@ class AIPromptActionConfig(BaseModel):
     provider: Literal["claude"] | None = Field(
         "claude",
         description=(
-            "AI provider to use for analysis:\n" "- claude: Claude Code via runner (default)"
+            "AI provider to use for analysis:\n- claude: Claude Code via runner (default)"
         ),
     )
 

@@ -330,9 +330,7 @@ class StateIdentifier:
                     if overlap >= self.min_matching_elements:
                         # Merge sid_b into sid_a
                         merged[sid_b] = sid_a
-                        logger.debug(
-                            f"Merging state {sid_b} into {sid_a} " f"(overlap: {overlap:.2%})"
-                        )
+                        logger.debug(f"Merging state {sid_b} into {sid_a} (overlap: {overlap:.2%})")
 
         # Rebuild groups with merges
         final_groups: dict[str, list[tuple[str, str, StateSignature]]] = {}

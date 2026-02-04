@@ -562,13 +562,13 @@ class StateExecutor:
         for i, action in enumerate(workflow.actions):
             action_result = self.action_executor.execute_action(action)
             logger.debug(
-                f"Action {i+1}/{len(workflow.actions)} ({action.type}) result: {action_result}"
+                f"Action {i + 1}/{len(workflow.actions)} ({action.type}) result: {action_result}"
             )
             if not action_result:
                 if action.continue_on_error:  # type: ignore[attr-defined]
-                    logger.debug(f"Action {i+1} failed but continue_on_error=True, continuing...")
+                    logger.debug(f"Action {i + 1} failed but continue_on_error=True, continuing...")
                     continue
-                logger.error(f"Workflow '{workflow.name}' FAILED at action {i+1}")
+                logger.error(f"Workflow '{workflow.name}' FAILED at action {i + 1}")
                 return False
 
         logger.debug(f"Workflow '{workflow.name}' COMPLETED successfully")

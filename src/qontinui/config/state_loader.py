@@ -229,9 +229,7 @@ def _load_single_state(state_def: dict[str, Any], state_service: StateService) -
     # Add state to service
     state_service.add_state(state)
 
-    logger.debug(
-        f"Loaded state '{name}': id={int_id}, images={image_count}, " f"initial={is_initial}"
-    )
+    logger.debug(f"Loaded state '{name}': id={int_id}, images={image_count}, initial={is_initial}")
 
     return True
 

@@ -380,7 +380,7 @@ class MultiStrategyLocator:
             name_lower = name.lower()
             if name_lower not in strategy_map:
                 raise ValueError(
-                    f"Unknown strategy: {name}. " f"Available: {', '.join(strategy_map.keys())}"
+                    f"Unknown strategy: {name}. Available: {', '.join(strategy_map.keys())}"
                 )
             strategies.append(strategy_map[name_lower]())  # type: ignore[abstract]
 

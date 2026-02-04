@@ -297,9 +297,9 @@ class HybridExtractor:
         viewport = page.viewport_size or {"width": 1920, "height": 1080}
 
         # Define extraction tasks
-        async def extract_elements() -> (
-            tuple[list[InteractiveElement] | list[FrameAwareElement], int, bool]
-        ):
+        async def extract_elements() -> tuple[
+            list[InteractiveElement] | list[FrameAwareElement], int, bool
+        ]:
             """Extract interactive elements."""
             if self.include_iframes:
                 frame_result = await extract_across_frames(
@@ -332,13 +332,16 @@ class HybridExtractor:
         # Run extractions in parallel or sequentially
         if self.parallel_extraction:
             # Run all extractions in parallel
-            (elements, frame_count, has_iframes), screenshot_b64, scroll_info, a11y_text = (
-                await asyncio.gather(
-                    extract_elements(),
-                    self._take_screenshot(page),
-                    self._get_scroll_info(page),
-                    extract_a11y(),
-                )
+            (
+                (elements, frame_count, has_iframes),
+                screenshot_b64,
+                scroll_info,
+                a11y_text,
+            ) = await asyncio.gather(
+                extract_elements(),
+                self._take_screenshot(page),
+                self._get_scroll_info(page),
+                extract_a11y(),
             )
         else:
             # Sequential extraction (for debugging or specific use cases)

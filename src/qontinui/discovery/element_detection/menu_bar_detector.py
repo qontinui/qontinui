@@ -70,7 +70,7 @@ class MenuBarDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect menu bars in screenshots"""
-        logger.info(f"Running menu bar detection on " f"{len(input_data.screenshots)} screenshots")
+        logger.info(f"Running menu bar detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 

@@ -500,9 +500,9 @@ async def run_validation(urls: list[str], headless: bool = True) -> list[Validat
         page = await context.new_page()
 
         for url in urls:
-            logger.info(f"\n{'='*60}")
+            logger.info(f"\n{'=' * 60}")
             logger.info(f"Validating: {url}")
-            logger.info(f"{'='*60}")
+            logger.info(f"{'=' * 60}")
 
             # Run each test
             tests = [
@@ -562,7 +562,7 @@ def print_summary(results: list[ValidationResult]) -> None:
 
     # Overall stats
     total_passed = sum(1 for r in results if r.success)
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"OVERALL: {total_passed}/{len(results)} tests passed")
     print("=" * 60)
 

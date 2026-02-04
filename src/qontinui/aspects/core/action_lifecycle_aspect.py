@@ -128,7 +128,6 @@ class ActionLifecycleAspect:
             action_result: "ActionResult",
             *object_collections: "ObjectCollection",
         ) -> Any:
-
             # Create action context
             context = ActionContext(
                 action_id=str(uuid.uuid4()),
@@ -192,7 +191,7 @@ class ActionLifecycleAspect:
         """
         if self.log_events:
             logger.debug(
-                f"[{context.action_id}] Starting {context.action_type} " f"({context.action_class})"
+                f"[{context.action_id}] Starting {context.action_type} ({context.action_class})"
             )
 
         # Pre-action pause
@@ -253,7 +252,7 @@ class ActionLifecycleAspect:
         """
         # This would integrate with screenshot capture service
         logger.debug(
-            f"Would capture {phase} screenshot for " f"{context.action_type} [{context.action_id}]"
+            f"Would capture {phase} screenshot for {context.action_type} [{context.action_id}]"
         )
 
     def _update_metrics(self, context: ActionContext) -> None:

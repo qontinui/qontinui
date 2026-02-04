@@ -382,8 +382,7 @@ class LoopExecutor:
             items = self.context.get_variable(var_name)
             if not isinstance(items, list | tuple):
                 raise ValueError(
-                    f"Collection variable '{var_name}' is not iterable "
-                    f"(got {type(items).__name__})"
+                    f"Collection variable '{var_name}' is not iterable (got {type(items).__name__})"
                 )
 
             return list(items)

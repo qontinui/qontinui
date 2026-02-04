@@ -589,7 +589,7 @@ class InteractiveElementExtractor:
                 "shadow" in error_str or "shadowroot" in error_str
             ):
                 logger.warning(
-                    f"Shadow DOM extraction failed: {e}. " "Falling back to regular DOM extraction."
+                    f"Shadow DOM extraction failed: {e}. Falling back to regular DOM extraction."
                 )
                 # Retry without shadow DOM
                 try:
@@ -803,8 +803,7 @@ class InteractiveElementExtractor:
 
         if result.stable:
             logger.info(
-                f"DOM stable after {result.wait_time_ms:.0f}ms "
-                f"({result.mutation_count} mutations)"
+                f"DOM stable after {result.wait_time_ms:.0f}ms ({result.mutation_count} mutations)"
             )
         else:
             logger.warning(

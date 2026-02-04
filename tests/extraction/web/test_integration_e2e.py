@@ -666,9 +666,7 @@ MATCH: 2, 0.85, Third link"""
         elements = await extractor.extract_interactive_elements(page, "test")
 
         # Configure mock for action selection
-        mock_llm_client.responses[
-            "click the submit"
-        ] = """INDEX: 0
+        mock_llm_client.responses["click the submit"] = """INDEX: 0
 ACTION: click
 CONFIDENCE: 0.95
 REASONING: User wants to click the submit button"""

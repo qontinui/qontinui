@@ -74,9 +74,7 @@ class InputFieldDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect input fields in screenshots"""
-        logger.info(
-            f"Running input field detection on " f"{len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running input field detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 

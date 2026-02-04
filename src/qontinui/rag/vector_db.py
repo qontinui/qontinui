@@ -70,8 +70,7 @@ class QdrantLocalDB:
 
         if distance not in distance_map:
             raise ValueError(
-                f"Invalid distance metric: {distance}. "
-                f"Must be one of {list(distance_map.keys())}"
+                f"Invalid distance metric: {distance}. Must be one of {list(distance_map.keys())}"
             )
 
         # Check if collection exists
@@ -91,8 +90,7 @@ class QdrantLocalDB:
             ),
         )
         logger.info(
-            f"Created collection '{name}' with vector size {vector_size} "
-            f"and {distance} distance"
+            f"Created collection '{name}' with vector size {vector_size} and {distance} distance"
         )
 
     async def create_collection_multivector(
@@ -144,8 +142,7 @@ class QdrantLocalDB:
             vectors_config=vector_params,
         )
         logger.info(
-            f"Created multi-vector collection '{name}' with vectors: "
-            f"{list(vectors_config.keys())}"
+            f"Created multi-vector collection '{name}' with vectors: {list(vectors_config.keys())}"
         )
 
     async def upsert(self, collection: str, points: list[dict[str, Any]]) -> None:
@@ -209,9 +206,7 @@ class QdrantLocalDB:
             limit=limit,
         )
 
-        logger.debug(
-            f"Search in '{collection}' returned {len(results)} results " f"(limit={limit})"
-        )
+        logger.debug(f"Search in '{collection}' returned {len(results)} results (limit={limit})")
         return cast(list[Any], results)
 
     async def get(self, collection: str, id: str) -> Any | None:

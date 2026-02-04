@@ -415,8 +415,7 @@ class MultiScreenshotDetector(ABC):
         for idx, screenshot in enumerate(screenshots[1:], start=1):
             if screenshot.shape[:2] != reference_shape:
                 raise ValueError(
-                    f"Screenshot {idx} has shape {screenshot.shape[:2]}, "
-                    f"expected {reference_shape}"
+                    f"Screenshot {idx} has shape {screenshot.shape[:2]}, expected {reference_shape}"
                 )
 
     def __repr__(self) -> str:

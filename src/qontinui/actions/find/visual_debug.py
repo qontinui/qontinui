@@ -175,13 +175,13 @@ class VisualDebugGenerator:
                         y = self._safe_int(location.get("y", 0), f"top_match[{idx}].y")
 
                         logger.info(
-                            f"[VISUAL_DEBUG] Top match #{idx+1}: confidence={confidence}, threshold={threshold}, coords=({x},{y})"
+                            f"[VISUAL_DEBUG] Top match #{idx + 1}: confidence={confidence}, threshold={threshold}, coords=({x},{y})"
                         )
 
                         # Skip if this match was already drawn as a green box
                         if (x, y) in returned_match_coords:
                             logger.info(
-                                f"[VISUAL_DEBUG] Skipping top match #{idx+1} - already drawn as green box"
+                                f"[VISUAL_DEBUG] Skipping top match #{idx + 1} - already drawn as green box"
                             )
                             continue
 

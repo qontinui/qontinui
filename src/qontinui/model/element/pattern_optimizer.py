@@ -219,8 +219,7 @@ class PatternOptimizer:
         """
         if new_mask.shape != pattern.mask.shape:
             raise ValueError(
-                f"New mask shape {new_mask.shape} doesn't match "
-                f"current shape {pattern.mask.shape}"
+                f"New mask shape {new_mask.shape} doesn't match current shape {pattern.mask.shape}"
             )
 
         old_density = pattern.mask_density

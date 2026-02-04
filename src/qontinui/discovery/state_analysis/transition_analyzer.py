@@ -403,7 +403,7 @@ class TransitionAnalyzer:
         logger.debug(
             f"Correlated event {closest_event.event_type} at {closest_event.timestamp:.3f}s "
             f"with state change at {change_point.timestamp:.3f}s "
-            f"(diff: {candidate_events[0][1]*1000:.1f}ms)"
+            f"(diff: {candidate_events[0][1] * 1000:.1f}ms)"
         )
 
         return closest_event

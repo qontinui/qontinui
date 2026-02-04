@@ -61,7 +61,6 @@ class ExampleButtonDetector(BaseDetector):
             if 1.5 < aspect_ratio < 8.0:  # Buttons are typically wider than tall
                 # Check size constraints
                 if min_size[0] <= w <= max_size[0] and min_size[1] <= h <= max_size[1]:
-
                     detections.append(
                         {
                             "bbox": (x, y, w, h),

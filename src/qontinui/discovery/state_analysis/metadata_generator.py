@@ -45,7 +45,8 @@ class MetadataGenerator:
             # State coverage (what percentage of frames are in states)
             total_state_frames = sum(len(s.frame_indices) for s in states)  # type: ignore[misc,attr-defined]
             scores["state_coverage"] = total_state_frames / max(
-                1, max(s.end_frame_index for s in states)  # type: ignore[attr-defined]
+                1,
+                max(s.end_frame_index for s in states),  # type: ignore[attr-defined]
             )
 
         # Transition coverage (what percentage of states have transitions)

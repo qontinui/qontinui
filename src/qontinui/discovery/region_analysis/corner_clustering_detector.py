@@ -77,7 +77,10 @@ class CornerClusteringDetector(BaseRegionAnalyzer):
         regions: list[Any] = []
         for spacing_info in grid_spacings:
             grid_regions = self._extract_grid_from_spacing(
-                corners, spacing_info, image.shape, params  # type: ignore[arg-type]
+                corners,
+                spacing_info,
+                image.shape,
+                params,  # type: ignore[arg-type]
             )
             regions.extend(grid_regions)
 

@@ -117,7 +117,7 @@ def find_claude() -> ClaudeInfo:
                 logger.info(f"Using claude from configured path: {configured_path}")
                 return ClaudeInfo(found=True, method="native", path=configured_path, error=None)
         logger.warning(
-            f"Configured Claude path {configured_path} not found, " "falling back to auto-detection"
+            f"Configured Claude path {configured_path} not found, falling back to auto-detection"
         )
 
     # 2. Check CLAUDE_PATH environment variable

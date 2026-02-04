@@ -221,8 +221,7 @@ class StateAutomator:
         for trans in transitions:
             if trans.name == transition_name:
                 logger.info(
-                    f"Executing transition: {transition_name} "
-                    f"({current.name} -> {trans.to_state})"
+                    f"Executing transition: {transition_name} ({current.name} -> {trans.to_state})"
                 )
 
                 try:

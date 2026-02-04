@@ -46,7 +46,7 @@ class StateSignature:
 
     def __repr__(self) -> str:
         """String representation of signature."""
-        return f"StateSignature(id={self.state_id}, " f"required={len(self.required_elements)})"
+        return f"StateSignature(id={self.state_id}, required={len(self.required_elements)})"
 
 
 @dataclass

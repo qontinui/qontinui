@@ -341,9 +341,7 @@ def run_all_benchmarks() -> list[dict[str, Any]]:
                 if "num_threads" in result
                 else "lock_overhead"
             )
-            print(
-                f"{test_name:<30} " f"{result['overhead_percent']:<15.1f} " f"{result['grade']:<15}"
-            )
+            print(f"{test_name:<30} {result['overhead_percent']:<15.1f} {result['grade']:<15}")
 
     return results
 

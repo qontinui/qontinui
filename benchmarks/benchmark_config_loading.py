@@ -217,11 +217,7 @@ def run_all_benchmarks() -> list[dict[str, Any]]:
     print(f"{'-' * 45}")
 
     for result in results:
-        print(
-            f"{result['config_size']:<15} "
-            f"{result['parse_time_ms']:<15.1f} "
-            f"{result['grade']:<15}"
-        )
+        print(f"{result['config_size']:<15} {result['parse_time_ms']:<15.1f} {result['grade']:<15}")
 
     return results
 

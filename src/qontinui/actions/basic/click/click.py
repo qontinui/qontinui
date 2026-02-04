@@ -173,19 +173,19 @@ class Click(ActionInterface):
 
         # Process all object collections
         for obj_idx, obj_collection in enumerate(object_collections):
-            log_func(f"Processing object collection #{obj_idx+1}")
+            log_func(f"Processing object collection #{obj_idx + 1}")
             log_func(f"  - matches: {len(obj_collection.matches)}")
             log_func(f"  - locations: {len(obj_collection.locations)}")  # type: ignore[attr-defined]
             log_func(f"  - regions: {len(obj_collection.regions)}")  # type: ignore[attr-defined]
             # Click on any existing matches in the collection (ActionResult objects with match_list)
             for ar_idx, action_result in enumerate(obj_collection.matches):
                 log_func(
-                    f"  Processing ActionResult #{ar_idx+1} with {len(action_result.matches)} matches"
+                    f"  Processing ActionResult #{ar_idx + 1} with {len(action_result.matches)} matches"
                 )
                 # ActionResult contains a match_list with actual Match objects (from find module)
                 for fm_idx, find_match in enumerate(action_result.matches):
                     location = find_match.target
-                    log_func(f"    Match #{fm_idx+1}: location={location}")
+                    log_func(f"    Match #{fm_idx + 1}: location={location}")
                     if location:  # Only click if match has a target location
                         log_func(f"    Calling _click() at coordinates: {location}")
                         # Use the underlying match_object which is a ModelMatch

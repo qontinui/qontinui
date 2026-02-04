@@ -44,9 +44,9 @@ class TestActionResultBuilderThreading:
         # Verify: should be exactly num_threads * increments_per_thread
         result = builder.build()
         expected = num_threads * increments_per_thread
-        assert (
-            result.times_acted_on == expected
-        ), f"Expected {expected}, got {result.times_acted_on}"
+        assert result.times_acted_on == expected, (
+            f"Expected {expected}, got {result.times_acted_on}"
+        )
 
     def test_concurrent_match_additions(self):
         """Test that adding matches concurrently doesn't corrupt the match list.
@@ -82,9 +82,9 @@ class TestActionResultBuilderThreading:
         # Build result and verify
         result = builder.build()
         expected_count = num_threads * matches_per_thread
-        assert (
-            len(result.matches) == expected_count
-        ), f"Expected {expected_count} matches, got {len(result.matches)}"
+        assert len(result.matches) == expected_count, (
+            f"Expected {expected_count} matches, got {len(result.matches)}"
+        )
 
         # Verify: all match values are unique (no duplicates)
         values = [m.value for m in result.matches]
@@ -124,9 +124,9 @@ class TestActionResultBuilderThreading:
         # Build result and verify
         result = builder.build()
         expected_count = num_threads * regions_per_thread
-        assert (
-            len(result.defined_regions) == expected_count
-        ), f"Expected {expected_count} regions, got {len(result.defined_regions)}"
+        assert len(result.defined_regions) == expected_count, (
+            f"Expected {expected_count} regions, got {len(result.defined_regions)}"
+        )
 
     def test_concurrent_movement_additions(self):
         """Test that adding movements concurrently is thread-safe.
@@ -162,9 +162,9 @@ class TestActionResultBuilderThreading:
         # Build result and verify
         result = builder.build()
         expected_count = num_threads * movements_per_thread
-        assert (
-            len(result.movements) == expected_count
-        ), f"Expected {expected_count} movements, got {len(result.movements)}"
+        assert len(result.movements) == expected_count, (
+            f"Expected {expected_count} movements, got {len(result.movements)}"
+        )
 
     def test_concurrent_execution_history_additions(self):
         """Test that adding execution records concurrently is thread-safe.
@@ -200,9 +200,9 @@ class TestActionResultBuilderThreading:
         # Build result and verify
         result = builder.build()
         expected_count = num_threads * records_per_thread
-        assert (
-            len(result.execution_history) == expected_count
-        ), f"Expected {expected_count} records, got {len(result.execution_history)}"
+        assert len(result.execution_history) == expected_count, (
+            f"Expected {expected_count} records, got {len(result.execution_history)}"
+        )
 
     def test_concurrent_mixed_operations(self):
         """Test that mixed concurrent operations are thread-safe.

@@ -113,8 +113,7 @@ class ButtonFusionDetector(BaseAnalyzer):
         avg_confidence = np.mean([e.confidence for e in all_elements]) if all_elements else 0.0
 
         logger.info(
-            f"Found {len(all_elements)} button candidates with "
-            f"avg confidence {avg_confidence:.2f}"
+            f"Found {len(all_elements)} button candidates with avg confidence {avg_confidence:.2f}"
         )
 
         return AnalysisResult(

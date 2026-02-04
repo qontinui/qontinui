@@ -134,7 +134,7 @@ def generate_html_report(all_results: dict[str, Any], output_file: Path):
     for suite_name, suite_results in all_results["results"].items():
         html += f"""
     <div class="benchmark-section">
-        <h2>{suite_name.replace('_', ' ').title()}</h2>
+        <h2>{suite_name.replace("_", " ").title()}</h2>
         <table>
             <tr>
                 <th>Test</th>
@@ -177,7 +177,7 @@ def generate_html_report(all_results: dict[str, Any], output_file: Path):
                     html += f"""
             <tr>
                 <td>{test_name}</td>
-                <td>{time_key.replace('_', ' ').title()}</td>
+                <td>{time_key.replace("_", " ").title()}</td>
                 <td>{value:.2f} {unit}</td>
                 <td class="{grade_class}">{grade}</td>
             </tr>

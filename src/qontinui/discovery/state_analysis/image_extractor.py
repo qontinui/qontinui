@@ -420,7 +420,7 @@ class StateImageExtractor:
 
                 # Create StateImage with refined boundaries
                 state_image = StateImage(  # type: ignore[call-arg]
-                    name=f"refined_{x+rx}_{y+ry}",
+                    name=f"refined_{x + rx}_{y + ry}",
                     image=refined,  # type: ignore[arg-type]
                     bbox=(x + rx, y + ry, rw, rh),
                     position_type="unknown",

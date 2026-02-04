@@ -344,7 +344,7 @@ class DOMStabilityWaiter:
                 time_since_mutation_ms = (time.time() - last_mutation_time) * 1000
                 if time_since_mutation_ms >= self.stability_threshold_ms:
                     logger.debug(
-                        f"DOM stable after {elapsed_ms:.0f}ms " f"({len(mutations)} mutations)"
+                        f"DOM stable after {elapsed_ms:.0f}ms ({len(mutations)} mutations)"
                     )
                     break
 

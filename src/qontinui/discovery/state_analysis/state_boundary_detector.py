@@ -169,8 +169,7 @@ class StateBoundaryDetector:
                 self.feature_detector = cv2.xfeatures2d.SURF_create()
             else:
                 logger.warning(
-                    f"Unknown feature extractor: {self.config.feature_extractor}, "
-                    "defaulting to ORB"
+                    f"Unknown feature extractor: {self.config.feature_extractor}, defaulting to ORB"
                 )
                 self.feature_detector = cv2.ORB_create(nfeatures=self.config.feature_count)
         except Exception as e:
@@ -519,7 +518,7 @@ class StateBoundaryDetector:
             return self._cluster_kmeans(distance_matrix)
         else:
             logger.warning(
-                f"Unknown clustering algorithm: {self.config.clustering_algorithm}, " "using DBSCAN"
+                f"Unknown clustering algorithm: {self.config.clustering_algorithm}, using DBSCAN"
             )
             return self._cluster_dbscan(distance_matrix)
 

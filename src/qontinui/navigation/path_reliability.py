@@ -168,7 +168,7 @@ class TransitionReliability:
                 self._history[key] = self._history[key][-self.max_history_per_transition :]
 
         logger.debug(
-            f"Recorded {'success' if success else 'failure'} for " f"{from_state} -> {to_state}"
+            f"Recorded {'success' if success else 'failure'} for {from_state} -> {to_state}"
         )
 
     def record_success(

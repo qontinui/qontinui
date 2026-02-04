@@ -203,5 +203,5 @@ class ActionHistory:
         return (
             f"ActionHistory({stats['total_snapshots']} snapshots, "
             f"{stats['successful']} successful, "
-            f"{stats['success_rate']*100:.1f}% success rate)"
+            f"{stats['success_rate'] * 100:.1f}% success rate)"
         )

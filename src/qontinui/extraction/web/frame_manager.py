@@ -484,8 +484,7 @@ async def _extract_from_frame_with_retry(
         except Exception as e:
             if attempt == max_retries:
                 logger.warning(
-                    f"Failed to extract from frame {frame_id} after "
-                    f"{max_retries + 1} attempts: {e}"
+                    f"Failed to extract from frame {frame_id} after {max_retries + 1} attempts: {e}"
                 )
                 return []
 

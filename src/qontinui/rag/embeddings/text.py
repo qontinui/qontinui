@@ -209,7 +209,7 @@ class TextEmbedder:
         """
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
             raise ImportError(
-                "sentence-transformers is not installed. " "Install it with: poetry install -E rag"
+                "sentence-transformers is not installed. Install it with: poetry install -E rag"
             )
 
         self.model_name = model_name

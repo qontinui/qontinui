@@ -137,9 +137,9 @@ class TestCooccurrenceClustering:
             "screen2",
         }, f"State with {{c,d}} should be active on screens 1,2, got {state_screens[state_with_cd]}"
 
-        assert set(state_screens[state_with_e]) == {
-            "screen3"
-        }, f"State with {{e}} should be active only on screen 3, got {state_screens[state_with_e]}"
+        assert set(state_screens[state_with_e]) == {"screen3"}, (
+            f"State with {{e}} should be active only on screen 3, got {state_screens[state_with_e]}"
+        )
 
         # Verify active states per screen
         screen1_states = get_active_states_for_screen("screen1", state_screens)

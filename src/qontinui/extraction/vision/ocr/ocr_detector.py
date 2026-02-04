@@ -145,7 +145,7 @@ class OCRDetector:
             overlay = self._create_ocr_overlay(screenshot, filtered_results)
 
             logger.info(
-                f"OCR found {len(results)} text regions, " f"{len(filtered_results)} passed filters"
+                f"OCR found {len(results)} text regions, {len(filtered_results)} passed filters"
             )
 
             return filtered_results, overlay

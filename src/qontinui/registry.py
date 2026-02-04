@@ -73,23 +73,23 @@ logger = logging.getLogger(__name__)
 
 # Global registries - private to this module
 _image_registry: dict[str, Image] = {}
-_image_metadata_registry: dict[str, dict[str, Any]] = (
-    {}
-)  # Stores {image_id: {file_path: str, name: str, monitors: list[int] | None}}
+_image_metadata_registry: dict[
+    str, dict[str, Any]
+] = {}  # Stores {image_id: {file_path: str, name: str, monitors: list[int] | None}}
 _workflow_registry: dict[str, Any] = {}
 _workflow_names: dict[str, str] = {}  # Stores {workflow_id: workflow_name}
-_workflow_definitions: dict[str, dict[str, Any]] = (
-    {}
-)  # Stores full workflow definitions for graph workflows
+_workflow_definitions: dict[
+    str, dict[str, Any]
+] = {}  # Stores full workflow definitions for graph workflows
 # StateRegion and StateLocation registries
-_region_registry: dict[str, dict[str, Any]] = (
-    {}
-)  # Stores {region_id: {x, y, width, height, monitors, name}}
+_region_registry: dict[
+    str, dict[str, Any]
+] = {}  # Stores {region_id: {x, y, width, height, monitors, name}}
 _location_registry: dict[str, dict[str, Any]] = {}  # Stores {location_id: {x, y, monitors, name}}
 # StateImage to pattern image IDs mapping (supports multi-pattern StateImages)
-_state_image_patterns_registry: dict[str, list[str]] = (
-    {}
-)  # Stores {state_image_id: [pattern_image_id1, pattern_image_id2, ...]}
+_state_image_patterns_registry: dict[
+    str, list[str]
+] = {}  # Stores {state_image_id: [pattern_image_id1, pattern_image_id2, ...]}
 
 
 def register_image(

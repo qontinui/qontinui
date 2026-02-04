@@ -387,7 +387,9 @@ class DataOperationsExecutor:
 
             # Perform operation using StringExecutor
             result_str = self._string_executor.execute(
-                config.operation, input_str, config.parameters  # type: ignore[arg-type]
+                config.operation,
+                input_str,
+                config.parameters,  # type: ignore[arg-type]
             )
 
             # Store result

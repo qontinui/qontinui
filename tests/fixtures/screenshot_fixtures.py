@@ -288,7 +288,7 @@ class SyntheticScreenshotGenerator:
                     y=50 + (i % 2) * 100,
                     width=120,
                     height=40,
-                    text=f"Button {i+1}",
+                    text=f"Button {i + 1}",
                     color=(200, 200, 200),
                     border_color=(100, 100, 100),
                 )
@@ -303,7 +303,7 @@ class SyntheticScreenshotGenerator:
                     y=200 + i * 60,
                     width=200,
                     height=35,
-                    text=f"Input {i+1}",
+                    text=f"Input {i + 1}",
                 )
             )
 
@@ -563,9 +563,9 @@ def create_button_screenshot(
     generator = SyntheticScreenshotGenerator()
 
     if button_text is None:
-        button_text = [f"Button {i+1}" for i in range(num_buttons)]
+        button_text = [f"Button {i + 1}" for i in range(num_buttons)]
     elif len(button_text) < num_buttons:
-        button_text.extend([f"Button {i+1}" for i in range(len(button_text), num_buttons)])
+        button_text.extend([f"Button {i + 1}" for i in range(len(button_text), num_buttons)])
 
     buttons = []
     for i in range(num_buttons):
@@ -899,7 +899,7 @@ def create_multi_region_screenshot(
                     y=sidebar_y + 60 + i * 50,
                     width=180,
                     height=40,
-                    text=f"Item {i+1}",
+                    text=f"Item {i + 1}",
                     color=(230, 230, 230),
                 )
             )

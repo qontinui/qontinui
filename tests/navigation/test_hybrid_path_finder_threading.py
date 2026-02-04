@@ -216,8 +216,7 @@ class TestHybridPathFinderThreading:
                     # Verify integrity
                     if retrieved != value:
                         errors.append(
-                            f"Thread {thread_id} iteration {i}: "
-                            f"Expected {value}, got {retrieved}"
+                            f"Thread {thread_id} iteration {i}: Expected {value}, got {retrieved}"
                         )
             except Exception as e:
                 errors.append(f"Thread {thread_id}: {e}")

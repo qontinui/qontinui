@@ -419,7 +419,7 @@ class PixelStabilityAnalyzer:
         for i, img in enumerate(screenshots[1:], 1):
             if img.shape != ref_shape:
                 raise ValueError(
-                    f"Screenshot {i} has different dimensions: " f"{img.shape} vs {ref_shape}"
+                    f"Screenshot {i} has different dimensions: {img.shape} vs {ref_shape}"
                 )
 
     def _calculate_pixel_hash(self, pixel_data: np.ndarray[Any, Any]) -> str:

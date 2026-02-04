@@ -300,7 +300,7 @@ class DelegatingActionExecutor:
                             action.type,
                         )
                         logger.info(
-                            f"[PAUSE] Applying pause_after_end: {pause_after}ms ({pause_after/1000.0}s) for action {action.type}"
+                            f"[PAUSE] Applying pause_after_end: {pause_after}ms ({pause_after / 1000.0}s) for action {action.type}"
                         )
                         logger.debug(f"Waiting {pause_after}ms after action")
                         self.time_wrapper.wait(pause_after / 1000.0)
@@ -314,7 +314,7 @@ class DelegatingActionExecutor:
                         f"[TIMING] Action {action.type} (ID: {action.id}) completed at {action_end_time:.3f}"
                     )
                     logger.debug(
-                        f"[TIMING] Action {action.type} (ID: {action.id}) took {action_duration:.3f} seconds ({action_duration*1000:.1f}ms)"
+                        f"[TIMING] Action {action.type} (ID: {action.id}) took {action_duration:.3f} seconds ({action_duration * 1000:.1f}ms)"
                     )
 
                     return True

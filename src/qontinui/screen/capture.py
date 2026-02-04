@@ -38,7 +38,9 @@ class ScreenCapture:
         self.hal_matcher = HALFactory.get_pattern_matcher()
 
         logger.info(
-            "screen_capture_initialized", backend="HAL", multi_monitor=self.settings.multi_monitor  # type: ignore[attr-defined]
+            "screen_capture_initialized",
+            backend="HAL",
+            multi_monitor=self.settings.multi_monitor,  # type: ignore[attr-defined]
         )
 
     @property

@@ -205,7 +205,11 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
 
             # Cluster matches into grid
             grid_regions = self._extract_grid_from_matches(
-                matches, spacing_x, spacing_y, gray_img.shape, params  # type: ignore[arg-type]
+                matches,
+                spacing_x,
+                spacing_y,
+                gray_img.shape,
+                params,  # type: ignore[arg-type]
             )
 
             return grid_regions

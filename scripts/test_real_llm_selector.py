@@ -317,9 +317,9 @@ class LLMSelectorTester:
         site_name = site_config["name"]
         queries = site_config.get("queries", [])
 
-        logger.info(f"\n{'='*60}")
+        logger.info(f"\n{'=' * 60}")
         logger.info(f"Testing site: {site_name} ({url})")
-        logger.info(f"{'='*60}")
+        logger.info(f"{'=' * 60}")
 
         result = SiteTestResult(
             url=url,

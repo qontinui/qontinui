@@ -297,7 +297,7 @@ class VariableExecutor:
             NotImplementedError: Always (feature not yet implemented)
         """
         raise NotImplementedError(
-            "OCR value source not yet implemented. " "Requires integration with OCR engine."
+            "OCR value source not yet implemented. Requires integration with OCR engine."
         )
 
     def _get_value_from_target(self, config: SetVariableActionConfig) -> Any:
@@ -315,5 +315,5 @@ class VariableExecutor:
             NotImplementedError: Always (feature not yet implemented)
         """
         raise NotImplementedError(
-            "Target value source not yet implemented. " "Requires integration with find operations."
+            "Target value source not yet implemented. Requires integration with find operations."
         )

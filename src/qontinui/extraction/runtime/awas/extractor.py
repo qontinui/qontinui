@@ -82,7 +82,7 @@ class AwasRuntimeExtractor(RuntimeExtractor):
 
             if self._manifest is None:
                 raise ConnectionError(
-                    f"No AWAS manifest found at {target.url}. " "The website does not support AWAS."
+                    f"No AWAS manifest found at {target.url}. The website does not support AWAS."
                 )
 
             self._target = target

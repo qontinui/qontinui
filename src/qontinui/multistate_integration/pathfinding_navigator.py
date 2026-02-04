@@ -285,10 +285,10 @@ class PathfindingNavigator:
                     if state_id in context.path.target_states:
                         context.targets_reached.add(state_id)
 
-                logger.debug(f"Completed transition {i+1}/{len(context.path.transitions)}")
+                logger.debug(f"Completed transition {i + 1}/{len(context.path.transitions)}")
             else:
                 context.failed_transition = transition
-                logger.warning(f"Failed at transition {i+1}: {transition.name}")
+                logger.warning(f"Failed at transition {i + 1}: {transition.name}")
 
                 # Attempt recovery
                 if not self._attempt_recovery(context):

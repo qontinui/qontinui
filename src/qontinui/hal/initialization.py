@@ -72,7 +72,7 @@ def initialize_hal(config: HALConfig | None = None) -> HALContainer:
         container = HALContainer.create_from_config(config)
     except ImportError as e:
         raise HALInitializationError(
-            f"Failed to import HAL backend: {e}. " f"Make sure required libraries are installed."
+            f"Failed to import HAL backend: {e}. Make sure required libraries are installed."
         ) from e
     except Exception as e:
         raise HALInitializationError(f"Failed to initialize HAL components: {e}") from e

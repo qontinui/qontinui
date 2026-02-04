@@ -426,8 +426,7 @@ class FindOptions:
 
         if self.min_matches > self.max_matches:
             raise ValueError(
-                f"min_matches ({self.min_matches}) cannot exceed "
-                f"max_matches ({self.max_matches})"
+                f"min_matches ({self.min_matches}) cannot exceed max_matches ({self.max_matches})"
             )
 
         if self.use_multiscale:

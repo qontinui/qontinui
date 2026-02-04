@@ -201,7 +201,6 @@ class HoughGridDetector(BaseRegionAnalyzer):
                     and v_y_min <= h_y_max
                     and v_y_max >= h_y_min
                 ):
-
                     configs.append(
                         {
                             "h_lines": h_group["lines"],

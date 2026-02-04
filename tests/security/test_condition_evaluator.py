@@ -138,9 +138,9 @@ class TestConditionTypes:
                 expected_value=expected_value,
             )
             result = evaluator.evaluate_condition(config)
-            assert (
-                result == expected_result
-            ), f"Failed for operator {operator} with expected {expected_value}"
+            assert result == expected_result, (
+                f"Failed for operator {operator} with expected {expected_value}"
+            )
 
     def test_contains_operator(self):
         """Test the contains operator."""

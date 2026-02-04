@@ -255,7 +255,7 @@ class RealFindImplementation:
             )
             # Log screenshot timing
             logger.debug(
-                f"[TIMING] Screenshot capture took {screenshot_duration:.3f}s ({screenshot_duration*1000:.1f}ms) for pattern {pattern.name}"
+                f"[TIMING] Screenshot capture took {screenshot_duration:.3f}s ({screenshot_duration * 1000:.1f}ms) for pattern {pattern.name}"
             )
 
             # Convert screenshot to numpy array for cache/healing operations
@@ -318,7 +318,7 @@ class RealFindImplementation:
                 )
                 # Log matching timing
                 logger.debug(
-                    f"[TIMING] Template matching took {matching_duration:.3f}s ({matching_duration*1000:.1f}ms) for pattern {pattern.name}"
+                    f"[TIMING] Template matching took {matching_duration:.3f}s ({matching_duration * 1000:.1f}ms) for pattern {pattern.name}"
                 )
 
                 # ================================================================

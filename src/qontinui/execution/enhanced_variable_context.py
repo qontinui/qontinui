@@ -120,7 +120,7 @@ class EnhancedVariableContext:
 
         if scope not in ("execution", "workflow", "global"):
             raise ValueError(
-                f"Invalid scope '{scope}'. Must be one of: " "execution, workflow, global"
+                f"Invalid scope '{scope}'. Must be one of: execution, workflow, global"
             )
 
         with self._lock:
@@ -209,9 +209,7 @@ class EnhancedVariableContext:
                     logger.debug(f"Retrieved {scope} variable '{name}'")
                     return storage[name]
                 else:
-                    logger.debug(
-                        f"Variable '{name}' not found in {scope} scope, " f"returning default"
-                    )
+                    logger.debug(f"Variable '{name}' not found in {scope} scope, returning default")
                     return default
 
             # Otherwise, search with precedence: execution -> workflow -> global
@@ -394,7 +392,7 @@ class EnhancedVariableContext:
         """
         if scope not in ("execution", "workflow", "global"):
             raise ValueError(
-                f"Invalid scope '{scope}'. Must be one of: " "execution, workflow, global"
+                f"Invalid scope '{scope}'. Must be one of: execution, workflow, global"
             )
 
         with self._lock:
@@ -448,7 +446,7 @@ class EnhancedVariableContext:
         """
         if scope not in ("workflow", "global"):
             raise ValueError(
-                f"Invalid scope '{scope}'. Only workflow and global support " "file persistence"
+                f"Invalid scope '{scope}'. Only workflow and global support file persistence"
             )
 
         with self._lock:
@@ -462,7 +460,7 @@ class EnhancedVariableContext:
 
             if target_file is None:
                 raise ValueError(
-                    f"No file configured for {scope} scope. " f"Set {scope}_file in constructor."
+                    f"No file configured for {scope} scope. Set {scope}_file in constructor."
                 )
 
             # Ensure parent directory exists
@@ -501,7 +499,7 @@ class EnhancedVariableContext:
         """
         if scope not in ("workflow", "global"):
             raise ValueError(
-                f"Invalid scope '{scope}'. Only workflow and global support " "file persistence"
+                f"Invalid scope '{scope}'. Only workflow and global support file persistence"
             )
 
         with self._lock:
@@ -515,11 +513,11 @@ class EnhancedVariableContext:
 
             if target_file is None:
                 raise ValueError(
-                    f"No file configured for {scope} scope. " f"Set {scope}_file in constructor."
+                    f"No file configured for {scope} scope. Set {scope}_file in constructor."
                 )
 
             if not target_file.exists():
-                logger.warning(f"{scope.capitalize()} variables file not found: " f"{target_file}")
+                logger.warning(f"{scope.capitalize()} variables file not found: {target_file}")
                 return 0
 
             # Read JSON
@@ -537,7 +535,7 @@ class EnhancedVariableContext:
                 storage.clear()
                 storage.update(loaded_vars)
 
-                logger.info(f"Loaded {len(loaded_vars)} {scope} variables from " f"{target_file}")
+                logger.info(f"Loaded {len(loaded_vars)} {scope} variables from {target_file}")
                 return len(loaded_vars)
 
             except json.JSONDecodeError as e:

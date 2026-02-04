@@ -125,8 +125,7 @@ def state(
 
         # Log state registration
         logger.debug(
-            f"State decorated: {state_name} "
-            f"(initial={initial}, priority={priority}, group={group})"
+            f"State decorated: {state_name} (initial={initial}, priority={priority}, group={group})"
         )
 
         # Add helper methods to the class

@@ -323,8 +323,7 @@ class UITARSExecutor:
         if self.settings.uitars_fallback_enabled:
             uitars_result = await self.ground_element(screenshot, element_name)
             logger.debug(
-                f"UI-TARS grounding: {element_name} "
-                f"(confidence: {uitars_result.confidence:.2f})"
+                f"UI-TARS grounding: {element_name} (confidence: {uitars_result.confidence:.2f})"
             )
             return uitars_result
 

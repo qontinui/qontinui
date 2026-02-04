@@ -148,7 +148,9 @@ class DefaultStateMatcher:
             # Find matching elements using component matcher
             # Note: regions aren't directly available, so we use states as a proxy
             evidence = self.component_matcher.match_component_to_elements(
-                component, all_elements, []  # Empty regions for now
+                component,
+                all_elements,
+                [],  # Empty regions for now
             )
 
             if not evidence:

@@ -422,13 +422,13 @@ async def run_benchmarks_on_page(
 
 def print_results(results: PageBenchmarkResults) -> None:
     """Print benchmark results in a formatted table."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"Benchmark Results: {results.url}")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     # Header
     print(f"{'Benchmark':<30} {'Mean':>10} {'Median':>10} {'StdDev':>10} {'Elements':>10}")
-    print(f"{'-'*30} {'-'*10} {'-'*10} {'-'*10} {'-'*10}")
+    print(f"{'-' * 30} {'-' * 10} {'-' * 10} {'-' * 10} {'-' * 10}")
 
     # Results
     for b in results.benchmarks:
@@ -451,9 +451,9 @@ def print_results(results: PageBenchmarkResults) -> None:
 
 def print_comparison(all_results: list[PageBenchmarkResults]) -> None:
     """Print comparison across all pages."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("Performance Comparison Across Pages")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     # Get all benchmark names
     bench_names = [b.name for b in all_results[0].benchmarks]
@@ -461,7 +461,7 @@ def print_comparison(all_results: list[PageBenchmarkResults]) -> None:
     for bench_name in bench_names:
         print(f"\n{bench_name}:")
         print(f"  {'Page':<50} {'Mean':>12} {'Elements':>10}")
-        print(f"  {'-'*50} {'-'*12} {'-'*10}")
+        print(f"  {'-' * 50} {'-' * 12} {'-' * 10}")
 
         for page_result in all_results:
             bench = next((b for b in page_result.benchmarks if b.name == bench_name), None)
@@ -470,18 +470,14 @@ def print_comparison(all_results: list[PageBenchmarkResults]) -> None:
                 url_display = (
                     page_result.url[:47] + "..." if len(page_result.url) > 50 else page_result.url
                 )
-                print(
-                    f"  {url_display:<50} "
-                    f"{bench.mean_ms:>10.1f}ms "
-                    f"{bench.elements_found:>10}"
-                )
+                print(f"  {url_display:<50} {bench.mean_ms:>10.1f}ms {bench.elements_found:>10}")
 
 
 def calculate_overhead(all_results: list[PageBenchmarkResults]) -> None:
     """Calculate and print overhead of enhanced features vs basic extraction."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("Feature Overhead Analysis (vs basic extraction)")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     for page_result in all_results:
         basic = next((b for b in page_result.benchmarks if b.name == "basic_extraction"), None)

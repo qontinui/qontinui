@@ -269,7 +269,9 @@ class TestRegionExtraction:
         consistency_map[50:150, 50:150] = 1.0  # 10000 pixels
 
         regions = detector._extract_regions(
-            consistency_map, threshold=0.5, min_area=500  # Filter out the small region
+            consistency_map,
+            threshold=0.5,
+            min_area=500,  # Filter out the small region
         )
 
         # Should only get the large region
@@ -807,7 +809,9 @@ class TestEdgeCases:
         pairs = [(before, after)] * 10
 
         regions = detector.detect_state_regions(
-            pairs, consistency_threshold=0.99, min_region_area=100  # Very high
+            pairs,
+            consistency_threshold=0.99,
+            min_region_area=100,  # Very high
         )
 
         # Likely no regions meet this threshold
@@ -824,7 +828,9 @@ class TestEdgeCases:
         pairs = [(before, after)] * 10
 
         regions = detector.detect_state_regions(
-            pairs, consistency_threshold=0.5, min_region_area=50000  # Very large
+            pairs,
+            consistency_threshold=0.5,
+            min_region_area=50000,  # Very large
         )
 
         # Should only return regions >= 50000 pixels

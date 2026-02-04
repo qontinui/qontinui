@@ -100,7 +100,6 @@ class Actions:
         else:
             # Live implementation
             if isinstance(target, Pattern):
-
                 # Find pattern first, then click
                 find_result = await self.find(target)
                 if find_result.success and find_result.matches:
@@ -118,10 +117,8 @@ class Actions:
                         .build()
                     )
             elif isinstance(target, Location):
-
                 return cast(ActionResult, self.pure.mouse_click(target.x, target.y, button))
             elif isinstance(target, Region):
-
                 center = target.get_center()
                 return cast(ActionResult, self.pure.mouse_click(center.x, center.y, button))
             else:
@@ -334,7 +331,6 @@ class Actions:
         elif isinstance(target, Region):
             return target.get_center()
         elif isinstance(target, Pattern):
-
             find_result = await self.find(target)
             if find_result.success and find_result.matches:
                 return cast(Location, find_result.matches[0].center)

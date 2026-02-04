@@ -183,7 +183,7 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
 
         if len(pairs) < 10:
             raise ValueError(
-                f"Need at least 10 screenshot pairs (11 screenshots), " f"got {len(pairs)} pairs"
+                f"Need at least 10 screenshot pairs (11 screenshots), got {len(pairs)} pairs"
             )
 
         # Detect regions

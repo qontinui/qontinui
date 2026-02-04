@@ -94,7 +94,7 @@ async def demo_selector_variations(page: Page):
 
     logger.info("\nGenerated variations:")
     for i, var in enumerate(variations):
-        logger.info(f"  {i+1}. {var}")
+        logger.info(f"  {i + 1}. {var}")
 
     # Now try healing on an actual page
     logger.info("\n--- Attempting to heal on actual page ---")

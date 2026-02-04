@@ -71,7 +71,6 @@ class IntelligentRegionDetector:
                         and width <= self.max_region_size[0]
                         and height <= self.max_region_size[1]
                     ):
-
                         merged_regions.append(
                             {
                                 "mask": original_mask[y_min : y_max + 1, x_min : x_max + 1],

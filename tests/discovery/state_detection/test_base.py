@@ -207,7 +207,7 @@ class BaseStateTypeTest:
                     y=100 + i * 60,
                     width=200,
                     height=40,
-                    text=f"Option {i+1}",
+                    text=f"Option {i + 1}",
                 )
                 for i in range(5)
             ]

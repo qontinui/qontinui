@@ -599,5 +599,5 @@ def create_llm_client(
         return MockLLMClient(**kwargs)
     else:
         raise ValueError(
-            f"Unknown provider: {provider}. " f"Supported: anthropic, openai, litellm, mock"
+            f"Unknown provider: {provider}. Supported: anthropic, openai, litellm, mock"
         )

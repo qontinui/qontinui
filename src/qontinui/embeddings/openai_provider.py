@@ -69,7 +69,7 @@ class OpenAIProvider(EmbeddingProvider):
 
         if not HAS_HTTPX:
             raise ImportError(
-                "httpx is required for OpenAIProvider. " "Install it with: pip install httpx"
+                "httpx is required for OpenAIProvider. Install it with: pip install httpx"
             )
 
         # Get API key from config or environment

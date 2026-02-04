@@ -158,7 +158,9 @@ class FindResult:
             raise ValueError("Region cannot be None")
 
         filtered = [
-            m for m in self.matches if m.region is not None and region.contains_region(m.region)  # type: ignore[attr-defined]
+            m
+            for m in self.matches
+            if m.region is not None and region.contains_region(m.region)  # type: ignore[attr-defined]
         ]
         return FindResult(
             matches=filtered,

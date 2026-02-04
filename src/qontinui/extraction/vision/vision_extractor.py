@@ -439,7 +439,6 @@ class VisionExtractor(AbstractExtractor):
                 kept.append(element)
 
         logger.debug(
-            f"Deduplicated {len(elements)} -> {len(kept)} elements "
-            f"(IoU threshold: {iou_threshold})"
+            f"Deduplicated {len(elements)} -> {len(kept)} elements (IoU threshold: {iou_threshold})"
         )
         return kept

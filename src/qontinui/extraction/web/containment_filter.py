@@ -155,7 +155,7 @@ class ContainmentFilter:
 
         container_count = len(elements) - len(filtered)
         logger.info(
-            f"Filtered {container_count} containers, " f"keeping {len(filtered)} atomic elements"
+            f"Filtered {container_count} containers, keeping {len(filtered)} atomic elements"
         )
 
         return filtered, containment_info

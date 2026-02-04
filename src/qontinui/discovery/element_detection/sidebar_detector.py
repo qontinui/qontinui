@@ -71,7 +71,7 @@ class SidebarDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect sidebars in screenshots"""
-        logger.info(f"Running sidebar detection on " f"{len(input_data.screenshots)} screenshots")
+        logger.info(f"Running sidebar detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 

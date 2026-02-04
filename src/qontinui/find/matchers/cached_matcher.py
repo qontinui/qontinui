@@ -103,9 +103,7 @@ class CachedTemplateMatcher(ImageMatcher):
             if result.hit and result.entry:
                 self._cache_hits += 1
                 coords = result.entry.coordinates
-                logger.debug(
-                    f"Cache hit for pattern '{pattern.name}' at " f"({coords.x}, {coords.y})"
-                )
+                logger.debug(f"Cache hit for pattern '{pattern.name}' at ({coords.x}, {coords.y})")
 
                 # Emit cache hit event
                 self._emit_cache_event(pattern, cache_hit=True)

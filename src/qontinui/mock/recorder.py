@@ -188,8 +188,7 @@ class SnapshotRecorder:
             )
 
         logger.debug(
-            f"Recorded FIND action: {pattern_name} "
-            f"({len(matches)} matches, {duration_ms:.1f}ms)"
+            f"Recorded FIND action: {pattern_name} ({len(matches)} matches, {duration_ms:.1f}ms)"
         )
 
     def record_screenshot(self, screenshot: Any) -> str:

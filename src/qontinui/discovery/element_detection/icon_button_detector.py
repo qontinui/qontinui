@@ -69,9 +69,7 @@ class IconButtonDetector(BaseAnalyzer):
 
     async def analyze(self, input_data: AnalysisInput) -> AnalysisResult:
         """Detect icon buttons in screenshots"""
-        logger.info(
-            f"Running icon button detection on " f"{len(input_data.screenshots)} screenshots"
-        )
+        logger.info(f"Running icon button detection on {len(input_data.screenshots)} screenshots")
 
         params = {**self.get_default_parameters(), **input_data.parameters}
 

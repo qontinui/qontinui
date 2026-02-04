@@ -35,7 +35,7 @@ class PairwiseStateAnalyzer:
             Dictionary with regions grouped by their exact screenshot presence
         """
         n = len(screenshots)
-        logger.info(f"Analyzing {n} screenshots pairwise ({n*(n-1)//2} pairs)")
+        logger.info(f"Analyzing {n} screenshots pairwise ({n * (n - 1) // 2} pairs)")
 
         # Step 1: Find stable regions between each pair
         all_regions: dict[str, dict[str, Any]] = {}

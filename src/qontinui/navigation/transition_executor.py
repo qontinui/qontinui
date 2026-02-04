@@ -131,7 +131,7 @@ class TransitionExecutor:
                 for state_id, result in incoming_results.items():
                     if not result.successful:
                         logger.warning(
-                            f"Incoming transition failed for state {state_id}: " f"{result.errors}"
+                            f"Incoming transition failed for state {state_id}: {result.errors}"
                         )
 
             # Phase 5: Update state visibility
@@ -307,7 +307,7 @@ class TransitionExecutor:
                         break  # Only execute first successful incoming
                     else:
                         logger.warning(
-                            f"Incoming transition failed for state {state_id}: " f"{result.errors}"
+                            f"Incoming transition failed for state {state_id}: {result.errors}"
                         )
                 else:
                     logger.debug(f"Incoming transition cannot execute for state {state_id}")

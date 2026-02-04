@@ -90,8 +90,7 @@ class AccessibilityExtractor(AbstractExtractor):
             root_element = await self._find_target(context, config.accessibility)
             if root_element is None:
                 result.add_error(
-                    f"Could not find target application: "
-                    f"{context.app_name or context.window_title}"
+                    f"Could not find target application: {context.app_name or context.window_title}"
                 )
                 result.complete()
                 return result
