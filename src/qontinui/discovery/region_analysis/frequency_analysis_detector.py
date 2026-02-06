@@ -208,8 +208,8 @@ class FrequencyAnalysisDetector(BaseRegionAnalyzer):
                 matches,
                 spacing_x,
                 spacing_y,
-                gray_img.shape,
-                params,  # type: ignore[arg-type]
+                gray_img.shape,  # type: ignore[arg-type]
+                params,
             )
 
             return grid_regions

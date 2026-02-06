@@ -643,9 +643,9 @@ def test_json_roundtrip():
         original_config = get_typed_config(original)
         imported_config = get_typed_config(imported)
 
-        assert type(original_config) is type(imported_config), (
-            f"Action {i} config type should match"
-        )
+        assert type(original_config) is type(
+            imported_config
+        ), f"Action {i} config type should match"
 
         print(f"  ✓ Action {i} ({imported.type}) matches")
 

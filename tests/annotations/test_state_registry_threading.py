@@ -55,24 +55,24 @@ class TestStateRegistryThreading:
 
         # Verify: all IDs should be unique (no duplicates)
         expected_count = num_threads * states_per_thread
-        assert len(all_state_ids) == expected_count, (
-            f"Expected {expected_count} state IDs, got {len(all_state_ids)}"
-        )
+        assert (
+            len(all_state_ids) == expected_count
+        ), f"Expected {expected_count} state IDs, got {len(all_state_ids)}"
 
         unique_ids = set(all_state_ids)
-        assert len(unique_ids) == expected_count, (
-            f"Found duplicate IDs! Expected {expected_count} unique IDs, got {len(unique_ids)}"
-        )
+        assert (
+            len(unique_ids) == expected_count
+        ), f"Found duplicate IDs! Expected {expected_count} unique IDs, got {len(unique_ids)}"
 
         # Verify: IDs should be sequential from 1 to expected_count
-        assert unique_ids == set(range(1, expected_count + 1)), (
-            f"IDs are not sequential: {sorted(unique_ids)}"
-        )
+        assert unique_ids == set(
+            range(1, expected_count + 1)
+        ), f"IDs are not sequential: {sorted(unique_ids)}"
 
         # Verify: registry state count matches
-        assert len(registry.states) == expected_count, (
-            f"Registry has {len(registry.states)} states, expected {expected_count}"
-        )
+        assert (
+            len(registry.states) == expected_count
+        ), f"Registry has {len(registry.states)} states, expected {expected_count}"
 
     def test_concurrent_same_state_registration(self):
         """Test that registering the same state concurrently is idempotent.
@@ -150,9 +150,9 @@ class TestStateRegistryThreading:
         # Verify: final counter value should be total_states + 1
         expected_count = num_threads * states_per_thread
         expected_next_id = expected_count + 1
-        assert registry.next_state_id == expected_next_id, (
-            f"Expected next_state_id={expected_next_id}, got {registry.next_state_id}"
-        )
+        assert (
+            registry.next_state_id == expected_next_id
+        ), f"Expected next_state_id={expected_next_id}, got {registry.next_state_id}"
 
         # Verify: all assigned IDs are in the correct range
         all_ids = set(registry.state_ids.values())
@@ -192,9 +192,9 @@ class TestStateRegistryThreading:
         # Verify: all states are in the group
         expected_count = num_threads * states_per_thread
         assert "test_group" in registry.groups
-        assert len(registry.groups["test_group"]) == expected_count, (
-            f"Expected {expected_count} states in group, got {len(registry.groups['test_group'])}"
-        )
+        assert (
+            len(registry.groups["test_group"]) == expected_count
+        ), f"Expected {expected_count} states in group, got {len(registry.groups['test_group'])}"
 
     def test_concurrent_state_registration_with_profiles(self):
         """Test that profile registration is thread-safe.
@@ -234,9 +234,9 @@ class TestStateRegistryThreading:
         # Verify: all states are in the profile
         expected_count = num_threads * states_per_thread
         assert "test_profile" in registry.profiles
-        assert len(registry.profiles["test_profile"]) == expected_count, (
-            f"Expected {expected_count} states in profile, got {len(registry.profiles['test_profile'])}"
-        )
+        assert (
+            len(registry.profiles["test_profile"]) == expected_count
+        ), f"Expected {expected_count} states in profile, got {len(registry.profiles['test_profile'])}"
 
     def test_freeze_prevents_registration(self):
         """Test that freezing registry prevents further registrations.

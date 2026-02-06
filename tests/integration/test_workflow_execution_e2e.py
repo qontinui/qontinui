@@ -309,12 +309,12 @@ class TestWorkflowExecutionE2E:
         navigation_api.set_workflow_executor(mock_workflow_executor)
 
         # Verify it was set (internal check through module globals)
-        assert navigation_api._workflow_executor is not None, (
-            "Workflow executor should be set in navigation_api"
-        )
-        assert navigation_api._workflow_executor == mock_workflow_executor, (
-            "Set workflow executor should match the one provided"
-        )
+        assert (
+            navigation_api._workflow_executor is not None
+        ), "Workflow executor should be set in navigation_api"
+        assert (
+            navigation_api._workflow_executor == mock_workflow_executor
+        ), "Set workflow executor should match the one provided"
 
     def test_action_config_parsing_with_pydantic(self, sample_bdo_config):
         """Test 3: Validate that action configs parse correctly with Pydantic."""
@@ -622,12 +622,12 @@ class TestWorkflowExecutionE2E:
         transition_executor.execute_transition(transition)
 
         # Verify workflow executor was called
-        assert mock_workflow_executor.execute_workflow.called, (
-            "Workflow executor should be called during transition"
-        )
-        assert mock_workflow_executor.execute_workflow.call_args[0][0] == "workflow-login", (
-            "Workflow executor should be called with correct workflow ID"
-        )
+        assert (
+            mock_workflow_executor.execute_workflow.called
+        ), "Workflow executor should be called during transition"
+        assert (
+            mock_workflow_executor.execute_workflow.call_args[0][0] == "workflow-login"
+        ), "Workflow executor should be called with correct workflow ID"
 
     def test_navigation_with_workflow_execution_mock(self, sample_bdo_config, mock_image):
         """Test navigation triggers workflow execution through the pipeline."""

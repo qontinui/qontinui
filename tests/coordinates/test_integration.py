@@ -102,15 +102,15 @@ class TestIntegrationRealMonitors:
             center_y = monitor.y + monitor.height // 2
 
             detected_idx = service.get_monitor_at_point(center_x, center_y)
-            assert detected_idx == monitor.index, (
-                f"Failed to detect monitor {monitor.index} at its center"
-            )
+            assert (
+                detected_idx == monitor.index
+            ), f"Failed to detect monitor {monitor.index} at its center"
 
             # Test top-left corner
             detected_idx = service.get_monitor_at_point(monitor.x, monitor.y)
-            assert detected_idx == monitor.index, (
-                f"Failed to detect monitor {monitor.index} at its top-left"
-            )
+            assert (
+                detected_idx == monitor.index
+            ), f"Failed to detect monitor {monitor.index} at its top-left"
 
             print(f"\nMonitor {monitor.index} detection: OK")
 
@@ -231,9 +231,9 @@ class TestIntegrationMultiMonitorScenarios:
                 monitor.x + monitor.width, monitor.y + monitor.height // 2
             )
             # Could be on another monitor or None
-            assert detected != i or detected is None, (
-                f"Point outside monitor {i} incorrectly detected as on monitor {i}"
-            )
+            assert (
+                detected != i or detected is None
+            ), f"Point outside monitor {i} incorrectly detected as on monitor {i}"
 
             print(f"Monitor {i} boundaries: OK")
 

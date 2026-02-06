@@ -60,8 +60,8 @@ class UnifiedInputController:
         self._mouse.mouse_click(
             x,
             y,
-            button if isinstance(button, MouseButton) else MouseButton[button.upper()],
-            clicks,  # type: ignore[arg-type]
+            button if isinstance(button, MouseButton) else MouseButton[button.upper()],  # type: ignore[arg-type]
+            clicks,
         )
 
     def scroll(self, clicks: int) -> None:

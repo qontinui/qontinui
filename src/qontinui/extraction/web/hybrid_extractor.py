@@ -297,9 +297,9 @@ class HybridExtractor:
         viewport = page.viewport_size or {"width": 1920, "height": 1080}
 
         # Define extraction tasks
-        async def extract_elements() -> tuple[
-            list[InteractiveElement] | list[FrameAwareElement], int, bool
-        ]:
+        async def extract_elements() -> (
+            tuple[list[InteractiveElement] | list[FrameAwareElement], int, bool]
+        ):
             """Extract interactive elements."""
             if self.include_iframes:
                 frame_result = await extract_across_frames(

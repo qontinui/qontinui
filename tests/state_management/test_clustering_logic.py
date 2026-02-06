@@ -85,9 +85,9 @@ class TestClusteringLogic:
 
         # 4. Assertions
         # Expectation: ALL 3 merged into 1 unique TrackedImage
-        assert len(builder.tracked_images) == 1, (
-            f"Expected 1 merged menu bar, but found {len(builder.tracked_images)}"
-        )
+        assert (
+            len(builder.tracked_images) == 1
+        ), f"Expected 1 merged menu bar, but found {len(builder.tracked_images)}"
 
         merged_menu = builder.tracked_images[0]
         assert merged_menu.screens_found == {"screen1", "screen2", "screen3"}
@@ -106,9 +106,9 @@ class TestClusteringLogic:
         assert set(state["screensFound"]) == {"screen1", "screen2", "screen3"}
         # Updated behavior: We now create one stateImage PER SCREEN to ensure correct bounding boxes per screen.
         # So for 3 screens, we expect 3 stateImages in the merged state.
-        assert len(state["stateImages"]) == 3, (
-            "Should have 3 stateImages (one per screen) for correct bbox tracking"
-        )
+        assert (
+            len(state["stateImages"]) == 3
+        ), "Should have 3 stateImages (one per screen) for correct bbox tracking"
 
         # Verify screensFound covers all
         screens_found = set()

@@ -131,9 +131,9 @@ class TestMaskedMatching:
 
         # Should find perfect match
         assert len(results.matches) > 0, "Should find perfect match with mask"
-        assert results.matches.first.similarity >= 0.95, (
-            "Perfect match should have very high confidence"
-        )
+        assert (
+            results.matches.first.similarity >= 0.95
+        ), "Perfect match should have very high confidence"
 
     @skip_without_display
     def test_image_converts_to_pattern_with_full_mask(self):
