@@ -675,6 +675,11 @@ class WebTargetConnection(TargetConnection):
 
             data = response.json()
 
+            # Check for API-level error (HTTP 200 but success: false)
+            if data.get("success") is False:
+                error_msg = data.get("error", "Unknown error from UI Bridge")
+                raise RuntimeError(f"Snapshot failed: {error_msg}")
+
             # Handle API response format: {success: bool, data: {...}}
             result_data = data.get("data", data)
 
@@ -683,9 +688,21 @@ class WebTargetConnection(TargetConnection):
             for elem_data in result_data.get("elements", []):
                 elements.append(Element.from_dict(elem_data))
 
+            # Parse timestamp: SDK returns epoch ms (number), but may also be ISO string
+            ts_raw = data.get("timestamp")
+            if isinstance(ts_raw, int | float):
+                timestamp = datetime.fromtimestamp(ts_raw / 1000)
+            elif isinstance(ts_raw, str):
+                try:
+                    timestamp = datetime.fromisoformat(ts_raw)
+                except ValueError:
+                    timestamp = datetime.now()
+            else:
+                timestamp = datetime.now()
+
             return DOMSnapshot(
                 id=data.get("id", ""),
-                timestamp=datetime.fromisoformat(data.get("timestamp", datetime.now().isoformat())),
+                timestamp=timestamp,
                 url=data.get("url", self._connection_url),
                 title=data.get("title", ""),
                 root=data.get("root", {}),
@@ -1005,6 +1022,12 @@ class DesktopTargetConnection(TargetConnection):
                 raise RuntimeError(f"Failed to capture snapshot: {error_detail}")
 
             data = response.json()
+
+            # Check for API-level error (HTTP 200 but success: false)
+            if data.get("success") is False:
+                error_msg = data.get("error", "Unknown error from UI Bridge")
+                raise RuntimeError(f"Snapshot failed: {error_msg}")
+
             result_data = data.get("data", data)
 
             elements = []
@@ -1012,12 +1035,15 @@ class DesktopTargetConnection(TargetConnection):
             for elem_data in elem_list:
                 elements.append(Element.from_dict(elem_data))
 
-            timestamp_str = result_data.get("timestamp") if isinstance(result_data, dict) else None
-            try:
-                timestamp = (
-                    datetime.fromisoformat(timestamp_str) if timestamp_str else datetime.now()
-                )
-            except (TypeError, ValueError):
+            ts_raw = result_data.get("timestamp") if isinstance(result_data, dict) else None
+            if isinstance(ts_raw, int | float):
+                timestamp = datetime.fromtimestamp(ts_raw / 1000)
+            elif isinstance(ts_raw, str):
+                try:
+                    timestamp = datetime.fromisoformat(ts_raw)
+                except ValueError:
+                    timestamp = datetime.now()
+            else:
                 timestamp = datetime.now()
 
             return DOMSnapshot(
@@ -1409,6 +1435,12 @@ class MobileTargetConnection(TargetConnection):
                 raise RuntimeError(f"Failed to capture snapshot: {error_detail}")
 
             data = response.json()
+
+            # Check for API-level error (HTTP 200 but success: false)
+            if data.get("success") is False:
+                error_msg = data.get("error", "Unknown error from UI Bridge")
+                raise RuntimeError(f"Snapshot failed: {error_msg}")
+
             result_data = data.get("data", data)
 
             elements = []
@@ -1416,12 +1448,15 @@ class MobileTargetConnection(TargetConnection):
             for elem_data in elem_list:
                 elements.append(Element.from_dict(elem_data))
 
-            timestamp_str = result_data.get("timestamp") if isinstance(result_data, dict) else None
-            try:
-                timestamp = (
-                    datetime.fromisoformat(timestamp_str) if timestamp_str else datetime.now()
-                )
-            except (TypeError, ValueError):
+            ts_raw = result_data.get("timestamp") if isinstance(result_data, dict) else None
+            if isinstance(ts_raw, int | float):
+                timestamp = datetime.fromtimestamp(ts_raw / 1000)
+            elif isinstance(ts_raw, str):
+                try:
+                    timestamp = datetime.fromisoformat(ts_raw)
+                except ValueError:
+                    timestamp = datetime.now()
+            else:
                 timestamp = datetime.now()
 
             return DOMSnapshot(

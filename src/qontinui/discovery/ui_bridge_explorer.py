@@ -1383,12 +1383,29 @@ class UIBridgeExplorer:
         Returns:
             Render log entry compatible with discover_states_from_renders()
         """
+        # The UI Bridge snapshot API returns a flat element list, not a DOM tree.
+        # If root is empty, synthesize a tree from elements so the legacy
+        # co-occurrence strategy can extract element IDs (data-ui-id).
+        root = snapshot.root
+        if not root and snapshot.elements:
+            root = {
+                "tagName": "body",
+                "children": [
+                    {
+                        "tagName": "div",
+                        "attributes": {"data-ui-id": elem.id},
+                        "children": [],
+                    }
+                    for elem in snapshot.elements
+                ],
+            }
+
         return {
             "id": snapshot.id,
             "type": "dom_snapshot",
             "timestamp": snapshot.timestamp.isoformat(),
             "snapshot": {
-                "root": snapshot.root,
+                "root": root,
                 "url": snapshot.url,
                 "title": snapshot.title,
             },
