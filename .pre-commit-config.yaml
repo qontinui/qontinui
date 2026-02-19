@@ -34,18 +34,15 @@ repos:
       - id: ruff
         args: ['--fix', '--exit-non-zero-on-fix']
 
-  # Note: Mypy disabled in pre-commit - run manually with: poetry run mypy src
-  # Pre-commit mypy runs in isolated env which causes false positives
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.8.0
-  #   hooks:
-  #     - id: mypy
-  #       args: ['--config-file=pyproject.toml', 'src/']
-  #       additional_dependencies: ['pydantic>=2.0']
-  #       pass_filenames: false
-
   - repo: local
     hooks:
+      - id: mypy
+        name: Python type check (mypy)
+        entry: bash -c 'poetry run mypy -p qontinui'
+        language: system
+        pass_filenames: false
+        files: \.py$
+
       - id: block-claude-attribution
         name: Block Claude Attribution
         entry: .pre-commit-hooks/block-claude-attribution.sh

@@ -11,6 +11,7 @@ lerna-debug.log*
 
 # Claude Code local settings
 .claude/
+.claude
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
