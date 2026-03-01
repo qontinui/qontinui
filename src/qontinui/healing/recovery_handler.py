@@ -96,7 +96,7 @@ class HealingRecoveryHandler(RecoveryHandler):
         Returns:
             True if this handler can attempt healing.
         """
-        return isinstance(exception, (ElementNotFoundError, MatchNotFoundError))
+        return isinstance(exception, ElementNotFoundError | MatchNotFoundError)
 
     def handle(self, exception: Exception, context: dict[str, Any]) -> Any:
         """Attempt to heal the failed element lookup.
@@ -111,7 +111,7 @@ class HealingRecoveryHandler(RecoveryHandler):
         Raises:
             The original exception if healing fails.
         """
-        if not isinstance(exception, (ElementNotFoundError, MatchNotFoundError)):
+        if not isinstance(exception, ElementNotFoundError | MatchNotFoundError):
             raise exception
 
         # Extract information from exception

@@ -136,7 +136,7 @@ class LLMConfig:
                 f"max_tokens must be a positive integer, got {self.max_tokens}"
             )
 
-        if not isinstance(self.temperature, (int, float)):
+        if not isinstance(self.temperature, int | float):
             raise LLMConfigValidationError(
                 f"temperature must be a number, got {type(self.temperature).__name__}"
             )
@@ -145,7 +145,7 @@ class LLMConfig:
                 f"temperature must be between 0.0 and 2.0, got {self.temperature}"
             )
 
-        if not isinstance(self.timeout, (int, float)) or self.timeout <= 0:
+        if not isinstance(self.timeout, int | float) or self.timeout <= 0:
             raise LLMConfigValidationError(f"timeout must be a positive number, got {self.timeout}")
 
         if not isinstance(self.extra_params, dict):

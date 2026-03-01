@@ -1,15 +1,19 @@
 """EasyOCR-based OCR engine implementation."""
 
-import difflib
-from typing import Any
+from __future__ import annotations
 
-import easyocr
+import difflib
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 from PIL import Image
 
 from ...logging import get_logger
 from ..config import HALConfig
 from ..interfaces.ocr_engine import IOCREngine, TextMatch, TextRegion
+
+if TYPE_CHECKING:
+    import easyocr
 
 logger = get_logger(__name__)
 
@@ -61,6 +65,8 @@ class EasyOCREngine(IOCREngine):
         Returns:
             EasyOCR Reader instance
         """
+        import easyocr as _easyocr
+
         # Use default if no languages specified
         if not languages:
             languages = self._default_languages
@@ -74,7 +80,7 @@ class EasyOCREngine(IOCREngine):
 
         # Create new reader
         try:
-            reader = easyocr.Reader(languages, gpu=self.use_gpu, verbose=False)
+            reader = _easyocr.Reader(languages, gpu=self.use_gpu, verbose=False)
             self._readers[cache_key] = reader
 
             logger.debug("easyocr_reader_created", languages=languages, gpu=self.use_gpu)

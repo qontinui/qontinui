@@ -230,7 +230,7 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
 
                 # Handle different bbox formats
                 if len(bbox) == 4:
-                    if isinstance(bbox[0], (list, tuple)):
+                    if isinstance(bbox[0], list | tuple):
                         # [[x1,y1], [x2,y1], [x2,y2], [x1,y2]] format
                         x1 = min(p[0] for p in bbox)
                         y1 = min(p[1] for p in bbox)
@@ -371,7 +371,7 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
             seen_heights.add(height)
 
             bbox = detection["bbox"]
-            if len(bbox) == 4 and not isinstance(bbox[0], (list, tuple)):
+            if len(bbox) == 4 and not isinstance(bbox[0], list | tuple):
                 x, y, w, h = bbox
             else:
                 continue
@@ -585,7 +585,7 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
             region_detections = []
             for d in detections:
                 bbox = d["bbox"]
-                if len(bbox) == 4 and not isinstance(bbox[0], (list, tuple)):
+                if len(bbox) == 4 and not isinstance(bbox[0], list | tuple):
                     dx, dy, dw, dh = bbox
                     # Check if detection is mostly inside region
                     if rx <= dx < rx + rw and ry <= dy < ry + rh:

@@ -481,7 +481,7 @@ class LayoutAnalyzer(BaseAnalyzer[Layout]):
                 continue
 
             # Get text position
-            if len(bbox) == 4 and not isinstance(bbox[0], (list, tuple)):
+            if len(bbox) == 4 and not isinstance(bbox[0], list | tuple):
                 tx, ty, tw, th = bbox
             else:
                 continue

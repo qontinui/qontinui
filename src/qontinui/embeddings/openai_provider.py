@@ -189,7 +189,7 @@ class OpenAIProvider(EmbeddingProvider):
                     "input": "test",
                 },
             )
-            return response.status_code == 200
+            return bool(response.status_code == 200)
         except Exception:
             return False
 

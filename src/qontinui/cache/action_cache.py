@@ -110,9 +110,9 @@ class ActionCache:
             # Only include serializable context
             serializable_context: dict[str, Any] = {}
             for k, v in context.items():
-                if isinstance(v, (str, int, float, bool, type(None))):
+                if isinstance(v, str | int | float | bool | type(None)):
                     serializable_context[k] = v
-                elif isinstance(v, (list, tuple)):
+                elif isinstance(v, list | tuple):
                     serializable_context[k] = list(v)
             if serializable_context:
                 components["context"] = serializable_context

@@ -287,7 +287,7 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
                 continue
 
             # Get item position
-            if len(item_bbox) == 4 and not isinstance(item_bbox[0], (list, tuple)):
+            if len(item_bbox) == 4 and not isinstance(item_bbox[0], list | tuple):
                 ix, iy, iw, ih = item_bbox
             else:
                 continue

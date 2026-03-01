@@ -154,7 +154,7 @@ class GUIEnvironmentDiscovery:
         if isinstance(source, np.ndarray):
             return source
 
-        if isinstance(source, (str, Path)):
+        if isinstance(source, str | Path):
             path = Path(source)
             if path.exists():
                 img = cv2.imread(str(path))
