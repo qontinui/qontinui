@@ -122,6 +122,25 @@ def setup_logging(
 _logging_initialized = False
 
 
+def _bind_trace_context() -> None:
+    """Bind trace context from environment variables to structlog context vars.
+
+    When running under the Rust executor, QONTINUI_TRACE_ID and
+    QONTINUI_PARENT_SPAN_ID are injected as env vars. Binding them
+    to structlog's context vars makes every subsequent log line include
+    the trace_id automatically, enabling cross-service correlation.
+    """
+    import os
+
+    trace_id = os.environ.get("QONTINUI_TRACE_ID")
+    parent_span_id = os.environ.get("QONTINUI_PARENT_SPAN_ID")
+    if trace_id:
+        structlog.contextvars.bind_contextvars(
+            trace_id=trace_id,
+            parent_span_id=parent_span_id,
+        )
+
+
 def _ensure_logging_initialized() -> None:
     """Ensure logging is initialized (called lazily, not at import time)."""
     global _logging_initialized
@@ -136,6 +155,9 @@ def _ensure_logging_initialized() -> None:
     if os.getenv("QONTINUI_DISABLE_CONSOLE_LOGGING") == "1":
         # Set to disabled state without calling setup_logging at all
         logging.disable(logging.CRITICAL)  # Disable ALL logging output
+        # Still bind trace context even when logging is disabled — structlog
+        # context vars are used by other subsystems beyond console logging.
+        _bind_trace_context()
         _logging_initialized = True
         return
 
@@ -153,6 +175,9 @@ def _ensure_logging_initialized() -> None:
     except (ImportError, AttributeError, OSError, ValueError):
         # If settings fail or log path is invalid, just use basic logging
         setup_logging(level="INFO", structured=False)
+
+    # Bind trace context from Rust executor env vars
+    _bind_trace_context()
 
     _logging_initialized = True
 
