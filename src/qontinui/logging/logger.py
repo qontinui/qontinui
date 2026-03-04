@@ -45,6 +45,7 @@ def setup_logging(
         log_file = None  # Also disable file logging to minimize I/O
     # Build processor chain
     processors: list[Any] = [
+        structlog.contextvars.merge_contextvars,
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
@@ -135,10 +136,10 @@ def _bind_trace_context() -> None:
     trace_id = os.environ.get("QONTINUI_TRACE_ID")
     parent_span_id = os.environ.get("QONTINUI_PARENT_SPAN_ID")
     if trace_id:
-        structlog.contextvars.bind_contextvars(
-            trace_id=trace_id,
-            parent_span_id=parent_span_id,
-        )
+        ctx: dict[str, str] = {"trace_id": trace_id}
+        if parent_span_id:
+            ctx["parent_span_id"] = parent_span_id
+        structlog.contextvars.bind_contextvars(**ctx)
 
 
 def _ensure_logging_initialized() -> None:
