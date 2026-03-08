@@ -13,7 +13,7 @@ use the StateDiscoveryService directly:
     result = service.discover_from_renders(renders)
 
 UI Bridge provides:
-- Registered elements (via useUIElement hook with data-ui-id attribute)
+- Registered elements (via AutoRegisterProvider — IDs stored in bridge registry)
 - data-testid attributes from the component tree
 
 The co-occurrence algorithm groups elements that appear together
@@ -121,7 +121,7 @@ def _extract_from_dom_element(
     Recursively extract element IDs from a DomElementSnapshot node.
 
     Extracts:
-    - data-ui-id (UI Bridge registered elements)
+    - Element registry ID (from bridge registry or element 'id' field)
     - data-testid (testing convention)
     - Optionally: HTML id attributes
 
@@ -133,14 +133,14 @@ def _extract_from_dom_element(
     if not isinstance(node, dict):
         return
 
+    # Priority 1: Element registry ID (from bridge registry 'id' field)
+    reg_id = node.get("id")
+    if reg_id and isinstance(reg_id, str):
+        element_ids.add(f"ui:{reg_id}")
+
     # Get attributes dict (DomElementSnapshot format)
     attrs = node.get("attributes", {})
     if isinstance(attrs, dict):
-        # Priority 1: data-ui-id (UI Bridge registered elements)
-        ui_id = attrs.get("data-ui-id")
-        if ui_id:
-            element_ids.add(f"ui:{ui_id}")
-
         # Priority 2: data-testid (testing convention)
         testid = attrs.get("data-testid")
         if testid:
@@ -148,17 +148,13 @@ def _extract_from_dom_element(
 
         # Optional: HTML id attribute
         if include_html_ids:
-            html_id = node.get("id") or attrs.get("id")
+            html_id = attrs.get("id")
             if html_id:
                 element_ids.add(f"html:{html_id}")
 
     # Also check props (for React component tree format)
     props = node.get("props", {})
     if isinstance(props, dict):
-        ui_id = props.get("data-ui-id")
-        if ui_id:
-            element_ids.add(f"ui:{ui_id}")
-
         testid = props.get("data-testid")
         if testid:
             element_ids.add(f"testid:{testid}")
@@ -181,7 +177,7 @@ def extract_elements_from_render(
     1. DomSnapshotRenderLogEntry: {"type": "dom_snapshot", "snapshot": {"root": ...}}
     2. Simple format: {"elements": [...], "componentTree": {...}}
 
-    Uses registered elements (data-ui-id) + data-testid attributes.
+    Uses registered element IDs (from bridge registry) + data-testid attributes.
 
     Args:
         render_log_entry: Single entry from UI Bridge render log
@@ -298,7 +294,7 @@ def discover_states_from_renders(
         unified_result = service.discover_from_renders(
             renders,
             include_html_ids=include_html_ids,
-            strategy=DiscoveryStrategyType.LEGACY,
+            strategy=DiscoveryStrategyType.AUTO,
         )
 
     # Convert unified result back to legacy format for backward compatibility

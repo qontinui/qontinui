@@ -89,7 +89,7 @@ class Element:
     """Represents an interactive element discovered via UI Bridge.
 
     Attributes:
-        id: Unique element identifier (data-ui-id value)
+        id: Unique element identifier (bridge registry ID)
         tag_name: HTML tag name (e.g., 'button', 'input')
         text_content: Visible text content of the element
         role: ARIA role if available
@@ -355,7 +355,7 @@ class TargetConnection(ABC):
         """Execute an action on an element.
 
         Args:
-            element_id: ID of the element (data-ui-id value)
+            element_id: ID of the element (bridge registry ID)
             action: Action to perform (click, type, etc.)
             value: Optional value for the action (e.g., text to type)
 
@@ -550,7 +550,7 @@ class WebTargetConnection(TargetConnection):
         """Execute an action on an element via UI Bridge control API.
 
         Args:
-            element_id: Element's data-ui-id value
+            element_id: Element's bridge registry ID
             action: Action to perform
             value: Optional value for the action
 
@@ -919,7 +919,7 @@ class DesktopTargetConnection(TargetConnection):
         The request body uses camelCase: {action, params, waitOptions}
 
         Args:
-            element_id: Element's data-ui-id value
+            element_id: Element's bridge registry ID
             action: Action to perform (click, type, clear, focus, blur, etc.)
             value: Optional value for the action (e.g., text to type)
 
@@ -1290,7 +1290,7 @@ class MobileTargetConnection(TargetConnection):
         The request body uses camelCase: {action, params, waitOptions}
 
         Args:
-            element_id: Element's data-ui-id value
+            element_id: Element's bridge registry ID
             action: Action to perform (click, type, clear, focus, blur, etc.)
             value: Optional value for the action (e.g., text to type)
 

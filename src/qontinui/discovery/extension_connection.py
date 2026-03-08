@@ -441,8 +441,8 @@ class ExtensionTargetConnection(TargetConnection):
     async def find_elements(self, selector: str | None = None) -> list[Element]:
         """Find interactive elements in the active browser tab.
 
-        Uses the extension's content script to find elements with data-ui-id
-        attributes on the current page.
+        Uses the extension's content script to find interactive elements
+        on the current page.
 
         Args:
             selector: Optional CSS selector to filter elements
@@ -485,7 +485,7 @@ class ExtensionTargetConnection(TargetConnection):
         """Execute an action on an element in the browser.
 
         Args:
-            element_id: Element's data-ui-id value
+            element_id: Element's bridge registry ID
             action: Action to perform (click, type, clear, focus, blur, etc.)
             value: Optional value for the action (e.g., text to type)
 

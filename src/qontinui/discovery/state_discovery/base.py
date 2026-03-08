@@ -16,8 +16,7 @@ from typing import Any
 class DiscoveryStrategyType(Enum):
     """Available state discovery strategy types."""
 
-    LEGACY = "legacy"  # ID-based co-occurrence (original)
-    FINGERPRINT = "fingerprint"  # Enhanced with element fingerprints
+    FINGERPRINT = "fingerprint"  # Enhanced with element fingerprints (supports ID fallback)
     AUTO = "auto"  # Auto-detect based on available data
 
 
@@ -174,7 +173,7 @@ class StateDiscoveryResult:
     unique_element_count: int = 0
 
     # Strategy metadata
-    strategy_used: DiscoveryStrategyType = DiscoveryStrategyType.LEGACY
+    strategy_used: DiscoveryStrategyType = DiscoveryStrategyType.FINGERPRINT
     strategy_metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

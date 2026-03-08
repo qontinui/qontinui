@@ -290,9 +290,9 @@ class SafetyFilter:
                 element_classes = element.attributes.get("class", "").split()
                 if class_name in element_classes:
                     return True
-            if selector.startswith("[data-ui-id="):
-                # Extract value from [data-ui-id="value"]
-                match = re.match(r'\[data-ui-id="([^"]+)"\]', selector)
+            if selector.startswith("[data-testid="):
+                # Extract value from [data-testid="value"]
+                match = re.match(r'\[data-testid="([^"]+)"\]', selector)
                 if match and element.id == match.group(1):
                     return True
 
@@ -714,7 +714,7 @@ class UIBridgeExplorer:
                 else:
                     error_msg = (
                         "No elements found. Make sure the target application has "
-                        "UI Bridge elements registered (elements with data-ui-id attributes)."
+                        "UI Bridge elements registered (use AutoRegisterProvider)."
                     )
                 logger.warning(error_msg)
                 result.errors.append(error_msg)
@@ -1384,8 +1384,8 @@ class UIBridgeExplorer:
             Render log entry compatible with discover_states_from_renders()
         """
         # The UI Bridge snapshot API returns a flat element list, not a DOM tree.
-        # If root is empty, synthesize a tree from elements so the legacy
-        # co-occurrence strategy can extract element IDs (data-ui-id).
+        # If root is empty, synthesize a tree from elements so the
+        # co-occurrence strategy can extract element IDs.
         root = snapshot.root
         if not root and snapshot.elements:
             root = {
@@ -1393,7 +1393,8 @@ class UIBridgeExplorer:
                 "children": [
                     {
                         "tagName": "div",
-                        "attributes": {"data-ui-id": elem.id},
+                        "id": elem.id,
+                        "attributes": {},
                         "children": [],
                     }
                     for elem in snapshot.elements

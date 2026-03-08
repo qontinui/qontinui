@@ -8,7 +8,7 @@ Example:
 
     service = StateDiscoveryService()
 
-    # From render logs (legacy)
+    # From render logs (uses fingerprint strategy with ID fallback)
     result = service.discover_from_renders(renders)
 
     # From cooccurrence export with fingerprints
@@ -34,7 +34,7 @@ from .base import (
     StateDiscoveryResult,
     StateDiscoveryStrategy,
 )
-from .strategies import FingerprintStrategy, LegacyStrategy
+from .strategies import FingerprintStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +42,10 @@ logger = logging.getLogger(__name__)
 class StateDiscoveryService:
     """Unified service for state discovery.
 
-    Automatically selects the best strategy based on available input data:
-    - If fingerprint data is available, uses FingerprintStrategy
-    - Otherwise falls back to LegacyStrategy
+    Uses the FingerprintStrategy for all discovery:
+    - If fingerprint data is available, uses it directly
+    - If only render data with element IDs is available, synthesizes
+      fingerprints from IDs and feeds them through the same pipeline
 
     You can also explicitly request a specific strategy.
     """
@@ -59,7 +60,6 @@ class StateDiscoveryService:
             fingerprint_config: Optional configuration for fingerprint strategy
         """
         self._strategies: dict[DiscoveryStrategyType, StateDiscoveryStrategy] = {
-            DiscoveryStrategyType.LEGACY: LegacyStrategy(),
             DiscoveryStrategyType.FINGERPRINT: FingerprintStrategy(fingerprint_config),
         }
 
@@ -88,7 +88,7 @@ class StateDiscoveryService:
                 element_to_renders={},
                 render_count=0,
                 unique_element_count=0,
-                strategy_used=DiscoveryStrategyType.LEGACY,
+                strategy_used=DiscoveryStrategyType.FINGERPRINT,
                 strategy_metadata={"error": "no_suitable_strategy"},
             )
 
@@ -101,12 +101,12 @@ class StateDiscoveryService:
         self,
         renders: list[dict[str, Any]],
         include_html_ids: bool = False,
-        strategy: DiscoveryStrategyType = DiscoveryStrategyType.LEGACY,
+        strategy: DiscoveryStrategyType = DiscoveryStrategyType.AUTO,
     ) -> StateDiscoveryResult:
         """Discover states from render log entries.
 
         This is the primary method for UI Bridge render-based discovery.
-        Uses the legacy strategy by default.
+        Uses the fingerprint strategy with element ID fallback.
 
         Args:
             renders: List of render log entries
@@ -131,7 +131,6 @@ class StateDiscoveryService:
         """Discover states from a co-occurrence export.
 
         This is the primary method for fingerprint-enhanced discovery.
-        Automatically uses fingerprint strategy if fingerprint data is present.
 
         Args:
             cooccurrence_export: Export data from UI Bridge
@@ -160,27 +159,19 @@ class StateDiscoveryService:
         Returns:
             Selected strategy or None if no suitable strategy
         """
-        # If specific strategy requested, check if it can process
-        if requested != DiscoveryStrategyType.AUTO:
-            strategy = self._strategies.get(requested)
-            if strategy and strategy.can_process(input_data):
-                return strategy
-            logger.warning(
-                f"Requested strategy {requested.value} cannot process input, "
-                "falling back to auto-detection"
-            )
+        fingerprint_strategy = self._strategies.get(DiscoveryStrategyType.FINGERPRINT)
 
-        # Auto-detect: prefer fingerprint if available
-        if input_data.has_fingerprint_data():
-            fingerprint_strategy = self._strategies.get(DiscoveryStrategyType.FINGERPRINT)
+        # If specific strategy requested, check if it can process
+        if requested == DiscoveryStrategyType.FINGERPRINT:
             if fingerprint_strategy and fingerprint_strategy.can_process(input_data):
                 return fingerprint_strategy
+            logger.warning("Requested fingerprint strategy cannot process input")
+            return None
 
-        # Fall back to legacy
-        if input_data.has_render_data():
-            legacy_strategy = self._strategies.get(DiscoveryStrategyType.LEGACY)
-            if legacy_strategy and legacy_strategy.can_process(input_data):
-                return legacy_strategy
+        # AUTO mode: always use fingerprint strategy (it handles both
+        # fingerprint data and element ID fallback)
+        if fingerprint_strategy and fingerprint_strategy.can_process(input_data):
+            return fingerprint_strategy
 
         return None
 

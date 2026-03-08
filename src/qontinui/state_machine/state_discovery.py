@@ -461,31 +461,27 @@ class UIBridgeStateDiscovery:
         if not isinstance(node, dict):
             return
 
+        # Priority 1: Element registry ID (from bridge registry 'id' field)
+        reg_id = node.get("id")
+        if reg_id and isinstance(reg_id, str):
+            element_ids.add(f"ui:{reg_id}")
+
         # Check attributes for IDs
         attrs = node.get("attributes", {})
         if isinstance(attrs, dict):
-            # data-ui-id (UI Bridge registered elements)
-            ui_id = attrs.get("data-ui-id")
-            if ui_id:
-                element_ids.add(f"ui:{ui_id}")
-
             # data-testid
             testid = attrs.get("data-testid")
             if testid:
                 element_ids.add(f"testid:{testid}")
 
             # id attribute
-            html_id = attrs.get("id") or node.get("id")
+            html_id = attrs.get("id")
             if html_id:
                 element_ids.add(f"html:{html_id}")
 
         # Check props for React components
         props = node.get("props", {})
         if isinstance(props, dict):
-            ui_id = props.get("data-ui-id")
-            if ui_id:
-                element_ids.add(f"ui:{ui_id}")
-
             testid = props.get("data-testid")
             if testid:
                 element_ids.add(f"testid:{testid}")

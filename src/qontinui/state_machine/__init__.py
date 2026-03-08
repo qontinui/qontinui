@@ -123,7 +123,7 @@ __all__ = [
     "UIBridgeTransition",
     "TransitionExecutionResult",
     "generate_state_id",
-    # ID-based Discovery (legacy)
+    # ID-based Discovery
     "UIBridgeStateDiscovery",
     "DiscoveredUIState",
     "StateDiscoveryConfig",
