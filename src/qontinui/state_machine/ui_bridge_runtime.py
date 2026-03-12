@@ -90,7 +90,7 @@ except ImportError:
             self._active = state_ids
 
         def get_available_transitions(self) -> list[Any]:
-            return list(self._transitions.values())
+            return list(self._transitions.keys())
 
         def analyze_complexity(self) -> dict[str, Any]:
             return {
@@ -431,6 +431,23 @@ class UIBridgeRuntime:
             List of multistate Transition objects
         """
         return [self.register_transition(t) for t in transitions]
+
+    def get_available_transitions(self) -> list[UIBridgeTransition]:
+        """Get transitions available from the current active states.
+
+        When no states are active (e.g., no UI connected yet), returns all
+        registered transitions so callers can see the full transition graph.
+
+        Returns:
+            List of UIBridgeTransition objects that can execute.
+        """
+        available_ids = self.manager.get_available_transitions()
+        if available_ids:
+            return [
+                self._ui_transitions[tid] for tid in available_ids if tid in self._ui_transitions
+            ]
+        # No active states — return all transitions for discoverability
+        return list(self._ui_transitions.values())
 
     # =========================================================================
     # State Detection (StateSpaceRuntime protocol)
