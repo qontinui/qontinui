@@ -68,6 +68,11 @@ Fingerprint-enhanced discovery example:
     states = discovery.get_discovered_states()
 """
 
+from .config_bridge import (
+    ConfigBridge,
+    UIBridgeStateInput,
+    UIBridgeTransitionInput,
+)
 from .fingerprint_state_discovery import (
     DiscoveredFingerprintState,
     FingerprintStateDiscovery,
@@ -116,6 +121,10 @@ from .ui_bridge_runtime import (
 )
 
 __all__ = [
+    # Config Bridge
+    "ConfigBridge",
+    "UIBridgeStateInput",
+    "UIBridgeTransitionInput",
     # Runtime
     "UIBridgeRuntime",
     "UIBridgeRuntimeConfig",

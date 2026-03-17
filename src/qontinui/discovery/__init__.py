@@ -1,3 +1,4 @@
+# isort: skip_file
 """State Discovery system for automated state and StateImage detection.
 
 This module provides comprehensive functionality for discovering, detecting, and
@@ -77,6 +78,15 @@ from .discovery_facade import (
     DiscoveryResult,
     StateDiscoveryFacade,
     discover_states,
+)
+
+# Element-to-image pipeline - extract GUI element images from screenshots
+from .element_image_pipeline import (
+    ElementImagePipeline,
+    ElementRect,
+    ExtractedElementImage,
+    ExtractionConfig,
+    ExtractionResult,
 )
 from .models import AnalysisResult, DiscoveredState, StateImage
 from .multi_screenshot_detector import MultiScreenshotDetector
@@ -232,6 +242,12 @@ __all__ = [
     "experimental",
     "click_analysis",
     "background_removal",
+    # Element-to-image pipeline
+    "ElementImagePipeline",
+    "ExtractionConfig",
+    "ExtractionResult",
+    "ExtractedElementImage",
+    "ElementRect",
     # UI Bridge adapter
     "UIBridgeElement",
     "UIBridgeRender",
