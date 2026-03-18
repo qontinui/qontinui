@@ -235,10 +235,14 @@ class ConfigBridge:
                         "id": image_id,
                         "name": img.label or img.element_id,
                         "data": img.base64_png,
+                        "url": f"data:image/png;base64,{img.base64_png}",
                         "format": "png",
                         "width": img.width,
                         "height": img.height,
                         "hash": img.sha256,
+                        "size": len(img.base64_png),
+                        "source": "ui-bridge-pipeline",
+                        "usageCount": 0,
                     }
                 )
 
@@ -299,7 +303,7 @@ class ConfigBridge:
             ],
             "shared": False,
             "monitors": [0],
-            "searchMode": "separate",
+            "searchMode": "default",
             "source": "ui-bridge-pipeline",
         }
 
@@ -314,12 +318,10 @@ class ConfigBridge:
                 {
                     "id": f"region-{uuid.uuid4().hex[:8]}",
                     "name": f"{img.label} region",
-                    "bounds": {
-                        "x": img.bbox[0],
-                        "y": img.bbox[1],
-                        "width": img.bbox[2],
-                        "height": img.bbox[3],
-                    },
+                    "x": img.bbox[0],
+                    "y": img.bbox[1],
+                    "width": img.bbox[2],
+                    "height": img.bbox[3],
                     "fixed": True,
                     "isSearchRegion": True,
                     "monitors": [0],

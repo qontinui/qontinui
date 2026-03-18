@@ -88,6 +88,13 @@ from .element_image_pipeline import (
     ExtractionConfig,
     ExtractionResult,
 )
+
+# Multi-state capture data classes
+from .multi_state_capture import (
+    CapturedState,
+    CaptureInteraction,
+    MultiStateCaptureResult,
+)
 from .models import AnalysisResult, DiscoveredState, StateImage
 from .multi_screenshot_detector import MultiScreenshotDetector
 
@@ -248,6 +255,10 @@ __all__ = [
     "ExtractionResult",
     "ExtractedElementImage",
     "ElementRect",
+    # Multi-state capture
+    "CaptureInteraction",
+    "CapturedState",
+    "MultiStateCaptureResult",
     # UI Bridge adapter
     "UIBridgeElement",
     "UIBridgeRender",
