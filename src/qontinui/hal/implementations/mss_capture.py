@@ -46,8 +46,10 @@
 
 import time
 from pathlib import Path
+from typing import ClassVar
 
 import mss
+import mss.base
 import mss.tools
 from PIL import Image
 
@@ -65,6 +67,8 @@ class MSSScreenCapture(IScreenCapture):
     MSS provides direct system-level screen capture without dependencies
     on GUI automation libraries, resulting in 10-50x faster captures.
     """
+
+    _dpi_awareness_set: ClassVar[bool]
 
     def __init__(self, config: HALConfig | None = None) -> None:
         """Initialize MSS screen capture.
@@ -93,8 +97,31 @@ class MSSScreenCapture(IScreenCapture):
             cache_enabled=self._cache_enabled,
         )
 
+    @staticmethod
+    def _create_mss_instance() -> mss.base.MSSBase:
+        """Create an MSS instance without using the mss.mss() context manager.
+
+        The mss.mss() factory deadlocks on Windows (MSS 9.0.2, Windows 11,
+        125% DPI scaling). Instantiating the platform class directly avoids
+        the deadlock while providing identical functionality.
+        """
+        import sys
+
+        if sys.platform == "win32":
+            import mss.windows
+
+            return mss.windows.MSS()
+        elif sys.platform == "darwin":
+            import mss.darwin
+
+            return mss.darwin.MSS()
+        else:
+            import mss.linux
+
+            return mss.linux.MSS()
+
     @property
-    def sct(self) -> mss.mss:  # type: ignore[valid-type]
+    def sct(self) -> mss.base.MSSBase:
         """Get or create thread-local mss instance.
 
         This ensures each thread has its own mss instance to avoid
@@ -106,10 +133,10 @@ class MSSScreenCapture(IScreenCapture):
             self._thread_local = threading.local()
 
         if not hasattr(self._thread_local, "sct"):
-            self._thread_local.sct = mss.mss()
+            self._thread_local.sct = self._create_mss_instance()
             logger.debug("mss_instance_created", thread_id=threading.current_thread().ident)
 
-        return self._thread_local.sct  # type: ignore[no-any-return]
+        return self._thread_local.sct
 
     def _detect_monitors(self) -> list[Monitor]:
         """Detect all available monitors.
@@ -126,7 +153,7 @@ class MSSScreenCapture(IScreenCapture):
 
         # Skip index 0 as it's the combined virtual monitor (see module docstring)
         # Physical monitors start at index 1
-        for i, mon in enumerate(self.sct.monitors[1:], 1):  # type: ignore[attr-defined]
+        for i, mon in enumerate(self.sct.monitors[1:], 1):
             monitor = Monitor(
                 index=i - 1,  # 0-based index
                 x=mon["left"],
@@ -151,7 +178,7 @@ class MSSScreenCapture(IScreenCapture):
         return monitors
 
     @staticmethod
-    def _set_dpi_awareness_once():
+    def _set_dpi_awareness_once() -> None:
         """Set DPI awareness once per process (Windows only).
 
         Requires Windows 10 1703+ for Per-Monitor DPI Awareness V2.
@@ -246,15 +273,15 @@ class MSSScreenCapture(IScreenCapture):
                     # monitors[0] is the combined virtual desktop - coordinates in the
                     # resulting screenshot are relative to the virtual desktop origin
                     # (min_x, min_y across all monitors). See module docstring.
-                    sct_img = self.sct.grab(self.sct.monitors[0])  # type: ignore[attr-defined]
+                    sct_img = self.sct.grab(self.sct.monitors[0])
                 else:
                     # Capture primary monitor only
-                    sct_img = self.sct.grab(self.sct.monitors[1])  # type: ignore[attr-defined]
+                    sct_img = self.sct.grab(self.sct.monitors[1])
             else:
                 # Capture specific monitor
                 if 0 <= monitor < len(self._monitors):
-                    mon_dict = self.sct.monitors[monitor + 1]  # type: ignore[attr-defined]
-                    sct_img = self.sct.grab(mon_dict)  # type: ignore[attr-defined]
+                    mon_dict = self.sct.monitors[monitor + 1]
+                    sct_img = self.sct.grab(mon_dict)
                 else:
                     raise ValueError(f"Invalid monitor index: {monitor}")
 
@@ -301,7 +328,7 @@ class MSSScreenCapture(IScreenCapture):
             # Adjust for monitor offset if specified
             if monitor is not None:
                 if 0 <= monitor < len(self._monitors):
-                    mon = self.sct.monitors[monitor + 1]  # type: ignore[attr-defined]
+                    mon = self.sct.monitors[monitor + 1]
                     region["left"] += mon["left"]
                     region["top"] += mon["top"]
                 else:
@@ -313,7 +340,7 @@ class MSSScreenCapture(IScreenCapture):
                 return self._cache[cache_key]
 
             # Capture region
-            sct_img = self.sct.grab(region)  # type: ignore[attr-defined]
+            sct_img = self.sct.grab(region)
 
             # Convert to PIL Image
             image = Image.frombytes(
@@ -391,7 +418,7 @@ class MSSScreenCapture(IScreenCapture):
             # Capture single pixel
             region = {"left": x, "top": y, "width": 1, "height": 1}
 
-            sct_img = self.sct.grab(region)  # type: ignore[attr-defined]
+            sct_img = self.sct.grab(region)
 
             # Extract RGB values from BGRA
             # MSS returns BGRA format
@@ -505,15 +532,20 @@ class MSSScreenCapture(IScreenCapture):
         self.clear_cache()
         logger.debug("mss_capture_closed")
 
-    def __enter__(self):
+    def __enter__(self) -> "MSSScreenCapture":
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
         """Context manager exit."""
         self.close()
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destructor to ensure resources are cleaned up."""
         try:
             # Only call close if object was fully initialized

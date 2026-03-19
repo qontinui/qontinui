@@ -156,11 +156,84 @@ class ExtractionConfig:
 # ---------------------------------------------------------------------------
 
 
+@dataclass
+class _FilteredElement:
+    """An element that passed all filter checks."""
+
+    elem_id: str
+    label: str
+    elem_type: str
+    rect: ElementRect
+
+
 class ElementImagePipeline:
     """Extracts element images from screenshots using UI Bridge position data."""
 
     def __init__(self, config: ExtractionConfig | None = None) -> None:
         self.config = config or ExtractionConfig()
+
+    def _filter_elements(
+        self,
+        elements: list[dict[str, Any]],
+        skipped: list[dict[str, str]],
+    ) -> list[_FilteredElement]:
+        """Apply visibility, category, type, size, and rect filters to elements.
+
+        Elements that fail a filter are appended to *skipped* with a reason.
+
+        Returns:
+            List of elements that passed all filters.
+        """
+        accepted: list[_FilteredElement] = []
+        for elem in elements:
+            elem_id = elem.get("id", "")
+            label = elem.get("label", elem_id)
+            elem_type = elem.get("type", "unknown")
+            category = elem.get("category", "")
+            state = elem.get("state", {})
+
+            # Visibility filter
+            if not self.config.include_invisible and not state.get("visible", True):
+                skipped.append({"id": elem_id, "reason": "not visible"})
+                continue
+
+            if not self.config.include_out_of_viewport and not state.get("inViewport", True):
+                skipped.append({"id": elem_id, "reason": "out of viewport"})
+                continue
+
+            # Category filter
+            if self.config.category_filter and category not in self.config.category_filter:
+                skipped.append({"id": elem_id, "reason": f"category={category}"})
+                continue
+
+            # Type filter
+            if self.config.type_filter and elem_type not in self.config.type_filter:
+                skipped.append({"id": elem_id, "reason": f"type={elem_type}"})
+                continue
+
+            # Parse rect
+            rect = ElementRect.from_snapshot_element(state)
+            if rect is None:
+                skipped.append({"id": elem_id, "reason": "no rect"})
+                continue
+
+            # Size filter
+            if (
+                rect.width < self.config.min_element_size
+                or rect.height < self.config.min_element_size
+            ):
+                skipped.append({"id": elem_id, "reason": "too small"})
+                continue
+
+            accepted.append(
+                _FilteredElement(
+                    elem_id=elem_id,
+                    label=label,
+                    elem_type=elem_type,
+                    rect=rect,
+                )
+            )
+        return accepted
 
     def extract(
         self,
@@ -198,46 +271,10 @@ class ElementImagePipeline:
 
         scale = self.config.scale_factor
         ox, oy = window_offset
+        accepted = self._filter_elements(elements, result.skipped)
 
-        for elem in elements:
-            elem_id = elem.get("id", "")
-            label = elem.get("label", elem_id)
-            elem_type = elem.get("type", "unknown")
-            category = elem.get("category", "")
-            state = elem.get("state", {})
-
-            # Visibility filter
-            if not self.config.include_invisible and not state.get("visible", True):
-                result.skipped.append({"id": elem_id, "reason": "not visible"})
-                continue
-
-            if not self.config.include_out_of_viewport and not state.get("inViewport", True):
-                result.skipped.append({"id": elem_id, "reason": "out of viewport"})
-                continue
-
-            # Category filter
-            if self.config.category_filter and category not in self.config.category_filter:
-                result.skipped.append({"id": elem_id, "reason": f"category={category}"})
-                continue
-
-            # Type filter
-            if self.config.type_filter and elem_type not in self.config.type_filter:
-                result.skipped.append({"id": elem_id, "reason": f"type={elem_type}"})
-                continue
-
-            # Parse rect
-            rect = ElementRect.from_snapshot_element(state)
-            if rect is None:
-                result.skipped.append({"id": elem_id, "reason": "no rect"})
-                continue
-
-            # Size filter
-            if (
-                rect.width < self.config.min_element_size
-                or rect.height < self.config.min_element_size
-            ):
-                result.skipped.append({"id": elem_id, "reason": "too small"})
-                continue
+        for fe in accepted:
+            rect = fe.rect
 
             # Map viewport coords to screenshot coords
             pad = self.config.padding
@@ -253,7 +290,7 @@ class ElementImagePipeline:
             sh = min(sh, screenshot.height - sy)
 
             if sw <= 0 or sh <= 0:
-                result.skipped.append({"id": elem_id, "reason": "out of bounds"})
+                result.skipped.append({"id": fe.elem_id, "reason": "out of bounds"})
                 continue
 
             # Crop
@@ -264,9 +301,9 @@ class ElementImagePipeline:
 
             result.images.append(
                 ExtractedElementImage(
-                    element_id=elem_id,
-                    label=label,
-                    element_type=elem_type,
+                    element_id=fe.elem_id,
+                    label=fe.label,
+                    element_type=fe.elem_type,
                     image=cropped,
                     bbox=(sx, sy, sw, sh),
                     base64_png=b64,
@@ -277,6 +314,89 @@ class ElementImagePipeline:
 
         logger.info(
             "Extracted %d element images, skipped %d",
+            len(result.images),
+            len(result.skipped),
+        )
+        return result
+
+    def extract_from_captures(
+        self,
+        snapshot: dict[str, Any],
+        captures: dict[str, dict[str, Any]],
+    ) -> ExtractionResult:
+        """Build extraction results from pre-captured element images.
+
+        Instead of cropping from a screenshot, this accepts element images
+        that were rendered directly from the DOM (e.g. via html2canvas in
+        the UI Bridge). The same visibility/category/size filters are applied.
+
+        Args:
+            snapshot: UI Bridge control snapshot (from GET /control/snapshot).
+            captures: Dict mapping element_id to capture data. Each value has:
+                - base64_png: base64-encoded PNG (no data: prefix)
+                - width: image width in pixels
+                - height: image height in pixels
+
+        Returns:
+            ExtractionResult with element images and metadata.
+        """
+        elements = snapshot.get("elements", [])
+        viewport = snapshot.get("viewport", {})
+        viewport_w = int(viewport.get("width", 0))
+        viewport_h = int(viewport.get("height", 0))
+
+        result = ExtractionResult(
+            images=[],
+            screenshot_width=0,
+            screenshot_height=0,
+            viewport_width=viewport_w,
+            viewport_height=viewport_h,
+            window_offset=(0, 0),
+        )
+
+        accepted = self._filter_elements(elements, result.skipped)
+
+        for fe in accepted:
+            # Look up the pre-captured image
+            capture = captures.get(fe.elem_id)
+            if not capture:
+                result.skipped.append({"id": fe.elem_id, "reason": "no capture"})
+                continue
+
+            b64_png = capture.get("base64_png", "")
+            cap_w = int(capture.get("width", 0))
+            cap_h = int(capture.get("height", 0))
+
+            if not b64_png or cap_w <= 0 or cap_h <= 0:
+                result.skipped.append({"id": fe.elem_id, "reason": "empty capture"})
+                continue
+
+            # Decode base64 to PIL Image (per-element error handling so one
+            # corrupt capture doesn't crash the entire extraction)
+            try:
+                raw = base64.b64decode(b64_png)
+                pil_image = Image.open(io.BytesIO(raw)).convert("RGB")
+                sha = hashlib.sha256(raw).hexdigest()
+            except Exception as exc:
+                logger.warning("Failed to decode capture for %s: %s", fe.elem_id, exc)
+                result.skipped.append({"id": fe.elem_id, "reason": f"decode error: {exc}"})
+                continue
+
+            result.images.append(
+                ExtractedElementImage(
+                    element_id=fe.elem_id,
+                    label=fe.label,
+                    element_type=fe.elem_type,
+                    image=pil_image,
+                    bbox=(int(fe.rect.x), int(fe.rect.y), cap_w, cap_h),
+                    base64_png=b64_png,
+                    sha256=sha,
+                    viewport_rect=fe.rect,
+                )
+            )
+
+        logger.info(
+            "Extracted %d element images from captures, skipped %d",
             len(result.images),
             len(result.skipped),
         )
