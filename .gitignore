@@ -382,3 +382,4 @@ validate_run_process.py
 # All docs moved to qontinui-dev-notes private repo
 # Public documentation will be added via Docusaurus when ready
 docs/
+.worktrees/
