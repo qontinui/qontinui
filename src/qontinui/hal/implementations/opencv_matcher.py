@@ -43,8 +43,9 @@ class OpenCVMatcher(IPatternMatcher):
         except (cv2.error, AttributeError):
             logger.debug("SIFT not available in this OpenCV build")
 
-        # Feature matcher
-        self._matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        # Feature matchers (NORM_L2 for float descriptors like SIFT, NORM_HAMMING for binary)
+        self._matcher_l2 = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+        self._matcher_hamming = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
         logger.info(
             "opencv_matcher_initialized",
@@ -281,8 +282,14 @@ class OpenCVMatcher(IPatternMatcher):
             if desc1.size == 0 or desc2.size == 0:
                 return []
 
+            # Select matcher based on descriptor type (float -> L2, uint8 -> Hamming)
+            if desc1.dtype in (np.float32, np.float64):
+                matcher = self._matcher_l2
+            else:
+                matcher = self._matcher_hamming
+
             # Match descriptors
-            matches = self._matcher.match(desc1, desc2)
+            matches = matcher.match(desc1, desc2)
 
             # Filter matches by distance
             matches = sorted(matches, key=lambda x: x.distance)
@@ -376,6 +383,156 @@ class OpenCVMatcher(IPatternMatcher):
             logger.error(f"Multiscale matching failed: {e}")
             return None
 
+    # Default DPI-common scale factors: native, inverses (template at higher DPI),
+    # and common Windows/macOS scale factors.
+    _DEFAULT_INVARIANT_SCALES = [1.0, 0.8, 0.667, 1.25, 1.5, 1.75, 2.0]
+    _EARLY_EXIT_CONFIDENCE = 0.95
+
+    def find_template_invariant(
+        self,
+        haystack: Image.Image,
+        needle: Image.Image,
+        scales: list[float] | None = None,
+        rotations: list[float] | None = None,
+        confidence: float = 0.9,
+        grayscale: bool = True,
+    ) -> Match | None:
+        """Find pattern with scale and rotation invariance.
+
+        Performs grid search over scale*rotation combinations.
+        Optimised for GUI automation: 1.0 scale tried first, early
+        exit at high confidence, no rotation by default.
+
+        Args:
+            haystack: Image to search in
+            needle: Pattern to search for
+            scales: Scale factors to try (default: common DPI ratios)
+            rotations: Rotation angles in degrees (default: [0])
+            confidence: Minimum confidence threshold
+            grayscale: Convert to grayscale before matching
+
+        Returns:
+            Best Match if found, None otherwise
+        """
+        if scales is None:
+            scales = self._DEFAULT_INVARIANT_SCALES
+        if rotations is None:
+            rotations = [0.0]
+
+        try:
+            haystack_cv = self._pil_to_cv2(haystack)
+            needle_cv = self._pil_to_cv2(needle)
+
+            if grayscale:
+                haystack_work = cv2.cvtColor(haystack_cv, cv2.COLOR_BGR2GRAY)
+                needle_work = cv2.cvtColor(needle_cv, cv2.COLOR_BGR2GRAY)
+            else:
+                haystack_work = haystack_cv
+                needle_work = needle_cv
+
+            h_h, h_w = haystack_work.shape[:2]
+            n_h, n_w = needle_work.shape[:2]
+
+            best_match: Match | None = None
+            best_conf = 0.0
+
+            # Sort scales so 1.0 (most likely) is tried first
+            ordered_scales = sorted(scales, key=lambda s: abs(s - 1.0))
+
+            for scale in ordered_scales:
+                new_w = int(n_w * scale)
+                new_h = int(n_h * scale)
+
+                # Skip if resized needle is too small or larger than haystack
+                if new_w < 10 or new_h < 10:
+                    continue
+                if new_w > h_w or new_h > h_h:
+                    continue
+
+                # Choose interpolation method
+                interp = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LINEAR
+                scaled_needle = cv2.resize(needle_work, (new_w, new_h), interpolation=interp)
+
+                for angle in rotations:
+                    if angle != 0.0:
+                        rotated = self._rotate_template(scaled_needle, angle)
+                        r_h, r_w = rotated.shape[:2]
+                        # Skip if rotated template exceeds haystack
+                        if r_w > h_w or r_h > h_h:
+                            continue
+                        match_needle = rotated
+                        match_w, match_h = r_w, r_h
+                    else:
+                        match_needle = scaled_needle
+                        match_w, match_h = new_w, new_h
+
+                    result = cv2.matchTemplate(haystack_work, match_needle, cv2.TM_CCOEFF_NORMED)
+                    _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+                    if max_val >= confidence and max_val > best_conf:
+                        x, y = max_loc
+                        best_match = Match(
+                            x=x,
+                            y=y,
+                            width=match_w,
+                            height=match_h,
+                            confidence=float(max_val),
+                            center=(x + match_w // 2, y + match_h // 2),
+                        )
+                        best_conf = max_val
+
+                        # Early exit on near-perfect match
+                        if best_conf >= self._EARLY_EXIT_CONFIDENCE:
+                            logger.debug(
+                                "invariant_early_exit",
+                                scale=scale,
+                                angle=angle,
+                                confidence=best_conf,
+                            )
+                            return best_match
+
+            if best_match:
+                logger.debug(
+                    "invariant_match_found",
+                    confidence=best_conf,
+                    size=(best_match.width, best_match.height),
+                )
+
+            return best_match
+
+        except Exception as e:
+            logger.error(f"Invariant template matching failed: {e}")
+            return None
+
+    @staticmethod
+    def _rotate_template(template: np.ndarray[Any, Any], angle: float) -> np.ndarray[Any, Any]:
+        """Rotate a template image around its center.
+
+        Expands the canvas so the rotated template is fully visible.
+
+        Args:
+            template: Image to rotate.
+            angle: Rotation angle in degrees (counter-clockwise).
+
+        Returns:
+            Rotated image with expanded canvas.
+        """
+        h, w = template.shape[:2]
+        cx, cy = w / 2, h / 2
+        mat = cv2.getRotationMatrix2D((cx, cy), angle, 1.0)
+
+        # Compute new bounding box size
+        cos_a = abs(mat[0, 0])
+        sin_a = abs(mat[0, 1])
+        new_w = int(h * sin_a + w * cos_a)
+        new_h = int(h * cos_a + w * sin_a)
+
+        # Adjust the rotation matrix for the new center
+        mat[0, 2] += (new_w / 2) - cx
+        mat[1, 2] += (new_h / 2) - cy
+
+        return cv2.warpAffine(template, mat, (new_w, new_h))
+
     def compare_histograms(
         self, image1: Image.Image, image2: Image.Image, method: str = "correlation"
     ) -> float:
@@ -413,7 +570,9 @@ class OpenCVMatcher(IPatternMatcher):
             similarity = cv2.compareHist(hist1, hist2, cv_method)
 
             # Normalize to 0-1 range
-            if method.lower() == "chi-square" or method.lower() == "bhattacharyya":
+            if method.lower() == "chi-square":
+                similarity = 1.0 / (1.0 + similarity)
+            elif method.lower() == "bhattacharyya":
                 similarity = 1.0 - min(similarity, 1.0)
             else:
                 similarity = max(0.0, min(1.0, similarity))

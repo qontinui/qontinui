@@ -162,6 +162,18 @@ def _load_single_state(state_def: dict[str, Any], state_service: StateService) -
 
                 # Create StateImage and add to builder
                 state_image = StateImage(image=image, name=si_name or pattern_image_id)
+
+                # Apply matchSettings from config if present
+                match_settings_dict = si.get("matchSettings")
+                if match_settings_dict and isinstance(match_settings_dict, dict):
+                    try:
+                        from ..json_executor.config_parser import MatchSettingsConfig
+
+                        ms_config = MatchSettingsConfig(**match_settings_dict)
+                        state_image.set_match_settings(ms_config.to_match_settings())
+                    except Exception as e:
+                        logger.debug(f"State '{state_id}': failed to parse matchSettings: {e}")
+
                 builder.with_images(state_image)
                 image_count += 1
                 logger.debug(

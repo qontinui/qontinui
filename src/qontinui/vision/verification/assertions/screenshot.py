@@ -110,6 +110,67 @@ class ScreenshotComparator:
             return self._config.comparison.default_method
         return "ssim"
 
+    def _get_pixel_threshold(self) -> int:
+        """Get per-pixel difference threshold.
+
+        Returns:
+            Per-pixel threshold (0-255).
+        """
+        if self._config is not None:
+            return self._config.comparison.pixel_threshold
+        return 10
+
+    def _get_diff_percentage_threshold(self, override: float | None = None) -> float | None:
+        """Get diff percentage threshold.
+
+        Args:
+            override: Per-call override.
+
+        Returns:
+            Percentage threshold (0.0-1.0), or None if not configured.
+        """
+        if override is not None:
+            return override
+        if self._config is not None:
+            return self._config.comparison.diff_percentage_threshold
+        return None
+
+    def _should_blur(self, blur: bool | None) -> bool:
+        """Determine whether to apply Gaussian blur before comparison.
+
+        Args:
+            blur: Per-call override.
+
+        Returns:
+            True if blur should be applied.
+        """
+        if blur is not None:
+            return blur
+        if self._config is not None:
+            return self._config.comparison.blur_before_compare
+        return False
+
+    def _apply_blur(self, image: NDArray[np.uint8]) -> NDArray[np.uint8]:
+        """Apply Gaussian blur for noise reduction.
+
+        Reduces false positives from antialiasing and subpixel rendering
+        differences (jest-image-snapshot pattern).
+
+        Args:
+            image: Input image.
+
+        Returns:
+            Blurred image.
+        """
+        if self._config is not None:
+            radius = self._config.comparison.blur_radius
+            sigma = self._config.comparison.blur_sigma
+        else:
+            radius = (3, 3)
+            sigma = 0.0
+        blurred = cv2.GaussianBlur(image, radius, sigma)
+        return cast(NDArray[np.uint8], blurred)
+
     def compare(
         self,
         actual: NDArray[np.uint8],
@@ -118,6 +179,8 @@ class ScreenshotComparator:
         method: str | None = None,
         mask_regions: list[BoundingBox] | None = None,
         auto_mask: bool = True,
+        blur: bool | None = None,
+        fail_percentage: float | None = None,
     ) -> ComparisonResult:
         """Compare two screenshots.
 
@@ -128,6 +191,8 @@ class ScreenshotComparator:
             method: Comparison method ('pixel', 'ssim', 'phash', 'feature').
             mask_regions: Regions to ignore during comparison.
             auto_mask: Automatically mask dynamic regions from environment.
+            blur: Override Gaussian blur noise reduction (None = use config).
+            fail_percentage: Override diff percentage threshold (None = use config).
 
         Returns:
             Comparison result.
@@ -156,6 +221,14 @@ class ScreenshotComparator:
             )
             expected_masked = cast(NDArray[np.uint8], resized)
 
+        # Apply Gaussian blur for noise reduction (jest-image-snapshot pattern)
+        if self._should_blur(blur):
+            actual_masked = self._apply_blur(actual_masked)
+            expected_masked = self._apply_blur(expected_masked)
+
+        # Resolve diff percentage threshold for dual-threshold gating
+        pct_threshold = self._get_diff_percentage_threshold(fail_percentage)
+
         # Run comparison
         if method == "pixel":
             result = self._compare_pixel(actual_masked, expected_masked, threshold)
@@ -168,6 +241,16 @@ class ScreenshotComparator:
         else:
             logger.warning(f"Unknown method {method}, falling back to ssim")
             result = self._compare_ssim(actual_masked, expected_masked, threshold)
+
+        # Apply dual-threshold gate: even if similarity passes, fail if too
+        # many pixels differ (catches concentrated visual regressions that
+        # slip past global similarity scores)
+        if pct_threshold is not None and result.matches:
+            diff_pct = result.metadata.get("diff_pixel_percentage")
+            if diff_pct is not None and diff_pct > pct_threshold:
+                result.matches = False
+                result.metadata["failed_gate"] = "diff_percentage"
+                result.metadata["diff_percentage_threshold"] = pct_threshold
 
         result.masked_regions = all_masks
         return result
@@ -234,7 +317,10 @@ class ScreenshotComparator:
         expected: NDArray[np.uint8],
         threshold: float,
     ) -> ComparisonResult:
-        """Pixel-by-pixel comparison.
+        """Pixel-by-pixel comparison with dual-threshold model.
+
+        Uses per-pixel sensitivity threshold from config to determine which
+        pixels count as "changed", then computes overall similarity.
 
         Args:
             actual: Actual image.
@@ -244,6 +330,8 @@ class ScreenshotComparator:
         Returns:
             Comparison result.
         """
+        pixel_thresh = self._get_pixel_threshold()
+
         # Calculate absolute difference
         diff = cv2.absdiff(actual, expected)
         gray_diff: NDArray[np.uint8]
@@ -252,13 +340,14 @@ class ScreenshotComparator:
         else:
             gray_diff = np.asarray(diff, dtype=np.uint8)
 
-        # Count different pixels
-        _, thresh_result = cv2.threshold(gray_diff, 10, 255, cv2.THRESH_BINARY)
+        # Count different pixels using configured per-pixel threshold
+        _, thresh_result = cv2.threshold(gray_diff, pixel_thresh, 255, cv2.THRESH_BINARY)
         thresh_uint8: NDArray[np.uint8] = np.asarray(thresh_result, dtype=np.uint8)
-        diff_pixels = np.count_nonzero(thresh_uint8)
-        total_pixels = thresh_uint8.size
+        diff_pixels = int(np.count_nonzero(thresh_uint8))
+        total_pixels = int(thresh_uint8.size)
 
         similarity = 1.0 - (diff_pixels / total_pixels)
+        diff_pct = diff_pixels / total_pixels if total_pixels > 0 else 0.0
 
         # Find diff regions using contours
         diff_regions = self._find_diff_regions(thresh_uint8)
@@ -275,6 +364,8 @@ class ScreenshotComparator:
             metadata={
                 "diff_pixels": diff_pixels,
                 "total_pixels": total_pixels,
+                "diff_pixel_percentage": diff_pct,
+                "pixel_threshold_used": pixel_thresh,
             },
         )
 
@@ -284,7 +375,11 @@ class ScreenshotComparator:
         expected: NDArray[np.uint8],
         threshold: float,
     ) -> ComparisonResult:
-        """SSIM (Structural Similarity Index) comparison.
+        """SSIM (Structural Similarity Index) comparison with dual-threshold support.
+
+        Computes SSIM score and also tracks per-pixel diff percentage so
+        the dual-threshold gate in compare() can catch concentrated regressions
+        that slip past global SSIM.
 
         Args:
             actual: Actual image.
@@ -294,6 +389,8 @@ class ScreenshotComparator:
         Returns:
             Comparison result.
         """
+        pixel_thresh = self._get_pixel_threshold()
+
         # Convert to grayscale
         actual_gray: NDArray[np.uint8]
         expected_gray: NDArray[np.uint8]
@@ -328,12 +425,25 @@ class ScreenshotComparator:
         diff_regions = self._find_diff_regions(thresh_uint8)
         diff_image = self._create_diff_image(actual, expected, thresh_uint8)
 
+        # Compute pixel-level diff percentage for dual-threshold gating
+        pixel_diff = cv2.absdiff(actual_gray, expected_gray)
+        _, pixel_thresh_result = cv2.threshold(pixel_diff, pixel_thresh, 255, cv2.THRESH_BINARY)
+        diff_pixels = int(np.count_nonzero(pixel_thresh_result))
+        total_pixels = int(pixel_thresh_result.size)
+        diff_pct = diff_pixels / total_pixels if total_pixels > 0 else 0.0
+
         return ComparisonResult(
             matches=score >= threshold,
             similarity_score=float(score),
             method="ssim",
             diff_regions=diff_regions,
             diff_image=diff_image,
+            metadata={
+                "diff_pixels": diff_pixels,
+                "total_pixels": total_pixels,
+                "diff_pixel_percentage": diff_pct,
+                "pixel_threshold_used": pixel_thresh,
+            },
         )
 
     def _manual_ssim(
@@ -672,6 +782,8 @@ class ScreenshotAssertion:
         mask_regions: list[BoundingBox] | None = None,
         auto_mask: bool = True,
         update_baseline: bool = False,
+        blur: bool | None = None,
+        fail_percentage: float | None = None,
     ) -> AssertionResult:
         """Assert screenshot matches baseline.
 
@@ -685,6 +797,8 @@ class ScreenshotAssertion:
             mask_regions: Regions to ignore.
             auto_mask: Auto-mask dynamic regions.
             update_baseline: Update baseline if not found.
+            blur: Override Gaussian blur noise reduction (None = use config).
+            fail_percentage: Override diff percentage threshold (None = use config).
 
         Returns:
             Assertion result.
@@ -755,6 +869,8 @@ class ScreenshotAssertion:
             method=method,
             mask_regions=mask_regions,
             auto_mask=auto_mask,
+            blur=blur,
+            fail_percentage=fail_percentage,
         )
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
@@ -784,13 +900,29 @@ class ScreenshotAssertion:
                 duration_ms=elapsed_ms,
             )
         else:
+            # Build enriched failure message showing which gate failed
+            diff_pct = result.metadata.get("diff_pixel_percentage")
+            failed_gate = result.metadata.get("failed_gate")
+
+            parts = [f"Screenshot differs ({result.similarity_score:.1%} similarity"]
+            if diff_pct is not None:
+                parts.append(f", {diff_pct:.2%} pixels changed")
+            parts.append(f", {len(result.diff_regions)} regions)")
+
+            if failed_gate == "diff_percentage":
+                pct_thresh = result.metadata.get("diff_percentage_threshold")
+                pct_thresh_str = f"{pct_thresh:.2%}" if pct_thresh is not None else "?"
+                parts.append(f" [failed diff_percentage gate: {diff_pct:.2%} > {pct_thresh_str}]")
+
+            error_msg = "".join(parts)
+
             return AssertionResult(
                 assertion_id="screenshot_match",
                 assertion_method="to_match_screenshot",
                 status=AssertionStatus.FAILED,
                 started_at=started_at,
                 completed_at=completed_at,
-                error_message=f"Screenshot differs ({result.similarity_score:.1%} similarity, {len(result.diff_regions)} regions)",
+                error_message=error_msg,
                 expected_value="baseline",
                 actual_value=f"{result.similarity_score:.1%} match",
                 matches_found=0,
@@ -801,6 +933,8 @@ class ScreenshotAssertion:
 
 # Global comparator instance
 _screenshot_comparator: ScreenshotComparator | None = None
+_screenshot_comparator_config: "VisionConfig | None" = None
+_screenshot_comparator_environment: "GUIEnvironment | None" = None
 
 
 def get_screenshot_comparator(
@@ -809,6 +943,8 @@ def get_screenshot_comparator(
 ) -> ScreenshotComparator:
     """Get the global screenshot comparator instance.
 
+    Recreates the comparator if config or environment has changed.
+
     Args:
         config: Optional vision configuration.
         environment: Optional GUI environment.
@@ -816,9 +952,15 @@ def get_screenshot_comparator(
     Returns:
         ScreenshotComparator instance.
     """
-    global _screenshot_comparator
-    if _screenshot_comparator is None:
+    global _screenshot_comparator, _screenshot_comparator_config, _screenshot_comparator_environment
+    if (
+        _screenshot_comparator is None
+        or config is not _screenshot_comparator_config
+        or environment is not _screenshot_comparator_environment
+    ):
         _screenshot_comparator = ScreenshotComparator(config=config, environment=environment)
+        _screenshot_comparator_config = config
+        _screenshot_comparator_environment = environment
     return _screenshot_comparator
 
 

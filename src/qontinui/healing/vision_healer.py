@@ -8,7 +8,7 @@ This module emits healing events for monitoring and metrics in qontinui-runner.
 
 import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import cv2
 import numpy as np
@@ -17,7 +17,6 @@ from ..reporting.events import EventType, emit_event
 from ..reporting.schemas import (
     HealingAttemptData,
     HealingMetricsData,
-    VisualValidationData,
 )
 from .healing_config import HealingConfig
 from .healing_types import (
@@ -54,15 +53,20 @@ class VisionHealer:
         self,
         config: HealingConfig | None = None,
         cache: "ActionCache | None" = None,
+        accessibility_capture: "Any | None" = None,
     ) -> None:
         """Initialize vision healer.
 
         Args:
             config: Healing configuration. Defaults to disabled.
             cache: Optional action cache for persisting healed locations.
+            accessibility_capture: Optional IAccessibilityCapture for UIA
+                healing. When provided and connected, UIA healing is tried
+                before visual search (faster, no image processing).
         """
         self.config = config or HealingConfig.disabled()
         self.cache = cache
+        self._accessibility_capture = accessibility_capture
 
         # Statistics
         self._total_attempts = 0
@@ -96,6 +100,23 @@ class VisionHealer:
 
         # Emit healing started event
         self._emit_healing_started(context)
+
+        # Strategy 0: UIA accessibility tree re-match (fastest, no images)
+        if self._accessibility_capture is not None:
+            try:
+                if self._accessibility_capture.is_connected():
+                    self._emit_strategy_attempted("uia_selector", context)
+                    uia_result = self._try_uia_healing(context)
+                    if uia_result and uia_result.success:
+                        self._successful_heals += 1
+                        uia_result.duration_ms = (time.time() - start_time) * 1000
+                        self._emit_healing_succeeded(uia_result, context, "uia_selector")
+                        return uia_result
+                    attempts.append((HealingStrategy.UIA_SELECTOR, "UIA re-match failed"))
+                    self._emit_strategy_failed("uia_selector", "UIA re-match failed")
+            except Exception as e:
+                logger.debug("UIA healing skipped: %s", e)
+                attempts.append((HealingStrategy.UIA_SELECTOR, f"UIA error: {e}"))
 
         # Strategy 1: Visual search (no LLM, always available)
         if pattern is not None:
@@ -151,6 +172,28 @@ class VisionHealer:
         self._emit_healing_failed(result, context, attempts)
         return result
 
+    def _try_uia_healing(
+        self,
+        context: HealingContext,
+    ) -> HealingResult | None:
+        """Try to re-find element using UIA accessibility tree.
+
+        Args:
+            context: Healing context with element fingerprint in
+                additional_context (automation_id, role, name, etc.).
+
+        Returns:
+            HealingResult if successful, None otherwise.
+        """
+        try:
+            from .uia_healer import UIAHealer
+
+            healer = UIAHealer(self._accessibility_capture)
+            return healer.heal(context)
+        except Exception as e:
+            logger.debug("UIA healer failed: %s", e)
+            return None
+
     def _try_visual_search(
         self,
         screenshot: np.ndarray,
@@ -176,13 +219,12 @@ class VisionHealer:
         if len(pattern.shape) == 3 and pattern.shape[2] == 4:
             pattern = pattern[:, :, :3]
 
-        # Try at multiple similarity thresholds
-        for threshold in [0.7, 0.6, 0.5]:
-            result = cv2.matchTemplate(screenshot, pattern, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+        # Single matchTemplate call, check thresholds in descending order
+        result = cv2.matchTemplate(screenshot, pattern, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
+        for threshold in [0.7, 0.6, 0.5]:
             if max_val >= threshold:
-                # Found with lower threshold
                 x = max_loc[0] + pattern.shape[1] // 2
                 y = max_loc[1] + pattern.shape[0] // 2
 
@@ -443,44 +485,6 @@ class VisionHealer:
             emit_event(EventType.HEALING_METRICS_UPDATED, data=metrics_data.to_dict())
         except Exception as e:
             logger.debug(f"Failed to emit metrics update event: {e}")
-
-    def _emit_visual_validation(
-        self,
-        validation_type: str,
-        passed: bool,
-        confidence: float,
-        threshold: float,
-        expected_state: str | None = None,
-        actual_state: str | None = None,
-    ) -> None:
-        """Emit visual validation event.
-
-        Args:
-            validation_type: Type of validation performed
-            passed: Whether validation passed
-            confidence: Validation confidence
-            threshold: Confidence threshold used
-            expected_state: Expected state identifier
-            actual_state: Actually detected state
-        """
-        try:
-            validation_data = VisualValidationData(
-                validation_type=validation_type,
-                passed=passed,
-                confidence=confidence,
-                threshold=threshold,
-                expected_state=expected_state,
-                actual_state=actual_state,
-                timestamp=time.time(),
-            )
-            event_type = (
-                EventType.HEALING_VISUAL_VALIDATION_PASSED
-                if passed
-                else EventType.HEALING_VISUAL_VALIDATION_FAILED
-            )
-            emit_event(event_type, data=validation_data.to_dict())
-        except Exception as e:
-            logger.debug(f"Failed to emit visual validation event: {e}")
 
 
 # Global healer instance

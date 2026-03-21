@@ -162,6 +162,35 @@ class IPatternMatcher(ABC):
         pass
 
     @abstractmethod
+    def find_template_invariant(
+        self,
+        haystack: Image.Image,
+        needle: Image.Image,
+        scales: list[float] | None = None,
+        rotations: list[float] | None = None,
+        confidence: float = 0.9,
+        grayscale: bool = True,
+    ) -> Match | None:
+        """Find pattern with scale and rotation invariance.
+
+        Performs grid search over scale*rotation combinations using
+        cv2.matchTemplate at each step. Returns the best match across
+        all combinations that exceeds the confidence threshold.
+
+        Args:
+            haystack: Image to search in
+            needle: Pattern to search for
+            scales: Scale factors to try (default: common DPI ratios)
+            rotations: Rotation angles in degrees to try (default: [0])
+            confidence: Minimum confidence threshold (0.0 to 1.0)
+            grayscale: Convert to grayscale before matching
+
+        Returns:
+            Best Match if found, None otherwise
+        """
+        pass
+
+    @abstractmethod
     def detect_edges(
         self, image: Image.Image, low_threshold: int = 50, high_threshold: int = 150
     ) -> Image.Image:

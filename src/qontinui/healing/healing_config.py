@@ -62,6 +62,13 @@ class HealingConfig:
     remote_base_url: str | None = None
     """Optional base URL override for remote API."""
 
+    # Aria-UI settings (only used if llm_mode == ARIA_UI or ARIA_UI_CONTEXT)
+    aria_ui_endpoint: str = "http://localhost:8100"
+    """Base URL of the Aria-UI vLLM server."""
+
+    aria_ui_max_history: int = 3
+    """Maximum action history entries for context-aware mode."""
+
     # Healing behavior
     max_heal_attempts: int = 2
     """Maximum healing attempts before giving up."""
@@ -111,6 +118,8 @@ class HealingConfig:
             HealingConfigurationError: If configuration is invalid.
         """
         # Import here to avoid circular imports
+        from .aria_ui_client import AriaUIClient
+        from .aria_ui_context_client import AriaUIContextClient
         from .llm_client import (
             DisabledVisionClient,
             LocalVisionClient,
@@ -138,6 +147,19 @@ class HealingConfig:
                 model=self.remote_model,
                 base_url=self.remote_base_url,
                 timeout_seconds=self.heal_timeout_seconds,
+            )
+
+        elif self.llm_mode == LLMMode.ARIA_UI:
+            return AriaUIClient(
+                endpoint=self.aria_ui_endpoint,
+                timeout=self.heal_timeout_seconds,
+            )
+
+        elif self.llm_mode == LLMMode.ARIA_UI_CONTEXT:
+            return AriaUIContextClient(
+                endpoint=self.aria_ui_endpoint,
+                timeout=self.heal_timeout_seconds,
+                max_history=self.aria_ui_max_history,
             )
 
         else:
@@ -228,3 +250,72 @@ class HealingConfig:
             remote_api_key=api_key,
             remote_model=model,
         )
+
+    @classmethod
+    def with_aria_ui(
+        cls,
+        endpoint: str = "http://localhost:8100",
+    ) -> "HealingConfig":
+        """Create configuration for Aria-UI base model.
+
+        Args:
+            endpoint: vLLM server URL.
+
+        Returns:
+            HealingConfig for Aria-UI.
+        """
+        return cls(
+            llm_mode=LLMMode.ARIA_UI,
+            aria_ui_endpoint=endpoint,
+        )
+
+    @classmethod
+    def with_aria_ui_context(
+        cls,
+        endpoint: str = "http://localhost:8100",
+        max_history: int = 3,
+    ) -> "HealingConfig":
+        """Create configuration for Aria-UI context-aware model.
+
+        Args:
+            endpoint: vLLM server URL.
+            max_history: Maximum action history entries.
+
+        Returns:
+            HealingConfig for context-aware Aria-UI.
+        """
+        return cls(
+            llm_mode=LLMMode.ARIA_UI_CONTEXT,
+            aria_ui_endpoint=endpoint,
+            aria_ui_max_history=max_history,
+        )
+
+    @classmethod
+    def from_env(cls) -> "HealingConfig":
+        """Create configuration from environment variables.
+
+        Reads:
+            QONTINUI_ARIA_UI_ENABLED: "true" to enable Aria-UI
+            QONTINUI_ARIA_UI_ENDPOINT: vLLM server URL
+            QONTINUI_ARIA_UI_MODE: "base" or "context"
+            QONTINUI_ARIA_UI_MAX_HISTORY: max history entries
+
+        Returns:
+            HealingConfig based on environment, or disabled if not set.
+        """
+        import os
+
+        if os.environ.get("QONTINUI_ARIA_UI_ENABLED", "").lower() != "true":
+            return cls.disabled()
+
+        endpoint = os.environ.get("QONTINUI_ARIA_UI_ENDPOINT", "http://localhost:8100")
+        mode = os.environ.get("QONTINUI_ARIA_UI_MODE", "base").lower()
+        try:
+            max_history = int(os.environ.get("QONTINUI_ARIA_UI_MAX_HISTORY", "3"))
+        except (ValueError, TypeError):
+            max_history = 3
+
+        if mode == "context":
+            return cls.with_aria_ui_context(endpoint=endpoint, max_history=max_history)
+        else:
+            return cls.with_aria_ui(endpoint=endpoint)

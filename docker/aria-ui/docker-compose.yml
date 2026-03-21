@@ -1,0 +1,49 @@
+services:
+  aria-ui:
+    build: .
+    ports:
+      - "8100:8100"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - VLLM_WORKER_MULTIPROC_METHOD=spawn
+    volumes:
+      # Cache HuggingFace models to avoid re-downloading
+      - aria-ui-cache:/root/.cache/huggingface
+
+  # Optional: context-aware variant on a separate port
+  aria-ui-context:
+    build: .
+    ports:
+      - "8101:8100"
+    command:
+      - python
+      - -m
+      - vllm.entrypoints.openai.api_server
+      - --model
+      - Aria-UI/Aria-UI-context-aware
+      - --port
+      - "8100"
+      - --dtype
+      - bfloat16
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - VLLM_WORKER_MULTIPROC_METHOD=spawn
+    volumes:
+      - aria-ui-cache:/root/.cache/huggingface
+    profiles:
+      - context  # Only start with: docker compose --profile context up
+
+volumes:
+  aria-ui-cache:

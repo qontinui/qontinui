@@ -261,6 +261,45 @@ class Pattern(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class MatchSettingsConfig(BaseModel):
+    """Per-target cascade detection settings (JSON config representation).
+
+    Maps to ``MatchSettings`` from ``find.backends.cascade`` at runtime.
+
+    Example JSON::
+
+        {
+            "matchSettings": {
+                "preferredBackend": "feature",
+                "minConfidence": 0.7,
+                "maxBackends": 3
+            }
+        }
+    """
+
+    preferred_backend: str | None = Field(default=None, alias="preferredBackend")
+    min_confidence: float = Field(default=0.8, alias="minConfidence")
+    max_backends: int = Field(default=5, alias="maxBackends")
+    search_region: list[int] | None = Field(default=None, alias="searchRegion")
+
+    model_config = {"populate_by_name": True}
+
+    def to_match_settings(self) -> Any:
+        """Convert to runtime MatchSettings object."""
+        from ..find.backends.cascade import MatchSettings
+
+        region = None
+        if self.search_region and len(self.search_region) == 4:
+            region = tuple(self.search_region)  # type: ignore[assignment]
+
+        return MatchSettings(
+            preferred_backend=self.preferred_backend,
+            min_confidence=self.min_confidence,
+            max_backends=self.max_backends,
+            search_region=region,
+        )
+
+
 class StateImage(BaseModel):
     """Image reference for state identification and visual recognition.
 
@@ -316,6 +355,9 @@ class StateImage(BaseModel):
     source: str = ""
     search_regions: list[SearchRegion] = Field(default_factory=list, alias="searchRegions")
     monitors: list[int] = Field(default_factory=list)
+
+    # Cascade detection overrides (optional)
+    match_settings: MatchSettingsConfig | None = Field(default=None, alias="matchSettings")
 
     model_config = {"populate_by_name": True}
 

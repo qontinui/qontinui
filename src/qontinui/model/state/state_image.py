@@ -77,6 +77,9 @@ class StateImage:
     # only if the Pattern doesn't already have its own similarity set
     _similarity: float = 0.7
 
+    # Cascade detection settings (optional per-target overrides)
+    _match_settings: Any = None  # MatchSettings from find.backends.cascade
+
     # Metadata
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -127,6 +130,10 @@ class StateImage:
         # Always apply search region from StateImage
         if self._search_region:
             pattern = pattern.with_search_region(self._search_region)
+
+        # Apply cascade match_settings if set on this StateImage
+        if self._match_settings is not None and pattern.match_settings is None:
+            pattern.match_settings = self._match_settings
 
         return pattern
 
@@ -188,6 +195,18 @@ class StateImage:
             Self for chaining
         """
         self._similarity = max(0.0, min(1.0, similarity))
+        return self
+
+    def set_match_settings(self, match_settings: Any) -> StateImage:
+        """Set cascade detection settings (fluent).
+
+        Args:
+            match_settings: MatchSettings instance from find.backends.cascade.
+
+        Returns:
+            Self for chaining
+        """
+        self._match_settings = match_settings
         return self
 
     def set_search_regions(self, search_regions: SearchRegions) -> StateImage:

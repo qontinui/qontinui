@@ -476,7 +476,17 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
         return CDPAccessibilityCapture(schema_config)
 
     elif backend == "auto":
-        # Auto-detect: default to CDP for now
+        # Auto-detect: prefer UIA on Windows, fall back to CDP
+        if _detect_platform(config) == "windows":
+            try:
+                from .implementations.accessibility.uia_capture import (
+                    UIAAccessibilityCapture,
+                )
+
+                return UIAAccessibilityCapture()
+            except ImportError:
+                pass  # Fall through to CDP
+
         from qontinui_schemas.accessibility import AccessibilityConfig as SchemaConfig
 
         from .implementations.accessibility import CDPAccessibilityCapture

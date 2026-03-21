@@ -7,7 +7,7 @@ including detection thresholds, timeouts, and comparison settings.
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class DetectionConfig(BaseModel):
@@ -35,6 +35,42 @@ class DetectionConfig(BaseModel):
     scale_steps: int = Field(
         5,
         description="Number of scale steps",
+    )
+
+    # Edge-aware template matching
+    edge_template_enabled: bool = Field(
+        True,
+        description="Enable edge-based template matching in cascade",
+    )
+    edge_canny_low: int = Field(
+        50,
+        ge=0,
+        le=255,
+        description="Canny low threshold for edge template matching",
+    )
+    edge_canny_high: int = Field(
+        150,
+        ge=0,
+        le=255,
+        description="Canny high threshold for edge template matching",
+    )
+
+    # Coarse-to-fine template matching
+    coarse_to_fine: bool = Field(
+        False,
+        description="Enable coarse-to-fine template matching for large images",
+    )
+    coarse_factor: int = Field(
+        4,
+        ge=2,
+        le=8,
+        description="Downscale factor for coarse pass",
+    )
+    coarse_threshold_factor: float = Field(
+        0.8,
+        ge=0.5,
+        le=1.0,
+        description="Threshold multiplier for coarse pass (lower = more candidates)",
     )
 
     # OCR settings
@@ -147,14 +183,39 @@ class ComparisonConfig(BaseModel):
         10,
         ge=0,
         le=255,
-        description="Per-pixel difference threshold",
+        description="Per-pixel difference threshold (0-255). Pixels whose absolute "
+        "difference exceeds this are counted as changed.",
     )
     diff_percentage_threshold: float = Field(
         0.01,
         ge=0.0,
         le=1.0,
-        description="Maximum allowed different pixels percentage",
+        description="Maximum allowed percentage of changed pixels (0.0-1.0). "
+        "Acts as a secondary gate alongside the similarity threshold.",
     )
+
+    # Gaussian blur noise reduction (jest-image-snapshot pattern)
+    blur_before_compare: bool = Field(
+        False,
+        description="Apply Gaussian blur before comparison to reduce "
+        "antialiasing and subpixel rendering noise",
+    )
+    blur_radius: tuple[int, int] = Field(
+        (3, 3),
+        description="Gaussian blur kernel size (must be odd numbers)",
+    )
+    blur_sigma: float = Field(
+        0.0,
+        ge=0.0,
+        description="Gaussian blur sigma (0 = auto from kernel size)",
+    )
+
+    @field_validator("blur_radius")
+    @classmethod
+    def _blur_radius_must_be_odd(cls, v: tuple[int, int]) -> tuple[int, int]:
+        if v[0] % 2 == 0 or v[1] % 2 == 0:
+            raise ValueError(f"blur_radius values must be odd numbers, got {v}")
+        return v
 
     # Color settings
     color_tolerance: int = Field(

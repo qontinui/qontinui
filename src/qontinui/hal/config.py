@@ -93,7 +93,7 @@ class HALConfig:
     )
     accessibility_backend: str = field(
         default_factory=lambda: os.getenv(
-            "QONTINUI_ACCESSIBILITY_BACKEND", AccessibilityBackend.NONE.value
+            "QONTINUI_ACCESSIBILITY_BACKEND", AccessibilityBackend.AUTO.value
         )
     )
 

@@ -25,6 +25,12 @@ class LLMMode(Enum):
     REMOTE = "remote"
     """Remote API (OpenAI, Anthropic, etc.). Requires API key and internet."""
 
+    ARIA_UI = "aria_ui"
+    """Aria-UI base model via vLLM Docker service. Stateless grounding."""
+
+    ARIA_UI_CONTEXT = "aria_ui_context"
+    """Aria-UI context-aware model. Uses action history for disambiguation."""
+
 
 class HealingStrategy(Enum):
     """Strategy used to heal a failed element lookup."""
@@ -43,6 +49,9 @@ class HealingStrategy(Enum):
 
     TEXT_SEARCH = "text_search"
     """Found by searching for text content."""
+
+    UIA_SELECTOR = "uia_selector"
+    """Found by re-matching against UIA accessibility tree."""
 
     FAILED = "failed"
     """All healing strategies failed."""

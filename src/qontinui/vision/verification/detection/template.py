@@ -7,6 +7,7 @@ accuracy and reduced need for pre-stored templates.
 
 import hashlib
 import logging
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -96,8 +97,9 @@ class TemplateEngine:
         if environment is not None:
             self._patterns = environment.element_patterns
 
-        # Template cache
-        self._template_cache: dict[str, NDArray[np.uint8]] = {}
+        # Template cache (bounded to prevent memory leaks)
+        self._template_cache: OrderedDict[str, NDArray[np.uint8]] = OrderedDict()
+        self._template_cache_max_size: int = 100
 
     def set_environment(self, environment: GUIEnvironment) -> None:
         """Update the environment.
@@ -146,6 +148,7 @@ class TemplateEngine:
         path_str = str(path)
 
         if path_str in self._template_cache:
+            self._template_cache.move_to_end(path_str)
             return self._template_cache[path_str]
 
         path_obj = Path(path)
@@ -155,6 +158,10 @@ class TemplateEngine:
         template = cv2.imread(path_str)
         if template is None:
             raise ValueError(f"Failed to load template: {path}")
+
+        # Evict oldest entry if cache is full
+        if len(self._template_cache) >= self._template_cache_max_size:
+            self._template_cache.popitem(last=False)
 
         self._template_cache[path_str] = template.astype(np.uint8)
         return self._template_cache[path_str]
@@ -221,6 +228,8 @@ class TemplateEngine:
             matches = self._find_multi_scale(
                 search_area, template, threshold, scale_range, scale_steps
             )
+        elif self._should_use_coarse_to_fine(search_area):
+            matches = self._find_coarse_to_fine(search_area, template, threshold)
         else:
             matches = self._find_single_scale(search_area, template, threshold)
 
@@ -278,6 +287,166 @@ class TemplateEngine:
         result_float = result.astype(np.float64)
         locations_tuple = (locations[0], locations[1])
         return self._non_max_suppression(result_float, locations_tuple, w, h, threshold)
+
+    def _should_use_coarse_to_fine(self, search_area: NDArray[np.uint8]) -> bool:
+        """Check if coarse-to-fine matching should be used.
+
+        Enabled when config flag is set and the search area is large enough
+        to benefit (>= 1920x1080).
+        """
+        if self._config is None:
+            return False
+        if not self._config.detection.coarse_to_fine:
+            return False
+        h, w = search_area.shape[:2]
+        return h >= 1080 and w >= 1920
+
+    def _get_coarse_factor(self) -> int:
+        """Get downscale factor for coarse pass."""
+        if self._config is not None:
+            return self._config.detection.coarse_factor
+        return 4
+
+    def _get_coarse_threshold_factor(self) -> float:
+        """Get threshold multiplier for coarse pass."""
+        if self._config is not None:
+            return self._config.detection.coarse_threshold_factor
+        return 0.8
+
+    def _find_coarse_to_fine(
+        self,
+        search_area: NDArray[np.uint8],
+        template: NDArray[np.uint8],
+        threshold: float,
+    ) -> list[TemplateMatch]:
+        """Find template using coarse-to-fine strategy.
+
+        Downsamples both images for a fast coarse pass to identify candidate
+        regions, then re-runs full-resolution matching only within those
+        regions.
+
+        Args:
+            search_area: Area to search.
+            template: Template image.
+            threshold: Match threshold.
+
+        Returns:
+            List of matches.
+        """
+        factor = self._get_coarse_factor()
+        coarse_threshold = threshold * self._get_coarse_threshold_factor()
+
+        sh, sw = search_area.shape[:2]
+        th, tw = template.shape[:2]
+
+        # Downsample
+        small_area = cv2.resize(
+            search_area,
+            (sw // factor, sh // factor),
+            interpolation=cv2.INTER_AREA,
+        )
+        small_tw, small_th = max(tw // factor, 4), max(th // factor, 4)
+        small_template = cv2.resize(
+            template, (small_tw, small_th), interpolation=cv2.INTER_AREA
+        ).astype(np.uint8)
+
+        # Check if small template fits
+        if small_th > small_area.shape[0] or small_tw > small_area.shape[1]:
+            return self._find_single_scale(search_area, template, threshold)
+
+        # Coarse pass
+        method = self._get_method()
+        result = cv2.matchTemplate(small_area, small_template, method)
+        if method in (cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED):
+            result = 1 - result
+            if method == cv2.TM_SQDIFF:
+                result = (result - result.min()) / (result.max() - result.min() + 1e-8)
+
+        locations = np.where(result >= coarse_threshold)
+        if len(locations[0]) == 0:
+            return []
+
+        # Collect candidate regions (map back to full resolution)
+        padding = max(tw, th)  # padding around candidate
+        candidates: list[tuple[int, int, int, int]] = []  # (x, y, w, h)
+
+        for i in range(len(locations[0])):
+            cy, cx = int(locations[0][i]) * factor, int(locations[1][i]) * factor
+            # Region around the candidate with padding
+            rx = max(cx - padding, 0)
+            ry = max(cy - padding, 0)
+            rx2 = min(cx + tw + padding, sw)
+            ry2 = min(cy + th + padding, sh)
+            candidates.append((rx, ry, rx2 - rx, ry2 - ry))
+
+        # Merge overlapping candidate regions
+        candidates = self._merge_regions(candidates)
+
+        # Fine pass on each candidate region
+        all_matches: list[TemplateMatch] = []
+        for rx, ry, rw, rh in candidates:
+            region = search_area[ry : ry + rh, rx : rx + rw]
+            if th > region.shape[0] or tw > region.shape[1]:
+                continue
+
+            matches = self._find_single_scale(region, template, threshold)
+            # Adjust coordinates to full image
+            for match in matches:
+                match.bounds = BoundingBox(
+                    x=match.bounds.x + rx,
+                    y=match.bounds.y + ry,
+                    width=match.bounds.width,
+                    height=match.bounds.height,
+                )
+            all_matches.extend(matches)
+
+        return self._deduplicate_matches(all_matches)
+
+    @staticmethod
+    def _merge_regions(
+        regions: list[tuple[int, int, int, int]],
+    ) -> list[tuple[int, int, int, int]]:
+        """Merge overlapping rectangular regions.
+
+        Args:
+            regions: List of (x, y, w, h) tuples.
+
+        Returns:
+            Merged list of (x, y, w, h) tuples.
+        """
+        if not regions:
+            return regions
+
+        # Convert to (x1, y1, x2, y2) for easier merging
+        boxes = [(x, y, x + w, y + h) for x, y, w, h in regions]
+        merged = True
+
+        while merged:
+            merged = False
+            new_boxes: list[tuple[int, int, int, int]] = []
+            used = [False] * len(boxes)
+
+            for i in range(len(boxes)):
+                if used[i]:
+                    continue
+                x1, y1, x2, y2 = boxes[i]
+                for j in range(i + 1, len(boxes)):
+                    if used[j]:
+                        continue
+                    jx1, jy1, jx2, jy2 = boxes[j]
+                    # Check overlap
+                    if x1 <= jx2 and x2 >= jx1 and y1 <= jy2 and y2 >= jy1:
+                        x1 = min(x1, jx1)
+                        y1 = min(y1, jy1)
+                        x2 = max(x2, jx2)
+                        y2 = max(y2, jy2)
+                        used[j] = True
+                        merged = True
+                new_boxes.append((x1, y1, x2, y2))
+                used[i] = True
+            boxes = new_boxes
+
+        return [(x1, y1, x2 - x1, y2 - y1) for x1, y1, x2, y2 in boxes]
 
     def _find_multi_scale(
         self,

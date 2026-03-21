@@ -67,6 +67,12 @@ class EventType(Enum):
     # Healing events - aggregate metrics
     HEALING_METRICS_UPDATED = "healing.metrics.updated"
 
+    # Cascade detection events
+    CASCADE_STARTED = "cascade.started"
+    CASCADE_BACKEND_TRIED = "cascade.backend.tried"
+    CASCADE_HIT = "cascade.hit"
+    CASCADE_MISS = "cascade.miss"
+
 
 @dataclass
 class Event:

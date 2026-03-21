@@ -58,6 +58,10 @@ class DiscoveryAlgorithm(str, Enum):
     COMBINED = "combined"
     """Uses both algorithms and merges results. Most thorough but slower."""
 
+    OMNIPARSER = "omniparser"
+    """Zero-shot element detection using OmniParser. Best for initial app exploration
+    on unfamiliar UIs where no templates exist yet."""
+
 
 @dataclass
 class DiscoveryConfig:
@@ -84,6 +88,7 @@ class DiscoveryConfig:
     similarity_threshold: float = 0.95
     enable_ocr_naming: bool = True
     enable_state_grouping: bool = True
+    enable_omniparser: bool = False
 
     def to_analysis_config(self) -> AnalysisConfig:
         """Convert to internal AnalysisConfig."""
@@ -255,6 +260,8 @@ class StateDiscoveryFacade:
             # For differential, we need transition pairs - create from consecutive frames
             transitions = self._create_transitions_from_sequence(screenshots)
             result = self._discover_with_differential(transitions, config)
+        elif config.algorithm == DiscoveryAlgorithm.OMNIPARSER:
+            result = self._discover_with_omniparser(screenshots, config)
         else:  # COMBINED
             result = self._discover_combined(screenshots, config, region)
 
@@ -407,6 +414,106 @@ class StateDiscoveryFacade:
                 "algorithm": "differential_consistency",
                 "transitions_analyzed": len(transitions),
                 "regions_found": len(regions),
+            },
+        )
+
+    def _discover_with_omniparser(
+        self,
+        screenshots: list[np.ndarray[Any, Any]],
+        config: DiscoveryConfig,
+    ) -> AnalysisResult:
+        """Run OmniParser zero-shot detection to auto-catalog UI elements.
+
+        Uses OmniParser's YOLO + Florence-2 pipeline to detect and semantically
+        label all interactive elements in the screenshots. This is ideal for
+        initial app exploration where no templates exist yet.
+        """
+        import asyncio
+        import io
+        from uuid import uuid4
+
+        from PIL import Image
+
+        from .element_detection.omniparser_detector import OmniParserDetector
+
+        detector = OmniParserDetector()
+
+        # Convert screenshots to bytes for AnalysisInput
+        screenshot_bytes: list[bytes] = []
+        screenshot_meta: list[dict[str, Any]] = []
+        for i, ss in enumerate(screenshots):
+            if len(ss.shape) == 3 and ss.shape[2] == 3:
+                pil_img = Image.fromarray(ss[..., ::-1])
+            else:
+                pil_img = Image.fromarray(ss)
+            buf = io.BytesIO()
+            pil_img.save(buf, format="PNG")
+            screenshot_bytes.append(buf.getvalue())
+            screenshot_meta.append({"index": i})
+
+        from .element_detection.analysis_base import AnalysisInput
+
+        analysis_input = AnalysisInput(
+            annotation_set_id=uuid4(),
+            screenshots=screenshot_meta,
+            screenshot_data=screenshot_bytes,
+        )
+
+        # Run async analyze in sync context
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                analysis_result = pool.submit(
+                    asyncio.run, detector.analyze(analysis_input)
+                ).result()
+        else:
+            analysis_result = asyncio.run(detector.analyze(analysis_input))
+
+        # Convert detected elements to StateImages
+        state_images: list[StateImage] = []
+        for i, elem in enumerate(analysis_result.elements):
+            bb = elem.bounding_box
+            state_images.append(
+                StateImage(
+                    id=f"omni_img_{i}",
+                    name=elem.label or f"Element_{i}",
+                    x=bb.x,
+                    y=bb.y,
+                    x2=bb.x + bb.width,
+                    y2=bb.y + bb.height,
+                    pixel_hash=f"omni_{i}",
+                    frequency=elem.confidence,
+                )
+            )
+
+        # Group into a single discovered state
+        states: list[DiscoveredState] = []
+        if state_images and config.enable_state_grouping:
+            states.append(
+                DiscoveredState(
+                    id="omni_state_0",
+                    name="OmniParser Discovered State",
+                    state_image_ids=[si.id for si in state_images],
+                    screenshot_ids=[],
+                    confidence=analysis_result.confidence,
+                )
+            )
+
+        return AnalysisResult(
+            states=states,
+            state_images=state_images,
+            transitions=[],
+            statistics={
+                "algorithm": "omniparser",
+                "screenshots_analyzed": len(screenshots),
+                "elements_found": len(analysis_result.elements),
+                "device": analysis_result.metadata.get("device", "unknown"),
             },
         )
 

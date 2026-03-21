@@ -9,6 +9,7 @@ Key Features:
 - Optional vision LLM healing (local via Ollama or remote via API)
 - Integration with action cache for learning
 - Multiple provider support (OpenAI, Anthropic, Google, Ollama)
+- Aria-UI grounding (base and context-aware via vLLM Docker service)
 
 Default Behavior (LLM Disabled):
     >>> from qontinui.healing import VisionHealer, HealingConfig
@@ -27,8 +28,25 @@ Enable Remote LLM (requires API key):
     >>>
     >>> # Or Anthropic
     >>> config = HealingConfig.with_anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+Enable Aria-UI (requires Docker service):
+    >>> config = HealingConfig.with_aria_ui(endpoint="http://localhost:8100")
+    >>> healer = VisionHealer(config=config)
+    >>>
+    >>> # Or context-aware variant with action history
+    >>> config = HealingConfig.with_aria_ui_context(max_history=3)
+    >>>
+    >>> # Or from environment variables
+    >>> config = HealingConfig.from_env()
 """
 
+from .aria_ui_client import AriaUIClient
+from .aria_ui_context_client import AriaUIContextClient
+from .context_mapper import (
+    ScreenshotProvider,
+    build_aria_ui_context,
+    build_aria_ui_context_from_records,
+)
 from .healing_config import HealingConfig, HealingConfigurationError
 from .healing_types import (
     ElementLocation,
@@ -50,6 +68,7 @@ from .recovery_handler import (
     create_healing_handler,
     enable_healing_recovery,
 )
+from .uia_healer import UIAElementFingerprint, UIAHealer
 from .vision_healer import (
     VisionHealer,
     configure_healing,
@@ -76,8 +95,18 @@ __all__ = [
     "DisabledVisionClient",
     "LocalVisionClient",
     "RemoteVisionClient",
+    # Aria-UI Clients
+    "AriaUIClient",
+    "AriaUIContextClient",
+    # Context mapping
+    "ScreenshotProvider",
+    "build_aria_ui_context",
+    "build_aria_ui_context_from_records",
     # Errors
     "HealingConfigurationError",
+    # UIA healing
+    "UIAHealer",
+    "UIAElementFingerprint",
     # Recovery integration
     "HealingRecoveryHandler",
     "ElementNotFoundError",

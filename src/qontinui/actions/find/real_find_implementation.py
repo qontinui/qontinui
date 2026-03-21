@@ -52,6 +52,21 @@ class RealFindImplementation:
         self.screenshot_provider = PureActionsScreenshotProvider()
         self.template_matcher = TemplateMatcher()
         self.visual_debug = VisualDebugGenerator()
+        self._cascade_detector = self._create_cascade_detector()
+
+    @staticmethod
+    def _create_cascade_detector() -> Any:
+        """Create a CascadeDetector with available backends.
+
+        Returns the detector or None if creation fails.
+        """
+        try:
+            from ...find.backends.cascade import CascadeDetector
+
+            return CascadeDetector()
+        except Exception:
+            logger.debug("CascadeDetector not available, cascade fallback disabled")
+            return None
 
     def _preprocess_image(self, image: np.ndarray, options: FindOptions) -> np.ndarray:
         """Apply image preprocessing based on FindOptions.
@@ -132,6 +147,10 @@ class RealFindImplementation:
     ) -> list[FindResult]:
         """Execute real find operations for multiple patterns.
 
+        When batch matching is enabled and multiple unmasked patterns are
+        provided, uses BatchTemplateMatcher to search all templates against
+        a single screenshot capture with cross-template NMS.
+
         Args:
             patterns: List of patterns to find
             options: Find configuration
@@ -144,7 +163,13 @@ class RealFindImplementation:
 
         logger.info(f"Executing find for {len(patterns)} patterns")
 
-        # Create tasks for each pattern
+        # Try batch matching for multi-pattern searches
+        if len(patterns) > 1 and options.use_batch_matching:
+            batch_results = await self._try_batch_execute(patterns, options)
+            if batch_results is not None:
+                return batch_results
+
+        # Fallback: sequential per-pattern matching
         tasks = [asyncio.to_thread(self._execute_single, pattern, options) for pattern in patterns]
 
         # Execute all searches concurrently
@@ -169,6 +194,108 @@ class RealFindImplementation:
 
         return final_results
 
+    async def _try_batch_execute(
+        self,
+        patterns: list[Pattern],
+        options: FindOptions,
+    ) -> list[FindResult] | None:
+        """Attempt batch multi-template matching.
+
+        Captures a single screenshot and matches all patterns at once.
+        Returns None if batch matching is unavailable or inappropriate,
+        falling back to the sequential path.
+        """
+        import asyncio
+
+        # Skip batch if patterns need individual preprocessing
+        has_preprocessing = (
+            options.grayscale or options.edge_detection or options.color_tolerance > 0
+        )
+        if has_preprocessing:
+            logger.debug("Batch matching skipped: patterns require preprocessing")
+            return None
+
+        try:
+            from ...find.matchers.batch_template_matcher import BatchTemplateMatcher
+        except ImportError:
+            logger.debug("Batch matching unavailable: Multi-Template-Matching not installed")
+            return None
+
+        start_time = time.time()
+
+        try:
+            # Capture screenshot once
+            screenshot = self.screenshot_provider.capture()
+            capture_ms = (time.time() - start_time) * 1000
+
+            # Prepare search region
+            search_region = None
+            if options.search_region is not None:
+                search_region = (
+                    options.search_region.x,
+                    options.search_region.y,
+                    options.search_region.width,
+                    options.search_region.height,
+                )
+
+            # Run batch matching in a thread to avoid blocking
+            batch_matcher = BatchTemplateMatcher(
+                nms_overlap_threshold=self.template_matcher.nms_overlap_threshold,
+            )
+            batch_results = await asyncio.to_thread(
+                batch_matcher.find_all_patterns,
+                screenshot,
+                patterns,
+                similarity=options.similarity,
+                search_region=search_region,
+            )
+
+            total_ms = (time.time() - start_time) * 1000
+
+            # Convert to FindResult list (preserving pattern order)
+            final_results = []
+            for pattern in patterns:
+                matches_list = batch_results.get(pattern.name, [])
+                matches_obj = Matches(matches_list)
+                found = len(matches_list) > 0
+
+                result = FindResult(
+                    matches=matches_obj,
+                    found=found,
+                    pattern_name=pattern.name,
+                    duration_ms=total_ms,
+                    debug_data={
+                        "batch_matching": True,
+                        "capture_ms": capture_ms,
+                        "total_patterns": len(patterns),
+                    },
+                )
+
+                # Emit event for each pattern
+                emit_event(
+                    EventType.IMAGE_RECOGNITION,
+                    {
+                        "pattern_name": pattern.name,
+                        "found": found,
+                        "match_count": len(matches_list),
+                        "best_score": matches_list[0].similarity if matches_list else 0.0,
+                        "duration_ms": total_ms,
+                        "batch_matching": True,
+                    },
+                )
+
+                final_results.append(result)
+
+            logger.info(
+                f"Batch matching completed: {len(patterns)} patterns in {total_ms:.1f}ms "
+                f"(capture: {capture_ms:.1f}ms)"
+            )
+            return final_results
+
+        except Exception as e:
+            logger.warning(f"Batch matching failed, falling back to sequential: {e}")
+            return None
+
     def _execute_single(
         self,
         pattern: Pattern,
@@ -190,30 +317,36 @@ class RealFindImplementation:
         Returns:
             FindResult with actual matches from screen
         """
-        # File-based debug logging at ENTRY point
+        # File-based debug logging at ENTRY point (only when collect_debug is enabled)
         import os
         import tempfile
 
         from qontinui_schemas.common import utc_now
 
-        debug_log = os.path.join(tempfile.gettempdir(), "qontinui_event_emission.log")
-        try:
-            with open(debug_log, "a", encoding="utf-8") as f:
-                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}] RealFindImplementation.execute() ENTRY\n")
-                f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
-                f.write(f"[{ts}]   pattern.pixel_data is None: {pattern.pixel_data is None}\n")
-                if pattern.pixel_data is not None:
-                    f.write(f"[{ts}]   pattern.pixel_data.shape={pattern.pixel_data.shape}\n")
-                f.write(
-                    f"[{ts}]   FindOptions: similarity={options.similarity}, find_all={options.find_all}\n"
-                )
-                f.write(
-                    f"[{ts}]   Self-healing: enable_healing={options.enable_healing}, "
-                    f"use_cache={options.use_cache}, store_in_cache={options.store_in_cache}\n"
-                )
-        except Exception:
-            pass
+        _file_debug = options.collect_debug
+        debug_log = (
+            os.path.join(tempfile.gettempdir(), "qontinui_event_emission.log")
+            if _file_debug
+            else ""
+        )
+        if _file_debug:
+            try:
+                with open(debug_log, "a", encoding="utf-8") as f:
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] RealFindImplementation.execute() ENTRY\n")
+                    f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
+                    f.write(f"[{ts}]   pattern.pixel_data is None: {pattern.pixel_data is None}\n")
+                    if pattern.pixel_data is not None:
+                        f.write(f"[{ts}]   pattern.pixel_data.shape={pattern.pixel_data.shape}\n")
+                    f.write(
+                        f"[{ts}]   FindOptions: similarity={options.similarity}, find_all={options.find_all}\n"
+                    )
+                    f.write(
+                        f"[{ts}]   Self-healing: enable_healing={options.enable_healing}, "
+                        f"use_cache={options.use_cache}, store_in_cache={options.store_in_cache}\n"
+                    )
+            except Exception:
+                pass
 
         logger.debug(
             f"[FIND_DEBUG] RealFindImplementation.execute() ENTRY - pattern.id={pattern.id}, pattern.name={pattern.name}"
@@ -320,6 +453,22 @@ class RealFindImplementation:
                 logger.debug(
                     f"[TIMING] Template matching took {matching_duration:.3f}s ({matching_duration * 1000:.1f}ms) for pattern {pattern.name}"
                 )
+
+                # ================================================================
+                # STEP 2b: Cascade fallback (if template matching failed)
+                # ================================================================
+                if not matches and self._cascade_detector is not None:
+                    cascade_matches = self._try_cascade_fallback(
+                        pattern,
+                        preprocessed_screenshot,
+                        options,
+                    )
+                    if cascade_matches:
+                        matches = cascade_matches
+                        if debug_data is None:
+                            debug_data = {}
+                        debug_data["source"] = "cascade"
+                        logger.info(f"[FIND] Cascade fallback succeeded for {pattern.name}")
 
                 # ================================================================
                 # STEP 3: Self-healing fallback (if template matching failed)
@@ -458,22 +607,28 @@ class RealFindImplementation:
             screenshot_timestamp: Unix timestamp when screenshot was captured
             screenshot: Screenshot image data (NumPy array or PIL Image) for encoding
         """
-        # File-based debug logging (works even when console logging is disabled)
+        # File-based debug logging (only when collect_debug is enabled)
         import os
         import tempfile
 
         from qontinui_schemas.common import utc_now
 
-        debug_log = os.path.join(tempfile.gettempdir(), "qontinui_event_emission.log")
-        try:
-            with open(debug_log, "a", encoding="utf-8") as f:
-                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}] _emit_image_recognition_event CALLED\n")
-                f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
-                f.write(f"[{ts}]   matches count={len(matches)}\n")
-                f.write(f"[{ts}]   found={len(matches) > 0}\n")
-        except Exception:
-            pass
+        _file_debug = options.collect_debug
+        debug_log = (
+            os.path.join(tempfile.gettempdir(), "qontinui_event_emission.log")
+            if _file_debug
+            else ""
+        )
+        if _file_debug:
+            try:
+                with open(debug_log, "a", encoding="utf-8") as f:
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] _emit_image_recognition_event CALLED\n")
+                    f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
+                    f.write(f"[{ts}]   matches count={len(matches)}\n")
+                    f.write(f"[{ts}]   found={len(matches) > 0}\n")
+            except Exception:
+                pass
         # Get template size from pattern
         template_size: tuple[int, int] = (0, 0)
         if hasattr(pattern, "pixel_data") and pattern.pixel_data is not None:
@@ -593,25 +748,25 @@ class RealFindImplementation:
         # Emit MATCH_ATTEMPTED event (EventTranslator listens for this)
         logger.debug(f"[FIND_DEBUG] Emitting MATCH_ATTEMPTED event for pattern {pattern.id}")
 
-        # File-based debug logging
-        try:
-            with open(debug_log, "a", encoding="utf-8") as f:
-                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}] About to call emit_event(EventType.MATCH_ATTEMPTED, ...)\n")
-                f.write(f"[{ts}]   EventType.MATCH_ATTEMPTED={EventType.MATCH_ATTEMPTED}\n")
-                f.write(f"[{ts}]   event_data keys={list(event_data.keys())}\n")
-        except Exception:
-            pass
+        if _file_debug:
+            try:
+                with open(debug_log, "a", encoding="utf-8") as f:
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] About to call emit_event(EventType.MATCH_ATTEMPTED, ...)\n")
+                    f.write(f"[{ts}]   EventType.MATCH_ATTEMPTED={EventType.MATCH_ATTEMPTED}\n")
+                    f.write(f"[{ts}]   event_data keys={list(event_data.keys())}\n")
+            except Exception:
+                pass
 
         emit_event(EventType.MATCH_ATTEMPTED, event_data)
 
-        # File-based debug logging
-        try:
-            with open(debug_log, "a", encoding="utf-8") as f:
-                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(f"[{ts}] emit_event() call completed successfully\n")
-        except Exception:
-            pass
+        if _file_debug:
+            try:
+                with open(debug_log, "a", encoding="utf-8") as f:
+                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    f.write(f"[{ts}] emit_event() call completed successfully\n")
+            except Exception:
+                pass
 
         logger.info(
             f"[EventTranslator] MATCH_ATTEMPTED event emitted successfully for pattern {pattern.id}"
@@ -903,6 +1058,67 @@ class RealFindImplementation:
         except Exception as e:
             logger.warning(f"[CACHE_ERROR] Failed to check cache: {e}")
             return [], False
+
+    def _try_cascade_fallback(
+        self,
+        pattern: Pattern,
+        screenshot: Any,
+        options: FindOptions,
+    ) -> list[ModelMatch]:
+        """Try cascade detection backends when template matching fails.
+
+        Runs the CascadeDetector which tries progressively more expensive
+        backends (feature, edge, invariant, etc.). The template backend
+        will be tried again but short-circuits quickly (~20ms) at the same
+        threshold, so the real value is in the subsequent backends.
+
+        Args:
+            pattern: Pattern that failed template matching.
+            screenshot: Current screenshot (any format accepted by backends).
+            options: Find options.
+
+        Returns:
+            List of ModelMatch from cascade (empty if all backends failed).
+        """
+        if self._cascade_detector is None:
+            return []
+
+        try:
+            from ...model.element.location import Location
+
+            config: dict[str, Any] = {
+                "needle_type": "template",
+                "min_confidence": options.similarity,
+                "find_all": options.find_all,
+                "search_region": options.search_region,
+            }
+
+            # Use pattern-level match_settings if available
+            match_settings = getattr(pattern, "match_settings", None)
+            if match_settings is not None:
+                config["match_settings"] = match_settings
+
+            results = self._cascade_detector.find(pattern, screenshot, config)
+            if not results:
+                return []
+
+            matches: list[ModelMatch] = []
+            for dr in results:
+                region = Region(x=dr.x, y=dr.y, width=dr.width, height=dr.height)
+                cx, cy = dr.center
+                match = ModelMatch(
+                    score=dr.confidence,
+                    target=Location(x=cx, y=cy, region=region),
+                    name=pattern.name,
+                )
+                matches.append(match)
+
+            matches.sort(key=lambda m: m.score, reverse=True)
+            return matches
+
+        except Exception as e:
+            logger.debug(f"[CASCADE] Cascade fallback failed: {e}")
+            return []
 
     def _try_healing(
         self,

@@ -92,6 +92,9 @@ class Pattern:
         default_factory=list
     )  # Image variations for optimization
 
+    # Cascade detection settings (optional per-target overrides)
+    match_settings: Any = None  # MatchSettings from find.backends.cascade
+
     # Additional attributes for compatibility
     path: str | None = None
     owner_state_name: str | None = None

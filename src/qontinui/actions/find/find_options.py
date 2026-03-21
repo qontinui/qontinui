@@ -125,3 +125,8 @@ class FindOptions:
 
     pre_screenshot: Any = None
     """Pre-action screenshot for validation (captured before action). numpy.ndarray or None."""
+
+    # Batch matching options
+    use_batch_matching: bool = True
+    """Use batch multi-template matching when searching for multiple patterns.
+    Set to False when patterns need different preprocessing options."""

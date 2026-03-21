@@ -52,6 +52,7 @@ from .icon_button_detector import IconButtonDetector
 from .input_field_detector import InputFieldDetector
 from .menu_bar_detector import MenuBarDetector
 from .modal_dialog_detector import ModalDialogDetector
+from .omniparser_detector import OmniParserDetector
 from .sidebar_detector import SidebarDetector
 from .typography_detector import TypographyDetector
 
@@ -76,6 +77,7 @@ __all__: list[str] = [
     "InputFieldDetector",
     "MenuBarDetector",
     "ModalDialogDetector",
+    "OmniParserDetector",
     "SidebarDetector",
     "TypographyDetector",
 ]

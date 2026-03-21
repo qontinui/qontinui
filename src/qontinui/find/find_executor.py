@@ -5,14 +5,23 @@ to execute complete find operations. Uses dependency injection for
 testability and flexibility.
 """
 
-from typing import Any
+from __future__ import annotations
 
-from ..model.element import Pattern, Region
+import logging
+from typing import TYPE_CHECKING, Any
+
+from ..model.element import Location, Pattern, Region
+from ..model.match import Match as MatchObject
 from ..model.search_regions import SearchRegions
 from .filters.match_filter import MatchFilter
 from .match import Match
 from .matchers.image_matcher import ImageMatcher
 from .screenshot.screenshot_provider import ScreenshotProvider
+
+if TYPE_CHECKING:
+    from .backends.cascade import CascadeDetector, MatchSettings
+
+logger = logging.getLogger(__name__)
 
 
 class FindExecutor:
@@ -66,6 +75,7 @@ class FindExecutor:
         screenshot_provider: ScreenshotProvider,
         matcher: ImageMatcher,
         filters: list[MatchFilter] | None = None,
+        cascade_detector: CascadeDetector | None = None,
     ) -> None:
         """Initialize FindExecutor with components.
 
@@ -77,6 +87,11 @@ class FindExecutor:
             filters: Optional list of filters to apply to matches.
                     Filters are applied in the order provided.
                     If None, no filtering is applied.
+            cascade_detector: Optional CascadeDetector for graduated
+                             fallback across multiple detection backends.
+                             When provided, the executor tries the cascade
+                             first and falls back to the raw matcher if the
+                             cascade returns no results.
 
         Raises:
             ValueError: If screenshot_provider or matcher is None
@@ -88,7 +103,64 @@ class FindExecutor:
 
         self.screenshot_provider = screenshot_provider
         self.matcher = matcher
-        self.filters = filters or []
+        self.filters = list(filters) if filters else []
+        self.cascade_detector = cascade_detector
+
+    @classmethod
+    def with_cascade(
+        cls,
+        screenshot_provider: ScreenshotProvider,
+        matcher: ImageMatcher | None = None,
+        filters: list[MatchFilter] | None = None,
+        accessibility_capture: Any = None,
+        ocr_engine: Any = None,
+        llm_client: Any = None,
+    ) -> FindExecutor:
+        """Create a FindExecutor with an auto-configured CascadeDetector.
+
+        This is the recommended way to create a FindExecutor for production
+        use. The cascade provides graduated fallback across all available
+        detection backends (template → edge → feature → invariant → QATM →
+        OCR → OmniParser → VLM).
+
+        Args:
+            screenshot_provider: Component for capturing screenshots.
+            matcher: Pattern matcher. Defaults to TemplateMatcher if None.
+            filters: Optional list of match filters.
+            accessibility_capture: Optional IAccessibilityCapture for
+                                   accessibility-tree-first detection.
+            ocr_engine: Optional IOCREngine for text-based detection.
+            llm_client: Optional VisionLLMClient for VLM fallback.
+
+        Returns:
+            Configured FindExecutor with CascadeDetector enabled.
+        """
+        if matcher is None:
+            from .matchers.template_matcher import TemplateMatcher
+
+            matcher = TemplateMatcher()
+
+        try:
+            from .backends.cascade import CascadeDetector
+
+            cascade = CascadeDetector(
+                accessibility_capture=accessibility_capture,
+                ocr_engine=ocr_engine,
+                llm_client=llm_client,
+            )
+        except Exception:
+            logger.warning(
+                "Could not create CascadeDetector, cascade fallback disabled",
+                exc_info=True,
+            )
+            cascade = None
+
+        return cls(
+            screenshot_provider=screenshot_provider,
+            matcher=matcher,
+            filters=filters,
+            cascade_detector=cascade,
+        )
 
     def execute(
         self,
@@ -96,14 +168,16 @@ class FindExecutor:
         search_region: Region | SearchRegions | None = None,
         similarity: float = 0.8,
         find_all: bool = False,
+        match_settings: MatchSettings | None = None,
     ) -> list[Match]:
         """Execute find operation using configured components.
 
         Orchestrates the complete find workflow:
         1. Capture screenshot from the specified region (or entire screen)
-        2. Use matcher to find pattern matches in the screenshot
-        3. Apply all filters in sequence to refine results
-        4. Return final filtered matches
+        2. If a CascadeDetector is configured, try it first
+        3. Otherwise (or on cascade miss), use the raw ImageMatcher
+        4. Apply all filters in sequence to refine results
+        5. Return final filtered matches
 
         Args:
             pattern: Pattern to search for. Must have valid pixel data.
@@ -114,6 +188,7 @@ class FindExecutor:
                        Higher values require closer matches.
             find_all: If True, find all matches above threshold.
                      If False, return only the best match.
+            match_settings: Optional per-target settings for the CascadeDetector.
 
         Returns:
             List of Match objects sorted by similarity (highest first).
@@ -122,20 +197,6 @@ class FindExecutor:
         Raises:
             ValueError: If pattern is None or has no pixel data
             RuntimeError: If screenshot capture or matching fails
-
-        Example:
-            >>> pattern = Pattern.from_file("icon.png")
-            >>> region = Region(x=100, y=100, width=800, height=600)
-            >>> matches = executor.execute(
-            ...     pattern=pattern,
-            ...     search_region=region,
-            ...     similarity=0.9,
-            ...     find_all=True
-            ... )
-            >>> print(f"Found {len(matches)} matches")
-            >>> for match in matches:
-            ...     print(f"  Match at ({match.x}, {match.y}), "
-            ...           f"similarity={match.similarity:.2f}")
         """
         if pattern is None:
             raise ValueError("pattern cannot be None")
@@ -144,10 +205,24 @@ class FindExecutor:
 
         # Step 1: Capture screenshot
         screenshot = self._capture_screenshot(search_region)
-
-        # Step 2: Find matches using matcher
-        # Convert search_region to tuple format for matcher
         search_region_tuple = self._convert_search_region(search_region)
+
+        # Step 2: Try CascadeDetector if available
+        # Use explicit match_settings, falling back to pattern-level settings
+        effective_settings = match_settings or getattr(pattern, "match_settings", None)
+        if self.cascade_detector is not None:
+            cascade_matches = self._try_cascade(
+                pattern,
+                screenshot,
+                search_region_tuple,
+                similarity,
+                find_all,
+                effective_settings,
+            )
+            if cascade_matches:
+                return self._apply_filters(cascade_matches)
+
+        # Step 3: Fall back to raw ImageMatcher
         matches = self.matcher.find_matches(
             screenshot=screenshot,
             pattern=pattern,
@@ -156,10 +231,54 @@ class FindExecutor:
             search_region=search_region_tuple,
         )
 
-        # Step 3: Apply filters in sequence
-        filtered_matches = self._apply_filters(matches)
+        # Step 4: Apply filters in sequence
+        return self._apply_filters(matches)
 
-        return filtered_matches
+    def _try_cascade(
+        self,
+        pattern: Pattern,
+        screenshot: Any,
+        search_region: tuple[int, int, int, int] | None,
+        similarity: float,
+        find_all: bool,
+        match_settings: MatchSettings | None,
+    ) -> list[Match]:
+        """Try the CascadeDetector and convert results to Match objects.
+
+        Returns:
+            List of Match objects, or empty list if cascade found nothing.
+        """
+        assert self.cascade_detector is not None
+
+        config: dict[str, Any] = {
+            "needle_type": "template",
+            "min_confidence": similarity,
+            "find_all": find_all,
+            "search_region": search_region,
+        }
+        if match_settings is not None:
+            config["match_settings"] = match_settings
+
+        try:
+            detection_results = self.cascade_detector.find(pattern, screenshot, config)
+        except Exception:
+            logger.warning("CascadeDetector failed, falling back to matcher", exc_info=True)
+            return []
+
+        # Convert DetectionResult → Match
+        matches: list[Match] = []
+        for dr in detection_results:
+            region = Region(x=dr.x, y=dr.y, width=dr.width, height=dr.height)
+            cx, cy = dr.center
+            match_obj = MatchObject(
+                target=Location(x=cx, y=cy, region=region),
+                score=dr.confidence,
+                name=pattern.name,
+            )
+            matches.append(Match(match_obj))
+
+        matches.sort(key=lambda m: m.similarity, reverse=True)
+        return matches
 
     def _capture_screenshot(self, search_region: Region | SearchRegions | None) -> Any:
         """Capture screenshot using the configured provider.
