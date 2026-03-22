@@ -10,7 +10,7 @@ feature matching (~100ms) at ~40ms estimated cost.
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 import cv2
 import numpy as np
@@ -150,7 +150,8 @@ class EdgeTemplateMatchBackend(DetectionBackend):
             return []
 
         # Apply non-maximum suppression
-        return self._nms(result, locations, tw, th, min_confidence, offset_x, offset_y)
+        locs = cast(tuple[np.ndarray, np.ndarray], locations)
+        return self._nms(result, locs, tw, th, min_confidence, offset_x, offset_y)
 
     def _nms(
         self,

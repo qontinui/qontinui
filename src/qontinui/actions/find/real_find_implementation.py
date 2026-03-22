@@ -275,7 +275,26 @@ class RealFindImplementation:
             # Convert to FindResult list (preserving pattern order)
             final_results = []
             for pattern in patterns:
-                matches_list = batch_results.get(pattern.name, [])
+                raw_matches_list = batch_results.get(pattern.name, [])
+                # Convert find.match.Match to model.match.Match
+                converted_list: list[ModelMatch] = []
+                for fm in raw_matches_list:
+                    converted_list.append(
+                        ModelMatch(
+                            score=(
+                                fm.match_object.score
+                                if hasattr(fm, "match_object")
+                                else fm.similarity
+                            ),
+                            target=(
+                                fm.match_object.target
+                                if hasattr(fm, "match_object")
+                                else fm.location
+                            ),
+                            name=pattern.name,
+                        )
+                    )
+                matches_list = converted_list
                 matches_obj = Matches(matches_list)
                 found = len(matches_list) > 0
 
@@ -294,7 +313,7 @@ class RealFindImplementation:
 
                 # Emit event for each pattern
                 emit_event(
-                    EventType.IMAGE_RECOGNITION,
+                    EventType.MATCH_ATTEMPTED,
                     {
                         "pattern_name": pattern.name,
                         "found": found,
@@ -413,11 +432,9 @@ class RealFindImplementation:
             )
 
             # Convert screenshot to numpy array for cache/healing operations
-            screenshot_array: np.ndarray
-            if hasattr(screenshot, "__array__"):
-                screenshot_array = np.array(screenshot)
-            else:
-                screenshot_array = screenshot
+            screenshot_array: np.ndarray = (
+                np.array(screenshot) if not isinstance(screenshot, np.ndarray) else screenshot
+            )
 
             # ================================================================
             # STEP 1: Try cache lookup first (if enabled)
@@ -438,7 +455,7 @@ class RealFindImplementation:
             # ================================================================
             if not cache_hit:
                 # Apply image preprocessing if any variant options are enabled
-                preprocessed_screenshot = screenshot
+                preprocessed_screenshot: Any = screenshot_array
                 preprocessed_pattern = pattern
 
                 if options.grayscale or options.edge_detection or options.color_tolerance > 0:
@@ -456,14 +473,35 @@ class RealFindImplementation:
                 # Perform template matching with debug support
                 logger.debug("[FIND_DEBUG] Calling template_matcher.find_matches_with_debug()")
                 matching_start_time = time.time()
-                matches, debug_data = self.template_matcher.find_matches_with_debug(
+                region_tuple = (
+                    (
+                        options.search_region.x,
+                        options.search_region.y,
+                        options.search_region.width,
+                        options.search_region.height,
+                    )
+                    if options.search_region is not None
+                    else None
+                )
+                raw_matches, debug_data = self.template_matcher.find_matches_with_debug(
                     screenshot=preprocessed_screenshot,
                     pattern=preprocessed_pattern,
                     find_all=options.find_all,
                     similarity=options.similarity,
-                    search_region=options.search_region,
+                    search_region=region_tuple,
                     collect_debug=collect_debug,
                 )
+                # Convert find.match.Match to model.match.Match
+                for fm in raw_matches:
+                    target = fm.match_object.target if hasattr(fm, "match_object") else fm.location
+                    score = fm.match_object.score if hasattr(fm, "match_object") else fm.similarity
+                    matches.append(
+                        ModelMatch(
+                            score=score,
+                            target=target,
+                            name=pattern.name,
+                        )
+                    )
                 matching_end_time = time.time()
                 matching_duration = matching_end_time - matching_start_time
 
@@ -525,7 +563,7 @@ class RealFindImplementation:
             if collect_debug and debug_data and not cache_hit:
                 logger.info("[REAL_FIND] Generating visual debug image")
                 visual_debug_image = self.visual_debug.generate_debug_image(
-                    screenshot=screenshot,
+                    screenshot=screenshot_array,
                     matches=matches,
                     debug_data=debug_data,
                     threshold=options.similarity,

@@ -14,7 +14,7 @@ import logging
 import threading
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import cv2
 import numpy as np
@@ -71,9 +71,9 @@ class QATMMatcher:
 
     def __init__(self, settings: QATMSettings | None = None) -> None:
         self._settings = settings or QATMSettings()
-        self._model = None
-        self._device = None
-        self._transform = None
+        self._model: Any = None
+        self._device: Any = None
+        self._transform: Any = None
         self._lock = threading.Lock()
         self._last_used: float = 0.0
 
@@ -125,7 +125,8 @@ class QATMMatcher:
         # BGR -> RGB
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         tensor = self._transform(rgb)  # type: ignore[misc]
-        return tensor.unsqueeze(0).to(self._device)  # (1, 3, H, W)
+        result: torch.Tensor = tensor.unsqueeze(0).to(self._device)  # (1, 3, H, W)
+        return result
 
     def _extract_features(self, image: np.ndarray) -> torch.Tensor:
         """Extract feature map from image using truncated VGG-19."""
@@ -134,7 +135,8 @@ class QATMMatcher:
         tensor = self._preprocess(image)
         with torch.no_grad():
             features = self._model(tensor)  # type: ignore[misc]
-        return features
+        result: torch.Tensor = features
+        return result
 
     def _compute_qatm_score(
         self,

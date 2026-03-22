@@ -14,7 +14,7 @@ then deduplicates cross-scale results via IoU-based NMS.
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 import cv2
 import numpy as np
@@ -241,7 +241,7 @@ class BatchTemplateMatcher:
             result = image.get_mat_bgr()
             if result is None:
                 raise ImageProcessingError("get_mat_bgr() returned None")
-            return result
+            return cast(np.ndarray, result)
 
         if isinstance(image, np.ndarray):
             if len(image.shape) == 3 and image.shape[2] == 4:

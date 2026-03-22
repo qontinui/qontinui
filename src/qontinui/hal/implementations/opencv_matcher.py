@@ -1,6 +1,6 @@
 """OpenCV-based pattern matching implementation."""
 
-from typing import Any
+from typing import Any, cast
 
 import cv2
 import numpy as np
@@ -435,7 +435,7 @@ class OpenCVMatcher(IPatternMatcher):
             except (OSError, AttributeError):
                 pass
             dpi = ctypes.windll.user32.GetDpiForSystem()
-            return dpi / 96.0
+            return cast(float, dpi / 96.0)
         except (OSError, AttributeError):
             return None
 
