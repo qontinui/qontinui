@@ -14,11 +14,15 @@ import logging
 import threading
 import time
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
 
 from .qatm_config import QATMSettings
+
+if TYPE_CHECKING:
+    import torch
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +255,7 @@ class QATMMatcher:
         if find_all:
             # Find all peaks above threshold
             locations = np.where(score_map >= min_confidence)
-            for fy, fx in zip(locations[0], locations[1]):
+            for fy, fx in zip(locations[0], locations[1], strict=True):
                 confidence = float(score_map[fy, fx])
                 px = int(fx * scale_x)
                 py = int(fy * scale_y)

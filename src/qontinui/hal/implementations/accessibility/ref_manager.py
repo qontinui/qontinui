@@ -214,7 +214,7 @@ class RefManager:
             return {}
 
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
+            data: dict[str, dict[str, Any]] = json.loads(path.read_text(encoding="utf-8"))
             logger.debug("Loaded %d ref fingerprints from %s", len(data), path)
             return data
         except (json.JSONDecodeError, OSError) as e:

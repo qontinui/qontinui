@@ -249,3 +249,32 @@ class TestCoarseToFineMatching:
         assert big[0][1] == 0  # y
         assert big[0][2] == 150  # width (0 to 150)
         assert big[0][3] == 150  # height (0 to 150)
+
+    def test_coarse_to_fine_activates_with_config(self):
+        """When config enables coarse-to-fine, it should activate for large images."""
+        from qontinui.vision.verification.config import VisionConfig
+        from qontinui.vision.verification.detection.template import TemplateEngine
+
+        config = VisionConfig()
+        config.detection.coarse_to_fine = True
+        engine = TemplateEngine(config=config)
+
+        big_image = np.zeros((2160, 3840, 3), dtype=np.uint8)
+        assert engine._should_use_coarse_to_fine(big_image) is True
+
+    def test_coarse_to_fine_skips_small_images_with_config(self):
+        """Even with config enabled, small images should skip coarse-to-fine."""
+        from qontinui.vision.verification.config import VisionConfig
+        from qontinui.vision.verification.detection.template import TemplateEngine
+
+        config = VisionConfig()
+        config.detection.coarse_to_fine = True
+        engine = TemplateEngine(config=config)
+
+        small_image = np.zeros((720, 1280, 3), dtype=np.uint8)
+        assert engine._should_use_coarse_to_fine(small_image) is False
+
+    def test_edge_template_disabled_via_constructor(self):
+        """EdgeTemplateMatchBackend should report unavailable when disabled."""
+        backend = EdgeTemplateMatchBackend(enabled=False)
+        assert backend.is_available() is False

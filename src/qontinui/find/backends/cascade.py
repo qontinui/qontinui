@@ -365,11 +365,40 @@ class CascadeDetector(DetectionBackend):
         except ImportError:
             logger.warning("CascadeDetector: TemplateMatchBackend unavailable")
 
-        # Edge-aware template matching (~40ms) — robust to theme/color changes
+        # Batch template matching (~25ms amortized) — matches multiple templates
+        # against a single screenshot with cross-template NMS. Requires MTM.
+        try:
+            from .batch_template_match_backend import BatchTemplateMatchBackend
+
+            backends.append(BatchTemplateMatchBackend())
+        except ImportError:
+            logger.debug("CascadeDetector: BatchTemplateMatchBackend unavailable")
+
+        # Edge-aware template matching (~40ms) — robust to theme/color changes.
+        # Reads DetectionConfig for enabled flag and Canny thresholds.
         try:
             from .edge_template_backend import EdgeTemplateMatchBackend
 
-            backends.append(EdgeTemplateMatchBackend())
+            edge_enabled = True
+            edge_canny_low = 50
+            edge_canny_high = 150
+            try:
+                from ...vision.verification.config import get_default_config
+
+                det_cfg = get_default_config().detection
+                edge_enabled = det_cfg.edge_template_enabled
+                edge_canny_low = det_cfg.edge_canny_low
+                edge_canny_high = det_cfg.edge_canny_high
+            except Exception:
+                pass  # Fall back to defaults if config unavailable
+
+            backends.append(
+                EdgeTemplateMatchBackend(
+                    canny_low=edge_canny_low,
+                    canny_high=edge_canny_high,
+                    enabled=edge_enabled,
+                )
+            )
         except ImportError:
             logger.warning("CascadeDetector: EdgeTemplateMatchBackend unavailable")
 
@@ -394,8 +423,7 @@ class CascadeDetector(DetectionBackend):
         try:
             from .qatm_backend import QATMBackend
 
-            backend = QATMBackend()
-            backends.append(backend)  # is_available() checks enabled flag
+            backends.append(QATMBackend())  # is_available() checks enabled flag
         except ImportError:
             pass  # Optional dependency (torch), silent skip
 
@@ -414,8 +442,7 @@ class CascadeDetector(DetectionBackend):
         try:
             from .omniparser_backend import OmniParserBackend
 
-            backend = OmniParserBackend()
-            backends.append(backend)  # is_available() checks enabled flag
+            backends.append(OmniParserBackend())  # is_available() checks enabled flag
         except ImportError:
             pass  # Optional dependency, silent skip
 
@@ -434,8 +461,7 @@ class CascadeDetector(DetectionBackend):
         try:
             from .omniparser_service_backend import OmniParserServiceBackend
 
-            backend = OmniParserServiceBackend()
-            backends.append(backend)  # is_available() checks enabled + provider
+            backends.append(OmniParserServiceBackend())  # is_available() checks enabled + provider
         except ImportError:
             pass
 

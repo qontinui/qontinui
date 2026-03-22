@@ -51,7 +51,20 @@ class FindWrapper:
         if self._real_impl is None:
             from .real_find_implementation import RealFindImplementation
 
-            self._real_impl = RealFindImplementation()
+            # Try to resolve accessibility capture from HAL config
+            accessibility_capture = None
+            try:
+                from ...hal.config import get_config
+
+                config = get_config()
+                if config.accessibility_backend != "none":
+                    from ...hal.initialization import _create_accessibility_capture
+
+                    accessibility_capture = _create_accessibility_capture(config)
+            except Exception:
+                pass  # Graceful degradation — no accessibility
+
+            self._real_impl = RealFindImplementation(accessibility_capture=accessibility_capture)
         return self._real_impl
 
     async def find(

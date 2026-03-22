@@ -188,7 +188,7 @@ class VisionHealer:
         try:
             from .uia_healer import UIAHealer
 
-            healer = UIAHealer(self._accessibility_capture)
+            healer = UIAHealer(self._accessibility_capture)  # type: ignore[arg-type]
             return healer.heal(context)
         except Exception as e:
             logger.debug("UIA healer failed: %s", e)

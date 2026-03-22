@@ -58,24 +58,33 @@ class InvariantMatchBackend(DetectionBackend):
             logger.debug("InvariantMatchBackend: needle is not a Pattern, skipping")
             return []
 
-        # Extract the needle as a PIL Image
+        # Extract the needle and convert to PIL Image
+        import cv2
+        import numpy as np
         from PIL import Image
 
-        needle_image = needle.pixel_data
-        if needle_image is None:
+        needle_data = needle.pixel_data
+        if needle_data is None or needle_data.size == 0:
             logger.debug("InvariantMatchBackend: Pattern has no pixel_data")
+            return []
+
+        # Pattern.pixel_data is np.ndarray (BGR) — convert to PIL RGB
+        if isinstance(needle_data, np.ndarray):
+            if len(needle_data.shape) == 3 and needle_data.shape[2] == 3:
+                needle_image = Image.fromarray(cv2.cvtColor(needle_data, cv2.COLOR_BGR2RGB))
+            else:
+                needle_image = Image.fromarray(needle_data)
+        elif isinstance(needle_data, Image.Image):
+            needle_image = needle_data
+        else:
+            logger.debug("InvariantMatchBackend: unsupported pixel_data type")
             return []
 
         # Convert haystack to PIL Image if needed
         if not isinstance(haystack, Image.Image):
-            import numpy as np
-
             if isinstance(haystack, np.ndarray):
-                import cv2
-
                 if len(haystack.shape) == 3 and haystack.shape[2] == 3:
-                    rgb = cv2.cvtColor(haystack, cv2.COLOR_BGR2RGB)
-                    haystack = Image.fromarray(rgb)
+                    haystack = Image.fromarray(cv2.cvtColor(haystack, cv2.COLOR_BGR2RGB))
                 else:
                     haystack = Image.fromarray(haystack)
             else:
@@ -86,33 +95,59 @@ class InvariantMatchBackend(DetectionBackend):
         confidence = config.get("min_confidence", 0.8)
         scales = config.get("invariant_scales")
         rotations = config.get("invariant_rotations")
+        find_all = config.get("find_all", False)
 
-        match = matcher.find_template_invariant(
-            haystack=haystack,
-            needle=needle_image,
-            scales=scales,
-            rotations=rotations,
-            confidence=confidence,
-        )
+        # Use DPI-aware scales when no explicit scales are provided
+        if scales is None:
+            scales = matcher.dpi_aware_scales()
 
-        if match is None:
+        results: list[DetectionResult] = []
+
+        if find_all:
+            hal_matches = matcher.find_all_template_invariant(
+                haystack=haystack,
+                needle=needle_image,
+                scales=scales,
+                rotations=rotations,
+                confidence=confidence,
+            )
+            for m in hal_matches:
+                results.append(
+                    DetectionResult(
+                        x=m.x,
+                        y=m.y,
+                        width=m.width,
+                        height=m.height,
+                        confidence=m.confidence,
+                        backend_name=self.name,
+                    )
+                )
+        else:
+            match = matcher.find_template_invariant(
+                haystack=haystack,
+                needle=needle_image,
+                scales=scales,
+                rotations=rotations,
+                confidence=confidence,
+            )
+            if match is not None:
+                results.append(
+                    DetectionResult(
+                        x=match.x,
+                        y=match.y,
+                        width=match.width,
+                        height=match.height,
+                        confidence=match.confidence,
+                        backend_name=self.name,
+                    )
+                )
+
+        if not results:
             return []
-
-        result = DetectionResult(
-            x=match.x,
-            y=match.y,
-            width=match.width,
-            height=match.height,
-            confidence=match.confidence,
-            backend_name=self.name,
-        )
 
         # Apply color-difference filter if configured
         color_ref = config.get("color_reference")
         if color_ref is not None:
-            import cv2
-            import numpy as np
-
             from ..utils.color_filter import ColorDifferenceFilter
 
             color_tolerance = config.get("color_tolerance", 50.0)
@@ -121,12 +156,10 @@ class InvariantMatchBackend(DetectionBackend):
                 tolerance=color_tolerance,
             )
 
-            # Convert haystack to BGR for color analysis
             haystack_bgr = cv2.cvtColor(np.array(haystack), cv2.COLOR_RGB2BGR)
-            filtered = color_filter.filter_results([result], haystack_bgr)
-            return filtered
+            results = color_filter.filter_results(results, haystack_bgr)
 
-        return [result]
+        return results
 
     def supports(self, needle_type: str) -> bool:
         """Only handles template-type needles."""

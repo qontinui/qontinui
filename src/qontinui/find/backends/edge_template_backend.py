@@ -42,10 +42,16 @@ class EdgeTemplateMatchBackend(DetectionBackend):
         canny_low: int = _DEFAULT_CANNY_LOW,
         canny_high: int = _DEFAULT_CANNY_HIGH,
         min_confidence: float = 0.7,
+        enabled: bool = True,
     ) -> None:
         self._canny_low = canny_low
         self._canny_high = canny_high
         self._min_confidence = min_confidence
+        self._enabled = enabled
+
+    def is_available(self) -> bool:
+        """Disabled when ``edge_template_enabled`` config is False."""
+        return self._enabled
 
     def _to_edges(self, image: np.ndarray) -> np.ndarray:
         """Convert image to Canny edge map.

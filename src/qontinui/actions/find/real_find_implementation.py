@@ -47,23 +47,32 @@ class RealFindImplementation:
     - Event emission: Emits IMAGE_RECOGNITION events
     """
 
-    def __init__(self):
-        """Initialize real implementation with components."""
+    def __init__(self, accessibility_capture: Any = None):
+        """Initialize real implementation with components.
+
+        Args:
+            accessibility_capture: Optional IAccessibilityCapture for
+                UIA/CDP accessibility-first detection in the cascade.
+        """
         self.screenshot_provider = PureActionsScreenshotProvider()
         self.template_matcher = TemplateMatcher()
         self.visual_debug = VisualDebugGenerator()
-        self._cascade_detector = self._create_cascade_detector()
+        self._cascade_detector = self._create_cascade_detector(accessibility_capture)
 
     @staticmethod
-    def _create_cascade_detector() -> Any:
+    def _create_cascade_detector(accessibility_capture: Any = None) -> Any:
         """Create a CascadeDetector with available backends.
+
+        Args:
+            accessibility_capture: Optional IAccessibilityCapture for
+                accessibility-tree-first detection.
 
         Returns the detector or None if creation fails.
         """
         try:
             from ...find.backends.cascade import CascadeDetector
 
-            return CascadeDetector()
+            return CascadeDetector(accessibility_capture=accessibility_capture)
         except Exception:
             logger.debug("CascadeDetector not available, cascade fallback disabled")
             return None
@@ -242,13 +251,24 @@ class RealFindImplementation:
             batch_matcher = BatchTemplateMatcher(
                 nms_overlap_threshold=self.template_matcher.nms_overlap_threshold,
             )
-            batch_results = await asyncio.to_thread(
-                batch_matcher.find_all_patterns,
-                screenshot,
-                patterns,
-                similarity=options.similarity,
-                search_region=search_region,
-            )
+
+            # Use multi-scale batch matching when scale_invariant is enabled
+            if options.scale_invariant:
+                batch_results = await asyncio.to_thread(
+                    batch_matcher.find_all_patterns_multiscale,
+                    screenshot,
+                    patterns,
+                    similarity=options.similarity,
+                    search_region=search_region,
+                )
+            else:
+                batch_results = await asyncio.to_thread(
+                    batch_matcher.find_all_patterns,
+                    screenshot,
+                    patterns,
+                    similarity=options.similarity,
+                    search_region=search_region,
+                )
 
             total_ms = (time.time() - start_time) * 1000
 
@@ -266,6 +286,7 @@ class RealFindImplementation:
                     duration_ms=total_ms,
                     debug_data={
                         "batch_matching": True,
+                        "multiscale": options.scale_invariant,
                         "capture_ms": capture_ms,
                         "total_patterns": len(patterns),
                     },
@@ -1097,6 +1118,16 @@ class RealFindImplementation:
             match_settings = getattr(pattern, "match_settings", None)
             if match_settings is not None:
                 config["match_settings"] = match_settings
+
+            # Route scale/rotation-invariant requests to the invariant backend
+            if options.scale_invariant or options.rotation_invariant:
+                from ...find.backends.cascade import MatchSettings
+
+                ms = match_settings or MatchSettings()
+                ms.preferred_backend = "invariant_template"
+                if options.rotation_invariant:
+                    config["invariant_rotations"] = [0.0, 90.0, 180.0, 270.0]
+                config["match_settings"] = ms
 
             results = self._cascade_detector.find(pattern, screenshot, config)
             if not results:

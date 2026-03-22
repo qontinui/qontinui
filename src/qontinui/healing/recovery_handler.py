@@ -83,7 +83,22 @@ class HealingRecoveryHandler(RecoveryHandler):
         if healer is not None:
             self.healer = healer
         else:
-            self.healer = VisionHealer(config=self.config)
+            # Try to resolve accessibility capture for UIA healing
+            accessibility_capture = None
+            try:
+                from ..hal.config import get_config
+                from ..hal.initialization import _create_accessibility_capture
+
+                hal_config = get_config()
+                if hal_config.accessibility_backend != "none":
+                    accessibility_capture = _create_accessibility_capture(hal_config)
+            except Exception:
+                pass  # Graceful degradation
+
+            self.healer = VisionHealer(
+                config=self.config,
+                accessibility_capture=accessibility_capture,
+            )
 
     def can_handle(self, exception: Exception) -> bool:
         """Check if this handler can handle the exception.

@@ -16,6 +16,7 @@ import asyncio
 import logging
 import platform
 import time
+from pathlib import Path
 from typing import Any
 
 from qontinui_schemas.accessibility import (
@@ -113,6 +114,7 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
         self._target_element: Any = None  # uiautomation.Control
         self._uia: Any = None  # uiautomation module
         self._is_connected = False
+        self._persistence_dir = Path.home() / ".qontinui" / "uia_refs"
 
     def _ensure_uia_available(self) -> bool:
         """Ensure the uiautomation module is available.
@@ -232,8 +234,32 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
             logger.exception(f"Failed to connect via UIA: {e}")
             return False
 
+    def _ref_persistence_path(self) -> Path | None:
+        """Get the persistence file path for the current target's refs."""
+        if self._target_element is None:
+            return None
+        title = getattr(self._target_element, "Name", None)
+        if not title:
+            return None
+        # Sanitise title into a safe filename
+        safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip()[:80]
+        return self._persistence_dir / f"{safe}.json"
+
     async def disconnect(self) -> None:
-        """Disconnect from the current UIA target."""
+        """Disconnect from the current UIA target.
+
+        Saves ref fingerprints to disk before clearing state so they can
+        be re-resolved on the next connect.
+        """
+        # Persist refs before clearing
+        if self._ref_manager.count > 0:
+            path = self._ref_persistence_path()
+            if path is not None:
+                try:
+                    self._ref_manager.save(path)
+                except Exception as e:
+                    logger.debug("Failed to persist UIA refs: %s", e)
+
         self._target_element = None
         self._is_connected = False
         self._current_snapshot = None
@@ -462,9 +488,67 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
         )
 
         self._current_snapshot = snapshot
+
+        # Attempt to re-resolve persisted ref fingerprints against the
+        # new tree so that refs from previous sessions stay valid.
+        self._try_restore_persisted_refs(snapshot)
+
         logger.info(f"Captured UIA tree: {total_nodes} nodes, {interactive_nodes} interactive")
 
         return snapshot
+
+    def _try_restore_persisted_refs(self, snapshot: AccessibilitySnapshot) -> None:
+        """Try to re-resolve persisted ref fingerprints against a new tree.
+
+        Loads fingerprints saved during a prior ``disconnect()`` and matches
+        them against the current tree by automation_id, then role+name.
+        Successfully re-resolved refs are registered in the ref manager so
+        callers can continue using the same ref IDs across sessions.
+        """
+        path = self._ref_persistence_path()
+        if path is None:
+            return
+
+        fingerprints = self._ref_manager.load(path)
+        if not fingerprints:
+            return
+
+        # Flatten interactive nodes for matching
+        def flatten(node: AccessibilityNode) -> list[AccessibilityNode]:
+            result: list[AccessibilityNode] = []
+            if node.is_interactive:
+                result.append(node)
+            for child in node.children:
+                result.extend(flatten(child))
+            return result
+
+        nodes = flatten(snapshot.root)
+        restored = 0
+
+        for ref, fp in fingerprints.items():
+            auto_id = fp.get("automation_id")
+            role = fp.get("role")
+            name = fp.get("name")
+
+            # Strategy 1: automation_id (most stable)
+            if auto_id:
+                for node in nodes:
+                    if node.automation_id == auto_id:
+                        self._ref_manager.register_node(ref, node)
+                        restored += 1
+                        break
+                else:
+                    # Strategy 2: role + name
+                    if role and name:
+                        for node in nodes:
+                            node_role = getattr(node.role, "value", str(node.role))
+                            if node_role == role and node.name == name:
+                                self._ref_manager.register_node(ref, node)
+                                restored += 1
+                                break
+
+        if restored:
+            logger.info("Restored %d/%d persisted refs", restored, len(fingerprints))
 
     async def get_node_by_ref(self, ref: str) -> AccessibilityNode | None:
         """Get a node by its ref ID from the current snapshot."""

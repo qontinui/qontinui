@@ -1,5 +1,6 @@
 """Tests for BatchTemplateMatcher — multi-template matching with NMS."""
 
+import cv2
 import numpy as np
 import pytest
 
@@ -275,3 +276,159 @@ class TestImageConversion:
         matcher = BatchTemplateMatcher()
         with pytest.raises(Exception):
             matcher._convert_to_opencv("not an image")
+
+
+class TestMultiscaleBatchMatching:
+    """Multi-scale batch matching via find_all_patterns_multiscale."""
+
+    def test_finds_at_native_scale(self):
+        """Pattern at 1.0 scale should be found with scales=[1.0]."""
+        screenshot = _make_screenshot()
+        patch = _make_textured_patch(40, 30, (0, 180, 0))
+        _place_patch(screenshot, x=200, y=100, patch=patch)
+
+        pattern = _make_pattern("native", w=40, h=30, pixel_data=patch)
+        matcher = BatchTemplateMatcher()
+
+        results = matcher.find_all_patterns_multiscale(
+            screenshot=screenshot,
+            patterns=[pattern],
+            similarity=0.9,
+            scales=[1.0],
+        )
+
+        assert len(results["native"]) >= 1
+        assert results["native"][0].similarity >= 0.9
+
+    def test_finds_scaled_template(self):
+        """A template at 50% size should be found with scale=0.5."""
+        screenshot = _make_screenshot(width=800, height=600)
+        # Place a 20x20 patch in the screenshot
+        small_patch = _make_textured_patch(20, 20, (200, 50, 50))
+        _place_patch(screenshot, x=300, y=200, patch=small_patch)
+
+        # Create a 40x40 template (2x the placed patch size)
+        big_template = cv2.resize(small_patch, (40, 40), interpolation=cv2.INTER_LINEAR)
+        pattern = _make_pattern("scaled_down", w=40, h=40, pixel_data=big_template)
+
+        matcher = BatchTemplateMatcher()
+        results = matcher.find_all_patterns_multiscale(
+            screenshot=screenshot,
+            patterns=[pattern],
+            similarity=0.7,
+            scales=[0.5, 1.0, 2.0],
+        )
+
+        assert len(results["scaled_down"]) >= 1
+
+    def test_cross_scale_nms_deduplicates(self):
+        """Multiple scales matching same location should be deduplicated."""
+        screenshot = _make_screenshot()
+        patch = _make_textured_patch(30, 30, (100, 200, 50))
+        _place_patch(screenshot, x=150, y=150, patch=patch)
+
+        pattern = _make_pattern("dedup", w=30, h=30, pixel_data=patch)
+        matcher = BatchTemplateMatcher()
+
+        # Scales close to 1.0 should all match at the same location
+        results = matcher.find_all_patterns_multiscale(
+            screenshot=screenshot,
+            patterns=[pattern],
+            similarity=0.7,
+            scales=[0.9, 1.0, 1.1],
+        )
+
+        # NMS should keep only the best match, not 3 overlapping ones
+        assert len(results["dedup"]) <= 2  # At most 2 (NMS removes most overlap)
+
+    def test_multiple_patterns_multiscale(self):
+        """Multiple patterns at different scales found in one pass."""
+        screenshot = _make_screenshot(width=800, height=600)
+
+        # Pattern A at native scale
+        patch_a = _make_textured_patch(30, 30, (50, 50, 200))
+        _place_patch(screenshot, x=100, y=100, patch=patch_a)
+
+        # Pattern B at native scale
+        patch_b = _make_textured_patch(25, 25, (200, 50, 50))
+        _place_patch(screenshot, x=500, y=400, patch=patch_b)
+
+        p_a = _make_pattern("blue_btn", w=30, h=30, pixel_data=patch_a)
+        p_b = _make_pattern("red_btn", w=25, h=25, pixel_data=patch_b)
+        matcher = BatchTemplateMatcher()
+
+        results = matcher.find_all_patterns_multiscale(
+            screenshot=screenshot,
+            patterns=[p_a, p_b],
+            similarity=0.9,
+            scales=[1.0],
+        )
+
+        assert len(results["blue_btn"]) >= 1
+        assert len(results["red_btn"]) >= 1
+
+    def test_skips_too_small_scaled_templates(self):
+        """Scale factors that would shrink template below 10px are skipped."""
+        matcher = BatchTemplateMatcher()
+
+        template = np.zeros((15, 15, 3), dtype=np.uint8)
+        # Scale 0.5 → 7x7 which is < 10 → should return None
+        result = matcher._resize_template(template, 0.5)
+        assert result is None
+
+        # Scale 1.0 → same size → should return same array
+        result = matcher._resize_template(template, 1.0)
+        assert result is template
+
+    def test_skips_templates_larger_than_image(self):
+        """Scaled templates larger than the screenshot are not sent to MTM."""
+        screenshot = _make_screenshot(width=100, height=100)
+        patch = _make_textured_patch(60, 60, (100, 100, 100))
+        _place_patch(screenshot, x=20, y=20, patch=patch)
+
+        pattern = _make_pattern("big", w=60, h=60, pixel_data=patch)
+        matcher = BatchTemplateMatcher()
+
+        # Scale 2.0 → 120x120 > 100x100 screenshot, should be skipped
+        results = matcher.find_all_patterns_multiscale(
+            screenshot=screenshot,
+            patterns=[pattern],
+            similarity=0.5,
+            scales=[2.0],  # Only scale that's too big
+        )
+
+        # No matches since the only scale was skipped
+        assert results["big"] == []
+
+    def test_dpi_aware_scales_returns_list(self):
+        """_get_dpi_aware_scales always returns a list containing 1.0."""
+        scales = BatchTemplateMatcher._get_dpi_aware_scales()
+        assert isinstance(scales, list)
+        assert 1.0 in scales
+        assert len(scales) >= 1
+
+    def test_nms_matches_deduplicates(self):
+        """_nms_matches removes overlapping lower-confidence matches."""
+        from qontinui.find.match import Match
+        from qontinui.model.element import Location, Region
+        from qontinui.model.match import Match as MatchObject
+
+        def _m(x: int, y: int, w: int, h: int, score: float) -> Match:
+            return Match(
+                MatchObject(
+                    target=Location(x=x + w // 2, y=y + h // 2, region=Region(x, y, w, h)),
+                    score=score,
+                    name="test",
+                )
+            )
+
+        matches = [
+            _m(100, 100, 30, 30, 0.95),  # Best
+            _m(105, 105, 30, 30, 0.90),  # Overlaps with best → suppressed
+            _m(400, 400, 30, 30, 0.85),  # Far away → kept
+        ]
+
+        kept = BatchTemplateMatcher._nms_matches(matches, overlap_threshold=0.3)
+        assert len(kept) == 2
+        assert kept[0].similarity == 0.95
+        assert kept[1].similarity == 0.85
