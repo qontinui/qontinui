@@ -432,3 +432,34 @@ class TestMultiscaleBatchMatching:
         assert len(kept) == 2
         assert kept[0].similarity == 0.95
         assert kept[1].similarity == 0.85
+
+    def test_pattern_name_with_at_sign(self):
+        """Pattern names containing '@' should be handled by multiscale rsplit."""
+        screenshot = _make_screenshot()
+        patch = _make_textured_patch(30, 30, (120, 80, 200))
+        _place_patch(screenshot, x=200, y=200, patch=patch)
+
+        # Name with "@" — multiscale uses "name@scale" labels internally
+        pattern = _make_pattern("button@active", w=30, h=30, pixel_data=patch)
+        matcher = BatchTemplateMatcher()
+
+        results = matcher.find_all_patterns_multiscale(
+            screenshot=screenshot,
+            patterns=[pattern],
+            similarity=0.9,
+            scales=[1.0],
+        )
+
+        assert "button@active" in results
+        assert len(results["button@active"]) >= 1
+
+    def test_empty_patterns_multiscale(self):
+        """Empty pattern list returns empty dict."""
+        matcher = BatchTemplateMatcher()
+        results = matcher.find_all_patterns_multiscale(
+            screenshot=_make_screenshot(),
+            patterns=[],
+            similarity=0.8,
+            scales=[1.0],
+        )
+        assert results == {}

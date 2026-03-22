@@ -10,8 +10,6 @@ analyzers in the static/ directory.
 from qontinui.extraction.config import StaticConfig
 from qontinui.extraction.models.static import (
     APICallDefinition,  # New hint models for state discovery
-)
-from qontinui.extraction.models.static import (
     APICallType,
     ComponentCategory,
     ComponentDefinition,

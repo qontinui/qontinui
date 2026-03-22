@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import Any
 
 from .base import DetectionBackend, DetectionResult
@@ -109,6 +110,17 @@ class SemanticAccessibilityBackend(DetectionBackend):
                 max_results=5,
             )
 
+            # LLM fallback: if best fuzzy score is below llm_threshold
+            # and an LLM client is available, use LLM for higher accuracy.
+            best_fuzzy_score = matches[0].score if matches else 0.0
+            if best_fuzzy_score < self._llm_threshold and self._llm_client is not None:
+                llm_results = self._llm_find(needle, snapshot, min_confidence)
+                if llm_results:
+                    # Cache and return LLM results
+                    if self._cache_enabled:
+                        self._get_cache().put(app_key, needle, [])  # no SemanticMatch to cache
+                    return llm_results
+
             # Cache results
             if self._cache_enabled and matches:
                 self._get_cache().put(app_key, needle, matches)
@@ -117,6 +129,94 @@ class SemanticAccessibilityBackend(DetectionBackend):
 
         except Exception:
             logger.exception("SemanticAccessibilityBackend: search failed")
+            return []
+
+    def _llm_find(
+        self, description: str, snapshot: Any, min_confidence: float
+    ) -> list[DetectionResult]:
+        """Use LLM to select the best matching element from the tree.
+
+        Sends the accessibility tree and description to the LLM client
+        and parses the response to extract the selected element index.
+
+        Returns:
+            List with a single DetectionResult if the LLM found a match,
+            empty list otherwise.
+        """
+        try:
+            from qontinui.hal.implementations.accessibility.uia_semantic import (
+                _flatten_nodes,
+                format_nodes_for_llm,
+            )
+
+            indexed_list = format_nodes_for_llm(snapshot)
+            if not indexed_list.strip():
+                return []
+
+            prompt = (
+                "You are an element selector. Given a list of interactive UI "
+                "elements from an accessibility tree and a description, find "
+                "the element that best matches.\n\n"
+                f"Interactive Elements:\n{indexed_list}\n\n"
+                f'Description: "{description}"\n\n'
+                "Return your answer in this exact format:\n"
+                'INDEX: <number or "none">\n'
+                "CONFIDENCE: <0.0 to 1.0>"
+            )
+
+            response = self._run_async(self._llm_client.complete(prompt))
+
+            # Parse INDEX
+            index_match = re.search(r"INDEX:\s*(\d+|none)", response, re.IGNORECASE)
+            if not index_match or index_match.group(1).lower() == "none":
+                return []
+            index = int(index_match.group(1))
+
+            # Parse CONFIDENCE
+            conf_match = re.search(r"CONFIDENCE:\s*([\d.]+)", response, re.IGNORECASE)
+            confidence = float(conf_match.group(1)) if conf_match else 0.5
+
+            if confidence < min_confidence:
+                return []
+
+            # Look up the node by index in the flattened list
+            nodes = _flatten_nodes(snapshot.root, interactive_only=True)
+            if index < 0 or index >= len(nodes):
+                return []
+
+            node = nodes[index]
+            bounds = getattr(node, "bounds", None)
+            if bounds is None:
+                return []
+
+            if hasattr(bounds, "x"):
+                x, y, w, h = bounds.x, bounds.y, bounds.width, bounds.height
+            elif isinstance(bounds, (list, tuple)) and len(bounds) >= 4:
+                x, y, w, h = int(bounds[0]), int(bounds[1]), int(bounds[2]), int(bounds[3])
+            else:
+                return []
+
+            return [
+                DetectionResult(
+                    x=x,
+                    y=y,
+                    width=w,
+                    height=h,
+                    confidence=confidence,
+                    backend_name=self.name,
+                    label=node.name,
+                    metadata={
+                        "role": getattr(node.role, "value", str(node.role)),
+                        "ref": node.ref,
+                        "match_type": "llm",
+                        "matched_term": description,
+                        "automation_id": node.automation_id,
+                    },
+                )
+            ]
+
+        except Exception:
+            logger.exception("SemanticAccessibilityBackend: LLM fallback failed")
             return []
 
     def _matches_to_results(
@@ -182,7 +282,7 @@ class SemanticAccessibilityBackend(DetectionBackend):
         return needle_type in ("description", "semantic")
 
     def estimated_cost_ms(self) -> float:
-        return 10.0
+        return 200.0 if self._llm_client is not None else 10.0
 
     @property
     def name(self) -> str:

@@ -63,6 +63,10 @@ class RealFindImplementation:
     def _create_cascade_detector(accessibility_capture: Any = None) -> Any:
         """Create a CascadeDetector with available backends.
 
+        Pulls OCR engine from the HAL factory and VisionLLMClient from the
+        healing subsystem when they are available, so the cascade can use
+        text detection and vision-LLM backends as expensive fallbacks.
+
         Args:
             accessibility_capture: Optional IAccessibilityCapture for
                 accessibility-tree-first detection.
@@ -72,9 +76,53 @@ class RealFindImplementation:
         try:
             from ...find.backends.cascade import CascadeDetector
 
-            return CascadeDetector(accessibility_capture=accessibility_capture)
+            ocr_engine = RealFindImplementation._get_ocr_engine()
+            llm_client = RealFindImplementation._get_llm_client()
+
+            return CascadeDetector(
+                accessibility_capture=accessibility_capture,
+                ocr_engine=ocr_engine,
+                llm_client=llm_client,
+            )
         except Exception:
             logger.debug("CascadeDetector not available, cascade fallback disabled")
+            return None
+
+    @staticmethod
+    def _get_ocr_engine() -> Any:
+        """Try to obtain an OCR engine from the HAL factory.
+
+        Returns None silently if OCR is not configured or unavailable.
+        """
+        try:
+            from ...hal.factory import HALFactory
+
+            engine = HALFactory.get_ocr_engine()
+            # Skip the null/disabled engine
+            if type(engine).__name__ == "NullOCREngine":
+                return None
+            return engine
+        except Exception:
+            return None
+
+    @staticmethod
+    def _get_llm_client() -> Any:
+        """Try to obtain a VisionLLMClient from the healing subsystem.
+
+        Returns None silently if LLM healing is disabled or unavailable.
+        """
+        try:
+            from ...healing.vision_healer import get_vision_healer
+
+            healer = get_vision_healer()
+            client = healer.config.get_client()
+            # Skip the disabled client
+            if type(client).__name__ == "DisabledVisionClient":
+                return None
+            if not client.is_available:
+                return None
+            return client
+        except Exception:
             return None
 
     def _preprocess_image(self, image: np.ndarray, options: FindOptions) -> np.ndarray:
@@ -1161,8 +1209,14 @@ class RealFindImplementation:
             if options.scale_invariant or options.rotation_invariant:
                 from ...find.backends.cascade import MatchSettings
 
-                ms = match_settings or MatchSettings()
-                ms.preferred_backend = "invariant_template"
+                # Create a fresh MatchSettings to avoid mutating the pattern's
+                # shared match_settings object.
+                ms = MatchSettings(
+                    preferred_backend="invariant_template",
+                    min_confidence=match_settings.min_confidence if match_settings else 0.8,
+                    max_backends=match_settings.max_backends if match_settings else 5,
+                    search_region=match_settings.search_region if match_settings else None,
+                )
                 if options.rotation_invariant:
                     config["invariant_rotations"] = [0.0, 90.0, 180.0, 270.0]
                 config["match_settings"] = ms

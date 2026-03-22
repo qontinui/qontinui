@@ -12,25 +12,36 @@ services:
               capabilities: [gpu]
     environment:
       - VLLM_WORKER_MULTIPROC_METHOD=spawn
+      # Limit GPU memory to leave room for desktop/other processes
+      - VLLM_GPU_MEMORY_UTILIZATION=0.90
     volumes:
-      # Cache HuggingFace models to avoid re-downloading
+      # Persist HuggingFace cache across rebuilds
       - aria-ui-cache:/root/.cache/huggingface
+    # For 32GB GPUs: reduce max-model-len to fit in VRAM
+    # Uncomment the next line to override the entrypoint with a shorter context:
+    # command: ["vllm", "serve", "Aria-UI/Aria-UI-base", "--host", "0.0.0.0", "--port", "8100", "--dtype", "bfloat16", "--trust-remote-code", "--tokenizer-mode", "slow", "--max-model-len", "1024"]
 
-  # Optional: context-aware variant on a separate port
+  # Context-aware variant (requires separate GPU or sequential use)
+  # Start with: docker compose --profile context up
   aria-ui-context:
     build: .
     ports:
       - "8101:8100"
-    command:
-      - python
-      - -m
-      - vllm.entrypoints.openai.api_server
-      - --model
+    entrypoint:
+      - vllm
+      - serve
       - Aria-UI/Aria-UI-context-aware
+      - --host
+      - "0.0.0.0"
       - --port
       - "8100"
       - --dtype
       - bfloat16
+      - --trust-remote-code
+      - --tokenizer-mode
+      - slow
+      - --max-model-len
+      - "4096"
     deploy:
       resources:
         reservations:
@@ -40,10 +51,11 @@ services:
               capabilities: [gpu]
     environment:
       - VLLM_WORKER_MULTIPROC_METHOD=spawn
+      - VLLM_GPU_MEMORY_UTILIZATION=0.90
     volumes:
       - aria-ui-cache:/root/.cache/huggingface
     profiles:
-      - context  # Only start with: docker compose --profile context up
+      - context
 
 volumes:
   aria-ui-cache:

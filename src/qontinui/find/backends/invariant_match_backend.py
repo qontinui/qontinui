@@ -64,7 +64,10 @@ class InvariantMatchBackend(DetectionBackend):
         from PIL import Image
 
         needle_data = needle.pixel_data
-        if needle_data is None or needle_data.size == 0:
+        if needle_data is None:
+            logger.debug("InvariantMatchBackend: Pattern has no pixel_data")
+            return []
+        if isinstance(needle_data, np.ndarray) and needle_data.size == 0:
             logger.debug("InvariantMatchBackend: Pattern has no pixel_data")
             return []
 

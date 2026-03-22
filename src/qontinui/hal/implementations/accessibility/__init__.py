@@ -5,6 +5,7 @@ for different accessibility backends:
 
 - CDPAccessibilityCapture: Chrome DevTools Protocol (web browsers, Electron, Tauri on Windows)
 - UIAAccessibilityCapture: Windows UI Automation (native Windows apps) [Windows only]
+- ATSPIAccessibilityCapture: AT-SPI2 (native Linux desktop apps) [Linux only]
 """
 
 import platform
@@ -29,4 +30,16 @@ if platform.system() == "Windows":
         __all__.append("UIAAccessibilityCapture")
     except ImportError:
         # uiautomation module not installed
+        pass
+
+# Conditionally export AT-SPI capture on Linux
+if platform.system() == "Linux":
+    try:
+        from qontinui.hal.implementations.accessibility.atspi_capture import (  # noqa: F401
+            ATSPIAccessibilityCapture,
+        )
+
+        __all__.append("ATSPIAccessibilityCapture")
+    except ImportError:
+        # pyatspi2 / gi.repository.Atspi not installed
         pass

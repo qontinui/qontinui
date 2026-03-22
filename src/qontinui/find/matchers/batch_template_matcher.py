@@ -471,7 +471,7 @@ class BatchTemplateMatcher:
                     scales.add(dpi_scale)
                 return sorted(scales)
             except Exception:
-                pass
+                logger.debug("DPI detection failed on Windows, using native scale only")
 
         return [1.0]  # No DPI info — native scale only
 

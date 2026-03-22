@@ -476,14 +476,26 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
         return CDPAccessibilityCapture(schema_config)
 
     elif backend == "auto":
-        # Auto-detect: prefer UIA on Windows, fall back to CDP
-        if _detect_platform(config) == "windows":
+        # Auto-detect: prefer UIA on Windows, AT-SPI on Linux, fall back to CDP
+        plat = _detect_platform(config)
+
+        if plat == "windows":
             try:
                 from .implementations.accessibility.uia_capture import (
                     UIAAccessibilityCapture,
                 )
 
                 return UIAAccessibilityCapture()
+            except ImportError:
+                pass  # Fall through to CDP
+
+        elif plat == "linux":
+            try:
+                from .implementations.accessibility.atspi_capture import (
+                    ATSPIAccessibilityCapture,
+                )
+
+                return ATSPIAccessibilityCapture()
             except ImportError:
                 pass  # Fall through to CDP
 
@@ -507,8 +519,13 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
         return UIAAccessibilityCapture()
 
     elif backend == "atspi":
-        # Linux AT-SPI2 - not yet implemented
-        raise NotImplementedError("Linux AT-SPI2 accessibility capture is not yet implemented")
+        # Linux AT-SPI2
+        if _detect_platform(config) != "linux":
+            raise ValueError("AT-SPI accessibility backend is only available on Linux")
+
+        from .implementations.accessibility.atspi_capture import ATSPIAccessibilityCapture
+
+        return ATSPIAccessibilityCapture()
 
     else:
         raise ValueError(f"Unsupported accessibility backend: {backend}")

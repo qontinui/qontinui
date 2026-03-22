@@ -132,6 +132,7 @@ class OmniParserDetector(BaseAnalyzer):
         self, img_bytes: bytes, screenshot_index: int, params: dict[str, Any]
     ) -> list[DetectedElement]:
         """Run full OmniParser pipeline on one screenshot."""
+        self._maybe_unload_idle()
         self._ensure_loaded()
 
         pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
@@ -304,6 +305,19 @@ class OmniParserDetector(BaseAnalyzer):
     # ------------------------------------------------------------------
     # Model lifecycle
     # ------------------------------------------------------------------
+
+    def _maybe_unload_idle(self) -> None:
+        """Unload models if idle longer than unload_after_seconds."""
+        timeout = self._settings.unload_after_seconds
+        if timeout <= 0 or not self.is_loaded:
+            return
+        if self._last_used > 0 and (time.perf_counter() - self._last_used) > timeout:
+            logger.info(
+                "OmniParser idle for %.0fs (threshold %.0fs), unloading",
+                time.perf_counter() - self._last_used,
+                timeout,
+            )
+            self.unload()
 
     def _ensure_loaded(self) -> None:
         """Lazy-load all models on first use."""

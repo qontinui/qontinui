@@ -353,7 +353,9 @@ class CascadeDetector(DetectionBackend):
                     SemanticAccessibilityBackend,
                 )
 
-                backends.append(SemanticAccessibilityBackend(accessibility_capture))
+                backends.append(
+                    SemanticAccessibilityBackend(accessibility_capture, llm_client=llm_client)
+                )
             except ImportError:
                 logger.debug("CascadeDetector: SemanticAccessibilityBackend unavailable")
 
