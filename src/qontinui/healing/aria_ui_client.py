@@ -7,7 +7,6 @@ coordinates in 0-1000 scale.
 Requires a running vLLM server (see docker/aria-ui/).
 """
 
-import ast
 import base64
 import logging
 import re
@@ -186,15 +185,6 @@ class AriaUIClient(VisionLLMClient):
         Returns:
             (x, y) tuple or None.
         """
-        # Try ast.literal_eval for clean list/tuple format
-        try:
-            parsed = ast.literal_eval(text.strip())
-            if isinstance(parsed, (list, tuple)) and len(parsed) == 2:
-                return (int(parsed[0]), int(parsed[1]))
-        except (ValueError, SyntaxError):
-            pass
-
-        # Regex fallback: find [x, y] or (x, y) or bare x, y
         match = re.search(r"[\[\(]?\s*(\d+)\s*,\s*(\d+)\s*[\]\)]?", text)
         if match:
             return (int(match.group(1)), int(match.group(2)))

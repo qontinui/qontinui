@@ -18,13 +18,11 @@ from qontinui.discovery.state_analysis.image_extractor import (
 from qontinui.discovery.state_analysis.pipeline import (
     AnalysisPipeline,
     AnalysisResult,
-)
-from qontinui.discovery.state_analysis.pipeline import CaptureSession as PipelineCaptureSession
-from qontinui.discovery.state_analysis.pipeline import (
     PipelineConfig,
     load_session_from_video,
     save_analysis_result,
 )
+from qontinui.discovery.state_analysis.pipeline import CaptureSession as PipelineCaptureSession
 from qontinui.discovery.state_analysis.state_boundary_detector import (
     FrameFeatures,
     StateBoundaryConfig,
