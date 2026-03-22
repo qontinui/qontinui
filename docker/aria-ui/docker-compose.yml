@@ -13,13 +13,13 @@ services:
     environment:
       - VLLM_WORKER_MULTIPROC_METHOD=spawn
       # Limit GPU memory to leave room for desktop/other processes
-      - VLLM_GPU_MEMORY_UTILIZATION=0.90
+      # - VLLM_GPU_MEMORY_UTILIZATION=0.90  # not recognized in vllm v0.18+
     volumes:
       # Persist HuggingFace cache across rebuilds
       - aria-ui-cache:/root/.cache/huggingface
     # For 32GB GPUs: reduce max-model-len to fit in VRAM
     # Uncomment the next line to override the entrypoint with a shorter context:
-    # command: ["vllm", "serve", "Aria-UI/Aria-UI-base", "--host", "0.0.0.0", "--port", "8100", "--dtype", "bfloat16", "--trust-remote-code", "--tokenizer-mode", "slow", "--max-model-len", "1024"]
+    # command: ["vllm", "serve", "Aria-UI/Aria-UI-base", "--host", "0.0.0.0", "--port", "8100", "--dtype", "bfloat16", "--tokenizer-mode", "slow", "--max-model-len", "1024"]
 
   # Context-aware variant (requires separate GPU or sequential use)
   # Start with: docker compose --profile context up
@@ -37,7 +37,6 @@ services:
       - "8100"
       - --dtype
       - bfloat16
-      - --trust-remote-code
       - --tokenizer-mode
       - slow
       - --max-model-len
@@ -51,7 +50,7 @@ services:
               capabilities: [gpu]
     environment:
       - VLLM_WORKER_MULTIPROC_METHOD=spawn
-      - VLLM_GPU_MEMORY_UTILIZATION=0.90
+      # - VLLM_GPU_MEMORY_UTILIZATION=0.90  # not recognized in vllm v0.18+
     volumes:
       - aria-ui-cache:/root/.cache/huggingface
     profiles:
