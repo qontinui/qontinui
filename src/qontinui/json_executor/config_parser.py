@@ -290,7 +290,12 @@ class MatchSettingsConfig(BaseModel):
 
         region = None
         if self.search_region and len(self.search_region) == 4:
-            region = tuple(self.search_region)  # type: ignore[assignment]
+            region = (
+                self.search_region[0],
+                self.search_region[1],
+                self.search_region[2],
+                self.search_region[3],
+            )
 
         return MatchSettings(
             preferred_backend=self.preferred_backend,

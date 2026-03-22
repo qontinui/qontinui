@@ -198,6 +198,6 @@ class OmniParserServiceBackend(DetectionBackend):
         try:
             client = self._ensure_client()
             resp = client.get("/health", timeout=2.0)
-            return resp.status_code == 200
+            return bool(resp.status_code == 200)
         except Exception:
             return False

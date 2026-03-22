@@ -50,7 +50,7 @@ class QATMBackend(DetectionBackend):
 
     def __init__(self, settings: QATMSettings | None = None) -> None:
         self._settings = settings or QATMSettings()
-        self._matcher = None
+        self._matcher: Any = None
 
     def _get_matcher(self) -> Any:
         if self._matcher is None:

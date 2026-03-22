@@ -53,10 +53,10 @@ class OmniParserDetector(BaseAnalyzer):
     ) -> None:
         super().__init__(config)
         self._settings = settings or OmniParserSettings()
-        self._yolo_model = None
-        self._caption_processor = None
-        self._caption_model = None
-        self._ocr_reader = None
+        self._yolo_model: Any = None
+        self._caption_processor: Any = None
+        self._caption_model: Any = None
+        self._ocr_reader: Any = None
         self._device: str | None = None
         self._last_used: float = 0.0
 

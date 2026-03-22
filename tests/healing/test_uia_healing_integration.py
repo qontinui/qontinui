@@ -89,16 +89,16 @@ def _make_screenshot() -> np.ndarray:
 
 def _make_context(**overrides) -> HealingContext:
     """Create a HealingContext with sensible defaults for UIA healing tests."""
-    defaults = dict(
-        original_description="Save button",
-        action_type="click",
-        failure_reason="Template not found",
-        additional_context={
+    defaults = {
+        "original_description": "Save button",
+        "action_type": "click",
+        "failure_reason": "Template not found",
+        "additional_context": {
             "automation_id": "btnSave",
             "role": "button",
             "name": "Save",
         },
-    )
+    }
     defaults.update(overrides)
     return HealingContext(**defaults)
 

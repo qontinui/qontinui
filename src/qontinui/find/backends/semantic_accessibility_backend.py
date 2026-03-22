@@ -164,6 +164,7 @@ class SemanticAccessibilityBackend(DetectionBackend):
                 "CONFIDENCE: <0.0 to 1.0>"
             )
 
+            assert self._llm_client is not None
             response = self._run_async(self._llm_client.complete(prompt))
 
             # Parse INDEX

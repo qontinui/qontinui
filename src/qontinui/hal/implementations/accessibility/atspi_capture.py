@@ -241,9 +241,9 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
         """
         try:
             if self._use_gi:
-                return element.get_role_name().lower()
+                return str(element.get_role_name().lower())
             else:
-                return element.getRoleName().lower()
+                return str(element.getRoleName().lower())
         except Exception:
             return "unknown"
 
@@ -293,14 +293,14 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
         """
         try:
             if self._use_gi:
-                return element.get_process_id()
+                return int(element.get_process_id())
             else:
                 pid = getattr(element, "pid", None)
                 if pid is not None:
-                    return pid
+                    return int(pid)
                 app = element.getApplication()
                 if app is not None:
-                    return getattr(app, "pid", -1)
+                    return int(getattr(app, "pid", -1))
                 return -1
         except Exception:
             return -1
@@ -385,13 +385,15 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
                 if text_iface is not None:
                     count = text_iface.get_character_count()
                     if count > 0:
-                        return text_iface.get_text(0, count)
+                        result: str | None = text_iface.get_text(0, count)
+                        return result
             else:
                 try:
                     text_iface = element.queryText()
                     count = text_iface.characterCount
                     if count > 0:
-                        return text_iface.getText(0, count)
+                        result2: str | None = text_iface.getText(0, count)
+                        return result2
                 except Exception:
                     pass
         except Exception:
