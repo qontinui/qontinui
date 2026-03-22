@@ -5,8 +5,8 @@ cross-cutting concerns.
 """
 
 # Annotations
+from .annotations import CollectedData  # Data collection; Monitoring; Recovery
 from .annotations import (
-    CollectedData,  # Data collection; Monitoring; Recovery
     MonitoredConfig,
     clear_collected_data,
     collect_data,
