@@ -262,7 +262,6 @@ MIT License - See [LICENSE](LICENSE) file for details.
 ## Related Projects
 
 - **[qontinui-runner](https://github.com/qontinui/qontinui-runner)** - Desktop application (Rust/TypeScript)
-- **[qontinui-api](https://github.com/qontinui/qontinui-api)** - REST API bridge (enables custom frontends)
 - **[qontinui-web](https://qontinui.com)** - Web-based visual builder (launching Feb 2026)
 - **[multistate](https://github.com/qontinui/multistate)** - State management library | [Docs](https://qontinui.github.io/multistate/)
 - **[Brobot](https://github.com/jspinak/brobot)** - Original Java implementation (2018-2024)

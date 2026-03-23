@@ -1,7 +1,6 @@
 """QontinUI API Module.
 
 This module provides workflow execution management components.
-The HTTP routing layer was migrated to qontinui-api.
 
 This module exports:
 - ExecutionManager: Facade for managing concurrent workflow executions

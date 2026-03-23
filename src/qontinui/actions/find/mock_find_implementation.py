@@ -5,7 +5,7 @@ It returns matches from ActionHistory without any actual image finding.
 
 The lookup order is:
 1. Pattern's local ActionHistory (fastest, no API call)
-2. API-based historical data from qontinui-api database (if enabled)
+2. Runner-based historical data from local database (if enabled)
 3. Generated mock based on state probability (fallback)
 """
 
@@ -35,7 +35,7 @@ class MockFindImplementation:
 
     The lookup order is:
     1. Pattern's local ActionHistory (fastest, no API call)
-    2. API-based historical data from qontinui-api database
+    2. Runner-based historical data from local database
     3. Generated mock based on state probability (fallback)
     """
 
@@ -188,7 +188,7 @@ class MockFindImplementation:
         pattern: Pattern,
         active_states: set[str],
     ) -> list[Match]:
-        """Get historical matches from qontinui-api.
+        """Get historical matches from the runner's local database.
 
         Args:
             pattern: Pattern to find historical data for

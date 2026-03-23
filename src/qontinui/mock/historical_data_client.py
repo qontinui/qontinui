@@ -7,8 +7,8 @@ When running in mock mode with historical data enabled, the mock system
 uses this client to fetch random historical results that match the
 current action context, making each test run different.
 
-Note: Historical data endpoints were migrated from qontinui-api (port 8001)
-to qontinui-web (port 8000) in the testing API namespace.
+Note: Historical data endpoints are served by qontinui-web (port 8000)
+in the testing API namespace.
 """
 
 import logging

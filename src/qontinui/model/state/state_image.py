@@ -24,7 +24,7 @@ class SearchMode(str, Enum):
     """
 
     DEFAULT = "default"  # Use project default
-    RAG = "rag"  # Use RAG/semantic search via qontinui-api
+    RAG = "rag"  # Use RAG/semantic search
     TEMPLATE = "template"  # Use traditional template matching
 
 
