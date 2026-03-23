@@ -16,6 +16,7 @@ import json
 import logging
 import re
 import time
+from pathlib import Path
 from typing import Any
 
 from qontinui_schemas.accessibility import (
@@ -68,6 +69,7 @@ class CDPAccessibilityCapture(IAccessibilityCapture):
         self._receive_task: asyncio.Task[None] | None = None
         # Map ref -> backendDOMNodeId for bounds retrieval and interaction
         self._ref_to_backend_node_id: dict[str, int] = {}
+        self._persistence_dir = Path.home() / ".qontinui" / "cdp_refs"
 
     async def connect(
         self,
@@ -160,7 +162,20 @@ class CDPAccessibilityCapture(IAccessibilityCapture):
             return False
 
     async def disconnect(self) -> None:
-        """Disconnect from CDP."""
+        """Disconnect from CDP.
+
+        Saves ref fingerprints to disk before clearing state so they can
+        be re-resolved on the next connect.
+        """
+        # Persist refs before clearing
+        if self._ref_manager.count > 0:
+            path = self._ref_persistence_path()
+            if path is not None:
+                try:
+                    self._ref_manager.save(path)
+                except Exception as e:
+                    logger.debug("Failed to persist CDP refs: %s", e)
+
         if self._receive_task:
             self._receive_task.cancel()
             try:
@@ -188,6 +203,14 @@ class CDPAccessibilityCapture(IAccessibilityCapture):
             True if connected
         """
         return self._ws is not None and not self._ws.closed
+
+    def _ref_persistence_path(self) -> Path | None:
+        """Get the persistence file path for the current target's refs."""
+        if self._ws_url is None:
+            return None
+        # Sanitise URL into a safe filename
+        safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in self._ws_url).strip()[:80]
+        return self._persistence_dir / f"{safe}.json"
 
     async def _send_command(
         self,
@@ -340,7 +363,67 @@ class CDPAccessibilityCapture(IAccessibilityCapture):
         )
 
         self._current_snapshot = snapshot
+
+        # Attempt to re-resolve persisted ref fingerprints against the
+        # new tree so that refs from previous sessions stay valid.
+        self._try_restore_persisted_refs(snapshot)
+
         return snapshot
+
+    def _try_restore_persisted_refs(self, snapshot: AccessibilitySnapshot) -> None:
+        """Try to re-resolve persisted ref fingerprints against a new tree.
+
+        Loads fingerprints saved during a prior ``disconnect()`` and matches
+        them against the current tree by automation_id, then role+name.
+        Successfully re-resolved refs are registered in the ref manager so
+        callers can continue using the same ref IDs across sessions.
+        """
+        path = self._ref_persistence_path()
+        if path is None:
+            return
+
+        fingerprints = self._ref_manager.load(path)
+        if not fingerprints:
+            return
+
+        # Flatten interactive nodes for matching
+        def flatten(node: AccessibilityNode) -> list[AccessibilityNode]:
+            result: list[AccessibilityNode] = []
+            if node.is_interactive:
+                result.append(node)
+            for child in node.children:
+                result.extend(flatten(child))
+            return result
+
+        nodes = flatten(snapshot.root)
+        restored = 0
+
+        for ref, fp in fingerprints.items():
+            auto_id = fp.get("automation_id")
+            role = fp.get("role")
+            name = fp.get("name")
+
+            # Strategy 1: automation_id (most stable)
+            matched = False
+            if auto_id:
+                for node in nodes:
+                    if node.automation_id == auto_id:
+                        self._ref_manager.register_node(ref, node)
+                        restored += 1
+                        matched = True
+                        break
+
+            # Strategy 2: role + name (fallback)
+            if not matched and role and name:
+                for node in nodes:
+                    node_role = getattr(node.role, "value", str(node.role))
+                    if node_role == role and node.name == name:
+                        self._ref_manager.register_node(ref, node)
+                        restored += 1
+                        break
+
+        if restored:
+            logger.info("Restored %d/%d persisted refs", restored, len(fingerprints))
 
     def _convert_ax_node(
         self,

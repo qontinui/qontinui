@@ -475,10 +475,13 @@ class StateDiscoveryFacade:
         else:
             analysis_result = asyncio.run(detector.analyze(analysis_input))
 
-        # Convert detected elements to StateImages
+        # Convert detected elements to StateImages with semantic tags
         state_images: list[StateImage] = []
         for i, elem in enumerate(analysis_result.elements):
             bb = elem.bounding_box
+            tags = ["omniparser"]
+            if elem.element_type:
+                tags.append(elem.element_type)
             state_images.append(
                 StateImage(
                     id=f"omni_img_{i}",
@@ -489,6 +492,7 @@ class StateDiscoveryFacade:
                     y2=bb.y + bb.height,
                     pixel_hash=f"omni_{i}",
                     frequency=elem.confidence,
+                    tags=tags,
                 )
             )
 
@@ -523,7 +527,12 @@ class StateDiscoveryFacade:
         config: DiscoveryConfig,
         region: tuple[int, int, int, int] | None,
     ) -> AnalysisResult:
-        """Run combined analysis using both algorithms."""
+        """Run combined analysis using multiple algorithms.
+
+        Combines pixel stability + differential consistency, and optionally
+        OmniParser for semantic element labeling when ``enable_omniparser``
+        is True.
+        """
         # Run pixel stability
         pixel_result = self._discover_with_pixel_stability(screenshots, config, region)
 
@@ -531,9 +540,16 @@ class StateDiscoveryFacade:
         transitions = self._create_transitions_from_sequence(screenshots)
         if transitions:
             diff_result = self._discover_with_differential(transitions, config)
-            return self._merge_results(pixel_result, diff_result)
+            merged = self._merge_results(pixel_result, diff_result)
+        else:
+            merged = pixel_result
 
-        return pixel_result
+        # Optionally enrich with OmniParser semantic detection
+        if config.enable_omniparser:
+            omni_result = self._discover_with_omniparser(screenshots, config)
+            merged = self._merge_results(merged, omni_result)
+
+        return merged
 
     def _create_transitions_from_sequence(
         self,
@@ -558,7 +574,7 @@ class StateDiscoveryFacade:
         result2: AnalysisResult,
     ) -> AnalysisResult:
         """Merge results from multiple algorithms."""
-        # Combine state images (dedupe by overlap)
+        # Combine state images (dedupe by overlap, transfer tags)
         all_images = list(result1.state_images)
         for img2 in result2.state_images:
             # Check if this image significantly overlaps with existing
@@ -566,6 +582,12 @@ class StateDiscoveryFacade:
             for img1 in all_images:
                 if self._images_overlap(img1, img2, threshold=0.7):
                     is_duplicate = True
+                    # Transfer semantic tags from the duplicate to the survivor
+                    if img2.tags:
+                        existing_tags = set(img1.tags)
+                        for tag in img2.tags:
+                            if tag not in existing_tags:
+                                img1.tags.append(tag)
                     break
             if not is_duplicate:
                 all_images.append(img2)

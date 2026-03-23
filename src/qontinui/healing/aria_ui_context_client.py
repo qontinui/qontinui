@@ -40,7 +40,7 @@ class AriaUIContextClient(AriaUIClient):
     def __init__(
         self,
         endpoint: str = "http://localhost:8100",
-        timeout: float = 10.0,
+        timeout: float = 120.0,
         max_history: int = 3,
         model: str | None = None,
     ) -> None:

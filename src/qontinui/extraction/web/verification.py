@@ -222,8 +222,8 @@ class ClickableVerifier:
                 NMSFilter(iou_threshold=0.3),
             ]
 
-            # Create executor
-            executor = FindExecutor(
+            # Create executor with cascade for accessibility support
+            executor = FindExecutor.with_cascade(
                 screenshot_provider=screenshot_provider,
                 matcher=matcher,
                 filters=filters,

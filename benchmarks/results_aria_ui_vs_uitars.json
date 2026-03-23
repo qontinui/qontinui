@@ -1,0 +1,147 @@
+{
+  "aria_ui": {
+    "backend": "aria_ui",
+    "total_tasks": 9,
+    "successful": 5,
+    "within_tolerance": 0,
+    "accuracy_pct": 0.0,
+    "mean_distance_px": 531.738038562904,
+    "latency_mean_ms": 59197.38436000043,
+    "latency_p50_ms": 48992.959499999415,
+    "latency_p95_ms": 101857.26770000474,
+    "attempts": [
+      {
+        "element": "File menu",
+        "screenshot": "notepad_file_menu.png",
+        "expected": [
+          30,
+          12
+        ],
+        "predicted": null,
+        "distance_px": null,
+        "within_tolerance": false,
+        "latency_ms": 120232.62439999962,
+        "error": "not_found"
+      },
+      {
+        "element": "Text editing area",
+        "screenshot": "notepad_edit_area.png",
+        "expected": [
+          400,
+          300
+        ],
+        "predicted": null,
+        "distance_px": null,
+        "within_tolerance": false,
+        "latency_ms": 120185.54030000087,
+        "error": "not_found"
+      },
+      {
+        "element": "Search box",
+        "screenshot": "explorer_search.png",
+        "expected": [
+          1050,
+          25
+        ],
+        "predicted": null,
+        "distance_px": null,
+        "within_tolerance": false,
+        "latency_ms": 120176.993400004,
+        "error": "not_found"
+      },
+      {
+        "element": "Up arrow navigation",
+        "screenshot": "explorer_nav_up.png",
+        "expected": [
+          52,
+          25
+        ],
+        "predicted": null,
+        "distance_px": null,
+        "within_tolerance": false,
+        "latency_ms": 120176.16470000212,
+        "error": "not_found"
+      },
+      {
+        "element": "First file in list",
+        "screenshot": "explorer_file_item.png",
+        "expected": [
+          400,
+          200
+        ],
+        "predicted": [
+          848,
+          569
+        ],
+        "distance_px": 580.4007236384186,
+        "within_tolerance": false,
+        "latency_ms": 101857.26770000474,
+        "error": null
+      },
+      {
+        "element": "Equals button",
+        "screenshot": "calc_equals.png",
+        "expected": [
+          320,
+          540
+        ],
+        "predicted": [
+          264,
+          597
+        ],
+        "distance_px": 79.90619500389191,
+        "within_tolerance": false,
+        "latency_ms": 48992.959499999415,
+        "error": null
+      },
+      {
+        "element": "Number 5 button",
+        "screenshot": "calc_digit_5.png",
+        "expected": [
+          200,
+          450
+        ],
+        "predicted": [
+          192,
+          478
+        ],
+        "distance_px": 29.120439557122072,
+        "within_tolerance": false,
+        "latency_ms": 49081.75520000077,
+        "error": null
+      },
+      {
+        "element": "Start button",
+        "screenshot": "taskbar_start.png",
+        "expected": [
+          24,
+          1065
+        ],
+        "predicted": [
+          455,
+          131
+        ],
+        "distance_px": 1028.6481419805316,
+        "within_tolerance": false,
+        "latency_ms": 48832.85430000251,
+        "error": null
+      },
+      {
+        "element": "Search icon",
+        "screenshot": "taskbar_search.png",
+        "expected": [
+          60,
+          1065
+        ],
+        "predicted": [
+          26,
+          125
+        ],
+        "distance_px": 940.6146926345558,
+        "within_tolerance": false,
+        "latency_ms": 47222.08509999473,
+        "error": null
+      }
+    ]
+  }
+}

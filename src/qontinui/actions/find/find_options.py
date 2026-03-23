@@ -70,8 +70,8 @@ class FindOptions:
     Image Variant Options:
     - grayscale: Convert to grayscale before matching
     - edge_detection: Use edge detection for matching
-    - scale_invariant: Enable scale-invariant matching (SIFT/SURF)
-    - rotation_invariant: Enable rotation-invariant matching
+    - scale_invariant: Enable scale-invariant template matching (DPI-aware)
+    - rotation_invariant: Enable rotation-invariant template matching
     - color_tolerance: Tolerance for color differences (0-255)
     """
 
@@ -91,10 +91,10 @@ class FindOptions:
     """Apply edge detection (Canny) before matching."""
 
     scale_invariant: bool = False
-    """Use scale-invariant feature matching (SIFT/ORB)."""
+    """Enable DPI-aware scale-invariant template matching via InvariantMatchBackend."""
 
     rotation_invariant: bool = False
-    """Use rotation-invariant feature matching."""
+    """Enable rotation-invariant template matching (0°, 90°, 180°, 270°)."""
 
     color_tolerance: int = 0
     """Tolerance for color differences (0-255). 0 means exact match."""

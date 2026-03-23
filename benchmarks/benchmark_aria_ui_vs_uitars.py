@@ -161,7 +161,7 @@ async def ground_with_aria_ui(
     from qontinui.healing.aria_ui_client import AriaUIClient
     from qontinui.healing.healing_types import HealingContext
 
-    client = AriaUIClient(endpoint=endpoint)
+    client = AriaUIClient(endpoint=endpoint, timeout=120.0)
     context = HealingContext(
         original_description=task.element_description,
         screenshot_shape=(screen_height, screen_width),

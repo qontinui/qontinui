@@ -64,7 +64,7 @@ class VisionHealer:
                 healing. When provided and connected, UIA healing is tried
                 before visual search (faster, no image processing).
         """
-        self.config = config or HealingConfig.disabled()
+        self.config = config or HealingConfig.from_env()
         self.cache = cache
         self._accessibility_capture = accessibility_capture
 

@@ -1,10 +1,10 @@
-"""Aria-UI grounding client via vLLM OpenAI-compatible API.
+"""Aria-UI grounding client via OpenAI-compatible API.
 
 Aria-UI is a 25B MoE vision model (3.9B activated) that performs
 element grounding on screenshots. It returns normalized [x, y]
 coordinates in 0-1000 scale.
 
-Requires a running vLLM server (see docker/aria-ui/).
+Requires a running Aria-UI server (see docker/aria-ui/).
 """
 
 import base64
@@ -25,9 +25,9 @@ _ARIA_UI_PROMPT = (
 
 
 class AriaUIClient(VisionLLMClient):
-    """Aria-UI grounding via HTTP API to vLLM server.
+    """Aria-UI grounding via HTTP API.
 
-    Sends screenshots to a vLLM-served Aria-UI model and parses
+    Sends screenshots to the Aria-UI server and parses
     the returned [x, y] coordinates (0-1000 normalized scale).
 
     Example:
@@ -36,13 +36,13 @@ class AriaUIClient(VisionLLMClient):
             location = client.find_element(screenshot_bytes, context)
     """
 
-    # Model identifier on the vLLM server
+    # Model identifier on the server
     MODEL_NAME = "Aria-UI/Aria-UI-base"
 
     def __init__(
         self,
         endpoint: str = "http://localhost:8100",
-        timeout: float = 10.0,
+        timeout: float = 120.0,
         model: str | None = None,
     ) -> None:
         """Initialize Aria-UI client.

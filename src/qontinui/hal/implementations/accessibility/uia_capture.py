@@ -377,8 +377,9 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
 
                 # If we have interactive children, create a container node
                 if children:
-                    return AccessibilityNode(
-                        ref=self._ref_manager.assign_ref(is_interactive=False),
+                    container_ref = self._ref_manager.assign_ref(is_interactive=False)
+                    container_node = AccessibilityNode(
+                        ref=container_ref,
                         role=role,
                         name=name or None,
                         value=value,
@@ -389,6 +390,8 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
                         class_name=class_name,
                         children=children,
                     )
+                    self._ref_manager.register_node(container_ref, container_node)
+                    return container_node
                 return None
 
             # Assign ref
@@ -404,7 +407,7 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
             except Exception as e:
                 logger.debug(f"Error getting children: {e}")
 
-            return AccessibilityNode(
+            node = AccessibilityNode(
                 ref=ref,
                 role=role,
                 name=name or None,
@@ -416,6 +419,8 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
                 class_name=class_name,
                 children=children,
             )
+            self._ref_manager.register_node(ref, node)
+            return node
 
         except Exception as e:
             logger.debug(f"Error converting element: {e}")
@@ -531,21 +536,23 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
             name = fp.get("name")
 
             # Strategy 1: automation_id (most stable)
+            matched = False
             if auto_id:
                 for node in nodes:
                     if node.automation_id == auto_id:
                         self._ref_manager.register_node(ref, node)
                         restored += 1
+                        matched = True
                         break
-                else:
-                    # Strategy 2: role + name
-                    if role and name:
-                        for node in nodes:
-                            node_role = getattr(node.role, "value", str(node.role))
-                            if node_role == role and node.name == name:
-                                self._ref_manager.register_node(ref, node)
-                                restored += 1
-                                break
+
+            # Strategy 2: role + name (fallback)
+            if not matched and role and name:
+                for node in nodes:
+                    node_role = getattr(node.role, "value", str(node.role))
+                    if node_role == role and node.name == name:
+                        self._ref_manager.register_node(ref, node)
+                        restored += 1
+                        break
 
         if restored:
             logger.info("Restored %d/%d persisted refs", restored, len(fingerprints))

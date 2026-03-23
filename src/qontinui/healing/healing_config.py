@@ -259,7 +259,7 @@ class HealingConfig:
         """Create configuration for Aria-UI base model.
 
         Args:
-            endpoint: vLLM server URL.
+            endpoint: Aria-UI server URL.
 
         Returns:
             HealingConfig for Aria-UI.
@@ -267,6 +267,7 @@ class HealingConfig:
         return cls(
             llm_mode=LLMMode.ARIA_UI,
             aria_ui_endpoint=endpoint,
+            heal_timeout_seconds=120.0,
         )
 
     @classmethod
@@ -278,7 +279,7 @@ class HealingConfig:
         """Create configuration for Aria-UI context-aware model.
 
         Args:
-            endpoint: vLLM server URL.
+            endpoint: Aria-UI server URL.
             max_history: Maximum action history entries.
 
         Returns:
@@ -288,6 +289,7 @@ class HealingConfig:
             llm_mode=LLMMode.ARIA_UI_CONTEXT,
             aria_ui_endpoint=endpoint,
             aria_ui_max_history=max_history,
+            heal_timeout_seconds=120.0,
         )
 
     @classmethod

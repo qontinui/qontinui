@@ -78,7 +78,7 @@ class HealingRecoveryHandler(RecoveryHandler):
             config: Healing configuration. Uses default if not provided.
             healer: VisionHealer instance. Creates one from config if not provided.
         """
-        self.config = config or HealingConfig.disabled()
+        self.config = config or HealingConfig.from_env()
 
         if healer is not None:
             self.healer = healer

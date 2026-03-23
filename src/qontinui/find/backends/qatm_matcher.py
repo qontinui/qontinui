@@ -142,61 +142,57 @@ class QATMMatcher:
         self,
         template_features: torch.Tensor,
         image_features: torch.Tensor,
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, int, int]:
         """Compute quality-aware template matching score map.
 
-        The QATM score at each location measures both:
-        1. How well the template matches at that location (strength)
-        2. How much the match stands out from other locations (quality)
+        Uses sliding-window correlation (F.conv2d) to produce a proper
+        valid-convolution output, then applies QATM quality-aware scoring
+        to measure both match strength AND uniqueness.
 
         Returns:
-            2D score map (H, W) where H, W are the valid convolution output
-            dimensions. Values in [0, 1].
+            Tuple of (score_map, feat_ht, feat_wt) where score_map has
+            shape (Hi-Ht+1, Wi-Wt+1) with values in [0, 1], and feat_ht/wt
+            are the template feature dimensions (needed for coordinate mapping).
         """
-        import torch
         import torch.nn.functional as F
 
         alpha = self._settings.alpha
 
         # template_features: (1, C, Ht, Wt)
         # image_features:    (1, C, Hi, Wi)
-        t_feat = template_features.squeeze(0)  # (C, Ht, Wt)
-        i_feat = image_features.squeeze(0)  # (C, Hi, Wi)
-
-        c, ht, wt = t_feat.shape
-        _, hi, wi = i_feat.shape
-
-        # Flatten spatial dims: template -> (C, Ht*Wt), image -> (C, Hi*Wi)
-        t_flat = t_feat.reshape(c, -1)  # (C, Nt)
-        i_flat = i_feat.reshape(c, -1)  # (C, Ni)
+        c = template_features.shape[1]
+        ht, wt = template_features.shape[2], template_features.shape[3]
 
         # Normalize features along channel dimension
-        t_norm = F.normalize(t_flat, dim=0)  # (C, Nt)
-        i_norm = F.normalize(i_flat, dim=0)  # (C, Ni)
+        t_norm = F.normalize(template_features, dim=1)  # (1, C, Ht, Wt)
+        i_norm = F.normalize(image_features, dim=1)  # (1, C, Hi, Wi)
 
-        # Cosine similarity matrix: (Nt, Ni)
-        cos_sim = torch.mm(t_norm.t(), i_norm)  # (Nt, Ni)
+        # Sliding-window cosine similarity via conv2d.
+        # Reshape template as C conv filters of size (Ht, Wt), each with 1 channel.
+        # Use groups=C to compute per-channel correlation, then sum.
+        # This produces an output of valid size: (Hi-Ht+1, Wi-Wt+1).
+        t_kernel = t_norm.squeeze(0).unsqueeze(1)  # (C, 1, Ht, Wt)
+        # Per-channel sliding dot product, then sum across channels
+        per_channel = F.conv2d(i_norm, t_kernel, groups=c)  # (1, C, Ho, Wo)
+        # Sum across channels and average by template spatial size
+        # to get mean cosine similarity per sliding position
+        cos_sim_map = per_channel.sum(dim=1, keepdim=True) / (ht * wt)  # (1, 1, Ho, Wo)
+
+        # Flatten to (N_positions,) for QATM quality scoring
+        ho, wo = cos_sim_map.shape[2], cos_sim_map.shape[3]
+        cos_sim_flat = cos_sim_map.reshape(-1)  # (Ho*Wo,)
 
         # QATM quality-aware scoring:
-        # For each template location, softmax across image locations (how
-        # unique is the best match for this template patch?)
-        # For each image location, softmax across template locations (how
-        # well does this image patch match the full template?)
-        qatm_t = F.softmax(alpha * cos_sim, dim=1)  # (Nt, Ni)
-        qatm_i = F.softmax(alpha * cos_sim, dim=0)  # (Nt, Ni)
-
-        # Combined quality score: element-wise product, sum over template dims
-        # This produces a score for each image spatial location
-        qatm_score = (qatm_t * qatm_i).sum(dim=0)  # (Ni,)
+        # Apply softmax across all positions — measures how much the best
+        # match stands out from alternatives. A unique match gets high
+        # quality; ambiguous matches (many similar buttons) get low quality.
+        qatm_score = F.softmax(alpha * cos_sim_flat, dim=0)  # (Ho*Wo,)
 
         # Reshape back to spatial dimensions
-        score_map = qatm_score.reshape(hi, wi).cpu().numpy()
+        score_map = qatm_score.reshape(ho, wo).cpu().numpy()
 
-        # Resize score map to match the valid correlation output size
-        out_h = hi
-        out_w = wi
-        if out_h <= 0 or out_w <= 0:
-            return np.zeros((1, 1), dtype=np.float32)
+        if score_map.size == 0:
+            return np.zeros((1, 1), dtype=np.float32), ht, wt
 
         # Normalize to [0, 1]
         score_min = score_map.min()
@@ -206,7 +202,7 @@ class QATMMatcher:
         else:
             score_map = np.zeros_like(score_map)
 
-        return score_map.astype(np.float32)
+        return score_map.astype(np.float32), ht, wt
 
     def find(
         self,
@@ -227,10 +223,6 @@ class QATMMatcher:
         Returns:
             List of QATMMatch sorted by confidence (highest first).
         """
-        with self._lock:
-            self._ensure_model()
-            self._last_used = time.monotonic()
-
         t_h, t_w = template.shape[:2]
         s_h, s_w = screenshot.shape[:2]
 
@@ -238,24 +230,40 @@ class QATMMatcher:
             logger.debug("QATM: template larger than screenshot, skipping")
             return []
 
-        # Extract deep features
+        # Hold lock for entire GPU computation to prevent race conditions
+        # with concurrent unload() calls or parallel find() on same device.
         with self._lock:
+            self._ensure_model()
+            self._last_used = time.monotonic()
+
             t_features = self._extract_features(template)
             s_features = self._extract_features(screenshot)
+            score_map, feat_ht, feat_wt = self._compute_qatm_score(t_features, s_features)
 
-        # Compute quality-aware score map
-        score_map = self._compute_qatm_score(t_features, s_features)
+        # Score map has shape (Ho, Wo) = valid convolution output.
+        # Each position (fy, fx) corresponds to where the template feature
+        # block starts. Map feature-space back to pixel-space for the
+        # top-left corner of the matched region.
+        #
+        # VGG pooling reduces spatial dims. The scale factor maps feature
+        # positions to pixel positions of the receptive field top-left.
+        # The score map is already "valid" (no border artifacts), so
+        # position (fy, fx) maps to pixel top-left at (fy * scale, fx * scale).
+        ho, wo = score_map.shape
+        if ho == 0 or wo == 0:
+            return []
 
-        # Scale factor: feature map is smaller than input image due to
-        # VGG pooling layers. We need to map feature-space coordinates
-        # back to pixel-space.
-        scale_y = s_h / score_map.shape[0]
-        scale_x = s_w / score_map.shape[1]
+        # Compute scale: image pixels per feature-map cell
+        # Use the full feature map size (ho + feat_ht - 1) to recover
+        # the image-to-feature ratio, since ho = Hi - Ht + 1.
+        feat_hi = ho + feat_ht - 1
+        feat_wi = wo + feat_wt - 1
+        scale_y = s_h / feat_hi
+        scale_x = s_w / feat_wi
 
         results: list[QATMMatch] = []
 
         if find_all:
-            # Find all peaks above threshold
             locations = np.where(score_map >= min_confidence)
             for fy, fx in zip(locations[0], locations[1], strict=True):
                 confidence = float(score_map[fy, fx])
@@ -263,17 +271,15 @@ class QATMMatcher:
                 py = int(fy * scale_y)
                 results.append(
                     QATMMatch(
-                        x=max(0, px - t_w // 2),
-                        y=max(0, py - t_h // 2),
+                        x=max(0, px),
+                        y=max(0, py),
                         width=t_w,
                         height=t_h,
                         confidence=confidence,
                     )
                 )
-            # Apply NMS to remove overlapping detections
             results = self._nms(results, iou_threshold=0.5)
         else:
-            # Return only the best match
             max_val = float(score_map.max())
             if max_val >= min_confidence:
                 max_loc = np.unravel_index(score_map.argmax(), score_map.shape)
@@ -282,8 +288,8 @@ class QATMMatcher:
                 py = int(fy * scale_y)
                 results.append(
                     QATMMatch(
-                        x=max(0, px - t_w // 2),
-                        y=max(0, py - t_h // 2),
+                        x=max(0, px),
+                        y=max(0, py),
                         width=t_w,
                         height=t_h,
                         confidence=max_val,

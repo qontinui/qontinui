@@ -147,6 +147,8 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
         self._is_connected = False
         self._persistence_dir = Path.home() / ".qontinui" / "atspi_refs"
         self._use_gi = False  # True if using gi.repository.Atspi
+        # Map ref → live AT-SPI element for click/type/focus operations
+        self._atspi_elements_by_ref: dict[str, Any] = {}
 
     def _ensure_atspi_available(self) -> bool:
         """Ensure the AT-SPI module is available.
@@ -684,8 +686,10 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
 
                 # If we have interactive children, create a container node
                 if children:
-                    return AccessibilityNode(
-                        ref=self._ref_manager.assign_ref(is_interactive=False),
+                    container_ref = self._ref_manager.assign_ref(is_interactive=False)
+                    self._atspi_elements_by_ref[container_ref] = element
+                    container_node = AccessibilityNode(
+                        ref=container_ref,
                         role=role,
                         name=name or None,
                         value=value,
@@ -696,10 +700,13 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
                         automation_id=automation_id,
                         children=children,
                     )
+                    self._ref_manager.register_node(container_ref, container_node)
+                    return container_node
                 return None
 
-            # Assign ref
+            # Assign ref and store AT-SPI element mapping
             ref = self._ref_manager.assign_ref(is_interactive=is_interactive)
+            self._atspi_elements_by_ref[ref] = element
 
             # Process children
             children = []
@@ -708,7 +715,7 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
                 if child_node:
                     children.append(child_node)
 
-            return AccessibilityNode(
+            node = AccessibilityNode(
                 ref=ref,
                 role=role,
                 name=name or None,
@@ -720,6 +727,9 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
                 automation_id=automation_id,
                 children=children,
             )
+            # Register in ref manager so save() can persist fingerprints
+            self._ref_manager.register_node(ref, node)
+            return node
 
         except Exception as e:
             logger.debug(f"Error converting element: {e}")
@@ -746,8 +756,9 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
         opts = options or AccessibilityCaptureOptions()
         config = opts.config or self._config
 
-        # Reset ref manager for new capture
+        # Reset ref manager and element map for new capture
         self._ref_manager.clear()
+        self._atspi_elements_by_ref.clear()
 
         # Capture in executor to avoid blocking
         loop = asyncio.get_event_loop()
@@ -838,21 +849,23 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
             name = fp.get("name")
 
             # Strategy 1: automation_id (most stable)
+            matched = False
             if auto_id:
                 for node in nodes:
                     if node.automation_id == auto_id:
                         self._ref_manager.register_node(ref, node)
                         restored += 1
+                        matched = True
                         break
-                else:
-                    # Strategy 2: role + name
-                    if role and name:
-                        for node in nodes:
-                            node_role = getattr(node.role, "value", str(node.role))
-                            if node_role == role and node.name == name:
-                                self._ref_manager.register_node(ref, node)
-                                restored += 1
-                                break
+
+            # Strategy 2: role + name (fallback)
+            if not matched and role and name:
+                for node in nodes:
+                    node_role = getattr(node.role, "value", str(node.role))
+                    if node_role == role and node.name == name:
+                        self._ref_manager.register_node(ref, node)
+                        restored += 1
+                        break
 
         if restored:
             logger.info("Restored %d/%d persisted refs", restored, len(fingerprints))
@@ -951,9 +964,8 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
     def _find_atspi_element_by_ref(self, ref: str) -> Any | None:
         """Find the original AT-SPI element corresponding to a node ref.
 
-        Walks the AT-SPI tree in the same order as _element_to_node to
-        find the element at the matching position. This is used for
-        click/type/focus operations that need the live AT-SPI object.
+        Uses the ref→element mapping built during ``_element_to_node``
+        to return the live AT-SPI Accessible object for click/type/focus.
 
         Args:
             ref: Reference ID (e.g., "@e3")
@@ -961,33 +973,7 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
         Returns:
             The AT-SPI Accessible object or None
         """
-        if not self._target_element:
-            return None
-
-        # Extract the ref number to match position
-        target_counter = 0
-        try:
-            target_counter = int(ref.replace("@e", ""))
-        except ValueError:
-            return None
-
-        counter = [0]
-        result: list[Any] = [None]
-
-        def walk(element: Any) -> bool:
-            """Walk tree counting refs until we hit the target. Returns True to stop."""
-            counter[0] += 1
-            if counter[0] == target_counter:
-                result[0] = element
-                return True
-
-            for child in self._get_children(element):
-                if walk(child):
-                    return True
-            return False
-
-        walk(self._target_element)
-        return result[0]
+        return self._atspi_elements_by_ref.get(ref)
 
     async def click_by_ref(self, ref: str) -> bool:
         """Click an element by ref using AT-SPI action interface.

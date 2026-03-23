@@ -1,7 +1,9 @@
 """Tests for HealingConfig."""
 
+import os
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent / "src"
@@ -103,6 +105,98 @@ class TestHealingConfig:
 
         # Client is created, availability depends on Ollama being installed
         assert client is not None
+
+
+class TestHealingConfigAriaUI:
+    """Tests for HealingConfig Aria-UI factory methods and from_env."""
+
+    def test_with_aria_ui(self):
+        """Should create ARIA_UI mode config with endpoint."""
+        config = HealingConfig.with_aria_ui(endpoint="http://gpu-server:8100")
+
+        assert config.llm_mode == LLMMode.ARIA_UI
+        assert config.aria_ui_endpoint == "http://gpu-server:8100"
+
+    def test_with_aria_ui_default_endpoint(self):
+        """Should use default localhost endpoint."""
+        config = HealingConfig.with_aria_ui()
+
+        assert config.llm_mode == LLMMode.ARIA_UI
+        assert config.aria_ui_endpoint == "http://localhost:8100"
+
+    def test_with_aria_ui_context(self):
+        """Should create ARIA_UI_CONTEXT mode with max_history."""
+        config = HealingConfig.with_aria_ui_context(
+            endpoint="http://gpu-server:8100", max_history=5
+        )
+
+        assert config.llm_mode == LLMMode.ARIA_UI_CONTEXT
+        assert config.aria_ui_endpoint == "http://gpu-server:8100"
+        assert config.aria_ui_max_history == 5
+
+    def test_with_aria_ui_context_defaults(self):
+        """Should use default max_history of 3."""
+        config = HealingConfig.with_aria_ui_context()
+
+        assert config.llm_mode == LLMMode.ARIA_UI_CONTEXT
+        assert config.aria_ui_max_history == 3
+
+    def test_from_env_aria_ui_enabled(self):
+        """Should create Aria-UI config when QONTINUI_ARIA_UI_ENABLED=true."""
+        env = {
+            "QONTINUI_ARIA_UI_ENABLED": "true",
+            "QONTINUI_ARIA_UI_ENDPOINT": "http://myserver:8100",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            config = HealingConfig.from_env()
+
+        assert config.llm_mode == LLMMode.ARIA_UI
+        assert config.aria_ui_endpoint == "http://myserver:8100"
+
+    def test_from_env_aria_ui_context(self):
+        """Should create context mode when QONTINUI_ARIA_UI_MODE=context."""
+        env = {
+            "QONTINUI_ARIA_UI_ENABLED": "true",
+            "QONTINUI_ARIA_UI_MODE": "context",
+            "QONTINUI_ARIA_UI_MAX_HISTORY": "5",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            config = HealingConfig.from_env()
+
+        assert config.llm_mode == LLMMode.ARIA_UI_CONTEXT
+        assert config.aria_ui_max_history == 5
+
+    def test_from_env_disabled(self):
+        """Should return disabled config when no env vars are set."""
+        env_keys = [
+            "QONTINUI_ARIA_UI_ENABLED",
+            "QONTINUI_ARIA_UI_ENDPOINT",
+            "QONTINUI_ARIA_UI_MODE",
+            "QONTINUI_ARIA_UI_MAX_HISTORY",
+        ]
+        clean_env = {k: v for k, v in os.environ.items() if k not in env_keys}
+        with patch.dict(os.environ, clean_env, clear=True):
+            config = HealingConfig.from_env()
+
+        assert config.llm_mode == LLMMode.DISABLED
+
+    def test_get_client_aria_ui(self):
+        """Should create an AriaUIClient instance."""
+        from qontinui.healing.aria_ui_client import AriaUIClient
+
+        config = HealingConfig.with_aria_ui()
+        client = config.get_client()
+
+        assert isinstance(client, AriaUIClient)
+
+    def test_get_client_aria_ui_context(self):
+        """Should create an AriaUIContextClient instance."""
+        from qontinui.healing.aria_ui_context_client import AriaUIContextClient
+
+        config = HealingConfig.with_aria_ui_context()
+        client = config.get_client()
+
+        assert isinstance(client, AriaUIContextClient)
 
 
 class TestLLMMode:
