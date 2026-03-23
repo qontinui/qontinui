@@ -324,9 +324,7 @@ class HealingConfig:
             if env == "production":
                 return cls.disabled()
             # Dev mode: auto-enable if endpoint is reachable (quick probe)
-            endpoint = os.environ.get(
-                "QONTINUI_ARIA_UI_ENDPOINT", "http://localhost:8100"
-            )
+            endpoint = os.environ.get("QONTINUI_ARIA_UI_ENDPOINT", "http://localhost:8100")
             if not cls._is_endpoint_reachable(endpoint):
                 return cls.disabled()
 
@@ -346,8 +344,8 @@ class HealingConfig:
     def _is_endpoint_reachable(endpoint: str, timeout: float = 0.5) -> bool:
         """Quick probe to check if an Aria-UI endpoint is reachable."""
         try:
-            from urllib.parse import urlparse
             import socket
+            from urllib.parse import urlparse
 
             parsed = urlparse(endpoint)
             host = parsed.hostname or "localhost"
