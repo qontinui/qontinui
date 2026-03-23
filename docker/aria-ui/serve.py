@@ -292,7 +292,7 @@ async def chat_completions(req: ChatCompletionRequest):
             }
         )
 
-    except Exception as e:
+    except Exception:
         logger.exception("Error processing chat completion")
         return JSONResponse(
             status_code=500,

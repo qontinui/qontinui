@@ -143,8 +143,12 @@ class StubBackend(DetectionBackend):
 
 def _make_result(confidence: float = 0.9, backend: str = "test") -> DetectionResult:
     return DetectionResult(
-        x=100, y=200, width=50, height=30,
-        confidence=confidence, backend_name=backend,
+        x=100,
+        y=200,
+        width=50,
+        height=30,
+        confidence=confidence,
+        backend_name=backend,
     )
 
 
@@ -262,15 +266,17 @@ class TestScoutBackendSupportsTypes:
     def test_template_backends_support_template(self):
         """Template-matching backends must support 'template' needle type."""
         template_backends = [
-            "template", "batch_template_match", "edge_template",
-            "feature", "invariant_template", "qatm",
+            "template",
+            "batch_template_match",
+            "edge_template",
+            "feature",
+            "invariant_template",
+            "qatm",
         ]
         cascade, stubs = _build_full_stub_cascade()
         for name in template_backends:
             backend = stubs[name]
-            assert backend.supports("template"), (
-                f"Backend '{name}' should support 'template'"
-            )
+            assert backend.supports("template"), f"Backend '{name}' should support 'template'"
 
     def test_ocr_backend_supports_text(self):
         _, stubs = _build_full_stub_cascade()
@@ -280,9 +286,9 @@ class TestScoutBackendSupportsTypes:
     def test_omniparser_supports_multiple_types(self):
         _, stubs = _build_full_stub_cascade()
         for needle_type in ("template", "text", "description", "semantic"):
-            assert stubs["omniparser"].supports(needle_type), (
-                f"omniparser should support '{needle_type}'"
-            )
+            assert stubs["omniparser"].supports(
+                needle_type
+            ), f"omniparser should support '{needle_type}'"
 
     def test_accessibility_backend_supports_structured_types(self):
         _, stubs = _build_full_stub_cascade()
@@ -520,21 +526,20 @@ class TestAllBackendsHaveNameAndCost:
     def test_all_backends_have_name_and_cost(self):
         cascade, _ = _build_full_stub_cascade()
         for backend in cascade.backends:
-            assert isinstance(backend.name, str) and len(backend.name) > 0, (
-                f"Backend has empty or non-string name: {backend!r}"
-            )
+            assert (
+                isinstance(backend.name, str) and len(backend.name) > 0
+            ), f"Backend has empty or non-string name: {backend!r}"
             assert backend.estimated_cost_ms() > 0, (
-                f"Backend '{backend.name}' has non-positive cost: "
-                f"{backend.estimated_cost_ms()}"
+                f"Backend '{backend.name}' has non-positive cost: " f"{backend.estimated_cost_ms()}"
             )
 
     def test_all_backends_implement_detection_interface(self):
         """Every backend must be a DetectionBackend subclass."""
         cascade, _ = _build_full_stub_cascade()
         for backend in cascade.backends:
-            assert isinstance(backend, DetectionBackend), (
-                f"Backend '{backend.name}' is not a DetectionBackend"
-            )
+            assert isinstance(
+                backend, DetectionBackend
+            ), f"Backend '{backend.name}' is not a DetectionBackend"
 
 
 # ===========================================================================
@@ -628,9 +633,7 @@ class TestCascadeFindConcurrentCalls:
         # All 5 calls should return exactly 1 result each
         assert len(results_map) == 5, f"Expected 5 results, got {len(results_map)}"
         for idx, results in results_map.items():
-            assert len(results) == 1, (
-                f"Call {idx}: expected 1 result, got {len(results)}"
-            )
+            assert len(results) == 1, f"Call {idx}: expected 1 result, got {len(results)}"
             assert results[0].backend_name == "template"
             assert results[0].confidence == 0.95
 

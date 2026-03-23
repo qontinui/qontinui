@@ -52,7 +52,7 @@ def _make_omniparser_analysis_result() -> MagicMock:
 
 
 def _empty_analysis_result(**overrides: Any) -> AnalysisResult:
-    defaults = dict(states=[], state_images=[], transitions=[], statistics={})
+    defaults = {"states": [], "state_images": [], "transitions": [], "statistics": {}}
     defaults.update(overrides)
     return AnalysisResult(**defaults)
 
