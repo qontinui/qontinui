@@ -212,6 +212,10 @@ def _extract_images_and_text(messages: list[Message]):
 
 @app.post("/v1/chat/completions")
 async def chat_completions(req: ChatCompletionRequest):
+    # NOTE: This endpoint uses sync requests.get() and model.generate() which
+    # block the event loop. This is acceptable for this Docker-contained service
+    # that processes single requests at a time. If concurrent request handling is
+    # needed in the future, wrap these calls in run_in_executor.
     try:
         text, images = _extract_images_and_text(req.messages)
 
@@ -292,7 +296,7 @@ async def chat_completions(req: ChatCompletionRequest):
         logger.exception("Error processing chat completion")
         return JSONResponse(
             status_code=500,
-            content={"error": {"message": str(e), "type": "server_error"}},
+            content={"error": {"message": "Internal server error", "type": "server_error"}},
         )
 
 

@@ -298,7 +298,7 @@ class HealingConfig:
 
         Reads:
             QONTINUI_ARIA_UI_ENABLED: "true" to enable Aria-UI
-            QONTINUI_ARIA_UI_ENDPOINT: vLLM server URL
+            QONTINUI_ARIA_UI_ENDPOINT: Aria-UI server URL
             QONTINUI_ARIA_UI_MODE: "base" or "context"
             QONTINUI_ARIA_UI_MAX_HISTORY: max history entries
 
