@@ -586,3 +586,129 @@ class TestSearchRegionPropagation:
         )
 
         assert stubs["template"].last_config["search_region"] == explicit_region
+
+
+# ===========================================================================
+# Thread safety — concurrent cascade.find() calls
+# ===========================================================================
+
+
+class TestCascadeFindConcurrentCalls:
+    """Thread safety: concurrent cascade.find() with stub backends."""
+
+    def test_cascade_find_concurrent_calls(self):
+        """Use ThreadPoolExecutor to run 5 concurrent cascade.find() calls
+        with stub backends, verify all return results without corruption."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        # Each call gets its own cascade+stubs to avoid shared mutable state
+        # on the stubs, but tests that the CascadeDetector itself is safe.
+        cascade, stubs = _build_full_stub_cascade(
+            successes={"template": 0.95},
+        )
+
+        needle = np.zeros((10, 10, 3), dtype=np.uint8)
+        haystack = np.zeros((100, 100, 3), dtype=np.uint8)
+
+        def run_find(idx: int):
+            results = cascade.find(
+                needle=needle,
+                haystack=haystack,
+                config={"needle_type": "template"},
+            )
+            return idx, results
+
+        results_map = {}
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(run_find, i) for i in range(5)]
+            for future in as_completed(futures):
+                idx, results = future.result()
+                results_map[idx] = results
+
+        # All 5 calls should return exactly 1 result each
+        assert len(results_map) == 5, f"Expected 5 results, got {len(results_map)}"
+        for idx, results in results_map.items():
+            assert len(results) == 1, (
+                f"Call {idx}: expected 1 result, got {len(results)}"
+            )
+            assert results[0].backend_name == "template"
+            assert results[0].confidence == 0.95
+
+
+# ===========================================================================
+# Timeout fallback — first backend times out, second succeeds
+# ===========================================================================
+
+
+class TestBackendTimeoutCausesFallback:
+    """Timeout in one backend causes cascade to fall through to the next."""
+
+    def test_backend_timeout_causes_fallback(self):
+        """First backend raises TimeoutError, second backend succeeds."""
+        timeout_backend = StubBackend(
+            backend_name="slow_backend",
+            cost=10.0,
+            supported_types=["template"],
+            raises=TimeoutError("Backend timed out"),
+        )
+        success_backend = StubBackend(
+            backend_name="fast_backend",
+            cost=20.0,
+            supported_types=["template"],
+            results=[_make_result(0.88, "fast_backend")],
+        )
+
+        cascade = CascadeDetector(backends=[timeout_backend, success_backend])
+        results = cascade.find(
+            needle=np.zeros((10, 10, 3), dtype=np.uint8),
+            haystack=np.zeros((100, 100, 3), dtype=np.uint8),
+            config={"needle_type": "template"},
+        )
+
+        # The timeout backend was tried and failed
+        assert timeout_backend.find_called
+        # The success backend was tried next and succeeded
+        assert success_backend.find_called
+        assert len(results) == 1
+        assert results[0].backend_name == "fast_backend"
+        assert results[0].confidence == 0.88
+
+
+# ===========================================================================
+# Short-circuit — first successful backend's results returned directly
+# ===========================================================================
+
+
+class TestCascadeShortCircuitsNoNMS:
+    """Cascade returns FIRST successful backend's results without cross-backend NMS."""
+
+    def test_cascade_short_circuits_no_cross_backend_nms(self):
+        """Verify cascade returns the first successful backend's results
+        immediately (no cross-backend NMS needed since it short-circuits)."""
+        cascade, stubs = _build_full_stub_cascade(
+            successes={
+                "template": 0.90,
+                "feature": 0.95,
+            },
+        )
+
+        results = cascade.find(
+            needle=np.zeros((10, 10, 3), dtype=np.uint8),
+            haystack=np.zeros((100, 100, 3), dtype=np.uint8),
+            config={"needle_type": "template"},
+        )
+
+        # The cascade should short-circuit at the first successful backend
+        assert len(results) == 1
+        assert results[0].backend_name == "template", (
+            "Cascade should return the FIRST successful backend's results "
+            f"(template at 20ms), not {results[0].backend_name}"
+        )
+        assert results[0].confidence == 0.90
+
+        # template was tried and succeeded — feature should NOT have been tried
+        assert stubs["template"].find_called
+        assert not stubs["feature"].find_called, (
+            "Cascade should short-circuit after first success; "
+            "feature backend should not have been called"
+        )
