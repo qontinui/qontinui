@@ -296,8 +296,15 @@ class HealingConfig:
     def from_env(cls) -> "HealingConfig":
         """Create configuration from environment variables.
 
+        In production (QONTINUI_ENV=production), healing is disabled unless
+        explicitly enabled via QONTINUI_ARIA_UI_ENABLED=true.
+
+        In development (default), healing auto-enables when the Aria-UI
+        endpoint is reachable, unless explicitly disabled.
+
         Reads:
-            QONTINUI_ARIA_UI_ENABLED: "true" to enable Aria-UI
+            QONTINUI_ENV: "development" (default) or "production"
+            QONTINUI_ARIA_UI_ENABLED: "true"/"false" to force on/off
             QONTINUI_ARIA_UI_ENDPOINT: Aria-UI server URL
             QONTINUI_ARIA_UI_MODE: "base" or "context"
             QONTINUI_ARIA_UI_MAX_HISTORY: max history entries
@@ -307,8 +314,21 @@ class HealingConfig:
         """
         import os
 
-        if os.environ.get("QONTINUI_ARIA_UI_ENABLED", "").lower() != "true":
+        env = os.environ.get("QONTINUI_ENV", "development").lower()
+        explicit = os.environ.get("QONTINUI_ARIA_UI_ENABLED", "").lower()
+
+        if explicit == "false":
             return cls.disabled()
+        if explicit != "true":
+            # No explicit opt-in — production requires it, dev auto-enables
+            if env == "production":
+                return cls.disabled()
+            # Dev mode: auto-enable if endpoint is reachable (quick probe)
+            endpoint = os.environ.get(
+                "QONTINUI_ARIA_UI_ENDPOINT", "http://localhost:8100"
+            )
+            if not cls._is_endpoint_reachable(endpoint):
+                return cls.disabled()
 
         endpoint = os.environ.get("QONTINUI_ARIA_UI_ENDPOINT", "http://localhost:8100")
         mode = os.environ.get("QONTINUI_ARIA_UI_MODE", "base").lower()
@@ -321,3 +341,21 @@ class HealingConfig:
             return cls.with_aria_ui_context(endpoint=endpoint, max_history=max_history)
         else:
             return cls.with_aria_ui(endpoint=endpoint)
+
+    @staticmethod
+    def _is_endpoint_reachable(endpoint: str, timeout: float = 0.5) -> bool:
+        """Quick probe to check if an Aria-UI endpoint is reachable."""
+        try:
+            from urllib.parse import urlparse
+            import socket
+
+            parsed = urlparse(endpoint)
+            host = parsed.hostname or "localhost"
+            port = parsed.port or 8100
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            result = sock.connect_ex((host, port))
+            sock.close()
+            return result == 0
+        except Exception:
+            return False
