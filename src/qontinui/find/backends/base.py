@@ -6,7 +6,7 @@ and tried in sequence by the CascadeDetector.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 
@@ -15,13 +15,18 @@ class DetectionResult:
     """Result from a detection backend.
 
     Attributes:
-        x: X coordinate of the detected element (top-left).
-        y: Y coordinate of the detected element (top-left).
-        width: Width of the detected region.
-        height: Height of the detected region.
+        x: X coordinate of the detected element (top-left), in pixels.
+        y: Y coordinate of the detected element (top-left), in pixels.
+        width: Width of the detected region, in pixels.
+        height: Height of the detected region, in pixels.
         confidence: Confidence score (0.0-1.0).
         backend_name: Name of the backend that produced this result.
+        label: Optional label describing the detected element.
         metadata: Optional backend-specific metadata.
+        normalized_x: X coordinate normalized to 0.0-1.0 range (screen-relative).
+        normalized_y: Y coordinate normalized to 0.0-1.0 range (screen-relative).
+        normalized_width: Width normalized to 0.0-1.0 range (screen-relative).
+        normalized_height: Height normalized to 0.0-1.0 range (screen-relative).
     """
 
     x: int
@@ -32,6 +37,10 @@ class DetectionResult:
     backend_name: str
     label: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    normalized_x: float | None = None
+    normalized_y: float | None = None
+    normalized_width: float | None = None
+    normalized_height: float | None = None
 
     @property
     def center(self) -> tuple[int, int]:
@@ -42,6 +51,44 @@ class DetectionResult:
     def bounds(self) -> tuple[int, int, int, int]:
         """Bounding box as (x, y, width, height)."""
         return (self.x, self.y, self.width, self.height)
+
+    @property
+    def normalized_bounds(self) -> tuple[float, float, float, float] | None:
+        """Normalized bounding box as (x, y, width, height) in 0.0-1.0 range.
+
+        Returns None if coordinates have not been normalized yet.
+        """
+        if self.normalized_x is None:
+            return None
+        return (
+            self.normalized_x,
+            self.normalized_y,
+            self.normalized_width,
+            self.normalized_height,
+        )
+
+    def normalize(self, screen_width: int, screen_height: int) -> "DetectionResult":
+        """Return a copy with normalized coordinates filled in.
+
+        Normalized coordinates represent position and size as fractions of
+        the screen dimensions (0.0-1.0), making them resolution-independent.
+
+        Args:
+            screen_width: Full screen width in pixels.
+            screen_height: Full screen height in pixels.
+
+        Returns:
+            A new DetectionResult with normalized_* fields populated.
+        """
+        if screen_width <= 0 or screen_height <= 0:
+            return self
+        return replace(
+            self,
+            normalized_x=self.x / screen_width,
+            normalized_y=self.y / screen_height,
+            normalized_width=self.width / screen_width,
+            normalized_height=self.height / screen_height,
+        )
 
 
 class DetectionBackend(ABC):

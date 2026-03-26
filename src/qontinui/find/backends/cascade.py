@@ -182,6 +182,8 @@ class CascadeDetector(DetectionBackend):
                     results[0].confidence,
                     total_ms,
                 )
+                # Normalize coordinates to 0.0-1.0 range if haystack dimensions available
+                results = self._normalize_results(results, haystack)
                 return results
 
             self._emit_backend_tried(
@@ -201,6 +203,39 @@ class CascadeDetector(DetectionBackend):
         total_ms = (time.perf_counter() - cascade_t0) * 1000
         self._emit_cascade_miss(needle_label, backends_tried, total_ms)
         return []
+
+    @staticmethod
+    def _normalize_results(
+        results: list[DetectionResult], haystack: Any
+    ) -> list[DetectionResult]:
+        """Normalize result coordinates to 0.0-1.0 range using haystack dimensions.
+
+        Tries to extract width/height from the haystack (PIL Image or numpy array).
+        If dimensions can't be determined, returns results unchanged.
+        """
+        if not results:
+            return results
+
+        # Already normalized? Skip.
+        if results[0].normalized_x is not None:
+            return results
+
+        width: int = 0
+        height: int = 0
+        try:
+            # PIL Image
+            if hasattr(haystack, "size"):
+                width, height = haystack.size
+            # numpy array (OpenCV format: height, width, channels)
+            elif hasattr(haystack, "shape"):
+                height, width = haystack.shape[:2]
+        except Exception:
+            pass
+
+        if width <= 0 or height <= 0:
+            return results
+
+        return [r.normalize(width, height) for r in results]
 
     def _ordered_backends(self, preferred: str | None) -> list[DetectionBackend]:
         """Return backends with the preferred one moved to front."""
