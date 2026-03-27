@@ -264,9 +264,7 @@ class EventMonitor:
         try:
             import subprocess
 
-            result = subprocess.run(
-                ["pbpaste"], capture_output=True, text=True, timeout=2
-            )
+            result = subprocess.run(["pbpaste"], capture_output=True, text=True, timeout=2)
             return result.stdout if result.returncode == 0 else None
         except Exception:
             return None

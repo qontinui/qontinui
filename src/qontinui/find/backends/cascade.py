@@ -205,9 +205,7 @@ class CascadeDetector(DetectionBackend):
         return []
 
     @staticmethod
-    def _normalize_results(
-        results: list[DetectionResult], haystack: Any
-    ) -> list[DetectionResult]:
+    def _normalize_results(results: list[DetectionResult], haystack: Any) -> list[DetectionResult]:
         """Normalize result coordinates to 0.0-1.0 range using haystack dimensions.
 
         Tries to extract width/height from the haystack (PIL Image or numpy array).
