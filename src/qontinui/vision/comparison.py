@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 import cv2
 import numpy as np
@@ -44,7 +44,7 @@ except ImportError:
     IMAGEHASH_AVAILABLE = False
 
 
-class ComparisonAlgorithm(str, Enum):
+class ComparisonAlgorithm(StrEnum):
     """Available comparison algorithms."""
 
     SSIM = "ssim"

@@ -7,7 +7,7 @@ and spatial relationships between elements.
 import logging
 import time
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class Alignment(str, Enum):
+class Alignment(StrEnum):
     """Alignment types."""
 
     LEFT = "left"
@@ -37,7 +37,7 @@ class Alignment(str, Enum):
     MIDDLE = "middle"
 
 
-class Direction(str, Enum):
+class Direction(StrEnum):
     """Spatial direction."""
 
     ABOVE = "above"

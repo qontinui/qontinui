@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +36,7 @@ logger = get_logger(__name__)
 # ============================================================================
 
 
-class OCRMatchMode(str, Enum):
+class OCRMatchMode(StrEnum):
     """Mode for OCR text matching."""
 
     EXACT = "exact"  # Text must match exactly

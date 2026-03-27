@@ -8,7 +8,7 @@ from the GUI environment discovery.
 import logging
 import time
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import cv2
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ElementState(str, Enum):
+class ElementState(StrEnum):
     """Element visual states."""
 
     ENABLED = "enabled"
@@ -423,7 +423,7 @@ class StateDetector:
         has_contrast = abs(dark_pixels - light_pixels) / total_pixels > 0.1
         has_saturation = saturation > 50
 
-        is_checked = has_contrast or has_saturation
+        is_checked = bool(has_contrast or has_saturation)
         confidence = 0.7 if is_checked else 0.6
 
         return is_checked, confidence

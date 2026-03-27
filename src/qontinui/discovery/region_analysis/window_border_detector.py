@@ -259,7 +259,7 @@ class WindowBorderDetector(BaseRegionAnalyzer):
         row_std = np.std(row_means)
 
         # Title bars typically have uniform rows
-        return row_std < 15  # type: ignore[no-any-return]
+        return bool(row_std < 15)
 
     def _remove_overlapping_windows(self, windows: list[DetectedRegion]) -> list[DetectedRegion]:
         """Remove overlapping windows, keeping larger ones."""

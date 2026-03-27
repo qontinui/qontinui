@@ -89,7 +89,7 @@ class ClickContextAnalyzer:
             # Color uniformity (low std = uniform)
             hue_std = np.std(hsv[:, :, 0])
             sat_std = np.std(hsv[:, :, 1])
-            features["color_uniformity"] = 1.0 - min(1.0, (hue_std + sat_std) / 180)
+            features["color_uniformity"] = 1.0 - min(1.0, (float(hue_std) + float(sat_std)) / 180)
 
             # Average saturation (buttons often have saturated colors)
             features["avg_saturation"] = float(np.mean(hsv[:, :, 1])) / 255.0

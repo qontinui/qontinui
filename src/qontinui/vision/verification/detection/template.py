@@ -299,7 +299,7 @@ class TemplateEngine:
         if not self._config.detection.coarse_to_fine:
             return False
         h, w = search_area.shape[:2]
-        return h >= 1080 and w >= 1920
+        return bool(h >= 1080 and w >= 1920)
 
     def _get_coarse_factor(self) -> int:
         """Get downscale factor for coarse pass."""

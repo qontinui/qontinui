@@ -179,8 +179,7 @@ class SafePlaywrightStateCollector:
     async def _is_truly_clickable(self, element: ElementHandle) -> bool:
         """Verify element is actually interactive."""
         try:
-            result = await element.evaluate(
-                """(el) => {
+            result = await element.evaluate("""(el) => {
                 const style = window.getComputedStyle(el);
                 const rect = el.getBoundingClientRect();
 
@@ -201,8 +200,7 @@ class SafePlaywrightStateCollector:
                 if (rect.bottom < 0) return false;
 
                 return true;
-            }"""
-            )
+            }""")
             return bool(result)
         except Exception:
             return False
@@ -210,8 +208,7 @@ class SafePlaywrightStateCollector:
     async def _get_unique_selector(self, element: ElementHandle) -> str:
         """Generate a unique CSS selector for an element."""
         try:
-            result = await element.evaluate(
-                """(el) => {
+            result = await element.evaluate("""(el) => {
                 // Try ID first
                 if (el.id) {
                     return '#' + CSS.escape(el.id);
@@ -253,8 +250,7 @@ class SafePlaywrightStateCollector:
                 }
 
                 return path.join(' > ');
-            }"""
-            )
+            }""")
             return str(result)
         except Exception:
             return "unknown"

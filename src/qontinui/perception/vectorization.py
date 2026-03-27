@@ -167,11 +167,11 @@ class ObjectVectorizer:
         v_projection = np.mean(edges, axis=0)
 
         features = [
-            edge_density,
-            np.mean(h_projection),
-            np.std(h_projection),
-            np.mean(v_projection),
-            np.std(v_projection),
+            float(edge_density),
+            float(np.mean(h_projection)),
+            float(np.std(h_projection)),
+            float(np.mean(v_projection)),
+            float(np.std(v_projection)),
         ]
 
         return features

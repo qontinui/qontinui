@@ -6,13 +6,13 @@ This module contains shared types used across execution state components.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from qontinui_schemas.common import utc_now
 
 
-class ExecutionStatus(str, Enum):
+class ExecutionStatus(StrEnum):
     """Status of workflow execution."""
 
     PENDING = "pending"
@@ -23,7 +23,7 @@ class ExecutionStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class ActionStatus(str, Enum):
+class ActionStatus(StrEnum):
     """Status of individual action execution."""
 
     PENDING = "pending"

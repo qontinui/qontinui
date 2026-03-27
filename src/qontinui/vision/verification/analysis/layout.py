@@ -10,7 +10,7 @@ Provides analysis of UI layout patterns including:
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -25,14 +25,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class AlignmentAxis(str, Enum):
+class AlignmentAxis(StrEnum):
     """Alignment axis types."""
 
     HORIZONTAL = "horizontal"
     VERTICAL = "vertical"
 
 
-class AlignmentEdge(str, Enum):
+class AlignmentEdge(StrEnum):
     """Alignment edge types."""
 
     LEFT = "left"

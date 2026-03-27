@@ -303,12 +303,12 @@ class ButtonFusionDetector(BaseAnalyzer):
             hue_std = np.std(region_hsv[:, :, 0])
 
             # Uniform colors suggest buttons
-            uniformity = max(0, 1 - (hue_std / 180))
+            uniformity = max(0, 1 - (float(hue_std) / 180))
 
             if uniformity < params["color_uniformity_threshold"]:
                 continue
 
-            confidence = min(0.85, uniformity * 0.7 + 0.15)
+            confidence = min(0.85, float(uniformity) * 0.7 + 0.15)
 
             regions.append((BoundingBox(x=x, y=y, width=w, height=h), confidence))
 

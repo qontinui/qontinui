@@ -5,10 +5,10 @@ This module provides fundamental enumerations and primitive types that are
 referenced throughout the action schema system.
 """
 
-from enum import Enum
+from enum import StrEnum
 
 
-class MouseButton(str, Enum):
+class MouseButton(StrEnum):
     """Mouse button types."""
 
     LEFT = "LEFT"
@@ -16,7 +16,7 @@ class MouseButton(str, Enum):
     MIDDLE = "MIDDLE"
 
 
-class SearchStrategy(str, Enum):
+class SearchStrategy(StrEnum):
     """Search strategy for finding targets."""
 
     FIRST = "FIRST"
@@ -25,7 +25,7 @@ class SearchStrategy(str, Enum):
     EACH = "EACH"
 
 
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     """Logging levels."""
 
     DEBUG = "debug"
@@ -34,7 +34,7 @@ class LogLevel(str, Enum):
     ERROR = "error"
 
 
-class VerificationMode(str, Enum):
+class VerificationMode(StrEnum):
     """Verification modes for action results."""
 
     IMAGE_APPEARS = "IMAGE_APPEARS"
@@ -45,7 +45,7 @@ class VerificationMode(str, Enum):
     NONE = "NONE"
 
 
-class WorkflowVisibility(str, Enum):
+class WorkflowVisibility(StrEnum):
     """Workflow visibility levels for UI filtering.
 
     - PUBLIC: Normal workflows visible in UI dropdowns and lists

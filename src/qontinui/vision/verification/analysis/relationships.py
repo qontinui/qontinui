@@ -9,7 +9,7 @@ Provides analysis of relationships between UI elements:
 
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class RelationshipType(str, Enum):
+class RelationshipType(StrEnum):
     """Types of element relationships."""
 
     CONTAINS = "contains"  # Element A contains element B

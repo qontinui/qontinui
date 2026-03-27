@@ -6,10 +6,10 @@ This module defines shared enums used across data operation components:
 - ComparisonOperator: Comparison operators for filtering
 """
 
-from enum import Enum
+from enum import StrEnum
 
 
-class VariableScope(str, Enum):
+class VariableScope(StrEnum):
     """Variable scope levels for hierarchical variable storage.
 
     Variables are resolved in order of priority:
@@ -23,7 +23,7 @@ class VariableScope(str, Enum):
     PROCESS = "process"
 
 
-class ComparatorType(str, Enum):
+class ComparatorType(StrEnum):
     """Types of comparators for sorting collections.
 
     Attributes:
@@ -39,7 +39,7 @@ class ComparatorType(str, Enum):
     CUSTOM = "CUSTOM"
 
 
-class ComparisonOperator(str, Enum):
+class ComparisonOperator(StrEnum):
     """Comparison operators for filtering collections.
 
     Attributes:

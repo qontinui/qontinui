@@ -2,13 +2,13 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from qontinui_schemas.common import utc_now
 
 
-class ElementType(str, Enum):
+class ElementType(StrEnum):
     """Types of GUI elements that can be detected and stored."""
 
     # Button types

@@ -8,7 +8,7 @@ efficient visual element matching.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any, cast
 
 import numpy as np
@@ -29,7 +29,7 @@ except ImportError:
     SAM3Processor = None  # type: ignore
 
 
-class MatchingStrategy(str, Enum):
+class MatchingStrategy(StrEnum):
     """Strategy for matching multi-pattern elements."""
 
     AVERAGE = "average"  # Average all pattern vectors into one query

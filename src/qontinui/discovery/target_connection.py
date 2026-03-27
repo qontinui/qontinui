@@ -17,7 +17,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal, Self
 
 import httpx
@@ -25,7 +25,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
-class ActionType(str, Enum):
+class ActionType(StrEnum):
     """Types of actions that can be executed on elements."""
 
     CLICK = "click"
@@ -38,7 +38,7 @@ class ActionType(str, Enum):
     HOVER = "hover"
 
 
-class ElementRole(str, Enum):
+class ElementRole(StrEnum):
     """ARIA roles for UI elements."""
 
     BUTTON = "button"

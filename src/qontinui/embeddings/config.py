@@ -6,13 +6,13 @@ including local models (sentence-transformers) and API-based services (OpenAI).
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
-class EmbeddingProviderType(str, Enum):
+class EmbeddingProviderType(StrEnum):
     """Supported embedding provider types."""
 
     SENTENCE_TRANSFORMERS = "sentence-transformers"

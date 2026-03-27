@@ -428,14 +428,12 @@ class HybridExtractor:
     async def _get_scroll_info(self, page: Page) -> dict[str, int]:
         """Get scroll position information."""
         try:
-            info = await page.evaluate(
-                """() => ({
+            info = await page.evaluate("""() => ({
                 scroll_x: window.scrollX || window.pageXOffset || 0,
                 scroll_y: window.scrollY || window.pageYOffset || 0,
                 scroll_height: document.documentElement.scrollHeight || document.body.scrollHeight || 0,
                 viewport_height: window.innerHeight || 0,
-            })"""
-            )
+            })""")
             return info
         except Exception:
             return {

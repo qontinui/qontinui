@@ -204,8 +204,7 @@ class ElementSafetyAnalyzer:
             Tuple of (risk_level, reason_string)
         """
         # Get element properties via JavaScript evaluation
-        props = await element.evaluate(
-            """(el) => ({
+        props = await element.evaluate("""(el) => ({
             tagName: el.tagName.toLowerCase(),
             text: el.textContent?.trim() || '',
             ariaLabel: el.getAttribute('aria-label') || '',
@@ -219,8 +218,7 @@ class ElementSafetyAnalyzer:
             role: el.getAttribute('role') || '',
             disabled: el.disabled || false,
             ariaDisabled: el.getAttribute('aria-disabled') === 'true',
-        })"""
-        )
+        })""")
 
         # Combine all text for analysis
         all_text = " ".join(
@@ -333,8 +331,7 @@ class ConfirmationDialogHandler:
         page.on("dialog", lambda dialog: dialog.dismiss())
 
         # Set up mutation observer for modal dialogs
-        await page.evaluate(
-            """() => {
+        await page.evaluate("""() => {
             window.__qontinui_dialog_detected = false;
 
             const observer = new MutationObserver((mutations) => {
@@ -363,8 +360,7 @@ class ConfirmationDialogHandler:
                 childList: true,
                 subtree: true
             });
-        }"""
-        )
+        }""")
 
     async def check_for_dialog(self, page: Page) -> bool:
         """Check if a dialog has been detected."""

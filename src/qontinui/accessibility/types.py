@@ -6,13 +6,13 @@ Pydantic models for accessibility validation and WCAG compliance.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
-class WCAGLevel(str, Enum):
+class WCAGLevel(StrEnum):
     """WCAG conformance level."""
 
     A = "A"
@@ -20,7 +20,7 @@ class WCAGLevel(str, Enum):
     AAA = "AAA"
 
 
-class AccessibilitySeverity(str, Enum):
+class AccessibilitySeverity(StrEnum):
     """Severity of accessibility issues."""
 
     CRITICAL = "critical"

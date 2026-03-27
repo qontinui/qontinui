@@ -15,7 +15,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from ..config import Workflow
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 
-class ExecutionStatus(str, Enum):
+class ExecutionStatus(StrEnum):
     """Execution status enum."""
 
     PENDING = "pending"
@@ -47,7 +47,7 @@ class ExecutionStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class ExecutionEventType(str, Enum):
+class ExecutionEventType(StrEnum):
     """Execution event types."""
 
     WORKFLOW_START = "workflow_start"

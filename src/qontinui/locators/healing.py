@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from ..model.element import Pattern
@@ -23,7 +23,7 @@ from .strategies import MatchResult, ScreenContext
 logger = logging.getLogger(__name__)
 
 
-class HealingEventType(str, Enum):
+class HealingEventType(StrEnum):
     """Types of healing events."""
 
     HEALING_ATTEMPTED = "healing_attempted"

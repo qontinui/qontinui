@@ -7,13 +7,13 @@ for discovering and executing AI-accessible web actions.
 Reference: https://github.com/TamTunnel/AWAS
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class ConformanceLevel(str, Enum):
+class ConformanceLevel(StrEnum):
     """AWAS conformance levels indicate implementation depth."""
 
     L1 = "L1"  # Basic: Actions only
@@ -21,7 +21,7 @@ class ConformanceLevel(str, Enum):
     L3 = "L3"  # Full: Rate limits, scopes, side effects
 
 
-class HttpMethod(str, Enum):
+class HttpMethod(StrEnum):
     """HTTP methods supported by AWAS actions."""
 
     GET = "GET"
@@ -31,7 +31,7 @@ class HttpMethod(str, Enum):
     DELETE = "DELETE"
 
 
-class ParameterLocation(str, Enum):
+class ParameterLocation(StrEnum):
     """Where a parameter should be placed in the HTTP request."""
 
     PATH = "path"
@@ -40,7 +40,7 @@ class ParameterLocation(str, Enum):
     HEADER = "header"
 
 
-class AwasAuthType(str, Enum):
+class AwasAuthType(StrEnum):
     """Authentication types supported by AWAS."""
 
     BEARER_TOKEN = "bearer_token"

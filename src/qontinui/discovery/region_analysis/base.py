@@ -7,12 +7,12 @@ Region analysis focuses on detecting larger functional areas of the UI
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
 
-class RegionType(str, Enum):
+class RegionType(StrEnum):
     """Types of regions that can be detected"""
 
     INVENTORY_GRID = "inventory_grid"  # Grid-based inventory systems
@@ -32,7 +32,7 @@ class RegionType(str, Enum):
     CUSTOM = "custom"  # Extensibility for game-specific regions
 
 
-class RegionAnalysisType(str, Enum):
+class RegionAnalysisType(StrEnum):
     """Types of region analysis methods"""
 
     TEMPLATE_MATCH = "template_match"  # Template matching for known regions

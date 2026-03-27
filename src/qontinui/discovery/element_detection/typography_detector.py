@@ -347,7 +347,7 @@ class TypographyDetector(BaseAnalyzer):
         stroke_ratio = avg_stroke_width / height if height > 0 else 0
         is_bold = stroke_ratio >= params["bold_stroke_ratio"]
 
-        return (is_bold, avg_stroke_width)
+        return (bool(is_bold), float(avg_stroke_width))
 
     def _analyze_text_compactness(self, gray: np.ndarray) -> float:
         """
@@ -402,7 +402,7 @@ class TypographyDetector(BaseAnalyzer):
 
         center_ratio = min(left_margin, right_margin) / max(left_margin, right_margin)
 
-        return center_ratio >= 0.7
+        return bool(center_ratio >= 0.7)
 
     def _calculate_confidence(self, features: dict[str, Any], params: dict[str, Any]) -> float:
         """

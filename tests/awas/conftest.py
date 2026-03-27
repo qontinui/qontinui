@@ -9,7 +9,7 @@ import sys
 import types
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -54,7 +54,7 @@ def _setup_extraction_stubs():
 
     # Create stub classes that the extractor needs
 
-    class StateType(str, Enum):
+    class StateType(StrEnum):
         PAGE = "page"
         MODAL = "modal"
         MENU = "menu"
@@ -62,14 +62,14 @@ def _setup_extraction_stubs():
         LIST = "list"
         DETAIL = "detail"
 
-    class ElementType(str, Enum):
+    class ElementType(StrEnum):
         BUTTON = "button"
         LINK = "link"
         INPUT = "input"
         SELECT = "select"
         CHECKBOX = "checkbox"
 
-    class TransitionType(str, Enum):
+    class TransitionType(StrEnum):
         CLICK = "click"
         NAVIGATE = "navigate"
         SUBMIT = "submit"

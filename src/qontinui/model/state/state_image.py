@@ -6,7 +6,7 @@ Images associated with states for identification.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from ..element import Image, Pattern, Region
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from qontinui.model.state.state import State
 
 
-class SearchMode(str, Enum):
+class SearchMode(StrEnum):
     """Search mode for finding images.
 
     Determines whether to use template matching or RAG-based semantic search.
@@ -28,7 +28,7 @@ class SearchMode(str, Enum):
     TEMPLATE = "template"  # Use traditional template matching
 
 
-class MultiPatternMode(str, Enum):
+class MultiPatternMode(StrEnum):
     """How to search when StateImage has multiple patterns.
 
     For RAG search, patterns can be searched individually or combined

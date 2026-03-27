@@ -4,12 +4,12 @@ Base classes and interfaces for analysis modules
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
 
-class AnalysisType(str, Enum):
+class AnalysisType(StrEnum):
     """Types of analysis methods"""
 
     STABLE_REGION = "stable_region"  # Type 1: Elements stable across screenshots

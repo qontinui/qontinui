@@ -5,7 +5,7 @@ branching, looping, and parallel execution paths.
 """
 
 import logging
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Union
 
 from ..config import Workflow
@@ -19,7 +19,7 @@ WorkflowType = Union[Workflow, "SchemaWorkflow"]
 logger = logging.getLogger(__name__)
 
 
-class TraversalState(str, Enum):
+class TraversalState(StrEnum):
     """State of action during traversal."""
 
     PENDING = "pending"

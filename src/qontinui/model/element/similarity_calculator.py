@@ -87,7 +87,7 @@ class SimilarityCalculator:
         Returns:
             True if shapes are compatible, False otherwise
         """
-        return img1.shape == img2.shape
+        return bool(img1.shape == img2.shape)
 
     def _apply_masks(
         self,

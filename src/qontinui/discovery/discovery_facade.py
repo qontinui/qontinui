@@ -35,7 +35,7 @@ The facade is designed to be:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from .state_construction.state_builder import TransitionInfo
 
 
-class DiscoveryAlgorithm(str, Enum):
+class DiscoveryAlgorithm(StrEnum):
     """Available state discovery algorithms."""
 
     PIXEL_STABILITY = "pixel_stability"

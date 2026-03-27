@@ -220,7 +220,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
             # Check for uniform color
             region_hsv = hsv[y : y + h, x : x + w]
             hue_std = np.std(region_hsv[:, :, 0])
-            uniformity = max(0, 1 - (hue_std / 180))
+            uniformity = max(0, 1 - (float(hue_std) / 180))
 
             if uniformity < 0.7:
                 continue
@@ -228,7 +228,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
             # Flat buttons have clean edges
             edge_region = gray[max(0, y - 2) : y + h + 2, max(0, x - 2) : x + w + 2]
             edges = cv2.Canny(edge_region, 50, 150)
-            edge_density = np.sum(edges > 0) / edges.size
+            edge_density = float(np.sum(edges > 0)) / edges.size
 
             # Moderate edge density (has border but not too complex)
             if edge_density > 0.3:
@@ -435,7 +435,7 @@ class ButtonEnsembleDetector(BaseAnalyzer):
             if profile_variance < 10:
                 continue
 
-            confidence = min(0.75, 0.4 + (profile_variance / 500) * 0.35)
+            confidence = min(0.75, 0.4 + (float(profile_variance) / 500) * 0.35)
 
             # Add padding
             padding = 6

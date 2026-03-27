@@ -10,7 +10,7 @@ Provides analysis of text visual properties including:
 
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import cv2
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class TextAlignment(str, Enum):
+class TextAlignment(StrEnum):
     """Text alignment types."""
 
     LEFT = "left"
@@ -258,13 +258,13 @@ class TextMetricsAnalyzer:
         content_rows = np.where(h_profile > threshold)[0]
 
         if len(content_rows) == 0:
-            return region.shape[0]
+            return int(region.shape[0])
 
         # Cap height is from top of content to baseline
         top = int(content_rows[0])
         bottom = int(np.percentile(content_rows, 85))
 
-        return int(bottom - top)
+        return int(bottom) - int(top)
 
     def detect_x_height(
         self,
