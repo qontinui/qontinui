@@ -21,13 +21,6 @@ repos:
         language_version: python3.12
         args: ['--line-length=100']
 
-  # Note: isort disabled in pre-commit - using ruff for import sorting (they conflict)
-  # - repo: https://github.com/pycqa/isort
-  #   rev: 5.13.2
-  #   hooks:
-  #     - id: isort
-  #       args: ['--profile', 'black', '--line-length', '100']
-
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.6.0
     hooks:
