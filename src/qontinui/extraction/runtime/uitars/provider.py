@@ -303,10 +303,11 @@ class HuggingFaceEndpointProvider(UITARSProviderBase):
             response.raise_for_status()
             result = response.json()
 
-            # Extract generated text
-            raw_output = result.get("generated_text", "") or result.get("text", "")
+            # Extract generated text — some TGI endpoints return a list
             if isinstance(result, list) and result:
                 raw_output = result[0].get("generated_text", "")
+            else:
+                raw_output = result.get("generated_text", "") or result.get("text", "")
 
             inference_time = (time.time() - start_time) * 1000
             thought, action = self.parse_output(raw_output)
@@ -321,7 +322,7 @@ class HuggingFaceEndpointProvider(UITARSProviderBase):
             )
 
         except Exception as e:
-            logger.error(f"HuggingFace inference failed: {e}")
+            logger.exception("HuggingFace inference failed")
             return UITARSInferenceResult(
                 thought=UITARSThought(reasoning=f"Inference failed: {e}"),
                 action=UITARSAction(action_type=UITARSActionType.WAIT),
@@ -529,7 +530,7 @@ class LocalTransformersProvider(UITARSProviderBase):
             )
 
         except Exception as e:
-            logger.error(f"Local inference failed: {e}")
+            logger.exception("Local inference failed")
             return UITARSInferenceResult(
                 thought=UITARSThought(reasoning=f"Inference failed: {e}"),
                 action=UITARSAction(action_type=UITARSActionType.WAIT),
@@ -660,7 +661,7 @@ class VLLMProvider(UITARSProviderBase):
             )
 
         except Exception as e:
-            logger.error(f"vLLM inference failed: {e}")
+            logger.exception("vLLM inference failed")
             return UITARSInferenceResult(
                 thought=UITARSThought(reasoning=f"Inference failed: {e}"),
                 action=UITARSAction(action_type=UITARSActionType.WAIT),
