@@ -349,7 +349,7 @@ class LocalTransformersProvider(UITARSProviderBase):
         """Load model and processor with optional quantization."""
         try:
             import torch
-            from transformers import AutoModelForVision2Seq, AutoProcessor
+            from transformers import AutoModelForImageTextToText, AutoProcessor
 
             model_id = self.settings.get_model_id()
             logger.info(f"Loading UI-TARS model: {model_id}")
@@ -384,7 +384,7 @@ class LocalTransformersProvider(UITARSProviderBase):
                         bnb_4bit_use_double_quant=True,
                         bnb_4bit_quant_type="nf4",
                     )
-                    self._model = AutoModelForVision2Seq.from_pretrained(
+                    self._model = AutoModelForImageTextToText.from_pretrained(
                         model_id,
                         quantization_config=quantization_config,
                         device_map="auto",
@@ -395,7 +395,7 @@ class LocalTransformersProvider(UITARSProviderBase):
                         "bitsandbytes not installed, falling back to float16. "
                         "Install with: pip install bitsandbytes"
                     )
-                    self._model = AutoModelForVision2Seq.from_pretrained(
+                    self._model = AutoModelForImageTextToText.from_pretrained(
                         model_id,
                         torch_dtype=torch_dtype,
                         device_map="auto",
@@ -407,7 +407,7 @@ class LocalTransformersProvider(UITARSProviderBase):
                     from transformers import BitsAndBytesConfig
 
                     quantization_config = BitsAndBytesConfig(load_in_8bit=True)
-                    self._model = AutoModelForVision2Seq.from_pretrained(
+                    self._model = AutoModelForImageTextToText.from_pretrained(
                         model_id,
                         quantization_config=quantization_config,
                         device_map="auto",
@@ -415,7 +415,7 @@ class LocalTransformersProvider(UITARSProviderBase):
                     )
                 except ImportError:
                     logger.warning("bitsandbytes not installed, falling back to float16")
-                    self._model = AutoModelForVision2Seq.from_pretrained(
+                    self._model = AutoModelForImageTextToText.from_pretrained(
                         model_id,
                         torch_dtype=torch_dtype,
                         device_map="auto",
@@ -423,7 +423,7 @@ class LocalTransformersProvider(UITARSProviderBase):
                     )
             else:
                 # No quantization
-                self._model = AutoModelForVision2Seq.from_pretrained(
+                self._model = AutoModelForImageTextToText.from_pretrained(
                     model_id,
                     torch_dtype=torch_dtype,
                     device_map="auto" if self._device == "cuda" else None,

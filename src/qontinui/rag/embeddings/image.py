@@ -30,7 +30,7 @@ class CLIPEmbedder:
         try:
             self._processor = CLIPProcessor.from_pretrained(model_name, cache_dir=self._cache_dir)
             self._model = CLIPModel.from_pretrained(model_name, cache_dir=self._cache_dir).to(
-                self._device
+                self._device  # type: ignore[arg-type]
             )
             self._model.eval()
         except Exception as e:
