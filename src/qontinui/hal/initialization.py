@@ -4,8 +4,11 @@ This module provides functions for initializing and shutting down HAL
 components using explicit dependency injection instead of global factories.
 """
 
+import logging
 import sys
 from typing import cast
+
+logger = logging.getLogger(__name__)
 
 from .config import HALConfig
 from .container import HALContainer
@@ -475,8 +478,55 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
         )
         return CDPAccessibilityCapture(schema_config)
 
+    elif backend == "rust":
+        # Explicit Rust runner backend
+        from .implementations.accessibility.rust_backend import RustBackendCapture
+
+        return RustBackendCapture()
+
     elif backend == "auto":
-        # Auto-detect: prefer UIA on Windows, AT-SPI on Linux, fall back to CDP
+        # Auto-detect: prefer Rust runner > UIA/AT-SPI > CDP
+        #
+        # Try the Rust runner first — it provides the fastest, most capable
+        # accessibility capture using platform-native adapters with CDP fusion.
+        # The check is synchronous (blocking) but uses a very short timeout.
+        import asyncio
+
+        from .implementations.accessibility.rust_backend import RustBackendCapture
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is not None and loop.is_running():
+            # We're inside an event loop — schedule the check as a task.
+            # Since this is called during initialization (before any capture),
+            # we optimistically try the runner and fall back synchronously.
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                runner_available = loop.run_in_executor(
+                    pool,
+                    lambda: asyncio.run(RustBackendCapture.is_runner_available(timeout=2.0)),
+                )
+                # We can't await here in a sync function, so we use a non-blocking
+                # check. If the runner was recently available, assume it still is.
+                # For a clean first-time check, fall through to platform backends.
+                runner_available = False  # Can't block; fall through
+        else:
+            try:
+                runner_available = asyncio.run(
+                    RustBackendCapture.is_runner_available(timeout=2.0)
+                )
+            except RuntimeError:
+                runner_available = False
+
+        if runner_available:
+            logger.info("Rust runner available — using RustBackendCapture")
+            return RustBackendCapture()
+
+        # Fall back to platform-native Python backends
         plat = _detect_platform(config)
 
         if plat == "windows":

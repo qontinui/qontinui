@@ -6,6 +6,7 @@ for different accessibility backends:
 - CDPAccessibilityCapture: Chrome DevTools Protocol (web browsers, Electron, Tauri on Windows)
 - UIAAccessibilityCapture: Windows UI Automation (native Windows apps) [Windows only]
 - ATSPIAccessibilityCapture: AT-SPI2 (native Linux desktop apps) [Linux only]
+- RustBackendCapture: Delegates to Rust runner's native accessibility layer via HTTP
 """
 
 import platform
@@ -14,10 +15,14 @@ from qontinui.hal.implementations.accessibility.cdp_capture import (
     CDPAccessibilityCapture,
 )
 from qontinui.hal.implementations.accessibility.ref_manager import RefManager
+from qontinui.hal.implementations.accessibility.rust_backend import (
+    RustBackendCapture,
+)
 
 __all__ = [
     "CDPAccessibilityCapture",
     "RefManager",
+    "RustBackendCapture",
 ]
 
 # Conditionally export UIA capture on Windows
