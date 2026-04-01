@@ -1072,15 +1072,102 @@ class ImageMatchingStateMachineBuilder:
         logger.info(f"Clustered {len(self.tracked_images)} images into {len(states_config)} states")
         return states_config
 
+    def _derive_transitions(
+        self,
+        states_config: list[dict[str, Any]],
+        raw_transitions: list[dict[str, Any]],
+        extraction_state_to_screenshot: dict[str, str],
+    ) -> list[dict[str, Any]]:
+        """
+        Derive transitions from navigation data.
+
+        Maps extraction-level transitions onto the image-matching states by
+        resolving extraction state IDs to screenshot IDs, then finding which
+        image-matching state owns that screenshot.
+
+        Args:
+            states_config: State configs produced by cluster_into_states()
+            raw_transitions: InferredTransition dicts from ExtractionResult
+            extraction_state_to_screenshot: Maps extraction state ID -> screenshot ID
+
+        Returns:
+            List of transition config dicts ready for project configuration.
+        """
+        if not raw_transitions:
+            return []
+
+        # Build screenshot_id -> image-matching state_id lookup
+        screenshot_to_state: dict[str, str] = {}
+        for state in states_config:
+            state_id = state["id"]
+            for screen_id in state.get("screensFound", []):
+                screenshot_to_state[screen_id] = state_id
+
+        transitions_config: list[dict[str, Any]] = []
+
+        for trans in raw_transitions:
+            from_ext_state = trans.get("from_state_id", "")
+            to_ext_state = trans.get("to_state_id", "")
+            trigger_type = trans.get("trigger_type", "click")
+
+            # Resolve extraction state IDs to screenshot IDs, then to builder state IDs
+            from_screenshot = extraction_state_to_screenshot.get(from_ext_state, "")
+            to_screenshot = extraction_state_to_screenshot.get(to_ext_state, "")
+
+            from_state_id = screenshot_to_state.get(from_screenshot)
+            to_state_id = screenshot_to_state.get(to_screenshot)
+
+            if not from_state_id or not to_state_id:
+                logger.debug(
+                    "Skipping transition %s->%s: could not resolve to builder states",
+                    from_ext_state,
+                    to_ext_state,
+                )
+                continue
+
+            if from_state_id == to_state_id:
+                # Self-transition within same visual state cluster — skip
+                continue
+
+            # Build transition config
+            trigger_name = trans.get("target_element") or trigger_type
+            transition_id = str(uuid4())
+            transition_config = {
+                "id": transition_id,
+                "type": "OutgoingTransition",
+                "name": f"Transition: {trigger_name}",
+                "description": f"{trigger_type} transition",
+                "fromState": from_state_id,
+                "toState": to_state_id,
+                "workflows": [],
+                "timeout": 10000,
+                "retryCount": 3,
+                "staysVisible": False,
+                "activateStates": [to_state_id],
+                "deactivateStates": [from_state_id],
+            }
+            transitions_config.append(transition_config)
+
+        logger.info(
+            "Derived %d transitions from %d raw transitions",
+            len(transitions_config),
+            len(raw_transitions),
+        )
+        return transitions_config
+
     def build(
         self,
         elements_by_screenshot: dict[str, list[dict[str, Any]]],
+        raw_transitions: list[dict[str, Any]] | None = None,
+        extraction_state_to_screenshot: dict[str, str] | None = None,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """
         Build the state machine.
 
         Args:
             elements_by_screenshot: Dict mapping screenshot_id to list of element dicts
+            raw_transitions: Optional list of InferredTransition dicts for deriving transitions
+            extraction_state_to_screenshot: Optional mapping from extraction state ID to screenshot ID
 
         Returns:
             Tuple of (states_config, transitions_config)
@@ -1142,8 +1229,12 @@ class ImageMatchingStateMachineBuilder:
                 flush=True,
             )
 
-        # TODO: Derive transitions from navigation data
-        transitions_config: list[dict[str, Any]] = []
+        # Derive transitions from navigation data if available
+        transitions_config = self._derive_transitions(
+            states_config,
+            raw_transitions or [],
+            extraction_state_to_screenshot or {},
+        )
 
         return states_config, transitions_config
 
@@ -1190,6 +1281,8 @@ def build_state_machine_from_extraction_result(
 
     # Build elements_by_screenshot from RuntimeExtractionResult
     elements_by_screenshot: dict[str, list[dict[str, Any]]] = {}
+    # Map extraction state IDs to screenshot IDs for transition derivation
+    extraction_state_to_screenshot: dict[str, str] = {}
 
     runtime_result = extraction_result.runtime_extraction
     print(f"[IMAGE_MATCHING_DEBUG] runtime_result exists: {runtime_result is not None}", flush=True)
@@ -1210,6 +1303,7 @@ def build_state_machine_from_extraction_result(
         for i, runtime_state in enumerate(runtime_result.states):
             # Get screenshot_id - ExtractedState has screenshot_id directly (not screenshot.id)
             screenshot_id = getattr(runtime_state, "screenshot_id", None) or runtime_state.id
+            extraction_state_to_screenshot[runtime_state.id] = screenshot_id
             print(
                 f"[IMAGE_MATCHING_DEBUG] Processing state {i}: screenshot_id={screenshot_id}",
                 flush=True,
@@ -1285,8 +1379,26 @@ def build_state_machine_from_extraction_result(
         logger.error(f"Failed to create ImageMatchingStateMachineBuilder: {e}")
         return [], []
 
+    # Collect transition data from ExtractionResult for transition derivation
+    raw_transitions: list[dict[str, Any]] = []
+    for t in extraction_result.transitions:
+        raw_transitions.append({
+            "from_state_id": t.from_state_id,
+            "to_state_id": t.to_state_id,
+            "trigger_type": t.trigger_type,
+            "target_element": t.target_element,
+        })
+    print(
+        f"[IMAGE_MATCHING_DEBUG] Collected {len(raw_transitions)} transitions for derivation",
+        flush=True,
+    )
+
     print("[IMAGE_MATCHING_DEBUG] Calling builder.build()...", flush=True)
-    result = builder.build(elements_by_screenshot)
+    result = builder.build(
+        elements_by_screenshot,
+        raw_transitions=raw_transitions,
+        extraction_state_to_screenshot=extraction_state_to_screenshot,
+    )
     print(
         f"[IMAGE_MATCHING_DEBUG] builder.build() returned {len(result[0])} states, {len(result[1])} transitions",
         flush=True,
