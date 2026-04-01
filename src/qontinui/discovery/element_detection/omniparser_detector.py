@@ -356,8 +356,8 @@ class OmniParserDetector(BaseAnalyzer):
             torch_dtype=dtype,
             trust_remote_code=True,
         ).to(
-            self._device
-        )  # type: ignore[arg-type]
+            self._device  # type: ignore[arg-type]
+        )
         self._caption_model.eval()
 
         self._last_used = time.perf_counter()

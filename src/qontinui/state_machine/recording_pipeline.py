@@ -125,7 +125,7 @@ class RecordingPipeline:
             auto_detect_modal_states=self.config.auto_detect_modal_states,
         )
         discovery = FingerprintStateDiscovery(discovery_config)
-        discovery.load_cooccurrence_export(export)
+        discovery.load_cooccurrence_export(export_data)
 
         # 3. Discover states
         discovered_states = discovery.discover_states()

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import Any, cast
 
 import aiohttp
 from qontinui_schemas.accessibility import (
@@ -86,7 +86,7 @@ class RustBackendCapture(IAccessibilityCapture):
                 if resp.status >= 400:
                     body = await resp.text()
                     raise RuntimeError(f"Runner API error {resp.status} on POST {path}: {body}")
-                return await resp.json()
+                return cast(dict[str, Any], await resp.json())
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Failed to reach runner at {url}: {e}") from e
 
@@ -110,7 +110,7 @@ class RustBackendCapture(IAccessibilityCapture):
                 if resp.status >= 400:
                     body = await resp.text()
                     raise RuntimeError(f"Runner API error {resp.status} on GET {path}: {body}")
-                return await resp.json()
+                return cast(dict[str, Any], await resp.json())
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Failed to reach runner at {url}: {e}") from e
 
@@ -278,7 +278,7 @@ class RustBackendCapture(IAccessibilityCapture):
             True if click succeeded
         """
         result = await self._post("/a11y/click", json={"ref_id": ref})
-        return result.get("success", False)
+        return bool(result.get("success", False))
 
     async def type_by_ref(
         self,
@@ -305,7 +305,7 @@ class RustBackendCapture(IAccessibilityCapture):
                 "clear_first": clear_first,
             },
         )
-        return result.get("success", False)
+        return bool(result.get("success", False))
 
     async def focus_by_ref(self, ref: str) -> bool:
         """Focus an element by ref via the Rust runner.
@@ -317,7 +317,7 @@ class RustBackendCapture(IAccessibilityCapture):
             True if focus succeeded
         """
         result = await self._post("/a11y/focus", json={"ref_id": ref})
-        return result.get("success", False)
+        return bool(result.get("success", False))
 
     def get_backend_name(self) -> str:
         """Get the name of this backend implementation."""

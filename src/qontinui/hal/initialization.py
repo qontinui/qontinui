@@ -499,6 +499,7 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
         except RuntimeError:
             loop = None
 
+        runner_available: bool = False
         if loop is not None and loop.is_running():
             # We're inside an event loop — schedule the check as a task.
             # Since this is called during initialization (before any capture),
@@ -506,7 +507,7 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
             import concurrent.futures
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                runner_available = loop.run_in_executor(
+                _future = loop.run_in_executor(
                     pool,
                     lambda: asyncio.run(RustBackendCapture.is_runner_available(timeout=2.0)),
                 )

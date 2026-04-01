@@ -100,11 +100,11 @@ def _build_workflow_name(
         return "Recorded Workflow"
 
     # Use first and last state names
-    state_names = []
+    state_names: list[str] = []
     for sid in visited:
-        for s in states:
-            if s.id == sid:
-                state_names.append(s.name)
+        for st in states:
+            if st.id == sid:
+                state_names.append(st.name)
                 break
 
     if len(state_names) >= 2:
