@@ -8,11 +8,7 @@ from typing import Any
 
 import pytest
 
-from qontinui.actions.control_flow import (
-    BreakLoop,
-    ContinueLoop,
-    ControlFlowExecutor,
-)
+from qontinui.actions.control_flow import BreakLoop, ContinueLoop, ControlFlowExecutor
 from qontinui.config import Action
 
 # ============================================================================

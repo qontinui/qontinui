@@ -331,9 +331,7 @@ def demonstrate_registry():
     # Demonstrate transition execution
     print("\n=== Transition Execution Example ===")
     from qontinui.navigation.transition_executor import TransitionExecutor
-    from qontinui.state_management.enhanced_active_state_set import (
-        EnhancedActiveStateSet,
-    )
+    from qontinui.state_management.enhanced_active_state_set import EnhancedActiveStateSet
 
     # Create executor
     active_states = EnhancedActiveStateSet()

@@ -12,11 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .element_comparator import CrossPageMatch, CrossPageMatcher, ElementComparator
-from .models import (
-    ElementFingerprint,
-    ExtractedPageV2,
-    IdentifiedState,
-)
+from .models import ElementFingerprint, ExtractedPageV2, IdentifiedState
 
 logger = logging.getLogger(__name__)
 

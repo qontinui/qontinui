@@ -38,24 +38,87 @@ def compute_hash_sync(
         h2 = ctypes.c_int32(h2 * 0x01000193).value
 
     # Convert to unsigned 32-bit and format as hex
-    hex1 = format(ctypes.c_uint32(h1).value, '08x')
-    hex2 = format(ctypes.c_uint32(h2).value, '08x')
+    hex1 = format(ctypes.c_uint32(h1).value, "08x")
+    hex2 = format(ctypes.c_uint32(h2).value, "08x")
     return hex1 + hex2
 
 
 # Test vectors from TypeScript computeHashSync() — DO NOT MODIFY
 # Format: (structuralPath, positionZone, role, accessibleName, sizeCategory, expectedHash)
 TEST_VECTORS = [
-    ("header > nav > button", "header", "button", "Menu", "button", "332bcf7901518bd9"),  # Button in header
-    ("main > form > div > input", "main", "textbox", "Email", "small", "314e89fb4502cc0b"),  # Text input in main form
-    ("div > div > dialog", "modal", "dialog", "Confirm Delete", "large", "a94df5a4c8e52c9a"),  # Modal dialog
-    ("aside > ul > li > a", "sidebar-left", "link", "Dashboard", "button", "8174509c620d7ab2"),  # List item in sidebar
-    ("footer > div > a", "footer", "link", "Privacy Policy", "button", "4873c371fbca621d"),  # Footer link
-    ("main > section > h1", "main", "heading", None, "medium", "e5444cd6ebe1bfac"),  # Heading with no name
-    ("main > form > select", "main", "combobox", "Country", "small", "6d8e56731c4558c7"),  # Select in main
+    (
+        "header > nav > button",
+        "header",
+        "button",
+        "Menu",
+        "button",
+        "332bcf7901518bd9",
+    ),  # Button in header
+    (
+        "main > form > div > input",
+        "main",
+        "textbox",
+        "Email",
+        "small",
+        "314e89fb4502cc0b",
+    ),  # Text input in main form
+    (
+        "div > div > dialog",
+        "modal",
+        "dialog",
+        "Confirm Delete",
+        "large",
+        "a94df5a4c8e52c9a",
+    ),  # Modal dialog
+    (
+        "aside > ul > li > a",
+        "sidebar-left",
+        "link",
+        "Dashboard",
+        "button",
+        "8174509c620d7ab2",
+    ),  # List item in sidebar
+    (
+        "footer > div > a",
+        "footer",
+        "link",
+        "Privacy Policy",
+        "button",
+        "4873c371fbca621d",
+    ),  # Footer link
+    (
+        "main > section > h1",
+        "main",
+        "heading",
+        None,
+        "medium",
+        "e5444cd6ebe1bfac",
+    ),  # Heading with no name
+    (
+        "main > form > select",
+        "main",
+        "combobox",
+        "Country",
+        "small",
+        "6d8e56731c4558c7",
+    ),  # Select in main
     ("main > div", "main", "", None, "panel", "198907dce9e35536"),  # Panel full width
-    ("header > div > button", "header", "button", "Close", "icon", "87c26e378cea2acf"),  # Icon button
-    ("main > form > div > input", "main", "checkbox", "Remember me", "icon", "c2d6dff7e4d85f8f"),  # Checkbox in form
+    (
+        "header > div > button",
+        "header",
+        "button",
+        "Close",
+        "icon",
+        "87c26e378cea2acf",
+    ),  # Icon button
+    (
+        "main > form > div > input",
+        "main",
+        "checkbox",
+        "Remember me",
+        "icon",
+        "c2d6dff7e4d85f8f",
+    ),  # Checkbox in form
 ]
 
 

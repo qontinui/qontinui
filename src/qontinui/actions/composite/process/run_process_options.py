@@ -4,10 +4,7 @@ Provides configuration for executing a named process with optional repetition.
 """
 
 from ....actions.action_config import ActionConfig, ActionConfigBuilder
-from .process_repetition_options import (
-    ProcessRepetitionOptions,
-    ProcessRepetitionOptionsBuilder,
-)
+from .process_repetition_options import ProcessRepetitionOptions, ProcessRepetitionOptionsBuilder
 
 
 class RunProcessOptions(ActionConfig):

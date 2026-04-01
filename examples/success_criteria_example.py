@@ -5,11 +5,7 @@ workflow execution beyond simple all-actions-pass logic.
 """
 
 from qontinui.config import Action, Connections, Workflow
-from qontinui.execution import (
-    SuccessCriteria,
-    SuccessCriteriaType,
-    evaluate_workflow_success,
-)
+from qontinui.execution import SuccessCriteria, SuccessCriteriaType, evaluate_workflow_success
 from qontinui.execution.graph_executor import ExecutionState
 
 

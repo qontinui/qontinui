@@ -25,19 +25,13 @@ from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 from numpy.typing import NDArray
-from qontinui_schemas.testing.assertions import (
-    AssertionResult,
-    AssertionStatus,
-    BoundingBox,
-)
+from qontinui_schemas.testing.assertions import AssertionResult, AssertionStatus, BoundingBox
 from qontinui_schemas.testing.environment import GUIEnvironment
 
 from qontinui.vision.verification.config import VisionConfig, get_default_config
 from qontinui.vision.verification.detection.ocr import OCREngine, get_ocr_engine
 from qontinui.vision.verification.detection.template import TemplateEngine, get_template_engine
-from qontinui.vision.verification.errors import (
-    AssertionError,
-)
+from qontinui.vision.verification.errors import AssertionError
 from qontinui.vision.verification.errors import TimeoutError as VisionTimeoutError
 from qontinui.vision.verification.locators.base import BaseLocator, LocatorMatch
 from qontinui.vision.verification.locators.environment import EnvironmentLocator

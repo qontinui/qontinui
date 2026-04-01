@@ -21,20 +21,20 @@ Usage:
 from .edge import EdgeDetector
 from .fusion import ResultMerger
 from .models import (
-    BoundingBox,
-    ContourResult,
-    EdgeDetectionConfig,
-    EdgeDetectionResult,
-    ExtractedStateImageCandidate,
-    FusionConfig,
-    OCRConfig,
-    OCRResult,
-    SAM3Config,
-    SAM3SegmentResult,
-    ScreenshotInfo,
-    TemplateConfig,
-    VisionExtractionConfig,
-    VisionExtractionResult,
+                     BoundingBox,
+                     ContourResult,
+                     EdgeDetectionConfig,
+                     EdgeDetectionResult,
+                     ExtractedStateImageCandidate,
+                     FusionConfig,
+                     OCRConfig,
+                     OCRResult,
+                     SAM3Config,
+                     SAM3SegmentResult,
+                     ScreenshotInfo,
+                     TemplateConfig,
+                     VisionExtractionConfig,
+                     VisionExtractionResult,
 )
 from .ocr import OCRDetector
 from .sam3 import SAM3Segmenter

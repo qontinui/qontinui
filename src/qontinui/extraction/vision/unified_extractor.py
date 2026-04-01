@@ -15,11 +15,7 @@ import numpy as np
 
 from .edge import EdgeDetector
 from .fusion import ResultMerger
-from .models import (
-    ScreenshotInfo,
-    VisionExtractionConfig,
-    VisionExtractionResult,
-)
+from .models import ScreenshotInfo, VisionExtractionConfig, VisionExtractionResult
 from .ocr import OCRDetector
 from .sam3 import SAM3Segmenter
 

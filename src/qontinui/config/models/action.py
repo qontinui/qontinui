@@ -53,16 +53,8 @@ from .mouse_actions import (
     MouseUpActionConfig,
     ScrollActionConfig,
 )
-from .shell_actions import (
-    AIPromptActionConfig,
-    ShellActionConfig,
-    ShellScriptActionConfig,
-)
-from .state_actions import (
-    GoToStateActionConfig,
-    RunWorkflowActionConfig,
-    ScreenshotActionConfig,
-)
+from .shell_actions import AIPromptActionConfig, ShellActionConfig, ShellScriptActionConfig
+from .state_actions import GoToStateActionConfig, RunWorkflowActionConfig, ScreenshotActionConfig
 
 
 class Action(BaseModel):

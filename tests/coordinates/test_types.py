@@ -2,12 +2,7 @@
 
 import pytest
 
-from qontinui.coordinates.types import (
-    MonitorInfo,
-    MonitorPoint,
-    ScreenPoint,
-    VirtualPoint,
-)
+from qontinui.coordinates.types import MonitorInfo, MonitorPoint, ScreenPoint, VirtualPoint
 
 
 class TestScreenPoint:

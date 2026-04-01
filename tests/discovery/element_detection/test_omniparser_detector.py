@@ -22,19 +22,13 @@ from qontinui.discovery.element_detection.analysis_base import (
     BoundingBox,
     DetectedElement,
 )
-from qontinui.discovery.element_detection.omniparser_detector import (
-    OmniParserDetector,
-)
+from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
 from qontinui.find.backends.base import DetectionResult
 from qontinui.find.backends.cascade import CascadeDetector
 from qontinui.find.backends.omniparser_backend import OmniParserBackend
 from qontinui.find.backends.omniparser_config import OmniParserSettings
-from qontinui.find.backends.omniparser_service_backend import (
-    OmniParserServiceBackend,
-)
-from qontinui.find.semantic_matcher import (
-    match_element_by_description,
-)
+from qontinui.find.backends.omniparser_service_backend import OmniParserServiceBackend
+from qontinui.find.semantic_matcher import match_element_by_description
 
 # ---------------------------------------------------------------------------
 # Fixtures

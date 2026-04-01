@@ -34,10 +34,7 @@ from qontinui.vision.environment.analyzers import (
     TypographyAnalyzer,
     VisualStateLearner,
 )
-from qontinui.vision.environment.storage import (
-    load_environment,
-    save_environment,
-)
+from qontinui.vision.environment.storage import load_environment, save_environment
 
 logger = logging.getLogger(__name__)
 

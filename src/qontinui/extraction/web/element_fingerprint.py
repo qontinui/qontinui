@@ -14,13 +14,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from .models import (
-    BoundingBox,
-    ElementFingerprint,
-    PositionRegion,
-    RawElement,
-    SizeClass,
-)
+from .models import BoundingBox, ElementFingerprint, PositionRegion, RawElement, SizeClass
 
 logger = logging.getLogger(__name__)
 

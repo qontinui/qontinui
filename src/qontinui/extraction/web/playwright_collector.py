@@ -22,17 +22,8 @@ from PIL import Image as PILImage
 from playwright.async_api import Browser, BrowserContext, ElementHandle, Page, async_playwright
 
 from .interactive_element_extractor import ExtractionOptions, InteractiveElementExtractor
-from .safety import (
-    ActionRisk,
-    ConfirmationDialogHandler,
-    ElementSafetyAnalyzer,
-    SafetyConfig,
-)
-from .verification import (
-    BatchVerifier,
-    ClickableVerifier,
-    ExtractedClickable,
-)
+from .safety import ActionRisk, ConfirmationDialogHandler, ElementSafetyAnalyzer, SafetyConfig
+from .verification import BatchVerifier, ClickableVerifier, ExtractedClickable
 
 logger = logging.getLogger(__name__)
 

@@ -9,26 +9,26 @@ analyzers in the static/ directory.
 # Import StaticConfig from the config module
 from qontinui.extraction.config import StaticConfig
 from qontinui.extraction.models.static import (
-    APICallDefinition,  # New hint models for state discovery
-    APICallType,
-    ComponentCategory,
-    ComponentDefinition,
-    ComponentType,
-    ConditionalPattern,
-    ConditionalRender,
-    EventHandler,
-    RouteDefinition,
-    RouteParam,
-    RouteType,
-    SearchParam,
-    StateHint,
-    StateImageHint,
-    StateScope,
-    StateSourceType,
-    StateVariable,
-    StaticAnalysisResult,
-    TransitionHint,
-    VisibilityState,
+                                               APICallDefinition,  # New hint models for state discovery
+                                               APICallType,
+                                               ComponentCategory,
+                                               ComponentDefinition,
+                                               ComponentType,
+                                               ConditionalPattern,
+                                               ConditionalRender,
+                                               EventHandler,
+                                               RouteDefinition,
+                                               RouteParam,
+                                               RouteType,
+                                               SearchParam,
+                                               StateHint,
+                                               StateImageHint,
+                                               StateScope,
+                                               StateSourceType,
+                                               StateVariable,
+                                               StaticAnalysisResult,
+                                               TransitionHint,
+                                               VisibilityState,
 )
 
 __all__ = [

@@ -119,13 +119,13 @@ This package exports:
 
 from .service import CoordinateService
 from .types import (
-    Coordinates,
-    CoordinateSystem,
-    MonitorInfo,
-    MonitorPoint,
-    Region,
-    ScreenPoint,
-    VirtualPoint,
+                    Coordinates,
+                    CoordinateSystem,
+                    MonitorInfo,
+                    MonitorPoint,
+                    Region,
+                    ScreenPoint,
+                    VirtualPoint,
 )
 from .virtual_desktop import SchemaMonitor, SchemaVirtualDesktop, VirtualDesktopInfo
 

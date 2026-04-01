@@ -19,12 +19,7 @@ from qontinui.awas.types import AwasAction, AwasElement, AwasManifest, HttpMetho
 
 from ...models.base import BoundingBox, Screenshot, Viewport
 from ...web.models import BoundingBox as WebBoundingBox
-from ...web.models import (
-    ElementType,
-    ExtractedElement,
-    ExtractedState,
-    StateType,
-)
+from ...web.models import ElementType, ExtractedElement, ExtractedState, StateType
 from ..base import DetectedRegion, InteractionAction, RuntimeExtractor, StateChange
 from ..types import ExtractionTarget, RuntimeExtractionSession, RuntimeStateCapture
 

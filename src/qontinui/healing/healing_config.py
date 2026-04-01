@@ -120,11 +120,7 @@ class HealingConfig:
         # Import here to avoid circular imports
         from .aria_ui_client import AriaUIClient
         from .aria_ui_context_client import AriaUIContextClient
-        from .llm_client import (
-            DisabledVisionClient,
-            LocalVisionClient,
-            RemoteVisionClient,
-        )
+        from .llm_client import DisabledVisionClient, LocalVisionClient, RemoteVisionClient
 
         self.validate()
 

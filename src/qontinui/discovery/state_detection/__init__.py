@@ -24,18 +24,15 @@ Example:
 """
 
 from .detector import (
-    DetectionMethod,
-    MultiFrameValidator,
-    SignatureBasedDetector,
-    StateDetectionResult,
-    StateDetector,
-    StateSignature,
-    TransitionDetector,
+                       DetectionMethod,
+                       MultiFrameValidator,
+                       SignatureBasedDetector,
+                       StateDetectionResult,
+                       StateDetector,
+                       StateSignature,
+                       TransitionDetector,
 )
-from .differential_consistency_detector import (
-    DifferentialConsistencyDetector,
-    StateRegion,
-)
+from .differential_consistency_detector import DifferentialConsistencyDetector, StateRegion
 
 __all__ = [
     # Core detectors

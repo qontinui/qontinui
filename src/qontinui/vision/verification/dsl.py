@@ -374,10 +374,7 @@ class ElementVerifier:
         tolerance: int = 30,
     ) -> VerificationResult:
         """Assert element has expected color."""
-        from qontinui.vision.verification.assertions.attributes import (
-            AttributeAssertion,
-            Color,
-        )
+        from qontinui.vision.verification.assertions.attributes import AttributeAssertion, Color
 
         screenshot = await self._verifier._get_screenshot()
         locator = self._verifier._resolve_target(self._target)
@@ -799,9 +796,7 @@ class ScreenshotVerifier:
         method: str = "ssim",
     ) -> VerificationResult:
         """Assert screenshot matches baseline."""
-        from qontinui.vision.verification.assertions.screenshot import (
-            ScreenshotAssertion,
-        )
+        from qontinui.vision.verification.assertions.screenshot import ScreenshotAssertion
 
         assertion = ScreenshotAssertion(
             config=self._verifier._config,
@@ -1142,11 +1137,7 @@ class Verifier:
         target: "str | Path | BoundingBox | BaseLocator",
     ) -> "BaseLocator":
         """Resolve target to a locator."""
-        from qontinui.vision.verification.locators import (
-            ImageLocator,
-            RegionLocator,
-            TextLocator,
-        )
+        from qontinui.vision.verification.locators import ImageLocator, RegionLocator, TextLocator
 
         if hasattr(target, "find"):
             # Already a locator

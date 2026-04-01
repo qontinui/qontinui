@@ -16,9 +16,7 @@ from qontinui.runner.dsl.executor.flow_control import (
     ExecutionError,
     ReturnException,
 )
-from qontinui.runner.dsl.expressions.binary_operation_expression import (
-    BinaryOperationExpression,
-)
+from qontinui.runner.dsl.expressions.binary_operation_expression import BinaryOperationExpression
 from qontinui.runner.dsl.expressions.literal_expression import LiteralExpression
 from qontinui.runner.dsl.expressions.variable_expression import VariableExpression
 from qontinui.runner.dsl.statements.assignment_statement import AssignmentStatement

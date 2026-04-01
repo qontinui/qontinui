@@ -10,11 +10,7 @@ from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 from numpy.typing import NDArray
-from qontinui_schemas.testing.assertions import (
-    BoundingBox,
-    LocatorType,
-    VisionLocatorMatch,
-)
+from qontinui_schemas.testing.assertions import BoundingBox, LocatorType, VisionLocatorMatch
 
 if TYPE_CHECKING:
     from qontinui.vision.verification.config import VisionConfig

@@ -16,11 +16,7 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 from qontinui_schemas.testing.assertions import BoundingBox
-from qontinui_schemas.testing.environment import (
-    ElementPattern,
-    ElementPatterns,
-    GUIEnvironment,
-)
+from qontinui_schemas.testing.environment import ElementPattern, ElementPatterns, GUIEnvironment
 
 if TYPE_CHECKING:
     from qontinui.vision.verification.config import VisionConfig

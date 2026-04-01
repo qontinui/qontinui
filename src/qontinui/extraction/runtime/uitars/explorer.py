@@ -21,20 +21,10 @@ import numpy as np
 
 from ...models.base import BoundingBox, Screenshot, Viewport
 from ...web.models import ExtractedElement
-from ..base import (
-    DetectedRegion,
-    InteractionAction,
-    RuntimeExtractor,
-    StateChange,
-)
+from ..base import DetectedRegion, InteractionAction, RuntimeExtractor, StateChange
 from ..types import ExtractionTarget, RuntimeStateCapture, RuntimeType
 from .config import UITARSSettings
-from .models import (
-    ExplorationTrajectory,
-    UITARSActionType,
-    UITARSInferenceRequest,
-    UITARSStep,
-)
+from .models import ExplorationTrajectory, UITARSActionType, UITARSInferenceRequest, UITARSStep
 from .provider import UITARSProviderBase, create_provider
 
 if TYPE_CHECKING:

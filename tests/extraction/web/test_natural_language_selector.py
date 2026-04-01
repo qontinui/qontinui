@@ -5,10 +5,7 @@ Tests AI-driven element selection by natural language description.
 """
 
 from qontinui.extraction.web.models import BoundingBox, InteractiveElement
-from qontinui.extraction.web.natural_language_selector import (
-    FallbackSelector,
-    SelectionResult,
-)
+from qontinui.extraction.web.natural_language_selector import FallbackSelector, SelectionResult
 
 
 def create_test_element(

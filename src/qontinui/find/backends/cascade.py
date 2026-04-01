@@ -382,9 +382,7 @@ class CascadeDetector(DetectionBackend):
             # Semantic accessibility (~10ms) — fuzzy matching for natural-
             # language descriptions against the accessibility tree.
             try:
-                from .semantic_accessibility_backend import (
-                    SemanticAccessibilityBackend,
-                )
+                from .semantic_accessibility_backend import SemanticAccessibilityBackend
 
                 backends.append(
                     SemanticAccessibilityBackend(accessibility_capture, llm_client=llm_client)

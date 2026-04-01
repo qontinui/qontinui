@@ -22,10 +22,7 @@ def _make_screenshots(n: int = 3) -> list[np.ndarray]:
 
 def _make_omniparser_analysis_result() -> MagicMock:
     """Create a mock AnalysisResult from OmniParserDetector.analyze()."""
-    from qontinui.discovery.element_detection.analysis_base import (
-        BoundingBox,
-        DetectedElement,
-    )
+    from qontinui.discovery.element_detection.analysis_base import BoundingBox, DetectedElement
 
     result = MagicMock()
     result.elements = [

@@ -21,17 +21,10 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import TYPE_CHECKING, Any
 
-from .healing_types import (
-    ElementLocation,
-    HealingContext,
-    HealingResult,
-    HealingStrategy,
-)
+from .healing_types import ElementLocation, HealingContext, HealingResult, HealingStrategy
 
 if TYPE_CHECKING:
-    from qontinui_schemas.accessibility import (
-        AccessibilityNode,
-    )
+    from qontinui_schemas.accessibility import AccessibilityNode
 
     from ..hal.interfaces.accessibility_capture import IAccessibilityCapture
 

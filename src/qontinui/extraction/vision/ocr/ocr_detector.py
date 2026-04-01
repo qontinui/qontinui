@@ -13,12 +13,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from ..models import (
-    BoundingBox,
-    ExtractedStateImageCandidate,
-    OCRConfig,
-    OCRResult,
-)
+from ..models import BoundingBox, ExtractedStateImageCandidate, OCRConfig, OCRResult
 
 logger = logging.getLogger(__name__)
 

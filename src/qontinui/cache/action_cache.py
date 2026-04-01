@@ -14,13 +14,7 @@ import cv2
 import numpy as np
 
 from .cache_storage import CacheStorage
-from .cache_types import (
-    CachedCoordinates,
-    CacheEntry,
-    CacheResult,
-    CacheStats,
-    ValidationPattern,
-)
+from .cache_types import CachedCoordinates, CacheEntry, CacheResult, CacheStats, ValidationPattern
 
 if TYPE_CHECKING:
     from pathlib import Path

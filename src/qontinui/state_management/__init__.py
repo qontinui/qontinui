@@ -15,10 +15,7 @@ from .initial_states import InitialStates
 
 # Lazy import for builders to avoid import issues when used standalone
 try:
-    from .builders import (
-        StateMachineBuilder,
-        build_state_machine_from_extraction,
-    )
+    from .builders import StateMachineBuilder, build_state_machine_from_extraction
 except ImportError:
     # Builders may not be available in minimal configurations
     StateMachineBuilder = None  # type: ignore

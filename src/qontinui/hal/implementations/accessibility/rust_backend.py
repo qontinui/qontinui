@@ -22,7 +22,6 @@ import time
 from typing import Any
 
 import aiohttp
-
 from qontinui_schemas.accessibility import (
     AccessibilityCaptureOptions,
     AccessibilityNode,
@@ -32,6 +31,7 @@ from qontinui_schemas.accessibility import (
     AccessibilityState,
 )
 from qontinui_schemas.accessibility.enums import AccessibilityBackend
+
 from qontinui.hal.interfaces.accessibility_capture import IAccessibilityCapture
 
 logger = logging.getLogger(__name__)
@@ -85,9 +85,7 @@ class RustBackendCapture(IAccessibilityCapture):
             async with session.post(url, json=json or {}) as resp:
                 if resp.status >= 400:
                     body = await resp.text()
-                    raise RuntimeError(
-                        f"Runner API error {resp.status} on POST {path}: {body}"
-                    )
+                    raise RuntimeError(f"Runner API error {resp.status} on POST {path}: {body}")
                 return await resp.json()
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Failed to reach runner at {url}: {e}") from e
@@ -111,9 +109,7 @@ class RustBackendCapture(IAccessibilityCapture):
             async with session.get(url, params=params) as resp:
                 if resp.status >= 400:
                     body = await resp.text()
-                    raise RuntimeError(
-                        f"Runner API error {resp.status} on GET {path}: {body}"
-                    )
+                    raise RuntimeError(f"Runner API error {resp.status} on GET {path}: {body}")
                 return await resp.json()
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Failed to reach runner at {url}: {e}") from e
@@ -364,18 +360,14 @@ class RustBackendCapture(IAccessibilityCapture):
 
                 # 2. Check use_rust_accessibility setting
                 try:
-                    async with session.get(
-                        f"{runner_url}/settings/accessibility"
-                    ) as settings_resp:
+                    async with session.get(f"{runner_url}/settings/accessibility") as settings_resp:
                         if settings_resp.status == 200:
                             data = await settings_resp.json()
                             # The runner wraps responses in ApiResponse with a
                             # "data" field; fall back to top-level keys for
                             # forward compatibility.
                             settings_data = data.get("data", data)
-                            use_rust = settings_data.get(
-                                "use_rust_accessibility", True
-                            )
+                            use_rust = settings_data.get("use_rust_accessibility", True)
                             if not use_rust:
                                 logger.info(
                                     "Runner is available but use_rust_accessibility"

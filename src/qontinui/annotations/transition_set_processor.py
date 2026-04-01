@@ -14,14 +14,8 @@ from ..model.transition.state_transition_service import StateTransitionService
 from ..model.transition.state_transitions import StateTransitions
 from ..model.transition.state_transitions_joint_table import StateTransitionsJointTable
 from ..navigation.transition.code_state_transition import CodeStateTransition
-from .incoming_transition import (
-    get_incoming_transition_metadata,
-    is_incoming_transition,
-)
-from .outgoing_transition import (
-    get_outgoing_transition_metadata,
-    is_outgoing_transition,
-)
+from .incoming_transition import get_incoming_transition_metadata, is_incoming_transition
+from .outgoing_transition import get_outgoing_transition_metadata, is_outgoing_transition
 from .state import get_state_metadata
 from .transition_set import get_transition_metadata as get_transition_set_metadata
 from .transition_set import is_transition_set

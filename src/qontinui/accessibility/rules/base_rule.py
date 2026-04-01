@@ -9,11 +9,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from qontinui.accessibility.types import (
-    AccessibilityIssue,
-    AccessibilitySeverity,
-    WCAGLevel,
-)
+from qontinui.accessibility.types import AccessibilityIssue, AccessibilitySeverity, WCAGLevel
 
 if TYPE_CHECKING:
     pass

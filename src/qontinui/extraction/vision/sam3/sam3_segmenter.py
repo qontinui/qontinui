@@ -14,12 +14,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from ..models import (
-    BoundingBox,
-    ExtractedStateImageCandidate,
-    SAM3Config,
-    SAM3SegmentResult,
-)
+from ..models import BoundingBox, ExtractedStateImageCandidate, SAM3Config, SAM3SegmentResult
 
 logger = logging.getLogger(__name__)
 

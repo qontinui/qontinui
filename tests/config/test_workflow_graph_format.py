@@ -14,12 +14,7 @@ Tests cover:
 import pytest
 from pydantic import ValidationError as PydanticValidationError
 
-from qontinui.config.schema import (
-    Action,
-    Connections,
-    Workflow,
-    WorkflowFormat,
-)
+from qontinui.config.schema import Action, Connections, Workflow, WorkflowFormat
 from qontinui.config.workflow_utils import (
     convert_sequential_to_graph,
     detect_workflow_format,

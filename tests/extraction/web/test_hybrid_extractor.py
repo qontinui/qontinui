@@ -4,11 +4,7 @@ Tests for hybrid_extractor module.
 Tests combined DOM + screenshot context extraction for LLMs.
 """
 
-from qontinui.extraction.web.hybrid_extractor import (
-    HybridContext,
-    PageState,
-    build_llm_prompt,
-)
+from qontinui.extraction.web.hybrid_extractor import HybridContext, PageState, build_llm_prompt
 from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 
 

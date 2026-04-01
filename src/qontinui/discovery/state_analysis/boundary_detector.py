@@ -7,11 +7,7 @@ StateBoundaryDetector and provides pipeline-specific functionality.
 import logging
 import time
 
-from qontinui.discovery.state_analysis.models import (
-    DetectedState,
-    Frame,
-    ProcessingStep,
-)
+from qontinui.discovery.state_analysis.models import DetectedState, Frame, ProcessingStep
 from qontinui.discovery.state_analysis.state_boundary_detector import (
     StateBoundaryConfig,
     StateBoundaryDetector,

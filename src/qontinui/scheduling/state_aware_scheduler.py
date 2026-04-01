@@ -14,12 +14,7 @@ from typing import Any, cast
 
 from qontinui_schemas.common import utc_now
 
-from .schedule_config import (
-    CheckMode,
-    ExecutionRecord,
-    ScheduleConfig,
-    StateCheckResult,
-)
+from .schedule_config import CheckMode, ExecutionRecord, ScheduleConfig, StateCheckResult
 
 logger = logging.getLogger(__name__)
 

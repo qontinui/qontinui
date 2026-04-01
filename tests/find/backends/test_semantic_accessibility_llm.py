@@ -20,9 +20,7 @@ from qontinui_schemas.accessibility import (
     AccessibilitySnapshot,
 )
 
-from qontinui.find.backends.semantic_accessibility_backend import (
-    SemanticAccessibilityBackend,
-)
+from qontinui.find.backends.semantic_accessibility_backend import SemanticAccessibilityBackend
 
 # ---------------------------------------------------------------------------
 # Helpers

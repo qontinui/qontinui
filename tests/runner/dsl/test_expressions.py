@@ -10,13 +10,8 @@ This module tests all expression types including:
 
 import pytest
 
-from qontinui.runner.dsl.expressions.binary_operation_expression import (
-    BinaryOperationExpression,
-)
-from qontinui.runner.dsl.expressions.builder_expression import (
-    BuilderExpression,
-    BuilderMethodCall,
-)
+from qontinui.runner.dsl.expressions.binary_operation_expression import BinaryOperationExpression
+from qontinui.runner.dsl.expressions.builder_expression import BuilderExpression, BuilderMethodCall
 from qontinui.runner.dsl.expressions.expression import Expression
 from qontinui.runner.dsl.expressions.literal_expression import LiteralExpression
 from qontinui.runner.dsl.expressions.method_call_expression import MethodCallExpression

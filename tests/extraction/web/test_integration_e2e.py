@@ -564,9 +564,7 @@ class TestNaturalLanguageSelection:
         from qontinui.extraction.web.interactive_element_extractor import (
             InteractiveElementExtractor,
         )
-        from qontinui.extraction.web.natural_language_selector import (
-            NaturalLanguageSelector,
-        )
+        from qontinui.extraction.web.natural_language_selector import NaturalLanguageSelector
 
         # Load page
         await page.set_content(SIMPLE_HTML)
@@ -592,9 +590,7 @@ class TestNaturalLanguageSelection:
             InteractiveElementExtractor,
         )
         from qontinui.extraction.web.llm_clients import MockLLMClient
-        from qontinui.extraction.web.natural_language_selector import (
-            NaturalLanguageSelector,
-        )
+        from qontinui.extraction.web.natural_language_selector import NaturalLanguageSelector
 
         # Load page with multiple buttons
         html = """
@@ -615,13 +611,9 @@ class TestNaturalLanguageSelection:
 
         # Create dedicated mock with only the multi-response pattern
         # The generic mock fixture has patterns that may match the prompt's examples
-        multi_mock = MockLLMClient(
-            responses={
-                "all links": """MATCH: 0, 0.95, First link
+        multi_mock = MockLLMClient(responses={"all links": """MATCH: 0, 0.95, First link
 MATCH: 1, 0.90, Second link
-MATCH: 2, 0.85, Third link"""
-            }
-        )
+MATCH: 2, 0.85, Third link"""})
 
         selector = NaturalLanguageSelector(llm_client=multi_mock)
         results = await selector.find_multiple("all links", elements)
@@ -655,9 +647,7 @@ MATCH: 2, 0.85, Third link"""
         from qontinui.extraction.web.interactive_element_extractor import (
             InteractiveElementExtractor,
         )
-        from qontinui.extraction.web.natural_language_selector import (
-            NaturalLanguageSelector,
-        )
+        from qontinui.extraction.web.natural_language_selector import NaturalLanguageSelector
 
         await page.set_content(SIMPLE_HTML)
         await page.wait_for_load_state("domcontentloaded")
@@ -666,9 +656,7 @@ MATCH: 2, 0.85, Third link"""
         elements = await extractor.extract_interactive_elements(page, "test")
 
         # Configure mock for action selection
-        mock_llm_client.responses[
-            "click the submit"
-        ] = """INDEX: 0
+        mock_llm_client.responses["click the submit"] = """INDEX: 0
 ACTION: click
 CONFIDENCE: 0.95
 REASONING: User wants to click the submit button"""
@@ -691,9 +679,7 @@ class TestAccessibilityTreeExtraction:
     @pytest.mark.cdp_required
     async def test_extract_accessibility_tree(self, page) -> None:
         """Test extracting accessibility tree from a page."""
-        from qontinui.extraction.web.accessibility_extractor import (
-            AccessibilityExtractor,
-        )
+        from qontinui.extraction.web.accessibility_extractor import AccessibilityExtractor
 
         # Load a page with semantic structure
         html = """
@@ -737,9 +723,7 @@ class TestAccessibilityTreeExtraction:
     @pytest.mark.cdp_required
     async def test_enrich_elements_with_a11y(self, page) -> None:
         """Test enriching extracted elements with accessibility data."""
-        from qontinui.extraction.web.accessibility_extractor import (
-            AccessibilityExtractor,
-        )
+        from qontinui.extraction.web.accessibility_extractor import AccessibilityExtractor
         from qontinui.extraction.web.interactive_element_extractor import (
             InteractiveElementExtractor,
         )
@@ -870,10 +854,7 @@ class TestHybridExtraction:
 
     async def test_build_llm_prompt(self, page) -> None:
         """Test building a complete LLM prompt from hybrid context."""
-        from qontinui.extraction.web.hybrid_extractor import (
-            HybridExtractor,
-            build_llm_prompt,
-        )
+        from qontinui.extraction.web.hybrid_extractor import HybridExtractor, build_llm_prompt
 
         await page.set_content(SIMPLE_HTML)
         await page.wait_for_load_state("domcontentloaded")
@@ -1054,9 +1035,7 @@ class TestRealWebsiteIntegration:
         from qontinui.extraction.web.interactive_element_extractor import (
             InteractiveElementExtractor,
         )
-        from qontinui.extraction.web.natural_language_selector import (
-            NaturalLanguageSelector,
-        )
+        from qontinui.extraction.web.natural_language_selector import NaturalLanguageSelector
 
         try:
             await page.goto("https://example.com", wait_until="networkidle", timeout=30000)

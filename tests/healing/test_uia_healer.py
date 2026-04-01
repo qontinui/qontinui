@@ -18,14 +18,8 @@ from qontinui_schemas.accessibility import (
     AccessibilitySnapshot,
 )
 
-from qontinui.healing.healing_types import (
-    HealingContext,
-    HealingStrategy,
-)
-from qontinui.healing.uia_healer import (
-    UIAElementFingerprint,
-    UIAHealer,
-)
+from qontinui.healing.healing_types import HealingContext, HealingStrategy
+from qontinui.healing.uia_healer import UIAElementFingerprint, UIAHealer
 
 
 def _make_node(

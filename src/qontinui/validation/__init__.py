@@ -29,17 +29,13 @@ Example:
 """
 
 from .validation_types import (
-    ChangedRegion,
-    ChangeType,
-    ExpectedChange,
-    ValidationResult,
-    VisualDiff,
+                               ChangedRegion,
+                               ChangeType,
+                               ExpectedChange,
+                               ValidationResult,
+                               VisualDiff,
 )
-from .visual_validator import (
-    VisualValidator,
-    get_visual_validator,
-    set_visual_validator,
-)
+from .visual_validator import VisualValidator, get_visual_validator, set_visual_validator
 
 __all__ = [
     # Main class

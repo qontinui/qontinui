@@ -12,24 +12,13 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import (
-    Browser,
-    BrowserContext,
-    Page,
-    Playwright,
-    async_playwright,
-)
+from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 from qontinui_schemas.common import utc_now
 
 from ...models.base import BoundingBox as BaseBoundingBox
 from ...web.interactive_element_extractor import InteractiveElementExtractor
 from ...web.models import BoundingBox as WebBoundingBox
-from ...web.models import (
-    ExtractedElement,
-    ExtractedState,
-    InteractiveElement,
-    StateType,
-)
+from ...web.models import ExtractedElement, ExtractedState, InteractiveElement, StateType
 from ..base import DetectedRegion, InteractionAction, RuntimeExtractor, StateChange
 
 if TYPE_CHECKING:

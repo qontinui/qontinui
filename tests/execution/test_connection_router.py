@@ -6,12 +6,7 @@ Tests routing logic for all action types and edge cases.
 
 import pytest
 
-from qontinui.config.schema import (
-    Action,
-    Connection,
-    Connections,
-    Workflow,
-)
+from qontinui.config.schema import Action, Connection, Connections, Workflow
 from qontinui.execution import ConnectionRouter, OutputResolver, RoutingContext
 
 # ============================================================================

@@ -358,9 +358,7 @@ class TestVisionLLMBackend:
 class TestOmniParserAutoUnload:
     def test_unload_after_idle(self):
         """Models should be unloaded after unload_after_seconds of inactivity."""
-        from qontinui.discovery.element_detection.omniparser_detector import (
-            OmniParserDetector,
-        )
+        from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
         from qontinui.find.backends.omniparser_config import OmniParserSettings
 
         settings = OmniParserSettings(enabled=True, unload_after_seconds=0.1)
@@ -383,9 +381,7 @@ class TestOmniParserAutoUnload:
 
     def test_no_unload_when_recently_used(self):
         """Models should NOT be unloaded if recently used."""
-        from qontinui.discovery.element_detection.omniparser_detector import (
-            OmniParserDetector,
-        )
+        from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
         from qontinui.find.backends.omniparser_config import OmniParserSettings
 
         settings = OmniParserSettings(enabled=True, unload_after_seconds=60.0)
@@ -401,9 +397,7 @@ class TestOmniParserAutoUnload:
 
     def test_no_unload_when_disabled(self):
         """Auto-unload should not fire when unload_after_seconds=0."""
-        from qontinui.discovery.element_detection.omniparser_detector import (
-            OmniParserDetector,
-        )
+        from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
         from qontinui.find.backends.omniparser_config import OmniParserSettings
 
         settings = OmniParserSettings(enabled=True, unload_after_seconds=0.0)
@@ -419,9 +413,7 @@ class TestOmniParserAutoUnload:
 
     def test_no_unload_when_not_loaded(self):
         """Auto-unload should be a no-op when models aren't loaded."""
-        from qontinui.discovery.element_detection.omniparser_detector import (
-            OmniParserDetector,
-        )
+        from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
         from qontinui.find.backends.omniparser_config import OmniParserSettings
 
         settings = OmniParserSettings(enabled=True, unload_after_seconds=0.1)

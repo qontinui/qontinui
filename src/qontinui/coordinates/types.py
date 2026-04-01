@@ -19,11 +19,7 @@ from dataclasses import dataclass
 
 # Re-export schema types for coordinate configuration
 # These are Pydantic models used in configuration files
-from qontinui_schemas.config.models.geometry import (
-    Coordinates,
-    CoordinateSystem,
-    Region,
-)
+from qontinui_schemas.config.models.geometry import Coordinates, CoordinateSystem, Region
 
 __all__ = [
     # Local point types for coordinate translation

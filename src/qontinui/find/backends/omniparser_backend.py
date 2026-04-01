@@ -12,9 +12,7 @@ from typing import Any
 
 import numpy as np
 
-from qontinui.discovery.element_detection.omniparser_detector import (
-    OmniParserDetector,
-)
+from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
 from qontinui.find.semantic_matcher import match_element_by_description
 
 from .base import DetectionBackend, DetectionResult

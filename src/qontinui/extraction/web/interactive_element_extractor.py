@@ -91,12 +91,7 @@ if TYPE_CHECKING:
 
 from playwright.async_api import Page
 
-from .exceptions import (
-    ElementExtractionError,
-    ShadowDOMError,
-    ValidationError,
-    with_timeout,
-)
+from .exceptions import ElementExtractionError, ShadowDOMError, ValidationError, with_timeout
 from .models import BoundingBox, InteractiveElement
 
 logger = logging.getLogger(__name__)

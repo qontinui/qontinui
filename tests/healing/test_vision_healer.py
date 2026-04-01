@@ -11,11 +11,7 @@ sys.path.insert(0, str(src_path))
 
 # Import directly to avoid circular import issues in healing/__init__.py
 from qontinui.healing.healing_config import HealingConfig
-from qontinui.healing.healing_types import (
-    HealingContext,
-    HealingStrategy,
-    LLMMode,
-)
+from qontinui.healing.healing_types import HealingContext, HealingStrategy, LLMMode
 from qontinui.healing.vision_healer import (
     VisionHealer,
     configure_healing,

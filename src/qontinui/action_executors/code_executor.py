@@ -23,10 +23,7 @@ from typing import Any
 
 from ..actions.action_result import ActionResultBuilder
 from ..config.models.action import Action
-from ..config.models.code_actions import (
-    CodeBlockActionConfig,
-    CustomFunctionActionConfig,
-)
+from ..config.models.code_actions import CodeBlockActionConfig, CustomFunctionActionConfig
 from ..util.common.file_loader import PythonFileLoader
 from .base import ActionExecutorBase
 from .registry import register_executor

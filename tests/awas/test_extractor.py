@@ -9,9 +9,7 @@ import pytest
 import respx
 
 from qontinui.awas.discovery import AwasDiscoveryService, CacheEntry
-from qontinui.awas.types import (
-    AwasManifest,
-)
+from qontinui.awas.types import AwasManifest
 from qontinui.extraction.runtime.awas.extractor import AwasRuntimeExtractor
 from qontinui.extraction.runtime.base import InteractionAction
 from qontinui.extraction.runtime.types import ExtractionTarget, RuntimeType

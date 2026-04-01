@@ -23,13 +23,9 @@ from qontinui.model.transition.enhanced_state_transition import (
 )
 
 if TYPE_CHECKING:
-    from qontinui.state_management.enhanced_active_state_set import (
-        EnhancedActiveStateSet,
-    )
+    from qontinui.state_management.enhanced_active_state_set import EnhancedActiveStateSet
     from qontinui.state_management.state_memory import StateMemory
-    from qontinui.state_management.state_visibility_manager import (
-        StateVisibilityManager,
-    )
+    from qontinui.state_management.state_visibility_manager import StateVisibilityManager
 
 logger = logging.getLogger(__name__)
 

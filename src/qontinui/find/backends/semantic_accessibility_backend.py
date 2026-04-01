@@ -59,9 +59,7 @@ class SemanticAccessibilityBackend(DetectionBackend):
 
     def _get_cache(self) -> Any:
         if self._cache is None:
-            from qontinui.hal.implementations.accessibility.uia_semantic import (
-                SemanticSearchCache,
-            )
+            from qontinui.hal.implementations.accessibility.uia_semantic import SemanticSearchCache
 
             self._cache = SemanticSearchCache()
         return self._cache
@@ -99,9 +97,7 @@ class SemanticAccessibilityBackend(DetectionBackend):
                     return self._matches_to_results(cached, min_confidence)
 
             # Fuzzy match
-            from qontinui.hal.implementations.accessibility.uia_semantic import (
-                fuzzy_match_nodes,
-            )
+            from qontinui.hal.implementations.accessibility.uia_semantic import fuzzy_match_nodes
 
             matches = fuzzy_match_nodes(
                 needle,

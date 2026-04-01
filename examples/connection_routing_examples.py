@@ -5,12 +5,7 @@ Demonstrates the Connection Router system for graph-based workflows.
 Shows routing logic for different action types.
 """
 
-from qontinui.config.schema import (
-    Action,
-    Connection,
-    Connections,
-    Workflow,
-)
+from qontinui.config.schema import Action, Connection, Connections, Workflow
 from qontinui.execution import ConnectionRouter, RoutingContext
 
 # ============================================================================

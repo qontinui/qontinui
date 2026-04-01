@@ -72,10 +72,7 @@ def main():
     # Import action_executors to trigger all @register_executor decorators
     print("Importing action_executors package to trigger registrations...")
     try:
-        from qontinui.action_executors import (
-            get_executor_class,
-            get_registered_action_types,
-        )
+        from qontinui.action_executors import get_executor_class, get_registered_action_types
 
         print("✓ Import successful")
         print()

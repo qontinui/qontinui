@@ -225,11 +225,7 @@ def run(
     try:
         # Set execution mode
         if mock:
-            from ..config.execution_mode import (
-                ExecutionModeConfig,
-                MockMode,
-                set_execution_mode,
-            )
+            from ..config.execution_mode import ExecutionModeConfig, MockMode, set_execution_mode
 
             set_execution_mode(ExecutionModeConfig(mode=MockMode.MOCK))
 
@@ -505,11 +501,7 @@ def integration_test(
 
     try:
         # Configure mock mode
-        from ..config.execution_mode import (
-            ExecutionModeConfig,
-            MockMode,
-            set_execution_mode,
-        )
+        from ..config.execution_mode import ExecutionModeConfig, MockMode, set_execution_mode
 
         set_execution_mode(ExecutionModeConfig(mode=MockMode.MOCK))
 

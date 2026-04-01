@@ -5,11 +5,7 @@ Tests automatic selector repair when DOM changes.
 """
 
 from qontinui.extraction.web.models import BoundingBox, InteractiveElement
-from qontinui.extraction.web.selector_healer import (
-    HealingAttempt,
-    HealingResult,
-    SelectorHealer,
-)
+from qontinui.extraction.web.selector_healer import HealingAttempt, HealingResult, SelectorHealer
 
 
 class TestHealingAttempt:

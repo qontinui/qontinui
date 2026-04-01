@@ -17,20 +17,11 @@ import numpy as np
 import pytest
 
 from qontinui.cache import ActionCache
-from qontinui.healing import (
-    HealingConfig,
-    HealingContext,
-    HealingStrategy,
-    VisionHealer,
-)
+from qontinui.healing import HealingConfig, HealingContext, HealingStrategy, VisionHealer
 from qontinui.model.element.pattern import Pattern
 from qontinui.model.element.region import Region
 from qontinui.navigation import TransitionReliability
-from qontinui.validation import (
-    ChangeType,
-    ExpectedChange,
-    VisualValidator,
-)
+from qontinui.validation import ChangeType, ExpectedChange, VisualValidator
 
 # --- Test Fixtures ---
 

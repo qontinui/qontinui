@@ -36,11 +36,7 @@ from playwright.async_api import Page, async_playwright
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from qontinui.extraction.web import (
-    ExtractionOptions,
-    InteractiveElementExtractor,
-    format_for_llm,
-)
+from qontinui.extraction.web import ExtractionOptions, InteractiveElementExtractor, format_for_llm
 from qontinui.extraction.web.accessibility_extractor import extract_accessibility_tree
 from qontinui.extraction.web.frame_manager import extract_across_frames
 from qontinui.extraction.web.hybrid_extractor import HybridExtractor

@@ -8,11 +8,7 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent.parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from qontinui_schemas.accessibility import (
-    AccessibilityBounds,
-    AccessibilityNode,
-    AccessibilityRole,
-)
+from qontinui_schemas.accessibility import AccessibilityBounds, AccessibilityNode, AccessibilityRole
 
 from qontinui.hal.implementations.accessibility.ref_manager import RefManager
 

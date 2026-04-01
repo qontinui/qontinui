@@ -516,9 +516,7 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
                 runner_available = False  # Can't block; fall through
         else:
             try:
-                runner_available = asyncio.run(
-                    RustBackendCapture.is_runner_available(timeout=2.0)
-                )
+                runner_available = asyncio.run(RustBackendCapture.is_runner_available(timeout=2.0))
             except RuntimeError:
                 runner_available = False
 
@@ -531,9 +529,7 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
 
         if plat == "windows":
             try:
-                from .implementations.accessibility.uia_capture import (
-                    UIAAccessibilityCapture,
-                )
+                from .implementations.accessibility.uia_capture import UIAAccessibilityCapture
 
                 return UIAAccessibilityCapture()
             except ImportError:
@@ -541,9 +537,7 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
 
         elif plat == "linux":
             try:
-                from .implementations.accessibility.atspi_capture import (
-                    ATSPIAccessibilityCapture,
-                )
+                from .implementations.accessibility.atspi_capture import ATSPIAccessibilityCapture
 
                 return ATSPIAccessibilityCapture()
             except ImportError:

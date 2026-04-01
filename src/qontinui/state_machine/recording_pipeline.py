@@ -26,7 +26,7 @@ Example:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from .fingerprint_state_discovery import (
@@ -133,9 +133,7 @@ class RecordingPipeline:
 
         # 4. Build transitions from fingerprint-level records
         fp_transitions = discovery.build_transitions_from_records()
-        logger.info(
-            "Built %d fingerprint-level transitions", len(fp_transitions)
-        )
+        logger.info("Built %d fingerprint-level transitions", len(fp_transitions))
 
         # 5. Feed TransitionDetector for confidence scoring
         detector = TransitionDetector()
@@ -143,31 +141,21 @@ class RecordingPipeline:
 
         for record in export.transitions:
             # Map fingerprints to state IDs
-            before_state_ids = _map_fingerprints_to_states(
+            _before_state_ids = _map_fingerprints_to_states(
                 record.disappeared_fingerprints, state_index
             )
-            after_state_ids = _map_fingerprints_to_states(
-                record.appeared_fingerprints, state_index
-            )
+            _after_state_ids = _map_fingerprints_to_states(record.appeared_fingerprints, state_index)
 
             # Also include states that didn't change (stable states)
-            before_capture = _find_capture(
-                export.presence_matrix, record.before_capture_id
-            )
-            after_capture = _find_capture(
-                export.presence_matrix, record.after_capture_id
-            )
+            before_capture = _find_capture(export.presence_matrix, record.before_capture_id)
+            after_capture = _find_capture(export.presence_matrix, record.after_capture_id)
 
             all_before = set()
             all_after = set()
             if before_capture:
-                all_before = _map_fingerprints_to_states(
-                    before_capture.fingerprints, state_index
-                )
+                all_before = _map_fingerprints_to_states(before_capture.fingerprints, state_index)
             if after_capture:
-                all_after = _map_fingerprints_to_states(
-                    after_capture.fingerprints, state_index
-                )
+                all_after = _map_fingerprints_to_states(after_capture.fingerprints, state_index)
 
             if all_before or all_after:
                 detector.record_action(
@@ -182,9 +170,7 @@ class RecordingPipeline:
                 )
 
         # 6. Get confidence-scored transitions
-        detected = detector.get_detected_transitions(
-            min_confidence=self.config.min_confidence
-        )
+        detected = detector.get_detected_transitions(min_confidence=self.config.min_confidence)
         logger.info(
             "Detected %d transitions with confidence >= %.2f",
             len(detected),
@@ -282,7 +268,9 @@ class RecordingPipeline:
                 state_id_map[new_state.id] = best_match.id
                 logger.debug(
                     "Merged state %s into %s (overlap=%.2f)",
-                    new_state.id, best_match.id, best_overlap,
+                    new_state.id,
+                    best_match.id,
+                    best_overlap,
                 )
             else:
                 # New state — add to merged set
@@ -314,9 +302,7 @@ class RecordingPipeline:
                     existing_t.metadata.get("observation_count", 1) + 1
                 )
                 # Lower cost with higher confidence
-                existing_t.path_cost = 1.0 / max(
-                    existing_t.metadata["confidence"], 0.1
-                )
+                existing_t.path_cost = 1.0 / max(existing_t.metadata["confidence"], 0.1)
             else:
                 # New transition — remap and add
                 new_t.from_states = remapped_from
@@ -340,9 +326,7 @@ class RecordingPipeline:
             state_count=len(merged_states),
             transition_count=len(merged_transitions),
             session_id=new_result.session_id,
-            global_state_count=sum(
-                1 for s in merged_states if s.metadata.get("is_global", False)
-            ),
+            global_state_count=sum(1 for s in merged_states if s.metadata.get("is_global", False)),
             modal_state_count=sum(1 for s in merged_states if s.blocking),
         )
 

@@ -40,25 +40,25 @@ Usage:
 
 # Import executor modules to trigger @register_executor decorator
 from . import (
-    code_executor,  # noqa: F401
-    control_flow,  # noqa: F401
-    data_operations,  # noqa: F401
-    find_state,  # noqa: F401
-    keyboard,  # noqa: F401
-    mouse,  # noqa: F401
-    navigation,  # noqa: F401
-    shell,  # noqa: F401
-    utility,  # noqa: F401
-    vision,  # noqa: F401
+                       code_executor,  # noqa: F401
+                       control_flow,  # noqa: F401
+                       data_operations,  # noqa: F401
+                       find_state,  # noqa: F401
+                       keyboard,  # noqa: F401
+                       mouse,  # noqa: F401
+                       navigation,  # noqa: F401
+                       shell,  # noqa: F401
+                       utility,  # noqa: F401
+                       vision,  # noqa: F401
 )
 from .base import ActionExecutorBase, ExecutionContext
 from .delegating_executor import DelegatingActionExecutor
 from .registry import (
-    clear_registry,
-    create_executor,
-    get_executor_class,
-    get_registered_action_types,
-    register_executor,
+                       clear_registry,
+                       create_executor,
+                       get_executor_class,
+                       get_registered_action_types,
+                       register_executor,
 )
 
 __all__ = [

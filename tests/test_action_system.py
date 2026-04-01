@@ -2,9 +2,7 @@
 
 import pytest
 
-from qontinui.actions import (
-    ActionConfig,
-)
+from qontinui.actions import ActionConfig
 from qontinui.actions.basic.click.click_options import ClickOptionsBuilder
 from qontinui.actions.composite.drag.drag_options import DragOptionsBuilder
 from qontinui.primitives import MouseClick, MouseDrag, TypeText

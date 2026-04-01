@@ -6,12 +6,7 @@ import pytest
 
 from src.qontinui.action_executors.base import ExecutionContext
 from src.qontinui.action_executors.mouse import MouseActionExecutor
-from src.qontinui.config.schema import (
-    Action,
-    Coordinates,
-    CoordinatesTarget,
-    HighlightActionConfig,
-)
+from src.qontinui.config.schema import Action, Coordinates, CoordinatesTarget, HighlightActionConfig
 
 
 @pytest.fixture

@@ -23,11 +23,7 @@ from typing import Any
 
 import pytest
 
-from tests.fixtures.detector_fixtures import (
-    MockDetectionResult,
-    MockRegion,
-    MockState,
-)
+from tests.fixtures.detector_fixtures import MockDetectionResult, MockRegion, MockState
 
 
 class BaseStateBuilderTest(ABC):

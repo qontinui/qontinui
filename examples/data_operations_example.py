@@ -9,9 +9,7 @@ Demonstrates:
 """
 
 from qontinui.actions.data_operations import DataOperationsExecutor, VariableContext
-from qontinui.config import (
-    Action,
-)
+from qontinui.config import Action
 
 
 def example_set_variable():

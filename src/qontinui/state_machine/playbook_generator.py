@@ -20,7 +20,7 @@ Example:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
 
@@ -121,7 +121,7 @@ def _build_frontmatter(
     app_url: str | None,
 ) -> str:
     """Build YAML frontmatter string."""
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    now = datetime.now(UTC).strftime("%Y-%m-%d")
 
     lines = [
         f'name: "{_escape_yaml(workflow_name)}"',
@@ -204,7 +204,7 @@ def _build_body(
         lines.append(f"### Step {step_num}: {action_type.capitalize()}")
 
         # Action description
-        lines.append(f"- **Action**: {action_type} on \"{label}\"")
+        lines.append(f'- **Action**: {action_type} on "{label}"')
 
         # Variable reference
         if target_fp in var_by_fp:
@@ -219,9 +219,7 @@ def _build_body(
             to_names = _fingerprints_to_state_names(appeared, state_map, states)
 
             if from_names and to_names:
-                lines.append(
-                    f"- **Transition**: {', '.join(from_names)} → {', '.join(to_names)}"
-                )
+                lines.append(f"- **Transition**: {', '.join(from_names)} → {', '.join(to_names)}")
             elif to_names:
                 lines.append(f"- **Activates**: {', '.join(to_names)}")
             elif from_names:
@@ -235,21 +233,15 @@ def _build_body(
         lines.append("")
         for state in non_global:
             blocking = " (modal)" if state.blocking else ""
-            lines.append(
-                f"- **{state.name}**{blocking}: {len(state.element_ids)} elements"
-            )
+            lines.append(f"- **{state.name}**{blocking}: {len(state.element_ids)} elements")
         lines.append("")
 
         if transitions:
             lines.append("### Discovered Transitions")
             lines.append("")
             for t in transitions:
-                from_names = [
-                    state_map[s].name for s in t.from_states if s in state_map
-                ]
-                to_names = [
-                    state_map[s].name for s in t.activate_states if s in state_map
-                ]
+                from_names = [state_map[s].name for s in t.from_states if s in state_map]
+                to_names = [state_map[s].name for s in t.activate_states if s in state_map]
                 conf = t.metadata.get("confidence", 0)
                 lines.append(
                     f"- {', '.join(from_names)} → {', '.join(to_names)} "

@@ -121,11 +121,7 @@ from qontinui.vision.verification.errors import (
 )
 
 # Main API
-from qontinui.vision.verification.expect import (
-    VisionExpect,
-    expect,
-    locator,
-)
+from qontinui.vision.verification.expect import VisionExpect, expect, locator
 
 # Locators
 from qontinui.vision.verification.locators import (
@@ -146,10 +142,7 @@ from qontinui.vision.verification.results import (
 )
 
 # Screenshot management
-from qontinui.vision.verification.screenshot import (
-    ScreenshotManager,
-    get_screenshot_manager,
-)
+from qontinui.vision.verification.screenshot import ScreenshotManager, get_screenshot_manager
 
 __all__ = [
     # Config

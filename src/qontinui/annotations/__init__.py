@@ -7,14 +7,14 @@ as well as annotation processing infrastructure.
 from .annotated_state_builder import AnnotatedStateBuilder
 from .annotation_processor import AnnotationProcessor
 from .incoming_transition import (
-    get_incoming_transition_metadata,
-    incoming_transition,
-    is_incoming_transition,
+                                  get_incoming_transition_metadata,
+                                  incoming_transition,
+                                  is_incoming_transition,
 )
 from .outgoing_transition import (
-    get_outgoing_transition_metadata,
-    is_outgoing_transition,
-    outgoing_transition,
+                                  get_outgoing_transition_metadata,
+                                  is_outgoing_transition,
+                                  outgoing_transition,
 )
 from .state import get_state_metadata, is_state, state
 from .state_component_extractor import StateComponentExtractor, StateComponents

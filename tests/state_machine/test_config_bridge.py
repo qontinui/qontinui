@@ -4,10 +4,7 @@ import json
 
 from PIL import Image
 
-from qontinui.discovery.element_image_pipeline import (
-    ElementImagePipeline,
-    ExtractedElementImage,
-)
+from qontinui.discovery.element_image_pipeline import ElementImagePipeline, ExtractedElementImage
 from qontinui.state_machine.config_bridge import (
     ConfigBridge,
     UIBridgeStateInput,

@@ -241,10 +241,7 @@ class ConditionEvaluator:
             raise ValueError(error_msg)
 
         # Create Pattern from file using factory method
-        from ...actions.find.find_options_builder import (
-            CascadeContext,
-            build_find_options,
-        )
+        from ...actions.find.find_options_builder import CascadeContext, build_find_options
         from ...model.element import Pattern
 
         pattern = Pattern.from_file(
@@ -348,10 +345,7 @@ class ConditionEvaluator:
             patterns.append(pattern)
 
         # Build options with proper cascade
-        from ...actions.find.find_options_builder import (
-            CascadeContext,
-            build_find_options,
-        )
+        from ...actions.find.find_options_builder import CascadeContext, build_find_options
 
         try:
             from ...config.settings import QontinuiSettings

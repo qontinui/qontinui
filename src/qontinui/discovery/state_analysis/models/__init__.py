@@ -14,10 +14,7 @@ from qontinui.discovery.state_analysis.models.state_models import (
     InputEvent,
     StateImage,
 )
-from qontinui.discovery.state_analysis.models.transition import (
-    StateChangePoint,
-    Transition,
-)
+from qontinui.discovery.state_analysis.models.transition import StateChangePoint, Transition
 
 __all__ = [
     # State models

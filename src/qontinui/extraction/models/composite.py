@@ -18,12 +18,7 @@ from typing import Any
 from qontinui_schemas.common import utc_now
 
 from .base import Screenshot, Viewport
-from .correlated import (
-    CorrelatedState,
-    ExtractionResult,
-    InferredTransition,
-    VerifiedTransition,
-)
+from .correlated import CorrelatedState, ExtractionResult, InferredTransition, VerifiedTransition
 from .runtime import ExtractedElement
 
 

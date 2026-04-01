@@ -38,10 +38,7 @@ from qontinui.extraction.web import (
     NaturalLanguageSelector,
     format_for_llm,
 )
-from qontinui.extraction.web.llm_clients import (
-    MockLLMClient,
-    create_llm_client,
-)
+from qontinui.extraction.web.llm_clients import MockLLMClient, create_llm_client
 
 logging.basicConfig(
     level=logging.INFO,

@@ -22,10 +22,7 @@ from qontinui_schemas.accessibility import (
 )
 
 # Import directly to avoid circular import issues from healing/__init__.py
-from qontinui.healing.healing_types import (
-    HealingContext,
-    HealingStrategy,
-)
+from qontinui.healing.healing_types import HealingContext, HealingStrategy
 from qontinui.healing.vision_healer import VisionHealer
 
 # ---------------------------------------------------------------------------

@@ -48,9 +48,7 @@ class _MockFinder:
 sys.meta_path.insert(0, _MockFinder())
 
 from qontinui.find.backends.cascade import CascadeDetector
-from qontinui.find.semantic_matcher import (
-    match_element_by_description,
-)
+from qontinui.find.semantic_matcher import match_element_by_description
 
 # ===========================================================================
 # Task 4: Backend property verification

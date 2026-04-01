@@ -11,10 +11,7 @@ from unittest.mock import MagicMock, patch
 src_path = Path(__file__).parent.parent.parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from qontinui_schemas.accessibility import (
-    AccessibilityConfig,
-    AccessibilityRole,
-)
+from qontinui_schemas.accessibility import AccessibilityConfig, AccessibilityRole
 
 from qontinui.hal.implementations.accessibility.atspi_capture import (
     ATSPI_ROLE_MAP,

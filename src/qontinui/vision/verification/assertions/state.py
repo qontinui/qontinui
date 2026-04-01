@@ -15,18 +15,11 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 from qontinui_schemas.common import utc_now
-from qontinui_schemas.testing.assertions import (
-    AssertionResult,
-    AssertionStatus,
-    BoundingBox,
-)
+from qontinui_schemas.testing.assertions import AssertionResult, AssertionStatus, BoundingBox
 
 if TYPE_CHECKING:
     from qontinui_schemas.testing.environment import ElementState as SchemaElementState
-    from qontinui_schemas.testing.environment import (
-        GUIEnvironment,
-        VisualStates,
-    )
+    from qontinui_schemas.testing.environment import GUIEnvironment, VisualStates
 
     from qontinui.vision.verification.config import VisionConfig
     from qontinui.vision.verification.locators.base import BaseLocator

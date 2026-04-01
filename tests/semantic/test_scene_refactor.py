@@ -3,12 +3,7 @@
 import pytest
 
 from qontinui.model.element.region import Region
-from qontinui.semantic.core import (
-    SceneAnalyzer,
-    SceneObjectStore,
-    SceneQueryService,
-    SemanticScene,
-)
+from qontinui.semantic.core import SceneAnalyzer, SceneObjectStore, SceneQueryService, SemanticScene
 from qontinui.semantic.core.pixel_location import PixelLocation, Point
 from qontinui.semantic.core.semantic_object import ObjectType, SemanticObject
 

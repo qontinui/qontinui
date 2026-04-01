@@ -21,12 +21,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from qontinui.discovery.state_analysis.models import (
-    DetectedState,
-    Frame,
-    InputEvent,
-    StateImage,
-)
+from qontinui.discovery.state_analysis.models import DetectedState, Frame, InputEvent, StateImage
 
 # Configure logging
 logging.basicConfig(

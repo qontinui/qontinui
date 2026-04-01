@@ -59,14 +59,8 @@ sys.meta_path.insert(0, _MockFinder())
 
 import numpy as np  # noqa: E402
 
-from qontinui.find.backends.base import (  # noqa: E402
-    DetectionBackend,
-    DetectionResult,
-)
-from qontinui.find.backends.cascade import (  # noqa: E402
-    CascadeDetector,
-    MatchSettings,
-)
+from qontinui.find.backends.base import DetectionBackend, DetectionResult  # noqa: E402
+from qontinui.find.backends.cascade import CascadeDetector, MatchSettings  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Helpers

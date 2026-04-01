@@ -143,9 +143,7 @@ def __getattr__(name: str):
 
         return InteractiveElementExtractor
     if name == "SafePlaywrightStateCollector":
-        from qontinui.extraction.web.playwright_collector import (
-            SafePlaywrightStateCollector,
-        )
+        from qontinui.extraction.web.playwright_collector import SafePlaywrightStateCollector
 
         return SafePlaywrightStateCollector
     if name == "CollectionResult":
@@ -161,15 +159,11 @@ def __getattr__(name: str):
 
         return CollectorConfig
     if name == "collect_with_enhanced_extraction":
-        from qontinui.extraction.web.playwright_collector import (
-            collect_with_enhanced_extraction,
-        )
+        from qontinui.extraction.web.playwright_collector import collect_with_enhanced_extraction
 
         return collect_with_enhanced_extraction
     if name == "ExtractionOptions":
-        from qontinui.extraction.web.interactive_element_extractor import (
-            ExtractionOptions,
-        )
+        from qontinui.extraction.web.interactive_element_extractor import ExtractionOptions
 
         return ExtractionOptions
 
@@ -215,9 +209,7 @@ def __getattr__(name: str):
 
     # Accessibility extractor
     if name == "AccessibilityExtractor":
-        from qontinui.extraction.web.accessibility_extractor import (
-            AccessibilityExtractor,
-        )
+        from qontinui.extraction.web.accessibility_extractor import AccessibilityExtractor
 
         return AccessibilityExtractor
     if name == "A11yTree":
@@ -233,15 +225,11 @@ def __getattr__(name: str):
 
         return EnrichedElement
     if name == "extract_accessibility_tree":
-        from qontinui.extraction.web.accessibility_extractor import (
-            extract_accessibility_tree,
-        )
+        from qontinui.extraction.web.accessibility_extractor import extract_accessibility_tree
 
         return extract_accessibility_tree
     if name == "enrich_with_accessibility":
-        from qontinui.extraction.web.accessibility_extractor import (
-            enrich_with_accessibility,
-        )
+        from qontinui.extraction.web.accessibility_extractor import enrich_with_accessibility
 
         return enrich_with_accessibility
 
@@ -265,9 +253,7 @@ def __getattr__(name: str):
 
     # Natural language selector (Phase 2)
     if name == "NaturalLanguageSelector":
-        from qontinui.extraction.web.natural_language_selector import (
-            NaturalLanguageSelector,
-        )
+        from qontinui.extraction.web.natural_language_selector import NaturalLanguageSelector
 
         return NaturalLanguageSelector
     if name == "SelectionResult":
@@ -279,9 +265,7 @@ def __getattr__(name: str):
 
         return FallbackSelector
     if name == "find_element_by_description":
-        from qontinui.extraction.web.natural_language_selector import (
-            find_element_by_description,
-        )
+        from qontinui.extraction.web.natural_language_selector import find_element_by_description
 
         return find_element_by_description
 

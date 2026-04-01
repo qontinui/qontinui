@@ -14,18 +14,9 @@ import cv2
 import numpy as np
 
 from ..reporting.events import EventType, emit_event
-from ..reporting.schemas import (
-    HealingAttemptData,
-    HealingMetricsData,
-)
+from ..reporting.schemas import HealingAttemptData, HealingMetricsData
 from .healing_config import HealingConfig
-from .healing_types import (
-    ElementLocation,
-    HealingContext,
-    HealingResult,
-    HealingStrategy,
-    LLMMode,
-)
+from .healing_types import ElementLocation, HealingContext, HealingResult, HealingStrategy, LLMMode
 
 if TYPE_CHECKING:
     from ..cache import ActionCache

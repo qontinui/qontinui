@@ -6,10 +6,7 @@ import pytest
 
 from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import RegistryFrozenError, StateRegistry
-from qontinui.state_exceptions import (
-    StateAlreadyExistsException,
-    StateNotFoundException,
-)
+from qontinui.state_exceptions import StateAlreadyExistsException, StateNotFoundException
 
 
 class TestStateRegistryThreading:

@@ -12,11 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from qontinui.accessibility.rules.base_rule import AccessibilityRule
-from qontinui.accessibility.types import (
-    AccessibilityIssue,
-    AccessibilitySeverity,
-    WCAGLevel,
-)
+from qontinui.accessibility.types import AccessibilityIssue, AccessibilitySeverity, WCAGLevel
 
 
 class ButtonNameRule(AccessibilityRule):

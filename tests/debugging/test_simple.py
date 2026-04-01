@@ -7,12 +7,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from qontinui.debugging import (
-    BreakpointManager,
-    DebugManager,
-    DebugSession,
-    ExecutionState,
-)
+from qontinui.debugging import BreakpointManager, DebugManager, DebugSession, ExecutionState
 
 
 def test_debug_manager():

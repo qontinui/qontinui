@@ -11,13 +11,9 @@ for different accessibility backends:
 
 import platform
 
-from qontinui.hal.implementations.accessibility.cdp_capture import (
-    CDPAccessibilityCapture,
-)
+from qontinui.hal.implementations.accessibility.cdp_capture import CDPAccessibilityCapture
 from qontinui.hal.implementations.accessibility.ref_manager import RefManager
-from qontinui.hal.implementations.accessibility.rust_backend import (
-    RustBackendCapture,
-)
+from qontinui.hal.implementations.accessibility.rust_backend import RustBackendCapture
 
 __all__ = [
     "CDPAccessibilityCapture",
@@ -28,8 +24,8 @@ __all__ = [
 # Conditionally export UIA capture on Windows
 if platform.system() == "Windows":
     try:
-        from qontinui.hal.implementations.accessibility.uia_capture import (  # noqa: F401
-            UIAAccessibilityCapture,
+        from qontinui.hal.implementations.accessibility.uia_capture import (
+            UIAAccessibilityCapture,  # noqa: F401
         )
 
         __all__.append("UIAAccessibilityCapture")
@@ -40,8 +36,8 @@ if platform.system() == "Windows":
 # Conditionally export AT-SPI capture on Linux
 if platform.system() == "Linux":
     try:
-        from qontinui.hal.implementations.accessibility.atspi_capture import (  # noqa: F401
-            ATSPIAccessibilityCapture,
+        from qontinui.hal.implementations.accessibility.atspi_capture import (
+            ATSPIAccessibilityCapture,  # noqa: F401
         )
 
         __all__.append("ATSPIAccessibilityCapture")

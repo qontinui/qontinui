@@ -18,10 +18,7 @@ import cv2
 import numpy as np
 import pytest
 
-from qontinui.discovery.state_construction.state_builder import (
-    StateBuilder,
-    TransitionInfo,
-)
+from qontinui.discovery.state_construction.state_builder import StateBuilder, TransitionInfo
 from qontinui.discovery.state_detection.differential_consistency_detector import (
     DifferentialConsistencyDetector,
 )

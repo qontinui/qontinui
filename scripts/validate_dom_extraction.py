@@ -26,14 +26,8 @@ from playwright.async_api import async_playwright
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from qontinui.extraction.web import (
-    ExtractionOptions,
-    InteractiveElementExtractor,
-    format_for_llm,
-)
-from qontinui.extraction.web.accessibility_extractor import (
-    extract_accessibility_tree,
-)
+from qontinui.extraction.web import ExtractionOptions, InteractiveElementExtractor, format_for_llm
+from qontinui.extraction.web.accessibility_extractor import extract_accessibility_tree
 from qontinui.extraction.web.frame_manager import extract_across_frames
 from qontinui.extraction.web.hybrid_extractor import HybridExtractor
 
@@ -159,8 +153,7 @@ async def test_shadow_dom_extraction(page, url: str) -> ValidationResult:
         shadow_elements = [el for el in elements if el.shadow_path]
 
         # Also check for shadow roots on the page
-        shadow_root_count = await page.evaluate(
-            """
+        shadow_root_count = await page.evaluate("""
             () => {
                 let count = 0;
                 const checkShadow = (root) => {
@@ -174,8 +167,7 @@ async def test_shadow_dom_extraction(page, url: str) -> ValidationResult:
                 checkShadow(document);
                 return count;
             }
-        """
-        )
+        """)
 
         return ValidationResult(
             test_name=test_name,

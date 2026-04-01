@@ -580,9 +580,7 @@ class TestWorkflowExecutionE2E:
     def test_transition_executor_workflow_execution(self, sample_bdo_config, mock_image):
         """Test that EnhancedTransitionExecutor can execute workflows through workflow_executor."""
         from qontinui.model.state.state_service import StateService
-        from qontinui.model.transition.enhanced_state_transition import (
-            TaskSequenceStateTransition,
-        )
+        from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
         from qontinui.multistate_integration.enhanced_transition_executor import (
             EnhancedTransitionExecutor,
         )
