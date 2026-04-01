@@ -97,6 +97,11 @@ from .persistence import (
     StateGroupRecord,
     StatePersistence,
 )
+from .recording_pipeline import (
+    RecordingPipeline,
+    RecordingPipelineConfig,
+    RecordingPipelineResult,
+)
 from .state_discovery import (
     DiscoveredUIState,
     StateDiscoveryConfig,
@@ -167,4 +172,8 @@ __all__ = [
     # Persistence
     "StatePersistence",
     "StateGroupRecord",
+    # Recording Pipeline
+    "RecordingPipeline",
+    "RecordingPipelineConfig",
+    "RecordingPipelineResult",
 ]
