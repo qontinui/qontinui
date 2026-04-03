@@ -144,7 +144,9 @@ class RecordingPipeline:
             _before_state_ids = _map_fingerprints_to_states(
                 record.disappeared_fingerprints, state_index
             )
-            _after_state_ids = _map_fingerprints_to_states(record.appeared_fingerprints, state_index)
+            _after_state_ids = _map_fingerprints_to_states(
+                record.appeared_fingerprints, state_index
+            )
 
             # Also include states that didn't change (stable states)
             before_capture = _find_capture(export.presence_matrix, record.before_capture_id)

@@ -24,13 +24,13 @@ Example:
 """
 
 from .detector import (
-                       DetectionMethod,
-                       MultiFrameValidator,
-                       SignatureBasedDetector,
-                       StateDetectionResult,
-                       StateDetector,
-                       StateSignature,
-                       TransitionDetector,
+    DetectionMethod,
+    MultiFrameValidator,
+    SignatureBasedDetector,
+    StateDetectionResult,
+    StateDetector,
+    StateSignature,
+    TransitionDetector,
 )
 from .differential_consistency_detector import DifferentialConsistencyDetector, StateRegion
 

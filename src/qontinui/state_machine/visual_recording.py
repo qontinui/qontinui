@@ -16,7 +16,7 @@ import ctypes
 import logging
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # FNV-1a hash (matches TypeScript computeHashSync)
 # =============================================================================
+
 
 def _fnv1a_fingerprint_hash(
     structural_path: str,
@@ -62,9 +63,14 @@ def _fnv1a_fingerprint_hash(
 # Position zone and size category classifiers
 # =============================================================================
 
+
 def _classify_position_zone(
-    x: int, y: int, w: int, h: int,
-    screen_w: int = 1920, screen_h: int = 1080,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    screen_w: int = 1920,
+    screen_h: int = 1080,
 ) -> str:
     """Classify an element's position zone from its screen bounds."""
     cx = x + w // 2
@@ -110,6 +116,7 @@ def _classify_size_category(w: int, h: int) -> str:
 # =============================================================================
 # Data classes
 # =============================================================================
+
 
 @dataclass
 class VisualRecordingConfig:
@@ -170,6 +177,7 @@ class _RecordedInteraction:
 # =============================================================================
 # Visual Recording Session
 # =============================================================================
+
 
 class VisualRecordingSession:
     """Recording session for non-SDK desktop apps using screenshots + a11y.
@@ -373,8 +381,12 @@ class VisualRecordingSession:
             w = int(getattr(bounds, "width", 0))
             h = int(getattr(bounds, "height", 0))
             position_zone = _classify_position_zone(
-                x, y, w, h,
-                self._config.screen_width, self._config.screen_height,
+                x,
+                y,
+                w,
+                h,
+                self._config.screen_width,
+                self._config.screen_height,
             )
             size_category = _classify_size_category(w, h)
         else:
@@ -384,7 +396,11 @@ class VisualRecordingSession:
         # Only fingerprint nodes with a role (skip generic containers)
         if role:
             fp_hash = _fnv1a_fingerprint_hash(
-                structural_path, position_zone, role, name, size_category,
+                structural_path,
+                position_zone,
+                role,
+                name,
+                size_category,
             )
             if fp_hash not in self._all_fingerprints:
                 self._all_fingerprints[fp_hash] = _ElementFingerprint(
@@ -407,14 +423,17 @@ class VisualRecordingSession:
         # Simple approach: check the most recent snapshot's fingerprints
         # and find the one whose position zone best matches the coordinates
         target_zone = _classify_position_zone(
-            x, y, 1, 1,
-            self._config.screen_width, self._config.screen_height,
+            x,
+            y,
+            1,
+            1,
+            self._config.screen_width,
+            self._config.screen_height,
         )
 
         # Find fingerprints in the same zone
         candidates = [
-            fp for fp in self._all_fingerprints.values()
-            if fp.position_zone == target_zone
+            fp for fp in self._all_fingerprints.values() if fp.position_zone == target_zone
         ]
 
         if not candidates:
@@ -447,11 +466,13 @@ class VisualRecordingSession:
         # Presence matrix
         presence_matrix: list[dict[str, Any]] = []
         for snap in self._snapshots:
-            presence_matrix.append({
-                "captureId": snap.id,
-                "url": snap.url or snap.window_title or "",
-                "fingerprints": snap.fingerprint_hashes,
-            })
+            presence_matrix.append(
+                {
+                    "captureId": snap.id,
+                    "url": snap.url or snap.window_title or "",
+                    "fingerprints": snap.fingerprint_hashes,
+                }
+            )
 
         # Co-occurrence counts
         cooccurrence_counts: dict[str, dict[str, int]] = {}
@@ -490,23 +511,27 @@ class VisualRecordingSession:
             before_snap = next(
                 (s for s in self._snapshots if s.id == interaction.before_capture_id), None
             )
-            after_snap = next(
-                (s for s in self._snapshots if s.id == interaction.after_capture_id), None
-            ) if interaction.after_capture_id else None
+            after_snap = (
+                next((s for s in self._snapshots if s.id == interaction.after_capture_id), None)
+                if interaction.after_capture_id
+                else None
+            )
 
             before_set = set(before_snap.fingerprint_hashes) if before_snap else set()
             after_set = set(after_snap.fingerprint_hashes) if after_snap else set()
 
-            transitions.append({
-                "actionId": interaction.id,
-                "actionType": interaction.action_type,
-                "targetFingerprint": interaction.target_fingerprint,
-                "beforeCaptureId": interaction.before_capture_id,
-                "afterCaptureId": interaction.after_capture_id or "",
-                "appearedFingerprints": list(after_set - before_set),
-                "disappearedFingerprints": list(before_set - after_set),
-                "timestamp": interaction.timestamp,
-            })
+            transitions.append(
+                {
+                    "actionId": interaction.id,
+                    "actionType": interaction.action_type,
+                    "targetFingerprint": interaction.target_fingerprint,
+                    "beforeCaptureId": interaction.before_capture_id,
+                    "afterCaptureId": interaction.after_capture_id or "",
+                    "appearedFingerprints": list(after_set - before_set),
+                    "disappearedFingerprints": list(before_set - after_set),
+                    "timestamp": interaction.timestamp,
+                }
+            )
 
         # State candidates: group fingerprints by identical presence signature
         sig_groups: dict[str, list[str]] = {}
@@ -527,11 +552,13 @@ class VisualRecordingSession:
             ]
             dominant_zone = max(set(zones), key=zones.count) if zones else None
 
-            state_candidates.append({
-                "fingerprints": sorted(group),
-                "cooccurrenceRate": 1.0,
-                "positionZone": dominant_zone,
-            })
+            state_candidates.append(
+                {
+                    "fingerprints": sorted(group),
+                    "cooccurrenceRate": 1.0,
+                    "positionZone": dominant_zone,
+                }
+            )
 
         return {
             "sessionId": self._session_id,

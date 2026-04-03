@@ -38,13 +38,13 @@ Available Strategies:
 """
 
 from .base import (
-                   DiscoveredElement,
-                   DiscoveredState,
-                   DiscoveredTransition,
-                   DiscoveryStrategyType,
-                   StateDiscoveryInput,
-                   StateDiscoveryResult,
-                   StateDiscoveryStrategy,
+    DiscoveredElement,
+    DiscoveredState,
+    DiscoveredTransition,
+    DiscoveryStrategyType,
+    StateDiscoveryInput,
+    StateDiscoveryResult,
+    StateDiscoveryStrategy,
 )
 from .service import StateDiscoveryService, discover_states
 from .strategies import FingerprintStrategy

@@ -23,16 +23,16 @@ from .debug_manager import DebugManager
 from .debug_session import DebugSession
 from .execution_recorder import ExecutionRecorder
 from .types import (
-                    Breakpoint,
-                    BreakpointType,
-                    DebugHookContext,
-                    ErrorHook,
-                    ExecutionRecord,
-                    ExecutionState,
-                    PostActionHook,
-                    PreActionHook,
-                    StepMode,
-                    VariableSnapshot,
+    Breakpoint,
+    BreakpointType,
+    DebugHookContext,
+    ErrorHook,
+    ExecutionRecord,
+    ExecutionState,
+    PostActionHook,
+    PreActionHook,
+    StepMode,
+    VariableSnapshot,
 )
 
 __all__ = [

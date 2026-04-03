@@ -660,9 +660,9 @@ class ImageMatchingStateMachineBuilder:
         self.screenshots_dir = Path(screenshots_dir)
         self.similarity_threshold = similarity_threshold
         self.screenshots: dict[str, Any] = {}  # screenshot_id -> image array (np.ndarray)
-        self.candidate_elements: dict[str, list[dict[str, Any]]] = (
-            {}
-        )  # screenshot_id -> list of elements
+        self.candidate_elements: dict[
+            str, list[dict[str, Any]]
+        ] = {}  # screenshot_id -> list of elements
         self.tracked_images: list[TrackedImage] = []
         self.states: list[dict[str, Any]] = []
 
@@ -1382,12 +1382,14 @@ def build_state_machine_from_extraction_result(
     # Collect transition data from ExtractionResult for transition derivation
     raw_transitions: list[dict[str, Any]] = []
     for t in extraction_result.transitions:
-        raw_transitions.append({
-            "from_state_id": t.from_state_id,
-            "to_state_id": t.to_state_id,
-            "trigger_type": t.trigger_type,
-            "target_element": t.target_element,
-        })
+        raw_transitions.append(
+            {
+                "from_state_id": t.from_state_id,
+                "to_state_id": t.to_state_id,
+                "trigger_type": t.trigger_type,
+                "target_element": t.target_element,
+            }
+        )
     print(
         f"[IMAGE_MATCHING_DEBUG] Collected {len(raw_transitions)} transitions for derivation",
         flush=True,

@@ -43,19 +43,19 @@ Enable Aria-UI (requires Docker service):
 from .aria_ui_client import AriaUIClient
 from .aria_ui_context_client import AriaUIContextClient
 from .context_mapper import (
-                             ScreenshotProvider,
-                             build_aria_ui_context,
-                             build_aria_ui_context_from_records,
+    ScreenshotProvider,
+    build_aria_ui_context,
+    build_aria_ui_context_from_records,
 )
 from .healing_config import HealingConfig, HealingConfigurationError
 from .healing_types import ElementLocation, HealingContext, HealingResult, HealingStrategy, LLMMode
 from .llm_client import DisabledVisionClient, LocalVisionClient, RemoteVisionClient, VisionLLMClient
 from .recovery_handler import (
-                             ElementNotFoundError,
-                             HealingRecoveryHandler,
-                             MatchNotFoundError,
-                             create_healing_handler,
-                             enable_healing_recovery,
+    ElementNotFoundError,
+    HealingRecoveryHandler,
+    MatchNotFoundError,
+    create_healing_handler,
+    enable_healing_recovery,
 )
 from .uia_healer import UIAElementFingerprint, UIAHealer
 from .vision_healer import VisionHealer, configure_healing, get_vision_healer, set_vision_healer

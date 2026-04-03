@@ -6,13 +6,13 @@ Provides color-based pattern matching, classification, and analysis.
 from .classify import Classify
 from .color_cluster import ColorCluster, ColorClusterAnalyzer
 from .color_find_options import (
-                                 AreaFilteringOptions,
-                                 AreaFilteringOptionsBuilder,
-                                 ColorFindOptions,
-                                 ColorFindOptionsBuilder,
-                                 ColorStrategy,
-                                 HSVBinOptions,
-                                 HSVBinOptionsBuilder,
+    AreaFilteringOptions,
+    AreaFilteringOptionsBuilder,
+    ColorFindOptions,
+    ColorFindOptionsBuilder,
+    ColorStrategy,
+    HSVBinOptions,
+    HSVBinOptionsBuilder,
 )
 from .color_profile import ColorProfile
 from .color_statistics import ColorStatistics, ColorStatisticsAnalyzer

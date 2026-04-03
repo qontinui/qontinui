@@ -611,9 +611,13 @@ class TestNaturalLanguageSelection:
 
         # Create dedicated mock with only the multi-response pattern
         # The generic mock fixture has patterns that may match the prompt's examples
-        multi_mock = MockLLMClient(responses={"all links": """MATCH: 0, 0.95, First link
+        multi_mock = MockLLMClient(
+            responses={
+                "all links": """MATCH: 0, 0.95, First link
 MATCH: 1, 0.90, Second link
-MATCH: 2, 0.85, Third link"""})
+MATCH: 2, 0.85, Third link"""
+            }
+        )
 
         selector = NaturalLanguageSelector(llm_client=multi_mock)
         results = await selector.find_multiple("all links", elements)

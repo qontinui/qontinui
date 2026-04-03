@@ -13,13 +13,13 @@ The hybrid approach provides precise bounding boxes for StateImages because:
 """
 
 from .base import (
-                   HybridExtractionConfig,
-                   HybridExtractionResult,
-                   HybridExtractor,
-                   State,
-                   StateImage,
-                   StateTransition,
-                   TechStackExtractor,
+    HybridExtractionConfig,
+    HybridExtractionResult,
+    HybridExtractor,
+    State,
+    StateImage,
+    StateTransition,
+    TechStackExtractor,
 )
 from .registry import TechStackRegistry
 

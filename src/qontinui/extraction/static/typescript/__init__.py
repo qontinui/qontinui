@@ -7,18 +7,18 @@ event handlers, and import/export relationships.
 """
 
 from .parser import (
-                     ComponentInfo,
-                     ConditionalRenderInfo,
-                     EventHandlerInfo,
-                     ExportInfo,
-                     FileParseResult,
-                     ImportInfo,
-                     JSXElementInfo,
-                     ParseResult,
-                     PropInfo,
-                     StateVariableInfo,
-                     TypeScriptParser,
-                     create_parser,
+    ComponentInfo,
+    ConditionalRenderInfo,
+    EventHandlerInfo,
+    ExportInfo,
+    FileParseResult,
+    ImportInfo,
+    JSXElementInfo,
+    ParseResult,
+    PropInfo,
+    StateVariableInfo,
+    TypeScriptParser,
+    create_parser,
 )
 
 __all__ = [

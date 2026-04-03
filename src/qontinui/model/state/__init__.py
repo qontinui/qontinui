@@ -7,10 +7,10 @@ from ..transition import StateTransition, StateTransitions
 from .action_history import ActionHistory
 from .action_snapshot import ActionSnapshot, ActionType, MatchResult
 from .initial_states import (
-                             InitialStates,
-                             get_initial_states,
-                             register_initial_state,
-                             register_initial_states,
+    InitialStates,
+    get_initial_states,
+    register_initial_state,
+    register_initial_states,
 )
 from .path import Path
 from .path_finder import PathFinder

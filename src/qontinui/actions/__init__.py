@@ -16,21 +16,21 @@ from .basic.click import ClickOptions, ClickOptionsBuilder
 
 # Import basic action options
 from .basic.find import (
-                            DoOnEach,
-                            FindStrategy,
-                            PatternFindOptions,
-                            PatternFindOptionsBuilder,
-                            Strategy,
+    DoOnEach,
+    FindStrategy,
+    PatternFindOptions,
+    PatternFindOptionsBuilder,
+    Strategy,
 )
 from .basic.mouse import (
-                            Direction,
-                            MouseButton,
-                            MouseMoveOptions,
-                            MouseMoveOptionsBuilder,
-                            MousePressOptions,
-                            MousePressOptionsBuilder,
-                            ScrollOptions,
-                            ScrollOptionsBuilder,
+    Direction,
+    MouseButton,
+    MouseMoveOptions,
+    MouseMoveOptionsBuilder,
+    MousePressOptions,
+    MousePressOptionsBuilder,
+    ScrollOptions,
+    ScrollOptionsBuilder,
 )
 from .basic.type import TypeOptions, TypeOptionsBuilder
 from .basic.type.key_down_options import KeyDownOptions, KeyDownOptionsBuilder

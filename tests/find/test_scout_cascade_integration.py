@@ -280,9 +280,9 @@ class TestScoutBackendSupportsTypes:
     def test_omniparser_supports_multiple_types(self):
         _, stubs = _build_full_stub_cascade()
         for needle_type in ("template", "text", "description", "semantic"):
-            assert stubs["omniparser"].supports(
-                needle_type
-            ), f"omniparser should support '{needle_type}'"
+            assert stubs["omniparser"].supports(needle_type), (
+                f"omniparser should support '{needle_type}'"
+            )
 
     def test_accessibility_backend_supports_structured_types(self):
         _, stubs = _build_full_stub_cascade()
@@ -373,8 +373,7 @@ class TestMaxBackendsLimitsCascadeAttempts:
         # Count how many backends were actually called.
         called = [name for name, s in stubs.items() if s.find_called]
         assert len(called) == 2, (
-            f"Expected exactly 2 backends tried with max_backends=2, "
-            f"got {len(called)}: {called}"
+            f"Expected exactly 2 backends tried with max_backends=2, got {len(called)}: {called}"
         )
 
         # The two called should be the two cheapest template-supporting backends.
@@ -520,20 +519,20 @@ class TestAllBackendsHaveNameAndCost:
     def test_all_backends_have_name_and_cost(self):
         cascade, _ = _build_full_stub_cascade()
         for backend in cascade.backends:
-            assert (
-                isinstance(backend.name, str) and len(backend.name) > 0
-            ), f"Backend has empty or non-string name: {backend!r}"
+            assert isinstance(backend.name, str) and len(backend.name) > 0, (
+                f"Backend has empty or non-string name: {backend!r}"
+            )
             assert backend.estimated_cost_ms() > 0, (
-                f"Backend '{backend.name}' has non-positive cost: " f"{backend.estimated_cost_ms()}"
+                f"Backend '{backend.name}' has non-positive cost: {backend.estimated_cost_ms()}"
             )
 
     def test_all_backends_implement_detection_interface(self):
         """Every backend must be a DetectionBackend subclass."""
         cascade, _ = _build_full_stub_cascade()
         for backend in cascade.backends:
-            assert isinstance(
-                backend, DetectionBackend
-            ), f"Backend '{backend.name}' is not a DetectionBackend"
+            assert isinstance(backend, DetectionBackend), (
+                f"Backend '{backend.name}' is not a DetectionBackend"
+            )
 
 
 # ===========================================================================

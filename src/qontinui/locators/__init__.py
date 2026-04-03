@@ -14,12 +14,12 @@ Key Components:
 from .healing import HealingConfig, HealingManager
 from .multi_strategy import MultiStrategyLocator
 from .strategies import (
-                         ColorRegionStrategy,
-                         LocatorStrategy,
-                         RelativePositionStrategy,
-                         SemanticTextStrategy,
-                         StructuralStrategy,
-                         VisualPatternStrategy,
+    ColorRegionStrategy,
+    LocatorStrategy,
+    RelativePositionStrategy,
+    SemanticTextStrategy,
+    StructuralStrategy,
+    VisualPatternStrategy,
 )
 
 __all__ = [

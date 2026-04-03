@@ -30,12 +30,12 @@ Example:
 
 # Base classes and data models
 from .analysis_base import (
-                            AnalysisInput,
-                            AnalysisResult,
-                            AnalysisType,
-                            BaseAnalyzer,
-                            BoundingBox,
-                            DetectedElement,
+    AnalysisInput,
+    AnalysisResult,
+    AnalysisType,
+    BaseAnalyzer,
+    BoundingBox,
+    DetectedElement,
 )
 
 # Button detectors

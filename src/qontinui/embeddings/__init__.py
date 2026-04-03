@@ -28,10 +28,10 @@ from .cache import CachedEmbeddingProvider, EmbeddingCache
 from .config import EmbeddingConfig, EmbeddingProviderType
 from .openai_provider import OpenAIProvider
 from .provider import (
-                       EmbeddingProvider,
-                       get_default_provider,
-                       get_embedding_provider,
-                       set_default_provider,
+    EmbeddingProvider,
+    get_default_provider,
+    get_embedding_provider,
+    set_default_provider,
 )
 from .search import SemanticSearchEngine, SemanticSearchResult
 from .sentence_transformers_provider import SentenceTransformersProvider

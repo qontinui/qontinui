@@ -7,10 +7,10 @@ Extracted from ActionExecutor to follow Single Responsibility Principle.
 from .execution_context import ActionState, ExecutionContext, ExecutionStatistics
 from .retry_policy import BackoffStrategy, RetryPolicy
 from .workflow_orchestrator import (
-                                ActionExecutorProtocol,
-                                EventEmitterProtocol,
-                                WorkflowOrchestrator,
-                                WorkflowResult,
+    ActionExecutorProtocol,
+    EventEmitterProtocol,
+    WorkflowOrchestrator,
+    WorkflowResult,
 )
 
 __all__ = [

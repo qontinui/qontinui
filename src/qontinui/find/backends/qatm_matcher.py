@@ -92,7 +92,7 @@ class QATMMatcher:
         layer_name = self._settings.feature_layer
         if layer_name not in self._LAYER_MAP:
             raise ValueError(
-                f"Unknown VGG-19 layer '{layer_name}'. " f"Valid: {sorted(self._LAYER_MAP.keys())}"
+                f"Unknown VGG-19 layer '{layer_name}'. Valid: {sorted(self._LAYER_MAP.keys())}"
             )
         layer_idx = self._LAYER_MAP[layer_name]
 

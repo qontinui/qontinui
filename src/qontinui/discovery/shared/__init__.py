@@ -11,11 +11,11 @@ Shared Components:
 """
 
 from .co_occurrence_grouper import (
-                                    CoOccurrenceGroup,
-                                    CoOccurrenceGrouper,
-                                    CoOccurrenceGroupingResult,
-                                    from_state_images_screenshot_ids,
-                                    invert_frame_template_map,
+    CoOccurrenceGroup,
+    CoOccurrenceGrouper,
+    CoOccurrenceGroupingResult,
+    from_state_images_screenshot_ids,
+    invert_frame_template_map,
 )
 
 __all__ = [

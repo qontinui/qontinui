@@ -20,13 +20,13 @@ Exports:
 from .base import StateMatcher
 from .component_matcher import ComponentMatcher
 from .confidence import (
-                         EVIDENCE_WEIGHTS,
-                         combine_evidence,
-                         compute_state_confidence,
-                         compute_transition_confidence,
-                         filter_weak_evidence,
-                         get_evidence_summary,
-                         get_strongest_evidence,
+    EVIDENCE_WEIGHTS,
+    combine_evidence,
+    compute_state_confidence,
+    compute_transition_confidence,
+    filter_weak_evidence,
+    get_evidence_summary,
+    get_strongest_evidence,
 )
 from .matcher import DefaultStateMatcher
 from .state_matcher import StateVariableMatcher

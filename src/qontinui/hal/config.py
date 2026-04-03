@@ -107,8 +107,9 @@ class HALConfig:
 
     # Performance settings
     capture_cache_enabled: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_CAPTURE_CACHE_ENABLED", "true").lower()
-        == "true"
+        default_factory=lambda: (
+            os.getenv("QONTINUI_CAPTURE_CACHE_ENABLED", "true").lower() == "true"
+        )
     )
     capture_cache_ttl: float = field(
         default_factory=lambda: float(os.getenv("QONTINUI_CAPTURE_CACHE_TTL", "1.0"))
@@ -125,8 +126,9 @@ class HALConfig:
         default_factory=lambda: os.getenv("QONTINUI_USE_FALLBACK", "true").lower() == "true"
     )
     fallback_to_pyautogui: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_FALLBACK_TO_PYAUTOGUI", "false").lower()
-        == "true"
+        default_factory=lambda: (
+            os.getenv("QONTINUI_FALLBACK_TO_PYAUTOGUI", "false").lower() == "true"
+        )
     )
 
     # Debug settings

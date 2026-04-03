@@ -6,16 +6,16 @@ This module provides builders for constructing state machines from various sourc
 """
 
 from .state_machine_builder import (
-                                    ExtractedImage,
-                                    ImageMatch,
-                                    ImageMatchingStateMachineBuilder,
-                                    ScreenInfo,
-                                    StateMachineBuilder,
-                                    StateMachineState,
-                                    StateMachineTransition,
-                                    TrackedImage,
-                                    build_state_machine_from_extraction,
-                                    build_state_machine_from_extraction_result,
+    ExtractedImage,
+    ImageMatch,
+    ImageMatchingStateMachineBuilder,
+    ScreenInfo,
+    StateMachineBuilder,
+    StateMachineState,
+    StateMachineTransition,
+    TrackedImage,
+    build_state_machine_from_extraction,
+    build_state_machine_from_extraction_result,
 )
 
 __all__ = [

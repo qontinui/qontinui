@@ -244,8 +244,7 @@ def _build_body(
                 to_names = [state_map[s].name for s in t.activate_states if s in state_map]
                 conf = t.metadata.get("confidence", 0)
                 lines.append(
-                    f"- {', '.join(from_names)} → {', '.join(to_names)} "
-                    f"(confidence: {conf:.0%})"
+                    f"- {', '.join(from_names)} → {', '.join(to_names)} (confidence: {conf:.0%})"
                 )
             lines.append("")
 
