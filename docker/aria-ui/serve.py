@@ -90,45 +90,61 @@ def _patch_mha_for_bnb(mdl):
 
 
 class _BnbMultiheadAttention(torch.nn.Module):
-    """Drop-in replacement for nn.MultiheadAttention that works with bnb Linear4bit."""
+    """Drop-in replacement for nn.MultiheadAttention that works with bnb Linear4bit.
+
+    In AriaUI's projector, the MHA (embed_dim=1152, num_heads=16, batch_first=False)
+    has a regular (non-quantized) in_proj_weight [3456, 1152] and a quantized
+    out_proj (Linear4bit). The standard F.multi_head_attention_forward fails because
+    it calls F.linear on out_proj.weight directly, which doesn't work with 4-bit params.
+
+    Solution: use F.multi_head_attention_forward for Q/K/V projection + attention,
+    but intercept the output projection to route through the bnb Linear4bit forward.
+    """
 
     def __init__(self, orig_mha):
         super().__init__()
+        self.embed_dim = orig_mha.embed_dim
         self.num_heads = orig_mha.num_heads
         self.head_dim = orig_mha.head_dim
-        self.embed_dim = orig_mha.embed_dim
+        self.dropout_p = orig_mha.dropout if hasattr(orig_mha, "dropout") else 0.0
+        # in_proj_weight/bias are regular (non-quantized) Parameters
         self.in_proj_weight = orig_mha.in_proj_weight
         self.in_proj_bias = orig_mha.in_proj_bias
+        # out_proj is bnb Linear4bit — keep as submodule for bnb forward
         self.out_proj = orig_mha.out_proj
 
     def forward(self, query, key, value, attn_mask=None, **kwargs):
-        bsz, tgt_len, embed_dim = query.size()
+        import torch.nn.functional as F
 
-        w = self.in_proj_weight
-        b = self.in_proj_bias
+        # Use PyTorch's built-in MHA forward for Q/K/V projection + attention.
+        # Pass identity matrix for out_proj since we'll apply bnb Linear4bit after.
+        identity_w = torch.eye(self.embed_dim, device=query.device, dtype=query.dtype)
+        identity_b = torch.zeros(self.embed_dim, device=query.device, dtype=query.dtype)
 
-        if hasattr(w, "quant_state"):
-            import bitsandbytes.functional as bnb_F
+        attn_output, attn_weights = F.multi_head_attention_forward(
+            query,
+            key,
+            value,
+            self.embed_dim,
+            self.num_heads,
+            self.in_proj_weight,
+            self.in_proj_bias,
+            None,  # bias_k
+            None,  # bias_v
+            False,  # add_zero_attn
+            self.dropout_p,
+            identity_w,
+            identity_b,
+            training=self.training,
+            key_padding_mask=None,
+            need_weights=False,
+            attn_mask=attn_mask,
+        )
 
-            w = bnb_F.dequantize_4bit(w.data, w.quant_state).to(query.dtype)
-
-        if b is not None:
-            proj = torch.nn.functional.linear(query, w, b)
-        else:
-            proj = torch.nn.functional.linear(query, w)
-
-        q, k, v = proj.chunk(3, dim=-1)
-
-        q = q.view(bsz, tgt_len, self.num_heads, self.head_dim).transpose(1, 2)
-        k = k.view(bsz, -1, self.num_heads, self.head_dim).transpose(1, 2)
-        v = v.view(bsz, -1, self.num_heads, self.head_dim).transpose(1, 2)
-
-        attn_output = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
-
-        attn_output = attn_output.transpose(1, 2).contiguous().view(bsz, tgt_len, embed_dim)
+        # Apply the quantized out_proj via bnb forward pass
         attn_output = self.out_proj(attn_output)
 
-        return attn_output, None
+        return attn_output, attn_weights
 
 
 # ---------------------------------------------------------------------------
