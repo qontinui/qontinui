@@ -78,19 +78,19 @@ class TestWebSocketEventIntegration:
         assert isinstance(timestamp, float), f"Timestamp should be float, got {type(timestamp)}"
 
         # Verify timestamp is within reasonable bounds (between time_before and time_after)
-        assert time_before <= timestamp <= time_after, (
-            f"Timestamp {timestamp} should be between {time_before} and {time_after}"
-        )
+        assert (
+            time_before <= timestamp <= time_after
+        ), f"Timestamp {timestamp} should be between {time_before} and {time_after}"
 
         # Check screenshot_timestamp field exists (if screenshot was captured)
         if "screenshot_base64" in event_data:
-            assert "screenshot_timestamp" in event_data, (
-                "Event should include screenshot_timestamp when screenshot is present"
-            )
+            assert (
+                "screenshot_timestamp" in event_data
+            ), "Event should include screenshot_timestamp when screenshot is present"
             screenshot_timestamp = event_data["screenshot_timestamp"]
-            assert isinstance(screenshot_timestamp, float), (
-                f"Screenshot timestamp should be float, got {type(screenshot_timestamp)}"
-            )
+            assert isinstance(
+                screenshot_timestamp, float
+            ), f"Screenshot timestamp should be float, got {type(screenshot_timestamp)}"
 
         print(f"✓ MATCH_ATTEMPTED event has timestamp: {timestamp}")
 
@@ -339,9 +339,9 @@ class TestWebSocketEventIntegration:
             if "timestamp" in event.data:
                 timestamp = event.data["timestamp"]
                 # Check that timestamp has fractional component (millisecond precision)
-                assert timestamp != int(timestamp), (
-                    f"Timestamp should have millisecond precision, got {timestamp}"
-                )
+                assert timestamp != int(
+                    timestamp
+                ), f"Timestamp should have millisecond precision, got {timestamp}"
                 print(f"✓ {event.type} timestamp has millisecond precision: {timestamp}")
 
 

@@ -33,8 +33,8 @@ def _debug_print(msg: str) -> None:
 
 
 from qontinui.model.transition.enhanced_state_transition import (
-    TaskSequenceStateTransition,  # noqa: E402
-)
+    TaskSequenceStateTransition,
+)  # noqa: E402
 from qontinui.state_management.state_memory import StateMemory  # noqa: E402
 
 from .multistate_adapter import MultiStateAdapter  # noqa: E402

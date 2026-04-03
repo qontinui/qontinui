@@ -287,6 +287,6 @@ class TestCascadeBackendOrdering:
         )
         template_indices = [i for i, b in enumerate(cascade.backends) if "template" in b.name]
         if template_indices:
-            assert sem_idx < min(template_indices), (
-                "Semantic backend should come before template backends"
-            )
+            assert sem_idx < min(
+                template_indices
+            ), "Semantic backend should come before template backends"

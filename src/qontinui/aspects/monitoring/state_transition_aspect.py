@@ -409,9 +409,7 @@ class StateTransitionAspect:
                 color = (
                     "green"
                     if stats.success_rate > 80
-                    else "red"
-                    if stats.success_rate < 50
-                    else "orange"
+                    else "red" if stats.success_rate < 50 else "orange"
                 )
                 lines.append(f'  "{from_state}" -> "{to_state}" [label="{label}", color={color}];')
 

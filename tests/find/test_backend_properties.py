@@ -147,9 +147,9 @@ class TestCascadeDefaultOrdering:
         """Default backends should be sorted cheapest-first."""
         cascade = CascadeDetector()
         costs = [b.estimated_cost_ms() for b in cascade.backends]
-        assert costs == sorted(costs), (
-            f"Backends not sorted by cost: {[(b.name, b.estimated_cost_ms()) for b in cascade.backends]}"
-        )
+        assert costs == sorted(
+            costs
+        ), f"Backends not sorted by cost: {[(b.name, b.estimated_cost_ms()) for b in cascade.backends]}"
 
     def test_default_includes_core_backends(self):
         """At minimum, template + feature backends should be present."""

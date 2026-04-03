@@ -88,13 +88,13 @@ def verify_python_import():
     print("\nChecking Python imports...")
 
     try:
-        from .parser import (  # noqa: F401
-            ComponentInfo,
-            ConditionalRenderInfo,
-            EventHandlerInfo,
-            FileParseResult,
-            ParseResult,
-            StateVariableInfo,
+        from .parser import (
+            ComponentInfo,  # noqa: F401
+            ConditionalRenderInfo,  # noqa: F401
+            EventHandlerInfo,  # noqa: F401
+            FileParseResult,  # noqa: F401
+            ParseResult,  # noqa: F401
+            StateVariableInfo,  # noqa: F401
             TypeScriptParser,
         )
 

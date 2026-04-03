@@ -9,7 +9,7 @@ analyzers in the static/ directory.
 # Import StaticConfig from the config module
 from qontinui.extraction.config import StaticConfig
 from qontinui.extraction.models.static import (
-    APICallDefinition,  # New hint models for state discovery
+    APICallDefinition,
     APICallType,
     ComponentCategory,
     ComponentDefinition,
@@ -29,7 +29,7 @@ from qontinui.extraction.models.static import (
     StaticAnalysisResult,
     TransitionHint,
     VisibilityState,
-)
+)  # New hint models for state discovery
 
 __all__ = [
     # Enums

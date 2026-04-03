@@ -81,9 +81,9 @@ class TestJSONConfigValidation:
 
         # Verify base settings were parsed correctly
         assert action.base is not None, "Base settings should be present"
-        assert action.base.pause_after_end == 10000, (
-            "pauseAfterEnd should be parsed as pause_after_end and equal 10000"
-        )
+        assert (
+            action.base.pause_after_end == 10000
+        ), "pauseAfterEnd should be parsed as pause_after_end and equal 10000"
 
     def test_action_base_settings_snakecase_fails(self):
         """Test that snake_case in JSON does NOT work (should use camelCase)."""
@@ -188,21 +188,21 @@ class TestRealConfigFiles:
 
             # If pauseAfterEnd is set, it should be parsed correctly
             if base.pause_after_end is not None:
-                assert isinstance(base.pause_after_end, int), (
-                    f"Action {action_info['id']}: pause_after_end should be int, got {type(base.pause_after_end)}"
-                )
-                assert base.pause_after_end >= 0, (
-                    f"Action {action_info['id']}: pause_after_end should be non-negative"
-                )
+                assert isinstance(
+                    base.pause_after_end, int
+                ), f"Action {action_info['id']}: pause_after_end should be int, got {type(base.pause_after_end)}"
+                assert (
+                    base.pause_after_end >= 0
+                ), f"Action {action_info['id']}: pause_after_end should be non-negative"
 
             # If pauseBeforeBegin is set, it should be parsed correctly
             if base.pause_before_begin is not None:
-                assert isinstance(base.pause_before_begin, int), (
-                    f"Action {action_info['id']}: pause_before_begin should be int, got {type(base.pause_before_begin)}"
-                )
-                assert base.pause_before_begin >= 0, (
-                    f"Action {action_info['id']}: pause_before_begin should be non-negative"
-                )
+                assert isinstance(
+                    base.pause_before_begin, int
+                ), f"Action {action_info['id']}: pause_before_begin should be int, got {type(base.pause_before_begin)}"
+                assert (
+                    base.pause_before_begin >= 0
+                ), f"Action {action_info['id']}: pause_before_begin should be non-negative"
 
     def test_all_config_files_in_parent_dir(self):
         """Test all bdo_config*.json files in the parent directory."""
