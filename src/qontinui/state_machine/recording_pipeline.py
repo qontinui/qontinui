@@ -227,12 +227,6 @@ class RecordingPipeline:
         # Run discovery on the new recording
         new_result = self.process_recording(export_data)
 
-        # Build lookup for existing states by element fingerprints
-        existing_fp_to_state: dict[str, UIBridgeState] = {}
-        for state in existing_states:
-            for fp in state.element_ids:
-                existing_fp_to_state[fp] = state
-
         # Merge states
         merged_states: list[UIBridgeState] = list(existing_states)
         state_id_map: dict[str, str] = {}  # new_id -> merged_id
@@ -245,9 +239,10 @@ class RecordingPipeline:
             new_fps = set(new_state.element_ids)
             for existing in existing_states:
                 existing_fps = set(existing.element_ids)
-                if not existing_fps:
+                union = new_fps | existing_fps
+                if not union:
                     continue
-                overlap = len(new_fps & existing_fps) / len(new_fps | existing_fps)
+                overlap = len(new_fps & existing_fps) / len(union)
                 if overlap > best_overlap:
                     best_overlap = overlap
                     best_match = existing

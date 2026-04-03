@@ -1,4 +1,7 @@
 services:
+  # Standalone AriaUI — use when NOT using llama-swap.
+  # Start with: docker compose --profile standalone up
+  # For GPU-shared multi-model setup, use docker/llama-swap/ instead.
   aria-ui:
     build: .
     ports:
@@ -14,6 +17,8 @@ services:
       - HF_HOME=/root/.cache/huggingface
     volumes:
       - aria-ui-cache:/root/.cache/huggingface
+    profiles:
+      - standalone
 
   # Context-aware variant — uses action history for disambiguation.
   # Requires Aria-UI-context-aware weights (add to Dockerfile).

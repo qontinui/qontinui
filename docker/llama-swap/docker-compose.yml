@@ -1,0 +1,49 @@
+# llama-swap model orchestration proxy.
+#
+# Time-shares a single GPU across AriaUI and UI-TARS.
+# Replaces running separate aria-ui and ui-tars containers simultaneously.
+#
+# Usage:
+#   docker compose -f docker/llama-swap/docker-compose.yml up
+#
+# To use standalone containers instead (original behavior):
+#   docker compose -f docker/aria-ui/docker-compose.yml --profile standalone up
+#
+# Models not managed here (run separately if needed):
+#   - OmniParser: docker compose -f docker/omniparser/docker-compose.yml up
+#   - PRM: cd ../qontinui-prm && docker compose -f docker/docker-compose.yml up
+
+services:
+  llama-swap:
+    build:
+      context: ..  # docker/ directory, so we can COPY from aria-ui/serve.py
+      dockerfile: llama-swap/Dockerfile
+    ports:
+      - "8100:8100"  # Primary API port (AriaUI default, all models routed here)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - HF_HOME=/root/.cache/huggingface
+      - CUDA_VISIBLE_DEVICES=0
+      # UI-TARS VLLMProvider defaults to port 8000. When using llama-swap,
+      # set QONTINUI_UITARS_VLLM_SERVER_URL=http://localhost:8100 on the
+      # host/runner side so UI-TARS requests go through the proxy.
+    volumes:
+      - llama-swap-hf-cache:/root/.cache/huggingface
+      # Mount config for hot-reload without rebuild
+      - ./config.yaml:/etc/llama-swap/config.yaml:ro
+    healthcheck:
+      # /running is llama-swap's native status endpoint (works even with no model loaded)
+      test: ["CMD", "curl", "-f", "http://localhost:8100/running"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  llama-swap-hf-cache:

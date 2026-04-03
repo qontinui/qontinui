@@ -1,0 +1,108 @@
+# llama-swap configuration for qontinui model orchestration.
+#
+# Time-shares a single GPU across AriaUI and UI-TARS models.
+# Only the active model occupies VRAM; idle models unload after TTL.
+#
+# Models not managed here (they use non-OpenAI APIs):
+#   - OmniParser (custom /parse endpoint, port 8080)
+#   - PRM (custom /v1/score endpoint, port 8400)
+
+healthCheckTimeout: 900  # AriaUI 25B MoE: ~3min cached, ~12min first download (12 shards x ~50s each)
+logLevel: info
+logToStdout: both  # Show backend stdout/stderr in container logs
+startPort: 5800
+
+models:
+  # --- AriaUI: 25B MoE VLM for element grounding ---
+  # Used by healing system (aria_ui_client.py -> /v1/chat/completions)
+  Aria-UI/Aria-UI-base:
+    cmd: >
+      /opt/venvs/aria-ui/bin/python3 /opt/backends/aria-ui/serve.py
+      --model Aria-UI/Aria-UI-base
+      --host 127.0.0.1
+      --port ${PORT}
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - aria-ui-base
+
+  Aria-UI/Aria-UI-context-aware:
+    cmd: >
+      /opt/venvs/aria-ui/bin/python3 /opt/backends/aria-ui/serve.py
+      --model Aria-UI/Aria-UI-context-aware
+      --host 127.0.0.1
+      --port ${PORT}
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - aria-ui-context
+
+  # --- UI-TARS: Visual grounding for GUI automation ---
+  # Used by uitars provider.py VLLMProvider -> /v1/chat/completions
+  # Default model size configurable via QONTINUI_UITARS_MODEL_SIZE env var.
+  # Each size is a separate llama-swap model entry so only one loads at a time.
+  ByteDance-Seed/UI-TARS-2B-SFT:
+    cmd: >
+      python3 -m vllm.entrypoints.openai.api_server
+      --model ByteDance-Seed/UI-TARS-2B-SFT
+      --host 127.0.0.1
+      --port ${PORT}
+      --dtype bfloat16
+      --max-model-len 4096
+      --trust-remote-code
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - ui-tars-2b
+
+  ByteDance-Seed/UI-TARS-7B-SFT:
+    cmd: >
+      python3 -m vllm.entrypoints.openai.api_server
+      --model ByteDance-Seed/UI-TARS-7B-SFT
+      --host 127.0.0.1
+      --port ${PORT}
+      --dtype bfloat16
+      --max-model-len 4096
+      --trust-remote-code
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - ui-tars-7b
+
+  # --- UI-TARS 1.5: Qwen2.5-VL based, ExLlamaV3-compatible ---
+  # UI-TARS 1.5 uses Qwen2.5-VL architecture which ExLlamaV3 supports natively.
+  # When EXL3-quantized weights are available, switch cmd to TabbyAPI for
+  # faster inference and lower VRAM (~4GB for 7B EXL3 vs ~14GB bfloat16).
+  ByteDance-Seed/UI-TARS-1.5-7B:
+    cmd: >
+      python3 -m vllm.entrypoints.openai.api_server
+      --model ByteDance-Seed/UI-TARS-1.5-7B
+      --host 127.0.0.1
+      --port ${PORT}
+      --dtype bfloat16
+      --max-model-len 4096
+      --trust-remote-code
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - ui-tars-1.5-7b
+
+# AriaUI variants are mutually exclusive (same architecture, different weights).
+# UI-TARS sizes are mutually exclusive (only one loaded at a time).
+# Default swap behavior: loading one model unloads any other.
+#
+# To co-load AriaUI + UI-TARS-2B simultaneously (requires ~17GB VRAM):
+# Uncomment the groups section below:
+#
+# groups:
+#   coload:
+#     swap: false
+#     exclusive: true
+#     members:
+#       - Aria-UI/Aria-UI-base
+#       - ByteDance-Seed/UI-TARS-2B-SFT
