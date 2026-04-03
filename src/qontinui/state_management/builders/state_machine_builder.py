@@ -53,7 +53,7 @@ from uuid import uuid4
 # to avoid import errors when cv2 DLLs are not available
 
 if TYPE_CHECKING:
-    from qontinui.extraction.models import ExtractionResult
+    from qontinui.extraction.models.base import ExtractionResult
 
 logger = logging.getLogger(__name__)
 
