@@ -8,8 +8,6 @@ import logging
 import sys
 from typing import cast
 
-logger = logging.getLogger(__name__)
-
 from .config import HALConfig
 from .container import HALContainer
 from .interfaces import (
@@ -21,6 +19,8 @@ from .interfaces import (
 )
 from .interfaces.keyboard_controller import IKeyboardController
 from .interfaces.mouse_controller import IMouseController
+
+logger = logging.getLogger(__name__)
 
 
 class HALInitializationError(Exception):
