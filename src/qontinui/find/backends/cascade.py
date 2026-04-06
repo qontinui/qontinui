@@ -204,6 +204,34 @@ class CascadeDetector(DetectionBackend):
         self._emit_cascade_miss(needle_label, backends_tried, total_ms)
         return []
 
+    def find_detections(self, needle: Any, haystack: Any, config: dict[str, Any]):
+        """Run the cascade and return results as a Detections container.
+
+        Same behaviour as ``find()`` but returns a ``Detections`` object
+        instead of a plain list, enabling batch operations like filtering,
+        merging, and NMS.
+
+        Returns:
+            A ``Detections`` container (possibly empty).
+        """
+        from ..detections import Detections
+
+        results = self.find(needle, haystack, config)
+        if not results:
+            return Detections.empty()
+
+        width = 0
+        height = 0
+        try:
+            if hasattr(haystack, "size"):
+                width, height = haystack.size
+            elif hasattr(haystack, "shape"):
+                height, width = haystack.shape[:2]
+        except Exception:
+            pass
+
+        return Detections.from_detection_results(results, screen_width=width, screen_height=height)
+
     @staticmethod
     def _normalize_results(results: list[DetectionResult], haystack: Any) -> list[DetectionResult]:
         """Normalize result coordinates to 0.0-1.0 range using haystack dimensions.

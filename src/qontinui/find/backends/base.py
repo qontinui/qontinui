@@ -153,3 +153,30 @@ class DetectionBackend(ABC):
         Returns True by default.
         """
         return True
+
+    def to_detections(
+        self,
+        results: list[DetectionResult],
+        *,
+        screen_width: int = 0,
+        screen_height: int = 0,
+    ):
+        """Convert results from this backend into a Detections container.
+
+        Uses lazy import to avoid circular dependency with detections module.
+
+        Args:
+            results: DetectionResult list from this backend's ``find()``.
+            screen_width: Screen width for normalization (0 to skip).
+            screen_height: Screen height for normalization (0 to skip).
+
+        Returns:
+            A ``Detections`` container.
+        """
+        from ..detections import Detections
+
+        return Detections.from_detection_results(
+            results,
+            screen_width=screen_width,
+            screen_height=screen_height,
+        )

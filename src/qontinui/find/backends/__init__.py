@@ -4,6 +4,7 @@ Provides a unified detection fallback chain that wraps existing detection
 mechanisms behind a common DetectionBackend interface.
 """
 
+from ..detections import Detections
 from .base import DetectionBackend, DetectionResult
 from .cascade import CascadeDetector, MatchSettings
 from .invariant_match_backend import InvariantMatchBackend
@@ -19,6 +20,7 @@ __all__ = [
     "CascadeDetector",
     "DetectionBackend",
     "DetectionResult",
+    "Detections",
     "InvariantMatchBackend",
     "MatchSettings",
 ]

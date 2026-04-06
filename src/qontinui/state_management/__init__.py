@@ -27,6 +27,7 @@ from .state_detector import StateDetector
 from .state_id_resolver import StateIdResolver
 from .state_memory import StateMemory, StateMemoryEnum, StateService
 from .state_visibility_manager import StateVisibilityManager
+from .zone_condition import ZoneCondition, ZoneConditionEvaluator
 
 # Import model classes for convenience
 try:
@@ -52,6 +53,9 @@ __all__ = [
     "Element",
     "State",
     "Transition",
+    # Zone conditions
+    "ZoneCondition",
+    "ZoneConditionEvaluator",
     # Builders
     "StateMachineBuilder",
     "build_state_machine_from_extraction",

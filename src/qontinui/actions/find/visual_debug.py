@@ -5,6 +5,10 @@ Creates annotated screenshots showing:
 - Top non-matches (red boxes)
 - Confidence scores
 - Template image for reference
+
+Internally uses composable annotators from ``qontinui.find.annotators``
+for the ``Detections``-based code path while preserving the legacy
+``Match``/``debug_data`` API for backwards compatibility.
 """
 
 import base64
@@ -47,6 +51,103 @@ class VisualDebugGenerator:
             logger.error(f"Failed to convert {name}={value} (type={type(value)}) to int: {e}")
             return 0
 
+    # ------------------------------------------------------------------
+    # Detections-based API (uses composable annotators)
+    # ------------------------------------------------------------------
+
+    def generate_from_detections(
+        self,
+        screenshot: np.ndarray,
+        detections: Any,
+        *,
+        confidence_threshold: float = 0.8,
+    ) -> str | None:
+        """Generate annotated debug image from a ``Detections`` container.
+
+        Uses the composable annotator pipeline: bounding boxes, labels,
+        and confidence bars are drawn in sequence.
+
+        Args:
+            screenshot: BGR image (numpy array).
+            detections: A ``Detections`` container from ``qontinui.find.detections``.
+            confidence_threshold: Confidence dividing match/non-match colours.
+
+        Returns:
+            Base64-encoded PNG, or ``None`` on error.
+        """
+        try:
+            from ...find.annotators import (
+                BoundingBoxAnnotator,
+                ConfidenceBarAnnotator,
+                LabelAnnotator,
+            )
+
+            if screenshot is None or detections is None or detections.is_empty():
+                return None
+
+            scene = self._prepare_scene(screenshot)
+            if scene is None:
+                return None
+
+            box_ann = BoundingBoxAnnotator(
+                color_match=self.COLOR_MATCH,
+                color_non_match=self.COLOR_NON_MATCH,
+                confidence_threshold=confidence_threshold,
+                thickness=self.BOX_THICKNESS,
+            )
+            label_ann = LabelAnnotator(
+                color_text=self.COLOR_TEXT,
+                color_background=self.COLOR_TEXT_BG,
+                font_scale=self.FONT_SCALE,
+                thickness=self.FONT_THICKNESS,
+                padding=self.TEXT_PADDING,
+            )
+            bar_ann = ConfidenceBarAnnotator()
+
+            scene = box_ann.annotate(scene, detections)
+            scene = label_ann.annotate(scene, detections)
+            scene = bar_ann.annotate(scene, detections)
+
+            self._draw_threshold_info(scene, confidence_threshold, len(detections))
+            return self._encode_image(scene)
+        except Exception as e:
+            logger.error(f"Failed to generate visual debug image: {e}", exc_info=True)
+            return None
+
+    @staticmethod
+    def annotate_detections(
+        screenshot: np.ndarray,
+        detections: Any,
+        annotators: list | None = None,
+    ) -> np.ndarray:
+        """Apply a list of annotators to a screenshot.
+
+        Convenience method for ad-hoc annotator composition without
+        encoding to base64.
+
+        Args:
+            screenshot: BGR image (numpy array).
+            detections: A ``Detections`` container.
+            annotators: Ordered list of ``Annotator`` instances.
+                If ``None``, uses ``[BoundingBoxAnnotator(), LabelAnnotator()]``.
+
+        Returns:
+            The annotated image.
+        """
+        if annotators is None:
+            from ...find.annotators import BoundingBoxAnnotator, LabelAnnotator
+
+            annotators = [BoundingBoxAnnotator(), LabelAnnotator()]
+
+        scene = screenshot.copy()
+        for ann in annotators:
+            scene = ann.annotate(scene, detections)
+        return scene
+
+    # ------------------------------------------------------------------
+    # Legacy API (preserved for backwards compatibility)
+    # ------------------------------------------------------------------
+
     def generate_debug_image(
         self,
         screenshot: np.ndarray,
@@ -68,32 +169,8 @@ class VisualDebugGenerator:
         try:
             logger.debug("[VISUAL_DEBUG] Starting visual debug image generation")
 
-            # Check screenshot validity before any operations
-            if screenshot is None:
-                logger.debug("[VISUAL_DEBUG] screenshot is None")
-                return None
-
-            # Convert PIL Image to NumPy array if needed
-            from PIL import Image
-
-            if isinstance(screenshot, Image.Image):
-                logger.debug("[VISUAL_DEBUG] Converting PIL Image to NumPy array")
-                screenshot = np.array(screenshot)
-                # PIL uses RGB, OpenCV uses BGR - convert
-                screenshot = cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR)
-
-            try:
-                shape = screenshot.shape
-                logger.debug(f"[VISUAL_DEBUG] Screenshot shape: {shape}")
-            except Exception as e:
-                logger.debug(f"[VISUAL_DEBUG] ERROR accessing screenshot.shape: {e}")
-                return None
-
-            try:
-                dtype = screenshot.dtype
-                logger.debug(f"[VISUAL_DEBUG] Screenshot dtype: {dtype}")
-            except Exception as e:
-                logger.debug(f"[VISUAL_DEBUG] ERROR accessing screenshot.dtype: {e}")
+            scene = self._prepare_scene(screenshot)
+            if scene is None:
                 return None
 
             try:
@@ -103,16 +180,7 @@ class VisualDebugGenerator:
                 logger.debug(f"[VISUAL_DEBUG] ERROR getting len(matches): {e}")
                 return None
 
-            try:
-                annotated = screenshot.copy()
-            except Exception as e:
-                logger.debug(f"[VISUAL_DEBUG] ERROR copying screenshot: {e}")
-                return None
-
-            # Validate screenshot
-            if annotated is None or annotated.size == 0:
-                logger.debug("[VISUAL_DEBUG] Invalid screenshot - returning None")
-                return None
+            annotated = scene
 
             # IMPORTANT: Draw in order from worst to best so best matches appear on top
             # Step 1: Draw debug matches (cyan and red) from debug data FIRST
@@ -261,6 +329,48 @@ class VisualDebugGenerator:
         except Exception as e:
             logger.error(f"Failed to generate visual debug image: {e}", exc_info=True)
             return None
+
+    # ------------------------------------------------------------------
+    # Shared helpers
+    # ------------------------------------------------------------------
+
+    def _prepare_scene(self, screenshot: np.ndarray) -> np.ndarray | None:
+        """Validate and copy the screenshot, converting from PIL if needed."""
+        if screenshot is None:
+            logger.debug("[VISUAL_DEBUG] screenshot is None")
+            return None
+
+        from PIL import Image
+
+        if isinstance(screenshot, Image.Image):
+            logger.debug("[VISUAL_DEBUG] Converting PIL Image to NumPy array")
+            screenshot = np.array(screenshot)
+            screenshot = cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR)
+
+        try:
+            shape = screenshot.shape
+            logger.debug(f"[VISUAL_DEBUG] Screenshot shape: {shape}")
+        except Exception as e:
+            logger.debug(f"[VISUAL_DEBUG] ERROR accessing screenshot.shape: {e}")
+            return None
+
+        try:
+            logger.debug(f"[VISUAL_DEBUG] Screenshot dtype: {screenshot.dtype}")
+        except Exception as e:
+            logger.debug(f"[VISUAL_DEBUG] ERROR accessing screenshot.dtype: {e}")
+            return None
+
+        try:
+            annotated = screenshot.copy()
+        except Exception as e:
+            logger.debug(f"[VISUAL_DEBUG] ERROR copying screenshot: {e}")
+            return None
+
+        if annotated is None or annotated.size == 0:
+            logger.debug("[VISUAL_DEBUG] Invalid screenshot - returning None")
+            return None
+
+        return annotated
 
     def _draw_label(
         self,
