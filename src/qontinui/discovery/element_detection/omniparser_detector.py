@@ -36,6 +36,29 @@ from .analysis_base import (
 logger = logging.getLogger(__name__)
 
 
+def _bbox_iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
+    """Intersection-over-union for (x, y, width, height) bboxes."""
+    ax1, ay1, aw, ah = a
+    bx1, by1, bw, bh = b
+    ax2, ay2 = ax1 + aw, ay1 + ah
+    bx2, by2 = bx1 + bw, by1 + bh
+
+    inter_x1 = max(ax1, bx1)
+    inter_y1 = max(ay1, by1)
+    inter_x2 = min(ax2, bx2)
+    inter_y2 = min(ay2, by2)
+    inter_w = max(0, inter_x2 - inter_x1)
+    inter_h = max(0, inter_y2 - inter_y1)
+    inter = inter_w * inter_h
+    if inter == 0:
+        return 0.0
+
+    area_a = aw * ah
+    area_b = bw * bh
+    union = area_a + area_b - inter
+    return inter / union if union > 0 else 0.0
+
+
 class OmniParserDetector(BaseAnalyzer):
     """Zero-shot UI element detector using Microsoft OmniParser.
 
@@ -123,6 +146,103 @@ class OmniParserDetector(BaseAnalyzer):
         buf = io.BytesIO()
         pil_img.save(buf, format="PNG")
         return self._detect_screenshot(buf.getvalue(), 0, self.get_default_parameters())
+
+    # ------------------------------------------------------------------
+    # Interactability classifier API (pre-filter mode)
+    # ------------------------------------------------------------------
+
+    def get_interactive_regions(
+        self, haystack: np.ndarray
+    ) -> list[tuple[int, int, int, int, float]]:
+        """Run only the YOLO interactability head on a screenshot.
+
+        Returns a list of (x, y, width, height, confidence) tuples for every
+        region the OmniParser YOLO head classifies as interactive. Skips the
+        OCR and Florence-2 stages — ~10x faster than ``detect_from_numpy``
+        when the caller only needs interactability gating.
+        """
+        self._maybe_unload_idle()
+        self._ensure_yolo_loaded()
+
+        if len(haystack.shape) == 3 and haystack.shape[2] == 3:
+            pil_img = Image.fromarray(haystack[..., ::-1])  # BGR -> RGB
+        else:
+            pil_img = Image.fromarray(haystack)
+
+        raw_boxes = self._run_yolo(pil_img, self.get_default_parameters())
+        self._last_used = time.perf_counter()
+
+        img_h, img_w = haystack.shape[:2]
+        regions: list[tuple[int, int, int, int, float]] = []
+        for x1, y1, x2, y2, conf, _cls in raw_boxes:
+            bx = max(0, int(x1))
+            by = max(0, int(y1))
+            bw = min(img_w, int(x2)) - bx
+            bh = min(img_h, int(y2)) - by
+            if bw > 0 and bh > 0:
+                regions.append((bx, by, bw, bh, float(conf)))
+        return regions
+
+    def classify_region(
+        self,
+        haystack: np.ndarray,
+        bbox: tuple[int, int, int, int],
+        iou_threshold: float = 0.3,
+        interactive_regions: list[tuple[int, int, int, int, float]] | None = None,
+    ) -> tuple[bool, float]:
+        """Classify a single bbox as interactive or not.
+
+        Args:
+            haystack: Full screenshot the bbox refers to.
+            bbox: Candidate region as (x, y, width, height).
+            iou_threshold: Minimum IoU against any YOLO-detected interactive
+                region to count as interactive.
+            interactive_regions: Optional pre-computed list from
+                ``get_interactive_regions`` — pass this when classifying many
+                candidates against the same haystack to avoid re-running YOLO.
+
+        Returns:
+            (is_interactive, confidence). ``confidence`` is the YOLO
+            confidence of the best-overlapping interactive region, or the
+            highest IoU if nothing overlaps (for diagnostics). Callers should
+            use ``is_interactive`` for the gate decision.
+        """
+        if interactive_regions is None:
+            interactive_regions = self.get_interactive_regions(haystack)
+
+        if not interactive_regions:
+            return (False, 0.0)
+
+        best_iou = 0.0
+        best_conf = 0.0
+        for ix, iy, iw, ih, iconf in interactive_regions:
+            iou = _bbox_iou(bbox, (ix, iy, iw, ih))
+            if iou > best_iou:
+                best_iou = iou
+                best_conf = iconf
+
+        is_interactive = best_iou >= iou_threshold
+        return (is_interactive, best_conf if is_interactive else best_iou)
+
+    def classify_point(
+        self,
+        haystack: np.ndarray,
+        x: int,
+        y: int,
+        interactive_regions: list[tuple[int, int, int, int, float]] | None = None,
+    ) -> tuple[bool, float]:
+        """Classify a single (x, y) pixel as landing on an interactive element.
+
+        Used by the UI-TARS executor hook to gate LLM-produced click
+        coordinates before execution.
+        """
+        if interactive_regions is None:
+            interactive_regions = self.get_interactive_regions(haystack)
+
+        for ix, iy, iw, ih, iconf in interactive_regions:
+            if ix <= x < ix + iw and iy <= y < iy + ih:
+                return (True, iconf)
+        return (False, 0.0)
 
     # ------------------------------------------------------------------
     # Internal detection pipeline
@@ -319,46 +439,85 @@ class OmniParserDetector(BaseAnalyzer):
             )
             self.unload()
 
-    def _ensure_loaded(self) -> None:
-        """Lazy-load all models on first use."""
+    def _ensure_yolo_loaded(self) -> None:
+        """Load only the YOLO interactability head.
+
+        Used by the fast interactability-classifier API
+        (``get_interactive_regions`` / ``classify_region`` / ``classify_point``)
+        which doesn't need OCR or Florence-2 captioning. Keeping this a
+        distinct step avoids dragging in heavy transformers dependencies
+        just to gate a click.
+        """
         if self._yolo_model is not None:
             return
 
-        self._device = self._settings.resolve_device()
-        logger.info(
-            "Loading OmniParser models on device=%s (this may take a moment)",
-            self._device,
-        )
+        if self._device is None:
+            self._device = self._settings.resolve_device()
+            logger.info(
+                "Loading OmniParser YOLO head on device=%s",
+                self._device,
+            )
 
-        # YOLO model
+        # ultralytics' YOLO() requires a local .pt path and does not resolve
+        # HuggingFace repo IDs. If the configured value points at a
+        # non-existent path that looks like a HF repo id, download
+        # icon_detect/model.pt from that repo and load from the local cache
+        # path instead.
+        from pathlib import Path as _Path
+
         from ultralytics import YOLO
 
         yolo_path = self._settings.model_path or self._settings.yolo_model
+        if not _Path(yolo_path).exists() and "/" in yolo_path and not yolo_path.endswith(".pt"):
+            from huggingface_hub import hf_hub_download
+
+            logger.info(
+                "Resolving OmniParser YOLO weights from HF repo %s",
+                yolo_path,
+            )
+            yolo_path = hf_hub_download(yolo_path, "icon_detect/model.pt")
         self._yolo_model = YOLO(yolo_path)
         if self._device == "cuda":
             self._yolo_model.to("cuda")
+        self._last_used = time.perf_counter()
+
+    def _ensure_loaded(self) -> None:
+        """Lazy-load all models on first use (full detection pipeline)."""
+        if self._yolo_model is not None and self._caption_model is not None:
+            return
+
+        self._ensure_yolo_loaded()
+
+        logger.info(
+            "Loading OmniParser OCR + Florence-2 on device=%s (this may take a moment)",
+            self._device,
+        )
 
         # EasyOCR reader (already a qontinui dependency)
-        import easyocr
+        if self._ocr_reader is None:
+            import easyocr
 
-        self._ocr_reader = easyocr.Reader(["en"], gpu=(self._device == "cuda"), verbose=False)
+            self._ocr_reader = easyocr.Reader(
+                ["en"], gpu=(self._device == "cuda"), verbose=False
+            )
 
         # Florence-2 captioning model
-        import torch
-        from transformers import AutoModelForCausalLM, AutoProcessor
+        if self._caption_model is None:
+            import torch
+            from transformers import AutoModelForCausalLM, AutoProcessor
 
-        self._caption_processor = AutoProcessor.from_pretrained(
-            self._settings.caption_model, trust_remote_code=True
-        )
-        dtype = torch.float16 if self._device == "cuda" else torch.float32
-        self._caption_model = AutoModelForCausalLM.from_pretrained(
-            self._settings.caption_model,
-            torch_dtype=dtype,
-            trust_remote_code=True,
-        ).to(
-            self._device  # type: ignore[arg-type]
-        )
-        self._caption_model.eval()
+            self._caption_processor = AutoProcessor.from_pretrained(
+                self._settings.caption_model, trust_remote_code=True
+            )
+            dtype = torch.float16 if self._device == "cuda" else torch.float32
+            self._caption_model = AutoModelForCausalLM.from_pretrained(
+                self._settings.caption_model,
+                torch_dtype=dtype,
+                trust_remote_code=True,
+            ).to(
+                self._device  # type: ignore[arg-type]
+            )
+            self._caption_model.eval()
 
         self._last_used = time.perf_counter()
         logger.info("OmniParser models loaded successfully")

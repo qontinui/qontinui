@@ -9,6 +9,7 @@ the confidence threshold.
 from __future__ import annotations
 
 import logging
+import os
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -73,12 +74,107 @@ class CascadeDetector(DetectionBackend):
                 ocr_engine=ocr_engine,
                 llm_client=llm_client,
             )
+        # Accessibility backend names known to the cascade. An "empty" result
+        # from any of these signals broken accessibility → bypass mid-tier
+        # vision backends and jump straight to the terminal fallback.
+        self._accessibility_backend_names: set[str] = {
+            "accessibility",
+            "semantic_accessibility",
+        }
+        # Default terminal fallback: OmniParser (local or service). Registered
+        # if available; callers may override via register_terminal_fallback().
+        self._terminal_fallback: DetectionBackend | None = None
+        # Pre-filter: wrap high-cost backends with InteractabilityFilter when
+        # QONTINUI_OMNIPARSER_PREFILTER is set. Wrapping is done before
+        # sorting so cost ordering is preserved.
+        backends = self._maybe_wrap_prefilter(backends)
         self._backends = sorted(backends, key=lambda b: b.estimated_cost_ms())
+        self._auto_register_terminal_fallback()
 
     def add_backend(self, backend: DetectionBackend) -> None:
         """Add a backend and re-sort by cost."""
         self._backends.append(backend)
         self._backends.sort(key=lambda b: b.estimated_cost_ms())
+
+    def register_terminal_fallback(self, backend: DetectionBackend) -> None:
+        """Register a backend as the terminal fallback.
+
+        The terminal fallback is invoked when the accessibility tier
+        (``AccessibilityBackend`` / ``SemanticAccessibilityBackend``) returns
+        zero candidates. In that case the cascade bypasses the intermediate
+        template/feature/OCR tiers — on broken-accessibility apps (legacy
+        Win32, games, graphic canvases) those tiers will also fail and only
+        waste latency — and jumps straight to the terminal fallback.
+
+        Registering ``None`` clears the fallback.
+        """
+        self._terminal_fallback = backend
+
+    @property
+    def terminal_fallback(self) -> DetectionBackend | None:
+        return self._terminal_fallback
+
+    def _maybe_wrap_prefilter(
+        self, backends: list[DetectionBackend]
+    ) -> list[DetectionBackend]:
+        """Wrap high-cost backends with InteractabilityFilter if env flag on.
+
+        Wrap threshold defaults to 1000ms: Template/Feature/Invariant/QATM/OCR
+        tiers are untouched; OmniParser (~1500ms), VisionLLM (~2000ms), and
+        OmniParser service (~2000ms) are wrapped. The OmniParser backend
+        itself is also wrapped — pre-filter on its own output removes
+        non-interactive captioned regions.
+        """
+        from .interactability_filter import InteractabilityFilter, prefilter_enabled
+
+        if not prefilter_enabled():
+            return backends
+
+        try:
+            threshold_ms = float(os.environ.get("QONTINUI_OMNIPARSER_PREFILTER_MIN_COST_MS", "1000"))
+        except ValueError:
+            threshold_ms = 1000.0
+
+        wrapped: list[DetectionBackend] = []
+        wrapped_names: list[str] = []
+        for b in backends:
+            if b.estimated_cost_ms() >= threshold_ms:
+                wrapped.append(InteractabilityFilter(b))
+                wrapped_names.append(b.name)
+            else:
+                wrapped.append(b)
+        if wrapped_names:
+            logger.info(
+                "CascadeDetector: InteractabilityFilter wrapping %d backend(s) "
+                "with cost >= %.0fms: %s",
+                len(wrapped_names),
+                threshold_ms,
+                ", ".join(wrapped_names),
+            )
+        return wrapped
+
+    def _auto_register_terminal_fallback(self) -> None:
+        """Use OmniParser (local, then service) as the default terminal fallback.
+
+        Picks the highest-cost omniparser backend already in the list — this
+        is the one most likely to succeed on a broken-accessibility target.
+        Silently no-ops if neither is available.
+        """
+        candidates: list[DetectionBackend] = []
+        for b in self._backends:
+            name = b.name
+            # InteractabilityFilter-wrapped backend still reports the
+            # underlying name, so this matches both raw and wrapped.
+            if name in ("omniparser", "omniparser_service"):
+                candidates.append(b)
+        if not candidates:
+            return
+        # Prefer local ("omniparser") over remote service for lower latency.
+        for b in candidates:
+            if b.name == "omniparser":
+                self._terminal_fallback = b
+                return
+        self._terminal_fallback = candidates[0]
 
     def remove_backend(self, name: str) -> None:
         """Remove a backend by name."""
@@ -126,6 +222,12 @@ class CascadeDetector(DetectionBackend):
         cascade_t0 = time.perf_counter()
         self._emit_cascade_started(needle_label, needle_type, min_confidence)
 
+        bypass_fallback = os.environ.get(
+            "QONTINUI_CASCADE_DISABLE_A11Y_BYPASS", ""
+        ).lower() not in ("1", "true", "yes", "on")
+
+        accessibility_tried = False
+        accessibility_all_empty = True
         backends_tried = 0
         for backend in ordered:
             if backends_tried >= max_backends:
@@ -155,8 +257,17 @@ class CascadeDetector(DetectionBackend):
                     False,
                     "exception",
                 )
+                # Treat an exception from an a11y backend the same as empty:
+                # the accessibility tree is unusable for this target.
+                if backend.name in self._accessibility_backend_names:
+                    accessibility_tried = True
                 continue
             elapsed_ms = (time.perf_counter() - t0) * 1000
+
+            if backend.name in self._accessibility_backend_names:
+                accessibility_tried = True
+                if results:
+                    accessibility_all_empty = False
 
             results = [r for r in results if r.confidence >= min_confidence]
             if results:
@@ -200,8 +311,108 @@ class CascadeDetector(DetectionBackend):
                 elapsed_ms,
             )
 
+            # Accessibility-empty bypass: once every a11y-tier backend has
+            # run and returned empty, skip the template/feature/OCR tiers
+            # and jump to the terminal fallback. Mid-tier vision-less
+            # backends can't rescue a broken-accessibility target.
+            if (
+                bypass_fallback
+                and accessibility_tried
+                and accessibility_all_empty
+                and self._terminal_fallback is not None
+                and self._all_accessibility_done(ordered, backend)
+            ):
+                fb_results = self._invoke_terminal_fallback(
+                    needle, haystack, config, needle_label, cascade_t0
+                )
+                if fb_results:
+                    return fb_results
+                break
+
         total_ms = (time.perf_counter() - cascade_t0) * 1000
         self._emit_cascade_miss(needle_label, backends_tried, total_ms)
+        return []
+
+    def _all_accessibility_done(
+        self, ordered: list[DetectionBackend], current: DetectionBackend
+    ) -> bool:
+        """True if ``current`` is the last accessibility backend in ``ordered``.
+
+        Used by the bypass path to wait until every a11y-tier backend has
+        had a chance to run before giving up on accessibility.
+        """
+        a11y_in_order = [
+            b for b in ordered if b.name in self._accessibility_backend_names
+        ]
+        if not a11y_in_order:
+            return False
+        return current is a11y_in_order[-1]
+
+    def _invoke_terminal_fallback(
+        self,
+        needle: Any,
+        haystack: Any,
+        config: dict[str, Any],
+        needle_label: str,
+        cascade_t0: float,
+    ) -> list[DetectionResult]:
+        """Run the registered terminal fallback backend directly.
+
+        The fallback may already be present in ``self._backends`` — that's
+        fine; running it here just short-circuits the mid-tier backends.
+        Results go through the same confidence filter and normalisation
+        as the main loop.
+        """
+        fb = self._terminal_fallback
+        if fb is None:
+            return []
+        if not fb.is_available():
+            logger.debug(
+                "CascadeDetector: terminal fallback %s not available", fb.name
+            )
+            return []
+        needle_type = config.get("needle_type", "template")
+        if not fb.supports(needle_type):
+            logger.debug(
+                "CascadeDetector: terminal fallback %s does not support "
+                "needle_type=%s",
+                fb.name,
+                needle_type,
+            )
+            return []
+
+        min_confidence = config.get("min_confidence", 0.8)
+        logger.info(
+            "CascadeDetector: accessibility tier empty, bypassing to terminal "
+            "fallback %s",
+            fb.name,
+        )
+        t0 = time.perf_counter()
+        try:
+            results = fb.find(needle, haystack, config)
+        except Exception:
+            logger.warning(
+                "CascadeDetector: terminal fallback %s raised, cascade miss",
+                fb.name,
+                exc_info=True,
+            )
+            return []
+        elapsed_ms = (time.perf_counter() - t0) * 1000
+        results = [r for r in results if r.confidence >= min_confidence]
+        self._emit_backend_tried(
+            fb.name,
+            needle_label,
+            elapsed_ms,
+            len(results),
+            bool(results),
+            "a11y_bypass_fallback",
+        )
+        if results:
+            total_ms = (time.perf_counter() - cascade_t0) * 1000
+            self._emit_cascade_hit(
+                needle_label, fb.name, 1, results[0].confidence, total_ms
+            )
+            return self._normalize_results(results, haystack)
         return []
 
     def find_detections(self, needle: Any, haystack: Any, config: dict[str, Any]):
