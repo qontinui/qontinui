@@ -257,9 +257,11 @@ def test_mspaint_empty_accessibility_triggers_bypass(
     )
     assert bypass_logged, "expected accessibility-empty bypass to fire and name omniparser_service"
 
+    # Port-agnostic: the backend may be on :8080 (standalone compose)
+    # or behind the ai-proxy on :8888. Both routes terminate at the
+    # OmniParser ``/parse`` endpoint.
     service_called = any(
-        "POST http://localhost:8080/parse" in rec.message
-        or "POST http://localhost:8080/parse" in str(getattr(rec, "msg", ""))
+        "POST http" in rec.message and "/parse" in rec.message
         for rec in caplog.records
     )
     assert service_called, "expected the terminal fallback to actually call the OmniParser /parse endpoint"

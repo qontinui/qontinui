@@ -1,0 +1,78 @@
+# Unified AI services reverse proxy.
+#
+# One ingress on port 8888 for every heterogeneous AI service in the
+# qontinui stack. Path-based routing to the right backend:
+#
+#   POST /parse       -> OmniParser (non-OpenAI, multipart image upload)
+#   GET  /v1/score    -> PRM (future; currently returns 503)
+#   *                 -> llama-swap (OpenAI-format LLM routing for
+#                        AriaUI + UI-TARS)
+#
+# llama-swap itself has no passthrough mode (every route handler parses
+# the JSON body and dispatches by ``model`` field), so it cannot front
+# OmniParser or PRM directly. This Caddy proxy is the thin layer that
+# lets callers hit one URL for everything.
+#
+# Health checks:
+#   GET /health/omniparser  -> 200 if OmniParser reachable
+#   GET /health/llama-swap  -> 200 if llama-swap reachable
+#   GET /health             -> proxy's own liveness
+#
+# The proxy terminates no TLS and adds no auth — it's an internal
+# dev/test convenience, meant to run on localhost only. Put a real
+# gateway in front of it if you expose this to a network.
+
+{
+    # Admin API on 2019 (default). Disable the admin endpoint on public
+    # interfaces in production.
+    admin localhost:2019
+    # Access logs go to stdout for docker logs consumption.
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}
+
+:8888 {
+    handle /health {
+        respond "ai-proxy ok" 200
+    }
+
+    handle /health/omniparser {
+        reverse_proxy omniparser:8080 {
+            rewrite /health
+        }
+    }
+
+    handle /health/llama-swap {
+        reverse_proxy llama-swap:8100 {
+            rewrite /running
+        }
+    }
+
+    # OmniParser — non-OpenAI, multipart image upload on POST /parse.
+    handle /parse* {
+        reverse_proxy omniparser:8080 {
+            # Large image uploads — raise the default buffer.
+            flush_interval -1
+        }
+    }
+
+    # PRM reranker — reserved path. Container lives in the sibling
+    # qontinui-prm repo; add a reverse_proxy line here once it's wired
+    # into this compose stack.
+    handle /v1/score* {
+        respond "PRM service not wired into ai-proxy stack yet" 503
+    }
+
+    # Everything else goes to llama-swap. This covers:
+    #   /v1/chat/completions, /v1/completions, /v1/embeddings,
+    #   /rerank, /sdapi/v1/*, and llama-swap's own /running, /unload,
+    #   /log endpoints.
+    handle {
+        reverse_proxy llama-swap:8100 {
+            flush_interval -1
+        }
+    }
+}

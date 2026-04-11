@@ -1,0 +1,117 @@
+# Unified AI services stack.
+#
+# One-command bring-up of every qontinui AI service behind a single
+# Caddy reverse proxy (see ./Caddyfile for routing). Use this instead
+# of the per-service docker-compose files when you want one URL
+# (http://localhost:8888) for:
+#
+#   * OmniParser element detection  (POST /parse)
+#   * AriaUI + UI-TARS LLM inference (llama-swap routes /v1/*)
+#   * PRM reranker                   (reserved path, not yet wired)
+#
+# Usage:
+#     docker compose -f docker/ai-proxy/docker-compose.yml up -d
+#     curl http://localhost:8888/health
+#
+# The per-service composes under docker/omniparser/ and
+# docker/llama-swap/ remain as alternatives for focused dev / debug.
+# If you run both this stack and a standalone service simultaneously,
+# expect port conflicts on the backend ports (the proxy stack does not
+# expose backend ports to the host, but the standalone files do).
+
+services:
+  proxy:
+    image: caddy:2-alpine
+    container_name: qontinui-ai-proxy
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    # Deliberately no depends_on here. The proxy must be able to start
+    # even if a backend is down — it just returns upstream errors on
+    # the affected routes. This also lets e2e tests bring up
+    # ``proxy + omniparser`` alone without paying for the llama-swap
+    # build (see ``profiles: [full]`` below).
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8888/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - ai-net
+
+  omniparser:
+    build:
+      context: ../omniparser
+    # No host port binding — only reachable via the proxy and the
+    # internal ai-net network. This is the whole point of the unified
+    # stack: one ingress, not three.
+    expose:
+      - "8080"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      # OMNIPARSER_YOLO_MODEL is baked into the Dockerfile as the
+      # pre-downloaded local path.
+      - OMNIPARSER_CAPTION_MODEL=microsoft/Florence-2-base
+    volumes:
+      - ai-proxy-omniparser-hf-cache:/root/.cache/huggingface
+      - ai-proxy-omniparser-easyocr-cache:/root/.EasyOCR
+    restart: unless-stopped
+    networks:
+      - ai-net
+
+  llama-swap:
+    profiles: [full]
+    # Opt-in: start with ``docker compose --profile full up -d`` to
+    # include llama-swap. The proxy + omniparser pair can run without
+    # it for lightweight use cases (e.g. element detection only).
+    build:
+      context: ..
+      dockerfile: llama-swap/Dockerfile
+    expose:
+      - "8100"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - HF_HOME=/root/.cache/huggingface
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ai-proxy-llama-swap-hf-cache:/root/.cache/huggingface
+      # Hot-reload config without a rebuild.
+      - ../llama-swap/config.yaml:/etc/llama-swap/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8100/running"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - ai-net
+
+networks:
+  ai-net:
+    driver: bridge
+
+volumes:
+  caddy-data:
+  caddy-config:
+  # Separate volume names from the standalone composes so the two
+  # stacks don't fight over the same cache directory.
+  ai-proxy-omniparser-hf-cache:
+  ai-proxy-omniparser-easyocr-cache:
+  ai-proxy-llama-swap-hf-cache:

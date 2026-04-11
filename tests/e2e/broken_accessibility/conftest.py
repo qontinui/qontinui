@@ -25,10 +25,33 @@ import pytest
 
 logger = logging.getLogger(__name__)
 
-OMNIPARSER_COMPOSE_FILE = (
-    Path(__file__).resolve().parents[3] / "docker" / "omniparser" / "docker-compose.yml"
-)
-OMNIPARSER_HEALTH_URL = "http://localhost:8080/health"
+# Use the unified ai-proxy stack by default so the live suite also
+# exercises the Caddy reverse proxy routing. The proxy fronts
+# OmniParser at http://localhost:8888/parse. Override to the
+# standalone compose by setting QONTINUI_E2E_OMNIPARSER_STACK=standalone.
+_STACK = os.environ.get("QONTINUI_E2E_OMNIPARSER_STACK", "proxy").lower()
+if _STACK == "standalone":
+    OMNIPARSER_COMPOSE_FILE = (
+        Path(__file__).resolve().parents[3]
+        / "docker"
+        / "omniparser"
+        / "docker-compose.yml"
+    )
+    OMNIPARSER_COMPOSE_SERVICES: list[str] = []  # bring up everything
+    OMNIPARSER_BASE_URL = "http://localhost:8080"
+    OMNIPARSER_HEALTH_URL = "http://localhost:8080/health"
+else:
+    OMNIPARSER_COMPOSE_FILE = (
+        Path(__file__).resolve().parents[3]
+        / "docker"
+        / "ai-proxy"
+        / "docker-compose.yml"
+    )
+    # Start only proxy + omniparser — llama-swap is behind the ``full``
+    # profile and not needed for the broken-accessibility suite.
+    OMNIPARSER_COMPOSE_SERVICES = ["proxy", "omniparser"]
+    OMNIPARSER_BASE_URL = "http://localhost:8888"
+    OMNIPARSER_HEALTH_URL = "http://localhost:8888/health/omniparser"
 OMNIPARSER_STARTUP_TIMEOUT_S = 300  # first pull + model load can be slow
 OMNIPARSER_POLL_INTERVAL_S = 3.0
 
@@ -76,13 +99,18 @@ def omniparser_service() -> Iterator[str]:
         pytest.skip("Docker / docker compose not available on PATH")
 
     compose_dir = OMNIPARSER_COMPOSE_FILE.parent
-    logger.info("Starting OmniParser service via docker compose in %s", compose_dir)
+    logger.info(
+        "Starting OmniParser (%s stack) via docker compose in %s",
+        _STACK,
+        compose_dir,
+    )
+    up_cmd = ["docker", "compose", "up", "-d", *OMNIPARSER_COMPOSE_SERVICES]
     up = subprocess.run(
-        ["docker", "compose", "up", "-d"],
+        up_cmd,
         cwd=str(compose_dir),
         capture_output=True,
         text=True,
-        timeout=180,
+        timeout=300,
     )
     if up.returncode != 0:
         pytest.skip(
@@ -110,12 +138,12 @@ def omniparser_service() -> Iterator[str]:
 
     os.environ["QONTINUI_OMNIPARSER_ENABLED"] = "true"
     os.environ["QONTINUI_OMNIPARSER_PROVIDER"] = "service"
-    os.environ["QONTINUI_OMNIPARSER_SERVICE_URL"] = "http://localhost:8080"
+    os.environ["QONTINUI_OMNIPARSER_SERVICE_URL"] = OMNIPARSER_BASE_URL
 
     try:
-        yield "http://localhost:8080"
+        yield OMNIPARSER_BASE_URL
     finally:
-        logger.info("Stopping OmniParser service")
+        logger.info("Stopping OmniParser (%s stack)", _STACK)
         subprocess.run(
             ["docker", "compose", "down"],
             cwd=str(compose_dir),
