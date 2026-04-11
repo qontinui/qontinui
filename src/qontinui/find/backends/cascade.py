@@ -228,6 +228,7 @@ class CascadeDetector(DetectionBackend):
 
         accessibility_tried = False
         accessibility_all_empty = True
+        already_ran: set[str] = set()
         backends_tried = 0
         for backend in ordered:
             if backends_tried >= max_backends:
@@ -239,6 +240,7 @@ class CascadeDetector(DetectionBackend):
                 continue
 
             backends_tried += 1
+            already_ran.add(backend.name)
             t0 = time.perf_counter()
             try:
                 results = backend.find(needle, haystack, config)
@@ -320,6 +322,7 @@ class CascadeDetector(DetectionBackend):
                 and accessibility_tried
                 and accessibility_all_empty
                 and self._terminal_fallback is not None
+                and self._terminal_fallback.name not in already_ran
                 and self._all_accessibility_done(ordered, backend)
             ):
                 fb_results = self._invoke_terminal_fallback(

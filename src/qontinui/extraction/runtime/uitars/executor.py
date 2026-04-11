@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import threading
 import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol
@@ -36,9 +37,11 @@ logger = logging.getLogger(__name__)
 
 # Module-level cache for the interactability detector. Lazy-constructed on
 # first use so UI-TARS doesn't pay for OmniParser imports unless the
-# pre-filter env flag is on.
+# pre-filter env flag is on. Guarded by a lock so concurrent callers from
+# different threads don't double-construct.
 _INTERACTABILITY_DETECTOR: Any = None
 _INTERACTABILITY_LOOKUP_FAILED: bool = False
+_INTERACTABILITY_LOCK = threading.Lock()
 
 
 def _prefilter_enabled() -> bool:
@@ -61,26 +64,31 @@ def _get_interactability_detector() -> Any | None:
         return _INTERACTABILITY_DETECTOR
     if _INTERACTABILITY_LOOKUP_FAILED:
         return None
-    try:
-        from qontinui.discovery.element_detection.omniparser_detector import (
-            OmniParserDetector,
-        )
-        from qontinui.find.backends.omniparser_config import OmniParserSettings
+    with _INTERACTABILITY_LOCK:
+        if _INTERACTABILITY_DETECTOR is not None:
+            return _INTERACTABILITY_DETECTOR
+        if _INTERACTABILITY_LOOKUP_FAILED:
+            return None
+        try:
+            from qontinui.discovery.element_detection.omniparser_detector import (
+                OmniParserDetector,
+            )
+            from qontinui.find.backends.omniparser_config import OmniParserSettings
 
-        settings = OmniParserSettings()
-        if not settings.enabled:
+            settings = OmniParserSettings()
+            if not settings.enabled:
+                _INTERACTABILITY_LOOKUP_FAILED = True
+                return None
+            _INTERACTABILITY_DETECTOR = OmniParserDetector(settings=settings)
+            return _INTERACTABILITY_DETECTOR
+        except Exception:
+            logger.warning(
+                "UI-TARS executor: OmniParser interactability gate unavailable, "
+                "pre-filter will be a no-op",
+                exc_info=True,
+            )
             _INTERACTABILITY_LOOKUP_FAILED = True
             return None
-        _INTERACTABILITY_DETECTOR = OmniParserDetector(settings=settings)
-        return _INTERACTABILITY_DETECTOR
-    except Exception:
-        logger.warning(
-            "UI-TARS executor: OmniParser interactability gate unavailable, "
-            "pre-filter will be a no-op",
-            exc_info=True,
-        )
-        _INTERACTABILITY_LOOKUP_FAILED = True
-        return None
 
 
 def _gate_click_coordinate(
@@ -354,6 +362,42 @@ class UITARSExecutor:
                 y=result.action.y,
                 confidence=result.action.confidence,
                 element_description=action_description,
+            )
+
+        # Gate LLM-produced click coordinates through the interactability
+        # filter (when enabled). If the target point doesn't overlap any
+        # YOLO-detected interactive region, reject the action rather than
+        # fire pyautogui at an arbitrary pixel.
+        gate_rejected: str | None = None
+        if result.action.x is not None and result.action.y is not None:
+            gate_rejected = _gate_click_coordinate(
+                screenshot, result.action.x, result.action.y
+            )
+        if gate_rejected is not None:
+            logger.info(
+                "UI-TARS execute_action rejected by OmniParser interactability "
+                "filter at (%d, %d): %s",
+                result.action.x,
+                result.action.y,
+                gate_rejected,
+            )
+            if grounding is not None:
+                grounding = GroundingResult(
+                    x=grounding.x,
+                    y=grounding.y,
+                    confidence=0.0,
+                    element_description=grounding.element_description,
+                    found_description=f"Rejected by interactability filter: {gate_rejected}",
+                )
+            return ActionResult(
+                success=False,
+                thought=result.thought,
+                action=result.action,
+                grounding=grounding,
+                screenshot_before=screenshot,
+                screenshot_after=None,
+                execution_time_ms=(time.time() - start_time) * 1000,
+                state_changed=False,
             )
 
         # Execute the action

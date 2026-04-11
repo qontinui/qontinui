@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import io
 import logging
+import threading
 import time
 from typing import Any
 
@@ -82,6 +83,11 @@ class OmniParserDetector(BaseAnalyzer):
         self._ocr_reader: Any = None
         self._device: str | None = None
         self._last_used: float = 0.0
+        # Guards the lazy-load paths against concurrent callers —
+        # InteractabilityFilter + UI-TARS executor can both hit the same
+        # detector from different threads and both trigger a YOLO load
+        # without this.
+        self._load_lock = threading.Lock()
 
     @property
     def analysis_type(self) -> AnalysisType:
@@ -451,35 +457,43 @@ class OmniParserDetector(BaseAnalyzer):
         if self._yolo_model is not None:
             return
 
-        if self._device is None:
-            self._device = self._settings.resolve_device()
-            logger.info(
-                "Loading OmniParser YOLO head on device=%s",
-                self._device,
-            )
+        with self._load_lock:
+            if self._yolo_model is not None:
+                return  # another thread won the race while we waited
 
-        # ultralytics' YOLO() requires a local .pt path and does not resolve
-        # HuggingFace repo IDs. If the configured value points at a
-        # non-existent path that looks like a HF repo id, download
-        # icon_detect/model.pt from that repo and load from the local cache
-        # path instead.
-        from pathlib import Path as _Path
+            if self._device is None:
+                self._device = self._settings.resolve_device()
+                logger.info(
+                    "Loading OmniParser YOLO head on device=%s",
+                    self._device,
+                )
 
-        from ultralytics import YOLO
+            # ultralytics' YOLO() requires a local .pt path and does not
+            # resolve HuggingFace repo IDs. If the configured value points
+            # at a non-existent path that looks like a HF repo id, download
+            # icon_detect/model.pt from that repo and load from the local
+            # cache path instead.
+            from pathlib import Path as _Path
 
-        yolo_path = self._settings.model_path or self._settings.yolo_model
-        if not _Path(yolo_path).exists() and "/" in yolo_path and not yolo_path.endswith(".pt"):
-            from huggingface_hub import hf_hub_download
+            from ultralytics import YOLO
 
-            logger.info(
-                "Resolving OmniParser YOLO weights from HF repo %s",
-                yolo_path,
-            )
-            yolo_path = hf_hub_download(yolo_path, "icon_detect/model.pt")
-        self._yolo_model = YOLO(yolo_path)
-        if self._device == "cuda":
-            self._yolo_model.to("cuda")
-        self._last_used = time.perf_counter()
+            yolo_path = self._settings.model_path or self._settings.yolo_model
+            if (
+                not _Path(yolo_path).exists()
+                and "/" in yolo_path
+                and not yolo_path.endswith(".pt")
+            ):
+                from huggingface_hub import hf_hub_download
+
+                logger.info(
+                    "Resolving OmniParser YOLO weights from HF repo %s",
+                    yolo_path,
+                )
+                yolo_path = hf_hub_download(yolo_path, "icon_detect/model.pt")
+            self._yolo_model = YOLO(yolo_path)
+            if self._device == "cuda":
+                self._yolo_model.to("cuda")
+            self._last_used = time.perf_counter()
 
     def _ensure_loaded(self) -> None:
         """Lazy-load all models on first use (full detection pipeline)."""
@@ -488,21 +502,24 @@ class OmniParserDetector(BaseAnalyzer):
 
         self._ensure_yolo_loaded()
 
-        logger.info(
-            "Loading OmniParser OCR + Florence-2 on device=%s (this may take a moment)",
-            self._device,
-        )
+        with self._load_lock:
+            if self._caption_model is not None:
+                return  # another thread loaded while we waited
 
-        # EasyOCR reader (already a qontinui dependency)
-        if self._ocr_reader is None:
-            import easyocr
-
-            self._ocr_reader = easyocr.Reader(
-                ["en"], gpu=(self._device == "cuda"), verbose=False
+            logger.info(
+                "Loading OmniParser OCR + Florence-2 on device=%s (this may take a moment)",
+                self._device,
             )
 
-        # Florence-2 captioning model
-        if self._caption_model is None:
+            # EasyOCR reader (already a qontinui dependency)
+            if self._ocr_reader is None:
+                import easyocr
+
+                self._ocr_reader = easyocr.Reader(
+                    ["en"], gpu=(self._device == "cuda"), verbose=False
+                )
+
+            # Florence-2 captioning model
             import torch
             from transformers import AutoModelForCausalLM, AutoProcessor
 
@@ -519,8 +536,8 @@ class OmniParserDetector(BaseAnalyzer):
             )
             self._caption_model.eval()
 
-        self._last_used = time.perf_counter()
-        logger.info("OmniParser models loaded successfully")
+            self._last_used = time.perf_counter()
+            logger.info("OmniParser models loaded successfully")
 
     def unload(self) -> None:
         """Explicitly unload models to free GPU memory."""

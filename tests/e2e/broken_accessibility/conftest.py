@@ -16,9 +16,10 @@ import os
 import subprocess
 import sys
 import time
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterator
+from typing import Any
 
 import pytest
 
