@@ -225,10 +225,14 @@ class CodeExecutor(ActionExecutorBase):
 
         # Execute code with timeout
         timeout = config.timeout or 30
+        sandbox_mode = None
+        if hasattr(config, "sandbox_overrides") and config.sandbox_overrides:
+            sandbox_mode = config.sandbox_overrides.mode
         result = self._execute_with_timeout(
             code=code,
             context=execution_context,
             timeout=timeout,
+            sandbox_mode=sandbox_mode,
         )
 
         if result["success"]:
@@ -731,6 +735,7 @@ class CodeExecutor(ActionExecutorBase):
         context: dict[str, Any],
         timeout: int,
         enable_imports: bool = True,
+        sandbox_mode: str | None = None,
     ) -> dict[str, Any]:
         """Execute code with timeout protection and import resolution.
 
@@ -752,6 +757,33 @@ class CodeExecutor(ActionExecutorBase):
             dict: Execution result with success, result, error, execution_time_ms
         """
         start_time = time.time()
+
+        # AST pre-scan (defense-in-depth)
+        from .ast_scanner import AstSecurityScanner, ScanConfig, ScanMode
+
+        scan_config = ScanConfig.default()
+        if sandbox_mode == "enforce":
+            scan_config.mode = ScanMode.ENFORCE
+        scanner = AstSecurityScanner(scan_config)
+        scan_result = scanner.scan(code)
+
+        if scan_result.has_blocking_violations:
+            violation_msgs = [
+                f"  Line {v.line}: {v.description}"
+                for v in scan_result.violations
+                if v.severity == "block"
+            ]
+            return {
+                "success": False,
+                "result": None,
+                "error": "AST security scan blocked execution:\n" + "\n".join(violation_msgs),
+                "execution_time_ms": (time.time() - start_time) * 1000,
+            }
+
+        if scan_result.has_warnings:
+            for v in scan_result.violations:
+                if v.severity == "warn":
+                    logger.warning("AST scan warning at line %d: %s", v.line, v.description)
 
         # Get project root for import sandboxing
         project_root = str(self._get_project_root()) if enable_imports else None

@@ -5,9 +5,20 @@ This module provides configuration models for Python code execution actions,
 including inline code blocks and custom functions.
 """
 
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
+
+
+class SandboxOverrides(BaseModel):
+    """Override defaults for the AST security scanner sandbox.
+
+    Allows per-action tuning of the scanner mode and deny lists.
+    """
+
+    mode: Literal["enforce", "warn"] = "warn"
+    additional_denied_imports: list[str] = []
+    additional_denied_patterns: list[str] = []
 
 
 class ErrorHandling(BaseModel):
@@ -53,6 +64,7 @@ class CodeBlockActionConfig(BaseModel):
     error_handling: ErrorHandling | None = Field(None, alias="errorHandling")
     description: str | None = None
     debug: bool | None = None
+    sandbox_overrides: Optional[SandboxOverrides] = Field(None, alias="sandboxOverrides")
 
     model_config = {"populate_by_name": True}
 
