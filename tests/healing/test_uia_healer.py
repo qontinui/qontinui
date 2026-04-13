@@ -192,6 +192,42 @@ class TestUIAHealerStrategies:
         assert result.strategy == HealingStrategy.UIA_SELECTOR
         assert "by_fuzzy" in result.message
 
+    def test_heal_by_spatial_label(self):
+        """Finds unlabeled element via adjacent Static text label."""
+        # Label to the left
+        label = _make_node(
+            ref="@label",
+            role=AccessibilityRole.STATIC_TEXT,
+            name="Username:",
+            bounds=AccessibilityBounds(x=100, y=200, width=100, height=20),
+            is_interactive=False,
+        )
+        # Unlabeled edit to the right
+        target = _make_node(
+            ref="@edit",
+            role=AccessibilityRole.TEXTBOX,
+            name="",
+            bounds=AccessibilityBounds(x=250, y=200, width=200, height=25),
+            is_interactive=True,
+        )
+        snapshot = _make_snapshot([label, target])
+        capture = _make_mock_capture(snapshot)
+        healer = UIAHealer(capture, fuzzy_threshold=0.5)
+
+        context = HealingContext(
+            original_description="Username",
+            additional_context={
+                "automation_id": "missingId",
+                "role": "textbox",
+                "name": "Username",
+                "bounds": (800, 800, 200, 25),  # different zone so structural won't match
+            },
+        )
+
+        result = healer.heal(context)
+        assert result.success
+        assert "by_spatial_label" in result.message
+
     def test_heal_all_fail(self):
         """Returns FAILED when no strategy matches."""
         node = _make_node(

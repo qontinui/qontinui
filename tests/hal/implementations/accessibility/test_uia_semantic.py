@@ -11,6 +11,7 @@ import time
 
 from qontinui_schemas.accessibility import (
     AccessibilityBackend,
+    AccessibilityBounds,
     AccessibilityNode,
     AccessibilityRole,
     AccessibilitySnapshot,
@@ -33,6 +34,7 @@ def _make_node(
     automation_id: str | None = None,
     is_interactive: bool = True,
     children: list[AccessibilityNode] | None = None,
+    bounds: AccessibilityBounds | None = None,
 ) -> AccessibilityNode:
     """Helper to build an AccessibilityNode for testing."""
     return AccessibilityNode(
@@ -43,6 +45,7 @@ def _make_node(
         automation_id=automation_id,
         is_interactive=is_interactive,
         children=children or [],
+        bounds=bounds,
     )
 
 
@@ -236,3 +239,168 @@ class TestSemanticSearchCache:
         cache.invalidate()
         assert cache.get("notepad", "Save") is None
         assert cache.get("chrome", "Back") is None
+
+
+class TestRatioCache:
+    """Tests for SemanticSearchCache put_ratio/get_ratio."""
+
+    def test_ratio_cache_put_get(self):
+        """put_ratio/get_ratio roundtrip."""
+        cache = SemanticSearchCache()
+        cache.put_ratio("hello", "world", 0.42)
+        assert cache.get_ratio("hello", "world") == 0.42
+        assert cache.get_ratio("world", "hello") == 0.42  # bidirectional
+
+    def test_ratio_cache_miss(self):
+        """get_ratio returns None on miss."""
+        cache = SemanticSearchCache()
+        assert cache.get_ratio("a", "b") is None
+
+    def test_ratio_cache_invalidate_clears(self):
+        """invalidate() clears the ratio cache."""
+        cache = SemanticSearchCache()
+        cache.put_ratio("a", "b", 0.5)
+        cache.invalidate()
+        assert cache.get_ratio("a", "b") is None
+
+    def test_fuzzy_match_populates_ratio_cache(self):
+        """When cache is passed to fuzzy_match_nodes, ratio cache gets populated."""
+        # Use a query that forces the fuzzy multi-mode ratio path.
+        # "sbmt" doesn't keyword-match "SaveButton", so best_score stays < 0.9
+        # and the fuzzy identifier loop runs, populating _ratio_cache.
+        node = _make_node(ref="@e1", name="SaveButton")
+        snapshot = _make_snapshot([node])
+        cache = SemanticSearchCache()
+
+        fuzzy_match_nodes("sbmt", snapshot, min_score=0.1, cache=cache)
+        # The cache should now contain ratio entries for strings compared
+        assert len(cache._ratio_cache) > 0
+
+
+class TestSpatialLabelInference:
+    """Tests for spatial label inference on unlabeled interactive nodes."""
+
+    def test_unlabeled_edit_matches_adjacent_label(self):
+        """An unlabeled Edit next to a 'Username:' Static should match 'Username'."""
+        # Static label to the left of the edit box (x=100, y=200)
+        label_node = _make_node(
+            ref="@label",
+            role=AccessibilityRole.STATIC_TEXT,
+            name="Username:",
+            is_interactive=False,
+            bounds=AccessibilityBounds(x=100, y=200, width=120, height=30),
+        )
+        # Unlabeled edit box to the right of the label (x=250, y=200)
+        edit_node = _make_node(
+            ref="@edit",
+            role=AccessibilityRole.TEXTBOX,
+            name="",  # unlabeled!
+            is_interactive=True,
+            bounds=AccessibilityBounds(x=250, y=200, width=150, height=30),
+        )
+        snapshot = _make_snapshot([label_node, edit_node])
+
+        # Search for "Username" — the edit should appear via spatial label inference
+        matches = fuzzy_match_nodes("Username", snapshot, min_score=0.3)
+        refs = [m.node.ref for m in matches]
+        assert "@edit" in refs, f"Expected @edit in matches, got: {refs}"
+
+        edit_match = next(m for m in matches if m.node.ref == "@edit")
+        assert edit_match.match_type == "spatial_label", (
+            f"Expected match_type='spatial_label', got '{edit_match.match_type}'"
+        )
+
+    def test_unlabeled_edit_matches_label_above(self):
+        """An unlabeled Edit below a 'Password:' Static should match via spatial label."""
+        # Static label above the edit box
+        label_node = _make_node(
+            ref="@label2",
+            role=AccessibilityRole.STATIC_TEXT,
+            name="Password:",
+            is_interactive=False,
+            bounds=AccessibilityBounds(x=100, y=100, width=120, height=30),
+        )
+        # Unlabeled edit box below the label
+        edit_node = _make_node(
+            ref="@edit2",
+            role=AccessibilityRole.TEXTBOX,
+            name="",
+            is_interactive=True,
+            bounds=AccessibilityBounds(x=100, y=140, width=200, height=30),
+        )
+        snapshot = _make_snapshot([label_node, edit_node])
+
+        matches = fuzzy_match_nodes("Password", snapshot, min_score=0.3)
+        refs = [m.node.ref for m in matches]
+        assert "@edit2" in refs, f"Expected @edit2 in matches, got: {refs}"
+
+        edit_match = next(m for m in matches if m.node.ref == "@edit2")
+        assert edit_match.match_type == "spatial_label"
+
+    def test_labeled_node_not_inferred(self):
+        """A node that already has a name is not overridden by spatial inference."""
+        label_node = _make_node(
+            ref="@label3",
+            role=AccessibilityRole.STATIC_TEXT,
+            name="Email:",
+            is_interactive=False,
+            bounds=AccessibilityBounds(x=100, y=200, width=80, height=30),
+        )
+        # This edit has its own name — it should NOT pick up the spatial label
+        named_edit = _make_node(
+            ref="@edit3",
+            role=AccessibilityRole.TEXTBOX,
+            name="EmailField",
+            is_interactive=True,
+            bounds=AccessibilityBounds(x=200, y=200, width=150, height=30),
+        )
+        snapshot = _make_snapshot([label_node, named_edit])
+
+        matches = fuzzy_match_nodes("Email", snapshot, min_score=0.3)
+        # The named edit should match, but via name-based match (not spatial_label)
+        refs = [m.node.ref for m in matches]
+        assert "@edit3" in refs
+        edit_match = next(m for m in matches if m.node.ref == "@edit3")
+        assert edit_match.match_type != "spatial_label"
+
+
+class TestMultiIdentifierScoring:
+    """Tests for multi-identifier generation and scoring."""
+
+    def test_automation_id_matches_when_name_empty(self):
+        """Node with empty name but matching automation_id should still match."""
+        node = _make_node(ref="@e1", name="", automation_id="btnSubmit")
+        snapshot = _make_snapshot([node])
+        matches = fuzzy_match_nodes("submit", snapshot, min_score=0.3)
+        assert len(matches) >= 1
+        assert matches[0].match_type == "automation_id"
+
+    def test_name_scores_higher_than_automation_id(self):
+        """Node whose name directly matches should score higher than automation_id match."""
+        named_node = _make_node(ref="@named", name="Submit", automation_id=None)
+        id_only_node = _make_node(ref="@idonly", name="", automation_id="btnSubmit")
+        snapshot = _make_snapshot([named_node, id_only_node])
+
+        matches = fuzzy_match_nodes("Submit", snapshot, min_score=0.3)
+        refs = [m.node.ref for m in matches]
+        assert "@named" in refs
+
+        named_match = next(m for m in matches if m.node.ref == "@named")
+        id_match = next((m for m in matches if m.node.ref == "@idonly"), None)
+        if id_match is not None:
+            assert named_match.score >= id_match.score
+
+    def test_role_name_composite_identifier(self):
+        """Node should also be findable via 'name role' composite (e.g. 'Save button')."""
+        node = _make_node(
+            ref="@e1",
+            role=AccessibilityRole.BUTTON,
+            name="Save",
+            automation_id=None,
+        )
+        snapshot = _make_snapshot([node])
+
+        # "Save button" should match via composite name+role identifier
+        matches = fuzzy_match_nodes("Save button", snapshot, min_score=0.3)
+        assert len(matches) >= 1
+        assert matches[0].node.ref == "@e1"

@@ -12,6 +12,7 @@ All tests mock the IAccessibilityCapture layer so they run on ANY platform
 (not just Windows) without needing a real UIA/CDP backend.
 """
 
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from qontinui_schemas.accessibility import AccessibilityBackend as AccBackend
@@ -290,3 +291,47 @@ class TestCascadeBackendOrdering:
             assert sem_idx < min(
                 template_indices
             ), "Semantic backend should come before template backends"
+
+
+class TestCascadeTimeBudget:
+    def test_max_time_ms_stops_cascade(self):
+        """When max_time_ms is set, cascade stops after time budget is exhausted."""
+        # Create a slow backend that sleeps
+        class SlowBackend(StubBackend):
+            def find(self, needle, haystack, config):
+                self.find_called = True
+                self.find_call_count += 1
+                time.sleep(0.1)  # 100ms
+                return []
+
+        slow1 = SlowBackend("slow1", cost=10, supported_types=["template"])
+        slow2 = SlowBackend("slow2", cost=20, supported_types=["template"])
+        fast_result = StubBackend(
+            "fast_result", cost=30, supported_types=["template"],
+            results=[_make_result(0.95, "fast_result")],
+        )
+
+        cascade = CascadeDetector(backends=[slow1, slow2, fast_result])
+        results = cascade.find("x", None, {
+            "needle_type": "template",
+            "max_time_ms": 50,  # Only 50ms budget — should stop after slow1
+        })
+
+        # slow1 should have run (it takes 100ms but we check BEFORE running)
+        assert slow1.find_called
+        # fast_result should NOT have been reached due to time budget
+        assert not fast_result.find_called
+        assert len(results) == 0
+
+    def test_max_time_ms_none_runs_all(self):
+        """When max_time_ms is None, all backends are tried."""
+        b1 = StubBackend("b1", cost=10, supported_types=["template"])
+        b2 = StubBackend("b2", cost=20, supported_types=["template"],
+                         results=[_make_result(0.95, "b2")])
+
+        cascade = CascadeDetector(backends=[b1, b2])
+        results = cascade.find("x", None, {"needle_type": "template"})
+
+        assert b1.find_called
+        assert b2.find_called
+        assert len(results) == 1

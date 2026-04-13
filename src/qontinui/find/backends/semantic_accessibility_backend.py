@@ -104,6 +104,7 @@ class SemanticAccessibilityBackend(DetectionBackend):
                 snapshot,
                 min_score=min_confidence,
                 max_results=5,
+                cache=cache if self._cache_enabled else None,
             )
 
             # LLM fallback: if best fuzzy score is below llm_threshold

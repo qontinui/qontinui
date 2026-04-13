@@ -105,6 +105,14 @@ def _flatten_interactive(node: AccessibilityNode) -> list[AccessibilityNode]:
     return result
 
 
+def _flatten_all(node: AccessibilityNode) -> list[AccessibilityNode]:
+    """Flatten tree to list of ALL nodes (interactive and non-interactive)."""
+    result: list[AccessibilityNode] = [node]
+    for child in node.children:
+        result.extend(_flatten_all(child))
+    return result
+
+
 class UIAHealer:
     """UIA-specific element healer.
 
@@ -175,6 +183,10 @@ class UIAHealer:
                 duration_ms=(time.perf_counter() - start) * 1000,
             )
 
+        # Collect all nodes (including non-interactive labels) for spatial
+        # label inference. Interactive-only strategies still receive `nodes`.
+        all_nodes = _flatten_all(snapshot.root)
+
         strategies = [
             ("by_automation_id", self._try_automation_id),
             ("by_semantic", self._try_semantic),
@@ -184,7 +196,10 @@ class UIAHealer:
         ]
 
         for strategy_name, strategy_fn in strategies[: self._max_attempts]:
-            node = strategy_fn(fingerprint, nodes)
+            if strategy_name == "by_spatial_label":
+                node = strategy_fn(fingerprint, all_nodes)
+            else:
+                node = strategy_fn(fingerprint, nodes)
             if node is not None:
                 location = self._node_to_location(node)
                 if location is not None:
