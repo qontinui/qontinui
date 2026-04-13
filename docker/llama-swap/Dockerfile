@@ -45,11 +45,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-dev python3-venv gcc g++ curl && \
     rm -rf /var/lib/apt/lists/*
 
-# PyTorch nightly with sm_120 support for RTX 5090 (Blackwell)
+# PyTorch nightly with sm_120 support for RTX 5090 (Blackwell).
+# Pin to a specific nightly date to avoid pip walking backwards through
+# every nightly release when vLLM adds conflicting constraints.
+# Using 2026-03-25 which is the latest cu128 nightly at time of writing.
 RUN pip install --no-cache-dir \
-    torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu128
+    torch==2.12.0.dev20260325+cu128 \
+    torchvision==0.26.0.dev20260325+cu128 \
+    --index-url https://download.pytorch.org/whl/nightly/cu128
 
-# vLLM for UI-TARS backend (system Python, uses its own transformers version)
+# vLLM for UI-TARS backend (system Python, uses its own transformers version).
+# Install AFTER torch so vLLM picks up the pre-installed CUDA-enabled torch.
 RUN pip install --no-cache-dir vllm
 
 # --- AriaUI virtualenv with pinned transformers ---
