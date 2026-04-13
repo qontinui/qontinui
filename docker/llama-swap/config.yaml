@@ -92,6 +92,26 @@ models:
     aliases:
       - ui-tars-1.5-7b
 
+  # --- Qontinui Grounding v1: Fine-tuned UI-TARS-1.5-7B for element grounding ---
+  # LoRA-merged checkpoint from the component-render synthetic grounding pipeline.
+  # Qwen2.5-VL architecture, trained on isolated component renders for precise
+  # element localization. Served from a local bind-mounted path.
+  qontinui-grounding-v1:
+    cmd: >
+      python3 -m vllm.entrypoints.openai.api_server
+      --model /models/qontinui-grounding-v1
+      --host 127.0.0.1
+      --port ${PORT}
+      --dtype bfloat16
+      --max-model-len 4096
+      --trust-remote-code
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - qontinui-grounding
+      - grounding-v1
+
   # --- CUA World State Model: 7B VLM judge for action verification ---
   # SEAgent's verifier; Qwen2.5-VL-7B-Instruct fine-tune.
   # Consumed by qontinui-runner's WorldStateVerifier via /v1/chat/completions.

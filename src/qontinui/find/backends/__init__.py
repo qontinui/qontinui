@@ -7,6 +7,7 @@ mechanisms behind a common DetectionBackend interface.
 from ..detections import Detections
 from .base import DetectionBackend, DetectionResult
 from .cascade import CascadeDetector, MatchSettings
+from .grounding_vlm_backend import GroundingVLMBackend
 from .invariant_match_backend import InvariantMatchBackend
 
 # OmniParser modules use lazy imports to avoid circular dependencies
@@ -21,6 +22,7 @@ __all__ = [
     "DetectionBackend",
     "DetectionResult",
     "Detections",
+    "GroundingVLMBackend",
     "InvariantMatchBackend",
     "MatchSettings",
 ]
