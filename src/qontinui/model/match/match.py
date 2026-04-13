@@ -58,6 +58,9 @@ class MatchMetadata:
     source_image_id: str | None = None
     """ID of the source image that was used to find this match."""
 
+    backend_metadata: dict[str, Any] = field(default_factory=dict)
+    """Backend-specific metadata (e.g. accessibility ref/role from DetectionResult.metadata)."""
+
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
     """Lock for thread-safe access."""
 

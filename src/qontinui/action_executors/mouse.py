@@ -781,6 +781,34 @@ class MouseActionExecutor(ActionExecutorBase):
         logger.info("[COMBINED ACTION: CLICK] Starting click action")
         debug_write("Starting click action")
 
+        # Try accessibility-pattern click first when the last FIND came from
+        # an accessibility backend (metadata contains a 'ref').
+        # Only attempt this for left-button single clicks — not for
+        # double-click, right-click, or explicitly coordinate-targeted actions.
+        _should_try_a11y = (
+            (typed_config.mouse_button is None or typed_config.mouse_button.value in ("LEFT", "left"))
+            and (typed_config.number_of_clicks or 1) == 1
+            and self.context.hal_container is not None
+            and self.context.last_action_result is not None
+        )
+        if _should_try_a11y:
+            import asyncio as _asyncio
+
+            from .accessibility_action import try_accessibility_click
+
+            a11y_result = await try_accessibility_click(
+                self.context.last_action_result,
+                self.context.hal_container,
+            )
+            if a11y_result.handled:
+                if a11y_result.wait_after_s > 0:
+                    await _asyncio.sleep(a11y_result.wait_after_s)
+                debug_write(
+                    f"Accessibility click handled: success={a11y_result.success}, "
+                    f"wait={a11y_result.wait_after_s}s"
+                )
+                return a11y_result.success
+
         # Check if target is None or currentPosition (pure action)
         location = None
         if typed_config.target and typed_config.target.type != "currentPosition":

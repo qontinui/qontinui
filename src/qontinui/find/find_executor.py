@@ -270,10 +270,14 @@ class FindExecutor:
         for dr in detection_results:
             region = Region(x=dr.x, y=dr.y, width=dr.width, height=dr.height)
             cx, cy = dr.center
+            from ..model.match import MatchMetadata
+
+            meta = MatchMetadata(backend_metadata=dict(dr.metadata) if dr.metadata else {})
             match_obj = MatchObject(
                 target=Location(x=cx, y=cy, region=region),
                 score=dr.confidence,
                 name=pattern.name,
+                metadata=meta,
             )
             matches.append(Match(match_obj))
 

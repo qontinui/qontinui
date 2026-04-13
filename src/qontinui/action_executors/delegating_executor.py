@@ -53,6 +53,9 @@ class DelegatingActionExecutor:
         state_executor: Any | None = None,
         use_graph_execution: bool = False,
         workflow_executor: Any | None = None,
+        hal_container: Any | None = None,
+        # Legacy alias accepted by state_execution_api.py
+        hal: Any | None = None,
     ) -> None:
         """Initialize DelegatingActionExecutor.
 
@@ -61,11 +64,15 @@ class DelegatingActionExecutor:
             state_executor: Optional state executor for GO_TO_STATE navigation
             use_graph_execution: Whether to use graph-based execution
             workflow_executor: Optional reference to workflow executor for RUN_WORKFLOW
+            hal_container: Optional HALContainer for accessibility-aware action dispatch.
+            hal: Alias for hal_container (legacy, kept for backwards compatibility).
         """
         self.config = config
         self.state_executor = state_executor
         self.use_graph_execution = use_graph_execution
         self.workflow_executor = workflow_executor
+        # Accept both hal_container and the legacy hal= kwarg
+        self._hal_container: Any | None = hal_container or hal
 
         # Get action defaults configuration
         self.defaults = self._create_defaults()
@@ -106,6 +113,9 @@ class DelegatingActionExecutor:
             variables=self.variable_context.get_all_variables(),
         )
 
+        # Resolve HALContainer — use the one passed at construction time if any.
+        _hal_container: Any | None = self._hal_container
+
         # Create execution context for specialized executors
         self.context = ExecutionContext(
             # Configuration access
@@ -130,6 +140,8 @@ class DelegatingActionExecutor:
             emit_event=self._emit_event,
             emit_action_event=self._emit_action_event,
             emit_image_recognition_event=self._emit_image_recognition_event,
+            # HAL container for accessibility-aware action dispatch
+            hal_container=_hal_container,
         )
 
         logger.info(

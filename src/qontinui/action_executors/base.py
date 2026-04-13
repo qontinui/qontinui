@@ -59,6 +59,10 @@ class ExecutionContext:
     emit_action_event: Callable[[str, str, bool, dict], None]
     emit_image_recognition_event: Callable[[dict], None]
 
+    # HAL container — provides access to accessibility_capture and action_dispatch.
+    # Optional: executors that need UIA pattern-based actions use this; others ignore it.
+    hal_container: Any | None = field(default=None)  # HALContainer
+
     # Project configuration
     project_root: Path | None = field(default=None)  # Root directory for code loading
 
