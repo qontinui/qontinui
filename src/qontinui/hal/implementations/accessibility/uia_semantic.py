@@ -393,9 +393,6 @@ def fuzzy_match_nodes(
                         elif ident_text == node_auto_id:
                             best_type = "automation_id"
                             best_term = node_auto_id
-                        elif node_auto_id and ident_text == node_auto_id:
-                            best_type = "automation_id"
-                            best_term = node_auto_id
                         elif node.ref in spatial_labels and spatial_labels[node.ref] in ident_text:
                             best_type = "spatial_label"
                             best_term = ident_text

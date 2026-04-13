@@ -90,8 +90,8 @@ class SemanticAccessibilityBackend(DetectionBackend):
 
             # Check cache
             app_key = snapshot.title or "unknown"
-            if self._cache_enabled:
-                cache = self._get_cache()
+            cache = self._get_cache() if self._cache_enabled else None
+            if cache is not None:
                 cached = cache.get(app_key, needle)
                 if cached is not None:
                     return self._matches_to_results(cached, min_confidence)
@@ -104,7 +104,7 @@ class SemanticAccessibilityBackend(DetectionBackend):
                 snapshot,
                 min_score=min_confidence,
                 max_results=5,
-                cache=cache if self._cache_enabled else None,
+                cache=cache,
             )
 
             # LLM fallback: if best fuzzy score is below llm_threshold
@@ -113,9 +113,9 @@ class SemanticAccessibilityBackend(DetectionBackend):
             if best_fuzzy_score < self._llm_threshold and self._llm_client is not None:
                 llm_results = self._llm_find(needle, snapshot, min_confidence)
                 if llm_results:
-                    # Cache and return LLM results
-                    if self._cache_enabled:
-                        self._get_cache().put(app_key, needle, [])  # no SemanticMatch to cache
+                    # LLM results are DetectionResults, not SemanticMatches —
+                    # don't cache them in the SemanticMatch cache (wrong type).
+                    # The next call will re-run fuzzy + LLM if needed.
                     return llm_results
 
             # Cache results
