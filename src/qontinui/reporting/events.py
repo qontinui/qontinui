@@ -72,6 +72,7 @@ class EventType(Enum):
     CASCADE_BACKEND_TRIED = "cascade.backend.tried"
     CASCADE_HIT = "cascade.hit"
     CASCADE_MISS = "cascade.miss"
+    CASCADE_TIME_BUDGET_EXHAUSTED = "cascade.time_budget_exhausted"
 
 
 @dataclass

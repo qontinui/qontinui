@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import TYPE_CHECKING, Any
 
+from ..hal.implementations.accessibility.uia_label_utils import infer_spatial_labels
 from .healing_types import ElementLocation, HealingContext, HealingResult, HealingStrategy
 
 if TYPE_CHECKING:
@@ -131,6 +132,7 @@ class UIAHealer:
             "success": 0,
             "by_automation_id": 0,
             "by_semantic": 0,
+            "by_spatial_label": 0,
             "by_structural": 0,
             "by_fuzzy": 0,
         }
@@ -176,6 +178,7 @@ class UIAHealer:
         strategies = [
             ("by_automation_id", self._try_automation_id),
             ("by_semantic", self._try_semantic),
+            ("by_spatial_label", self._try_spatial_label),
             ("by_structural", self._try_structural),
             ("by_fuzzy", self._try_fuzzy),
         ]
@@ -246,6 +249,45 @@ class UIAHealer:
             node_name = (node.name or "").lower()
             if node_name == fp_name_lower:
                 return node
+        return None
+
+    def _try_spatial_label(
+        self,
+        fp: UIAElementFingerprint,
+        nodes: list[AccessibilityNode],
+    ) -> AccessibilityNode | None:
+        """Strategy 2.5: Match unlabeled nodes whose inferred spatial label
+        fuzzy-matches the fingerprint name.
+
+        Applies when the fingerprint has a name but no node matched by name
+        in the semantic strategy (i.e., the target control is unlabeled in the
+        current tree, but a nearby text node still carries the right label).
+        """
+        if not fp.name:
+            return None
+
+        fp_name_lower = fp.name.lower()
+
+        spatial_labels = infer_spatial_labels(nodes)
+        if not spatial_labels:
+            return None
+
+        best_node: AccessibilityNode | None = None
+        best_ratio = 0.0
+
+        for node in nodes:
+            inferred = spatial_labels.get(node.ref, "").strip()
+            if not inferred:
+                continue
+
+            ratio = SequenceMatcher(None, fp_name_lower, inferred.lower()).ratio()
+            if ratio > best_ratio:
+                best_ratio = ratio
+                best_node = node
+
+        if best_ratio >= self._fuzzy_threshold:
+            return best_node
+
         return None
 
     def _try_structural(

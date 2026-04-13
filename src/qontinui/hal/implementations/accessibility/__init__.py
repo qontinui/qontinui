@@ -11,14 +11,36 @@ for different accessibility backends:
 
 import platform
 
+from qontinui.hal.implementations.accessibility.action_dispatch import (
+    ActionDispatchRegistry,
+    ActionResult,
+    ActionStrategy,
+    ButtonStrategy,
+    CheckboxStrategy,
+    ComboBoxStrategy,
+    MenuItemStrategy,
+    SliderStrategy,
+    TextBoxStrategy,
+    TreeItemStrategy,
+)
 from qontinui.hal.implementations.accessibility.cdp_capture import CDPAccessibilityCapture
 from qontinui.hal.implementations.accessibility.ref_manager import RefManager
 from qontinui.hal.implementations.accessibility.rust_backend import RustBackendCapture
 
 __all__ = [
+    "ActionDispatchRegistry",
+    "ActionResult",
+    "ActionStrategy",
+    "ButtonStrategy",
+    "CheckboxStrategy",
+    "ComboBoxStrategy",
     "CDPAccessibilityCapture",
+    "MenuItemStrategy",
     "RefManager",
     "RustBackendCapture",
+    "SliderStrategy",
+    "TextBoxStrategy",
+    "TreeItemStrategy",
 ]
 
 # Conditionally export UIA capture on Windows

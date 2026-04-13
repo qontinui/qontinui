@@ -37,6 +37,7 @@ class MatchSettings:
     min_confidence: float = 0.8
     max_backends: int = 5
     search_region: tuple[int, int, int, int] | None = None
+    max_time_ms: float | None = None
 
 
 class CascadeDetector(DetectionBackend):
@@ -213,6 +214,12 @@ class CascadeDetector(DetectionBackend):
         else:
             max_backends = config.get("max_backends", len(self._backends))
 
+        # Determine max_time_ms: MatchSettings takes priority, then config dict
+        if match_settings is not None and match_settings.max_time_ms is not None:
+            max_time_ms: float | None = match_settings.max_time_ms
+        else:
+            max_time_ms = config.get("max_time_ms")
+
         # Build ordered backend list, putting preferred backend first
         ordered = self._ordered_backends(
             match_settings.preferred_backend if match_settings else None
@@ -233,6 +240,17 @@ class CascadeDetector(DetectionBackend):
         for backend in ordered:
             if backends_tried >= max_backends:
                 break
+            if max_time_ms is not None:
+                elapsed = (time.perf_counter() - cascade_t0) * 1000
+                if elapsed >= max_time_ms:
+                    logger.info(
+                        "Cascade time budget exhausted (%.0fms >= %.0fms) after %d backends",
+                        elapsed,
+                        max_time_ms,
+                        backends_tried,
+                    )
+                    self._emit_time_budget_exhausted(needle_label, elapsed, max_time_ms, backends_tried)
+                    break
             if not backend.supports(needle_type):
                 continue
             if not backend.is_available():
@@ -580,6 +598,29 @@ class CascadeDetector(DetectionBackend):
                     "needle": needle_label,
                     "backends_tried": backends_tried,
                     "total_duration_ms": round(total_ms, 1),
+                    "timestamp": time.time(),
+                },
+            )
+        except Exception:
+            pass
+
+    @staticmethod
+    def _emit_time_budget_exhausted(
+        needle_label: str,
+        elapsed_ms: float,
+        budget_ms: float,
+        backends_tried: int,
+    ) -> None:
+        try:
+            from ...reporting.events import EventType, emit_event
+
+            emit_event(
+                EventType.CASCADE_TIME_BUDGET_EXHAUSTED,
+                data={
+                    "needle": needle_label,
+                    "elapsed_ms": round(elapsed_ms, 1),
+                    "budget_ms": round(budget_ms, 1),
+                    "backends_tried": backends_tried,
                     "timestamp": time.time(),
                 },
             )
