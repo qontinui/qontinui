@@ -4,11 +4,8 @@ This module provides a container for HAL component instances, replacing
 the global factory pattern with explicit dependency injection.
 """
 
+import logging
 from dataclasses import dataclass, field
-
-# Lazy import — only resolved when action_dispatch is actually used to avoid
-# pulling in qontinui_schemas.accessibility at HAL startup on platforms where
-# the accessibility backend is disabled.
 from typing import TYPE_CHECKING
 
 from .config import HALConfig
@@ -24,6 +21,8 @@ from .interfaces.mouse_controller import IMouseController
 
 if TYPE_CHECKING:
     from .implementations.accessibility.action_dispatch import ActionDispatchRegistry
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -125,7 +124,10 @@ class HALContainer:
 
                 action_dispatch = ActionDispatchRegistry()
             except Exception:
-                pass  # Non-fatal: fall back to generic actions
+                logger.warning(
+                    "ActionDispatchRegistry init failed, falling back to generic actions",
+                    exc_info=True,
+                )
 
         return cls(
             keyboard_controller=keyboard_controller,

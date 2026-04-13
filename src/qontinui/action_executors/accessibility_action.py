@@ -182,6 +182,7 @@ def _get_capture(hal_container: Any) -> Any | None:
     # Guard: only use if the capture is connected
     is_connected = getattr(capture, "is_connected", None)
     if callable(is_connected) and not is_connected():
+        logger.debug("accessibility_capture not connected — skipping accessibility path")
         return None
     return capture
 

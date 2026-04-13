@@ -75,7 +75,7 @@ class KeyboardActionExecutor(ActionExecutorBase):
             elif action_type == "KEY_PRESS":
                 return self._execute_key_press(action, typed_config)
             elif action_type == "TYPE":
-                return self._execute_type(action, typed_config)
+                return await self._execute_type(action, typed_config)
             else:
                 raise ActionExecutionError(
                     action_type=action_type,
@@ -91,27 +91,6 @@ class KeyboardActionExecutor(ActionExecutorBase):
                 action_type=action_type,
                 reason=f"Unexpected error: {e}",
             ) from e
-
-    def _run_async(self, coro: object) -> object:
-        """Run an async coroutine from this synchronous context.
-
-        Used so that TYPE can call async accessibility helpers without making
-        the whole executor chain async (keyboard actions are currently sync).
-        """
-        import asyncio
-
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        if loop and loop.is_running():
-            import concurrent.futures
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, coro).result(timeout=10.0)
-        else:
-            return asyncio.run(coro)  # type: ignore[arg-type]
 
     def _execute_key_down(self, action: Action, typed_config: KeyDownActionConfig | None) -> bool:
         """Execute KEY_DOWN action - press and hold key.
@@ -235,7 +214,7 @@ class KeyboardActionExecutor(ActionExecutorBase):
             self._emit_action_failure(action, str(e), {"keys": keys})
             return False
 
-    def _execute_type(self, action: Action, typed_config: TypeActionConfig | None) -> bool:
+    async def _execute_type(self, action: Action, typed_config: TypeActionConfig | None) -> bool:
         """Execute TYPE action with variable resolution and state string lookup.
 
         Supports:
@@ -338,18 +317,16 @@ class KeyboardActionExecutor(ActionExecutorBase):
         if text and self.context.hal_container is not None and self.context.last_action_result is not None:
             from .accessibility_action import try_accessibility_type
 
-            a11y_result = self._run_async(
-                try_accessibility_type(
-                    self.context.last_action_result,
-                    self.context.hal_container,
-                    text,
-                )
+            a11y_result = await try_accessibility_type(
+                self.context.last_action_result,
+                self.context.hal_container,
+                text,
             )
             if a11y_result.handled:
                 if a11y_result.wait_after_s > 0:
-                    import time as _time
+                    import asyncio as _asyncio
 
-                    _time.sleep(a11y_result.wait_after_s)
+                    await _asyncio.sleep(a11y_result.wait_after_s)
                 if a11y_result.success:
                     if typed_config.press_enter:
                         logger.info("Pressing Enter key after accessibility type...")

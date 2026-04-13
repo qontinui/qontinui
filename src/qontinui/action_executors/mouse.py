@@ -786,7 +786,7 @@ class MouseActionExecutor(ActionExecutorBase):
         # Only attempt this for left-button single clicks — not for
         # double-click, right-click, or explicitly coordinate-targeted actions.
         _should_try_a11y = (
-            (typed_config.mouse_button is None or typed_config.mouse_button.value in ("LEFT", "left"))
+            (typed_config.mouse_button is None or str(typed_config.mouse_button.value).upper() == "LEFT")
             and (typed_config.number_of_clicks or 1) == 1
             and self.context.hal_container is not None
             and self.context.last_action_result is not None
