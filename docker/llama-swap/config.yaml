@@ -100,6 +100,7 @@ models:
     cmd: >
       python3 -m vllm.entrypoints.openai.api_server
       --model /models/qontinui-grounding-v1
+      --served-model-name qontinui-grounding-v1
       --host 127.0.0.1
       --port ${PORT}
       --dtype bfloat16
