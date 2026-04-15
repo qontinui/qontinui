@@ -37,6 +37,11 @@ services:
       - llama-swap-hf-cache:/root/.cache/huggingface
       # Mount config for hot-reload without rebuild
       - ./config.yaml:/etc/llama-swap/config.yaml:ro
+      # Local fine-tuned checkpoints (e.g. qontinui-grounding-v1 produced by
+      # qontinui-finetune). Directory layout mirrors the paths referenced in
+      # config.yaml: /models/<name>/ must contain a full HuggingFace-style
+      # model directory (config.json, *.safetensors, tokenizer.json, etc.).
+      - ../../../models:/models:ro
     healthcheck:
       # /running is llama-swap's native status endpoint (works even with no model loaded)
       test: ["CMD", "curl", "-f", "http://localhost:8100/running"]
