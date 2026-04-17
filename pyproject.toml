@@ -19,6 +19,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 packages = [{include = "qontinui", from = "src"}]
+# Ship the shared WSM prompt artifact in sdist/wheel; Python resolves
+# it at runtime via importlib.resources via its package path.
+include = [
+    { path = "src/qontinui/verification/wsm_prompt.toml", format = ["sdist", "wheel"] },
+]
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.14.1 || >3.14.1,<3.15"

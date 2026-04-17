@@ -1,0 +1,94 @@
+# World State Verifier (WSM) prompt template — shared source of truth.
+#
+# This file is the single source of truth for the WSM prompt contract.
+# Both the Rust judge and the Python client load from here (or mirror this
+# content character-for-character) so verdicts are directly comparable
+# across call sites.
+#
+# Rust mirror: qontinui-runner/src-tauri/src/verification/world_state_verifier.rs
+#   (const WSM_SYSTEM_PROMPT + build_user_text). Keep in sync with this file.
+# Python loader: qontinui/src/qontinui/verification/wsm_client.py (load_prompt).
+#
+# Coordinate-space rule (GhostDesk/OSWorld-G):
+#   The WSM compares two PNG screenshots and returns a JSON verdict. It
+#   MUST never be asked to emit coordinates, because different screenshots
+#   at different DPRs would mix normalized and pixel coordinates inside a
+#   single prompt. Keep the output schema strictly coordinate-free.
+#
+# Fixed-baseline resolution: both screenshots should be 1920×1080 (or both
+# the same size, scaled by the caller). The judge prompt itself makes no
+# coordinate claims, so DPR variation between runs only affects what the
+# model can visually discriminate — not the schema.
+
+schema_version = "1"
+
+model_alias = "cua-wsm"
+
+# Sampling parameters — MUST match in Rust (see build_payload in
+# world_state_verifier.rs). Changing these changes judge behavior.
+temperature = 0.0
+max_tokens = 512
+
+# The system prompt drives the verdict schema. Rust inlines this as
+# WSM_SYSTEM_PROMPT; keep the wording aligned when editing either side.
+system_prompt = """\
+You are a GUI world-state verifier. You receive two screenshots (PRE and \
+POST) of an application and a text intent describing what action the agent \
+attempted. Your job is to judge, by comparing the two screenshots, whether \
+the POST state reflects that the intended action was actually performed on \
+the correct target.
+
+Output STRICT JSON matching this schema — no prose before or after:
+```json
+{
+  "status": "pass" | "fail" | "refused" | "partial",
+  "confidence": <float 0.0-1.0>,
+  "observations": "<short explanation of what changed>",
+  "refused_reason": "<present only if status=refused>",
+  "next_priority": "<optional: what the worker should try next>"
+}
+```
+
+Status semantics:
+- pass: The intended action was performed on the correct target AND the \
+resulting state matches the intent.
+- partial: Some visible progress toward the intent, but not complete.
+- fail: No visible progress, or the state regressed.
+- refused: The action did NOT interact with the intended target (wrong \
+button clicked, no-op, click missed, click landed on the wrong element). \
+This is distinct from fail — use refused when the agent appears to have \
+acted on the wrong element.
+
+Confidence must be calibrated: use high values (>0.8) only when you can \
+clearly see the intended change or the clear absence of it. Use middle \
+values (0.5-0.7) when you are unsure.\
+"""
+
+# User-message template. Placeholders:
+#   {goal_section} — optional "## Overall Goal\n<text>\n\n" block, empty
+#                    string if no goal_context was supplied
+#   {intent}       — the action intent string
+#
+# Images (PRE and POST PNGs, base64 data URLs) are appended as separate
+# content parts AFTER this text part in the chat message. The trailing
+# sentence below describes the image order so the model can align them.
+user_template = """\
+{goal_section}## Action Intent (what the worker just attempted)
+{intent}
+
+The first image is PRE (before the action). The second image is POST \
+(after the action). Compare them and return the JSON verdict.\
+"""
+
+# Goal-section wrapper used when a non-empty goal_context is supplied.
+goal_section_template = """\
+## Overall Goal
+{goal}
+
+"""
+
+# Confidence threshold: if the WSM returns confidence below this value,
+# Python callers fall back to pixel-diff instead of stamping "wsm".
+# Calibration was done in Rust (see WsvCalibrationSection.tsx) — keep
+# these in sync. The Rust judge does NOT apply a heuristic cap at 0.6.
+low_confidence_fallback_threshold = 0.55

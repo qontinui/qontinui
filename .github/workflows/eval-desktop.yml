@@ -1,0 +1,137 @@
+name: Eval Desktop
+
+# Phase 2 of scout-2026-04-16-hal-mcp-and-eval-sandbox.md
+# Builds the reproducible Linux eval container, boots it on the runner,
+# runs the grounding regression against the internal benchmark, uploads
+# results as an artifact. Not required for merge yet — continue-on-error
+# on the eval step while Phase 1 (hal-mcp) is stabilizing.
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'qontinui/docker/eval-desktop/**'
+      - 'qontinui-train/evaluation/**'
+      - 'qontinui-hal-mcp/**'
+      - 'qontinui/.github/workflows/eval-desktop.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'qontinui/docker/eval-desktop/**'
+      - 'qontinui-train/evaluation/**'
+      - 'qontinui-hal-mcp/**'
+      - 'qontinui/.github/workflows/eval-desktop.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: eval-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Image tag reused across steps
+  IMAGE_TAG: qontinui-eval-desktop:ci
+  # hal-mcp HTTP port (matches Dockerfile EXPOSE + entrypoint default)
+  HAL_MCP_PORT: 7801
+  # Token plumbing — set as repo secret QONTINUI_HAL_MCP_TOKEN; empty string
+  # in forks / PR-from-fork runs is fine because continue-on-error is set.
+  QONTINUI_HAL_MCP_TOKEN: ${{ secrets.QONTINUI_HAL_MCP_TOKEN }}
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Docker buildx gives us better caching + --load semantics than plain build.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build eval-desktop image
+        uses: docker/build-push-action@v5
+        with:
+          # Build context = repo root so the Dockerfile can COPY
+          # qontinui-hal-mcp/ (Phase 1 sibling package) if it's present.
+          context: .
+          file: qontinui/docker/eval-desktop/Dockerfile
+          tags: ${{ env.IMAGE_TAG }}
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start eval-desktop container
+        id: container
+        run: |
+          # Detached, name-pinned so teardown is trivial. Maps 7801 host->7801 container.
+          # --shm-size bumped because Xvfb + Firefox-class apps need more than the default 64MB.
+          CID=$(docker run -d \
+            --name eval-desktop \
+            --shm-size=1g \
+            -p ${HAL_MCP_PORT}:${HAL_MCP_PORT} \
+            -e QONTINUI_HAL_MCP_TOKEN="${QONTINUI_HAL_MCP_TOKEN}" \
+            "${IMAGE_TAG}")
+          echo "cid=${CID}" >> "$GITHUB_OUTPUT"
+          docker ps --filter "id=${CID}"
+
+      - name: Wait for hal-mcp health
+        # Phase 1 should expose /health on the HTTP transport. If it doesn't yet,
+        # this step warns and proceeds — the eval step will surface the actual
+        # error. Poll budget ~30s; longer would mask genuine startup failures.
+        continue-on-error: true
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:${HAL_MCP_PORT}/health" >/dev/null 2>&1; then
+              echo "hal-mcp is healthy (after ${i} polls)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::warning::hal-mcp did not report healthy within 30s; proceeding anyway"
+          docker logs eval-desktop --tail 100 || true
+
+      - name: Install qontinui-train
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e qontinui-train
+
+      - name: Run grounding eval against internal benchmark
+        # continue-on-error while benchmark data + hal-mcp integration stabilize.
+        # Remove once a green baseline exists and benchmark data is populated.
+        continue-on-error: true
+        env:
+          QONTINUI_HAL_MCP_URL: http://127.0.0.1:${{ env.HAL_MCP_PORT }}
+        run: |
+          mkdir -p eval-out
+          python qontinui-train/evaluation/grounding_eval.py \
+            --benchmark=internal \
+            --baseline-model ByteDance-Seed/UI-TARS-1.5-7B \
+            --output-dir eval-out/ \
+            --log-level INFO
+
+      - name: Capture container logs
+        if: always()
+        run: |
+          mkdir -p eval-out
+          docker logs eval-desktop > eval-out/container.stdout.log 2> eval-out/container.stderr.log || true
+          docker inspect eval-desktop > eval-out/container.inspect.json || true
+
+      - name: Upload eval artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-desktop-results-${{ github.run_id }}
+          path: eval-out/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Tear down container
+        if: always()
+        run: |
+          docker rm -f eval-desktop || true

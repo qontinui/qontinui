@@ -1,0 +1,18 @@
+# Applications under test in the eval-desktop container.
+# One apt package per line. Blank lines and # comments are ignored.
+# Goal: surface variety across a11y backends (AT-SPI adapters differ per toolkit),
+# not completeness. Expand based on which regressions we actually catch.
+
+# GTK3 — AT-SPI backend, baseline for Linux accessibility probes
+gedit
+
+# LibreOffice Calc — mixed toolkit (VCL + AT-SPI bridge), stresses table/grid grounding
+libreoffice-calc
+
+# Qt5/Qt6 reference app — exercises QAccessible bridge, different from GTK
+# kcalc is lighter than qtcreator (~15MB vs ~500MB) and pulls enough Qt runtime
+# to cover the Qt accessibility surface we care about.
+kcalc
+
+# Xterm — minimal X client, useful as a "does windowing work at all" smoke target
+xterm
