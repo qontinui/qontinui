@@ -317,3 +317,53 @@ class StateExecutionAPI:
             >>> print(f"Total transitions: {stats['total_transitions']}")
         """
         return self.query.get_statistics()
+
+    def get_permitted_triggers(
+        self, active_state_ids: list[str] | None = None
+    ) -> list[dict[str, Any]]:
+        """Return transitions currently permitted from an active state set.
+
+        Delegates to :class:`MultiStateAdapter.get_permitted_triggers`.
+
+        Args:
+            active_state_ids: Optional list of state IDs (MultiState ID or
+                Qontinui int stringified). When ``None``, uses the manager's
+                current active states.
+
+        Returns:
+            List of permitted-trigger dictionaries. See
+            :class:`multistate.core.trigger_introspection.PermittedTrigger`.
+        """
+        return self.state_memory.multistate_adapter.get_permitted_triggers(active_state_ids)
+
+    def get_blocked_triggers(
+        self, active_state_ids: list[str] | None = None
+    ) -> list[dict[str, Any]]:
+        """Return transitions currently blocked, annotated with a reason.
+
+        Delegates to :class:`MultiStateAdapter.get_blocked_triggers`.
+
+        Args:
+            active_state_ids: Optional list of state IDs (see
+                :meth:`get_permitted_triggers`).
+
+        Returns:
+            List of blocked-trigger dictionaries. See
+            :class:`multistate.core.trigger_introspection.BlockedTrigger`.
+        """
+        return self.state_memory.multistate_adapter.get_blocked_triggers(active_state_ids)
+
+    def get_mermaid_diagram(self, active_state_ids: list[str] | None = None) -> str:
+        """Return a Mermaid ``stateDiagram-v2`` source for the loaded machine.
+
+        Delegates to :class:`MultiStateAdapter.get_mermaid_diagram`.
+
+        Args:
+            active_state_ids: Optional list of state IDs (see
+                :meth:`get_permitted_triggers`). When ``None`` / empty, the
+                manager's current active states are highlighted.
+
+        Returns:
+            Mermaid diagram source string.
+        """
+        return self.state_memory.multistate_adapter.get_mermaid_diagram(active_state_ids)

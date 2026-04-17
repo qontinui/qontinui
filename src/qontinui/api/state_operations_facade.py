@@ -134,6 +134,81 @@ class StateOperationsFacade:
         # Delegate to StateExecutionAPI (library handles ALL state management)
         return state_api.get_available_transitions()
 
+    def get_permitted_triggers(
+        self,
+        execution_id: str,
+        active_state_ids: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get transitions currently permitted from the active state set.
+
+        Delegates to :meth:`StateExecutionAPI.get_permitted_triggers`. See
+        :class:`multistate.core.trigger_introspection.PermittedTrigger` for
+        the dict shape.
+
+        Args:
+            execution_id: Execution identifier.
+            active_state_ids: Optional list of state IDs (MultiState ID or
+                Qontinui int stringified). When ``None``/empty, the current
+                active state set of the execution is used.
+
+        Returns:
+            List of permitted-trigger dictionaries.
+
+        Raises:
+            ValueError: If execution not found.
+        """
+        state_api = self._get_state_api(execution_id)
+        return state_api.get_permitted_triggers(active_state_ids)
+
+    def get_blocked_triggers(
+        self,
+        execution_id: str,
+        active_state_ids: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get transitions currently blocked from the active state set.
+
+        Delegates to :meth:`StateExecutionAPI.get_blocked_triggers`. See
+        :class:`multistate.core.trigger_introspection.BlockedTrigger` for the
+        dict shape (includes a ``reason`` field).
+
+        Args:
+            execution_id: Execution identifier.
+            active_state_ids: Optional list of state IDs (see
+                :meth:`get_permitted_triggers`).
+
+        Returns:
+            List of blocked-trigger dictionaries, each with a ``reason``.
+
+        Raises:
+            ValueError: If execution not found.
+        """
+        state_api = self._get_state_api(execution_id)
+        return state_api.get_blocked_triggers(active_state_ids)
+
+    def get_mermaid_diagram(
+        self,
+        execution_id: str,
+        active_state_ids: list[str] | None = None,
+    ) -> str:
+        """Get a Mermaid ``stateDiagram-v2`` source for the execution's machine.
+
+        Delegates to :meth:`StateExecutionAPI.get_mermaid_diagram`.
+
+        Args:
+            execution_id: Execution identifier.
+            active_state_ids: Optional hypothetical active-state set for
+                highlighting. When ``None``/empty, the current active set is
+                used.
+
+        Returns:
+            Mermaid diagram source string.
+
+        Raises:
+            ValueError: If execution not found.
+        """
+        state_api = self._get_state_api(execution_id)
+        return state_api.get_mermaid_diagram(active_state_ids)
+
     def _get_state_api(self, execution_id: str) -> StateExecutionAPI:
         """Get StateExecutionAPI for an execution.
 

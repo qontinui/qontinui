@@ -528,3 +528,155 @@ class MultiStateAdapter:
             "reachable_states": complexity["reachable_states"],
             "groups": complexity["num_groups"],
         }
+
+    # ==================== Trigger Introspection ====================
+
+    def _resolve_multistate_active_set(
+        self, active_state_ids: list[str] | None
+    ) -> set[Any] | None:
+        """Resolve caller-provided state IDs to MultiState ``State`` objects.
+
+        Accepts either MultiState IDs (e.g. ``"state_login"``) or the string
+        form of Qontinui integer IDs. Unknown IDs are logged and skipped.
+
+        Returns:
+            Set of MultiState ``State`` objects, or ``None`` when the caller
+            did not specify any IDs (signalling "use current active set").
+        """
+        if not active_state_ids:
+            return None
+
+        resolved: set[Any] = set()
+        for sid in active_state_ids:
+            # Direct MultiState ID hit
+            if sid in self.reverse_mappings:
+                resolved.add(self.reverse_mappings[sid].multistate_state)
+                continue
+            # Qontinui integer ID (possibly passed as string)
+            try:
+                qid = int(sid)
+            except (TypeError, ValueError):
+                logger.warning(
+                    "Introspection: unknown state id '%s' (not a MultiState id or Qontinui int)",
+                    sid,
+                )
+                continue
+            if qid in self.state_mappings:
+                resolved.add(self.state_mappings[qid].multistate_state)
+            else:
+                logger.warning(
+                    "Introspection: Qontinui state id %s has no MultiState mapping", qid
+                )
+        return resolved
+
+    def _with_temporary_active_states(
+        self, active_state_ids: list[str] | None
+    ) -> tuple[set[Any] | None, set[Any] | None]:
+        """Temporarily swap ``manager.active_states`` for read-only introspection.
+
+        Directly mutates ``self.manager.active_states`` (a ``set``) instead of
+        calling :meth:`StateManager.activate_states` / ``deactivate_states``
+        because those methods record metrics and history — which we must not
+        pollute for a read-only query. Callers MUST pair this with
+        :meth:`_restore_active_states`.
+
+        Returns:
+            Tuple ``(saved_active_states, temp_active_states)``:
+            - ``saved_active_states`` is the previous snapshot to restore, or
+              ``None`` when no swap was performed.
+            - ``temp_active_states`` is the temporary set that was installed,
+              or ``None`` when no swap was performed.
+        """
+        resolved = self._resolve_multistate_active_set(active_state_ids)
+        if resolved is None:
+            return None, None
+        saved = self.manager.active_states.copy()
+        self.manager.active_states = resolved
+        return saved, resolved
+
+    def _restore_active_states(self, saved: set[Any] | None) -> None:
+        """Restore a previously saved ``active_states`` snapshot, if any."""
+        if saved is not None:
+            self.manager.active_states = saved
+
+    def get_permitted_triggers(
+        self, active_state_ids: list[str] | None = None
+    ) -> list[dict[str, Any]]:
+        """Return transitions currently permitted, as JSON-friendly dicts.
+
+        Args:
+            active_state_ids: Optional list of state IDs describing the
+                hypothetical active set for the query. Each entry may be a
+                MultiState ID (e.g. ``"state_login"``) or a Qontinui integer
+                state ID (stringified). When ``None`` / empty, the manager's
+                current active state set is used.
+
+                The manager's active states are temporarily replaced for the
+                duration of this call and restored before returning, via
+                direct mutation of ``StateManager.active_states`` (bypasses
+                metrics/history side effects). This is thread-unsafe — do not
+                call concurrently with transition execution on the same
+                manager.
+
+        Returns:
+            List of dictionaries matching :class:`PermittedTrigger.to_dict()`.
+        """
+        saved, _ = self._with_temporary_active_states(active_state_ids)
+        try:
+            triggers = self.manager.permitted_triggers()
+            return [t.to_dict() for t in triggers]
+        finally:
+            self._restore_active_states(saved)
+
+    def get_blocked_triggers(
+        self, active_state_ids: list[str] | None = None
+    ) -> list[dict[str, Any]]:
+        """Return transitions currently blocked with reasons, as JSON-friendly dicts.
+
+        See :meth:`get_permitted_triggers` for argument semantics and the
+        thread-safety caveat regarding temporarily swapping active states.
+
+        Returns:
+            List of dictionaries matching :class:`BlockedTrigger.to_dict()`.
+            Each entry carries a structured ``reason`` string.
+        """
+        saved, _ = self._with_temporary_active_states(active_state_ids)
+        try:
+            triggers = self.manager.blocked_triggers()
+            return [t.to_dict() for t in triggers]
+        finally:
+            self._restore_active_states(saved)
+
+    def get_mermaid_diagram(self, active_state_ids: list[str] | None = None) -> str:
+        """Generate a Mermaid ``stateDiagram-v2`` for the registered state machine.
+
+        Uses ``PathVisualizer.generate_mermaid`` with the manager's registered
+        transitions and active states. When ``active_state_ids`` is provided,
+        temporarily swaps the manager's ``active_states`` (same pattern as
+        :meth:`get_permitted_triggers`) so the diagram highlights a
+        hypothetical active set without polluting metrics/history.
+
+        Args:
+            active_state_ids: Optional list of state IDs (MultiState ID or
+                Qontinui integer stringified) describing the hypothetical
+                active set to highlight. When ``None`` or empty, the manager's
+                current active state set is used.
+
+        Returns:
+            Mermaid diagram source as a string (empty when no transitions are
+            registered).
+        """
+        # Local import so the qontinui package can still import even if
+        # multistate's visualizer is unavailable at import time.
+        from multistate.pathfinding.visualizer import PathVisualizer
+
+        saved, _ = self._with_temporary_active_states(active_state_ids)
+        try:
+            transitions = list(self.manager.transitions.values())
+            active = set(self.manager.active_states)
+            return PathVisualizer.generate_mermaid(
+                transitions=transitions,
+                active_states=active if active else None,
+            )
+        finally:
+            self._restore_active_states(saved)

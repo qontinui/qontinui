@@ -449,6 +449,118 @@ class UIBridgeRuntime:
         # No active states — return all transitions for discoverability
         return list(self._ui_transitions.values())
 
+    def _with_hypothetical_active_states(
+        self, active_state_ids: list[str] | None
+    ) -> set[Any] | None:
+        """Swap ``manager.active_states`` for a hypothetical query set.
+
+        Directly mutates ``manager.active_states`` (bypassing
+        ``activate_states``) so metrics/history aren't polluted for
+        read-only introspection. Returns the previous set so the caller
+        can restore it.
+
+        Args:
+            active_state_ids: When ``None``/empty, returns ``None`` and does
+                not mutate. Otherwise, resolves IDs to registered MultiState
+                ``State`` objects (unknown IDs skipped with a warning).
+
+        Returns:
+            The previous active-state set, or ``None`` when no swap was made.
+        """
+        if not active_state_ids:
+            return None
+        resolved: set[Any] = set()
+        for sid in active_state_ids:
+            state = self.manager.states.get(sid)
+            if state is None:
+                self.logger.warning(
+                    "Introspection: unknown state id '%s' (not registered)", sid
+                )
+                continue
+            resolved.add(state)
+        saved = self.manager.active_states.copy()
+        self.manager.active_states = resolved
+        return saved
+
+    def _restore_active_states(self, saved: set[Any] | None) -> None:
+        """Restore a saved ``active_states`` snapshot, if any."""
+        if saved is not None:
+            self.manager.active_states = saved
+
+    def get_permitted_triggers(
+        self, active_state_ids: list[str] | None = None
+    ) -> list[dict[str, Any]]:
+        """Return transitions currently permitted, as JSON-friendly dicts.
+
+        Args:
+            active_state_ids: Optional hypothetical active-state set for the
+                query. Unknown IDs are skipped with a warning. When empty,
+                the manager's current active set is used.
+
+        Returns:
+            List of :class:`PermittedTrigger.to_dict()` outputs.
+        """
+        saved = self._with_hypothetical_active_states(active_state_ids)
+        try:
+            return [t.to_dict() for t in self.manager.permitted_triggers()]
+        finally:
+            self._restore_active_states(saved)
+
+    def get_blocked_triggers(
+        self, active_state_ids: list[str] | None = None
+    ) -> list[dict[str, Any]]:
+        """Return transitions currently blocked (with reasons), as dicts.
+
+        Args:
+            active_state_ids: See :meth:`get_permitted_triggers`.
+
+        Returns:
+            List of :class:`BlockedTrigger.to_dict()` outputs.
+        """
+        saved = self._with_hypothetical_active_states(active_state_ids)
+        try:
+            return [t.to_dict() for t in self.manager.blocked_triggers()]
+        finally:
+            self._restore_active_states(saved)
+
+    def get_mermaid_diagram(self, active_state_ids: list[str] | None = None) -> str:
+        """Generate a Mermaid ``stateDiagram-v2`` for the registered machine.
+
+        Uses ``PathVisualizer.generate_mermaid`` with the manager's registered
+        transitions and active states. When ``active_state_ids`` is provided,
+        temporarily swaps the manager's active-state set to highlight a
+        hypothetical configuration without polluting metrics/history.
+
+        Args:
+            active_state_ids: Optional hypothetical active-state set. Unknown
+                IDs are skipped with a warning. When empty, the manager's
+                current active set is used for highlighting.
+
+        Returns:
+            Mermaid diagram source as a string (empty when no transitions are
+            registered).
+        """
+        # Local import so this module stays importable when multistate is
+        # stubbed out (see top-of-file fallback block).
+        try:
+            from multistate.pathfinding.visualizer import PathVisualizer
+        except ImportError:
+            self.logger.warning(
+                "multistate.pathfinding.visualizer unavailable; returning empty diagram"
+            )
+            return ""
+
+        saved = self._with_hypothetical_active_states(active_state_ids)
+        try:
+            transitions = list(self.manager.transitions.values())
+            active = set(self.manager.active_states)
+            return PathVisualizer.generate_mermaid(
+                transitions=transitions,
+                active_states=active if active else None,
+            )
+        finally:
+            self._restore_active_states(saved)
+
     # =========================================================================
     # State Detection (StateSpaceRuntime protocol)
     # =========================================================================
