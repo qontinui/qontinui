@@ -44,10 +44,9 @@ logging.basicConfig(
 
 
 def _emit(result: dict[str, Any]) -> None:
-    """Print result as JSON on stdout and exit."""
+    """Print result as JSON on stdout."""
     # Ensure ASCII so Windows console doesn't choke on unicode
     print(json.dumps(result, ensure_ascii=True))
-    sys.exit(0)
 
 
 def _failure(start: float, summary: str, error: str) -> dict[str, Any]:
@@ -151,190 +150,224 @@ def main() -> None:
     # Connect to UI Bridge (optional)
     connection: Any = None
     connection_cm: Any = None
-    if ui_bridge_url:
-        try:
-            from qontinui.discovery.target_connection import (
-                ExplorationConfig,
-                create_connection,
-            )
+    try:
+        if ui_bridge_url:
+            try:
+                from qontinui.discovery.target_connection import (
+                    ExplorationConfig,
+                    create_connection,
+                )
 
-            conn_config = ExplorationConfig(
-                target_type=target_type,
-                connection_url=ui_bridge_url,
-                timeout_seconds=30.0,
-            )
-            # create_connection returns a TargetConnection which is an async
-            # context manager; enter it manually so we can keep it alive for
-            # the duration of orchestration.
-            connection_cm = create_connection(conn_config)
-            connection = run_async_safe(connection_cm.__aenter__())
-            logger.info("Connected to UI Bridge at %s", ui_bridge_url)
-        except Exception as exc:
-            logger.warning("UI Bridge connection failed: %s - continuing without", exc)
-            connection = None
-            connection_cm = None
+                conn_config = ExplorationConfig(
+                    target_type=target_type,
+                    connection_url=ui_bridge_url,
+                    timeout_seconds=30.0,
+                )
+                # create_connection returns a TargetConnection which is an async
+                # context manager; enter it manually so we can keep it alive for
+                # the duration of orchestration.
+                connection_cm = create_connection(conn_config)
+                connection = run_async_safe(connection_cm.__aenter__())
+                logger.info("Connected to UI Bridge at %s", ui_bridge_url)
+            except Exception as exc:
+                logger.warning("UI Bridge connection failed: %s - continuing without", exc)
+                connection = None
+                connection_cm = None
 
-    # Build planner
-    registry = create_default_registry()
-    planner = registry.build_planner()
+        # Build planner
+        registry = create_default_registry()
+        planner = registry.build_planner()
 
-    # If no connection, do plan-only (no execution)
-    if connection is None:
-        try:
-            # Minimal world state: just what we know from StateManager
-            world_state = adapter.snapshot()
-            plan_result = planner.find_plan(world_state, [task_tuple])
+        # If no connection, do plan-only (no execution)
+        if connection is None:
+            try:
+                # Minimal world state: just what we know from StateManager
+                world_state = adapter.snapshot()
+                plan_result = planner.find_plan(world_state, [task_tuple])
 
-            elapsed = (time.time() - start) * 1000
-            if not plan_result.success or not plan_result.actions:
+                if not plan_result.success:
+                    _emit(
+                        _failure(
+                            start,
+                            f"No plan found (no UI Bridge): {plan_result.error}",
+                            plan_result.error or "No plan",
+                        )
+                    )
+                    return
+
+                if not plan_result.actions:
+                    # Goal already satisfied — nothing to execute
+                    elapsed = (time.time() - start) * 1000
+                    _emit(
+                        {
+                            "plan_found": True,
+                            "execution_success": True,
+                            "plan_actions": 0,
+                            "steps_succeeded": 0,
+                            "replans": 0,
+                            "total_time_ms": elapsed,
+                            "summary": "Goal already satisfied (no actions needed, no UI Bridge)",
+                            "error": None,
+                        }
+                    )
+                    return
+
+                elapsed = (time.time() - start) * 1000
+                # Plan-only: report as "plan_found but not executed"
+                actions_summary = "; ".join(
+                    " ".join(str(a) for a in action) for action in plan_result.actions[:5]
+                )
+                if len(plan_result.actions) > 5:
+                    actions_summary += f"... (+{len(plan_result.actions) - 5} more)"
+
+                _emit(
+                    {
+                        "plan_found": True,
+                        "execution_success": False,  # Not executed without UI Bridge
+                        "plan_actions": len(plan_result.actions),
+                        "steps_succeeded": 0,
+                        "replans": 0,
+                        "total_time_ms": elapsed,
+                        "summary": f"Plan found (not executed, no UI Bridge): {actions_summary}",
+                        "error": "No UI Bridge connection - plan not executed",
+                    }
+                )
+                return
+            except Exception as exc:
                 _emit(
                     _failure(
                         start,
-                        f"No plan found (no UI Bridge): {plan_result.error}",
-                        plan_result.error or "No plan",
+                        f"Planning error: {exc}",
+                        f"{exc}\n{traceback.format_exc()}",
                     )
                 )
                 return
 
-            # Plan-only: report as "plan_found but not executed"
-            actions_summary = "; ".join(
-                " ".join(str(a) for a in action) for action in plan_result.actions[:5]
-            )
-            if len(plan_result.actions) > 5:
-                actions_summary += f"... (+{len(plan_result.actions) - 5} more)"
+        # Full orchestration: snapshot world state from UI Bridge + plan + execute
+        try:
+            world_state = run_async_safe(create_world_state_snapshot(adapter, connection))
+        except Exception as exc:
+            _emit(_failure(start, f"World state snapshot failed: {exc}", str(exc)))
+            return
 
+        plan_result = planner.find_plan(world_state, [task_tuple])
+
+        if not plan_result.success:
+            _emit(
+                _failure(
+                    start,
+                    f"No plan found: {plan_result.error}",
+                    plan_result.error or "No plan",
+                )
+            )
+            return
+
+        if not plan_result.actions:
+            # Goal already satisfied — nothing to execute
+            elapsed = (time.time() - start) * 1000
             _emit(
                 {
                     "plan_found": True,
-                    "execution_success": False,  # Not executed without UI Bridge
+                    "execution_success": True,
+                    "plan_actions": 0,
+                    "steps_succeeded": 0,
+                    "replans": 0,
+                    "total_time_ms": elapsed,
+                    "summary": "Goal already satisfied (no actions needed)",
+                    "error": None,
+                }
+            )
+            return
+
+        # Create blackboard and populate
+        blackboard = Blackboard()
+        populate_blackboard(
+            blackboard,
+            dict(world_state.element_visible),
+            dict(world_state.element_values),
+            connection=connection,
+            state_manager=state_manager,
+        )
+
+        # Action handlers need HAL; if HAL init failed, execution will fail cleanly
+        if hal is None:
+            elapsed = (time.time() - start) * 1000
+            _emit(
+                {
+                    "plan_found": True,
+                    "execution_success": False,
                     "plan_actions": len(plan_result.actions),
                     "steps_succeeded": 0,
                     "replans": 0,
                     "total_time_ms": elapsed,
-                    "summary": f"Plan found (not executed, no UI Bridge): {actions_summary}",
-                    "error": "No UI Bridge connection - plan not executed",
+                    "summary": "Plan found but HAL unavailable",
+                    "error": "HAL initialization failed",
                 }
             )
             return
+
+        action_handlers = create_action_handlers(
+            hal=hal,
+            ui_connection=connection,
+            state_manager=state_manager,
+        )
+
+        executor = PlanExecutor(
+            planner=planner,
+            adapter=adapter,
+            action_handlers=action_handlers,
+            max_replans=max_replans,
+        )
+
+        try:
+            exec_result = executor.execute(
+                plan=plan_result.actions,
+                initial_state=world_state,
+                original_tasks=[task_tuple],
+                blackboard=blackboard,
+            )
         except Exception as exc:
             _emit(
                 _failure(
                     start,
-                    f"Planning error: {exc}",
+                    f"Plan execution crashed: {exc}",
                     f"{exc}\n{traceback.format_exc()}",
                 )
             )
             return
 
-    # Full orchestration: snapshot world state from UI Bridge + plan + execute
-    try:
-        world_state = run_async_safe(create_world_state_snapshot(adapter, connection))
-    except Exception as exc:
-        _emit(_failure(start, f"World state snapshot failed: {exc}", str(exc)))
-        return
-
-    plan_result = planner.find_plan(world_state, [task_tuple])
-
-    if not plan_result.success or not plan_result.actions:
-        _emit(
-            _failure(
-                start,
-                f"No plan found: {plan_result.error}",
-                plan_result.error or "No plan",
-            )
-        )
-        return
-
-    # Create blackboard and populate
-    blackboard = Blackboard()
-    populate_blackboard(
-        blackboard,
-        dict(world_state.element_visible),
-        dict(world_state.element_values),
-        connection=connection,
-        state_manager=state_manager,
-    )
-
-    # Action handlers need HAL; if HAL init failed, execution will fail cleanly
-    if hal is None:
         elapsed = (time.time() - start) * 1000
+        steps_succeeded = sum(
+            1 for s in exec_result.steps_executed if getattr(s.status, "value", "") == "success"
+        )
+
+        actions_summary = "; ".join(
+            " ".join(str(a) for a in action) for action in plan_result.actions[:5]
+        )
+        if len(plan_result.actions) > 5:
+            actions_summary += f"... (+{len(plan_result.actions) - 5} more)"
+
         _emit(
             {
                 "plan_found": True,
-                "execution_success": False,
+                "execution_success": exec_result.success,
                 "plan_actions": len(plan_result.actions),
-                "steps_succeeded": 0,
-                "replans": 0,
+                "steps_succeeded": steps_succeeded,
+                "replans": exec_result.replans,
                 "total_time_ms": elapsed,
-                "summary": "Plan found but HAL unavailable",
-                "error": "HAL initialization failed",
+                "summary": (
+                    f"Executed {steps_succeeded}/{len(plan_result.actions)} actions, "
+                    f"{exec_result.replans} replans: {actions_summary}"
+                ),
+                "error": exec_result.error,
             }
         )
-        return
-
-    action_handlers = create_action_handlers(
-        hal=hal,
-        ui_connection=connection,
-        state_manager=state_manager,
-    )
-
-    executor = PlanExecutor(
-        planner=planner,
-        adapter=adapter,
-        action_handlers=action_handlers,
-        max_replans=max_replans,
-    )
-
-    try:
-        exec_result = executor.execute(
-            plan=plan_result.actions,
-            initial_state=world_state,
-            original_tasks=[task_tuple],
-            blackboard=blackboard,
-        )
-    except Exception as exc:
-        _emit(
-            _failure(
-                start,
-                f"Plan execution crashed: {exc}",
-                f"{exc}\n{traceback.format_exc()}",
-            )
-        )
-        return
-
-    elapsed = (time.time() - start) * 1000
-    steps_succeeded = sum(
-        1 for s in exec_result.steps_executed if getattr(s.status, "value", "") == "success"
-    )
-
-    # Close UI Bridge connection (best-effort)
-    try:
+    finally:
         if connection_cm is not None:
-            run_async_safe(connection_cm.__aexit__(None, None, None))
-    except Exception:
-        pass
-
-    actions_summary = "; ".join(
-        " ".join(str(a) for a in action) for action in plan_result.actions[:5]
-    )
-    if len(plan_result.actions) > 5:
-        actions_summary += f"... (+{len(plan_result.actions) - 5} more)"
-
-    _emit(
-        {
-            "plan_found": True,
-            "execution_success": exec_result.success,
-            "plan_actions": len(plan_result.actions),
-            "steps_succeeded": steps_succeeded,
-            "replans": exec_result.replans,
-            "total_time_ms": elapsed,
-            "summary": (
-                f"Executed {steps_succeeded}/{len(plan_result.actions)} actions, "
-                f"{exec_result.replans} replans: {actions_summary}"
-            ),
-            "error": exec_result.error,
-        }
-    )
+            try:
+                run_async_safe(connection_cm.__aexit__(None, None, None))
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":

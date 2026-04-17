@@ -6,13 +6,13 @@ Handlers raise RuntimeError on failure (PlanExecutor catches and triggers replan
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 from collections.abc import Callable
 from typing import Any
 
 from qontinui.discovery.target_connection import Element
+from qontinui.planning_integration.world_state_bridge import run_async_safe
 
 logger = logging.getLogger(__name__)
 
@@ -21,61 +21,47 @@ _MAX_POLL_RETRIES: int = 10
 _POLL_INTERVAL_S: float = 0.5
 
 
-def _run_async(coro: Any) -> Any:
-    """Run an async coroutine from synchronous code.
+def _find_element(blackboard: Any, element_id: str) -> Element:
+    """Find an element by ID, using the cached raw element list when available.
 
-    Handles the case where an event loop may or may not already be running.
+    Falls back to querying the UI Bridge connection directly if no cached
+    list exists.  Raises RuntimeError if the element cannot be found.
     """
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = None
+    elements = blackboard.get("_raw_elements")
+    if elements is None:
+        conn = blackboard.get("_ui_connection")
+        if conn is None:
+            raise RuntimeError(
+                f"No UI connection for element lookup: {element_id}"
+            )
+        elements = run_async_safe(conn.find_elements())
+        blackboard.set("_raw_elements", elements)
 
-    if loop is not None and loop.is_running():
-        # We're inside a running loop (e.g. Jupyter, nested async).
-        # Create a new thread to run the coroutine.
-        import concurrent.futures
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            future = pool.submit(asyncio.run, coro)
-            return future.result()
-    else:
-        return asyncio.run(coro)
-
-
-async def _find_element_async(ui_connection: Any, element_id: str) -> Element:
-    """Query the UI Bridge connection for an element by ID.
-
-    Returns the Element if found; raises RuntimeError otherwise.
-    """
-    elements: list[Element] = await ui_connection.find_elements()
     for elem in elements:
         if elem.id == element_id:
             return elem
-    raise RuntimeError(f"Element '{element_id}' not found via UI Bridge")
-
-
-def _find_element(blackboard: Any, element_id: str) -> Element:
-    """Synchronous wrapper to find an element via the UI Bridge connection.
-
-    Looks up ``_ui_connection`` from the blackboard, queries it, and
-    returns the matching Element or raises RuntimeError.
-    """
-    ui_connection = blackboard.get("_ui_connection")
-    if ui_connection is None:
-        raise RuntimeError(
-            "No UI Bridge connection available in blackboard (_ui_connection)"
-        )
-    return _run_async(_find_element_async(ui_connection, element_id))
+    raise RuntimeError(f"Element not found: {element_id}")
 
 
 def _refresh_elements(blackboard: Any) -> list[Element]:
-    """Re-fetch all elements and cache them on the blackboard."""
-    ui_connection = blackboard.get("_ui_connection")
-    if ui_connection is None:
+    """Re-fetch all elements and update the blackboard.
+
+    Stores the visibility dict under ``_ui_elements`` (matching the format
+    used by :func:`populate_blackboard`) and the raw element list under
+    ``_raw_elements`` for element-lookup use.
+    """
+    conn = blackboard.get("_ui_connection")
+    if conn is None:
         return []
-    elements: list[Element] = _run_async(ui_connection.find_elements())
-    blackboard.set("_ui_elements", elements)
+    elements: list[Element] = run_async_safe(conn.find_elements())
+    # Store as dict[str, bool] matching the format populate_blackboard uses
+    blackboard.set("_ui_elements", {e.id: e.is_visible for e in elements})
+    blackboard.set("_ui_values", {
+        e.id: (e.attributes.get("value", "") or e.text_content or "")
+        for e in elements
+        if e.tag_name in ("input", "textarea", "select")
+    })
+    blackboard.set("_raw_elements", elements)
     return elements
 
 
@@ -217,7 +203,7 @@ def create_action_handlers(
 
         logger.debug("wait_for_element: %s", element_id)
         for attempt in range(_MAX_POLL_RETRIES):
-            elements: list[Element] = _run_async(ui_conn.find_elements())
+            elements: list[Element] = run_async_safe(ui_conn.find_elements())
             for elem in elements:
                 if elem.id == element_id and elem.is_visible:
                     logger.info(
@@ -225,7 +211,8 @@ def create_action_handlers(
                         element_id,
                         attempt + 1,
                     )
-                    blackboard.set("_ui_elements", elements)
+                    blackboard.set("_ui_elements", {e.id: e.is_visible for e in elements})
+                    blackboard.set("_raw_elements", elements)
                     return
             time.sleep(_POLL_INTERVAL_S)
 
