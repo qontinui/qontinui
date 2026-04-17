@@ -77,6 +77,7 @@ def main() -> None:
     ui_bridge_url = cfg.get("ui_bridge_url")
     target_type = cfg.get("target_type", "web")
     state_machine_path = cfg.get("state_machine_path")
+    methods_directory = cfg.get("methods_directory")
     max_replans = int(cfg.get("max_replans", 5))
 
     # Normalize task: string -> single-element tuple, list -> tuple
@@ -174,8 +175,22 @@ def main() -> None:
                 connection = None
                 connection_cm = None
 
-        # Build planner
+        # Build planner with default + custom methods
         registry = create_default_registry()
+        if methods_directory:
+            try:
+                from multistate.planning.methods.loader import MethodLoader
+
+                loaded = MethodLoader.load_from_directory(methods_directory)
+                for task_name, method_list in loaded.items():
+                    registry.register_methods(task_name, method_list)
+                logger.info(
+                    "Loaded %d methods from %s",
+                    sum(len(v) for v in loaded.values()),
+                    methods_directory,
+                )
+            except Exception as exc:
+                logger.warning("Failed to load methods from %s: %s", methods_directory, exc)
         planner = registry.build_planner()
 
         # If no connection, do plan-only (no execution)
