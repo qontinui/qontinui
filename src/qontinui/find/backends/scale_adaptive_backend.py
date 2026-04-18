@@ -182,7 +182,7 @@ class _VGG13FeatureExtractor:
 
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         tensor = self._transform(rgb)  # type: ignore[misc]
-        result = tensor.unsqueeze(0).to(self._device)
+        result: torch.Tensor = tensor.unsqueeze(0).to(self._device)
         return result
 
     def extract(self, bgr: np.ndarray) -> torch.Tensor:
@@ -197,7 +197,7 @@ class _VGG13FeatureExtractor:
         self._last_used = time.monotonic()
         tensor = self._preprocess(bgr)
         with torch.no_grad():
-            features = self._model(tensor)  # type: ignore[misc]
+            features: torch.Tensor = self._model(tensor)  # type: ignore[misc]
         return features
 
     @property
