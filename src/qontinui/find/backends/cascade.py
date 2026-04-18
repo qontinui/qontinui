@@ -734,6 +734,18 @@ class CascadeDetector(DetectionBackend):
         except ImportError:
             logger.debug("CascadeDetector: InvariantMatchBackend unavailable")
 
+        # Scale-adaptive deep template matching (~140ms) — robust-TM
+        # (kamata1729, APSIPA 2017) VGG-13 multi-scale correlation.
+        # Only registered when QONTINUI_ENABLE_SCALE_ADAPTIVE_MATCH=1 so
+        # the default cascade path is unaffected during rollout.
+        try:
+            from .scale_adaptive_backend import ScaleAdaptiveBackend, is_enabled
+
+            if is_enabled():
+                backends.append(ScaleAdaptiveBackend())
+        except ImportError:
+            pass  # Optional dependency (torch), silent skip
+
         # QATM (~200ms) — quality-aware deep template matching with VGG-19.
         # Only included when QONTINUI_QATM_ENABLED=true.
         try:
