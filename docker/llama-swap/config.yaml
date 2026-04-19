@@ -104,7 +104,7 @@ models:
       --host 127.0.0.1
       --port ${PORT}
       --dtype bfloat16
-      --max-model-len 4096
+      --max-model-len 8192
       --trust-remote-code
     proxy: "http://127.0.0.1:${PORT}"
     checkEndpoint: /health
