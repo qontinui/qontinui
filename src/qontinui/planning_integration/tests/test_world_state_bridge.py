@@ -180,9 +180,7 @@ def test_refresh_blackboard() -> None:
 
     # Now the connection returns different elements
     conn.find_elements.return_value = [
-        _make_element(
-            id="b", tag_name="input", is_visible=False, attributes={"value": "fresh"}
-        ),
+        _make_element(id="b", tag_name="input", is_visible=False, attributes={"value": "fresh"}),
     ]
 
     asyncio.run(refresh_blackboard(bb))

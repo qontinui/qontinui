@@ -35,7 +35,9 @@ import pytest
 # and we use importlib for modules whose names clash with packages already
 # on sys.path (e.g. "models").
 # ---------------------------------------------------------------------------
-_ROOT = Path(__file__).resolve().parents[4]  # …/qontinui/tests/e2e/broken_accessibility -> qontinui-root
+_ROOT = (
+    Path(__file__).resolve().parents[4]
+)  # …/qontinui/tests/e2e/broken_accessibility -> qontinui-root
 _RUNNER_BRIDGE = _ROOT / "qontinui-runner" / "python-bridge"
 _TRAIN_ROOT = _ROOT / "qontinui-train"
 
@@ -128,6 +130,7 @@ def test_trajectory_logger_notepad_3_actions(live_app):
             # (prevents SHA256 exact dedup from dropping records)
             try:
                 import pyautogui
+
                 pyautogui.moveTo(100 + i * 150, 100 + i * 100, duration=0)
             except ImportError:
                 pass
@@ -162,9 +165,10 @@ def test_trajectory_logger_notepad_3_actions(live_app):
             # Action (must be present for dynamic records)
             assert "action" in rec, f"Record {i}: missing action"
             assert rec["action"] is not None, f"Record {i}: action is None"
-            assert rec["action"]["type"] in ("click", "type"), (
-                f"Record {i}: unexpected action type {rec['action']['type']}"
-            )
+            assert rec["action"]["type"] in (
+                "click",
+                "type",
+            ), f"Record {i}: unexpected action type {rec['action']['type']}"
 
             # Source tag
             assert rec["source"] == "dynamic", f"Record {i}: source is not 'dynamic'"

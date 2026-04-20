@@ -35,7 +35,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from ..find.detections import Detections
@@ -101,7 +101,7 @@ class ZoneCondition:
             logger.warning("Unknown operator %r, defaulting to >=", self.operator)
             op_enum = ComparisonOperator.GE
 
-        result = _OP_FNS[op_enum](count, self.count_threshold)
+        result = cast(bool, _OP_FNS[op_enum](count, self.count_threshold))
         logger.debug(
             "ZoneCondition: %d %s %d → %s (%s)",
             count,

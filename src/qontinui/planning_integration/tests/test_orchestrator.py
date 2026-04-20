@@ -74,9 +74,7 @@ def test_run_htn_plan_success() -> None:
     )
 
     success_result = ExecutionResult(success=True)
-    with patch(
-        "qontinui.planning_integration.orchestrator.PlanExecutor"
-    ) as MockExecutor:
+    with patch("qontinui.planning_integration.orchestrator.PlanExecutor") as MockExecutor:
         instance = MockExecutor.return_value
         instance.execute.return_value = success_result
 
@@ -150,9 +148,7 @@ def test_run_htn_plan_sync_wrapper() -> None:
     )
 
     success_result = ExecutionResult(success=True)
-    with patch(
-        "qontinui.planning_integration.orchestrator.PlanExecutor"
-    ) as MockExecutor:
+    with patch("qontinui.planning_integration.orchestrator.PlanExecutor") as MockExecutor:
         instance = MockExecutor.return_value
         instance.execute.return_value = success_result
 

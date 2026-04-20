@@ -50,7 +50,6 @@ import pytest
 from qontinui.find.backends.base import DetectionResult
 from qontinui.find.detections import Detections
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -103,9 +102,7 @@ class TestConstruction:
 
     def test_from_results_with_normalization(self):
         results = _make_results(2)
-        d = Detections.from_detection_results(
-            results, screen_width=1920, screen_height=1080
-        )
+        d = Detections.from_detection_results(results, screen_width=1920, screen_height=1080)
         assert d.normalized_xyxy is not None
         assert d.normalized_xyxy.shape == (2, 4)
         # First box: x1=0/1920, y1=0/1080
@@ -231,7 +228,7 @@ class TestRoundTrip:
         d = Detections.from_detection_results(original, screen_width=1920, screen_height=1080)
         recovered = d.to_detection_results()
         assert len(recovered) == 3
-        for orig, rec in zip(original, recovered):
+        for orig, rec in zip(original, recovered, strict=False):
             assert rec.x == orig.x
             assert rec.y == orig.y
             assert rec.width == orig.width

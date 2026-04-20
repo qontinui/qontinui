@@ -42,9 +42,7 @@ class _MockFinder:
 
 sys.meta_path.insert(0, _MockFinder())
 
-import cv2
 import numpy as np
-import pytest
 
 from qontinui.find.annotators import (
     BoundingBoxAnnotator,
@@ -53,7 +51,6 @@ from qontinui.find.annotators import (
     RegionAnnotator,
 )
 from qontinui.find.detections import Detections
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

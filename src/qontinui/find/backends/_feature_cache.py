@@ -40,9 +40,7 @@ def hash_screenshot(image_bytes: bytes | memoryview | Any) -> str:
     if isinstance(image_bytes, memoryview):
         image_bytes = image_bytes.tobytes()
     if not isinstance(image_bytes, bytes):
-        raise TypeError(
-            "hash_screenshot expects bytes, memoryview, or tobytes()-capable object"
-        )
+        raise TypeError("hash_screenshot expects bytes, memoryview, or tobytes()-capable object")
     return hashlib.blake2b(image_bytes, digest_size=8).hexdigest()
 
 

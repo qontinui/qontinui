@@ -291,7 +291,8 @@ class ElementClassifier:
                 element_type = await self.classify_element(element)
 
             # Get element properties
-            properties = await element.evaluate("""el => {
+            properties = await element.evaluate(
+                """el => {
                 const computedStyle = window.getComputedStyle(el);
                 return {
                     tagName: el.tagName.toLowerCase(),
@@ -323,7 +324,8 @@ class ElementClassifier:
                                computedStyle.visibility !== 'hidden' &&
                                computedStyle.opacity !== '0',
                 };
-            }""")
+            }"""
+            )
 
             # Generate selector
             selector = await self._generate_selector(element, properties)
@@ -398,7 +400,8 @@ class ElementClassifier:
         """Generate a CSS selector for the element."""
         try:
             # Try to generate a unique selector
-            selector = await element.evaluate("""el => {
+            selector = await element.evaluate(
+                """el => {
                 // Try ID first
                 if (el.id) {
                     return '#' + CSS.escape(el.id);
@@ -451,7 +454,8 @@ class ElementClassifier:
                 }
 
                 return path.join(' > ');
-            }""")
+            }"""
+            )
             return cast(str, selector)
         except Exception:
             # Fallback to basic selector

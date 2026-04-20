@@ -314,7 +314,11 @@ class KeyboardActionExecutor(ActionExecutorBase):
 
         # Try accessibility-pattern type first when the last FIND came from an
         # accessibility backend (metadata contains a 'ref').
-        if text and self.context.hal_container is not None and self.context.last_action_result is not None:
+        if (
+            text
+            and self.context.hal_container is not None
+            and self.context.last_action_result is not None
+        ):
             from .accessibility_action import try_accessibility_type
 
             a11y_result = await try_accessibility_type(

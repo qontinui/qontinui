@@ -239,12 +239,14 @@ class StatePersistence:
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT state_id, name, elements, blocking, blocks, group_id,
                        path_cost, metadata
                 FROM ui_bridge_states
                 ORDER BY name
-                """)
+                """
+            )
 
             return [self._row_to_state(row) for row in cursor.fetchall()]
 
@@ -466,13 +468,15 @@ class StatePersistence:
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT transition_id, name, from_states, activate_states, exit_states,
                        actions, activate_groups, exit_groups, path_cost, stays_visible,
                        metadata
                 FROM ui_bridge_transitions
                 ORDER BY name
-                """)
+                """
+            )
 
             return [self._row_to_transition(row) for row in cursor.fetchall()]
 
@@ -582,11 +586,13 @@ class StatePersistence:
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT group_id, name, states, metadata
                 FROM ui_bridge_state_groups
                 ORDER BY name
-                """)
+                """
+            )
 
             groups = []
             for row in cursor.fetchall():

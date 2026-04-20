@@ -296,6 +296,7 @@ class TestCascadeBackendOrdering:
 class TestCascadeTimeBudget:
     def test_max_time_ms_stops_cascade(self):
         """When max_time_ms is set, cascade stops after time budget is exhausted."""
+
         # Create a slow backend that sleeps
         class SlowBackend(StubBackend):
             def find(self, needle, haystack, config):
@@ -307,15 +308,21 @@ class TestCascadeTimeBudget:
         slow1 = SlowBackend("slow1", cost=10, supported_types=["template"])
         slow2 = SlowBackend("slow2", cost=20, supported_types=["template"])
         fast_result = StubBackend(
-            "fast_result", cost=30, supported_types=["template"],
+            "fast_result",
+            cost=30,
+            supported_types=["template"],
             results=[_make_result(0.95, "fast_result")],
         )
 
         cascade = CascadeDetector(backends=[slow1, slow2, fast_result])
-        results = cascade.find("x", None, {
-            "needle_type": "template",
-            "max_time_ms": 50,  # Only 50ms budget — should stop after slow1
-        })
+        results = cascade.find(
+            "x",
+            None,
+            {
+                "needle_type": "template",
+                "max_time_ms": 50,  # Only 50ms budget — should stop after slow1
+            },
+        )
 
         # slow1 should have run (it takes 100ms but we check BEFORE running)
         assert slow1.find_called
@@ -326,8 +333,9 @@ class TestCascadeTimeBudget:
     def test_max_time_ms_none_runs_all(self):
         """When max_time_ms is None, all backends are tried."""
         b1 = StubBackend("b1", cost=10, supported_types=["template"])
-        b2 = StubBackend("b2", cost=20, supported_types=["template"],
-                         results=[_make_result(0.95, "b2")])
+        b2 = StubBackend(
+            "b2", cost=20, supported_types=["template"], results=[_make_result(0.95, "b2")]
+        )
 
         cascade = CascadeDetector(backends=[b1, b2])
         results = cascade.find("x", None, {"needle_type": "template"})

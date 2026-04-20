@@ -33,7 +33,7 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 # Import multistate components
 try:
@@ -473,12 +473,10 @@ class UIBridgeRuntime:
         for sid in active_state_ids:
             state = self.manager.states.get(sid)
             if state is None:
-                self.logger.warning(
-                    "Introspection: unknown state id '%s' (not registered)", sid
-                )
+                self.logger.warning("Introspection: unknown state id '%s' (not registered)", sid)
                 continue
             resolved.add(state)
-        saved = self.manager.active_states.copy()
+        saved = cast(set[Any], self.manager.active_states.copy())
         self.manager.active_states = resolved
         return saved
 
@@ -554,9 +552,12 @@ class UIBridgeRuntime:
         try:
             transitions = list(self.manager.transitions.values())
             active = set(self.manager.active_states)
-            return PathVisualizer.generate_mermaid(
-                transitions=transitions,
-                active_states=active if active else None,
+            return cast(
+                str,
+                PathVisualizer.generate_mermaid(
+                    transitions=transitions,
+                    active_states=active if active else None,
+                ),
             )
         finally:
             self._restore_active_states(saved)

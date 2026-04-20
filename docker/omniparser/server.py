@@ -138,7 +138,7 @@ async def parse(
     # Stage 2: OCR on each region
     img_np = np.array(pil_img)
     for b in boxes:
-        x1, y1, x2, y2 = [int(v) for v in b["xyxy"]]
+        x1, y1, x2, y2 = (int(v) for v in b["xyxy"])
         crop = img_np[y1:y2, x1:x2]
         if crop.size == 0:
             continue
@@ -154,7 +154,7 @@ async def parse(
     for b in boxes:
         if "ocr_text" in b:
             continue
-        x1, y1, x2, y2 = [int(v) for v in b["xyxy"]]
+        x1, y1, x2, y2 = (int(v) for v in b["xyxy"])
         crop_img = pil_img.crop((x1, y1, x2, y2))
         if crop_img.size[0] == 0 or crop_img.size[1] == 0:
             continue
@@ -180,7 +180,7 @@ async def parse(
     # Build response
     elements = []
     for b in boxes:
-        x1, y1, x2, y2 = [int(v) for v in b["xyxy"]]
+        x1, y1, x2, y2 = (int(v) for v in b["xyxy"])
         label = b.get("ocr_text") or b.get("caption")
         elements.append(
             {

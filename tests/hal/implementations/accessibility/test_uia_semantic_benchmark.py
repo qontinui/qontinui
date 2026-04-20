@@ -48,10 +48,10 @@ from qontinui.hal.implementations.accessibility.uia_semantic import (
     fuzzy_match_nodes,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers shared with test_uia_semantic.py
 # ---------------------------------------------------------------------------
+
 
 def _make_node(
     ref: str = "@e1",
@@ -98,12 +98,30 @@ def _make_snapshot(nodes: list[AccessibilityNode]) -> AccessibilitySnapshot:
 # Snapshot fixture
 # ---------------------------------------------------------------------------
 
+
 def _make_large_snapshot(num_nodes: int = 300) -> AccessibilitySnapshot:
     """Create a snapshot with many varied nodes to stress the sieve."""
     common_names = [
-        "Save", "Cancel", "OK", "Submit", "Close", "Open", "New", "Delete",
-        "Edit", "Copy", "Paste", "Cut", "Undo", "Redo", "Help", "About",
-        "Settings", "Preferences", "File", "View",
+        "Save",
+        "Cancel",
+        "OK",
+        "Submit",
+        "Close",
+        "Open",
+        "New",
+        "Delete",
+        "Edit",
+        "Copy",
+        "Paste",
+        "Cut",
+        "Undo",
+        "Redo",
+        "Help",
+        "About",
+        "Settings",
+        "Preferences",
+        "File",
+        "View",
     ]
     long_names = [
         "Save Document As PDF",
@@ -155,6 +173,7 @@ def _make_large_snapshot(num_nodes: int = 300) -> AccessibilitySnapshot:
 # Benchmark test class
 # ---------------------------------------------------------------------------
 
+
 class TestFuzzyMatchPerformance:
     """Performance benchmarks for the progressive ratio sieve in fuzzy_match_nodes."""
 
@@ -189,7 +208,7 @@ class TestFuzzyMatchPerformance:
         kws_list = [_extract_name_keywords(q) for q in queries]
 
         # Warm up
-        for kws, q in zip(kws_list, queries):
+        for kws, q in zip(kws_list, queries, strict=False):
             q_lower = q.lower()
             for name in node_names:
                 for kw in kws:
@@ -201,7 +220,7 @@ class TestFuzzyMatchPerformance:
         # ----------------------------------------------------------------
         start = time.perf_counter()
         for _ in range(iterations):
-            for kws, q in zip(kws_list, queries):
+            for kws, q in zip(kws_list, queries, strict=False):
                 q_lower = q.lower()
                 for name in node_names:
                     for kw in kws:
@@ -214,7 +233,7 @@ class TestFuzzyMatchPerformance:
         # ----------------------------------------------------------------
         start = time.perf_counter()
         for _ in range(iterations):
-            for kws, q in zip(kws_list, queries):
+            for kws, q in zip(kws_list, queries, strict=False):
                 q_lower = q.lower()
                 for name in node_names:
                     for kw in kws:
@@ -286,7 +305,7 @@ class TestFuzzyMatchPerformance:
 
         pruned = 0
         total = 0
-        for kws, q in zip(kws_list, queries):
+        for kws, q in zip(kws_list, queries, strict=False):
             q_lower = q.lower()
             for name in node_names:
                 for kw in kws:
@@ -301,8 +320,7 @@ class TestFuzzyMatchPerformance:
 
         prune_pct = 100.0 * pruned / total
         print(
-            f"\nSieve prune rate (min_score={min_score}): "
-            f"{pruned}/{total} = {prune_pct:.1f}%"
+            f"\nSieve prune rate (min_score={min_score}): " f"{pruned}/{total} = {prune_pct:.1f}%"
         )
 
         assert prune_pct >= 90.0, (
@@ -328,6 +346,5 @@ class TestFuzzyMatchPerformance:
         print(f"\nNo-match latency: {per_call_ms:.1f} ms per call (50 calls, 300 nodes)")
 
         assert per_call_ms < 100, (
-            f"Expected < 100 ms per call on 300-node no-match query, "
-            f"got {per_call_ms:.1f} ms"
+            f"Expected < 100 ms per call on 300-node no-match query, " f"got {per_call_ms:.1f} ms"
         )

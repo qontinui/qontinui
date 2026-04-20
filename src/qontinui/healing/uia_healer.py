@@ -58,7 +58,7 @@ class UIAElementFingerprint:
                     node.bounds.width,
                     node.bounds.height,
                 )
-            elif isinstance(node.bounds, (list, tuple)) and len(node.bounds) >= 4:
+            elif isinstance(node.bounds, list | tuple) and len(node.bounds) >= 4:
                 bounds = tuple(int(v) for v in node.bounds[:4])
 
         return cls(
@@ -327,7 +327,7 @@ class UIAHealer:
 
             if hasattr(bounds, "x"):
                 x, y = bounds.x, bounds.y
-            elif isinstance(bounds, (list, tuple)) and len(bounds) >= 2:
+            elif isinstance(bounds, list | tuple) and len(bounds) >= 2:
                 x, y = int(bounds[0]), int(bounds[1])
             else:
                 continue
@@ -379,7 +379,7 @@ class UIAHealer:
 
         if hasattr(bounds, "x"):
             x, y, w, h = bounds.x, bounds.y, bounds.width, bounds.height
-        elif isinstance(bounds, (list, tuple)) and len(bounds) >= 4:
+        elif isinstance(bounds, list | tuple) and len(bounds) >= 4:
             x, y, w, h = int(bounds[0]), int(bounds[1]), int(bounds[2]), int(bounds[3])
         else:
             return None

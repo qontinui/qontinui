@@ -23,7 +23,7 @@ Example::
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import cv2
 import numpy as np
@@ -162,7 +162,7 @@ class PolygonZone:
     def bounding_rect(self) -> tuple[int, int, int, int]:
         """Axis-aligned bounding rectangle ``(x, y, width, height)``."""
         contour = self.polygon.reshape((-1, 1, 2))
-        return cv2.boundingRect(contour)
+        return cast(tuple[int, int, int, int], cv2.boundingRect(contour))
 
     def __repr__(self) -> str:
         n_verts = len(self.polygon)

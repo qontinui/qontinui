@@ -16,8 +16,8 @@ from qontinui_schemas.accessibility import (
 )
 
 from qontinui.hal.implementations.accessibility.action_dispatch import (
+    _POST_ACTION_WAIT_S,
     ActionDispatchRegistry,
-    ActionResult,
     ButtonStrategy,
     CheckboxStrategy,
     ComboBoxStrategy,
@@ -25,10 +25,7 @@ from qontinui.hal.implementations.accessibility.action_dispatch import (
     SliderStrategy,
     TextBoxStrategy,
     TreeItemStrategy,
-    _DEFAULT_WAIT_S,
-    _POST_ACTION_WAIT_S,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

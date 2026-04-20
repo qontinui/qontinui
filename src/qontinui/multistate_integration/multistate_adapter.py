@@ -531,9 +531,7 @@ class MultiStateAdapter:
 
     # ==================== Trigger Introspection ====================
 
-    def _resolve_multistate_active_set(
-        self, active_state_ids: list[str] | None
-    ) -> set[Any] | None:
+    def _resolve_multistate_active_set(self, active_state_ids: list[str] | None) -> set[Any] | None:
         """Resolve caller-provided state IDs to MultiState ``State`` objects.
 
         Accepts either MultiState IDs (e.g. ``"state_login"``) or the string
@@ -564,9 +562,7 @@ class MultiStateAdapter:
             if qid in self.state_mappings:
                 resolved.add(self.state_mappings[qid].multistate_state)
             else:
-                logger.warning(
-                    "Introspection: Qontinui state id %s has no MultiState mapping", qid
-                )
+                logger.warning("Introspection: Qontinui state id %s has no MultiState mapping", qid)
         return resolved
 
     def _with_temporary_active_states(
@@ -674,9 +670,12 @@ class MultiStateAdapter:
         try:
             transitions = list(self.manager.transitions.values())
             active = set(self.manager.active_states)
-            return PathVisualizer.generate_mermaid(
-                transitions=transitions,
-                active_states=active if active else None,
+            return cast(
+                str,
+                PathVisualizer.generate_mermaid(
+                    transitions=transitions,
+                    active_states=active if active else None,
+                ),
             )
         finally:
             self._restore_active_states(saved)

@@ -478,11 +478,7 @@ class OmniParserDetector(BaseAnalyzer):
             from ultralytics import YOLO
 
             yolo_path = self._settings.model_path or self._settings.yolo_model
-            if (
-                not _Path(yolo_path).exists()
-                and "/" in yolo_path
-                and not yolo_path.endswith(".pt")
-            ):
+            if not _Path(yolo_path).exists() and "/" in yolo_path and not yolo_path.endswith(".pt"):
                 from huggingface_hub import hf_hub_download
 
                 logger.info(

@@ -15,7 +15,7 @@ import base64
 import io
 import logging
 import re
-from typing import Any
+from typing import Any, cast
 
 from .base import DetectionBackend, DetectionResult
 
@@ -48,9 +48,7 @@ class GroundingVLMBackend(DetectionBackend):
             centered on the predicted point. Defaults to 40.
     """
 
-    _SUPPORTED_NEEDLE_TYPES = frozenset(
-        {"template", "text", "description", "label"}
-    )
+    _SUPPORTED_NEEDLE_TYPES = frozenset({"template", "text", "description", "label"})
 
     def __init__(
         self,
@@ -83,9 +81,7 @@ class GroundingVLMBackend(DetectionBackend):
         """Return True — availability is checked lazily on first call."""
         return True
 
-    def find(
-        self, needle: Any, haystack: Any, config: dict[str, Any]
-    ) -> list[DetectionResult]:
+    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
         """Locate an element by sending the screenshot to the grounding model.
 
         Args:
@@ -113,9 +109,7 @@ class GroundingVLMBackend(DetectionBackend):
 
         point = self._parse_point(raw_text)
         if point is None:
-            logger.debug(
-                "GroundingVLMBackend: no <point> tag in response: %.120s", raw_text
-            )
+            logger.debug("GroundingVLMBackend: no <point> tag in response: %.120s", raw_text)
             return [
                 DetectionResult(
                     x=0,
@@ -175,13 +169,11 @@ class GroundingVLMBackend(DetectionBackend):
         for attr in ("description", "name", "label"):
             val = getattr(needle, attr, None)
             if val and isinstance(val, str):
-                return val.strip()
+                return cast(str, val.strip())
 
         return None
 
-    def _encode_image(
-        self, image: Any
-    ) -> tuple[str | None, int, int]:
+    def _encode_image(self, image: Any) -> tuple[str | None, int, int]:
         """Convert image to base-64 PNG string + (width, height).
 
         Returns (None, 0, 0) on failure.
@@ -240,9 +232,7 @@ class GroundingVLMBackend(DetectionBackend):
                     "content": [
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{img_b64}"
-                            },
+                            "image_url": {"url": f"data:image/png;base64,{img_b64}"},
                         },
                         {"type": "text", "text": prompt},
                     ],
@@ -264,11 +254,9 @@ class GroundingVLMBackend(DetectionBackend):
         try:
             with urllib.request.urlopen(req, timeout=self._timeout) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
-                return body["choices"][0]["message"]["content"]
+                return cast(str, body["choices"][0]["message"]["content"])
         except urllib.error.URLError:
-            logger.warning(
-                "GroundingVLMBackend: could not reach model at %s", url, exc_info=True
-            )
+            logger.warning("GroundingVLMBackend: could not reach model at %s", url, exc_info=True)
             return None
         except Exception:
             logger.exception("GroundingVLMBackend: model query failed")

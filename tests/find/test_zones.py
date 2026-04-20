@@ -52,7 +52,6 @@ from qontinui.state_management.zone_condition import (
     ZoneConditionEvaluator,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -61,12 +60,14 @@ from qontinui.state_management.zone_condition import (
 def _square_zone(x: int = 0, y: int = 0, size: int = 200) -> PolygonZone:
     """Create a square zone."""
     return PolygonZone(
-        polygon=np.array([
-            [x, y],
-            [x + size, y],
-            [x + size, y + size],
-            [x, y + size],
-        ]),
+        polygon=np.array(
+            [
+                [x, y],
+                [x + size, y],
+                [x + size, y + size],
+                [x, y + size],
+            ]
+        ),
     )
 
 

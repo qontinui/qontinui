@@ -99,9 +99,7 @@ class TestBackendShape:
         assert b.supports("description") is False
         assert b.supports("accessibility_id") is False
 
-    def test_is_enabled_helper(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_is_enabled_helper(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(ENV_FLAG, raising=False)
         assert is_enabled() is False
         monkeypatch.setenv(ENV_FLAG, "0")
@@ -121,9 +119,7 @@ class TestBackendShape:
         )
         assert results == []
 
-    def test_find_handles_unconvertible_inputs(
-        self, enabled_env: None
-    ) -> None:
+    def test_find_handles_unconvertible_inputs(self, enabled_env: None) -> None:
         b = ScaleAdaptiveBackend()
         # Strings should convert to None and yield an empty result.
         assert (
@@ -285,9 +281,7 @@ _DATASET = _load_dataset()
 @pytest.mark.parametrize(
     "record",
     _DATASET,
-    ids=[rec.get("id", f"rec_{i}") for i, rec in enumerate(_DATASET)]
-    if _DATASET
-    else None,
+    ids=[rec.get("id", f"rec_{i}") for i, rec in enumerate(_DATASET)] if _DATASET else None,
 )
 def test_regression_by_tag(record: dict[str, Any], enabled_env: None) -> None:
     """Smoke-run the backend against a tagged eval record.
@@ -322,9 +316,7 @@ def test_regression_by_tag(record: dict[str, Any], enabled_env: None) -> None:
         pytest.skip("record image files not readable")
 
     tags = record.get("tags") or []
-    tag_group = (
-        "resolution_scaled" if "resolution_scaled" in tags else "dpi_changed"
-    )
+    tag_group = "resolution_scaled" if "resolution_scaled" in tags else "dpi_changed"
     # Tag is surfaced via user_properties so downstream analysis can
     # split pass/fail by tag group without re-parsing the dataset.
     # pytest's request fixture would let us record this more formally;

@@ -43,7 +43,7 @@ def _node_center(node: AccessibilityNode) -> tuple[int, int] | None:
         return None
     if hasattr(b, "x"):
         return (b.x + b.width // 2, b.y + b.height // 2)
-    if isinstance(b, (list, tuple)) and len(b) >= 4:
+    if isinstance(b, list | tuple) and len(b) >= 4:
         x, y, w, h = int(b[0]), int(b[1]), int(b[2]), int(b[3])
         return (x + w // 2, y + h // 2)
     return None
@@ -56,7 +56,7 @@ def _node_top_left(node: AccessibilityNode) -> tuple[int, int] | None:
         return None
     if hasattr(b, "x"):
         return (b.x, b.y)
-    if isinstance(b, (list, tuple)) and len(b) >= 2:
+    if isinstance(b, list | tuple) and len(b) >= 2:
         return (int(b[0]), int(b[1]))
     return None
 

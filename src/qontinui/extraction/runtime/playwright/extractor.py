@@ -526,7 +526,8 @@ class PlaywrightExtractor(RuntimeExtractor):
             parsed = urlparse(current_url)
             origin = f"{parsed.scheme}://{parsed.netloc}"
 
-            links = await self.page.evaluate("""() => {
+            links = await self.page.evaluate(
+                """() => {
                 const anchors = document.querySelectorAll('a[href]');
                 const results = [];
                 for (const a of anchors) {
@@ -556,7 +557,8 @@ class PlaywrightExtractor(RuntimeExtractor):
                     }
                 }
                 return results;
-            }""")
+            }"""
+            )
 
             same_origin_links = []
             seen_urls = set()

@@ -179,7 +179,7 @@ class RefManager:
                         node.bounds.width,
                         node.bounds.height,
                     ]
-                elif isinstance(node.bounds, (list, tuple)):
+                elif isinstance(node.bounds, list | tuple):
                     bounds = list(node.bounds[:4])
 
             entries[ref] = {

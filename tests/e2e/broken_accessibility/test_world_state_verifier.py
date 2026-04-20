@@ -61,9 +61,7 @@ def _png_bytes_from_bgr(bgr_array) -> bytes:
 @pytest.fixture(scope="module")
 def wsm_client() -> WorldStateVerifierClient:
     """Shared WSM client. Skips the module if the endpoint isn't reachable."""
-    endpoint = os.environ.get(
-        "QONTINUI_WORLD_STATE_VERIFIER_ENDPOINT", "http://127.0.0.1:8100"
-    )
+    endpoint = os.environ.get("QONTINUI_WORLD_STATE_VERIFIER_ENDPOINT", "http://127.0.0.1:8100")
     model = os.environ.get("QONTINUI_WORLD_STATE_VERIFIER_MODEL", "cua-wsm")
     client = WorldStateVerifierClient(endpoint=endpoint, model=model)
     if not client.is_reachable():
@@ -108,7 +106,8 @@ def test_wsm_refuses_wrong_target_click(
     time.sleep(1.5)
 
     wins = [
-        w for w in gw.getAllWindows()
+        w
+        for w in gw.getAllWindows()
         if "paint" in (w.title or "").lower() and w.visible and w.width > 0
     ]
     if not wins:
@@ -129,8 +128,7 @@ def test_wsm_refuses_wrong_target_click(
     canvas_x = win.left + win.width // 2
     canvas_y = win.top + (win.height * 2) // 3
     logger.info(
-        "Clicking mspaint canvas interior at (%d, %d) — deliberately NOT "
-        "the red color swatch",
+        "Clicking mspaint canvas interior at (%d, %d) — deliberately NOT " "the red color swatch",
         canvas_x,
         canvas_y,
     )
@@ -175,7 +173,11 @@ def test_wsm_refuses_wrong_target_click(
     # and the observations should mention something about the wrong
     # target or no color selection — this exercises the prompt schema.
     if verdict.status == "refused":
-        assert verdict.refused_reason or "red" in verdict.observations.lower() or "color" in verdict.observations.lower(), (
+        assert (
+            verdict.refused_reason
+            or "red" in verdict.observations.lower()
+            or "color" in verdict.observations.lower()
+        ), (
             f"Refused verdict lacks reason or color/red mention: "
             f"observations={verdict.observations!r}, "
             f"refused_reason={verdict.refused_reason!r}"

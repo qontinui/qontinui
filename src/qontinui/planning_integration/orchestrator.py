@@ -163,6 +163,4 @@ def run_htn_plan_sync(
     Returns:
         An ExecutionResult summarising the outcome.
     """
-    return run_async_safe(
-        run_htn_plan(task, adapter, connection, hal, planner=planner)
-    )
+    return run_async_safe(run_htn_plan(task, adapter, connection, hal, planner=planner))

@@ -201,25 +201,29 @@ class RegionDetector:
             return None
 
         # Get semantic info
-        properties = await element.evaluate("""el => ({
+        properties = await element.evaluate(
+            """el => ({
             role: el.getAttribute('role'),
             ariaLabel: el.getAttribute('aria-label'),
             tagName: el.tagName.toLowerCase(),
             id: el.id || null,
             className: el.className || '',
             childCount: el.children.length,
-        })""")
+        })"""
+        )
 
         # Generate unique selector
         selector = await self._generate_selector(element, properties)
 
         # Count interactive elements inside
-        element_count = await element.evaluate("""el => {
+        element_count = await element.evaluate(
+            """el => {
             const interactives = el.querySelectorAll(
                 'button, a, input, select, textarea, [role="button"], [role="link"]'
             );
             return interactives.length;
-        }""")
+        }"""
+        )
 
         return DetectedRegion(
             id=self._generate_id(),
@@ -240,7 +244,8 @@ class RegionDetector:
     async def _generate_selector(self, element: ElementHandle, properties: dict[str, Any]) -> str:
         """Generate a CSS selector for the region."""
         try:
-            selector = await element.evaluate("""el => {
+            selector = await element.evaluate(
+                """el => {
                 if (el.id) {
                     return '#' + CSS.escape(el.id);
                 }
@@ -280,7 +285,8 @@ class RegionDetector:
                 }
 
                 return path.slice(-3).join(' > ');
-            }""")
+            }"""
+            )
             return cast(str, selector)
         except Exception:
             return cast(str, properties.get("tagName", "div"))
@@ -371,7 +377,8 @@ class RegionDetector:
 
         This is a fallback when semantic hints aren't available.
         """
-        analysis = await element.evaluate("""el => {
+        analysis = await element.evaluate(
+            """el => {
             const hasForm = el.querySelector('form, input, select, textarea') !== null;
             const hasNav = el.querySelector('a, nav') !== null;
             const hasButtons = el.querySelectorAll('button').length;
@@ -386,7 +393,8 @@ class RegionDetector:
                 hasForm, hasNav, hasButtons, hasLinks, hasInputs,
                 isAtTop, isAtBottom, isAtSide
             };
-        }""")
+        }"""
+        )
 
         if analysis["hasForm"] and analysis["hasInputs"] > 2:
             return StateType.FORM

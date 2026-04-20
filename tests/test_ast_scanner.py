@@ -1,7 +1,5 @@
 """Tests for the AST security scanner module."""
 
-import pytest
-
 from qontinui.action_executors.ast_scanner import (
     AstSecurityScanner,
     ScanConfig,
@@ -136,12 +134,26 @@ class TestAstScanner:
         assert not result.has_warnings
 
     def test_scan_result_mixed_severities(self):
-        result = ScanResult(violations=[
-            ScanViolation(line=1, col=0, category="import", description="test",
-                          pattern="os", severity="warn"),
-            ScanViolation(line=2, col=0, category="import", description="test2",
-                          pattern="sys", severity="block"),
-        ])
+        result = ScanResult(
+            violations=[
+                ScanViolation(
+                    line=1,
+                    col=0,
+                    category="import",
+                    description="test",
+                    pattern="os",
+                    severity="warn",
+                ),
+                ScanViolation(
+                    line=2,
+                    col=0,
+                    category="import",
+                    description="test2",
+                    pattern="sys",
+                    severity="block",
+                ),
+            ]
+        )
         assert result.has_blocking_violations
         assert result.has_warnings
 

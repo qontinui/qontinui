@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 # Stamping
 # ---------------------------------------------------------------------------
 
+
 def record_wsm_verdict(grounding_action: Any, verdict: WSMVerdict) -> None:
     """Write *verdict* onto a :class:`GroundingAction` in place.
 
@@ -101,6 +102,7 @@ async def verify_and_stamp(
 # HITL enqueue
 # ---------------------------------------------------------------------------
 
+
 def resolve_runner_url(explicit: str | None = None) -> str | None:
     """Pick the runner base URL for HITL enqueue, or ``None`` to skip.
 
@@ -154,8 +156,7 @@ async def _maybe_enqueue_deferred(
         "task_run_id": task_run_id,
         "action_id": action_id,
         "question": (
-            f"Low-confidence WSM verdict for action {action_id or '<unknown>'}: "
-            f"{intent}"
+            f"Low-confidence WSM verdict for action {action_id or '<unknown>'}: " f"{intent}"
         ),
         "auto_decision_type": "pixel_diff_fallback",
         "auto_decision_detail": verdict.reason,

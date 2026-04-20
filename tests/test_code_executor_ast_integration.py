@@ -4,13 +4,10 @@ These tests verify that the AST security scanner correctly blocks dangerous
 code patterns in ENFORCE mode and allows them (with warnings) in WARN mode.
 """
 
-import pytest
-
 from qontinui.action_executors.ast_scanner import (
     AstSecurityScanner,
     ScanConfig,
     ScanMode,
-    ScanResult,
 )
 
 
@@ -53,7 +50,9 @@ data = {"pi": math.pi, "now": str(datetime.now())}
 result = json.dumps(data)
 """
         for mode in [ScanMode.WARN, ScanMode.ENFORCE]:
-            config = ScanConfig.default_enforce() if mode == ScanMode.ENFORCE else ScanConfig.default()
+            config = (
+                ScanConfig.default_enforce() if mode == ScanMode.ENFORCE else ScanConfig.default()
+            )
             scanner = AstSecurityScanner(config)
             scan_result = scanner.scan(code)
             assert not scan_result.has_blocking_violations

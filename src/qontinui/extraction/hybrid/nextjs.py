@@ -504,7 +504,8 @@ class NextJSExtractor(TechStackExtractor):
             return []
 
         # Use JavaScript to find interactive elements
-        selectors = await self.page.evaluate("""
+        selectors = await self.page.evaluate(
+            """
             () => {
                 const elements = [];
                 const interactiveSelectors = [
@@ -563,7 +564,8 @@ class NextJSExtractor(TechStackExtractor):
                     return true;
                 });
             }
-        """)
+        """
+        )
 
         selectors_result: list[dict[str, Any]] = selectors  # type: ignore[assignment]
         return selectors_result
@@ -573,7 +575,8 @@ class NextJSExtractor(TechStackExtractor):
         if not self.page:
             return []
 
-        triggers = await self.page.evaluate("""
+        triggers = await self.page.evaluate(
+            """
             () => {
                 const triggers = [];
 
@@ -590,7 +593,8 @@ class NextJSExtractor(TechStackExtractor):
 
                 return triggers.slice(0, 5);  // Limit to avoid too many modals
             }
-        """)
+        """
+        )
 
         triggers_result: list[dict[str, str]] = triggers  # type: ignore[assignment]
         return triggers_result

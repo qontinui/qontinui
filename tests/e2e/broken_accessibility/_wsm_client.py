@@ -23,7 +23,6 @@ from typing import Any
 
 import httpx
 
-
 WSM_SYSTEM_PROMPT = (
     "You are a GUI world-state verifier. You receive two screenshots "
     "(PRE and POST) of an application and a text intent describing what "
@@ -116,15 +115,11 @@ class WorldStateVerifierClient:
                         {"type": "text", "text": user_text},
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{pre_b64}"
-                            },
+                            "image_url": {"url": f"data:image/png;base64,{pre_b64}"},
                         },
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{post_b64}"
-                            },
+                            "image_url": {"url": f"data:image/png;base64,{post_b64}"},
                         },
                     ],
                 },

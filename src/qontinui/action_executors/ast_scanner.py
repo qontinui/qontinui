@@ -32,15 +32,25 @@ class ScanConfig:
 
     mode: ScanMode = ScanMode.WARN
     denied_imports: set[str] = field(default_factory=set)
-    denied_builtins: set[str] = field(default_factory=lambda: {
-        "eval", "exec", "compile", "open", "input", "breakpoint", "__import__",
-    })
-    denied_attribute_patterns: list[str] = field(default_factory=lambda: [
-        "__class__.__bases__",
-        "__subclasses__",
-        "__globals__",
-        "__code__",
-    ])
+    denied_builtins: set[str] = field(
+        default_factory=lambda: {
+            "eval",
+            "exec",
+            "compile",
+            "open",
+            "input",
+            "breakpoint",
+            "__import__",
+        }
+    )
+    denied_attribute_patterns: list[str] = field(
+        default_factory=lambda: [
+            "__class__.__bases__",
+            "__subclasses__",
+            "__globals__",
+            "__code__",
+        ]
+    )
     custom_deny_patterns: list[str] = field(default_factory=list)
 
     @classmethod
@@ -138,14 +148,16 @@ class AstSecurityScanner(ast.NodeVisitor):
         for alias in node.names:
             top_level = alias.name.split(".")[0]
             if top_level in self.config.denied_imports:
-                self._violations.append(ScanViolation(
-                    line=node.lineno,
-                    col=node.col_offset,
-                    category="import",
-                    description=f"Denied import: '{alias.name}'",
-                    pattern=top_level,
-                    severity=self._severity,
-                ))
+                self._violations.append(
+                    ScanViolation(
+                        line=node.lineno,
+                        col=node.col_offset,
+                        category="import",
+                        description=f"Denied import: '{alias.name}'",
+                        pattern=top_level,
+                        severity=self._severity,
+                    )
+                )
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802
@@ -153,14 +165,16 @@ class AstSecurityScanner(ast.NodeVisitor):
         if node.module:
             top_level = node.module.split(".")[0]
             if top_level in self.config.denied_imports:
-                self._violations.append(ScanViolation(
-                    line=node.lineno,
-                    col=node.col_offset,
-                    category="import",
-                    description=f"Denied import: 'from {node.module} import ...'",
-                    pattern=top_level,
-                    severity=self._severity,
-                ))
+                self._violations.append(
+                    ScanViolation(
+                        line=node.lineno,
+                        col=node.col_offset,
+                        category="import",
+                        description=f"Denied import: 'from {node.module} import ...'",
+                        pattern=top_level,
+                        severity=self._severity,
+                    )
+                )
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:  # noqa: N802
@@ -168,14 +182,16 @@ class AstSecurityScanner(ast.NodeVisitor):
         # Direct calls like eval(...), exec(...), __import__(...)
         if isinstance(node.func, ast.Name):
             if node.func.id in self.config.denied_builtins:
-                self._violations.append(ScanViolation(
-                    line=node.lineno,
-                    col=node.col_offset,
-                    category="builtin_call",
-                    description=f"Denied builtin call: '{node.func.id}()'",
-                    pattern=node.func.id,
-                    severity=self._severity,
-                ))
+                self._violations.append(
+                    ScanViolation(
+                        line=node.lineno,
+                        col=node.col_offset,
+                        category="builtin_call",
+                        description=f"Denied builtin call: '{node.func.id}()'",
+                        pattern=node.func.id,
+                        severity=self._severity,
+                    )
+                )
 
         # getattr(obj, '__globals__') style access
         if isinstance(node.func, ast.Name) and node.func.id == "getattr":
@@ -184,14 +200,16 @@ class AstSecurityScanner(ast.NodeVisitor):
                 if isinstance(attr_arg, ast.Constant) and isinstance(attr_arg.value, str):
                     for denied in self.config.denied_attribute_patterns:
                         if attr_arg.value == denied or denied in attr_arg.value:
-                            self._violations.append(ScanViolation(
-                                line=node.lineno,
-                                col=node.col_offset,
-                                category="attribute_access",
-                                description=f"Denied attribute via getattr: '{attr_arg.value}'",
-                                pattern=denied,
-                                severity=self._severity,
-                            ))
+                            self._violations.append(
+                                ScanViolation(
+                                    line=node.lineno,
+                                    col=node.col_offset,
+                                    category="attribute_access",
+                                    description=f"Denied attribute via getattr: '{attr_arg.value}'",
+                                    pattern=denied,
+                                    severity=self._severity,
+                                )
+                            )
 
         self.generic_visit(node)
 
@@ -201,14 +219,16 @@ class AstSecurityScanner(ast.NodeVisitor):
         if chain:
             for denied in self.config.denied_attribute_patterns:
                 if denied in chain:
-                    self._violations.append(ScanViolation(
-                        line=node.lineno,
-                        col=node.col_offset,
-                        category="attribute_access",
-                        description=f"Denied attribute access: '{chain}' matches pattern '{denied}'",
-                        pattern=denied,
-                        severity=self._severity,
-                    ))
+                    self._violations.append(
+                        ScanViolation(
+                            line=node.lineno,
+                            col=node.col_offset,
+                            category="attribute_access",
+                            description=f"Denied attribute access: '{chain}' matches pattern '{denied}'",
+                            pattern=denied,
+                            severity=self._severity,
+                        )
+                    )
         self.generic_visit(node)
 
     def _build_attr_chain(self, node: ast.AST) -> str:
@@ -239,12 +259,14 @@ class AstSecurityScanner(ast.NodeVisitor):
         for i, pattern in enumerate(self._compiled_patterns):
             for match in pattern.finditer(code):
                 # Approximate line number from character offset
-                line_no = code[:match.start()].count("\n") + 1
-                self._violations.append(ScanViolation(
-                    line=line_no,
-                    col=0,
-                    category="pattern",
-                    description=f"Custom deny pattern matched: '{pattern.pattern}'",
-                    pattern=self.config.custom_deny_patterns[i],
-                    severity=self._severity,
-                ))
+                line_no = code[: match.start()].count("\n") + 1
+                self._violations.append(
+                    ScanViolation(
+                        line=line_no,
+                        col=0,
+                        category="pattern",
+                        description=f"Custom deny pattern matched: '{pattern.pattern}'",
+                        pattern=self.config.custom_deny_patterns[i],
+                        severity=self._severity,
+                    )
+                )

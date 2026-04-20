@@ -23,7 +23,7 @@ Example::
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -188,7 +188,7 @@ class Detections:
         """Pixel area of each bounding box, shape ``(n,)``."""
         widths = self.xyxy[:, 2] - self.xyxy[:, 0]
         heights = self.xyxy[:, 3] - self.xyxy[:, 1]
-        return widths * heights
+        return cast(NDArray[np.int_], widths * heights)
 
     @property
     def center(self) -> NDArray[np.floating]:
@@ -231,7 +231,7 @@ class Detections:
             # Index list
             selected = dets[[0, 2, 4]]
         """
-        if isinstance(index, (int, np.integer)):
+        if isinstance(index, int | np.integer):
             index = [int(index)]
 
         # Resolve data dict indexing — lists need explicit index expansion
@@ -267,7 +267,7 @@ class Detections:
         order = np.argsort(self.confidence)
         if descending:
             order = order[::-1]
-        return self[order]
+        return self[order.tolist()]
 
     # ------------------------------------------------------------------
     # Merge and NMS

@@ -91,9 +91,7 @@ def _get_interactability_detector() -> Any | None:
             return None
 
 
-def _gate_click_coordinate(
-    screenshot: np.ndarray[Any, Any], x: int, y: int
-) -> str | None:
+def _gate_click_coordinate(screenshot: np.ndarray[Any, Any], x: int, y: int) -> str | None:
     """Check whether a UI-TARS click coordinate lands on an interactive element.
 
     Returns None on pass (gate disabled, or point is interactive).
@@ -108,8 +106,7 @@ def _gate_click_coordinate(
         is_interactive, conf = detector.classify_point(screenshot, x, y)
     except Exception:
         logger.debug(
-            "UI-TARS executor: interactability classification failed, "
-            "passing click through",
+            "UI-TARS executor: interactability classification failed, " "passing click through",
             exc_info=True,
         )
         return None
@@ -269,9 +266,7 @@ class UITARSExecutor:
 
         # Extract coordinates from action
         if result.action.x is not None and result.action.y is not None:
-            gated = _gate_click_coordinate(
-                screenshot, result.action.x, result.action.y
-            )
+            gated = _gate_click_coordinate(screenshot, result.action.x, result.action.y)
             if gated is not None:
                 logger.info(
                     "UI-TARS grounding rejected by OmniParser interactability "
@@ -370,9 +365,7 @@ class UITARSExecutor:
         # fire pyautogui at an arbitrary pixel.
         gate_rejected: str | None = None
         if result.action.x is not None and result.action.y is not None:
-            gate_rejected = _gate_click_coordinate(
-                screenshot, result.action.x, result.action.y
-            )
+            gate_rejected = _gate_click_coordinate(screenshot, result.action.x, result.action.y)
         if gate_rejected is not None:
             logger.info(
                 "UI-TARS execute_action rejected by OmniParser interactability "

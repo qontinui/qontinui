@@ -131,8 +131,7 @@ class _VGG13FeatureExtractor:
     def __init__(self, layer: str = _DEFAULT_LAYER) -> None:
         if layer not in _VGG13_LAYER_MAP:
             raise ValueError(
-                f"Unknown VGG-13 layer '{layer}'. "
-                f"Valid: {sorted(_VGG13_LAYER_MAP.keys())}"
+                f"Unknown VGG-13 layer '{layer}'. " f"Valid: {sorted(_VGG13_LAYER_MAP.keys())}"
             )
         self._layer = layer
         self._model: Any = None
@@ -173,9 +172,7 @@ class _VGG13FeatureExtractor:
             ]
         )
 
-        logger.info(
-            "ScaleAdaptive: loaded VGG-13 (up to %s) on %s", self._layer, device_str
-        )
+        logger.info("ScaleAdaptive: loaded VGG-13 (up to %s) on %s", self._layer, device_str)
 
     def _preprocess(self, bgr: np.ndarray) -> torch.Tensor:
         import cv2
@@ -272,18 +269,14 @@ class ScaleAdaptiveBackend(DetectionBackend):
     def is_available(self) -> bool:
         return is_enabled() and _torch_available()
 
-    def find(
-        self, needle: Any, haystack: Any, config: dict[str, Any]
-    ) -> list[DetectionResult]:
+    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
         if not is_enabled():
             return []
 
         template = self._to_bgr(needle)
         screenshot = self._to_bgr(haystack)
         if template is None or screenshot is None:
-            logger.debug(
-                "ScaleAdaptiveBackend: could not convert needle/haystack to BGR"
-            )
+            logger.debug("ScaleAdaptiveBackend: could not convert needle/haystack to BGR")
             return []
 
         # Apply search-region cropping if requested.
@@ -415,9 +408,7 @@ class ScaleAdaptiveBackend(DetectionBackend):
                     scaled_template = cv2.resize(
                         template,
                         (scaled_w, scaled_h),
-                        interpolation=cv2.INTER_AREA
-                        if scale < 1.0
-                        else cv2.INTER_LINEAR,
+                        interpolation=cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LINEAR,
                     )
 
                 t_features = extractor.extract(scaled_template)

@@ -110,9 +110,7 @@ class TestClickElement:
         ui_connection: AsyncMock,
     ) -> None:
         """RuntimeError raised when element has no bounding box."""
-        no_bbox_elem = Element(
-            id="no-bbox", tag_name="span", bbox=None, is_visible=True
-        )
+        no_bbox_elem = Element(id="no-bbox", tag_name="span", bbox=None, is_visible=True)
         ui_connection.find_elements = AsyncMock(return_value=[no_bbox_elem])
 
         with pytest.raises(RuntimeError, match="no bounding box"):

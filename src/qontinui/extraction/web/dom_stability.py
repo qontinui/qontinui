@@ -205,7 +205,8 @@ class DOMStabilityWaiter:
             True if page appears stable and ready
         """
         try:
-            is_ready = await page.evaluate("""
+            is_ready = await page.evaluate(
+                """
                 () => {
                     // Check document ready state
                     if (document.readyState !== 'complete') return false;
@@ -231,7 +232,8 @@ class DOMStabilityWaiter:
 
                     return true;
                 }
-                """)
+                """
+            )
             return bool(is_ready)
         except Exception:
             return False
@@ -314,13 +316,15 @@ class DOMStabilityWaiter:
                     break
 
                 # Check for new mutations
-                new_mutations = await page.evaluate("""
+                new_mutations = await page.evaluate(
+                    """
                     () => {
                         const mutations = window.__domMutations || [];
                         window.__domMutations = [];
                         return mutations;
                     }
-                """)
+                """
+                )
 
                 if new_mutations:
                     last_mutation_time = time.time()
@@ -349,7 +353,8 @@ class DOMStabilityWaiter:
         finally:
             # Clean up observer
             try:
-                await page.evaluate("""
+                await page.evaluate(
+                    """
                     () => {
                         if (window.__mutationObserver) {
                             window.__mutationObserver.disconnect();
@@ -357,7 +362,8 @@ class DOMStabilityWaiter:
                             delete window.__domMutations;
                         }
                     }
-                """)
+                """
+                )
             except Exception:
                 pass
 
@@ -412,7 +418,8 @@ class DOMStabilityWaiter:
     async def _take_snapshot(self, page: Page) -> DOMSnapshot:
         """Take a DOM snapshot for comparison."""
         try:
-            info = await page.evaluate("""
+            info = await page.evaluate(
+                """
                 () => {
                     const elements = document.querySelectorAll('*');
                     const texts = [];
@@ -429,7 +436,8 @@ class DOMStabilityWaiter:
                         documentHeight: document.documentElement.scrollHeight || 0
                     };
                 }
-            """)
+            """
+            )
 
             content_hash = hashlib.md5(info["contentSample"].encode()).hexdigest()[:16]
 
@@ -520,14 +528,16 @@ class LazyContentLoader:
                 elements_loaded = max(elements_loaded, new_elements)
 
                 # Check if at bottom/top
-                at_boundary = await page.evaluate(f"""
+                at_boundary = await page.evaluate(
+                    f"""
                     () => {{
                         const atBottom = (window.innerHeight + window.scrollY) >=
                                         document.documentElement.scrollHeight - 10;
                         const atTop = window.scrollY <= 10;
                         return {'{"direction": "down"}' if scroll_direction == "down" else '{"direction": "up"}'}.direction === "down" ? atBottom : atTop;
                     }}
-                """)
+                """
+                )
 
                 if at_boundary:
                     logger.debug(f"Reached page boundary after {scroll_count} scrolls")

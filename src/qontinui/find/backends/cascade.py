@@ -115,9 +115,7 @@ class CascadeDetector(DetectionBackend):
     def terminal_fallback(self) -> DetectionBackend | None:
         return self._terminal_fallback
 
-    def _maybe_wrap_prefilter(
-        self, backends: list[DetectionBackend]
-    ) -> list[DetectionBackend]:
+    def _maybe_wrap_prefilter(self, backends: list[DetectionBackend]) -> list[DetectionBackend]:
         """Wrap high-cost backends with InteractabilityFilter if env flag on.
 
         Wrap threshold defaults to 1000ms: Template/Feature/Invariant/QATM/OCR
@@ -132,7 +130,9 @@ class CascadeDetector(DetectionBackend):
             return backends
 
         try:
-            threshold_ms = float(os.environ.get("QONTINUI_OMNIPARSER_PREFILTER_MIN_COST_MS", "1000"))
+            threshold_ms = float(
+                os.environ.get("QONTINUI_OMNIPARSER_PREFILTER_MIN_COST_MS", "1000")
+            )
         except ValueError:
             threshold_ms = 1000.0
 
@@ -249,7 +249,9 @@ class CascadeDetector(DetectionBackend):
                         max_time_ms,
                         backends_tried,
                     )
-                    self._emit_time_budget_exhausted(needle_label, elapsed, max_time_ms, backends_tried)
+                    self._emit_time_budget_exhausted(
+                        needle_label, elapsed, max_time_ms, backends_tried
+                    )
                     break
             if not backend.supports(needle_type):
                 continue
@@ -362,9 +364,7 @@ class CascadeDetector(DetectionBackend):
         Used by the bypass path to wait until every a11y-tier backend has
         had a chance to run before giving up on accessibility.
         """
-        a11y_in_order = [
-            b for b in ordered if b.name in self._accessibility_backend_names
-        ]
+        a11y_in_order = [b for b in ordered if b.name in self._accessibility_backend_names]
         if not a11y_in_order:
             return False
         return current is a11y_in_order[-1]
@@ -388,15 +388,12 @@ class CascadeDetector(DetectionBackend):
         if fb is None:
             return []
         if not fb.is_available():
-            logger.debug(
-                "CascadeDetector: terminal fallback %s not available", fb.name
-            )
+            logger.debug("CascadeDetector: terminal fallback %s not available", fb.name)
             return []
         needle_type = config.get("needle_type", "template")
         if not fb.supports(needle_type):
             logger.debug(
-                "CascadeDetector: terminal fallback %s does not support "
-                "needle_type=%s",
+                "CascadeDetector: terminal fallback %s does not support " "needle_type=%s",
                 fb.name,
                 needle_type,
             )
@@ -404,8 +401,7 @@ class CascadeDetector(DetectionBackend):
 
         min_confidence = config.get("min_confidence", 0.8)
         logger.info(
-            "CascadeDetector: accessibility tier empty, bypassing to terminal "
-            "fallback %s",
+            "CascadeDetector: accessibility tier empty, bypassing to terminal " "fallback %s",
             fb.name,
         )
         t0 = time.perf_counter()
@@ -430,9 +426,7 @@ class CascadeDetector(DetectionBackend):
         )
         if results:
             total_ms = (time.perf_counter() - cascade_t0) * 1000
-            self._emit_cascade_hit(
-                needle_label, fb.name, 1, results[0].confidence, total_ms
-            )
+            self._emit_cascade_hit(needle_label, fb.name, 1, results[0].confidence, total_ms)
             return self._normalize_results(results, haystack)
         return []
 

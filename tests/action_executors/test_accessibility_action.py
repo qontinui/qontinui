@@ -4,7 +4,6 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 from qontinui.action_executors.accessibility_action import (
-    AccessibilityActionResult,
     try_accessibility_click,
     try_accessibility_type,
 )

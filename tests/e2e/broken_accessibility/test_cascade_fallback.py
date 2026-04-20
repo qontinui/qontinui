@@ -172,9 +172,7 @@ def _build_service_cascade(
     ]
     cascade = CascadeDetector(backends=backends)
     # terminal fallback should auto-register to omniparser_service
-    assert cascade.terminal_fallback is not None, (
-        "expected auto-registered terminal fallback"
-    )
+    assert cascade.terminal_fallback is not None, "expected auto-registered terminal fallback"
     assert cascade.terminal_fallback.name == "omniparser_service"
     return cascade
 
@@ -199,9 +197,7 @@ def test_notepad_accessibility_short_circuits(
 
     # Stub says "File" menu is at a known bbox — real coords don't matter
     # for the test, we're proving the cascade terminates on a11y.
-    capture = StubAccessibilityCapture(
-        responses={("label", "File"): [(10, 30, 40, 20, "File")]}
-    )
+    capture = StubAccessibilityCapture(responses={("label", "File"): [(10, 30, 40, 20, "File")]})
     cascade = _build_service_cascade(capture)
 
     results = cascade.find(
@@ -252,8 +248,7 @@ def test_mspaint_empty_accessibility_triggers_bypass(
     # Whether Florence-2 caption matching found "pencil tool" specifically
     # is a semantic-matcher concern, not a cascade wiring concern.
     bypass_logged = any(
-        "bypassing to terminal fallback omniparser_service" in rec.message
-        for rec in caplog.records
+        "bypassing to terminal fallback omniparser_service" in rec.message for rec in caplog.records
     )
     assert bypass_logged, "expected accessibility-empty bypass to fire and name omniparser_service"
 
@@ -261,10 +256,11 @@ def test_mspaint_empty_accessibility_triggers_bypass(
     # or behind the ai-proxy on :8888. Both routes terminate at the
     # OmniParser ``/parse`` endpoint.
     service_called = any(
-        "POST http" in rec.message and "/parse" in rec.message
-        for rec in caplog.records
+        "POST http" in rec.message and "/parse" in rec.message for rec in caplog.records
     )
-    assert service_called, "expected the terminal fallback to actually call the OmniParser /parse endpoint"
+    assert (
+        service_called
+    ), "expected the terminal fallback to actually call the OmniParser /parse endpoint"
 
 
 # ---------------------------------------------------------------------------

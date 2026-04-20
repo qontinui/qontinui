@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from qontinui.discovery.target_connection import Element
 from qontinui.planning_integration.world_state_bridge import run_async_safe
@@ -31,15 +31,13 @@ def _find_element(blackboard: Any, element_id: str) -> Element:
     if elements is None:
         conn = blackboard.get("_ui_connection")
         if conn is None:
-            raise RuntimeError(
-                f"No UI connection for element lookup: {element_id}"
-            )
+            raise RuntimeError(f"No UI connection for element lookup: {element_id}")
         elements = run_async_safe(conn.find_elements())
         blackboard.set("_raw_elements", elements)
 
     for elem in elements:
         if elem.id == element_id:
-            return elem
+            return cast(Element, elem)
     raise RuntimeError(f"Element not found: {element_id}")
 
 
@@ -56,11 +54,14 @@ def _refresh_elements(blackboard: Any) -> list[Element]:
     elements: list[Element] = run_async_safe(conn.find_elements())
     # Store as dict[str, bool] matching the format populate_blackboard uses
     blackboard.set("_ui_elements", {e.id: e.is_visible for e in elements})
-    blackboard.set("_ui_values", {
-        e.id: (e.attributes.get("value", "") or e.text_content or "")
-        for e in elements
-        if e.tag_name in ("input", "textarea", "select")
-    })
+    blackboard.set(
+        "_ui_values",
+        {
+            e.id: (e.attributes.get("value", "") or e.text_content or "")
+            for e in elements
+            if e.tag_name in ("input", "textarea", "select")
+        },
+    )
     blackboard.set("_raw_elements", elements)
     return elements
 
@@ -94,9 +95,7 @@ def create_action_handlers(
         element = _find_element(blackboard, element_id)
 
         if element.bbox is None:
-            raise RuntimeError(
-                f"Element '{element_id}' has no bounding box; cannot click"
-            )
+            raise RuntimeError(f"Element '{element_id}' has no bounding box; cannot click")
 
         cx, cy = element.bbox.center
         hal.mouse_controller.mouse_click(int(cx), int(cy))
@@ -131,9 +130,7 @@ def create_action_handlers(
         """Navigate to *target_state* using the state manager."""
         mgr = blackboard.get("_state_manager") or state_manager
         if mgr is None:
-            raise RuntimeError(
-                "No state manager available for navigate_path"
-            )
+            raise RuntimeError("No state manager available for navigate_path")
         logger.debug("navigate_path: %s", target_state)
         success = mgr.navigate_to([target_state])
         if not success:
@@ -147,9 +144,7 @@ def create_action_handlers(
         """Execute a specific transition by ID."""
         mgr = blackboard.get("_state_manager") or state_manager
         if mgr is None:
-            raise RuntimeError(
-                "No state manager available for navigate_transition"
-            )
+            raise RuntimeError("No state manager available for navigate_transition")
         logger.debug("navigate_transition: %s", transition_id)
         success = mgr.execute_transition(transition_id)
         if not success:
@@ -175,9 +170,7 @@ def create_action_handlers(
         for attempt in range(_MAX_POLL_RETRIES):
             active = mgr.get_active_states()
             if target_state in active:
-                logger.info(
-                    "State '%s' became active (attempt %d)", target_state, attempt + 1
-                )
+                logger.info("State '%s' became active (attempt %d)", target_state, attempt + 1)
                 return
             time.sleep(_POLL_INTERVAL_S)
 
@@ -197,9 +190,7 @@ def create_action_handlers(
         """
         ui_conn = blackboard.get("_ui_connection")
         if ui_conn is None:
-            raise RuntimeError(
-                "No UI Bridge connection available for wait_for_element"
-            )
+            raise RuntimeError("No UI Bridge connection available for wait_for_element")
 
         logger.debug("wait_for_element: %s", element_id)
         for attempt in range(_MAX_POLL_RETRIES):

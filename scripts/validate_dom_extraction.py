@@ -153,7 +153,8 @@ async def test_shadow_dom_extraction(page, url: str) -> ValidationResult:
         shadow_elements = [el for el in elements if el.shadow_path]
 
         # Also check for shadow roots on the page
-        shadow_root_count = await page.evaluate("""
+        shadow_root_count = await page.evaluate(
+            """
             () => {
                 let count = 0;
                 const checkShadow = (root) => {
@@ -167,7 +168,8 @@ async def test_shadow_dom_extraction(page, url: str) -> ValidationResult:
                 checkShadow(document);
                 return count;
             }
-        """)
+        """
+        )
 
         return ValidationResult(
             test_name=test_name,

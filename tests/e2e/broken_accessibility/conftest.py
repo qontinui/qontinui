@@ -32,20 +32,14 @@ logger = logging.getLogger(__name__)
 _STACK = os.environ.get("QONTINUI_E2E_OMNIPARSER_STACK", "proxy").lower()
 if _STACK == "standalone":
     OMNIPARSER_COMPOSE_FILE = (
-        Path(__file__).resolve().parents[3]
-        / "docker"
-        / "omniparser"
-        / "docker-compose.yml"
+        Path(__file__).resolve().parents[3] / "docker" / "omniparser" / "docker-compose.yml"
     )
     OMNIPARSER_COMPOSE_SERVICES: list[str] = []  # bring up everything
     OMNIPARSER_BASE_URL = "http://localhost:8080"
     OMNIPARSER_HEALTH_URL = "http://localhost:8080/health"
 else:
     OMNIPARSER_COMPOSE_FILE = (
-        Path(__file__).resolve().parents[3]
-        / "docker"
-        / "ai-proxy"
-        / "docker-compose.yml"
+        Path(__file__).resolve().parents[3] / "docker" / "ai-proxy" / "docker-compose.yml"
     )
     # Start only proxy + omniparser — llama-swap is behind the ``full``
     # profile and not needed for the broken-accessibility suite.
@@ -113,10 +107,7 @@ def omniparser_service() -> Iterator[str]:
         timeout=300,
     )
     if up.returncode != 0:
-        pytest.skip(
-            f"docker compose up failed (rc={up.returncode}): "
-            f"stderr={up.stderr[:500]}"
-        )
+        pytest.skip(f"docker compose up failed (rc={up.returncode}): " f"stderr={up.stderr[:500]}")
 
     ready = _wait_for_health(OMNIPARSER_HEALTH_URL, OMNIPARSER_STARTUP_TIMEOUT_S)
     if not ready:
@@ -132,8 +123,7 @@ def omniparser_service() -> Iterator[str]:
             timeout=60,
         )
         pytest.skip(
-            f"OmniParser service did not become healthy within "
-            f"{OMNIPARSER_STARTUP_TIMEOUT_S}s"
+            f"OmniParser service did not become healthy within " f"{OMNIPARSER_STARTUP_TIMEOUT_S}s"
         )
 
     os.environ["QONTINUI_OMNIPARSER_ENABLED"] = "true"
@@ -168,7 +158,9 @@ class LiveApp:
             except subprocess.TimeoutExpired:
                 self.process.kill()
         except Exception:
-            logger.exception("Failed to terminate %s (pid=%s)", self.window_title_fragment, self.pid)
+            logger.exception(
+                "Failed to terminate %s (pid=%s)", self.window_title_fragment, self.pid
+            )
 
 
 def _wait_for_window(title_fragment: str, timeout_s: float = 15.0) -> bool:
@@ -217,12 +209,8 @@ def live_app() -> Iterator[Callable[..., LiveApp]]:
         proc = subprocess.Popen(cmd)
         if not _wait_for_window(window_title, timeout_s=timeout_s):
             proc.kill()
-            pytest.skip(
-                f"Window with title fragment {window_title!r} never appeared"
-            )
-        app = LiveApp(
-            process=proc, window_title_fragment=window_title, pid=proc.pid
-        )
+            pytest.skip(f"Window with title fragment {window_title!r} never appeared")
+        app = LiveApp(process=proc, window_title_fragment=window_title, pid=proc.pid)
         launched.append(app)
         return app
 

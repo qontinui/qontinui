@@ -28,7 +28,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import httpx
 
@@ -56,6 +56,7 @@ SuccessSource = Literal["wsm", "pixel_diff", "record_flag"]
 # ---------------------------------------------------------------------------
 # Public types
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class WSMVerdict:
@@ -140,6 +141,7 @@ def reload_prompt_config() -> PromptConfig:
 # Endpoint resolution
 # ---------------------------------------------------------------------------
 
+
 def resolve_endpoint(explicit: str | None = None) -> str:
     """Pick the WSM endpoint per the documented precedence order."""
     if explicit:
@@ -154,6 +156,7 @@ def resolve_endpoint(explicit: str | None = None) -> str:
 # ---------------------------------------------------------------------------
 # Client
 # ---------------------------------------------------------------------------
+
 
 class WSMClient:
     """Async client for the WSM llama-swap endpoint.
@@ -219,15 +222,11 @@ class WSMClient:
                         {"type": "text", "text": self._build_user_text(intent, goal)},
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{pre_b64}"
-                            },
+                            "image_url": {"url": f"data:image/png;base64,{pre_b64}"},
                         },
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{post_b64}"
-                            },
+                            "image_url": {"url": f"data:image/png;base64,{post_b64}"},
                         },
                     ],
                 },
@@ -279,9 +278,7 @@ class WSMClient:
         - ``"pixel_diff"`` — confidence below threshold, success from
           pixel diff; ``raw`` still carries the WSM response for audit
         """
-        parsed = await self.verify_raw(
-            before_png_bytes, after_png_bytes, intent, goal
-        )
+        parsed = await self.verify_raw(before_png_bytes, after_png_bytes, intent, goal)
         status = str(parsed.get("status", "")).lower()
         confidence = _clamp_confidence(parsed.get("confidence", 0.0))
         observations = str(parsed.get("observations", ""))
@@ -308,9 +305,7 @@ class WSMClient:
 
         # Low confidence: fall back to pixel diff and preserve the raw
         # WSM verdict for audit so calibration work can analyze why.
-        pd_success, pd_reason = pixel_diff_verdict(
-            before_png_bytes, after_png_bytes
-        )
+        pd_success, pd_reason = pixel_diff_verdict(before_png_bytes, after_png_bytes)
         return WSMVerdict(
             success=pd_success,
             confidence=confidence,
@@ -329,6 +324,7 @@ class WSMClient:
 # ---------------------------------------------------------------------------
 # Top-level functional API (preferred by callers that don't hold a client)
 # ---------------------------------------------------------------------------
+
 
 async def verify_action(
     before_png_bytes: bytes,
@@ -349,20 +345,14 @@ async def verify_action(
     just with a conservative label.
     """
     try:
-        async with WSMClient(
-            endpoint=endpoint, model=model, timeout_s=timeout_s
-        ) as client:
+        async with WSMClient(endpoint=endpoint, model=model, timeout_s=timeout_s) as client:
             return await asyncio.wait_for(
                 client.verify(before_png_bytes, after_png_bytes, intent, goal),
                 timeout=timeout_s,
             )
     except TimeoutError:
-        pd_success, pd_reason = pixel_diff_verdict(
-            before_png_bytes, after_png_bytes
-        )
-        logger.warning(
-            "WSM verify timed out after %.1fs; falling back to pixel diff", timeout_s
-        )
+        pd_success, pd_reason = pixel_diff_verdict(before_png_bytes, after_png_bytes)
+        logger.warning("WSM verify timed out after %.1fs; falling back to pixel diff", timeout_s)
         return WSMVerdict(
             success=pd_success,
             confidence=0.0,
@@ -370,9 +360,7 @@ async def verify_action(
             source="pixel_diff",
         )
     except (httpx.HTTPError, ValueError, KeyError) as exc:
-        pd_success, pd_reason = pixel_diff_verdict(
-            before_png_bytes, after_png_bytes
-        )
+        pd_success, pd_reason = pixel_diff_verdict(before_png_bytes, after_png_bytes)
         logger.warning("WSM verify failed (%s); falling back to pixel diff", exc)
         return WSMVerdict(
             success=pd_success,
@@ -397,7 +385,7 @@ def _parse_wsm_json(content: str) -> dict[str, Any]:
     """
     m = _FENCED_JSON_RE.search(content)
     if m:
-        return json.loads(m.group(1))
+        return cast(dict[str, Any], json.loads(m.group(1)))
 
     start = content.find("{")
     if start < 0:
@@ -409,7 +397,7 @@ def _parse_wsm_json(content: str) -> dict[str, Any]:
         elif ch == "}":
             depth -= 1
             if depth == 0:
-                return json.loads(content[start : i + 1])
+                return cast(dict[str, Any], json.loads(content[start : i + 1]))
     raise ValueError(f"Unbalanced JSON in WSM response: {content[:200]!r}")
 
 

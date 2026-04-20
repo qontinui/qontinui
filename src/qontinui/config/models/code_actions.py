@@ -5,7 +5,7 @@ This module provides configuration models for Python code execution actions,
 including inline code blocks and custom functions.
 """
 
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -64,7 +64,7 @@ class CodeBlockActionConfig(BaseModel):
     error_handling: ErrorHandling | None = Field(None, alias="errorHandling")
     description: str | None = None
     debug: bool | None = None
-    sandbox_overrides: Optional[SandboxOverrides] = Field(None, alias="sandboxOverrides")
+    sandbox_overrides: SandboxOverrides | None = Field(None, alias="sandboxOverrides")
 
     model_config = {"populate_by_name": True}
 
