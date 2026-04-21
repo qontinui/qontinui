@@ -113,6 +113,45 @@ models:
       - qontinui-grounding
       - grounding-v1
 
+  # --- Qontinui Grounding v5: Balanced web + runner + iso training set ---
+  # LoRA-merged checkpoint, 2,504 samples (runner/web/iso balanced), 1 epoch,
+  # train loss 0.4153, eval loss 0.2407. Successor to v1's isolated-only set.
+  qontinui-grounding-v5:
+    cmd: >
+      python3 -m vllm.entrypoints.openai.api_server
+      --model /models/qontinui-grounding-v5
+      --served-model-name qontinui-grounding-v5
+      --host 127.0.0.1
+      --port ${PORT}
+      --dtype bfloat16
+      --max-model-len 8192
+      --trust-remote-code
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - grounding-v5
+
+  # Placeholder for v6 — uncomment once the v6 merged model lands at
+  # /models/qontinui-grounding-v6. Retrain trigger: per-domain >=200 corrections
+  # OR aggregate >=500; ship gate: beats v5 by >=5pp Acc@center on EVERY
+  # per-domain held-out split (see plan section 13).
+  # qontinui-grounding-v6:
+  #   cmd: >
+  #     python3 -m vllm.entrypoints.openai.api_server
+  #     --model /models/qontinui-grounding-v6
+  #     --served-model-name qontinui-grounding-v6
+  #     --host 127.0.0.1
+  #     --port ${PORT}
+  #     --dtype bfloat16
+  #     --max-model-len 8192
+  #     --trust-remote-code
+  #   proxy: "http://127.0.0.1:${PORT}"
+  #   checkEndpoint: /health
+  #   ttl: 300
+  #   aliases:
+  #     - grounding-v6
+
   # --- CUA World State Model: 7B VLM judge for action verification ---
   # SEAgent's verifier; Qwen2.5-VL-7B-Instruct fine-tune.
   # Consumed by qontinui-runner's WorldStateVerifier via /v1/chat/completions.
