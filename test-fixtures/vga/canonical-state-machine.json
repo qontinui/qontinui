@@ -1,0 +1,304 @@
+{
+  "id": "11111111-0000-0000-0000-000000000001",
+  "name": "Notepad++ Parity Fixture",
+  "target_process": "notepad++.exe",
+  "target_os": "windows",
+  "grounding_model": "qontinui-grounding-v5",
+  "private": true,
+  "states": [
+    {
+      "id": "22222222-0000-0000-0000-000000000001",
+      "name": "main_editor",
+      "blocking": false,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-000000000001",
+          "label": "File menu",
+          "prompt": "top-bar menu labeled 'File'",
+          "bbox": {"x": 0, "y": 0, "w": 40, "h": 20}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000002",
+          "label": "Edit menu",
+          "prompt": "top-bar menu labeled 'Edit'",
+          "bbox": {"x": 40, "y": 0, "w": 40, "h": 20}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000003",
+          "label": "Search menu",
+          "prompt": "top-bar menu labeled 'Search'",
+          "bbox": {"x": 80, "y": 0, "w": 56, "h": 20}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000004",
+          "label": "Text area",
+          "prompt": "main editable text region",
+          "bbox": {"x": 0, "y": 40, "w": 800, "h": 600}
+        }
+      ]
+    },
+    {
+      "id": "22222222-0000-0000-0000-000000000002",
+      "name": "file_menu_open",
+      "blocking": false,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-000000000005",
+          "label": "New",
+          "prompt": "menu item labeled 'New'",
+          "bbox": {"x": 0, "y": 20, "w": 200, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000006",
+          "label": "Open",
+          "prompt": "menu item labeled 'Open'",
+          "bbox": {"x": 0, "y": 44, "w": 200, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000007",
+          "label": "Save",
+          "prompt": "menu item labeled 'Save'",
+          "bbox": {"x": 0, "y": 68, "w": 200, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000008",
+          "label": "Exit",
+          "prompt": "menu item labeled 'Exit'",
+          "bbox": {"x": 0, "y": 92, "w": 200, "h": 24}
+        }
+      ]
+    },
+    {
+      "id": "22222222-0000-0000-0000-000000000003",
+      "name": "open_dialog",
+      "blocking": true,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-000000000009",
+          "label": "Filename input",
+          "prompt": "text input for filename",
+          "bbox": {"x": 100, "y": 300, "w": 400, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-00000000000a",
+          "label": "Open button",
+          "prompt": "button labeled 'Open'",
+          "bbox": {"x": 520, "y": 340, "w": 80, "h": 30}
+        },
+        {
+          "id": "33333333-0000-0000-0000-00000000000b",
+          "label": "Cancel button",
+          "prompt": "button labeled 'Cancel'",
+          "bbox": {"x": 620, "y": 340, "w": 80, "h": 30}
+        }
+      ]
+    },
+    {
+      "id": "22222222-0000-0000-0000-000000000004",
+      "name": "edit_menu_open",
+      "blocking": false,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-00000000000c",
+          "label": "Undo",
+          "prompt": "menu item labeled 'Undo'",
+          "bbox": {"x": 40, "y": 20, "w": 200, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-00000000000d",
+          "label": "Cut",
+          "prompt": "menu item labeled 'Cut'",
+          "bbox": {"x": 40, "y": 44, "w": 200, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-00000000000e",
+          "label": "Copy",
+          "prompt": "menu item labeled 'Copy'",
+          "bbox": {"x": 40, "y": 68, "w": 200, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-00000000000f",
+          "label": "Paste",
+          "prompt": "menu item labeled 'Paste'",
+          "bbox": {"x": 40, "y": 92, "w": 200, "h": 24}
+        }
+      ]
+    },
+    {
+      "id": "22222222-0000-0000-0000-000000000005",
+      "name": "search_menu_open",
+      "blocking": false,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-000000000010",
+          "label": "Find",
+          "prompt": "menu item labeled 'Find'",
+          "bbox": {"x": 80, "y": 20, "w": 200, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000011",
+          "label": "Replace",
+          "prompt": "menu item labeled 'Replace'",
+          "bbox": {"x": 80, "y": 44, "w": 200, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000012",
+          "label": "Go to line",
+          "prompt": "menu item labeled 'Go to line'",
+          "bbox": {"x": 80, "y": 68, "w": 200, "h": 24}
+        }
+      ]
+    },
+    {
+      "id": "22222222-0000-0000-0000-000000000006",
+      "name": "find_dialog",
+      "blocking": false,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-000000000013",
+          "label": "Find input",
+          "prompt": "text input for find query",
+          "bbox": {"x": 100, "y": 200, "w": 300, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000014",
+          "label": "Find next",
+          "prompt": "button labeled 'Find Next'",
+          "bbox": {"x": 420, "y": 200, "w": 100, "h": 30}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000015",
+          "label": "Close find",
+          "prompt": "close button on find dialog",
+          "bbox": {"x": 540, "y": 200, "w": 24, "h": 24}
+        }
+      ]
+    },
+    {
+      "id": "22222222-0000-0000-0000-000000000007",
+      "name": "save_as_dialog",
+      "blocking": false,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-000000000016",
+          "label": "Save filename",
+          "prompt": "text input for save filename",
+          "bbox": {"x": 100, "y": 300, "w": 400, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000017",
+          "label": "Save confirm",
+          "prompt": "button labeled 'Save'",
+          "bbox": {"x": 520, "y": 340, "w": 80, "h": 30}
+        },
+        {
+          "id": "33333333-0000-0000-0000-000000000018",
+          "label": "Save cancel",
+          "prompt": "button labeled 'Cancel'",
+          "bbox": {"x": 620, "y": 340, "w": 80, "h": 30}
+        }
+      ]
+    },
+    {
+      "id": "22222222-0000-0000-0000-000000000008",
+      "name": "about_dialog",
+      "blocking": false,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-000000000019",
+          "label": "About OK",
+          "prompt": "button labeled 'OK' on about dialog",
+          "bbox": {"x": 400, "y": 400, "w": 80, "h": 30}
+        }
+      ]
+    },
+    {
+      "id": "22222222-0000-0000-0000-000000000009",
+      "name": "settings_pane",
+      "blocking": false,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-00000000001a",
+          "label": "Theme dropdown",
+          "prompt": "dropdown labeled 'Theme'",
+          "bbox": {"x": 150, "y": 150, "w": 200, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-00000000001b",
+          "label": "Font size",
+          "prompt": "numeric input labeled 'Font size'",
+          "bbox": {"x": 150, "y": 190, "w": 80, "h": 24}
+        },
+        {
+          "id": "33333333-0000-0000-0000-00000000001c",
+          "label": "Apply settings",
+          "prompt": "button labeled 'Apply'",
+          "bbox": {"x": 300, "y": 400, "w": 100, "h": 30}
+        }
+      ]
+    },
+    {
+      "id": "22222222-0000-0000-0000-00000000000a",
+      "name": "closed",
+      "blocking": false,
+      "elements": [
+        {
+          "id": "33333333-0000-0000-0000-00000000001d",
+          "label": "Reopen",
+          "prompt": "taskbar entry to reopen Notepad++",
+          "bbox": {"x": 0, "y": 1000, "w": 48, "h": 40}
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "44444444-0000-0000-0000-000000000001",
+      "from_state_id": "22222222-0000-0000-0000-000000000001",
+      "to_state_id": "22222222-0000-0000-0000-000000000002",
+      "trigger_element_id": "33333333-0000-0000-0000-000000000001"
+    },
+    {
+      "id": "44444444-0000-0000-0000-000000000002",
+      "from_state_id": "22222222-0000-0000-0000-000000000002",
+      "to_state_id": "22222222-0000-0000-0000-000000000003",
+      "trigger_element_id": "33333333-0000-0000-0000-000000000006"
+    },
+    {
+      "id": "44444444-0000-0000-0000-000000000003",
+      "from_state_id": "22222222-0000-0000-0000-000000000003",
+      "to_state_id": "22222222-0000-0000-0000-000000000001",
+      "trigger_element_id": "33333333-0000-0000-0000-00000000000a"
+    },
+    {
+      "id": "44444444-0000-0000-0000-000000000004",
+      "from_state_id": "22222222-0000-0000-0000-000000000001",
+      "to_state_id": "22222222-0000-0000-0000-000000000004",
+      "trigger_element_id": "33333333-0000-0000-0000-000000000002"
+    },
+    {
+      "id": "44444444-0000-0000-0000-000000000005",
+      "from_state_id": "22222222-0000-0000-0000-000000000001",
+      "to_state_id": "22222222-0000-0000-0000-000000000005",
+      "trigger_element_id": "33333333-0000-0000-0000-000000000003"
+    },
+    {
+      "id": "44444444-0000-0000-0000-000000000006",
+      "from_state_id": "22222222-0000-0000-0000-000000000005",
+      "to_state_id": "22222222-0000-0000-0000-000000000006",
+      "trigger_element_id": "33333333-0000-0000-0000-000000000010"
+    },
+    {
+      "id": "44444444-0000-0000-0000-000000000007",
+      "from_state_id": "22222222-0000-0000-0000-000000000002",
+      "to_state_id": "22222222-0000-0000-0000-000000000007",
+      "trigger_element_id": "33333333-0000-0000-0000-000000000007"
+    },
+    {
+      "id": "44444444-0000-0000-0000-000000000008",
+      "from_state_id": "22222222-0000-0000-0000-000000000002",
+      "to_state_id": "22222222-0000-0000-0000-00000000000a",
+      "trigger_element_id": "33333333-0000-0000-0000-000000000008"
+    }
+  ]
+}

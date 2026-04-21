@@ -160,6 +160,13 @@ class VgaStateMachine(BaseModel):
 
         Used by the web export route ``GET /state/[id].json`` and by
         :meth:`sha256`.
+
+        This encoder has a parity twin at
+        ``qontinui-web/frontend/src/lib/vga/canonical.ts``. Shared
+        fixtures live at ``test-fixtures/vga/canonical-state-machine{,
+        .canonical}.json``. Tests must update both sides OR canonical
+        JSON (and thus ``content_hash``) will diverge silently; CI will
+        fail (see ``tests/test_vga_canonical_parity.py``).
         """
         data = self.model_dump(mode="json", exclude_none=False)
         for key in self._CANONICAL_EXCLUDE:

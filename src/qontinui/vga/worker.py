@@ -39,6 +39,7 @@ from uuid import UUID, uuid4
 
 from .client import VgaClient
 from .runtime import VgaAction, VgaRuntime, VgaStepEvent
+from .shadow_log import ShadowSampleLogger
 from .state_machine import VgaStateMachine
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,16 @@ class _RunRecorder:
     ``VgaStepEvent`` to ``step_log`` as it occurs. On finish it updates
     ``status`` and ``ended_at``. Failures to write are logged and skipped —
     the runtime must not be blocked on PG availability.
+
+    Must be used as a context manager: ``__enter__`` opens a single long-lived
+    ``psycopg.Connection`` that is reused across ``start()``, every
+    ``append_event()``, and ``finish()``. Each of those methods still commits
+    at its natural boundary so step events are durable even if the process
+    crashes mid-run. ``__exit__`` closes the connection unconditionally.
+
+    If psycopg isn't importable, or the initial connection fails, the
+    recorder flips to a disabled state and every method (plus ``__exit__``)
+    becomes a silent no-op — a missing database must never crash the runtime.
     """
 
     def __init__(
@@ -71,96 +82,114 @@ class _RunRecorder:
         self._grounding_model = grounding_model
         self._task_run_id = os.environ.get("QONTINUI_TASK_RUN_ID")
         self._disabled = False
+        self._conn: Any = None
+
+    def __enter__(self) -> _RunRecorder:
         try:
-            import psycopg  # type: ignore[import-not-found]  # noqa: F401
+            import psycopg  # type: ignore[import-not-found]
         except ImportError:
             logger.warning(
                 "psycopg not available — VGA run history will not be persisted"
             )
             self._disabled = True
+            return self
+        try:
+            self._conn = psycopg.connect(self._pg_url)
+            with self._conn.cursor() as cur:
+                cur.execute("SET search_path TO runner, public")
+            self._conn.commit()
+        except Exception:
+            logger.exception("Failed to open VGA recorder connection; continuing")
+            self._disabled = True
+            self._conn = None
+        return self
 
-    def start(self) -> None:
-        if self._disabled:
+    def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
+        if self._conn is None:
             return
         try:
-            import psycopg  # type: ignore[import-not-found]
+            try:
+                self._conn.commit()
+            except Exception:
+                logger.exception("Failed to commit VGA recorder on exit; continuing")
+        finally:
+            try:
+                self._conn.close()
+            except Exception:
+                logger.exception("Failed to close VGA recorder connection; continuing")
+            self._conn = None
+            self._disabled = True
 
-            with psycopg.connect(self._pg_url) as conn:
-                with conn.cursor() as cur:
-                    cur.execute("SET search_path TO runner, public")
-                    cur.execute(
-                        "INSERT INTO runner.vga_runs "
-                        "(id, state_machine_id, task_run_id, grounding_model, "
-                        " status, step_log, started_at) "
-                        "VALUES (%s, %s, %s, %s, 'running', '[]'::jsonb, NOW())",
-                        (
-                            str(self._run_id),
-                            str(self._sm_id),
-                            self._task_run_id,
-                            self._grounding_model,
-                        ),
-                    )
-                conn.commit()
+    def start(self) -> None:
+        if self._disabled or self._conn is None:
+            return
+        try:
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO runner.vga_runs "
+                    "(id, state_machine_id, task_run_id, grounding_model, "
+                    " status, step_log, started_at) "
+                    "VALUES (%s, %s, %s, %s, 'running', '[]'::jsonb, NOW())",
+                    (
+                        str(self._run_id),
+                        str(self._sm_id),
+                        self._task_run_id,
+                        self._grounding_model,
+                    ),
+                )
+            self._conn.commit()
         except Exception:
             logger.exception("Failed to insert vga_runs row; continuing")
             self._disabled = True
 
     def append_event(self, event: dict[str, Any]) -> None:
-        if self._disabled:
+        if self._disabled or self._conn is None:
             return
         try:
-            import psycopg  # type: ignore[import-not-found]
-
-            with psycopg.connect(self._pg_url) as conn:
-                with conn.cursor() as cur:
-                    cur.execute("SET search_path TO runner, public")
-                    cur.execute(
-                        "UPDATE runner.vga_runs "
-                        "SET step_log = step_log || %s::jsonb "
-                        "WHERE id = %s",
-                        (json.dumps([event]), str(self._run_id)),
-                    )
-                conn.commit()
+            with self._conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE runner.vga_runs "
+                    "SET step_log = step_log || %s::jsonb "
+                    "WHERE id = %s",
+                    (json.dumps([event]), str(self._run_id)),
+                )
+            self._conn.commit()
         except Exception:
             logger.exception("Failed to append vga_runs step; continuing")
 
     def finish(self, status: str, error: str | None = None) -> None:
-        if self._disabled:
+        if self._disabled or self._conn is None:
             return
         try:
-            import psycopg  # type: ignore[import-not-found]
-
-            with psycopg.connect(self._pg_url) as conn:
-                with conn.cursor() as cur:
-                    cur.execute("SET search_path TO runner, public")
-                    if error:
-                        cur.execute(
-                            "UPDATE runner.vga_runs "
-                            "SET status = %s, ended_at = NOW(), "
-                            "    step_log = step_log || %s::jsonb "
-                            "WHERE id = %s",
-                            (
-                                status,
-                                json.dumps(
-                                    [
-                                        {
-                                            "kind": "vga.error",
-                                            "error": error,
-                                            "ts": datetime.now(UTC).isoformat(),
-                                        }
-                                    ]
-                                ),
-                                str(self._run_id),
+            with self._conn.cursor() as cur:
+                if error:
+                    cur.execute(
+                        "UPDATE runner.vga_runs "
+                        "SET status = %s, ended_at = NOW(), "
+                        "    step_log = step_log || %s::jsonb "
+                        "WHERE id = %s",
+                        (
+                            status,
+                            json.dumps(
+                                [
+                                    {
+                                        "kind": "vga.error",
+                                        "error": error,
+                                        "ts": datetime.now(UTC).isoformat(),
+                                    }
+                                ]
                             ),
-                        )
-                    else:
-                        cur.execute(
-                            "UPDATE runner.vga_runs "
-                            "SET status = %s, ended_at = NOW() "
-                            "WHERE id = %s",
-                            (status, str(self._run_id)),
-                        )
-                conn.commit()
+                            str(self._run_id),
+                        ),
+                    )
+                else:
+                    cur.execute(
+                        "UPDATE runner.vga_runs "
+                        "SET status = %s, ended_at = NOW() "
+                        "WHERE id = %s",
+                        (status, str(self._run_id)),
+                    )
+            self._conn.commit()
         except Exception:
             logger.exception("Failed to finalize vga_runs row; continuing")
 
@@ -227,11 +256,19 @@ def _load_actions(actions_path: Path) -> list[VgaAction]:
     return [VgaAction.model_validate(item) for item in payload]
 
 
-def _build_runtime() -> VgaRuntime:
+def _build_runtime(
+    shadow_logger: ShadowSampleLogger | None = None,
+) -> VgaRuntime:
     """Wire a :class:`VgaRuntime` to the default HAL implementations.
 
     Uses ``pyautogui`` for input + ``mss`` for capture — both are already
     hard deps of qontinui on all platforms.
+
+    Args:
+        shadow_logger: Optional shadow-sample writer. When set, every
+            successful grounding call is mirrored into
+            ``runner.vga_shadow_samples`` — the v6 training gate needs
+            production-distribution data.
     """
     from ..hal.implementations.mss_capture import MSSCapture
     from ..hal.implementations.pyautogui_keyboard import PyAutoGUIKeyboard
@@ -243,6 +280,7 @@ def _build_runtime() -> VgaRuntime:
         hal_mouse=PyAutoGUIMouse(),
         hal_keyboard=PyAutoGUIKeyboard(),
         hal_capture=MSSCapture(),
+        shadow_logger=shadow_logger,
     )
 
 
@@ -262,22 +300,25 @@ def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint. Returns an exit code."""
     args = _parse_args(argv)
     run_id = uuid4()
-    recorder: _RunRecorder | None = None
 
+    # Pre-recorder setup: if this fails we have no recorder to update, so
+    # just surface the error via stdout and exit.
     try:
         sm = _load_state_machine_from_pg(args.pg_url, args.state_machine_id)
         actions = _load_actions(args.action_sequence_json)
-        runtime = _build_runtime()
-        recorder = _RunRecorder(
-            pg_url=args.pg_url,
-            run_id=run_id,
-            state_machine_id=args.state_machine_id,
-            grounding_model=sm.grounding_model,
-        )
-        recorder.start()
+        # Shadow logger is only instantiated for non-private SMs — the
+        # privacy contract mirrors CorrectionLogger's sidecar behavior.
+        shadow_logger: ShadowSampleLogger | None = None
+        if not sm.private:
+            try:
+                shadow_logger = ShadowSampleLogger(pg_url=args.pg_url)
+            except Exception:
+                logger.exception(
+                    "Failed to construct ShadowSampleLogger; continuing without it"
+                )
+                shadow_logger = None
+        runtime = _build_runtime(shadow_logger=shadow_logger)
     except Exception as exc:
-        if recorder is not None:
-            recorder.finish("failed", error=f"{type(exc).__name__}: {exc}")
         _emit(
             {
                 "kind": "vga.done",
@@ -289,30 +330,51 @@ def main(argv: list[str] | None = None) -> int:
         logger.exception("VGA worker setup failed")
         return 1
 
-    def _on_event(event: VgaStepEvent) -> None:
-        payload = event.model_dump(mode="json")
-        _emit(payload)
-        if recorder is not None:
+    recorder = _RunRecorder(
+        pg_url=args.pg_url,
+        run_id=run_id,
+        state_machine_id=args.state_machine_id,
+        grounding_model=sm.grounding_model,
+    )
+
+    with recorder:
+        try:
+            recorder.start()
+        except Exception as exc:
+            recorder.finish("failed", error=f"{type(exc).__name__}: {exc}")
+            _emit(
+                {
+                    "kind": "vga.done",
+                    "status": "failed",
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "run_id": str(run_id),
+                }
+            )
+            logger.exception("VGA worker setup failed")
+            return 1
+
+        def _on_event(event: VgaStepEvent) -> None:
+            payload = event.model_dump(mode="json")
+            _emit(payload)
             recorder.append_event(payload)
 
-    result = runtime.execute(sm, actions, on_event=_on_event)
-    # The worker-allocated run_id is the authoritative one (it's what landed
-    # in the vga_runs row at recorder.start()); override the runtime's
-    # factory-generated UUID so the stdout/Rust handler reports the same ID.
-    result.run_id = run_id
+        result = runtime.execute(sm, actions, on_event=_on_event)
+        # The worker-allocated run_id is the authoritative one (it's what landed
+        # in the vga_runs row at recorder.start()); override the runtime's
+        # factory-generated UUID so the stdout/Rust handler reports the same ID.
+        result.run_id = run_id
 
-    if recorder is not None:
         recorder.finish(result.status, error=result.error)
 
-    _emit(
-        {
-            "kind": "vga.done",
-            "status": result.status,
-            "error": result.error,
-            "run_id": str(run_id),
-        }
-    )
-    return 0 if result.status == "success" else 1
+        _emit(
+            {
+                "kind": "vga.done",
+                "status": result.status,
+                "error": result.error,
+                "run_id": str(run_id),
+            }
+        )
+        return 0 if result.status == "success" else 1
 
 
 if __name__ == "__main__":

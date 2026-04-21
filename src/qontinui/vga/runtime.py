@@ -18,6 +18,7 @@ reuse existing ``blocking`` states"):
 
 from __future__ import annotations
 
+import io
 import logging
 import time
 from collections.abc import Callable
@@ -33,6 +34,7 @@ from ..hal.interfaces.screen_capture import IScreenCapture
 from ..state_management.enhanced_active_state_set import EnhancedActiveStateSet
 from .client import VgaClient, VgaClientError
 from .drift import DriftDetector
+from .shadow_log import ShadowSampleLogger
 from .state_machine import BBox, VgaElement, VgaState, VgaStateMachine
 
 logger = logging.getLogger(__name__)
@@ -132,6 +134,7 @@ class VgaRuntime:
         hal_capture: IScreenCapture,
         drift_detector: DriftDetector | None = None,
         active_state_set: EnhancedActiveStateSet | None = None,
+        shadow_logger: ShadowSampleLogger | None = None,
     ) -> None:
         self._client = client
         self._mouse = hal_mouse
@@ -139,6 +142,12 @@ class VgaRuntime:
         self._capture = hal_capture
         self._drift = drift_detector or DriftDetector()
         self._active = active_state_set or EnhancedActiveStateSet()
+        # Optional shadow-sample writer. When present, every successful
+        # grounding call is mirrored to ``runner.vga_shadow_samples`` so
+        # the v6 trainer has production-distribution data for its no-
+        # regression gate. Respects the SM's ``private`` flag — private
+        # SMs never leak here.
+        self._shadow = shadow_logger
 
     # ------------------------------------------------------------------
     # Public API
@@ -217,13 +226,13 @@ class VgaRuntime:
             if action.kind == "click":
                 if target is None:
                     raise VgaRuntimeError("click requires element_id")
-                return self._do_click(action, *target)
+                return self._do_click(sm, action, *target)
             if action.kind == "type":
-                return self._do_type(action, target)
+                return self._do_type(sm, action, target)
             if action.kind == "wait_for":
                 if target is None:
                     raise VgaRuntimeError("wait_for requires element_id")
-                return self._do_wait_for(action, *target)
+                return self._do_wait_for(sm, action, *target)
             raise VgaRuntimeError(f"unknown action kind {action.kind!r}")
         except VgaClientError as exc:
             return VgaStepEvent(
@@ -247,10 +256,14 @@ class VgaRuntime:
     # ------------------------------------------------------------------
 
     def _do_click(
-        self, action: VgaAction, _state: VgaState, element: VgaElement
+        self,
+        sm: VgaStateMachine,
+        action: VgaAction,
+        _state: VgaState,
+        element: VgaElement,
     ) -> VgaStepEvent:
         screenshot = self._capture.capture_screen()
-        pred_bbox = self._ground_element(screenshot, element)
+        pred_bbox = self._ground_element(sm, screenshot, element)
         drift = self._drift.check(pred_bbox, element.bbox, screenshot=screenshot)
 
         cx, cy = pred_bbox.center
@@ -275,6 +288,7 @@ class VgaRuntime:
 
     def _do_type(
         self,
+        sm: VgaStateMachine,
         action: VgaAction,
         target: tuple[VgaState, VgaElement] | None,
     ) -> VgaStepEvent:
@@ -289,7 +303,7 @@ class VgaRuntime:
         if target is not None:
             _state, element = target
             screenshot = self._capture.capture_screen()
-            pred_bbox = self._ground_element(screenshot, element)
+            pred_bbox = self._ground_element(sm, screenshot, element)
             drift = self._drift.check(pred_bbox, element.bbox, screenshot=screenshot)
             bbox_last = element.bbox
             iou_val = drift.iou
@@ -331,7 +345,11 @@ class VgaRuntime:
         )
 
     def _do_wait_for(
-        self, action: VgaAction, _state: VgaState, element: VgaElement
+        self,
+        sm: VgaStateMachine,
+        action: VgaAction,
+        _state: VgaState,
+        element: VgaElement,
     ) -> VgaStepEvent:
         deadline = time.monotonic() + max(0.0, action.timeout_ms / 1000.0)
         last_pred: BBox | None = None
@@ -342,7 +360,7 @@ class VgaRuntime:
         while time.monotonic() < deadline:
             try:
                 screenshot = self._capture.capture_screen()
-                pred_bbox = self._ground_element(screenshot, element)
+                pred_bbox = self._ground_element(sm, screenshot, element)
                 drift = self._drift.check(
                     pred_bbox, element.bbox, screenshot=screenshot
                 )
@@ -379,18 +397,60 @@ class VgaRuntime:
     # Grounding + blocking-state policy
     # ------------------------------------------------------------------
 
-    def _ground_element(self, screenshot: Any, element: VgaElement) -> BBox:
+    def _ground_element(
+        self, sm: VgaStateMachine, screenshot: Any, element: VgaElement
+    ) -> BBox:
         """Ground ``element.prompt`` against the current screenshot.
 
         Returns a bbox centered on the predicted point, sized to match
         ``element.bbox`` (so IoU is meaningful against the stored bbox).
+
+        Side effect: when a :class:`ShadowSampleLogger` is configured and
+        the SM is not private, logs a shadow sample containing the
+        captured PNG + the predicted bbox for offline v6 re-evaluation.
         """
         result = self._client.ground(screenshot, element.prompt)
         w = max(1, element.bbox.w)
         h = max(1, element.bbox.h)
         x = max(0, result.x - w // 2)
         y = max(0, result.y - h // 2)
-        return BBox(x=x, y=y, w=w, h=h)
+        pred = BBox(x=x, y=y, w=w, h=h)
+        self._maybe_log_shadow(sm, screenshot, element, pred, result.confidence)
+        return pred
+
+    def _maybe_log_shadow(
+        self,
+        sm: VgaStateMachine,
+        screenshot: Any,
+        element: VgaElement,
+        pred: BBox,
+        confidence: float,
+    ) -> None:
+        """Best-effort write to ``runner.vga_shadow_samples``.
+
+        A capture failure or encode failure is swallowed — the shadow
+        log is advisory, not load-bearing.
+        """
+        if self._shadow is None:
+            return
+        if getattr(sm, "private", True):
+            return
+        try:
+            png_bytes = _to_png_bytes(screenshot)
+        except Exception:
+            logger.exception("VgaRuntime: could not encode screenshot for shadow log")
+            return
+
+        self._shadow.log_sample(
+            image_png_bytes=png_bytes,
+            state_machine_id=sm.id,
+            target_process=sm.target_process,
+            prompt=element.prompt,
+            v5_bbox={"x": pred.x, "y": pred.y, "w": pred.w, "h": pred.h},
+            v5_model=self._client.model,
+            private=False,
+            confidence=confidence,
+        )
 
     def _seed_active_states(self, sm: VgaStateMachine) -> None:
         """Populate the shared :class:`EnhancedActiveStateSet` with any
@@ -428,3 +488,45 @@ class VgaRuntime:
             f"blocking state(s) {sorted(blocking_ids)} active; "
             f"cannot act on state {target_state.name!r} until dismissed"
         )
+
+
+# ----------------------------------------------------------------------
+# Helpers
+# ----------------------------------------------------------------------
+
+
+def _to_png_bytes(screenshot: Any) -> bytes:
+    """Encode a screenshot (PIL Image, numpy ndarray, or raw bytes) to PNG.
+
+    The HAL's ``capture_screen`` returns a PIL ``Image.Image`` on all
+    platforms but this helper is lenient so tests can pass raw bytes
+    directly.
+    """
+    if isinstance(screenshot, bytes):
+        return screenshot
+
+    # PIL import is deferred so this module stays importable without PIL
+    # in environments that never hit shadow logging (unlikely, but cheap
+    # insurance).
+    from PIL import Image as PILImage
+
+    if isinstance(screenshot, PILImage.Image):
+        buf = io.BytesIO()
+        screenshot.save(buf, format="PNG")
+        return buf.getvalue()
+
+    # Fall back to numpy → PIL conversion (mirrors VgaClient._encode_image).
+    try:
+        import numpy as np
+    except ImportError as exc:  # pragma: no cover — numpy is a hard dep
+        raise RuntimeError("numpy is required to encode ndarray screenshots") from exc
+
+    if isinstance(screenshot, np.ndarray):
+        pil_img = PILImage.fromarray(screenshot)
+        buf = io.BytesIO()
+        pil_img.save(buf, format="PNG")
+        return buf.getvalue()
+
+    raise TypeError(
+        f"Unsupported screenshot type for shadow log: {type(screenshot).__name__}"
+    )
