@@ -41,7 +41,7 @@ class GroundingVLMBackend(DetectionBackend):
             ``"qontinui-grounding-v1"`` for backwards compatibility; new
             callers should use ``"qontinui-grounding-v5"``.
         api_base: Base URL of the OpenAI-compatible API. Defaults to
-            ``"http://localhost:5800/v1"`` (llama-swap default port).
+            ``"http://localhost:8100/v1"`` (host-side llama-swap port).
         timeout: HTTP request timeout in seconds. Defaults to 30.
         box_size: Side length in pixels of the synthetic bounding box
             centered on the predicted point. Defaults to 40.
@@ -52,7 +52,7 @@ class GroundingVLMBackend(DetectionBackend):
     def __init__(
         self,
         model: str = "qontinui-grounding-v1",
-        api_base: str = "http://localhost:5800/v1",
+        api_base: str = "http://localhost:8100/v1",
         timeout: float = 30.0,
         box_size: int = 40,
     ) -> None:

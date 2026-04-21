@@ -86,7 +86,9 @@ class VgaClient:
 
     Args:
         api_base: Base URL of the OpenAI-compatible API. Defaults to
-            ``http://localhost:5800/v1`` (llama-swap default port).
+            ``http://localhost:8100/v1`` (host-side llama-swap port; the
+            docker-compose publishes the container's internal port 5800
+            as 8100 on the host).
         model: Model name to request. Defaults to
             ``qontinui-grounding-v5``.
         timeout: HTTP request timeout in seconds.
@@ -94,7 +96,7 @@ class VgaClient:
 
     def __init__(
         self,
-        api_base: str = "http://localhost:5800/v1",
+        api_base: str = "http://localhost:8100/v1",
         model: str = "qontinui-grounding-v5",
         timeout: float = 30.0,
     ) -> None:
@@ -287,8 +289,17 @@ class VgaClient:
                 f"No <point> tag in response: {snippet!r}"
             )
 
-        norm_x = float(m.group(1))
-        norm_y = float(m.group(2))
+        raw_x = float(m.group(1))
+        raw_y = float(m.group(2))
+
+        # Auto-detect coordinate convention. v5 in practice emits 0-1
+        # fractions (e.g. ``<point>0.0253 0.1401</point>``) even though
+        # the training prompt claims 0-1000 integers. If either coord is
+        # > 1.0 we're in the 0-1000 world; otherwise assume 0-1 and scale
+        # back to the 0-1000 convention we store on GroundResult.
+        is_thousands = max(abs(raw_x), abs(raw_y)) > 1.0
+        norm_x = raw_x if is_thousands else raw_x * 1000.0
+        norm_y = raw_y if is_thousands else raw_y * 1000.0
 
         px = int((norm_x / 1000.0) * img_width) if img_width else int(norm_x)
         py = int((norm_y / 1000.0) * img_height) if img_height else int(norm_y)
