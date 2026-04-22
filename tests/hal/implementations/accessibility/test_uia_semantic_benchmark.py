@@ -278,8 +278,7 @@ class TestFuzzyMatchPerformance:
         )
 
         assert warm_time < cold_time, (
-            f"Warm cache should be faster than cold: "
-            f"cold={cold_time:.3f}s warm={warm_time:.3f}s"
+            f"Warm cache should be faster than cold: cold={cold_time:.3f}s warm={warm_time:.3f}s"
         )
 
     def test_sieve_prunes_high_fraction_of_pairs(self):
@@ -319,9 +318,7 @@ class TestFuzzyMatchPerformance:
                     pruned += 1
 
         prune_pct = 100.0 * pruned / total
-        print(
-            f"\nSieve prune rate (min_score={min_score}): " f"{pruned}/{total} = {prune_pct:.1f}%"
-        )
+        print(f"\nSieve prune rate (min_score={min_score}): {pruned}/{total} = {prune_pct:.1f}%")
 
         assert prune_pct >= 90.0, (
             f"Expected sieve to prune >= 90% of pairs at min_score={min_score}, "
@@ -346,5 +343,5 @@ class TestFuzzyMatchPerformance:
         print(f"\nNo-match latency: {per_call_ms:.1f} ms per call (50 calls, 300 nodes)")
 
         assert per_call_ms < 100, (
-            f"Expected < 100 ms per call on 300-node no-match query, " f"got {per_call_ms:.1f} ms"
+            f"Expected < 100 ms per call on 300-node no-match query, got {per_call_ms:.1f} ms"
         )

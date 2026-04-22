@@ -131,7 +131,7 @@ class _VGG13FeatureExtractor:
     def __init__(self, layer: str = _DEFAULT_LAYER) -> None:
         if layer not in _VGG13_LAYER_MAP:
             raise ValueError(
-                f"Unknown VGG-13 layer '{layer}'. " f"Valid: {sorted(_VGG13_LAYER_MAP.keys())}"
+                f"Unknown VGG-13 layer '{layer}'. Valid: {sorted(_VGG13_LAYER_MAP.keys())}"
             )
         self._layer = layer
         self._model: Any = None

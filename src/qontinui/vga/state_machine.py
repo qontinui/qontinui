@@ -75,9 +75,7 @@ class VgaElement(BaseModel):
     label: str
     prompt: str
     bbox: BBox
-    last_confirmed_at: datetime = Field(
-        default_factory=lambda: datetime.now(tz=UTC)
-    )
+    last_confirmed_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     correction_count: int = 0
 
 

@@ -57,9 +57,7 @@ def _read_expected() -> str:
 
 def test_fixtures_exist() -> None:
     assert INPUT_FIXTURE.is_file(), f"missing input fixture: {INPUT_FIXTURE}"
-    assert EXPECTED_FIXTURE.is_file(), (
-        f"missing expected canonical fixture: {EXPECTED_FIXTURE}"
-    )
+    assert EXPECTED_FIXTURE.is_file(), f"missing expected canonical fixture: {EXPECTED_FIXTURE}"
 
 
 def test_expected_has_no_trailing_newline() -> None:
@@ -74,9 +72,7 @@ def test_expected_has_no_trailing_newline() -> None:
 
 def test_python_encoder_matches_expected_bytes() -> None:
     """Python's canonical encoder reproduces the frozen byte string."""
-    sm = VgaStateMachine.from_canonical_json(
-        INPUT_FIXTURE.read_text(encoding="utf-8")
-    )
+    sm = VgaStateMachine.from_canonical_json(INPUT_FIXTURE.read_text(encoding="utf-8"))
     actual = sm.to_canonical_json()
     expected = _read_expected()
     assert actual == expected, (
@@ -90,9 +86,7 @@ def test_python_encoder_matches_expected_bytes() -> None:
 
 def test_frozen_sha256_stable() -> None:
     """Freeze the SHA-256 digest so ``content_hash`` can't drift unnoticed."""
-    sm = VgaStateMachine.from_canonical_json(
-        INPUT_FIXTURE.read_text(encoding="utf-8")
-    )
+    sm = VgaStateMachine.from_canonical_json(INPUT_FIXTURE.read_text(encoding="utf-8"))
     digest = hashlib.sha256(sm.to_canonical_json().encode("utf-8")).hexdigest()
     assert digest == FROZEN_SHA256, (
         f"content_hash digest changed: {digest} != {FROZEN_SHA256}. "
@@ -104,7 +98,5 @@ def test_frozen_sha256_stable() -> None:
 
 def test_sm_sha256_method_matches_frozen() -> None:
     """The public :meth:`VgaStateMachine.sha256` helper agrees with the digest."""
-    sm = VgaStateMachine.from_canonical_json(
-        INPUT_FIXTURE.read_text(encoding="utf-8")
-    )
+    sm = VgaStateMachine.from_canonical_json(INPUT_FIXTURE.read_text(encoding="utf-8"))
     assert sm.sha256() == FROZEN_SHA256

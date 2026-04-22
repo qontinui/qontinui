@@ -155,9 +155,7 @@ async def _maybe_enqueue_deferred(
     body: dict[str, Any] = {
         "task_run_id": task_run_id,
         "action_id": action_id,
-        "question": (
-            f"Low-confidence WSM verdict for action {action_id or '<unknown>'}: " f"{intent}"
-        ),
+        "question": (f"Low-confidence WSM verdict for action {action_id or '<unknown>'}: {intent}"),
         "auto_decision_type": "pixel_diff_fallback",
         "auto_decision_detail": verdict.reason,
         "confidence": verdict.confidence,

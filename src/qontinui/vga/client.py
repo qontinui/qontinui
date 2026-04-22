@@ -208,9 +208,7 @@ class VgaClient:
             logger.exception("VgaClient: image encoding failed")
             return None, 0, 0
 
-    def _query_model(
-        self, prompt: str, img_b64: str, *, max_tokens: int = 64
-    ) -> str:
+    def _query_model(self, prompt: str, img_b64: str, *, max_tokens: int = 64) -> str:
         """POST to ``/v1/chat/completions`` and return the raw text content.
 
         Raises:
@@ -225,9 +223,7 @@ class VgaClient:
                     "content": [
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{img_b64}"
-                            },
+                            "image_url": {"url": f"data:image/png;base64,{img_b64}"},
                         },
                         {"type": "text", "text": prompt},
                     ],
@@ -256,9 +252,7 @@ class VgaClient:
             raise VgaClientError(f"Unexpected response shape from {url}: {e}") from e
 
     @staticmethod
-    def _parse_response(
-        raw_text: str, img_width: int, img_height: int
-    ) -> GroundResult:
+    def _parse_response(raw_text: str, img_width: int, img_height: int) -> GroundResult:
         """Parse a ``<point>`` tag out of ``raw_text``.
 
         If the response contains ``<none/>``, return a zero-confidence
@@ -285,9 +279,7 @@ class VgaClient:
 
         m = _POINT_RE.search(raw_text)
         if m is None:
-            raise VgaClientError(
-                f"No <point> tag in response: {snippet!r}"
-            )
+            raise VgaClientError(f"No <point> tag in response: {snippet!r}")
 
         raw_x = float(m.group(1))
         raw_y = float(m.group(2))

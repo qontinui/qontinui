@@ -107,7 +107,7 @@ def omniparser_service() -> Iterator[str]:
         timeout=300,
     )
     if up.returncode != 0:
-        pytest.skip(f"docker compose up failed (rc={up.returncode}): " f"stderr={up.stderr[:500]}")
+        pytest.skip(f"docker compose up failed (rc={up.returncode}): stderr={up.stderr[:500]}")
 
     ready = _wait_for_health(OMNIPARSER_HEALTH_URL, OMNIPARSER_STARTUP_TIMEOUT_S)
     if not ready:
@@ -123,7 +123,7 @@ def omniparser_service() -> Iterator[str]:
             timeout=60,
         )
         pytest.skip(
-            f"OmniParser service did not become healthy within " f"{OMNIPARSER_STARTUP_TIMEOUT_S}s"
+            f"OmniParser service did not become healthy within {OMNIPARSER_STARTUP_TIMEOUT_S}s"
         )
 
     os.environ["QONTINUI_OMNIPARSER_ENABLED"] = "true"

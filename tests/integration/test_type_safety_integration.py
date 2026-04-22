@@ -350,9 +350,9 @@ class TestTypeAnnotationCoverage:
             if not name.startswith("_"):
                 sig = inspect.signature(func)
                 # Should have return annotation
-                assert (
-                    sig.return_annotation != inspect.Signature.empty
-                ), f"Function {name} missing return type hint"
+                assert sig.return_annotation != inspect.Signature.empty, (
+                    f"Function {name} missing return type hint"
+                )
 
 
 class TestOptionalTypeHandling:

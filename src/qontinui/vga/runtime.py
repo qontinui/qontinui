@@ -361,9 +361,7 @@ class VgaRuntime:
             try:
                 screenshot = self._capture.capture_screen()
                 pred_bbox = self._ground_element(sm, screenshot, element)
-                drift = self._drift.check(
-                    pred_bbox, element.bbox, screenshot=screenshot
-                )
+                drift = self._drift.check(pred_bbox, element.bbox, screenshot=screenshot)
                 last_pred = pred_bbox
                 last_iou = drift.iou
                 last_sim = drift.template_similarity
@@ -397,9 +395,7 @@ class VgaRuntime:
     # Grounding + blocking-state policy
     # ------------------------------------------------------------------
 
-    def _ground_element(
-        self, sm: VgaStateMachine, screenshot: Any, element: VgaElement
-    ) -> BBox:
+    def _ground_element(self, sm: VgaStateMachine, screenshot: Any, element: VgaElement) -> BBox:
         """Ground ``element.prompt`` against the current screenshot.
 
         Returns a bbox centered on the predicted point, sized to match
@@ -467,9 +463,7 @@ class VgaRuntime:
             if state.blocking:
                 self._active.add_state(int_id, blocking=True)
 
-    def _enforce_blocking_policy(
-        self, _sm: VgaStateMachine, target_state: VgaState
-    ) -> None:
+    def _enforce_blocking_policy(self, _sm: VgaStateMachine, target_state: VgaState) -> None:
         """Reject actions that target a non-blocking state while any
         blocking state is active.
 
@@ -527,6 +521,4 @@ def _to_png_bytes(screenshot: Any) -> bytes:
         pil_img.save(buf, format="PNG")
         return buf.getvalue()
 
-    raise TypeError(
-        f"Unsupported screenshot type for shadow log: {type(screenshot).__name__}"
-    )
+    raise TypeError(f"Unsupported screenshot type for shadow log: {type(screenshot).__name__}")

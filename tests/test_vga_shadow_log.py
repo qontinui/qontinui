@@ -38,9 +38,7 @@ if "psycopg" not in sys.modules:
     _stub = types.ModuleType("psycopg")
 
     def _unused_connect(*_args: Any, **_kwargs: Any) -> Any:  # pragma: no cover
-        raise RuntimeError(
-            "psycopg.connect stub invoked — test forgot to patch psycopg.connect"
-        )
+        raise RuntimeError("psycopg.connect stub invoked — test forgot to patch psycopg.connect")
 
     _stub.connect = _unused_connect  # type: ignore[attr-defined]
     sys.modules["psycopg"] = _stub

@@ -128,9 +128,7 @@ def test_correction_logger_appends_jsonl(tmp_path: Path) -> None:
 
 def _fake_response(text: str) -> mock.MagicMock:
     """Build a urlopen context-manager returning the given model text."""
-    body = json.dumps(
-        {"choices": [{"message": {"content": text}}]}
-    ).encode("utf-8")
+    body = json.dumps({"choices": [{"message": {"content": text}}]}).encode("utf-8")
 
     resp = mock.MagicMock()
     resp.read.return_value = body
@@ -150,7 +148,9 @@ def test_client_ground_parses_point_tag() -> None:
     client = VgaClient()
     png = _make_png_bytes()
 
-    with mock.patch("urllib.request.urlopen", return_value=_fake_response("<point>500 500</point>")):
+    with mock.patch(
+        "urllib.request.urlopen", return_value=_fake_response("<point>500 500</point>")
+    ):
         result = client.ground(png, "Save button")
 
     # 500/1000 * 100 = 50 in both axes.
@@ -178,9 +178,7 @@ def test_client_ground_raises_on_unparseable() -> None:
     client = VgaClient()
     png = _make_png_bytes()
 
-    with mock.patch(
-        "urllib.request.urlopen", return_value=_fake_response("the model rambled")
-    ):
+    with mock.patch("urllib.request.urlopen", return_value=_fake_response("the model rambled")):
         with pytest.raises(VgaClientError):
             client.ground(png, "Whatever")
 

@@ -88,9 +88,7 @@ class _RunRecorder:
         try:
             import psycopg  # type: ignore[import-not-found]
         except ImportError:
-            logger.warning(
-                "psycopg not available — VGA run history will not be persisted"
-            )
+            logger.warning("psycopg not available — VGA run history will not be persisted")
             self._disabled = True
             return self
         try:
@@ -148,9 +146,7 @@ class _RunRecorder:
         try:
             with self._conn.cursor() as cur:
                 cur.execute(
-                    "UPDATE runner.vga_runs "
-                    "SET step_log = step_log || %s::jsonb "
-                    "WHERE id = %s",
+                    "UPDATE runner.vga_runs SET step_log = step_log || %s::jsonb WHERE id = %s",
                     (json.dumps([event]), str(self._run_id)),
                 )
             self._conn.commit()
@@ -184,9 +180,7 @@ class _RunRecorder:
                     )
                 else:
                     cur.execute(
-                        "UPDATE runner.vga_runs "
-                        "SET status = %s, ended_at = NOW() "
-                        "WHERE id = %s",
+                        "UPDATE runner.vga_runs SET status = %s, ended_at = NOW() WHERE id = %s",
                         (status, str(self._run_id)),
                     )
             self._conn.commit()
@@ -250,9 +244,7 @@ def _load_actions(actions_path: Path) -> list[VgaAction]:
     """Parse the action-sequence JSON file into :class:`VgaAction` models."""
     payload = json.loads(actions_path.read_text(encoding="utf-8"))
     if not isinstance(payload, list):
-        raise RuntimeError(
-            f"action sequence must be a JSON list; got {type(payload).__name__}"
-        )
+        raise RuntimeError(f"action sequence must be a JSON list; got {type(payload).__name__}")
     return [VgaAction.model_validate(item) for item in payload]
 
 
@@ -313,9 +305,7 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 shadow_logger = ShadowSampleLogger(pg_url=args.pg_url)
             except Exception:
-                logger.exception(
-                    "Failed to construct ShadowSampleLogger; continuing without it"
-                )
+                logger.exception("Failed to construct ShadowSampleLogger; continuing without it")
                 shadow_logger = None
         runtime = _build_runtime(shadow_logger=shadow_logger)
     except Exception as exc:

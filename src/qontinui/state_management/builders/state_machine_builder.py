@@ -660,9 +660,9 @@ class ImageMatchingStateMachineBuilder:
         self.screenshots_dir = Path(screenshots_dir)
         self.similarity_threshold = similarity_threshold
         self.screenshots: dict[str, Any] = {}  # screenshot_id -> image array (np.ndarray)
-        self.candidate_elements: dict[str, list[dict[str, Any]]] = (
-            {}
-        )  # screenshot_id -> list of elements
+        self.candidate_elements: dict[
+            str, list[dict[str, Any]]
+        ] = {}  # screenshot_id -> list of elements
         self.tracked_images: list[TrackedImage] = []
         self.states: list[dict[str, Any]] = []
 

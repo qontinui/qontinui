@@ -138,8 +138,7 @@ class InteractabilityFilter(DetectionBackend):
             settings = OmniParserSettings()
             if not settings.enabled:
                 logger.debug(
-                    "InteractabilityFilter: OmniParserSettings.enabled=false, "
-                    "pre-filter is a no-op"
+                    "InteractabilityFilter: OmniParserSettings.enabled=false, pre-filter is a no-op"
                 )
                 return None
             self._detector = OmniParserDetector(settings=settings)

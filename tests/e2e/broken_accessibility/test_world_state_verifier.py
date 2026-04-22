@@ -128,7 +128,7 @@ def test_wsm_refuses_wrong_target_click(
     canvas_x = win.left + win.width // 2
     canvas_y = win.top + (win.height * 2) // 3
     logger.info(
-        "Clicking mspaint canvas interior at (%d, %d) — deliberately NOT " "the red color swatch",
+        "Clicking mspaint canvas interior at (%d, %d) — deliberately NOT the red color swatch",
         canvas_x,
         canvas_y,
     )

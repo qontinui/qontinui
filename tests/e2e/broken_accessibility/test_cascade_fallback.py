@@ -258,9 +258,9 @@ def test_mspaint_empty_accessibility_triggers_bypass(
     service_called = any(
         "POST http" in rec.message and "/parse" in rec.message for rec in caplog.records
     )
-    assert (
-        service_called
-    ), "expected the terminal fallback to actually call the OmniParser /parse endpoint"
+    assert service_called, (
+        "expected the terminal fallback to actually call the OmniParser /parse endpoint"
+    )
 
 
 # ---------------------------------------------------------------------------

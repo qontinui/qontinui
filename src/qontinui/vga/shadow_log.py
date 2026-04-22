@@ -103,9 +103,7 @@ class ShadowSampleLogger:
         try:
             import psycopg  # type: ignore[import-not-found]  # noqa: F401
         except ImportError:
-            logger.warning(
-                "psycopg not available — VGA shadow samples will not be persisted"
-            )
+            logger.warning("psycopg not available — VGA shadow samples will not be persisted")
             self._disabled = True
 
         # Row-count cache: (count, fetched_at monotonic seconds).
@@ -186,10 +184,7 @@ class ShadowSampleLogger:
     def _get_cached_count(self) -> int | None:
         """Return the (possibly cached) row count, or None on failure."""
         now = time.monotonic()
-        if (
-            self._cached_count is not None
-            and (now - self._cached_at) < _COUNT_CACHE_TTL_SECONDS
-        ):
+        if self._cached_count is not None and (now - self._cached_at) < _COUNT_CACHE_TTL_SECONDS:
             return self._cached_count
 
         try:

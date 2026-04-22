@@ -106,7 +106,7 @@ def _gate_click_coordinate(screenshot: np.ndarray[Any, Any], x: int, y: int) -> 
         is_interactive, conf = detector.classify_point(screenshot, x, y)
     except Exception:
         logger.debug(
-            "UI-TARS executor: interactability classification failed, " "passing click through",
+            "UI-TARS executor: interactability classification failed, passing click through",
             exc_info=True,
         )
         return None

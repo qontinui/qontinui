@@ -393,7 +393,7 @@ class CascadeDetector(DetectionBackend):
         needle_type = config.get("needle_type", "template")
         if not fb.supports(needle_type):
             logger.debug(
-                "CascadeDetector: terminal fallback %s does not support " "needle_type=%s",
+                "CascadeDetector: terminal fallback %s does not support needle_type=%s",
                 fb.name,
                 needle_type,
             )
@@ -401,7 +401,7 @@ class CascadeDetector(DetectionBackend):
 
         min_confidence = config.get("min_confidence", 0.8)
         logger.info(
-            "CascadeDetector: accessibility tier empty, bypassing to terminal " "fallback %s",
+            "CascadeDetector: accessibility tier empty, bypassing to terminal fallback %s",
             fb.name,
         )
         t0 = time.perf_counter()
