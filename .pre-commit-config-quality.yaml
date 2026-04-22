@@ -57,20 +57,13 @@ repos:
       - id: mixed-line-ending
         args: ['--fix=lf']
 
-  # Black formatter
-  - repo: https://github.com/psf/black
-    rev: 24.4.2
-    hooks:
-      - id: black
-        language_version: python3.12
-        args: ['--line-length=100']
-
-  # Ruff linter
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
+  # Ruff: format + lint
+  - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.0
     hooks:
       - id: ruff
         args: ['--fix', '--exit-non-zero-on-fix']
+      - id: ruff-format
 
   # Optional: MyPy type checker (commented out due to isolated env issues)
   # Uncomment if you want to run mypy in pre-commit
