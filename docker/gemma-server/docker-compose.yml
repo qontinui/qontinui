@@ -1,0 +1,65 @@
+# Standalone llama.cpp server for the scripted-output emitter's
+# `gemma_local_warm` provider lane.
+#
+# Deliberately NOT routed through `docker/llama-swap/` because:
+#   - llama-swap is currently vLLM-only; adding a llama.cpp backend would
+#     require rebuilding its image (risks breaking AriaUI / UI-TARS).
+#   - llama-swap proxies OpenAI routes; the emitter uses llama.cpp's raw
+#     `/completion` endpoint to bypass chat-template stripping of Gemma 4's
+#     `<channel|>` reasoning trace.
+#   - Gemma is always-on here. With ~26 GB VRAM used at steady state, it
+#     co-exists fine on the 5090 alongside runner Tauri webviews but will
+#     contend with AriaUI / UI-TARS if those load concurrently. Operators
+#     who want strict time-sharing should instead run Gemma via llama-swap
+#     once a llama.cpp backend is added there (tracked as a follow-up).
+#
+# Model: google/gemma-4-26B-A4B-it (MoE, 4B active params)
+# Quant: Unsloth UD-Q6_K (~23 GB on disk, ~26 GB VRAM with q8_0 KV cache)
+# Throughput on RTX 5090 at time of writing: ~1.1–1.4 s/emit, 100+ tok/s.
+#
+# Usage:
+#   # Download the GGUF once (outside compose — it's 23 GB):
+#   curl -L -o models/gemma-4-26B-A4B-it-UD-Q6_K.gguf \
+#     https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/gemma-4-26B-A4B-it-UD-Q6_K.gguf
+#
+#   # Bring up:
+#   docker compose -f docker/gemma-server/docker-compose.yml up -d
+#
+# The runner reads `scripted_output.gemma_local_endpoint` from settings
+# (default http://localhost:8200) — no runner restart needed when the server
+# comes up, the provider probes on demand.
+
+services:
+  gemma-server:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: qontinui-gemma-server
+    ports:
+      - "8200:8200"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      # The GGUF is bind-mounted from the host so swapping to a different
+      # quant (Q5_K_M for more VRAM headroom, Q8 for best quality) is a
+      # one-line change to the `-m` argument and a `docker restart`.
+      - ./models:/models:ro
+    command: >
+      -m /models/gemma-4-26B-A4B-it-UD-Q6_K.gguf
+      --host 0.0.0.0 --port 8200
+      --n-gpu-layers 999
+      --ctx-size 16384
+      --cache-type-k q8_0 --cache-type-v q8_0
+      --threads 8
+      --alias gemma-4-26b-a4b
+      --no-warmup
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8200/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
