@@ -174,7 +174,7 @@ class DriftDetector:
             cand_hash = imagehash.phash(cand_pil)
 
             # phash is 64-bit; Hamming distance in [0, 64].
-            dist = ref_hash - cand_hash
+            dist = float(ref_hash - cand_hash)
             return max(0.0, 1.0 - dist / 64.0)
         except ImportError:
             pass

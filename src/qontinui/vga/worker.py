@@ -262,16 +262,16 @@ def _build_runtime(
             ``runner.vga_shadow_samples`` — the v6 training gate needs
             production-distribution data.
     """
-    from ..hal.implementations.mss_capture import MSSCapture
-    from ..hal.implementations.pyautogui_keyboard import PyAutoGUIKeyboard
-    from ..hal.implementations.pyautogui_mouse import PyAutoGUIMouse
+    from ..hal.implementations.mss_capture import MSSScreenCapture
+    from ..hal.implementations.pyautogui_keyboard import PyAutoGUIKeyboardOperations
+    from ..hal.implementations.pyautogui_mouse import PyAutoGUIMouseOperations
 
     client = VgaClient()
     return VgaRuntime(
         client=client,
-        hal_mouse=PyAutoGUIMouse(),
-        hal_keyboard=PyAutoGUIKeyboard(),
-        hal_capture=MSSCapture(),
+        hal_mouse=PyAutoGUIMouseOperations(),
+        hal_keyboard=PyAutoGUIKeyboardOperations(),
+        hal_capture=MSSScreenCapture(),
         shadow_logger=shadow_logger,
     )
 
