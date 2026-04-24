@@ -8,6 +8,7 @@ import logging
 import re
 from typing import Any
 
+from qontinui.actions.data_operations.evaluator import SafeEvaluator
 from qontinui.config import ConditionConfig
 from qontinui.orchestration.execution_context import ExecutionContext
 
@@ -134,27 +135,15 @@ class ConditionEvaluator:
         Executes a Python expression in a restricted context with access to
         workflow variables. The expression should return a truthy/falsy value.
 
-        SECURITY WARNING:
-        This method uses eval() to execute Python expressions. It is designed for
-        TRUSTED INPUT ONLY (automation scripts written by developers).
+        Uses SafeEvaluator which performs AST-based whitelist validation before
+        evaluation, blocking dangerous operations (imports, file I/O, exec, etc.).
 
-        DO NOT use this with:
-        - User-provided input from web forms, APIs, or command line
-        - Data from external/untrusted sources
-        - Configuration files from untrusted locations
+        SECURITY NOTE:
+        Designed for TRUSTED INPUT ONLY (automation scripts written by developers).
+        Do not use with user-provided input from web forms, APIs, or CLI arguments.
+        For untrusted scenarios, run Qontinui in isolated containers/VMs.
 
-        Security mitigations in place:
-        - Empty __builtins__ prevents access to dangerous functions
-        - No access to __import__, open(), exec(), compile()
-        - Expressions limited to variable references and basic operations
-        - Intended for workflow conditions, not arbitrary code execution
-
-        For untrusted scenarios:
-        - Run Qontinui in isolated containers/VMs
-        - Implement additional validation layers
-        - Use alternative condition types (variable, image_exists)
-
-        See docs/SECURITY.md for detailed security model.
+        See docs/SECURITY.md for the full security model.
 
         Args:
             condition: Condition configuration with expression string
@@ -171,32 +160,13 @@ class ConditionEvaluator:
         expression = condition.expression
         logger.debug("Evaluating expression: %s", expression)
 
-        try:
-            # Create safe evaluation context with variables
-            # Include both namespaced and direct access to variables
-            variables = self.context.variables
-            eval_context = {"variables": variables, **variables}
+        # Create evaluation context with both namespaced and direct variable access
+        variables = self.context.variables
+        eval_context = {"variables": variables, **variables}
 
-            # Evaluate with restricted builtins for safety
-            result = eval(expression, {"__builtins__": {}}, eval_context)
-            logger.debug("Expression result: %s", result)
-            return bool(result)
-
-        except NameError as e:
-            logger.error("Expression references undefined variable: %s", str(e))
-            raise ValueError(f"Invalid expression '{expression}': {e}") from e
-
-        except SyntaxError as e:
-            logger.error("Expression has invalid syntax: %s", str(e))
-            raise ValueError(f"Invalid expression '{expression}': {e}") from e
-
-        except TypeError as e:
-            logger.error("Expression type error: %s", str(e))
-            raise ValueError(f"Invalid expression '{expression}': {e}") from e
-
-        except ZeroDivisionError as e:
-            logger.error("Expression division by zero: %s", str(e))
-            raise ValueError(f"Invalid expression '{expression}': {e}") from e
+        result = SafeEvaluator.safe_eval(expression, eval_context)
+        logger.debug("Expression result: %s", result)
+        return bool(result)
 
     async def _evaluate_image_exists_condition(self, condition: ConditionConfig) -> bool:
         """Evaluate image-exists condition using FindAction.

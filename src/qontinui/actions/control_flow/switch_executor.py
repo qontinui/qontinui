@@ -7,6 +7,7 @@ conditional branching logic for control flow operations.
 import logging
 from typing import Any
 
+from qontinui.actions.data_operations.evaluator import SafeEvaluator
 from qontinui.config import Action, SwitchActionConfig
 from qontinui.orchestration.execution_context import ExecutionContext
 
@@ -165,12 +166,13 @@ class SwitchExecutor:
     def _evaluate_expression(self, expression: str) -> Any:
         """Evaluate a Python expression and return the result.
 
-        Uses the same security-restricted eval context as ConditionEvaluator
-        to evaluate expressions safely with access to workflow variables.
+        Uses SafeEvaluator which performs AST-based whitelist validation before
+        evaluation, blocking dangerous operations (imports, file I/O, exec, etc.).
 
-        SECURITY WARNING:
-        This method uses eval() to execute Python expressions. It is designed for
-        TRUSTED INPUT ONLY (automation scripts written by developers).
+        SECURITY NOTE:
+        Designed for TRUSTED INPUT ONLY (automation scripts written by developers).
+        Do not use with user-provided input from web forms, APIs, or CLI arguments.
+        For untrusted scenarios, run Qontinui in isolated containers/VMs.
 
         Args:
             expression: Python expression string to evaluate
@@ -183,32 +185,13 @@ class SwitchExecutor:
         """
         logger.debug("Evaluating SWITCH expression: %s", expression)
 
-        try:
-            # Create safe evaluation context with variables
-            # Include both namespaced and direct access to variables
-            variables = self.context.variables
-            eval_context = {"variables": variables, **variables}
+        # Create evaluation context with both namespaced and direct variable access
+        variables = self.context.variables
+        eval_context = {"variables": variables, **variables}
 
-            # Evaluate with restricted builtins for safety
-            result = eval(expression, {"__builtins__": {}}, eval_context)
-            logger.debug("Expression result: %s (type: %s)", result, type(result).__name__)
-            return result
-
-        except NameError as e:
-            logger.error("Expression references undefined variable: %s", str(e))
-            raise ValueError(f"Invalid expression '{expression}': {e}") from e
-
-        except SyntaxError as e:
-            logger.error("Expression has invalid syntax: %s", str(e))
-            raise ValueError(f"Invalid expression '{expression}': {e}") from e
-
-        except TypeError as e:
-            logger.error("Expression type error: %s", str(e))
-            raise ValueError(f"Invalid expression '{expression}': {e}") from e
-
-        except ZeroDivisionError as e:
-            logger.error("Expression division by zero: %s", str(e))
-            raise ValueError(f"Invalid expression '{expression}': {e}") from e
+        result = SafeEvaluator.safe_eval(expression, eval_context)
+        logger.debug("Expression result: %s (type: %s)", result, type(result).__name__)
+        return result
 
     def _matches_case(self, expression_value: Any, case_value: Any | list[Any]) -> bool:
         """Check if expression value matches a case value.

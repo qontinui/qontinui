@@ -17,6 +17,7 @@ import os
 import time
 import uuid
 from contextlib import asynccontextmanager
+from urllib.parse import urlparse
 
 import torch
 import uvicorn
@@ -256,6 +257,24 @@ class ChatCompletionRequest(BaseModel):
     stream: bool = False
 
 
+def _validate_image_url(url: str) -> None:
+    """Validate an image URL to prevent SSRF attacks.
+
+    Only allows http:// and https:// URLs with non-empty hostnames.
+    Rejects private/internal addresses is best done at the network level
+    (e.g., Docker network policies), but scheme and host validation catches
+    the most common SSRF vectors (file://, ftp://, gopher://, bare paths, etc.).
+
+    Raises:
+        ValueError: If the URL is not a safe http/https URL.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"Unsupported image URL scheme '{parsed.scheme}': only http/https allowed")
+    if not parsed.netloc:
+        raise ValueError("Image URL must include a hostname")
+
+
 def _extract_images_and_text(messages: list[Message]):
     """Parse OpenAI-format messages into text + PIL images."""
     import requests
@@ -278,6 +297,7 @@ def _extract_images_and_text(messages: list[Message]):
                     img_bytes = base64.b64decode(data)
                     images.append(Image.open(io.BytesIO(img_bytes)).convert("RGB"))
                 else:
+                    _validate_image_url(url)
                     resp = requests.get(url, timeout=30)
                     images.append(Image.open(io.BytesIO(resp.content)).convert("RGB"))
 
