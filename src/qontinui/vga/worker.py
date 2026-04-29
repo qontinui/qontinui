@@ -12,7 +12,7 @@ Invocation shape (matches what the handler will fork):
 
 The worker:
 
-1. Loads the state machine row from ``runner.vga_state_machines`` via
+1. Loads the state machine row from ``project.vga_state_machines`` via
    psycopg (sync — the caller is a short-lived subprocess).
 2. Constructs a :class:`VgaRuntime` wired to the platform-default HAL
    implementations.
@@ -51,7 +51,7 @@ def _emit(event: dict[str, Any]) -> None:
 
 
 class _RunRecorder:
-    """Append-only recorder for a ``runner.vga_runs`` row.
+    """Append-only recorder for a ``project.vga_runs`` row.
 
     Inserts a ``status='running'`` row at the start of a run and appends each
     ``VgaStepEvent`` to ``step_log`` as it occurs. On finish it updates
@@ -94,7 +94,7 @@ class _RunRecorder:
         try:
             self._conn = psycopg.connect(self._pg_url)
             with self._conn.cursor() as cur:
-                cur.execute("SET search_path TO runner, public")
+                cur.execute("SET search_path TO project, public")
             self._conn.commit()
         except Exception:
             logger.exception("Failed to open VGA recorder connection; continuing")
@@ -124,7 +124,7 @@ class _RunRecorder:
         try:
             with self._conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO runner.vga_runs "
+                    "INSERT INTO project.vga_runs "
                     "(id, state_machine_id, task_run_id, grounding_model, "
                     " status, step_log, started_at) "
                     "VALUES (%s, %s, %s, %s, 'running', '[]'::jsonb, NOW())",
@@ -146,7 +146,7 @@ class _RunRecorder:
         try:
             with self._conn.cursor() as cur:
                 cur.execute(
-                    "UPDATE runner.vga_runs SET step_log = step_log || %s::jsonb WHERE id = %s",
+                    "UPDATE project.vga_runs SET step_log = step_log || %s::jsonb WHERE id = %s",
                     (json.dumps([event]), str(self._run_id)),
                 )
             self._conn.commit()
@@ -160,7 +160,7 @@ class _RunRecorder:
             with self._conn.cursor() as cur:
                 if error:
                     cur.execute(
-                        "UPDATE runner.vga_runs "
+                        "UPDATE project.vga_runs "
                         "SET status = %s, ended_at = NOW(), "
                         "    step_log = step_log || %s::jsonb "
                         "WHERE id = %s",
@@ -180,7 +180,7 @@ class _RunRecorder:
                     )
                 else:
                     cur.execute(
-                        "UPDATE runner.vga_runs SET status = %s, ended_at = NOW() WHERE id = %s",
+                        "UPDATE project.vga_runs SET status = %s, ended_at = NOW() WHERE id = %s",
                         (status, str(self._run_id)),
                     )
             self._conn.commit()
@@ -189,7 +189,7 @@ class _RunRecorder:
 
 
 def _load_state_machine_from_pg(pg_url: str, sm_id: UUID) -> VgaStateMachine:
-    """Load a VGA state machine row from ``runner.vga_state_machines``.
+    """Load a VGA state machine row from ``project.vga_state_machines``.
 
     The row's ``state_graph`` JSONB column holds the canonical JSON
     payload that :meth:`VgaStateMachine.from_canonical_json` consumes.
@@ -208,11 +208,11 @@ def _load_state_machine_from_pg(pg_url: str, sm_id: UUID) -> VgaStateMachine:
 
     with psycopg.connect(pg_url) as conn:  # type: ignore[attr-defined]
         with conn.cursor() as cur:
-            cur.execute("SET search_path TO runner, public")
+            cur.execute("SET search_path TO project, public")
             cur.execute(
                 "SELECT id, name, target_process, target_os, grounding_model, "
                 "private, state_graph "
-                "FROM runner.vga_state_machines WHERE id = %s",
+                "FROM project.vga_state_machines WHERE id = %s",
                 (str(sm_id),),
             )
             row = cur.fetchone()
@@ -259,7 +259,7 @@ def _build_runtime(
     Args:
         shadow_logger: Optional shadow-sample writer. When set, every
             successful grounding call is mirrored into
-            ``runner.vga_shadow_samples`` — the v6 training gate needs
+            ``project.vga_shadow_samples`` — the v6 training gate needs
             production-distribution data.
     """
     from ..hal.implementations.mss_capture import MSSScreenCapture
