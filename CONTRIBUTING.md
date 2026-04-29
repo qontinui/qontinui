@@ -1,3 +1,17 @@
+<!-- BEGIN License & CLA preamble — added 2026-04-29 during AGPL rollout -->
+## License & CLA
+
+This project is licensed under the **GNU Affero General Public License v3.0 or later** (`AGPL-3.0-or-later`). See [`LICENSE`](LICENSE) for the full text. Contributors should be aware:
+
+- AGPL is a strong copyleft license. Anyone who runs a modified version of this project as a network service must publish their modifications under AGPL too.
+- For typical self-hosting, internal use, forking, or contributing back, AGPL behaves like GPL.
+
+All non-trivial contributions require signing the qontinui Contributor License Agreement (CLA). The CLA is administered via [cla-assistant.io](https://cla-assistant.io/) — when you open a pull request, the CLA bot will comment with a one-click sign link, and signing applies across all qontinui repositories. The CLA text lives in [`CLA.md`](CLA.md). It grants Joshua Spinak the right to relicense your contribution under any future license; you retain copyright in your contributions.
+
+The remainder of this document covers contribution mechanics specific to this repository.
+
+<!-- END License & CLA preamble -->
+
 # Contributing to Qontinui
 
 Thank you for your interest in contributing to Qontinui! This document provides guidelines for contributing to the project.
