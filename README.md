@@ -2,7 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/qontinui.svg)](https://badge.fury.io/py/qontinui)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 A Python library for model-based GUI automation with intelligent state management and visual recognition.
@@ -250,7 +250,7 @@ Qontinui is a faithful port of Brobot. When contributing, please preserve Brobot
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file for details.
+Licensed under the GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later). See [LICENSE](LICENSE) for full terms.
 
 ## Acknowledgments
 

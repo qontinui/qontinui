@@ -3,7 +3,7 @@ name = "qontinui"
 version = "0.1.1"
 description = "Model-based GUI automation with AI-enhanced perception"
 authors = ["Joshua Spinak <jspinak@alum.mit.edu>"]
-license = "MIT"
+license = "AGPL-3.0-or-later"
 readme = "README.md"
 homepage = "https://github.com/qontinui/qontinui"
 repository = "https://github.com/qontinui/qontinui"
@@ -12,7 +12,7 @@ keywords = ["gui", "automation", "ai", "testing", "rpa"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Testing",
