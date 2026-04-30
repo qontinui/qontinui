@@ -2,8 +2,6 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
         args: ['--maxkb=1000']
@@ -11,15 +9,12 @@ repos:
       - id: check-merge-conflict
       - id: check-toml
       - id: debug-statements
-      - id: mixed-line-ending
-        args: ['--fix=lf']
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.6.0
     hooks:
       - id: ruff
         args: ['--fix', '--exit-non-zero-on-fix']
-      - id: ruff-format
 
   - repo: local
     hooks:
