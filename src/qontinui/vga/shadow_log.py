@@ -1,7 +1,7 @@
 """Shadow-sample writer for the VGA v6 training gate.
 
 Every production grounding call is mirrored into
-``runner.vga_shadow_samples``: one row per unique
+``project.vga_shadow_samples``: one row per unique
 ``(image_sha, prompt, model_used)`` triple. The full-region PNG lands
 at ``datasets/vga-shadow/<image_sha>.png`` (dedupe on disk too).
 
@@ -48,7 +48,7 @@ _COUNT_CACHE_TTL_SECONDS = 60.0
 
 
 class ShadowSampleLogger:
-    """Writes one row per unique grounding call into ``runner.vga_shadow_samples``.
+    """Writes one row per unique grounding call into ``project.vga_shadow_samples``.
 
     Args:
         pg_url: Postgres connection string. Connections are opened lazily
@@ -130,7 +130,7 @@ class ShadowSampleLogger:
         Args:
             image_png_bytes: PNG-encoded bytes of the captured region.
                 Used for the disk write and for computing ``image_sha``.
-            state_machine_id: FK into ``runner.vga_state_machines``.
+            state_machine_id: FK into ``project.vga_state_machines``.
             target_process: Process name (e.g. ``"notepad++.exe"``).
                 Used by the daemon to bucket per-domain regression.
             prompt: Natural-language element description fed to the VLM.
@@ -192,8 +192,8 @@ class ShadowSampleLogger:
 
             with psycopg.connect(self._pg_url) as conn:  # type: ignore[attr-defined]
                 with conn.cursor() as cur:
-                    cur.execute("SET search_path TO runner, public")
-                    cur.execute("SELECT COUNT(*) FROM runner.vga_shadow_samples")
+                    cur.execute("SET search_path TO project, public")
+                    cur.execute("SELECT COUNT(*) FROM project.vga_shadow_samples")
                     row = cur.fetchone()
                     count = int(row[0]) if row else 0
         except Exception:
@@ -234,7 +234,7 @@ class ShadowSampleLogger:
         v5_model: str,
         confidence: float | None,
     ) -> None:
-        """INSERT ... ON CONFLICT DO NOTHING into ``runner.vga_shadow_samples``.
+        """INSERT ... ON CONFLICT DO NOTHING into ``project.vga_shadow_samples``.
 
         There is no UNIQUE index on ``(image_sha, prompt, model_used)``
         in the shipped schema; deduplication is handled at the disk
@@ -249,9 +249,9 @@ class ShadowSampleLogger:
 
         with psycopg.connect(self._pg_url) as conn:  # type: ignore[attr-defined]
             with conn.cursor() as cur:
-                cur.execute("SET search_path TO runner, public")
+                cur.execute("SET search_path TO project, public")
                 cur.execute(
-                    "INSERT INTO runner.vga_shadow_samples "
+                    "INSERT INTO project.vga_shadow_samples "
                     "(state_machine_id, image_sha, image_path, prompt, "
                     " target_process, predicted_bbox, model_used, confidence, "
                     " created_at) "
