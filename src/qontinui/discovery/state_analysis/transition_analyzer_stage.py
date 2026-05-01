@@ -70,7 +70,9 @@ class TransitionAnalyzerStage:
             transitions = self.analyzer.analyze_transitions(states, events, frames)  # type: ignore[arg-type]
             success = True
 
-            logger.info("Transition analysis complete: %d transitions found", len(transitions))
+            logger.info(
+                "Transition analysis complete: %d transitions found", len(transitions)
+            )
             for transition in transitions:
                 logger.debug(
                     "  - %s: %s -> %s (%s)",

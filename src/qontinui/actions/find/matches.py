@@ -191,7 +191,9 @@ class Matches:
         self._matches.sort(key=lambda m: m.similarity, reverse=reverse)
         return self
 
-    def sort_by_position(self, top_to_bottom: bool = True, left_to_right: bool = True) -> "Matches":
+    def sort_by_position(
+        self, top_to_bottom: bool = True, left_to_right: bool = True
+    ) -> "Matches":
         """Sort matches by position.
 
         Args:
@@ -251,7 +253,9 @@ class Matches:
         Returns:
             New Matches with filtered results
         """
-        filtered = [m for m in self._matches if m.center.distance_to(location) <= max_distance]
+        filtered = [
+            m for m in self._matches if m.center.distance_to(location) <= max_distance
+        ]
         return Matches(filtered)
 
     def filter(self, predicate: Callable[[Match], bool]) -> "Matches":
@@ -296,7 +300,9 @@ class Matches:
                     continue
                 intersection = match_region.intersection(kept_region)
                 if intersection:
-                    overlap_ratio = intersection.area / min(match_region.area, kept_region.area)
+                    overlap_ratio = intersection.area / min(
+                        match_region.area, kept_region.area
+                    )
                     if overlap_ratio > overlap_threshold:
                         overlaps = True
                         break

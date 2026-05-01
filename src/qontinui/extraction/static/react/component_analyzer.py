@@ -23,7 +23,9 @@ class ComponentAnalyzer:
         """Initialize the component analyzer."""
         self.components: list[ComponentDefinition] = []
 
-    def extract_components(self, parse_result: dict, file_path: Path) -> list[ComponentDefinition]:
+    def extract_components(
+        self, parse_result: dict, file_path: Path
+    ) -> list[ComponentDefinition]:
         """
         Extract all components from a parse result.
 
@@ -34,7 +36,9 @@ class ComponentAnalyzer:
         Returns:
             List of ComponentDefinition objects
         """
-        function_components = comp_module.extract_function_components(parse_result, file_path)
+        function_components = comp_module.extract_function_components(
+            parse_result, file_path
+        )
         class_components = comp_module.extract_class_components(parse_result, file_path)
 
         all_components = function_components + class_components
@@ -66,8 +70,12 @@ class ComponentAnalyzer:
         Returns:
             Dictionary with component counts by category
         """
-        state_count = sum(1 for c in self.components if c.category == ComponentCategory.STATE)
-        widget_count = sum(1 for c in self.components if c.category == ComponentCategory.WIDGET)
+        state_count = sum(
+            1 for c in self.components if c.category == ComponentCategory.STATE
+        )
+        widget_count = sum(
+            1 for c in self.components if c.category == ComponentCategory.WIDGET
+        )
 
         return {
             "total": len(self.components),

@@ -142,7 +142,9 @@ class ConfigAdapter:
 
         return (new_x, new_y)
 
-    def _translate_region_to_monitors(self, region: Region, target_monitors: list[int]) -> Region:
+    def _translate_region_to_monitors(
+        self, region: Region, target_monitors: list[int]
+    ) -> Region:
         """Translate a region from its original monitor to target monitors.
 
         Args:
@@ -155,7 +157,9 @@ class ConfigAdapter:
         if not target_monitors:
             return region
 
-        new_x, new_y = self._translate_point_to_monitors(region.x, region.y, target_monitors)
+        new_x, new_y = self._translate_point_to_monitors(
+            region.x, region.y, target_monitors
+        )
 
         return Region(
             x=new_x,
@@ -230,7 +234,9 @@ class ConfigAdapter:
 
         logger.info(f"Successfully loaded {len(self._image_lookup)} images")
 
-    def _load_states(self, states: list[ConfigState], state_service: StateService) -> bool:
+    def _load_states(
+        self, states: list[ConfigState], state_service: StateService
+    ) -> bool:
         """Load all states from config.
 
         Args:
@@ -258,11 +264,15 @@ class ConfigAdapter:
                 )
                 error_count += 1
 
-        logger.info(f"State loading complete: {success_count} succeeded, {error_count} failed")
+        logger.info(
+            f"State loading complete: {success_count} succeeded, {error_count} failed"
+        )
 
         return error_count == 0
 
-    def _load_single_state(self, config_state: ConfigState, state_service: StateService) -> bool:
+    def _load_single_state(
+        self, config_state: ConfigState, state_service: StateService
+    ) -> bool:
         """Load a single state from config.
 
         Args:
@@ -354,20 +364,26 @@ class ConfigAdapter:
         """
         # Get the first pattern's image (primary image)
         if not config_state_image.patterns:
-            logger.warning(f"StateImage '{config_state_image.id}' has no patterns, skipping")
+            logger.warning(
+                f"StateImage '{config_state_image.id}' has no patterns, skipping"
+            )
             return None
 
         primary_pattern = config_state_image.patterns[0]
         image_id = primary_pattern.image_id
 
         if not image_id:
-            logger.warning(f"StateImage '{config_state_image.id}' pattern has no imageId, skipping")
+            logger.warning(
+                f"StateImage '{config_state_image.id}' pattern has no imageId, skipping"
+            )
             return None
 
         # Look up the image
         image = self._image_lookup.get(image_id)
         if not image:
-            logger.error(f"StateImage '{config_state_image.id}': image '{image_id}' not found")
+            logger.error(
+                f"StateImage '{config_state_image.id}': image '{image_id}' not found"
+            )
             return None
 
         # Create the runtime StateImage
@@ -390,9 +406,13 @@ class ConfigAdapter:
 
         # Get pattern's search_regions (plural - list of SearchRegion)
         pattern_search_regions = (
-            primary_pattern.search_regions if hasattr(primary_pattern, "search_regions") else []
+            primary_pattern.search_regions
+            if hasattr(primary_pattern, "search_regions")
+            else []
         )
-        has_pattern_regions = bool(pattern_search_regions and len(pattern_search_regions) > 0)
+        has_pattern_regions = bool(
+            pattern_search_regions and len(pattern_search_regions) > 0
+        )
 
         # Log what we're processing
         logger.info(
@@ -423,7 +443,9 @@ class ConfigAdapter:
             logger.info(
                 f"StateImage '{config_state_image.id}': using full monitor bounds for {target_monitors}"
             )
-            monitor_search_regions = self._create_search_regions_for_monitors(target_monitors)
+            monitor_search_regions = self._create_search_regions_for_monitors(
+                target_monitors
+            )
             if monitor_search_regions:
                 runtime_state_image.set_search_regions(monitor_search_regions)
                 # Log the actual regions being used
@@ -525,7 +547,9 @@ class ConfigAdapter:
             logger.warning(f"Failed to create search regions for monitors: {e}")
             return None
 
-    def _convert_state_region(self, config_region: ConfigStateRegion) -> StateRegion | None:
+    def _convert_state_region(
+        self, config_region: ConfigStateRegion
+    ) -> StateRegion | None:
         """Convert a config StateRegion to a runtime StateRegion.
 
         Translates region coordinates to the configured monitors.
@@ -559,9 +583,14 @@ class ConfigAdapter:
             )
 
             # Translate coordinates to target monitors
-            translated_region = self._translate_region_to_monitors(original_region, monitors)
+            translated_region = self._translate_region_to_monitors(
+                original_region, monitors
+            )
 
-            if translated_region.x != original_region.x or translated_region.y != original_region.y:
+            if (
+                translated_region.x != original_region.x
+                or translated_region.y != original_region.y
+            ):
                 logger.debug(
                     f"StateRegion '{config_region.id}': translated from "
                     f"({original_region.x}, {original_region.y}) to "
@@ -577,7 +606,9 @@ class ConfigAdapter:
             logger.warning(f"Failed to convert state region: {e}")
             return None
 
-    def _convert_state_location(self, config_location: ConfigStateLocation) -> StateLocation | None:
+    def _convert_state_location(
+        self, config_location: ConfigStateLocation
+    ) -> StateLocation | None:
         """Convert a config StateLocation to a runtime StateLocation.
 
         Translates location coordinates to the configured monitors.
@@ -633,7 +664,9 @@ class ConfigAdapter:
             logger.warning(f"Failed to convert state location: {e}")
             return None
 
-    def _convert_state_string(self, config_string: ConfigStateString) -> StateString | None:
+    def _convert_state_string(
+        self, config_string: ConfigStateString
+    ) -> StateString | None:
         """Convert a config StateString to a runtime StateString.
 
         Args:
@@ -673,7 +706,9 @@ def load_config(config: QontinuiConfig, state_service: StateService) -> bool:
     return adapter.load_config(config, state_service)
 
 
-def load_config_from_dict(config_dict: dict[str, Any], state_service: StateService) -> bool:
+def load_config_from_dict(
+    config_dict: dict[str, Any], state_service: StateService
+) -> bool:
     """Load a config dictionary and populate the StateService.
 
     This function accepts a raw dictionary (e.g., from JSON.loads) and
@@ -693,7 +728,9 @@ def load_config_from_dict(config_dict: dict[str, Any], state_service: StateServi
         return load_config(config, state_service)
 
     except ImportError:
-        logger.error("qontinui-schemas not installed. Install with: pip install qontinui-schemas")
+        logger.error(
+            "qontinui-schemas not installed. Install with: pip install qontinui-schemas"
+        )
         return False
 
     except Exception as e:

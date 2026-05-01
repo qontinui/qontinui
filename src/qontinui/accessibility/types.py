@@ -124,14 +124,20 @@ class AccessibilityIssue(BaseModel):
         description="The WCAG success criterion this issue relates to (e.g., '4.1.2')",
     )
     severity: AccessibilitySeverity = Field(description="How severe this issue is")
-    level: WCAGLevel = Field(description="WCAG conformance level this criterion belongs to")
+    level: WCAGLevel = Field(
+        description="WCAG conformance level this criterion belongs to"
+    )
     message: str = Field(description="Human-readable description of the issue")
-    element_id: str = Field(alias="elementId", description="ID of the element with the issue")
+    element_id: str = Field(
+        alias="elementId", description="ID of the element with the issue"
+    )
     element_selector: str | None = Field(
         None, alias="elementSelector", description="Selector to find the element"
     )
     suggestion: str = Field(description="Suggested fix for the issue")
-    rule_id: str = Field(alias="ruleId", description="The rule ID that detected this issue")
+    rule_id: str = Field(
+        alias="ruleId", description="The rule ID that detected this issue"
+    )
 
     model_config = {"populate_by_name": True}
 
@@ -139,7 +145,9 @@ class AccessibilityIssue(BaseModel):
 class AccessibilityReport(BaseModel):
     """Accessibility validation report."""
 
-    timestamp: int = Field(description="When the validation was performed (Unix timestamp)")
+    timestamp: int = Field(
+        description="When the validation was performed (Unix timestamp)"
+    )
     url: str = Field(description="URL of the page that was validated")
     elements_scanned: int = Field(
         alias="elementsScanned", description="Number of elements that were scanned"
@@ -147,8 +155,12 @@ class AccessibilityReport(BaseModel):
     issues: list[AccessibilityIssue] = Field(
         default_factory=list, description="All issues found during validation"
     )
-    passed_count: int = Field(alias="passedCount", description="Number of checks that passed")
-    failed_count: int = Field(alias="failedCount", description="Number of checks that failed")
+    passed_count: int = Field(
+        alias="passedCount", description="Number of checks that passed"
+    )
+    failed_count: int = Field(
+        alias="failedCount", description="Number of checks that failed"
+    )
     meets_wcag_a: bool = Field(
         alias="meetsWCAG_A", description="Whether the page meets WCAG 2.1 Level A"
     )
@@ -162,7 +174,9 @@ class AccessibilityReport(BaseModel):
 
     model_config = {"populate_by_name": True}
 
-    def get_issues_by_severity(self, severity: AccessibilitySeverity) -> list[AccessibilityIssue]:
+    def get_issues_by_severity(
+        self, severity: AccessibilitySeverity
+    ) -> list[AccessibilityIssue]:
         """Get issues filtered by severity."""
         return [issue for issue in self.issues if issue.severity == severity]
 
@@ -177,6 +191,7 @@ class AccessibilityReport(BaseModel):
     def has_blocking_issues(self) -> bool:
         """Check if there are any critical or serious issues."""
         return any(
-            issue.severity in (AccessibilitySeverity.CRITICAL, AccessibilitySeverity.SERIOUS)
+            issue.severity
+            in (AccessibilitySeverity.CRITICAL, AccessibilitySeverity.SERIOUS)
             for issue in self.issues
         )

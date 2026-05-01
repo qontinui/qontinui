@@ -134,7 +134,9 @@ class MouseActionExecutor(ActionExecutorBase):
             try:
                 with open(debug_log_path, "a", encoding="utf-8") as f:
                     f.write(log_msg)
-                    f.write(f"[{timestamp}]   Typed config type: {type(typed_config).__name__}\n")
+                    f.write(
+                        f"[{timestamp}]   Typed config type: {type(typed_config).__name__}\n"
+                    )
                 break  # Stop after first successful write
             except Exception:
                 continue
@@ -177,7 +179,9 @@ class MouseActionExecutor(ActionExecutorBase):
 
     # Helper methods
 
-    async def _get_target_location(self, target: TargetConfig | None) -> tuple[int, int] | None:
+    async def _get_target_location(
+        self, target: TargetConfig | None
+    ) -> tuple[int, int] | None:
         """Get target location from TargetConfig.
 
         Handles different target types:
@@ -238,11 +242,15 @@ class MouseActionExecutor(ActionExecutorBase):
             log_debug(
                 f"  isinstance(target, LastFindResultTarget): {isinstance(target, LastFindResultTarget)}"
             )
-            log_debug(f"  isinstance(target, ImageTarget): {isinstance(target, ImageTarget)}")
+            log_debug(
+                f"  isinstance(target, ImageTarget): {isinstance(target, ImageTarget)}"
+            )
             log_debug(
                 f"  isinstance(target, CoordinatesTarget): {isinstance(target, CoordinatesTarget)}"
             )
-            log_debug(f"  isinstance(target, RegionTarget): {isinstance(target, RegionTarget)}")
+            log_debug(
+                f"  isinstance(target, RegionTarget): {isinstance(target, RegionTarget)}"
+            )
 
         logger.debug(f"_get_target_location() called with target={target}")
         logger.debug(f"Target type: {type(target).__name__ if target else 'None'}")
@@ -279,7 +287,9 @@ class MouseActionExecutor(ActionExecutorBase):
                 monitors = state_image_meta.get("monitors")
                 if monitors:
                     monitor_index = monitors[0]  # Use first monitor
-                    logger.debug(f"Using monitor {monitor_index} from StateImage config")
+                    logger.debug(
+                        f"Using monitor {monitor_index} from StateImage config"
+                    )
 
             # Fall back to context monitor_index if not set from StateImage
             if monitor_index is None:
@@ -294,7 +304,9 @@ class MouseActionExecutor(ActionExecutorBase):
 
                 # Create pattern from image file
                 pattern = Pattern.from_file(image.file_path)
-                options = FindOptions(similarity=similarity, monitor_index=monitor_index)
+                options = FindOptions(
+                    similarity=similarity, monitor_index=monitor_index
+                )
 
                 # Use FindAction to find the pattern
                 find_action = FindAction()
@@ -366,7 +378,9 @@ class MouseActionExecutor(ActionExecutorBase):
             )
 
             if hasattr(self.context, "last_action_result"):
-                log_debug(f"self.context.last_action_result: {self.context.last_action_result}")
+                log_debug(
+                    f"self.context.last_action_result: {self.context.last_action_result}"
+                )
                 log_debug(
                     f"self.context.last_action_result type: {type(self.context.last_action_result)}"
                 )
@@ -386,7 +400,10 @@ class MouseActionExecutor(ActionExecutorBase):
 
             logger.debug("Target is LastFindResultTarget")
             # Use first match from last action result
-            if self.context.last_action_result and self.context.last_action_result.matches:
+            if (
+                self.context.last_action_result
+                and self.context.last_action_result.matches
+            ):
                 match = self.context.last_action_result.matches[0]
                 # Convert FIND match coordinates to absolute screen coordinates
                 # using the CoordinateService singleton
@@ -405,19 +422,25 @@ class MouseActionExecutor(ActionExecutorBase):
                 log_debug(
                     "ERROR: LastFindResultTarget requested but no matches in last_action_result"
                 )
-                logger.error("LastFindResultTarget requested but no matches in last_action_result")
+                logger.error(
+                    "LastFindResultTarget requested but no matches in last_action_result"
+                )
                 return None
 
         elif isinstance(target, ResultIndexTarget):
             logger.debug(f"Target is ResultIndexTarget with index={target.index}")
             # Access specific match by index
             if not self.context.last_action_result:
-                logger.error("ResultIndexTarget requested but no last_action_result available")
+                logger.error(
+                    "ResultIndexTarget requested but no last_action_result available"
+                )
                 return None
 
             matches = self.context.last_action_result.matches
             if not matches:
-                logger.error("ResultIndexTarget requested but no matches in last_action_result")
+                logger.error(
+                    "ResultIndexTarget requested but no matches in last_action_result"
+                )
                 return None
 
             if target.index < 0 or target.index >= len(matches):
@@ -441,7 +464,10 @@ class MouseActionExecutor(ActionExecutorBase):
             logger.debug("Target is AllResultsTarget")
             # AllResultsTarget is not supported for single-location actions
             # Return first match location as fallback
-            if self.context.last_action_result and self.context.last_action_result.matches:
+            if (
+                self.context.last_action_result
+                and self.context.last_action_result.matches
+            ):
                 match = self.context.last_action_result.matches[0]
                 # Convert FIND match coordinates to absolute screen coordinates
                 screen_point = self._match_to_screen_point(match.x, match.y)
@@ -453,25 +479,35 @@ class MouseActionExecutor(ActionExecutorBase):
                 )
                 return location
             else:
-                logger.error("AllResultsTarget requested but no matches in last_action_result")
+                logger.error(
+                    "AllResultsTarget requested but no matches in last_action_result"
+                )
                 return None
 
         elif isinstance(target, ResultByImageTarget):
-            logger.debug(f"Target is ResultByImageTarget with image_id={target.image_id}")
+            logger.debug(
+                f"Target is ResultByImageTarget with image_id={target.image_id}"
+            )
             # Find match from specific source image
             if not self.context.last_action_result:
-                logger.error("ResultByImageTarget requested but no last_action_result available")
+                logger.error(
+                    "ResultByImageTarget requested but no last_action_result available"
+                )
                 return None
 
             matches = self.context.last_action_result.matches
             if not matches:
-                logger.error("ResultByImageTarget requested but no matches in last_action_result")
+                logger.error(
+                    "ResultByImageTarget requested but no matches in last_action_result"
+                )
                 return None
 
             # Search for match with matching source_image_id in metadata
             for match in matches:
                 # Check if match has metadata with source_image_id
-                if hasattr(match, "match_object") and hasattr(match.match_object, "metadata"):
+                if hasattr(match, "match_object") and hasattr(
+                    match.match_object, "metadata"
+                ):
                     metadata = match.match_object.metadata
                     # Check both as attribute and dict key for flexibility
                     source_id = getattr(metadata, "source_image_id", None)
@@ -578,7 +614,9 @@ class MouseActionExecutor(ActionExecutorBase):
 
         from qontinui_schemas.common import utc_now
 
-        debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_mouse_move_debug.log")
+        debug_log_path = os.path.join(
+            tempfile.gettempdir(), "qontinui_mouse_move_debug.log"
+        )
 
         def log_debug(msg: str):
             """Write to both logger and debug file."""
@@ -620,7 +658,9 @@ class MouseActionExecutor(ActionExecutorBase):
             duration_seconds = 0.0
             log_debug("moveInstantly=True, duration set to 0")
 
-        log_debug(f"Moving mouse to {location} (duration: {duration_ms}ms = {duration_seconds}s)")
+        log_debug(
+            f"Moving mouse to {location} (duration: {duration_ms}ms = {duration_seconds}s)"
+        )
         logger.info(f"Moving mouse to {location} (duration: {duration_ms}ms)")
         success = self.context.mouse.move(location[0], location[1], duration_seconds)
         log_debug(f"context.mouse.move() returned: {success}")
@@ -673,7 +713,9 @@ class MouseActionExecutor(ActionExecutorBase):
 
         return success  # type: ignore[no-any-return]
 
-    async def _execute_mouse_up(self, action: Action, typed_config: MouseUpActionConfig) -> bool:
+    async def _execute_mouse_up(
+        self, action: Action, typed_config: MouseUpActionConfig
+    ) -> bool:
         """Execute MOUSE_UP action (pure) - release mouse button.
 
         Args:
@@ -709,7 +751,9 @@ class MouseActionExecutor(ActionExecutorBase):
 
         return success  # type: ignore[no-any-return]
 
-    async def _execute_scroll(self, action: Action, typed_config: ScrollActionConfig) -> bool:
+    async def _execute_scroll(
+        self, action: Action, typed_config: ScrollActionConfig
+    ) -> bool:
         """Execute SCROLL/MOUSE_SCROLL action - scroll mouse wheel.
 
         Args:
@@ -746,7 +790,9 @@ class MouseActionExecutor(ActionExecutorBase):
 
     # Combined action executors
 
-    async def _execute_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
+    async def _execute_click(
+        self, action: Action, typed_config: ClickActionConfig
+    ) -> bool:
         """Execute CLICK action - combined move + down + up with timing.
 
         This is a COMBINED action that orchestrates pure actions.
@@ -764,7 +810,9 @@ class MouseActionExecutor(ActionExecutorBase):
 
         from qontinui_schemas.common import utc_now
 
-        debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_click_executor_debug.log")
+        debug_log_path = os.path.join(
+            tempfile.gettempdir(), "qontinui_click_executor_debug.log"
+        )
 
         def debug_write(msg: str) -> None:
             try:
@@ -823,11 +871,15 @@ class MouseActionExecutor(ActionExecutorBase):
                 debug_write("ERROR: Failed to get target location - returning False")
                 return False
         else:
-            logger.debug("No target specified - clicking at current position (pure action)")
+            logger.debug(
+                "No target specified - clicking at current position (pure action)"
+            )
             debug_write("No target - clicking at current position")
 
         # Get button
-        button_value = typed_config.mouse_button.value if typed_config.mouse_button else None
+        button_value = (
+            typed_config.mouse_button.value if typed_config.mouse_button else None
+        )
         logger.info(
             f"[CLICK DEBUG] Raw mouse_button from config: {typed_config.mouse_button}, value: {button_value}"
         )
@@ -858,7 +910,9 @@ class MouseActionExecutor(ActionExecutorBase):
         current_pos = self.context.mouse.position()
         debug_write(f"Current position: ({current_pos.x}, {current_pos.y})")
         logger.debug(f"Current position: ({current_pos.x}, {current_pos.y})")
-        logger.debug(f"Target: {location}, Button: {button.value}, Count: {click_count}")
+        logger.debug(
+            f"Target: {location}, Button: {button.value}, Count: {click_count}"
+        )
         logger.debug(f"Timing: hold={hold_duration}s, release={release_delay}s")
 
         # Step 1: Safety - Release all buttons first (if enabled)
@@ -891,7 +945,9 @@ class MouseActionExecutor(ActionExecutorBase):
         )
         debug_write(f"Step 2: Starting {click_count} click(s) at {click_location}")
         for i in range(click_count):
-            logger.info(f"[CLICK DEBUG] Click {i + 1}/{click_count} - Pressing {button}")
+            logger.info(
+                f"[CLICK DEBUG] Click {i + 1}/{click_count} - Pressing {button}"
+            )
             debug_write(f"  Click {i + 1}/{click_count}")
 
             # Sub-action: MOUSE_DOWN
@@ -931,18 +987,24 @@ class MouseActionExecutor(ActionExecutorBase):
                     "button": button.value,
                     "clicks": click_count,
                     "click_type": "double" if click_count > 1 else "single",
-                    "target_type": (typed_config.target.type if typed_config.target else "unknown"),
+                    "target_type": (
+                        typed_config.target.type if typed_config.target else "unknown"
+                    ),
                     "timestamp": time.time(),
                     "action_id": action.id,
                 },
             )
             debug_write(f"Step 4: Emitted MOUSE_CLICKED event with location={location}")
 
-        logger.info(f"[COMBINED ACTION: CLICK] Completed {click_count} {button.value}-click(s)")
+        logger.info(
+            f"[COMBINED ACTION: CLICK] Completed {click_count} {button.value}-click(s)"
+        )
         debug_write(f"SUCCESS: Completed {click_count} {button.value}-click(s)")
         return True
 
-    async def _execute_double_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
+    async def _execute_double_click(
+        self, action: Action, typed_config: ClickActionConfig
+    ) -> bool:
         """Execute DOUBLE_CLICK action - convenience wrapper for CLICK with count=2.
 
         Args:
@@ -963,12 +1025,16 @@ class MouseActionExecutor(ActionExecutorBase):
             mouse_button=typed_config.mouse_button if typed_config else None,
             press_duration=typed_config.press_duration if typed_config else None,
             pause_after_press=typed_config.pause_after_press if typed_config else None,
-            pause_after_release=(typed_config.pause_after_release if typed_config else None),
+            pause_after_release=(
+                typed_config.pause_after_release if typed_config else None
+            ),
         )
 
         return await self._execute_click(action, double_click_config)
 
-    async def _execute_right_click(self, action: Action, typed_config: ClickActionConfig) -> bool:
+    async def _execute_right_click(
+        self, action: Action, typed_config: ClickActionConfig
+    ) -> bool:
         """Execute RIGHT_CLICK action - convenience wrapper for CLICK with button=right.
 
         Args:
@@ -978,7 +1044,9 @@ class MouseActionExecutor(ActionExecutorBase):
         Returns:
             True if successful
         """
-        logger.info("[COMBINED ACTION: RIGHT_CLICK] Delegating to CLICK with button=right")
+        logger.info(
+            "[COMBINED ACTION: RIGHT_CLICK] Delegating to CLICK with button=right"
+        )
 
         # Create modified config with button=right
         from ..config.schema import ClickActionConfig, MouseButton
@@ -989,12 +1057,16 @@ class MouseActionExecutor(ActionExecutorBase):
             mouse_button=MouseButton.RIGHT,
             press_duration=typed_config.press_duration if typed_config else None,
             pause_after_press=typed_config.pause_after_press if typed_config else None,
-            pause_after_release=(typed_config.pause_after_release if typed_config else None),
+            pause_after_release=(
+                typed_config.pause_after_release if typed_config else None
+            ),
         )
 
         return await self._execute_click(action, right_click_config)
 
-    async def _execute_drag(self, action: Action, typed_config: DragActionConfig) -> bool:
+    async def _execute_drag(
+        self, action: Action, typed_config: DragActionConfig
+    ) -> bool:
         """Execute DRAG action - move + down + move + up.
 
         This is a COMBINED action using pure actions:
@@ -1074,7 +1146,9 @@ class MouseActionExecutor(ActionExecutorBase):
         logger.info("[COMBINED ACTION: DRAG] Completed")
         return True
 
-    async def _execute_highlight(self, action: Action, typed_config: HighlightActionConfig) -> bool:
+    async def _execute_highlight(
+        self, action: Action, typed_config: HighlightActionConfig
+    ) -> bool:
         """Execute HIGHLIGHT action - visually highlight a screen region.
 
         Args:

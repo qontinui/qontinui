@@ -163,7 +163,9 @@ class ZoneConditionEvaluator:
         Returns:
             Dict mapping condition name to result.
         """
-        return {name: cond.evaluate(detections) for name, cond in self.conditions.items()}
+        return {
+            name: cond.evaluate(detections) for name, cond in self.conditions.items()
+        }
 
     def triggered(self, detections: Detections) -> list[str]:
         """Return names of conditions that are currently triggered.
@@ -174,4 +176,6 @@ class ZoneConditionEvaluator:
         Returns:
             List of condition names where the condition evaluated to True.
         """
-        return [name for name, result in self.evaluate_all(detections).items() if result]
+        return [
+            name for name, result in self.evaluate_all(detections).items() if result
+        ]

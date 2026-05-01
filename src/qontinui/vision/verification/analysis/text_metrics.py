@@ -432,7 +432,9 @@ class TextMetricsAnalyzer:
         lines = self._group_into_lines(ocr_results, img_region)
 
         # Calculate metrics
-        font_sizes = [line.font_size_estimate for line in lines if line.font_size_estimate > 0]
+        font_sizes = [
+            line.font_size_estimate for line in lines if line.font_size_estimate > 0
+        ]
         avg_font_size = sum(font_sizes) / len(font_sizes) if font_sizes else 0
 
         avg_line_spacing = self.measure_line_spacing(lines)
@@ -443,7 +445,9 @@ class TextMetricsAnalyzer:
             for word in line.words:
                 if word.char_spacing_estimate > 0:
                     char_spacings.append(word.char_spacing_estimate)
-        avg_char_spacing = sum(char_spacings) / len(char_spacings) if char_spacings else 0
+        avg_char_spacing = (
+            sum(char_spacings) / len(char_spacings) if char_spacings else 0
+        )
 
         alignment = self.detect_alignment(lines, region.width)
 
@@ -564,11 +568,19 @@ class TextMetricsAnalyzer:
 
         # Detect metrics
         baseline_y = (
-            self.detect_baseline(line_region, bounds) if line_region.size > 0 else bounds.height
+            self.detect_baseline(line_region, bounds)
+            if line_region.size > 0
+            else bounds.height
         )
-        cap_height = self.detect_cap_height(line_region) if line_region.size > 0 else bounds.height
+        cap_height = (
+            self.detect_cap_height(line_region)
+            if line_region.size > 0
+            else bounds.height
+        )
         x_height = (
-            self.detect_x_height(line_region) if line_region.size > 0 else int(bounds.height * 0.7)
+            self.detect_x_height(line_region)
+            if line_region.size > 0
+            else int(bounds.height * 0.7)
         )
 
         font_size = self.estimate_font_size(bounds.height)
@@ -580,7 +592,9 @@ class TextMetricsAnalyzer:
         # Create words
         words = []
         for result in results:
-            char_spacing = self.measure_char_spacing(result.text, result.bounds.width, font_size)
+            char_spacing = self.measure_char_spacing(
+                result.text, result.bounds.width, font_size
+            )
             words.append(
                 TextWord(
                     text=result.text,

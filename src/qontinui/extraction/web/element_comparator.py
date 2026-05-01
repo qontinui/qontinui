@@ -41,7 +41,9 @@ class CrossPageMatch:
 
     element_id: str
     screenshot_id: str
-    matching_elements: list[tuple[str, str, float]]  # (element_id, screenshot_id, similarity)
+    matching_elements: list[
+        tuple[str, str, float]
+    ]  # (element_id, screenshot_id, similarity)
 
 
 @runtime_checkable
@@ -153,7 +155,9 @@ class DefaultComparator:
 
         # Visual hash similarity
         if fp_a.visual_hash and fp_b.visual_hash:
-            scores["visual"] = compute_hash_similarity(fp_a.visual_hash, fp_b.visual_hash)
+            scores["visual"] = compute_hash_similarity(
+                fp_a.visual_hash, fp_b.visual_hash
+            )
         else:
             scores["visual"] = 0.5  # Neutral if no hash
 
@@ -262,7 +266,10 @@ class TemplateMatchComparator:
                 template, search = gray_b, gray_a
 
             # Pad search image if template is larger
-            if template.shape[0] > search.shape[0] or template.shape[1] > search.shape[1]:
+            if (
+                template.shape[0] > search.shape[0]
+                or template.shape[1] > search.shape[1]
+            ):
                 # Swap
                 template, search = search, template
 
@@ -438,8 +445,12 @@ class CrossPageMatcher:
                         continue
 
                     # Get images if available
-                    img_a = element_images.get(fp_a.element_id) if element_images else None
-                    img_b = element_images.get(fp_b.element_id) if element_images else None
+                    img_a = (
+                        element_images.get(fp_a.element_id) if element_images else None
+                    )
+                    img_b = (
+                        element_images.get(fp_b.element_id) if element_images else None
+                    )
 
                     result = self.comparator.compare(fp_a, fp_b, img_a, img_b)
 

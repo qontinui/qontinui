@@ -28,7 +28,9 @@ class StateNotFoundException(StateException):
 class StateTransitionException(StateException):
     """Raised when state transition fails."""
 
-    def __init__(self, from_state: str, to_state: str, reason: str | None = None, **kwargs) -> None:
+    def __init__(
+        self, from_state: str, to_state: str, reason: str | None = None, **kwargs
+    ) -> None:
         """Initialize with transition details."""
         message = f"Failed to transition from '{from_state}' to '{to_state}'"
         if reason:

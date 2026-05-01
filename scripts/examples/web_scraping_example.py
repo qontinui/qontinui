@@ -258,7 +258,9 @@ async def extract_forms(url: str, headless: bool = True) -> dict:
         # Filter for form-related elements
         form_types = {"input", "select", "textarea", "button", "label"}
         form_elements = [
-            e for e in elements if e.element_type in form_types or e.tag_name in form_types
+            e
+            for e in elements
+            if e.element_type in form_types or e.tag_name in form_types
         ]
 
         logger.info(f"Found {len(form_elements)} form-related elements")
@@ -309,7 +311,9 @@ async def extract_forms(url: str, headless: bool = True) -> dict:
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Web scraping example using qontinui extraction")
+    parser = argparse.ArgumentParser(
+        description="Web scraping example using qontinui extraction"
+    )
     parser.add_argument(
         "--url",
         default="https://github.com",
@@ -357,16 +361,22 @@ async def main():
         logger.info("=" * 60)
 
         if "basic" in results and "error" not in results["basic"]:
-            logger.info(f"Basic extraction: {results['basic']['total_elements']} elements")
+            logger.info(
+                f"Basic extraction: {results['basic']['total_elements']} elements"
+            )
             logger.info(f"  - Links: {len(results['basic']['links'])}")
             logger.info(f"  - Buttons: {len(results['basic']['buttons'])}")
 
         if "enhanced" in results and "error" not in results["enhanced"]:
-            logger.info(f"Enhanced extraction: {results['enhanced']['total_elements']} elements")
+            logger.info(
+                f"Enhanced extraction: {results['enhanced']['total_elements']} elements"
+            )
             logger.info(f"  - Shadow DOM: {results['enhanced']['shadow_dom_elements']}")
 
         if "forms" in results and "error" not in results["forms"]:
-            logger.info(f"Form extraction: {results['forms']['total_form_elements']} elements")
+            logger.info(
+                f"Form extraction: {results['forms']['total_form_elements']} elements"
+            )
             logger.info(f"  - Inputs: {len(results['forms']['inputs'])}")
 
     return results

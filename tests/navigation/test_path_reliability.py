@@ -66,7 +66,9 @@ class TestTransitionReliability:
     def test_recency_weighting(self):
         """Test that recent results are weighted more heavily."""
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-            reliability = TransitionReliability(persistence_path=f.name, recency_decay=0.9)
+            reliability = TransitionReliability(
+                persistence_path=f.name, recency_decay=0.9
+            )
 
             # Record older successes, then a recent failure
             reliability.record_attempt("A", "B", success=True)
@@ -74,8 +76,12 @@ class TestTransitionReliability:
             reliability.record_attempt("A", "B", success=True)
             reliability.record_attempt("A", "B", success=False)  # Most recent
 
-            score_weighted = reliability.get_reliability("A", "B", use_recency_weighting=True)
-            score_unweighted = reliability.get_reliability("A", "B", use_recency_weighting=False)
+            score_weighted = reliability.get_reliability(
+                "A", "B", use_recency_weighting=True
+            )
+            score_unweighted = reliability.get_reliability(
+                "A", "B", use_recency_weighting=False
+            )
 
             # With recency weighting, recent failure should have more impact
             assert score_weighted < score_unweighted
@@ -160,7 +166,9 @@ class TestTransitionReliability:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             reliability = TransitionReliability(persistence_path=f.name)
 
-            reliability.record_attempt("A", "B", success=False, failure_reason="Element not found")
+            reliability.record_attempt(
+                "A", "B", success=False, failure_reason="Element not found"
+            )
 
             stats = reliability.get_stats("A", "B")
             assert stats is not None

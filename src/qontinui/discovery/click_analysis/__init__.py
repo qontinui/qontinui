@@ -58,19 +58,19 @@ from .co_occurrence_analyzer import CoOccurrenceAnalyzer, CoOccurrenceResult
 from .context_analyzer import ClickContextAnalyzer
 from .inferrer import ClickBoundingBoxInferrer, infer_bbox_from_click
 from .models import (
-    DetectionStrategy,
-    ElementType,
-    InferenceConfig,
-    InferenceResult,
-    InferredBoundingBox,
+                                  DetectionStrategy,
+                                  ElementType,
+                                  InferenceConfig,
+                                  InferenceResult,
+                                  InferredBoundingBox,
 )
 from .state_grouper import GroupingResult, StateGroup, StateGrouper
 from .state_machine_builder import (
-    ClickToStateMachineBuilder,
-    StateDef,
-    StateImageDef,
-    StateMachineResult,
-    TransitionDef,
+                                  ClickToStateMachineBuilder,
+                                  StateDef,
+                                  StateImageDef,
+                                  StateMachineResult,
+                                  TransitionDef,
 )
 from .template_candidate import ClickTemplateCandidate
 

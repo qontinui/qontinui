@@ -82,9 +82,9 @@ def test_single_connection_across_full_run() -> None:
                 recorder.append_event({"kind": "vga.step", "i": i})
             recorder.finish("success")
 
-    assert connect.call_count == 1, (
-        f"expected exactly one psycopg.connect() call for the whole run, got {connect.call_count}"
-    )
+    assert (
+        connect.call_count == 1
+    ), f"expected exactly one psycopg.connect() call for the whole run, got {connect.call_count}"
     assert conn.close.call_count == 1
 
 

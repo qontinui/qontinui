@@ -30,7 +30,9 @@ class ExtractionConfig:
 
     # Scroll state extraction
     scroll_overlap_percent: float = 0.1  # Overlap between scroll states (0-1)
-    min_scroll_content_change: float = 0.3  # Minimum content change to create new state (0-1)
+    min_scroll_content_change: float = (
+        0.3  # Minimum content change to create new state (0-1)
+    )
 
     # Element detection
     min_element_size: tuple[int, int] = (10, 10)  # Minimum width, height

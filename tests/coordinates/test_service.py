@@ -90,7 +90,9 @@ class TestCoordinateServiceMatchToScreen:
     ) -> None:
         """Test match_to_screen with single monitor at origin."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_single_monitor_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_single_monitor_mss
+            )
 
             service = CoordinateService()
             screen_point = service.match_to_screen(100, 200)
@@ -104,7 +106,9 @@ class TestCoordinateServiceMatchToScreen:
     ) -> None:
         """Test match_to_screen with standard dual monitor layout."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_standard_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_standard_mss
+            )
 
             service = CoordinateService()
             screen_point = service.match_to_screen(100, 200)
@@ -121,7 +125,9 @@ class TestCoordinateServiceMatchToScreen:
         This is the critical test case that was broken.
         """
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_left_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_left_mss
+            )
 
             service = CoordinateService()
 
@@ -137,7 +143,9 @@ class TestCoordinateServiceMatchToScreen:
     ) -> None:
         """Test match_to_screen with complex three-monitor layout."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_triple_monitor_complex_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_triple_monitor_complex_mss
+            )
 
             service = CoordinateService()
 
@@ -157,7 +165,9 @@ class TestCoordinateServiceScreenToMatch:
     ) -> None:
         """Test screen_to_match with single monitor."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_single_monitor_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_single_monitor_mss
+            )
 
             service = CoordinateService()
             virtual_point = service.screen_to_match(100, 200)
@@ -170,7 +180,9 @@ class TestCoordinateServiceScreenToMatch:
     ) -> None:
         """Test screen_to_match with left monitor (negative screen coords)."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_left_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_left_mss
+            )
 
             service = CoordinateService()
 
@@ -189,7 +201,9 @@ class TestCoordinateServiceRoundTrip:
     ) -> None:
         """Test round-trip conversion with single monitor."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_single_monitor_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_single_monitor_mss
+            )
 
             service = CoordinateService()
             original = VirtualPoint(100, 200)
@@ -205,7 +219,9 @@ class TestCoordinateServiceRoundTrip:
     ) -> None:
         """Test round-trip conversion with left monitor."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_left_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_left_mss
+            )
 
             service = CoordinateService()
             original = VirtualPoint(65, 1372)
@@ -221,7 +237,9 @@ class TestCoordinateServiceRoundTrip:
     ) -> None:
         """Test round-trip conversion starting from screen coords."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_left_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_left_mss
+            )
 
             service = CoordinateService()
             original = ScreenPoint(-1855, 1372)
@@ -236,10 +254,14 @@ class TestCoordinateServiceRoundTrip:
 class TestCoordinateServiceMonitorConversions:
     """Test monitor-relative coordinate conversions."""
 
-    def test_monitor_to_screen(self, mock_dual_monitor_standard_mss: list[dict[str, int]]) -> None:
+    def test_monitor_to_screen(
+        self, mock_dual_monitor_standard_mss: list[dict[str, int]]
+    ) -> None:
         """Test monitor_to_screen conversion."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_standard_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_standard_mss
+            )
 
             service = CoordinateService()
 
@@ -254,17 +276,23 @@ class TestCoordinateServiceMonitorConversions:
     ) -> None:
         """Test monitor_to_screen with invalid monitor index."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_single_monitor_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_single_monitor_mss
+            )
 
             service = CoordinateService()
 
             with pytest.raises(ValueError, match="Invalid monitor index"):
                 service.monitor_to_screen(100, 100, monitor_index=5)
 
-    def test_screen_to_monitor(self, mock_dual_monitor_standard_mss: list[dict[str, int]]) -> None:
+    def test_screen_to_monitor(
+        self, mock_dual_monitor_standard_mss: list[dict[str, int]]
+    ) -> None:
         """Test screen_to_monitor conversion."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_standard_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_standard_mss
+            )
 
             service = CoordinateService()
 
@@ -275,10 +303,14 @@ class TestCoordinateServiceMonitorConversions:
             assert monitor_point.y == 100  # 100 - 0
             assert monitor_point.monitor_index == 1
 
-    def test_monitor_round_trip(self, mock_dual_monitor_standard_mss: list[dict[str, int]]) -> None:
+    def test_monitor_round_trip(
+        self, mock_dual_monitor_standard_mss: list[dict[str, int]]
+    ) -> None:
         """Test round-trip conversion for monitor coordinates."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_standard_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_standard_mss
+            )
 
             service = CoordinateService()
             original_x, original_y, monitor_idx = 100, 100, 1
@@ -299,7 +331,9 @@ class TestCoordinateServiceMonitorQueries:
     ) -> None:
         """Test getting monitor at a specific screen point."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_standard_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_standard_mss
+            )
 
             service = CoordinateService()
 
@@ -316,7 +350,9 @@ class TestCoordinateServiceMonitorQueries:
     ) -> None:
         """Test getting monitor for point outside all monitors."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_single_monitor_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_single_monitor_mss
+            )
 
             service = CoordinateService()
 
@@ -324,10 +360,14 @@ class TestCoordinateServiceMonitorQueries:
             monitor_idx = service.get_monitor_at_point(10000, 10000)
             assert monitor_idx is None
 
-    def test_get_monitor_count(self, mock_dual_monitor_standard_mss: list[dict[str, int]]) -> None:
+    def test_get_monitor_count(
+        self, mock_dual_monitor_standard_mss: list[dict[str, int]]
+    ) -> None:
         """Test getting monitor count."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_dual_monitor_standard_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_dual_monitor_standard_mss
+            )
 
             service = CoordinateService()
             count = service.get_monitor_count()
@@ -342,7 +382,9 @@ class TestCoordinateServiceRefresh:
         """Test that refresh updates monitor information."""
         with patch("mss.mss") as mock_mss:
             # Start with one monitor
-            mock_mss.return_value.__enter__.return_value.monitors = mock_single_monitor_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_single_monitor_mss
+            )
 
             service = CoordinateService()
             assert service.get_monitor_count() == 1
@@ -365,7 +407,9 @@ class TestCoordinateServiceRepr:
     def test_repr(self, mock_single_monitor_mss: list[dict[str, int]]) -> None:
         """Test repr output."""
         with patch("mss.mss") as mock_mss:
-            mock_mss.return_value.__enter__.return_value.monitors = mock_single_monitor_mss
+            mock_mss.return_value.__enter__.return_value.monitors = (
+                mock_single_monitor_mss
+            )
 
             service = CoordinateService()
             repr_str = repr(service)

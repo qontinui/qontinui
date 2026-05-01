@@ -142,7 +142,9 @@ class AriaUIClient(VisionLLMClient):
         # Try to extract [x, y] pattern
         coord = self._extract_coordinates(response)
         if coord is None:
-            logger.warning(f"Could not parse Aria-UI coordinates from: {response[:100]}")
+            logger.warning(
+                f"Could not parse Aria-UI coordinates from: {response[:100]}"
+            )
             return None
 
         norm_x, norm_y = coord

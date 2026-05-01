@@ -146,7 +146,9 @@ class LLMConfig:
             )
 
         if not isinstance(self.timeout, int | float) or self.timeout <= 0:
-            raise LLMConfigValidationError(f"timeout must be a positive number, got {self.timeout}")
+            raise LLMConfigValidationError(
+                f"timeout must be a positive number, got {self.timeout}"
+            )
 
         if not isinstance(self.extra_params, dict):
             raise LLMConfigValidationError(
@@ -334,7 +336,9 @@ class OpenAIClient(BaseLLMClient):
         """
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
-            raise ValueError("OpenAI API key required. Pass api_key or set OPENAI_API_KEY env var.")
+            raise ValueError(
+                "OpenAI API key required. Pass api_key or set OPENAI_API_KEY env var."
+            )
 
         if config:
             super().__init__(config)

@@ -298,9 +298,13 @@ class ExtractionResult:
             "states": [s.to_dict() for s in self.states],
             "transitions": [t.to_dict() for t in self.transitions],
             "screenshots": self.screenshots,
-            "screenshots_dir": str(self.screenshots_dir) if self.screenshots_dir else None,
+            "screenshots_dir": (
+                str(self.screenshots_dir) if self.screenshots_dir else None
+            ),
             "started_at": self.started_at.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
             "duration_ms": self.duration_ms,
             "errors": self.errors,
             "warnings": self.warnings,
@@ -483,7 +487,9 @@ class AbstractExtractor(ABC):
             ValueError: If context is invalid
         """
         if not self.supports_target(context):
-            raise ValueError(f"Extractor {self.get_name()} does not support target: {context}")
+            raise ValueError(
+                f"Extractor {self.get_name()} does not support target: {context}"
+            )
 
     def filter_elements(
         self,

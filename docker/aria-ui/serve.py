@@ -270,7 +270,9 @@ def _validate_image_url(url: str) -> None:
     """
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
-        raise ValueError(f"Unsupported image URL scheme '{parsed.scheme}': only http/https allowed")
+        raise ValueError(
+            f"Unsupported image URL scheme '{parsed.scheme}': only http/https allowed"
+        )
     if not parsed.netloc:
         raise ValueError("Image URL must include a hostname")
 
@@ -341,7 +343,9 @@ async def chat_completions(req: ChatCompletionRequest):
 
         if backend == "exl3":
             # ExLlamaV3 path
-            response_text = generate_exl3(model, inputs, req.max_tokens, req.temperature)
+            response_text = generate_exl3(
+                model, inputs, req.max_tokens, req.temperature
+            )
             input_len = inputs["input_ids"].shape[1]
             gen_len = len(processor.encode(response_text)) if response_text else 0
         else:
@@ -397,7 +401,9 @@ async def chat_completions(req: ChatCompletionRequest):
         logger.exception("Error processing chat completion")
         return JSONResponse(
             status_code=500,
-            content={"error": {"message": "Internal server error", "type": "server_error"}},
+            content={
+                "error": {"message": "Internal server error", "type": "server_error"}
+            },
         )
 
 

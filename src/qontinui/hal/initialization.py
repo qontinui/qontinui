@@ -509,7 +509,9 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 _future = loop.run_in_executor(
                     pool,
-                    lambda: asyncio.run(RustBackendCapture.is_runner_available(timeout=2.0)),
+                    lambda: asyncio.run(
+                        RustBackendCapture.is_runner_available(timeout=2.0)
+                    ),
                 )
                 # We can't await here in a sync function, so we use a non-blocking
                 # check. If the runner was recently available, assume it still is.
@@ -517,7 +519,9 @@ def _create_accessibility_capture(config: HALConfig) -> IAccessibilityCapture | 
                 runner_available = False  # Can't block; fall through
         else:
             try:
-                runner_available = asyncio.run(RustBackendCapture.is_runner_available(timeout=2.0))
+                runner_available = asyncio.run(
+                    RustBackendCapture.is_runner_available(timeout=2.0)
+                )
             except RuntimeError:
                 runner_available = False
 

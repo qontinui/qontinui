@@ -80,7 +80,9 @@ class OCRDetector:
             logger.info("Tesseract OCR loaded")
 
         except ImportError:
-            logger.warning("pytesseract not installed. Install with: pip install pytesseract")
+            logger.warning(
+                "pytesseract not installed. Install with: pip install pytesseract"
+            )
         except Exception as e:
             logger.warning(f"Failed to load Tesseract: {e}")
 
@@ -133,7 +135,9 @@ class OCRDetector:
             filtered_results = [
                 r
                 for r in filtered_results
-                if self.config.min_text_height <= r.bbox.height <= self.config.max_text_height
+                if self.config.min_text_height
+                <= r.bbox.height
+                <= self.config.max_text_height
             ]
 
             # Create debug overlay

@@ -114,7 +114,11 @@ class NavigationActionExecutor(ActionExecutorBase):
         logger.debug("Executing GO_TO_STATE action")
 
         # Get target state IDs from config
-        state_ids = typed_config.state_ids if typed_config else action.config.get("stateIds", [])
+        state_ids = (
+            typed_config.state_ids
+            if typed_config
+            else action.config.get("stateIds", [])
+        )
         logger.debug(f"Target state IDs: {state_ids}")
 
         if not state_ids:
@@ -146,7 +150,9 @@ class NavigationActionExecutor(ActionExecutorBase):
         active_states = await self._find_active_states(state_ids)
 
         if active_states and all(sid in active_states for sid in state_ids):
-            logger.info(f"All target state(s) already active on screen: {', '.join(target_names)}")
+            logger.info(
+                f"All target state(s) already active on screen: {', '.join(target_names)}"
+            )
             self._emit_action_success(
                 action,
                 {
@@ -160,8 +166,12 @@ class NavigationActionExecutor(ActionExecutorBase):
 
         # Log which states are missing
         missing_states = [sid for sid in state_ids if sid not in active_states]
-        missing_names = [self.context.config.state_map[sid].name for sid in missing_states]
-        logger.info(f"States not yet active: {', '.join(missing_names)}. Initiating navigation.")
+        missing_names = [
+            self.context.config.state_map[sid].name for sid in missing_states
+        ]
+        logger.info(
+            f"States not yet active: {', '.join(missing_names)}. Initiating navigation."
+        )
 
         # Delegate to qontinui library's pathfinding (which uses multistate)
         logger.debug("Initiating navigation via navigation_api")
@@ -175,7 +185,9 @@ class NavigationActionExecutor(ActionExecutorBase):
         # Old code: navigation_api.set_workflow_executor(self.context.workflow_executor)
         # Convert state IDs to state names for the navigation API
         target_names = [st.name for st in target_states]
-        logger.info(f"Navigating to {len(state_ids)} state(s): {', '.join(target_names)}")
+        logger.info(
+            f"Navigating to {len(state_ids)} state(s): {', '.join(target_names)}"
+        )
 
         try:
             # Call navigation_api.open_states with state names
@@ -262,7 +274,9 @@ class NavigationActionExecutor(ActionExecutorBase):
                 image_id = getattr(state_image, "id", None)
                 if not image_id:
                     # Try using name
-                    image_id = state_image.name or getattr(state_image.image, "name", None)
+                    image_id = state_image.name or getattr(
+                        state_image.image, "name", None
+                    )
 
                 if not image_id:
                     continue
@@ -309,7 +323,9 @@ class NavigationActionExecutor(ActionExecutorBase):
                     find_result = await find_action.find(pattern, options)
 
                     if find_result.found:
-                        logger.debug(f"State '{state_id}' is active (found image '{img_id}')")
+                        logger.debug(
+                            f"State '{state_id}' is active (found image '{img_id}')"
+                        )
                         active_states.add(state_id)
                         break
 
@@ -391,7 +407,9 @@ class NavigationActionExecutor(ActionExecutorBase):
                 )
 
                 if success:
-                    logger.info(f"Workflow succeeded on run {run_num}/{total_runs}, stopping early")
+                    logger.info(
+                        f"Workflow succeeded on run {run_num}/{total_runs}, stopping early"
+                    )
                     return True
 
                 # Delay before next attempt (if not the last run)
@@ -439,7 +457,9 @@ class NavigationActionExecutor(ActionExecutorBase):
         Returns:
             bool: True if workflow execution succeeded
         """
-        logger.info(f"Executing workflow '{workflow.name}' (run {run_num}/{total_runs})")
+        logger.info(
+            f"Executing workflow '{workflow.name}' (run {run_num}/{total_runs})"
+        )
 
         # Emit workflow started event
         self.context.emit_event(
@@ -471,10 +491,14 @@ class NavigationActionExecutor(ActionExecutorBase):
                 # Find entry points and execute in graph order
                 entry_points = traverser.find_entry_points()
                 if not entry_points:
-                    logger.warning(f"No entry points found in workflow '{workflow.name}'")
+                    logger.warning(
+                        f"No entry points found in workflow '{workflow.name}'"
+                    )
                     # Fallback to array order if no entry points
                     for nested_action in workflow.actions:
-                        action_success = await self.context.execute_action(nested_action)
+                        action_success = await self.context.execute_action(
+                            nested_action
+                        )
                         if not action_success:
                             logger.warning(
                                 f"Nested action failed in workflow '{workflow.name}': "
@@ -494,11 +518,15 @@ class NavigationActionExecutor(ActionExecutorBase):
 
                         nested_action = action_map.get(action_id)
                         if not nested_action:
-                            logger.warning(f"Action '{action_id}' not found in workflow")
+                            logger.warning(
+                                f"Action '{action_id}' not found in workflow"
+                            )
                             continue
 
                         # Execute the action
-                        action_success = await self.context.execute_action(nested_action)
+                        action_success = await self.context.execute_action(
+                            nested_action
+                        )
                         executed_set.add(action_id)
                         executed_count += 1
 
@@ -526,7 +554,9 @@ class NavigationActionExecutor(ActionExecutorBase):
                     executed_count += 1
 
             else:
-                logger.warning(f"Unknown workflow type: {workflow.type}, executing sequentially")
+                logger.warning(
+                    f"Unknown workflow type: {workflow.type}, executing sequentially"
+                )
                 for nested_action in workflow.actions:
                     # Model-based GUI automation principle: always continue, never stop on failure
                     action_success = await self.context.execute_action(nested_action)

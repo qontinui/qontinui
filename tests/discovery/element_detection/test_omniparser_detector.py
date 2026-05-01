@@ -129,13 +129,22 @@ class TestOmniParserDetector:
         assert "enable_ocr" in params
 
     def test_classify_element_button(self):
-        assert OmniParserDetector._classify_element("Submit button", 100, 40, 0) == "button"
+        assert (
+            OmniParserDetector._classify_element("Submit button", 100, 40, 0)
+            == "button"
+        )
 
     def test_classify_element_text_field(self):
-        assert OmniParserDetector._classify_element("Search input", 200, 30, 0) == "text_field"
+        assert (
+            OmniParserDetector._classify_element("Search input", 200, 30, 0)
+            == "text_field"
+        )
 
     def test_classify_element_checkbox(self):
-        assert OmniParserDetector._classify_element("Agree checkbox", 20, 20, 0) == "checkbox"
+        assert (
+            OmniParserDetector._classify_element("Agree checkbox", 20, 20, 0)
+            == "checkbox"
+        )
 
     def test_classify_element_icon_by_size(self):
         """Small regions without text labels are classified as icons."""
@@ -477,7 +486,9 @@ class TestCascadeWithOmniParser:
 
         cascade = CascadeDetector(backends=[broken_backend, fallback_backend])
         results = cascade.find(
-            "test", sample_screenshot, {"needle_type": "template", "min_confidence": 0.5}
+            "test",
+            sample_screenshot,
+            {"needle_type": "template", "min_confidence": 0.5},
         )
 
         assert len(results) == 1
@@ -513,7 +524,10 @@ class TestOmniParserSettings:
     def test_env_prefix(self):
         with patch.dict(
             "os.environ",
-            {"QONTINUI_OMNIPARSER_ENABLED": "true", "QONTINUI_OMNIPARSER_DEVICE": "cpu"},
+            {
+                "QONTINUI_OMNIPARSER_ENABLED": "true",
+                "QONTINUI_OMNIPARSER_DEVICE": "cpu",
+            },
         ):
             settings = OmniParserSettings()
             assert settings.enabled is True

@@ -89,7 +89,9 @@ class VisualValidator:
             result = self._validate_no_change(diff, expected)
 
         elif expected.type == ChangeType.ELEMENT_APPEARS:
-            result = self._validate_element_appears(pre_screenshot, post_screenshot, diff, expected)
+            result = self._validate_element_appears(
+                pre_screenshot, post_screenshot, diff, expected
+            )
 
         elif expected.type == ChangeType.ELEMENT_DISAPPEARS:
             result = self._validate_element_disappears(
@@ -97,7 +99,9 @@ class VisualValidator:
             )
 
         elif expected.type == ChangeType.REGION_CHANGES:
-            result = self._validate_region_changes(pre_screenshot, post_screenshot, diff, expected)
+            result = self._validate_region_changes(
+                pre_screenshot, post_screenshot, diff, expected
+            )
 
         else:
             result = ValidationResult(
@@ -173,10 +177,14 @@ class VisualValidator:
         # Calculate statistics
         changed_pixels = cv2.countNonZero(thresh)
         total_pixels = thresh.shape[0] * thresh.shape[1]
-        change_percentage = (changed_pixels / total_pixels) * 100 if total_pixels > 0 else 0.0
+        change_percentage = (
+            (changed_pixels / total_pixels) * 100 if total_pixels > 0 else 0.0
+        )
 
         # Calculate mean intensity of changes
-        mean_intensity = float(np.mean(diff[thresh > 0])) / 255.0 if changed_pixels > 0 else 0.0
+        mean_intensity = (
+            float(np.mean(diff[thresh > 0])) / 255.0 if changed_pixels > 0 else 0.0
+        )
 
         # Find changed regions using contours
         changed_regions = self._find_changed_regions(thresh, diff)
@@ -204,7 +212,9 @@ class VisualValidator:
             List of changed regions.
         """
         # Find contours of changed areas
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         regions = []
         for contour in contours:
@@ -288,8 +298,12 @@ class VisualValidator:
         pattern = self._prepare_pattern(expected.pattern)
 
         # Check if pattern is in post but not in pre
-        pre_match = self._find_pattern(pre_screenshot, pattern, expected.similarity_threshold)
-        post_match = self._find_pattern(post_screenshot, pattern, expected.similarity_threshold)
+        pre_match = self._find_pattern(
+            pre_screenshot, pattern, expected.similarity_threshold
+        )
+        post_match = self._find_pattern(
+            post_screenshot, pattern, expected.similarity_threshold
+        )
 
         if post_match and not pre_match:
             return ValidationResult(
@@ -325,8 +339,12 @@ class VisualValidator:
         pattern = self._prepare_pattern(expected.pattern)
 
         # Check if pattern was in pre but not in post
-        pre_match = self._find_pattern(pre_screenshot, pattern, expected.similarity_threshold)
-        post_match = self._find_pattern(post_screenshot, pattern, expected.similarity_threshold)
+        pre_match = self._find_pattern(
+            pre_screenshot, pattern, expected.similarity_threshold
+        )
+        post_match = self._find_pattern(
+            post_screenshot, pattern, expected.similarity_threshold
+        )
 
         if pre_match and not post_match:
             return ValidationResult(

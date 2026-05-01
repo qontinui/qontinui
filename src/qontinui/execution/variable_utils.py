@@ -122,7 +122,9 @@ def merge_variable_scopes(
         {'x': 1, 'y': 20, 'z': 30}
     """
     if precedence not in ("last", "first"):
-        raise ValueError(f"Invalid precedence '{precedence}'. Must be 'last' or 'first'")
+        raise ValueError(
+            f"Invalid precedence '{precedence}'. Must be 'last' or 'first'"
+        )
 
     merged: dict[str, Any] = {}
 

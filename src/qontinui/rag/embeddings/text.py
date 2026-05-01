@@ -243,7 +243,9 @@ class TextEmbedder:
 
         except Exception as e:
             logger.error("text_embedder_load_failed", model=model_name, error=str(e))
-            raise RuntimeError(f"Failed to load text embedder model '{model_name}': {e}") from e
+            raise RuntimeError(
+                f"Failed to load text embedder model '{model_name}': {e}"
+            ) from e
 
     def encode(self, text: str) -> list[float]:
         """Encode single text into embedding vector.

@@ -15,7 +15,9 @@ def _make_screenshot(width: int = 800, height: int = 600) -> np.ndarray:
     return _rng.randint(10, 40, (height, width, 3)).astype(np.uint8)
 
 
-def _make_textured_patch(w: int, h: int, base_color: tuple[int, int, int]) -> np.ndarray:
+def _make_textured_patch(
+    w: int, h: int, base_color: tuple[int, int, int]
+) -> np.ndarray:
     """Create a textured patch with a dominant colour + noise.
 
     TM_CCOEFF_NORMED needs variance in the template to work correctly.
@@ -208,7 +210,9 @@ class TestMaskedPatternFallback:
         _place_patch(screenshot, x=100, y=100, patch=patch_data)
 
         p_unmasked = _make_pattern("unmasked", w=20, h=20, pixel_data=patch_data)
-        p_masked = _make_pattern("masked", w=20, h=20, color=(150, 150, 150), with_mask=True)
+        p_masked = _make_pattern(
+            "masked", w=20, h=20, color=(150, 150, 150), with_mask=True
+        )
 
         # Mock TemplateMatcher to avoid heavy imports and verify fallback is called
         mock_seq_matcher = MagicMock()
@@ -416,7 +420,9 @@ class TestMultiscaleBatchMatching:
         def _m(x: int, y: int, w: int, h: int, score: float) -> Match:
             return Match(
                 MatchObject(
-                    target=Location(x=x + w // 2, y=y + h // 2, region=Region(x, y, w, h)),
+                    target=Location(
+                        x=x + w // 2, y=y + h // 2, region=Region(x, y, w, h)
+                    ),
                     score=score,
                     name="test",
                 )

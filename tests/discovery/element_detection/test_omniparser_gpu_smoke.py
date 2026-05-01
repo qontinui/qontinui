@@ -32,9 +32,7 @@ def _skip_if_no_gpu() -> None:
 
 @pytest.mark.gpu_smoke
 def test_omniparser_yolo_runs_on_gpu(_skip_if_no_gpu: None) -> None:
-    from qontinui.discovery.element_detection.omniparser_detector import (
-        OmniParserDetector,
-    )
+    from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
     from qontinui.find.backends.omniparser_config import OmniParserSettings
 
     d = OmniParserDetector(settings=OmniParserSettings(enabled=True, device="cuda"))

@@ -42,7 +42,9 @@ class ClickOptions(ActionConfig):
         super().__init__(builder)
         self.number_of_clicks: int = builder.number_of_clicks
         self.mouse_press_options: MousePressOptions = builder.mouse_press_options
-        self.verification_options: VerificationOptions = builder.verification_options.build()
+        self.verification_options: VerificationOptions = (
+            builder.verification_options.build()
+        )
         self.repetition_options: RepetitionOptions = builder.repetition_options.build()
 
     def get_number_of_clicks(self) -> int:
@@ -115,7 +117,9 @@ class ClickOptionsBuilder(ActionConfigBuilder):
         self.number_of_clicks = max(1, number_of_clicks)  # Ensure at least 1 click
         return self
 
-    def set_press_options(self, press_options: MousePressOptions) -> "ClickOptionsBuilder":
+    def set_press_options(
+        self, press_options: MousePressOptions
+    ) -> "ClickOptionsBuilder":
         """Configure the pause behaviors for the press-and-release part of the click.
 
         Args:

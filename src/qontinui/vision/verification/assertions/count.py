@@ -529,7 +529,9 @@ class CountAssertion:
         result.assertion_method = "to_be_empty"
         result.assertion_id = "count_empty"
         if result.status != AssertionStatus.PASSED:
-            result.error_message = f"Expected empty, found {result.actual_value} element(s)"
+            result.error_message = (
+                f"Expected empty, found {result.actual_value} element(s)"
+            )
 
         return result
 

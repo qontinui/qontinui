@@ -262,7 +262,9 @@ class FindExecutor:
         try:
             detection_results = self.cascade_detector.find(pattern, screenshot, config)
         except Exception:
-            logger.warning("CascadeDetector failed, falling back to matcher", exc_info=True)
+            logger.warning(
+                "CascadeDetector failed, falling back to matcher", exc_info=True
+            )
             return []
 
         # Convert DetectionResult → Match
@@ -272,7 +274,9 @@ class FindExecutor:
             cx, cy = dr.center
             from ..model.match import MatchMetadata
 
-            meta = MatchMetadata(backend_metadata=dict(dr.metadata) if dr.metadata else {})
+            meta = MatchMetadata(
+                backend_metadata=dict(dr.metadata) if dr.metadata else {}
+            )
             match_obj = MatchObject(
                 target=Location(x=cx, y=cy, region=region),
                 score=dr.confidence,
@@ -405,7 +409,9 @@ class FindExecutor:
                 result = filter_instance.filter(result)
             except ValueError as e:
                 # Re-raise validation errors from filters
-                raise ValueError(f"Filter {type(filter_instance).__name__} failed: {e}") from e
+                raise ValueError(
+                    f"Filter {type(filter_instance).__name__} failed: {e}"
+                ) from e
             except Exception as e:
                 # Wrap unexpected errors
                 raise RuntimeError(

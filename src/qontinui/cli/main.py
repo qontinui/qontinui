@@ -144,10 +144,14 @@ def validate(config_path: str, verbose: bool) -> None:
 
         if verbose:
             click.echo(f"\nVersion: {validated.version}")
-            click.echo(f"Name: {validated.metadata.name if validated.metadata else 'N/A'}")
+            click.echo(
+                f"Name: {validated.metadata.name if validated.metadata else 'N/A'}"
+            )
             click.echo(f"\nStates: {len(validated.states)}")
             for state in validated.states:
-                click.echo(f"  - {state.name} (id={state.id}, initial={state.is_initial})")
+                click.echo(
+                    f"  - {state.name} (id={state.id}, initial={state.is_initial})"
+                )
 
             click.echo(f"\nWorkflows: {len(validated.workflows)}")
             for workflow in validated.workflows:
@@ -174,7 +178,9 @@ def validate(config_path: str, verbose: bool) -> None:
 @click.option("--workflow", "-w", help="Workflow name or ID to run")
 @click.option("--headless", is_flag=True, help="Run in headless mode (no GUI)")
 @click.option("--timeout", default=600, help="Execution timeout in seconds")
-@click.option("--output-dir", "-o", type=click.Path(), help="Output directory for results")
+@click.option(
+    "--output-dir", "-o", type=click.Path(), help="Output directory for results"
+)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option("--stream", is_flag=True, help="Stream results to cloud")
 @click.option("--cloud-url", help="Cloud backend URL for streaming")
@@ -278,7 +284,9 @@ def run(
         if output_dir:
             results_path = Path(output_dir) / "results.json"
             with open(results_path, "w") as f:
-                json.dump({"summary": summary, "workflow": target_workflow.name}, f, indent=2)
+                json.dump(
+                    {"summary": summary, "workflow": target_workflow.name}, f, indent=2
+                )
             click.echo(f"Results saved to: {results_path}")
 
         if summary.get("failed", 0) > 0:
@@ -303,8 +311,12 @@ def run(
 @main.command()
 @click.argument("config_path", type=click.Path(exists=True))
 @click.option("--workflow", "-w", help="Workflow name or ID to test")
-@click.option("--output-dir", "-o", type=click.Path(), help="Output directory for results")
-@click.option("--output-format", "-f", type=click.Choice(["json", "junit", "tap"]), default="json")
+@click.option(
+    "--output-dir", "-o", type=click.Path(), help="Output directory for results"
+)
+@click.option(
+    "--output-format", "-f", type=click.Choice(["json", "junit", "tap"]), default="json"
+)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option("--stream", is_flag=True, help="Stream results to cloud")
 @click.option("--cloud-url", help="Cloud backend URL for streaming")
@@ -361,7 +373,9 @@ def test(
         workflows_to_run = validated_config.workflows
         if workflow:
             workflows_to_run = [
-                wf for wf in workflows_to_run if wf.name == workflow or wf.id == workflow
+                wf
+                for wf in workflows_to_run
+                if wf.name == workflow or wf.id == workflow
             ]
 
         for wf in workflows_to_run:
@@ -384,7 +398,9 @@ def test(
                         "workflow_name": wf.name,
                         "success": summary.get("failed", 0) == 0,
                         "duration": time.time() - wf_start,
-                        "error": (None if summary.get("failed", 0) == 0 else "Actions failed"),
+                        "error": (
+                            None if summary.get("failed", 0) == 0 else "Actions failed"
+                        ),
                         "start_time": wf_start,
                     }
                 )
@@ -444,16 +460,24 @@ def test(
 @main.command("integration-test")
 @click.argument("config_path", type=click.Path(exists=True))
 @click.option("--workflow", "-w", help="Workflow name or ID to test")
-@click.option("--history", type=click.Path(), help="Path to history JSON file (optional)")
+@click.option(
+    "--history", type=click.Path(), help="Path to history JSON file (optional)"
+)
 @click.option(
     "--history-url",
     help="URL to fetch historical data from (default: QONTINUI_WEB_URL)",
 )
 @click.option("--project-id", help="Project ID for fetching historical data")
-@click.option("--expect-success", is_flag=True, help="Exit with error if any step fails")
+@click.option(
+    "--expect-success", is_flag=True, help="Exit with error if any step fails"
+)
 @click.option("--expect-states", help="Comma-separated list of expected final states")
-@click.option("--output-dir", "-o", type=click.Path(), help="Output directory for results")
-@click.option("--output-format", "-f", type=click.Choice(["text", "json"]), default="text")
+@click.option(
+    "--output-dir", "-o", type=click.Path(), help="Output directory for results"
+)
+@click.option(
+    "--output-format", "-f", type=click.Choice(["text", "json"]), default="text"
+)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 def integration_test(
     config_path: str,
@@ -527,7 +551,9 @@ def integration_test(
         elif history_url:
             click.echo(f"History source: {history_url}")
         else:
-            click.echo(f"History source: {os.getenv('QONTINUI_WEB_URL', 'http://localhost:8000')}")
+            click.echo(
+                f"History source: {os.getenv('QONTINUI_WEB_URL', 'http://localhost:8000')}"
+            )
         click.echo()
 
         # Load and validate configuration
@@ -589,7 +615,9 @@ def integration_test(
         # Check success expectation
         test_passed = summary["success"]
         if expect_success and not test_passed:
-            summary["failure_reason"] = "Workflow execution failed (--expect-success was set)"
+            summary["failure_reason"] = (
+                "Workflow execution failed (--expect-success was set)"
+            )
 
         # Format and output results
         if output_format == "json":
@@ -617,7 +645,9 @@ def integration_test(
         if expect_success and not test_passed:
             sys.exit(EXIT_EXECUTION_FAILED)
         elif not test_passed:
-            click.echo("\nNote: Test completed with failures. Use --expect-success to fail CI.")
+            click.echo(
+                "\nNote: Test completed with failures. Use --expect-success to fail CI."
+            )
             sys.exit(EXIT_SUCCESS)
         else:
             sys.exit(EXIT_SUCCESS)

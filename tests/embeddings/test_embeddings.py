@@ -204,13 +204,16 @@ class TestSemanticSearchEngine:
                 # Simple hash-based embedding for testing
                 h = hash(text) % 1000
                 return np.array(
-                    [h / 1000, (h * 2 % 1000) / 1000, (h * 3 % 1000) / 1000], dtype=np.float32
+                    [h / 1000, (h * 2 % 1000) / 1000, (h * 3 % 1000) / 1000],
+                    dtype=np.float32,
                 )
 
             def embed_batch(self, texts: list[str]) -> np.ndarray:
                 return np.vstack([self.embed(t) for t in texts])
 
-            def similarities_batch(self, query: np.ndarray, embeddings: np.ndarray) -> np.ndarray:
+            def similarities_batch(
+                self, query: np.ndarray, embeddings: np.ndarray
+            ) -> np.ndarray:
                 # Simple dot product similarity
                 return np.dot(embeddings, query)
 
@@ -218,7 +221,12 @@ class TestSemanticSearchEngine:
                 return True
 
             def get_info(self) -> dict:
-                return {"provider": "mock", "model": "test", "dimension": 3, "available": True}
+                return {
+                    "provider": "mock",
+                    "model": "test",
+                    "dimension": 3,
+                    "available": True,
+                }
 
         provider = MockProvider()
         engine = SemanticSearchEngine(provider, similarity_threshold=0.0)
@@ -248,7 +256,9 @@ except ImportError:
     HAS_SENTENCE_TRANSFORMERS = False
 
 
-@pytest.mark.skipif(not HAS_SENTENCE_TRANSFORMERS, reason="sentence-transformers not installed")
+@pytest.mark.skipif(
+    not HAS_SENTENCE_TRANSFORMERS, reason="sentence-transformers not installed"
+)
 class TestSentenceTransformersProvider:
     """Tests for SentenceTransformersProvider (requires sentence-transformers)."""
 

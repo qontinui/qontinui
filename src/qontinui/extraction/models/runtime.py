@@ -266,7 +266,9 @@ class RuntimeExtractionResult:
     states: list[RuntimeStateCapture] = field(default_factory=list)
     transitions: list[ObservedTransition] = field(default_factory=list)
     routes_visited: list[str] = field(default_factory=list)
-    elements_by_state: dict[str, list[str]] = field(default_factory=dict)  # state_id -> element_ids
+    elements_by_state: dict[str, list[str]] = field(
+        default_factory=dict
+    )  # state_id -> element_ids
     screenshots_dir: Path | None = None
 
     def get_state(self, state_id: str) -> RuntimeStateCapture | None:

@@ -79,7 +79,9 @@ class Mouse:
         is_mock = MockModeManager.is_mock_mode()
 
         # Debug logging to file for troubleshooting
-        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
+        debug_log_path = (
+            r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
+        )
         try:
             with open(debug_log_path, "a") as f:
                 ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
@@ -107,7 +109,9 @@ class Mouse:
             try:
                 with open(debug_log_path, "a") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] Mouse.move() controller.mouse_move() returned: {result}\n")
+                    f.write(
+                        f"[{ts}] Mouse.move() controller.mouse_move() returned: {result}\n"
+                    )
             except Exception:
                 pass
             logger.debug(f"[LIVE] Mouse moved to ({x}, {y})")
@@ -210,7 +214,9 @@ class Mouse:
             return controller.click_at(x, y, button)
 
     @classmethod
-    def double_click_at(cls, x: int, y: int, button: MouseButton = MouseButton.LEFT) -> bool:
+    def double_click_at(
+        cls, x: int, y: int, button: MouseButton = MouseButton.LEFT
+    ) -> bool:
         """Double click at specific coordinates.
 
         Args:
@@ -245,7 +251,9 @@ class Mouse:
             True if successful
         """
         # Debug logging to file for troubleshooting
-        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
+        debug_log_path = (
+            r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
+        )
         try:
             with open(debug_log_path, "a") as f:
                 ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
@@ -273,7 +281,9 @@ class Mouse:
             try:
                 with open(debug_log_path, "a") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] Mouse.down() controller.mouse_down() returned: {result}\n")
+                    f.write(
+                        f"[{ts}] Mouse.down() controller.mouse_down() returned: {result}\n"
+                    )
             except Exception:
                 pass
             return result
@@ -296,7 +306,9 @@ class Mouse:
             True if successful
         """
         # Debug logging to file for troubleshooting
-        debug_log_path = r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
+        debug_log_path = (
+            r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
+        )
         try:
             with open(debug_log_path, "a") as f:
                 ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
@@ -324,7 +336,9 @@ class Mouse:
             try:
                 with open(debug_log_path, "a") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] Mouse.up() controller.mouse_up() returned: {result}\n")
+                    f.write(
+                        f"[{ts}] Mouse.up() controller.mouse_up() returned: {result}\n"
+                    )
             except Exception:
                 pass
             return result
@@ -355,12 +369,20 @@ class Mouse:
         is_mock = MockModeManager.is_mock_mode()
 
         if is_mock:
-            result = cls._mock_input.mouse_drag(start_x, start_y, end_x, end_y, button, duration)
-            logger.debug(f"[MOCK] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+            result = cls._mock_input.mouse_drag(
+                start_x, start_y, end_x, end_y, button, duration
+            )
+            logger.debug(
+                f"[MOCK] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})"
+            )
         else:
             controller = cls._get_controller()
-            result = controller.mouse_drag(start_x, start_y, end_x, end_y, button, duration)
-            logger.debug(f"[LIVE] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+            result = controller.mouse_drag(
+                start_x, start_y, end_x, end_y, button, duration
+            )
+            logger.debug(
+                f"[LIVE] Mouse dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})"
+            )
 
         # Emit event after successful drag
         if result:

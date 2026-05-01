@@ -118,9 +118,13 @@ class StateExecutor:
             # Fallback to (0, 0) if service fails
             context.monitor_offset_x = 0
             context.monitor_offset_y = 0
-            logger.warning(f"Failed to get virtual desktop info: {e}, using offset (0, 0)")
+            logger.warning(
+                f"Failed to get virtual desktop info: {e}, using offset (0, 0)"
+            )
 
-    def set_monitor_offset(self, monitor_index: int, offset_x: int, offset_y: int) -> None:
+    def set_monitor_offset(
+        self, monitor_index: int, offset_x: int, offset_y: int
+    ) -> None:
         """Set monitor offset for coordinate conversion (legacy method).
 
         DEPRECATED: Use set_monitor(monitor_index) instead, which automatically
@@ -183,7 +187,9 @@ class StateExecutor:
                     self.active_states.add(state.id)
                     initial_states.append(state.name)
                 else:
-                    logger.warning(f"Initial state ID '{state_id}' not found in configuration")
+                    logger.warning(
+                        f"Initial state ID '{state_id}' not found in configuration"
+                    )
 
             if initial_states:
                 logger.info(
@@ -391,7 +397,9 @@ class StateExecutor:
                 logger.debug(f"Using monitor {monitor_index} from StateImage config")
             else:
                 # Fall back to action_executor context
-                monitor_index = getattr(self.action_executor.context, "monitor_index", None)
+                monitor_index = getattr(
+                    self.action_executor.context, "monitor_index", None
+                )
                 logger.debug(f"Using monitor {monitor_index} from ExecutionContext")
 
             ctx = CascadeContext(
@@ -418,7 +426,9 @@ class StateExecutor:
         for state_id in self.active_states:
             if self._verify_state(state_id):
                 self.current_state = state_id
-                logger.info(f"Found active state: {self.config.state_map[state_id].name}")
+                logger.info(
+                    f"Found active state: {self.config.state_map[state_id].name}"
+                )
                 return True
 
         # Check all states if none of the active ones match
@@ -472,15 +482,21 @@ class StateExecutor:
             workflow = self.config.workflow_map.get(workflow_id)
             if workflow:
                 workflow_result = self._execute_workflow(workflow)
-                logger.debug(f"Workflow '{workflow.name}' execution result: {workflow_result}")
+                logger.debug(
+                    f"Workflow '{workflow.name}' execution result: {workflow_result}"
+                )
                 if not workflow_result:
                     logger.error(f"Workflow {workflow.name} failed")
                     return False
             else:
                 # Workflow not found - fail fast with clear error
                 logger.error(f"Workflow {workflow_id} not found in workflow_map")
-                logger.error(f"Available workflows: {list(self.config.workflow_map.keys())}")
-                logger.error("This workflow was not loaded during configuration parsing.")
+                logger.error(
+                    f"Available workflows: {list(self.config.workflow_map.keys())}"
+                )
+                logger.error(
+                    "This workflow was not loaded during configuration parsing."
+                )
                 logger.error(
                     "If this is an inline workflow, it may have invalid format - please re-export your configuration."
                 )
@@ -563,7 +579,9 @@ class StateExecutor:
             )
             if not action_result:
                 if action.continue_on_error:  # type: ignore[attr-defined]
-                    logger.debug(f"Action {i + 1} failed but continue_on_error=True, continuing...")
+                    logger.debug(
+                        f"Action {i + 1} failed but continue_on_error=True, continuing..."
+                    )
                     continue
                 logger.error(f"Workflow '{workflow.name}' FAILED at action {i + 1}")
                 return False

@@ -249,7 +249,9 @@ class TestTrajectoryConverter:
         """Test state name generation from thought text."""
         name1 = self.converter._generate_state_name("Click the submit button", 0)
         name2 = self.converter._generate_state_name("", 1)
-        name3 = self.converter._generate_state_name("Open settings menu to configure", 2)
+        name3 = self.converter._generate_state_name(
+            "Open settings menu to configure", 2
+        )
 
         assert "Click" in name1 or "Submit" in name1
         assert name2 == "State 2"  # Fallback for empty thought
@@ -258,7 +260,10 @@ class TestTrajectoryConverter:
     def test_map_action_type(self):
         """Test action type mapping."""
         assert self.converter._map_action_type(UITARSActionType.CLICK) == "click"
-        assert self.converter._map_action_type(UITARSActionType.DOUBLE_CLICK) == "double_click"
+        assert (
+            self.converter._map_action_type(UITARSActionType.DOUBLE_CLICK)
+            == "double_click"
+        )
         assert self.converter._map_action_type(UITARSActionType.TYPE) == "type"
         assert self.converter._map_action_type(UITARSActionType.SCROLL) == "scroll"
         assert self.converter._map_action_type(UITARSActionType.HOVER) == "hover"
@@ -464,7 +469,9 @@ class TestTrajectoryConverterEdgeCases:
 
         # Check transitions preserve action details
         if result.transitions:
-            type_transitions = [t for t in result.transitions if t.action_type == "type"]
+            type_transitions = [
+                t for t in result.transitions if t.action_type == "type"
+            ]
             if type_transitions:
                 assert type_transitions[0].action_value == "hello"
 

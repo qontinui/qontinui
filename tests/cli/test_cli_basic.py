@@ -34,7 +34,9 @@ def sample_config(tmp_path):
                 "id": "wf-1",
                 "name": "Test Workflow",
                 "version": "1.0.0",
-                "actions": [{"id": "act-1", "type": "WAIT", "config": {"duration": 100}}],
+                "actions": [
+                    {"id": "act-1", "type": "WAIT", "config": {"duration": 100}}
+                ],
                 "connections": {},  # Required for v2.0.0 format
             }
         ],

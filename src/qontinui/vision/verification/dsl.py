@@ -125,7 +125,8 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -165,7 +166,8 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -206,7 +208,8 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -240,7 +243,8 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -274,7 +278,8 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -287,7 +292,9 @@ class ElementVerifier:
 
         return self._handle_result(result)
 
-    async def is_right_of(self, other: "str | Path | BoundingBox") -> VerificationResult:
+    async def is_right_of(
+        self, other: "str | Path | BoundingBox"
+    ) -> VerificationResult:
         """Assert element is to the right of another element."""
         from qontinui.vision.verification.assertions.spatial import SpatialAssertion
 
@@ -308,7 +315,8 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -353,7 +361,8 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -399,7 +408,8 @@ class ElementVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -480,7 +490,8 @@ class TextVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -659,7 +670,9 @@ class RegionVerifier:
         # Detect elements in the region using contour detection
         gray = cv2.cvtColor(region_img, cv2.COLOR_BGR2GRAY)
         _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         # Convert contours to BoundingBox list (filter small noise)
         elements = []
@@ -823,7 +836,8 @@ class ScreenshotVerifier:
         # Convert AssertionResult to VerificationResult
         result = VerificationResult(
             passed=assertion_result.status.value == "passed",
-            message=assertion_result.error_message or f"Status: {assertion_result.status.value}",
+            message=assertion_result.error_message
+            or f"Status: {assertion_result.status.value}",
             expected=assertion_result.expected_value,
             actual=assertion_result.actual_value,
         )
@@ -966,7 +980,9 @@ class ElementsVerifier:
 
         avg_spacing = sum(spacings) / len(spacings)
         max_deviation = max(abs(s - avg_spacing) for s in spacings)
-        relative_deviation = max_deviation / avg_spacing if avg_spacing > 0 else float("inf")
+        relative_deviation = (
+            max_deviation / avg_spacing if avg_spacing > 0 else float("inf")
+        )
 
         passed = relative_deviation <= tolerance
 
@@ -1072,7 +1088,9 @@ class Verifier:
         self._environment = environment
         self._cached_screenshot: NDArray[np.uint8] | None = None
 
-    def element(self, target: "str | Path | BoundingBox | BaseLocator") -> ElementVerifier:
+    def element(
+        self, target: "str | Path | BoundingBox | BaseLocator"
+    ) -> ElementVerifier:
         """Create element verifier.
 
         Args:
@@ -1175,7 +1193,9 @@ class Verifier:
 # Convenience function
 def create_verifier(
     screenshot_callback: (
-        Callable[[], NDArray[np.uint8]] | Callable[[], asyncio.Future[NDArray[np.uint8]]] | None
+        Callable[[], NDArray[np.uint8]]
+        | Callable[[], asyncio.Future[NDArray[np.uint8]]]
+        | None
     ) = None,
     config: "VisionConfig | None" = None,
     environment: "GUIEnvironment | None" = None,

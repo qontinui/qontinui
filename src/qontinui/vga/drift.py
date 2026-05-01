@@ -151,7 +151,9 @@ class DriftDetector:
             # SSIM returns value in [-1, 1]; clamp to [0, 1].
             score = float(ssim(ref_arr, cand_arr, data_range=255))
             return (
-                max(0.0, min(1.0, (score + 1.0) / 2.0)) if score < 0 else max(0.0, min(1.0, score))
+                max(0.0, min(1.0, (score + 1.0) / 2.0))
+                if score < 0
+                else max(0.0, min(1.0, score))
             )
         except ImportError:
             pass
@@ -213,12 +215,17 @@ class DriftDetector:
             :class:`DriftResult`.
         """
         iou_val = self.iou(predicted_bbox, last_bbox)
-        similarity = self.template_anchor_similarity(screenshot, predicted_bbox, reference_patch)
+        similarity = self.template_anchor_similarity(
+            screenshot, predicted_bbox, reference_patch
+        )
 
         iou_confidence = (
             min(1.0, iou_val / max(iou_threshold, 1e-6) * 0.5)
             if (iou_val < iou_threshold)
-            else min(1.0, 0.5 + (iou_val - iou_threshold) * 0.5 / max(1.0 - iou_threshold, 1e-6))
+            else min(
+                1.0,
+                0.5 + (iou_val - iou_threshold) * 0.5 / max(1.0 - iou_threshold, 1e-6),
+            )
         )
 
         combined = min(iou_confidence, similarity)

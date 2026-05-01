@@ -192,7 +192,9 @@ class ElementSafetyAnalyzer:
     def __init__(self, config: SafetyConfig | None = None):
         self.config = config or SafetyConfig()
 
-    async def analyze_risk(self, element: ElementHandle, page: Page) -> tuple[ActionRisk, str]:
+    async def analyze_risk(
+        self, element: ElementHandle, page: Page
+    ) -> tuple[ActionRisk, str]:
         """
         Analyze an element and return its risk level with reason.
 
@@ -235,7 +237,9 @@ class ElementSafetyAnalyzer:
         # Check blocked selectors first (highest priority)
         for selector in self.config.blocked_selectors:
             try:
-                matches = await element.evaluate(f'(el) => el.matches("{selector}")', selector)
+                matches = await element.evaluate(
+                    f'(el) => el.matches("{selector}")', selector
+                )
                 if matches:
                     return ActionRisk.BLOCKED, f"Matches blocked selector: {selector}"
             except Exception:
@@ -247,7 +251,14 @@ class ElementSafetyAnalyzer:
                 return ActionRisk.DANGEROUS, f"Contains dangerous keyword: {keyword}"
 
         # Check class names for danger indicators
-        danger_classes = ["danger", "destructive", "delete", "remove", "warning", "error"]
+        danger_classes = [
+            "danger",
+            "destructive",
+            "delete",
+            "remove",
+            "warning",
+            "error",
+        ]
         for cls in danger_classes:
             if cls in props["className"].lower():
                 return ActionRisk.DANGEROUS, f"Has danger class: {cls}"
@@ -259,7 +270,9 @@ class ElementSafetyAnalyzer:
         # Check safe selectors
         for selector in self.config.safe_selectors:
             try:
-                matches = await element.evaluate(f'(el) => el.matches("{selector}")', selector)
+                matches = await element.evaluate(
+                    f'(el) => el.matches("{selector}")', selector
+                )
                 if matches:
                     return ActionRisk.SAFE, f"Matches safe selector: {selector}"
             except Exception:
@@ -369,7 +382,9 @@ class ConfirmationDialogHandler:
     async def check_for_dialog(self, page: Page) -> bool:
         """Check if a dialog has been detected."""
         try:
-            result = await page.evaluate("() => window.__qontinui_dialog_detected || false")
+            result = await page.evaluate(
+                "() => window.__qontinui_dialog_detected || false"
+            )
             return bool(result)
         except Exception:
             return False
@@ -392,7 +407,9 @@ class ConfirmationDialogHandler:
                 cancel_btn = await page.query_selector(selector)
                 if cancel_btn and await cancel_btn.is_visible():
                     await cancel_btn.click()
-                    await page.evaluate("() => window.__qontinui_dialog_detected = false")
+                    await page.evaluate(
+                        "() => window.__qontinui_dialog_detected = false"
+                    )
                     return True
             except Exception:
                 continue

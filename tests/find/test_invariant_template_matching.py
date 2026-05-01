@@ -59,7 +59,9 @@ from qontinui.find.backends.cascade import CascadeDetector, MatchSettings  # noq
 _rng = np.random.RandomState(42)
 
 
-def _make_textured_patch(w: int, h: int, base_color: tuple[int, int, int]) -> np.ndarray:
+def _make_textured_patch(
+    w: int, h: int, base_color: tuple[int, int, int]
+) -> np.ndarray:
     """Textured BGR patch — TM_CCOEFF_NORMED needs variance to work."""
     patch = np.empty((h, w, 3), dtype=np.uint8)
     for c in range(3):
@@ -609,6 +611,8 @@ class TestCascadeInvariantIntegration:
 
         # With preferred_backend, invariant goes first
         ms = MatchSettings(preferred_backend="invariant_template")
-        results = cd.find("needle", "haystack", {"needle_type": "template", "match_settings": ms})
+        results = cd.find(
+            "needle", "haystack", {"needle_type": "template", "match_settings": ms}
+        )
         assert results[0].backend_name == "invariant_template"
         assert invariant.find_called

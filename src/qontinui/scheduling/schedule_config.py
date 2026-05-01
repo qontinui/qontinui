@@ -161,8 +161,12 @@ class ScheduleConfig:
             "projectName": self.project_name,
             "createdAt": self.created_at.isoformat(),
             "lastModified": self.last_modified.isoformat(),
-            "lastExecuted": (self.last_executed.isoformat() if self.last_executed else None),
-            "nextExecution": (self.next_execution.isoformat() if self.next_execution else None),
+            "lastExecuted": (
+                self.last_executed.isoformat() if self.last_executed else None
+            ),
+            "nextExecution": (
+                self.next_execution.isoformat() if self.next_execution else None
+            ),
             "tags": self.tags,
             "metadata": self.metadata,
         }
@@ -179,9 +183,13 @@ class ScheduleConfig:
             schedule_type=ScheduleType(data.get("scheduleType", "fixed_rate")),
             cron_expression=data.get("cronExpression"),
             start_time=(
-                datetime.fromisoformat(data["startTime"]) if data.get("startTime") else None
+                datetime.fromisoformat(data["startTime"])
+                if data.get("startTime")
+                else None
             ),
-            end_time=(datetime.fromisoformat(data["endTime"]) if data.get("endTime") else None),
+            end_time=(
+                datetime.fromisoformat(data["endTime"]) if data.get("endTime") else None
+            ),
             interval_seconds=data.get("intervalSeconds"),
             initial_delay_seconds=data.get("initialDelaySeconds", 0),
             required_states=data.get("requiredStates", []),
@@ -197,7 +205,9 @@ class ScheduleConfig:
             retry_delay_seconds=data.get("retryDelaySeconds", 5),
             project_name=data.get("projectName", ""),
             created_at=(
-                datetime.fromisoformat(data["createdAt"]) if data.get("createdAt") else utc_now()
+                datetime.fromisoformat(data["createdAt"])
+                if data.get("createdAt")
+                else utc_now()
             ),
             last_modified=(
                 datetime.fromisoformat(data["lastModified"])
@@ -205,10 +215,14 @@ class ScheduleConfig:
                 else utc_now()
             ),
             last_executed=(
-                datetime.fromisoformat(data["lastExecuted"]) if data.get("lastExecuted") else None
+                datetime.fromisoformat(data["lastExecuted"])
+                if data.get("lastExecuted")
+                else None
             ),
             next_execution=(
-                datetime.fromisoformat(data["nextExecution"]) if data.get("nextExecution") else None
+                datetime.fromisoformat(data["nextExecution"])
+                if data.get("nextExecution")
+                else None
             ),
             tags=data.get("tags", []),
             metadata=data.get("metadata", {}),

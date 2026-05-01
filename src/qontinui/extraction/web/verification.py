@@ -239,10 +239,14 @@ class ClickableVerifier:
             if matches and len(matches) > 0:
                 match = matches[0]
                 match_x = (
-                    match.region.x if hasattr(match, "region") and match.region is not None else 0
+                    match.region.x
+                    if hasattr(match, "region") and match.region is not None
+                    else 0
                 )
                 match_y = (
-                    match.region.y if hasattr(match, "region") and match.region is not None else 0
+                    match.region.y
+                    if hasattr(match, "region") and match.region is not None
+                    else 0
                 )
                 confidence = match.similarity if hasattr(match, "similarity") else 0.0
 
@@ -251,7 +255,9 @@ class ClickableVerifier:
                 expected_y = clickable.bounding_box.get("y", 0)
 
                 # Calculate location error
-                location_error = ((match_x - expected_x) ** 2 + (match_y - expected_y) ** 2) ** 0.5
+                location_error = (
+                    (match_x - expected_x) ** 2 + (match_y - expected_y) ** 2
+                ) ** 0.5
 
                 # Verify both confidence and location
                 location_ok = location_error <= self.location_tolerance
@@ -391,7 +397,9 @@ class BatchVerifier:
             # Report progress
             if self.on_progress:
                 percent = int((i / total) * 100)
-                self.on_progress(f"Verifying batch {batch_num}/{total_batches}", percent)
+                self.on_progress(
+                    f"Verifying batch {batch_num}/{total_batches}", percent
+                )
 
             # Verify batch
             for clickable in batch:
@@ -419,7 +427,9 @@ class BatchVerifier:
             min_confidence=min(all_confidences) if all_confidences else 0.0,
             max_confidence=max(all_confidences) if all_confidences else 0.0,
             avg_location_error=(
-                sum(all_location_errors) / len(all_location_errors) if all_location_errors else 0.0
+                sum(all_location_errors) / len(all_location_errors)
+                if all_location_errors
+                else 0.0
             ),
             verification_rate=verified_count / total if total else 0.0,
         )

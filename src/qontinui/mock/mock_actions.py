@@ -89,7 +89,9 @@ class MockActions:
         )
         return result  # type: ignore[no-any-return]
 
-    def drag(self, from_target: Any, to_target: Any, duration: float = 1.0) -> ActionResult:
+    def drag(
+        self, from_target: Any, to_target: Any, duration: float = 1.0
+    ) -> ActionResult:
         """Mock drag action.
 
         Args:

@@ -308,7 +308,9 @@ class LLMSelectorTester:
         self.verbose = verbose
         self.selector = NaturalLanguageSelector(client, confidence_threshold=0.3)
 
-    async def test_site(self, site_key: str, site_config: dict[str, Any]) -> SiteTestResult:
+    async def test_site(
+        self, site_key: str, site_config: dict[str, Any]
+    ) -> SiteTestResult:
         """Test all queries for a single site."""
         url = site_config["url"]
         site_name = site_config["name"]
@@ -412,7 +414,9 @@ class LLMSelectorTester:
 
             if found:
                 inner = (
-                    result.element.element if hasattr(result.element, "element") else result.element
+                    result.element.element
+                    if hasattr(result.element, "element")
+                    else result.element
                 )
                 element_tag = inner.tag_name.lower()
                 element_text = (inner.text or inner.aria_label or "")[:50]
@@ -437,7 +441,9 @@ class LLMSelectorTester:
                 logger.info(
                     f'  [{status}] Found: [{result.index}] <{element_tag}> "{element_text}"'
                 )
-                logger.info(f"  Confidence: {result.confidence:.2f} (min: {query.min_confidence})")
+                logger.info(
+                    f"  Confidence: {result.confidence:.2f} (min: {query.min_confidence})"
+                )
                 logger.info(f"  Reasoning: {result.reasoning[:80]}...")
                 logger.info(f"  Response time: {response_time_ms:.0f}ms")
 
@@ -502,10 +508,14 @@ class LLMSelectorTester:
 
             if result.found:
                 inner = (
-                    result.element.element if hasattr(result.element, "element") else result.element
+                    result.element.element
+                    if hasattr(result.element, "element")
+                    else result.element
                 )
                 status = "PASS" if action_correct else "WRONG_ACTION"
-                logger.info(f"  [{status}] Element: [{result.index}] <{inner.tag_name}>")
+                logger.info(
+                    f"  [{status}] Element: [{result.index}] <{inner.tag_name}>"
+                )
                 logger.info(f"  Action: {action} (expected: {expected_action})")
                 logger.info(f"  Confidence: {result.confidence:.2f}")
                 logger.info(f"  Response time: {response_time_ms:.0f}ms")
@@ -552,7 +562,11 @@ class LLMSelectorTester:
         category_results: dict[str, dict[str, int]] = {}
         for q in valid_queries:
             if q.category not in category_results:
-                category_results[q.category] = {"total": 0, "success": 0, "meets_expectations": 0}
+                category_results[q.category] = {
+                    "total": 0,
+                    "success": 0,
+                    "meets_expectations": 0,
+                }
             category_results[q.category]["total"] += 1
             if q.success:
                 category_results[q.category]["success"] += 1
@@ -560,7 +574,9 @@ class LLMSelectorTester:
                 category_results[q.category]["meets_expectations"] += 1
 
         # Calculate timing stats
-        response_times = [q.response_time_ms for q in valid_queries if q.response_time_ms > 0]
+        response_times = [
+            q.response_time_ms for q in valid_queries if q.response_time_ms > 0
+        ]
         avg_time = statistics.mean(response_times) if response_times else 0
         min_time = min(response_times) if response_times else 0
         max_time = max(response_times) if response_times else 0
@@ -634,9 +650,13 @@ def print_summary(summary: TestSummary) -> None:
 
     print("\n--- Results by Category ---")
     for category, results in summary.category_results.items():
-        cat_success = (results["success"] / results["total"] * 100) if results["total"] > 0 else 0
+        cat_success = (
+            (results["success"] / results["total"] * 100) if results["total"] > 0 else 0
+        )
         cat_meets = (
-            (results["meets_expectations"] / results["total"] * 100) if results["total"] > 0 else 0
+            (results["meets_expectations"] / results["total"] * 100)
+            if results["total"] > 0
+            else 0
         )
         print(
             f"  {category}: {results['success']}/{results['total']} success ({cat_success:.0f}%), "
@@ -676,7 +696,9 @@ def save_report(summary: TestSummary, output_path: str) -> None:
         "successful_queries": summary.successful_queries,
         "failed_queries": summary.failed_queries,
         "success_rate": (
-            (summary.successful_queries / summary.total_queries) if summary.total_queries > 0 else 0
+            (summary.successful_queries / summary.total_queries)
+            if summary.total_queries > 0
+            else 0
         ),
         "category_results": summary.category_results,
         "timing": {

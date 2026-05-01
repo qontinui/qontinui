@@ -9,11 +9,7 @@ from unittest.mock import AsyncMock, MagicMock
 src_path = Path(__file__).parent.parent.parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from qontinui_schemas.accessibility import (
-    AccessibilityBounds,
-    AccessibilityNode,
-    AccessibilityRole,
-)
+from qontinui_schemas.accessibility import AccessibilityBounds, AccessibilityNode, AccessibilityRole
 
 from qontinui.hal.implementations.accessibility.action_dispatch import (
     _POST_ACTION_WAIT_S,
@@ -88,7 +84,9 @@ class TestActionDispatchRegistry:
             AccessibilityRole.SLIDER,
             AccessibilityRole.TEXTBOX,
         ]:
-            assert registry.get_strategy(role) is not None, f"Missing strategy for {role}"
+            assert (
+                registry.get_strategy(role) is not None
+            ), f"Missing strategy for {role}"
 
     def test_unregistered_role_returns_none(self):
         """Roles without a strategy return None."""
@@ -444,7 +442,9 @@ class TestTextBoxStrategy:
         )
 
         strategy = TextBoxStrategy()
-        asyncio.run(strategy.execute(node, "type", capture, text="world", clear_first=True))
+        asyncio.run(
+            strategy.execute(node, "type", capture, text="world", clear_first=True)
+        )
 
         capture.type_by_ref.assert_called_once_with("@tb", "world", clear_first=True)
 

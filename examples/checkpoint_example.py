@@ -90,7 +90,9 @@ def main():
     if checkpoint1.text_regions:
         print("\nSearching for text in checkpoint...")
         # Search for any region containing "the" (common word)
-        matching_regions = checkpoint1.get_regions_containing("the", case_sensitive=False)
+        matching_regions = checkpoint1.get_regions_containing(
+            "the", case_sensitive=False
+        )
         print(f"Found {len(matching_regions)} regions containing 'the'")
 
         if matching_regions:

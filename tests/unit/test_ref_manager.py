@@ -112,7 +112,9 @@ class TestRefManagerBasic:
         """Gets all assigned refs."""
         child1 = AccessibilityNode(ref="", role=AccessibilityRole.BUTTON, name="A")
         child2 = AccessibilityNode(ref="", role=AccessibilityRole.BUTTON, name="B")
-        root = AccessibilityNode(ref="", role=AccessibilityRole.GROUP, children=[child1, child2])
+        root = AccessibilityNode(
+            ref="", role=AccessibilityRole.GROUP, children=[child1, child2]
+        )
         manager = RefManager()
         manager.assign_refs(root)
 
@@ -133,7 +135,10 @@ class TestRefManagerInteractiveOnly:
             ref="", role=AccessibilityRole.BUTTON, name="Click", is_interactive=True
         )
         static = AccessibilityNode(
-            ref="", role=AccessibilityRole.STATIC_TEXT, name="Label", is_interactive=False
+            ref="",
+            role=AccessibilityRole.STATIC_TEXT,
+            name="Label",
+            is_interactive=False,
         )
         root = AccessibilityNode(
             ref="",
@@ -182,8 +187,12 @@ class TestRefManagerInteractiveOnly:
 
     def test_all_nodes_mode(self) -> None:
         """Assigns refs to all nodes when interactive_only=False."""
-        interactive = AccessibilityNode(ref="", role=AccessibilityRole.BUTTON, is_interactive=True)
-        static = AccessibilityNode(ref="", role=AccessibilityRole.STATIC_TEXT, is_interactive=False)
+        interactive = AccessibilityNode(
+            ref="", role=AccessibilityRole.BUTTON, is_interactive=True
+        )
+        static = AccessibilityNode(
+            ref="", role=AccessibilityRole.STATIC_TEXT, is_interactive=False
+        )
         root = AccessibilityNode(
             ref="",
             role=AccessibilityRole.DOCUMENT,
@@ -264,7 +273,9 @@ class TestRefManagerDeepTree:
             AccessibilityNode(ref="", role=AccessibilityRole.BUTTON, name=f"Button{i}")
             for i in range(100)
         ]
-        root = AccessibilityNode(ref="", role=AccessibilityRole.TOOLBAR, children=children)
+        root = AccessibilityNode(
+            ref="", role=AccessibilityRole.TOOLBAR, children=children
+        )
 
         manager = RefManager()
         count = manager.assign_refs(root)
@@ -282,7 +293,9 @@ class TestRefManagerGetInteractiveNodes:
         """Returns all nodes with assigned refs."""
         child1 = AccessibilityNode(ref="", role=AccessibilityRole.BUTTON, name="A")
         child2 = AccessibilityNode(ref="", role=AccessibilityRole.LINK, name="B")
-        root = AccessibilityNode(ref="", role=AccessibilityRole.DOCUMENT, children=[child1, child2])
+        root = AccessibilityNode(
+            ref="", role=AccessibilityRole.DOCUMENT, children=[child1, child2]
+        )
 
         manager = RefManager()
         manager.assign_refs(root)
@@ -299,7 +312,10 @@ class TestRefManagerGetInteractiveNodes:
             ref="", role=AccessibilityRole.BUTTON, name="Click", is_interactive=True
         )
         static = AccessibilityNode(
-            ref="", role=AccessibilityRole.STATIC_TEXT, name="Label", is_interactive=False
+            ref="",
+            role=AccessibilityRole.STATIC_TEXT,
+            name="Label",
+            is_interactive=False,
         )
         root = AccessibilityNode(
             ref="",

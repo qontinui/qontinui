@@ -44,8 +44,12 @@ def mock_registry():
         mock_reg.register_image = MagicMock(
             side_effect=lambda id, img: mock_reg._image_registry.update({id: img})
         )
-        mock_reg.get_image = MagicMock(side_effect=lambda id: mock_reg._image_registry.get(id))
-        mock_reg.clear_images = MagicMock(side_effect=lambda: mock_reg._image_registry.clear())
+        mock_reg.get_image = MagicMock(
+            side_effect=lambda id: mock_reg._image_registry.get(id)
+        )
+        mock_reg.clear_images = MagicMock(
+            side_effect=lambda: mock_reg._image_registry.clear()
+        )
         yield mock_reg
 
 
@@ -208,7 +212,9 @@ def config_with_missing_image_reference() -> dict[str, Any]:
 class TestImageLoadingFromConfig:
     """Test that images from config["images"] are registered in registry."""
 
-    def test_images_array_loaded_into_config(self, simple_config_with_images: dict[str, Any]):
+    def test_images_array_loaded_into_config(
+        self, simple_config_with_images: dict[str, Any]
+    ):
         """Test that images from config["images"] are loaded into QontinuiConfig."""
         # Parse config using Pydantic
         config = QontinuiConfig.model_validate(simple_config_with_images)
@@ -240,7 +246,9 @@ class TestImageLoadingFromConfig:
 class TestStateImageLoadingFromConfig:
     """Test that state images from config["states"][]["stateImages"] are registered."""
 
-    def test_state_images_loaded_into_config(self, config_with_state_images: dict[str, Any]):
+    def test_state_images_loaded_into_config(
+        self, config_with_state_images: dict[str, Any]
+    ):
         """Test that state images are loaded from config["states"][]["stateImages"]."""
         config = QontinuiConfig.model_validate(config_with_state_images)
 
@@ -260,7 +268,9 @@ class TestStateImageLoadingFromConfig:
         assert state_img_2.id == "stateimg-logo"
         assert state_img_2.name == "Company Logo"
 
-    def test_state_images_added_to_image_map(self, config_with_state_images: dict[str, Any]):
+    def test_state_images_added_to_image_map(
+        self, config_with_state_images: dict[str, Any]
+    ):
         """Test that state images are added to image_map alongside base images."""
         config = QontinuiConfig.model_validate(config_with_state_images)
 
@@ -297,7 +307,9 @@ class TestStateImageMapping:
         assert state_img_asset.id == "img-button-1"
         assert state_img_asset.name == "login_button.png"
 
-    def test_pattern_contains_image_id_reference(self, config_with_state_images: dict[str, Any]):
+    def test_pattern_contains_image_id_reference(
+        self, config_with_state_images: dict[str, Any]
+    ):
         """Test that Pattern objects contain the imageId field referencing base images."""
         config = QontinuiConfig.model_validate(config_with_state_images)
 
@@ -357,9 +369,9 @@ class TestMissingImageReferenceWarning:
         warning_messages = [
             record.message for record in caplog.records if record.levelname == "WARNING"
         ]
-        assert any("references missing image" in msg for msg in warning_messages), (
-            f"Expected warning about missing image. Got: {warning_messages}"
-        )
+        assert any(
+            "references missing image" in msg for msg in warning_messages
+        ), f"Expected warning about missing image. Got: {warning_messages}"
 
     def test_missing_reference_not_in_image_map(
         self, config_with_missing_image_reference: dict[str, Any]
@@ -397,7 +409,9 @@ class TestMissingImageReferenceWarning:
 class TestBothIDsInRegistry:
     """Test that both image ID and state image ID are in registry after loading."""
 
-    def test_both_base_and_state_image_ids_in_map(self, config_with_state_images: dict[str, Any]):
+    def test_both_base_and_state_image_ids_in_map(
+        self, config_with_state_images: dict[str, Any]
+    ):
         """Test that both base image ID and state image ID are accessible in image_map."""
         config = QontinuiConfig.model_validate(config_with_state_images)
 
@@ -434,7 +448,9 @@ class TestBothIDsInRegistry:
                         {
                             "id": "stateimg-1",
                             "name": "State Image 1",
-                            "patterns": [{"id": "p1", "name": "pat1", "imageId": "img-shared"}],
+                            "patterns": [
+                                {"id": "p1", "name": "pat1", "imageId": "img-shared"}
+                            ],
                             "threshold": 0.85,
                         }
                     ],
@@ -447,7 +463,9 @@ class TestBothIDsInRegistry:
                         {
                             "id": "stateimg-2",
                             "name": "State Image 2",
-                            "patterns": [{"id": "p2", "name": "pat2", "imageId": "img-shared"}],
+                            "patterns": [
+                                {"id": "p2", "name": "pat2", "imageId": "img-shared"}
+                            ],
                             "threshold": 0.85,
                         }
                     ],
@@ -593,7 +611,9 @@ class TestIntegrationWithRegistry:
                         {
                             "id": "stateimg-test",
                             "name": "Test State Image",
-                            "patterns": [{"id": "p1", "name": "pat1", "imageId": "img-test"}],
+                            "patterns": [
+                                {"id": "p1", "name": "pat1", "imageId": "img-test"}
+                            ],
                             "threshold": 0.85,
                         }
                     ],

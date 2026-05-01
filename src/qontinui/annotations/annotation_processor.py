@@ -66,7 +66,9 @@ class AnnotationProcessor:
         self.registration_service = registration_service
         self._state_instances: dict[type, Any] = {}
         # Create transition set processor for transitions
-        self.transition_set_processor = TransitionSetProcessor(joint_table, transition_service)
+        self.transition_set_processor = TransitionSetProcessor(
+            joint_table, transition_service
+        )
 
     def process_annotations(self, module: Any = None) -> StatesRegisteredEvent:
         """Process all annotations in the given module.
@@ -121,7 +123,9 @@ class AnnotationProcessor:
             # Create instance if needed
             state_instance = self._get_or_create_instance(state_class)
             if state_instance is None:
-                logger.error(f"Failed to create instance of state class: {state_class.__name__}")
+                logger.error(
+                    f"Failed to create instance of state class: {state_class.__name__}"
+                )
                 continue
 
             logger.info(f"Processing state class: {state_class.__name__}")
@@ -165,7 +169,9 @@ class AnnotationProcessor:
                     self.initial_states.add_state(initial_state)
                     logger.debug(f"Added {state_name} to initial states registry")
                 else:
-                    logger.warning(f"Could not find state {state_name} to add to initial states")
+                    logger.warning(
+                        f"Could not find state {state_name} to add to initial states"
+                    )
         else:
             logger.warning("No initial states found!")
 
@@ -194,7 +200,9 @@ class AnnotationProcessor:
             return class_name[:-5]
         return class_name
 
-    def _find_decorated_classes(self, module: Any, predicate: Callable[..., Any]) -> list[type]:
+    def _find_decorated_classes(
+        self, module: Any, predicate: Callable[..., Any]
+    ) -> list[type]:
         """Find all classes matching the predicate.
 
         Args:

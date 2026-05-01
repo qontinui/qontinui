@@ -247,7 +247,9 @@ class LocalVisionClient(VisionLLMClient):
                     if model.startswith(self.model_name.split(":")[0]):
                         return True
 
-                logger.warning(f"Model {self.model_name} not found. Available: {models}")
+                logger.warning(
+                    f"Model {self.model_name} not found. Available: {models}"
+                )
                 return False
 
         except Exception as e:

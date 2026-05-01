@@ -202,7 +202,9 @@ class TestOCRBackend:
         from PIL import Image
 
         haystack = Image.new("RGB", (640, 480))
-        results = backend.find("Submit", haystack, {"needle_type": "text", "min_confidence": 0.8})
+        results = backend.find(
+            "Submit", haystack, {"needle_type": "text", "min_confidence": 0.8}
+        )
         assert len(results) == 1
         assert results[0].x == 50
         assert results[0].width == 200
@@ -310,7 +312,9 @@ class TestVisionLLMBackend:
         from PIL import Image
 
         haystack = Image.new("RGB", (640, 480))
-        results = backend.find("nonexistent element", haystack, {"needle_type": "description"})
+        results = backend.find(
+            "nonexistent element", haystack, {"needle_type": "description"}
+        )
         assert results == []
 
     def test_find_with_pattern_needle(self):
@@ -346,7 +350,9 @@ class TestVisionLLMBackend:
         from PIL import Image
 
         haystack = Image.new("RGB", (640, 480))
-        results = backend.find("test", haystack, {"needle_type": "text", "min_confidence": 0.8})
+        results = backend.find(
+            "test", haystack, {"needle_type": "text", "min_confidence": 0.8}
+        )
         assert results == []
 
 

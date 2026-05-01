@@ -128,7 +128,9 @@ class AwasExecutor:
 
         except httpx.TimeoutException:
             response_time_ms = int((time.time() - start_time) * 1000)
-            logger.warning(f"AWAS action '{action_id}' timed out after {response_time_ms}ms")
+            logger.warning(
+                f"AWAS action '{action_id}' timed out after {response_time_ms}ms"
+            )
             return AwasActionResult(
                 success=False,
                 action_id=action_id,
@@ -326,7 +328,9 @@ class AwasExecutor:
             results.append(result)
 
             if not result.success and stop_on_error:
-                logger.warning(f"Batch execution stopped due to error in action '{action_id}'")
+                logger.warning(
+                    f"Batch execution stopped due to error in action '{action_id}'"
+                )
                 break
 
         return results

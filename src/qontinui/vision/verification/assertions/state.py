@@ -146,7 +146,11 @@ class StateDetector:
             from typing import cast
 
             avg_color_seq = cast(tuple[float, ...], avg_color_tuple)
-            avg_color = (avg_color_seq[0], avg_color_seq[1], avg_color_seq[2])  # BGR format
+            avg_color = (
+                avg_color_seq[0],
+                avg_color_seq[1],
+                avg_color_seq[2],
+            )  # BGR format
             bg_hex = sig.color_profile.background
             # Parse hex color to RGB
             r = int(bg_hex[1:3], 16)
@@ -155,7 +159,9 @@ class StateDetector:
 
             # Calculate color distance (avg_color is BGR)
             distance = np.sqrt(
-                (avg_color[2] - r) ** 2 + (avg_color[1] - g) ** 2 + (avg_color[0] - b) ** 2
+                (avg_color[2] - r) ** 2
+                + (avg_color[1] - g) ** 2
+                + (avg_color[0] - b) ** 2
             )
 
             # Normalize to 0-1 (max distance is ~441)

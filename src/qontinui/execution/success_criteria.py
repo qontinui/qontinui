@@ -242,7 +242,9 @@ class SuccessCriteriaEvaluator:
                 f"({stats['skipped_actions']} skipped)"
             )
         else:
-            return False, (f"{stats['failed_actions']} of {stats['total_actions']} actions failed")
+            return False, (
+                f"{stats['failed_actions']} of {stats['total_actions']} actions failed"
+            )
 
     def _evaluate_min_matches(
         self, criteria: SuccessCriteria, state: ExecutionState
@@ -255,9 +257,13 @@ class SuccessCriteriaEvaluator:
         match_count = stats["match_count"]
 
         if match_count >= criteria.min_matches:
-            return True, (f"Found {match_count} matches (required: {criteria.min_matches})")
+            return True, (
+                f"Found {match_count} matches (required: {criteria.min_matches})"
+            )
         else:
-            return False, (f"Only found {match_count} matches, needed {criteria.min_matches}")
+            return False, (
+                f"Only found {match_count} matches, needed {criteria.min_matches}"
+            )
 
     def _evaluate_max_failures(
         self, criteria: SuccessCriteria, state: ExecutionState
@@ -275,14 +281,18 @@ class SuccessCriteriaEvaluator:
                 f"{stats['successful_actions']} succeeded"
             )
         else:
-            return False, (f"{failed_count} failures exceeds limit of {criteria.max_failures}")
+            return False, (
+                f"{failed_count} failures exceeds limit of {criteria.max_failures}"
+            )
 
     def _evaluate_checkpoint(
         self, criteria: SuccessCriteria, state: ExecutionState
     ) -> tuple[bool, str]:
         """Evaluate CHECKPOINT_PASSED criteria."""
         if not criteria.checkpoint_name:
-            raise ValueError("CHECKPOINT_PASSED criteria requires checkpoint_name parameter")
+            raise ValueError(
+                "CHECKPOINT_PASSED criteria requires checkpoint_name parameter"
+            )
 
         stats = self._compute_statistics(state)
         checkpoints_passed = stats["checkpoints_passed"]
@@ -303,7 +313,9 @@ class SuccessCriteriaEvaluator:
     ) -> tuple[bool, str]:
         """Evaluate REQUIRED_STATES criteria."""
         if not criteria.required_states:
-            raise ValueError("REQUIRED_STATES criteria requires required_states parameter")
+            raise ValueError(
+                "REQUIRED_STATES criteria requires required_states parameter"
+            )
 
         stats = self._compute_statistics(state)
         states_reached = stats["states_reached"]
@@ -352,7 +364,9 @@ class SuccessCriteriaEvaluator:
             )
 
             if not isinstance(result, bool):
-                return False, (f"Custom condition returned non-boolean: {type(result).__name__}")
+                return False, (
+                    f"Custom condition returned non-boolean: {type(result).__name__}"
+                )
 
             explanation = (
                 f"Custom condition '{criteria.custom_condition}' "
@@ -402,7 +416,9 @@ class SuccessCriteriaEvaluator:
 
         for node in ast.walk(parsed):
             if type(node) not in safe_nodes:
-                raise ValueError(f"Unsafe operation in custom condition: {type(node).__name__}")
+                raise ValueError(
+                    f"Unsafe operation in custom condition: {type(node).__name__}"
+                )
 
     def _compute_statistics(self, state: ExecutionState) -> dict[str, Any]:
         """Compute comprehensive statistics from execution state.
@@ -420,7 +436,9 @@ class SuccessCriteriaEvaluator:
         successful_actions = sum(
             1 for s in state.action_states.values() if s == TraversalState.COMPLETED
         )
-        failed_actions = sum(1 for s in state.action_states.values() if s == TraversalState.FAILED)
+        failed_actions = sum(
+            1 for s in state.action_states.values() if s == TraversalState.FAILED
+        )
         skipped_actions = sum(
             1 for s in state.action_states.values() if s == TraversalState.SKIPPED
         )

@@ -162,7 +162,9 @@ class TestSuccessCriteriaEvaluator:
         criteria = SuccessCriteria(criteria_type=SuccessCriteriaType.ALL_ACTIONS_PASS)
         evaluator = SuccessCriteriaEvaluator()
 
-        success, explanation = evaluator.evaluate(criteria, execution_state_with_failures)
+        success, explanation = evaluator.evaluate(
+            criteria, execution_state_with_failures
+        )
 
         assert success is False
         assert "1 of 3 actions failed" in explanation
@@ -184,7 +186,9 @@ class TestSuccessCriteriaEvaluator:
 
     def test_min_matches_failure(self, execution_state_all_pass):
         """Test MIN_MATCHES criteria with insufficient matches."""
-        criteria = SuccessCriteria(criteria_type=SuccessCriteriaType.MIN_MATCHES, min_matches=10)
+        criteria = SuccessCriteria(
+            criteria_type=SuccessCriteriaType.MIN_MATCHES, min_matches=10
+        )
         evaluator = SuccessCriteriaEvaluator()
 
         success, explanation = evaluator.evaluate(criteria, execution_state_all_pass)
@@ -210,7 +214,9 @@ class TestSuccessCriteriaEvaluator:
         )
         evaluator = SuccessCriteriaEvaluator()
 
-        success, explanation = evaluator.evaluate(criteria, execution_state_with_failures)
+        success, explanation = evaluator.evaluate(
+            criteria, execution_state_with_failures
+        )
 
         assert success is True
         assert "1 failures" in explanation
@@ -218,10 +224,14 @@ class TestSuccessCriteriaEvaluator:
 
     def test_max_failures_exceeded(self, execution_state_with_failures):
         """Test MAX_FAILURES criteria with too many failures."""
-        criteria = SuccessCriteria(criteria_type=SuccessCriteriaType.MAX_FAILURES, max_failures=0)
+        criteria = SuccessCriteria(
+            criteria_type=SuccessCriteriaType.MAX_FAILURES, max_failures=0
+        )
         evaluator = SuccessCriteriaEvaluator()
 
-        success, explanation = evaluator.evaluate(criteria, execution_state_with_failures)
+        success, explanation = evaluator.evaluate(
+            criteria, execution_state_with_failures
+        )
 
         assert success is False
         assert "1 failures exceeds limit of 0" in explanation
@@ -247,7 +257,9 @@ class TestSuccessCriteriaEvaluator:
         )
         evaluator = SuccessCriteriaEvaluator()
 
-        success, explanation = evaluator.evaluate(criteria, execution_state_checkpoint_failed)
+        success, explanation = evaluator.evaluate(
+            criteria, execution_state_checkpoint_failed
+        )
 
         assert success is False
         assert "Checkpoint 'Login checkpoint' failed" in explanation
@@ -313,7 +325,9 @@ class TestSuccessCriteriaEvaluator:
         )
         evaluator = SuccessCriteriaEvaluator()
 
-        success, explanation = evaluator.evaluate(criteria, execution_state_with_failures)
+        success, explanation = evaluator.evaluate(
+            criteria, execution_state_with_failures
+        )
 
         assert success is False
         assert "evaluated to False" in explanation
@@ -395,10 +409,14 @@ class TestWorkflowResult:
 
     def test_create_workflow_result_with_failures(self, execution_state_with_failures):
         """Test creating workflow result with failures."""
-        criteria = SuccessCriteria(criteria_type=SuccessCriteriaType.MAX_FAILURES, max_failures=1)
+        criteria = SuccessCriteria(
+            criteria_type=SuccessCriteriaType.MAX_FAILURES, max_failures=1
+        )
         evaluator = SuccessCriteriaEvaluator()
 
-        result = evaluator.create_workflow_result(criteria, execution_state_with_failures)
+        result = evaluator.create_workflow_result(
+            criteria, execution_state_with_failures
+        )
 
         assert result.success is True
         assert result.total_actions == 3
@@ -416,7 +434,10 @@ class TestWorkflowResult:
 
         assert result.success is True
         assert result.success_criteria is not None
-        assert result.success_criteria.criteria_type == SuccessCriteriaType.ALL_ACTIONS_PASS
+        assert (
+            result.success_criteria.criteria_type
+            == SuccessCriteriaType.ALL_ACTIONS_PASS
+        )
 
     def test_workflow_result_str(self, execution_state_all_pass):
         """Test WorkflowResult string representation."""
@@ -460,7 +481,9 @@ class TestConvenienceFunction:
 
     def test_evaluate_workflow_success_custom_criteria(self, execution_state_all_pass):
         """Test convenience function with custom criteria."""
-        criteria = SuccessCriteria(criteria_type=SuccessCriteriaType.MIN_MATCHES, min_matches=5)
+        criteria = SuccessCriteria(
+            criteria_type=SuccessCriteriaType.MIN_MATCHES, min_matches=5
+        )
 
         result = evaluate_workflow_success(execution_state_all_pass, criteria)
 
@@ -502,7 +525,9 @@ class TestEdgeCases:
         state.mark_completed("action2", {"success": True, "matches": []})
         state.mark_completed("checkpoint1", {"success": True, "matches": []})
 
-        criteria = SuccessCriteria(criteria_type=SuccessCriteriaType.MIN_MATCHES, min_matches=1)
+        criteria = SuccessCriteria(
+            criteria_type=SuccessCriteriaType.MIN_MATCHES, min_matches=1
+        )
 
         result = evaluate_workflow_success(state, criteria)
 
@@ -517,7 +542,9 @@ class TestEdgeCases:
 
         # Different formats for matches
         state.mark_completed("action1", {"success": True, "match_count": 3})
-        state.mark_completed("action2", {"success": True, "matches": [{"x": 0}, {"x": 1}]})
+        state.mark_completed(
+            "action2", {"success": True, "matches": [{"x": 0}, {"x": 1}]}
+        )
         state.mark_completed("checkpoint1", {"success": True})
 
         result = evaluate_workflow_success(state)
@@ -547,7 +574,9 @@ class TestImmutability:
 
     def test_success_criteria_immutable(self):
         """Test that SuccessCriteria is immutable."""
-        criteria = SuccessCriteria(criteria_type=SuccessCriteriaType.MIN_MATCHES, min_matches=5)
+        criteria = SuccessCriteria(
+            criteria_type=SuccessCriteriaType.MIN_MATCHES, min_matches=5
+        )
 
         with pytest.raises(AttributeError):
             criteria.min_matches = 10  # type: ignore[misc]

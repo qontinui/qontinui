@@ -152,7 +152,9 @@ class LayoutAnalyzer(BaseAnalyzer[Layout]):
             edges = cv2.dilate(edges, kernel, iterations=2)
 
             # Find contours
-            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
 
             for contour in contours:
                 area = cv2.contourArea(contour)
@@ -219,11 +221,15 @@ class LayoutAnalyzer(BaseAnalyzer[Layout]):
                 mask = np.all(quantized == color, axis=2).astype(np.uint8) * 255
 
                 # Find contours
-                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                contours, _ = cv2.findContours(
+                    mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+                )
 
                 for contour in contours:
                     area = cv2.contourArea(contour)
-                    if area < self.min_region_area * 2:  # Higher threshold for color regions
+                    if (
+                        area < self.min_region_area * 2
+                    ):  # Higher threshold for color regions
                         continue
 
                     x, y, rw, rh = cv2.boundingRect(contour)
@@ -278,7 +284,12 @@ class LayoutAnalyzer(BaseAnalyzer[Layout]):
         for region in regions:
             bounds = region["bounds"]
             if isinstance(bounds, tuple) and len(bounds) == 4:
-                x, y, rw, rh = int(bounds[0]), int(bounds[1]), int(bounds[2]), int(bounds[3])
+                x, y, rw, rh = (
+                    int(bounds[0]),
+                    int(bounds[1]),
+                    int(bounds[2]),
+                    int(bounds[3]),
+                )
                 region_img = screenshot[y : y + rh, x : x + rw]
                 region["characteristics"] = self._analyze_region_characteristics(
                     region_img, screenshot, (x, y, rw, rh)
@@ -317,7 +328,9 @@ class LayoutAnalyzer(BaseAnalyzer[Layout]):
         if counts:
             most_common = counts.most_common(1)[0][0]
             b, g, r = most_common
-            characteristics["background_color"] = self._rgb_to_hex(int(r), int(g), int(b))
+            characteristics["background_color"] = self._rgb_to_hex(
+                int(r), int(g), int(b)
+            )
 
         # Check for vertical/horizontal lists (simplified)
         # This would need proper element detection for accuracy
@@ -371,8 +384,12 @@ class LayoutAnalyzer(BaseAnalyzer[Layout]):
                     bounds=BoundingBox(x=x, y=y, width=w, height=h),
                     characteristics=RegionCharacteristics(
                         background_color=characteristics.get("background_color"),
-                        has_vertical_list=characteristics.get("has_vertical_list", False),
-                        has_horizontal_list=characteristics.get("has_horizontal_list", False),
+                        has_vertical_list=characteristics.get(
+                            "has_vertical_list", False
+                        ),
+                        has_horizontal_list=characteristics.get(
+                            "has_horizontal_list", False
+                        ),
                         content_varies=stability < 0.5,
                     ),
                     semantic_label=SemanticRegionType.UNKNOWN,
@@ -522,7 +539,9 @@ class LayoutAnalyzer(BaseAnalyzer[Layout]):
 
         # Find common gutters (gaps between positions)
         x_positions = sorted(set(x_positions))
-        gutters = [x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)]
+        gutters = [
+            x_positions[i + 1] - x_positions[i] for i in range(len(x_positions) - 1)
+        ]
 
         if not gutters:
             return GridConfiguration(detected=False)
@@ -530,7 +549,9 @@ class LayoutAnalyzer(BaseAnalyzer[Layout]):
         # Check if gutters are consistent (indicating a grid)
         from collections import Counter
 
-        gutter_counts = Counter(round(g / 4) * 4 for g in gutters if g > 5)  # Round to 4px
+        gutter_counts = Counter(
+            round(g / 4) * 4 for g in gutters if g > 5
+        )  # Round to 4px
 
         if not gutter_counts:
             return GridConfiguration(detected=False)

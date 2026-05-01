@@ -319,7 +319,9 @@ class ExtensionTargetConnection(TargetConnection):
 
         try:
             # Check extension status via runner API
-            response = await self._client.get(f"{self._connection_url}/extension/status")
+            response = await self._client.get(
+                f"{self._connection_url}/extension/status"
+            )
 
             if not response.is_success:
                 error_msg = (
@@ -420,7 +422,9 @@ class ExtensionTargetConnection(TargetConnection):
 
             if not response.is_success:
                 error_text = response.text
-                raise RuntimeError(f"Extension command failed: {response.status_code} {error_text}")
+                raise RuntimeError(
+                    f"Extension command failed: {response.status_code} {error_text}"
+                )
 
             data = response.json()
 
@@ -461,7 +465,9 @@ class ExtensionTargetConnection(TargetConnection):
             result = await self._send_command("getElements", params)
 
             elements: list[Element] = []
-            elem_list = result.get("elements", result) if isinstance(result, dict) else result
+            elem_list = (
+                result.get("elements", result) if isinstance(result, dict) else result
+            )
 
             if isinstance(elem_list, list):
                 for elem_data in elem_list:
@@ -524,7 +530,10 @@ class ExtensionTargetConnection(TargetConnection):
             response_time_ms = int((time.time() - start_time) * 1000)
             error_msg = str(e)
 
-            if "not connected" in error_msg.lower() or "disconnected" in error_msg.lower():
+            if (
+                "not connected" in error_msg.lower()
+                or "disconnected" in error_msg.lower()
+            ):
                 self._connected = False
 
             return ActionResult(
@@ -564,7 +573,9 @@ class ExtensionTargetConnection(TargetConnection):
             timestamp_str = result.get("timestamp")
             try:
                 timestamp = (
-                    datetime.fromisoformat(timestamp_str) if timestamp_str else datetime.now()
+                    datetime.fromisoformat(timestamp_str)
+                    if timestamp_str
+                    else datetime.now()
                 )
             except (TypeError, ValueError):
                 timestamp = datetime.now()
@@ -632,7 +643,9 @@ class ExtensionTargetConnection(TargetConnection):
             is_enabled=elem_data.get(
                 "isEnabled", elem_data.get("is_enabled", elem_data.get("enabled", True))
             ),
-            component_name=elem_data.get("componentName", elem_data.get("component_name")),
+            component_name=elem_data.get(
+                "componentName", elem_data.get("component_name")
+            ),
             fingerprint=fingerprint,
         )
 
@@ -828,7 +841,9 @@ class ExtensionTargetConnection(TargetConnection):
             Base64-encoded screenshot or None on failure
         """
         try:
-            data = await self._send_command("capturePageScreenshot", {}, timeout_secs=30)
+            data = await self._send_command(
+                "capturePageScreenshot", {}, timeout_secs=30
+            )
             return data.get("screenshot")
         except Exception as e:
             logger.warning(f"Screenshot capture failed: {e}")

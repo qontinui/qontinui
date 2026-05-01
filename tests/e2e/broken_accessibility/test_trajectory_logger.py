@@ -153,8 +153,12 @@ def test_trajectory_logger_notepad_3_actions(live_app):
             # Required top-level fields
             assert "image_hash" in rec, f"Record {i}: missing image_hash"
             assert "image_path" in rec, f"Record {i}: missing image_path"
-            assert isinstance(rec["viewport_width"], int), f"Record {i}: viewport_width not int"
-            assert isinstance(rec["viewport_height"], int), f"Record {i}: viewport_height not int"
+            assert isinstance(
+                rec["viewport_width"], int
+            ), f"Record {i}: viewport_width not int"
+            assert isinstance(
+                rec["viewport_height"], int
+            ), f"Record {i}: viewport_height not int"
             assert rec["viewport_width"] > 0, f"Record {i}: viewport_width <= 0"
             assert rec["viewport_height"] > 0, f"Record {i}: viewport_height <= 0"
 

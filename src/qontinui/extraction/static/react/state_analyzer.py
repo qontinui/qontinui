@@ -47,7 +47,9 @@ class StateAnalyzer:
         state_vars: list[StateVariable] = []
 
         # Extract from different hook types
-        state_vars.extend(hook_module.extract_use_state(component_parse, component_name, file_path))
+        state_vars.extend(
+            hook_module.extract_use_state(component_parse, component_name, file_path)
+        )
         state_vars.extend(
             hook_module.extract_use_reducer(component_parse, component_name, file_path)
         )
@@ -113,7 +115,11 @@ class StateAnalyzer:
             toggle_handlers = self._find_toggle_handlers(var, handlers)
 
             # For boolean visibility variables, create two states: visible and hidden
-            if var.initial_value is False or var.initial_value is True or self._is_boolean_var(var):
+            if (
+                var.initial_value is False
+                or var.initial_value is True
+                or self._is_boolean_var(var)
+            ):
                 # State 1: Variable is False (default/closed/hidden)
                 default_state = VisibilityState(
                     id=f"{component.id}:{var.name}_false",
@@ -123,7 +129,9 @@ class StateAnalyzer:
                     controlling_variable=var.id,
                     variable_value=False,
                     rendered_components=[],  # Nothing extra rendered
-                    hidden_components=self._extract_rendered_components(related_conditionals, True),
+                    hidden_components=self._extract_rendered_components(
+                        related_conditionals, True
+                    ),
                     toggle_handlers=[h.id for h in toggle_handlers],
                     conditional_render_id=(
                         related_conditionals[0].id if related_conditionals else None

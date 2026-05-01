@@ -147,9 +147,9 @@ class TestCascadeDefaultOrdering:
         """Default backends should be sorted cheapest-first."""
         cascade = CascadeDetector()
         costs = [b.estimated_cost_ms() for b in cascade.backends]
-        assert costs == sorted(costs), (
-            f"Backends not sorted by cost: {[(b.name, b.estimated_cost_ms()) for b in cascade.backends]}"
-        )
+        assert costs == sorted(
+            costs
+        ), f"Backends not sorted by cost: {[(b.name, b.estimated_cost_ms()) for b in cascade.backends]}"
 
     def test_default_includes_core_backends(self):
         """At minimum, template + feature backends should be present."""
@@ -245,7 +245,9 @@ class TestSemanticMatcherFlorence2:
     def test_submit_button_match(self):
         matches = match_element_by_description("Submit button", self.FLORENCE2_CAPTIONS)
         assert len(matches) > 0
-        assert matches[0].element_index == 0  # "blue rectangular button with text Submit"
+        assert (
+            matches[0].element_index == 0
+        )  # "blue rectangular button with text Submit"
         assert matches[0].score >= 0.5
 
     def test_search_field_match(self):
@@ -271,7 +273,9 @@ class TestSemanticMatcherFlorence2:
         assert matches[0].element_index == 8  # "green 'Save' button"
 
     def test_checkbox_agree_match(self):
-        matches = match_element_by_description("agree checkbox", self.FLORENCE2_CAPTIONS)
+        matches = match_element_by_description(
+            "agree checkbox", self.FLORENCE2_CAPTIONS
+        )
         assert len(matches) > 0
         assert matches[0].element_index == 5  # "checkbox with label 'I agree'"
 

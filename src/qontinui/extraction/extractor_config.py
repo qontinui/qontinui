@@ -306,7 +306,9 @@ class ExtractorConfig:
             config.backend = ExtractionBackend(data["backend"])
 
         if "fallback_backends" in data:
-            config.fallback_backends = [ExtractionBackend(b) for b in data["fallback_backends"]]
+            config.fallback_backends = [
+                ExtractionBackend(b) for b in data["fallback_backends"]
+            ]
 
         if "element_filter" in data:
             config.element_filter = ElementFilter(data["element_filter"])

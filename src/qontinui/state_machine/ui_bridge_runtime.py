@@ -367,7 +367,9 @@ class UIBridgeRuntime:
             group=state.group,
         )
 
-        self.logger.info(f"Registered state: {state.id} with {len(state.element_ids)} elements")
+        self.logger.info(
+            f"Registered state: {state.id} with {len(state.element_ids)} elements"
+        )
         return ms_state
 
     def register_states(self, states: list[UIBridgeState]) -> list[State]:
@@ -421,7 +423,9 @@ class UIBridgeRuntime:
         )
         return ms_transition
 
-    def register_transitions(self, transitions: list[UIBridgeTransition]) -> list[Transition]:
+    def register_transitions(
+        self, transitions: list[UIBridgeTransition]
+    ) -> list[Transition]:
         """Register multiple transitions.
 
         Args:
@@ -444,7 +448,9 @@ class UIBridgeRuntime:
         available_ids = self.manager.get_available_transitions()
         if available_ids:
             return [
-                self._ui_transitions[tid] for tid in available_ids if tid in self._ui_transitions
+                self._ui_transitions[tid]
+                for tid in available_ids
+                if tid in self._ui_transitions
             ]
         # No active states — return all transitions for discoverability
         return list(self._ui_transitions.values())
@@ -473,7 +479,9 @@ class UIBridgeRuntime:
         for sid in active_state_ids:
             state = self.manager.states.get(sid)
             if state is None:
-                self.logger.warning("Introspection: unknown state id '%s' (not registered)", sid)
+                self.logger.warning(
+                    "Introspection: unknown state id '%s' (not registered)", sid
+                )
                 continue
             resolved.add(state)
         saved = cast(set[Any], self.manager.active_states.copy())
@@ -897,7 +905,9 @@ class UIBridgeRuntime:
 
         try:
             # Assume client has select method
-            result = getattr(self.client, "select", lambda *a, **k: None)(element_id, value)
+            result = getattr(self.client, "select", lambda *a, **k: None)(
+                element_id, value
+            )
             return result.success if result else False
         except Exception as e:
             self.logger.error(f"Select action failed: {e}")

@@ -70,7 +70,9 @@ class MockStateManagement:
             return self._state_configs[state_name].probability
         return self._default_probability
 
-    def set_element_probability(self, state_name: str, element_name: str, probability: int) -> None:
+    def set_element_probability(
+        self, state_name: str, element_name: str, probability: int
+    ) -> None:
         """Set the probability for a specific element within a state.
 
         Args:

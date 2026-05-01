@@ -401,7 +401,8 @@ class CooccurrenceExport:
 
         # Parse presence matrix
         presence_matrix = [
-            PresenceMatrixEntry.from_dict(entry) for entry in data.get("presenceMatrix", [])
+            PresenceMatrixEntry.from_dict(entry)
+            for entry in data.get("presenceMatrix", [])
         ]
 
         # Parse fingerprint stats
@@ -410,10 +411,14 @@ class CooccurrenceExport:
             fingerprint_stats[fp_hash] = FingerprintStats.from_dict(stats_data)
 
         # Parse transitions
-        transitions = [TransitionRecord.from_dict(t) for t in data.get("transitions", [])]
+        transitions = [
+            TransitionRecord.from_dict(t) for t in data.get("transitions", [])
+        ]
 
         # Parse state candidates
-        state_candidates = [StateCandidate.from_dict(sc) for sc in data.get("stateCandidates", [])]
+        state_candidates = [
+            StateCandidate.from_dict(sc) for sc in data.get("stateCandidates", [])
+        ]
 
         return cls(
             session_id=data.get("sessionId", ""),
@@ -433,17 +438,23 @@ class CooccurrenceExport:
             "sessionId": self.session_id,
             "exportedAt": self.exported_at,
             "allFingerprints": self.all_fingerprints,
-            "fingerprintDetails": {k: v.to_dict() for k, v in self.fingerprint_details.items()},
+            "fingerprintDetails": {
+                k: v.to_dict() for k, v in self.fingerprint_details.items()
+            },
             "presenceMatrix": [entry.to_dict() for entry in self.presence_matrix],
             "cooccurrenceCounts": self.cooccurrence_counts,
-            "fingerprintStats": {k: v.to_dict() for k, v in self.fingerprint_stats.items()},
+            "fingerprintStats": {
+                k: v.to_dict() for k, v in self.fingerprint_stats.items()
+            },
             "transitions": [t.to_dict() for t in self.transitions],
             "stateCandidates": [sc.to_dict() for sc in self.state_candidates],
         }
 
 
 # Position zone constants for validation and grouping
-POSITION_ZONES = frozenset(["header", "footer", "sidebar-left", "sidebar-right", "main", "modal"])
+POSITION_ZONES = frozenset(
+    ["header", "footer", "sidebar-left", "sidebar-right", "main", "modal"]
+)
 
 # Global position zones (elements that appear across all states)
 GLOBAL_POSITION_ZONES = frozenset(["header", "footer"])
@@ -452,7 +463,9 @@ GLOBAL_POSITION_ZONES = frozenset(["header", "footer"])
 BLOCKING_POSITION_ZONES = frozenset(["modal"])
 
 # Size categories for weighting
-SIZE_CATEGORIES = frozenset(["icon", "button", "small", "medium", "large", "fullwidth", "panel"])
+SIZE_CATEGORIES = frozenset(
+    ["icon", "button", "small", "medium", "large", "fullwidth", "panel"]
+)
 
 # ARIA landmarks
 ARIA_LANDMARKS = frozenset(

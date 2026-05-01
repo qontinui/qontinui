@@ -16,7 +16,9 @@ from typing import Any
 class DiscoveryStrategyType(Enum):
     """Available state discovery strategy types."""
 
-    FINGERPRINT = "fingerprint"  # Enhanced with element fingerprints (supports ID fallback)
+    FINGERPRINT = (
+        "fingerprint"  # Enhanced with element fingerprints (supports ID fallback)
+    )
     AUTO = "auto"  # Auto-detect based on available data
 
 

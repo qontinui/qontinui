@@ -263,7 +263,10 @@ class VisualRecordingSession:
 
         # Use the most recent capture as "before" if it's less than 500ms old
         before_id: str
-        if self._snapshots and (time.time() * 1000 - self._snapshots[-1].timestamp) < 500:
+        if (
+            self._snapshots
+            and (time.time() * 1000 - self._snapshots[-1].timestamp) < 500
+        ):
             before_id = self._snapshots[-1].id
         else:
             before_id = await self._take_capture()
@@ -323,7 +326,10 @@ class VisualRecordingSession:
 
         # Build fingerprints from accessibility tree if available
         fingerprint_hashes: list[str] = []
-        if result.source_type == "accessibility" and result.metadata.get("total_nodes", 0) > 0:
+        if (
+            result.source_type == "accessibility"
+            and result.metadata.get("total_nodes", 0) > 0
+        ):
             fingerprint_hashes = await self._build_fingerprints_from_a11y()
 
         snapshot = _CaptureSnapshot(
@@ -433,7 +439,9 @@ class VisualRecordingSession:
 
         # Find fingerprints in the same zone
         candidates = [
-            fp for fp in self._all_fingerprints.values() if fp.position_zone == target_zone
+            fp
+            for fp in self._all_fingerprints.values()
+            if fp.position_zone == target_zone
         ]
 
         if not candidates:
@@ -509,10 +517,18 @@ class VisualRecordingSession:
         transitions: list[dict[str, Any]] = []
         for interaction in self._interactions:
             before_snap = next(
-                (s for s in self._snapshots if s.id == interaction.before_capture_id), None
+                (s for s in self._snapshots if s.id == interaction.before_capture_id),
+                None,
             )
             after_snap = (
-                next((s for s in self._snapshots if s.id == interaction.after_capture_id), None)
+                next(
+                    (
+                        s
+                        for s in self._snapshots
+                        if s.id == interaction.after_capture_id
+                    ),
+                    None,
+                )
                 if interaction.after_capture_id
                 else None
             )

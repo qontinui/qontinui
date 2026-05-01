@@ -36,7 +36,9 @@ app = FastAPI(title="OmniParser Service", version="1.0.0")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 YOLO_MODEL_ID = os.environ.get("OMNIPARSER_YOLO_MODEL", "microsoft/OmniParser-v2.0")
-CAPTION_MODEL_ID = os.environ.get("OMNIPARSER_CAPTION_MODEL", "microsoft/Florence-2-base")
+CAPTION_MODEL_ID = os.environ.get(
+    "OMNIPARSER_CAPTION_MODEL", "microsoft/Florence-2-base"
+)
 
 yolo_model: YOLO | None = None
 caption_processor = None
@@ -61,7 +63,9 @@ def load_models():
     logger.info("EasyOCR loaded")
 
     # Florence-2
-    caption_processor = AutoProcessor.from_pretrained(CAPTION_MODEL_ID, trust_remote_code=True)
+    caption_processor = AutoProcessor.from_pretrained(
+        CAPTION_MODEL_ID, trust_remote_code=True
+    )
     dtype = torch.float16 if DEVICE == "cuda" else torch.float32
     caption_model = AutoModelForCausalLM.from_pretrained(
         CAPTION_MODEL_ID,
@@ -171,7 +175,9 @@ async def parse(
                     max_new_tokens=50,
                     num_beams=3,
                 )
-            caption = caption_processor.batch_decode(gen_ids, skip_special_tokens=True)[0].strip()
+            caption = caption_processor.batch_decode(gen_ids, skip_special_tokens=True)[
+                0
+            ].strip()
             if caption:
                 b["caption"] = caption
         except Exception:

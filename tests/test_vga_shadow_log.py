@@ -38,7 +38,9 @@ if "psycopg" not in sys.modules:
     _stub = types.ModuleType("psycopg")
 
     def _unused_connect(*_args: Any, **_kwargs: Any) -> Any:  # pragma: no cover
-        raise RuntimeError("psycopg.connect stub invoked — test forgot to patch psycopg.connect")
+        raise RuntimeError(
+            "psycopg.connect stub invoked — test forgot to patch psycopg.connect"
+        )
 
     _stub.connect = _unused_connect  # type: ignore[attr-defined]
     sys.modules["psycopg"] = _stub
@@ -326,9 +328,9 @@ def test_rate_limit_with_positive_rate_passes_stochastically(
     inserts = _all_inserts(cursor)
     # Must be strictly between 0 and 5 — the whole point of the test is
     # that the gate is probabilistic, not "always pass" or "always drop".
-    assert 0 < expected_passes < 5, (
-        "Test seed produced a degenerate pass count; pick a different seed."
-    )
+    assert (
+        0 < expected_passes < 5
+    ), "Test seed produced a degenerate pass count; pick a different seed."
     assert len(inserts) == expected_passes
     # Number of PNGs on disk matches number of passes.
     assert len(list(tmp_path.glob("*.png"))) == expected_passes

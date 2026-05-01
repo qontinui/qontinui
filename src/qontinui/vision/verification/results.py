@@ -250,7 +250,9 @@ class ResultBuilder:
             AssertionResult instance.
         """
         self._completed_at = datetime.now(UTC)
-        duration_ms = int((self._completed_at - self._started_at).total_seconds() * 1000)
+        duration_ms = int(
+            (self._completed_at - self._started_at).total_seconds() * 1000
+        )
 
         best_match = self._matches[0] if self._matches else None
 
@@ -327,7 +329,9 @@ class SuiteResultBuilder:
             AssertionSuiteResult instance.
         """
         completed_at = datetime.now(UTC)
-        total_duration_ms = int((completed_at - self._started_at).total_seconds() * 1000)
+        total_duration_ms = int(
+            (completed_at - self._started_at).total_seconds() * 1000
+        )
 
         passed = sum(1 for r in self._results if r.status == AssertionStatus.PASSED)
         failed = sum(1 for r in self._results if r.status == AssertionStatus.FAILED)

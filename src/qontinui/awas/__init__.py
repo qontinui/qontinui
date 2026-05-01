@@ -11,16 +11,16 @@ Reference: https://github.com/TamTunnel/AWAS
 from .discovery import AwasDiscoveryService
 from .executor import AwasExecutor
 from .types import (
-    AwasAction,
-    AwasActionResult,
-    AwasAuth,
-    AwasAuthType,
-    AwasElement,
-    AwasManifest,
-    AwasParameter,
-    ConformanceLevel,
-    HttpMethod,
-    ParameterLocation,
+                    AwasAction,
+                    AwasActionResult,
+                    AwasAuth,
+                    AwasAuthType,
+                    AwasElement,
+                    AwasManifest,
+                    AwasParameter,
+                    ConformanceLevel,
+                    HttpMethod,
+                    ParameterLocation,
 )
 
 __all__ = [

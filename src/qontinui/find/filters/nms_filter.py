@@ -41,7 +41,9 @@ class NMSFilter(MatchFilter):
             ValueError: If iou_threshold is not in range [0.0, 1.0]
         """
         if not 0.0 <= iou_threshold <= 1.0:
-            raise ValueError(f"iou_threshold must be in [0.0, 1.0], got {iou_threshold}")
+            raise ValueError(
+                f"iou_threshold must be in [0.0, 1.0], got {iou_threshold}"
+            )
         self.iou_threshold = iou_threshold
 
     def filter(self, matches: list[Match]) -> list[Match]:

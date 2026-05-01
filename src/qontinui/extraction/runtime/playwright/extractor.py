@@ -158,9 +158,11 @@ class PlaywrightExtractor(RuntimeExtractor):
 
             # Extract interactive elements
             self.element_extractor.reset_counter()
-            interactive_elements = await self.element_extractor.extract_interactive_elements(
-                self.page,
-                screenshot_id or f"page_{self._capture_counter:04d}",
+            interactive_elements = (
+                await self.element_extractor.extract_interactive_elements(
+                    self.page,
+                    screenshot_id or f"page_{self._capture_counter:04d}",
+                )
             )
 
             # Convert InteractiveElement to ExtractedElement for compatibility
@@ -273,9 +275,11 @@ class PlaywrightExtractor(RuntimeExtractor):
             raise RuntimeError("Not connected to target")
 
         self.element_extractor.reset_counter()
-        interactive_elements = await self.element_extractor.extract_interactive_elements(
-            self.page,
-            f"page_{self._capture_counter:04d}",
+        interactive_elements = (
+            await self.element_extractor.extract_interactive_elements(
+                self.page,
+                f"page_{self._capture_counter:04d}",
+            )
         )
         return self._convert_to_extracted_elements(interactive_elements)
 
@@ -285,7 +289,9 @@ class PlaywrightExtractor(RuntimeExtractor):
         """
         return []
 
-    async def capture_screenshot(self, region: BaseBoundingBox | None = None) -> Screenshot:
+    async def capture_screenshot(
+        self, region: BaseBoundingBox | None = None
+    ) -> Screenshot:
         """Capture a screenshot of the current state."""
         from ...models.base import Screenshot, Viewport
 
@@ -428,7 +434,9 @@ class PlaywrightExtractor(RuntimeExtractor):
             before_state_ids = {s.id for s in before_capture.states}
             after_state_ids = {s.id for s in after_capture.states}
 
-            appeared_states = [s.id for s in after_capture.states if s.id not in before_state_ids]
+            appeared_states = [
+                s.id for s in after_capture.states if s.id not in before_state_ids
+            ]
             disappeared_states = [
                 s.id for s in before_capture.states if s.id not in after_state_ids
             ]
@@ -442,10 +450,14 @@ class PlaywrightExtractor(RuntimeExtractor):
                 url_changed=(before_url != after_url),
                 new_url=after_url if before_url != after_url else None,
                 screenshot_before=(
-                    str(before_capture.screenshot_path) if before_capture.screenshot_path else None
+                    str(before_capture.screenshot_path)
+                    if before_capture.screenshot_path
+                    else None
                 ),
                 screenshot_after=(
-                    str(after_capture.screenshot_path) if after_capture.screenshot_path else None
+                    str(after_capture.screenshot_path)
+                    if after_capture.screenshot_path
+                    else None
                 ),
                 metadata={"action": action.__dict__},
             )
@@ -635,7 +647,9 @@ class PlaywrightExtractor(RuntimeExtractor):
             start_url = target.url
             if start_url:
                 parsed = urlparse(start_url)
-                normalized_start = f"{parsed.scheme}://{parsed.netloc}{parsed.path}".rstrip("/")
+                normalized_start = (
+                    f"{parsed.scheme}://{parsed.netloc}{parsed.path}".rstrip("/")
+                )
                 urls_to_visit.append((normalized_start, 0, None, None))
 
             pages_visited = 0
@@ -651,7 +665,9 @@ class PlaywrightExtractor(RuntimeExtractor):
 
                 visited_urls.add(normalized_current)
 
-                logger.info(f"Crawling page {pages_visited + 1}/{max_pages}: {current_url}")
+                logger.info(
+                    f"Crawling page {pages_visited + 1}/{max_pages}: {current_url}"
+                )
 
                 try:
                     if pages_visited > 0:
@@ -669,15 +685,21 @@ class PlaywrightExtractor(RuntimeExtractor):
 
                     if capture.states:
                         primary_state = capture.states[0]
-                        primary_state_id = getattr(primary_state, "id", f"state_{pages_visited}")
+                        primary_state_id = getattr(
+                            primary_state, "id", f"state_{pages_visited}"
+                        )
                         url_to_state_id[normalized_current] = primary_state_id
 
                         if source_url and source_url in url_to_state_id:
                             source_state_id = url_to_state_id[source_url]
                             transition_counter += 1
 
-                            trigger_selector = link_info.get("selector", "") if link_info else ""
-                            trigger_text = link_info.get("text", "") if link_info else ""
+                            trigger_selector = (
+                                link_info.get("selector", "") if link_info else ""
+                            )
+                            trigger_text = (
+                                link_info.get("text", "") if link_info else ""
+                            )
 
                             transition = InferredTransition(
                                 id=f"trans_{transition_counter:04d}",
@@ -705,7 +727,8 @@ class PlaywrightExtractor(RuntimeExtractor):
                             normalized_link = link_url.split("#")[0].rstrip("/")
                             if normalized_link not in visited_urls:
                                 if not any(
-                                    url == normalized_link for url, _, _, _ in urls_to_visit
+                                    url == normalized_link
+                                    for url, _, _, _ in urls_to_visit
                                 ):
                                     urls_to_visit.append(
                                         (

@@ -57,12 +57,18 @@ def _empty_analysis_result(**overrides: Any) -> AnalysisResult:
 class TestCombinedWithOmniParser:
     """Tests for _discover_combined with enable_omniparser."""
 
-    @patch("qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_omniparser")
-    @patch("qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_differential")
+    @patch(
+        "qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_omniparser"
+    )
+    @patch(
+        "qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_differential"
+    )
     @patch(
         "qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_pixel_stability"
     )
-    def test_combined_includes_omniparser_when_enabled(self, mock_pixel, mock_diff, mock_omni):
+    def test_combined_includes_omniparser_when_enabled(
+        self, mock_pixel, mock_diff, mock_omni
+    ):
         """When enable_omniparser=True, combined discovery should call OmniParser."""
         mock_pixel.return_value = _empty_analysis_result()
         mock_diff.return_value = _empty_analysis_result()
@@ -99,12 +105,18 @@ class TestCombinedWithOmniParser:
         # OmniParser results should be in merged output
         assert any(si.name == "Submit Button" for si in result.state_images)
 
-    @patch("qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_omniparser")
-    @patch("qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_differential")
+    @patch(
+        "qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_omniparser"
+    )
+    @patch(
+        "qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_differential"
+    )
     @patch(
         "qontinui.discovery.discovery_facade.StateDiscoveryFacade._discover_with_pixel_stability"
     )
-    def test_combined_skips_omniparser_when_disabled(self, mock_pixel, mock_diff, mock_omni):
+    def test_combined_skips_omniparser_when_disabled(
+        self, mock_pixel, mock_diff, mock_omni
+    ):
         """Default config (enable_omniparser=False) should NOT call OmniParser."""
         mock_pixel.return_value = _empty_analysis_result()
         mock_diff.return_value = _empty_analysis_result()

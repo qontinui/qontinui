@@ -76,7 +76,9 @@ class Find(ActionInterface):
         """
         return ActionType.FIND
 
-    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(
+        self, matches: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Execute the find operation to locate GUI elements on screen.
 
         This method now delegates to FindAction for actual pattern matching.
@@ -154,5 +156,7 @@ class FindPipeline:
             object_collections: Objects to find
         """
         # Placeholder implementation
-        logger.debug("Executing find with strategy: %s", find_options.get_find_strategy())
+        logger.debug(
+            "Executing find with strategy: %s", find_options.get_find_strategy()
+        )
         object.__setattr__(matches, "success", False)

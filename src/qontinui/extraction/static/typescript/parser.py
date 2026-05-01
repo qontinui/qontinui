@@ -200,7 +200,9 @@ class TypeScriptParser:
             extract = ["components", "state", "conditionals", "handlers", "imports"]
 
         # Use a temporary file to avoid stdout buffer limits
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as output_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as output_file:
             output_path = output_file.name
 
         try:

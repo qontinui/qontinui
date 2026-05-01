@@ -26,7 +26,9 @@ class SessionMetadata:
     successful_actions: int = 0
     metadata: str = ""
 
-    def __init__(self, session_id: str = "", name: str = "", application: str = "") -> None:
+    def __init__(
+        self, session_id: str = "", name: str = "", application: str = ""
+    ) -> None:
         """Initialize session metadata.
 
         Args:
@@ -106,7 +108,9 @@ class PersistenceProvider(Protocol):
         """
         ...
 
-    def record_action(self, record: "ActionRecord", state_object: Optional["StateObject"]) -> None:
+    def record_action(
+        self, record: "ActionRecord", state_object: Optional["StateObject"]
+    ) -> None:
         """Record an action execution.
 
         Args:

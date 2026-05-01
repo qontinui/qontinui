@@ -116,7 +116,9 @@ class ScreenshotComparator:
             return self._config.comparison.pixel_threshold
         return 10
 
-    def _get_diff_percentage_threshold(self, override: float | None = None) -> float | None:
+    def _get_diff_percentage_threshold(
+        self, override: float | None = None
+    ) -> float | None:
         """Get diff percentage threshold.
 
         Args:
@@ -332,12 +334,16 @@ class ScreenshotComparator:
         diff = cv2.absdiff(actual, expected)
         gray_diff: NDArray[np.uint8]
         if len(diff.shape) == 3:
-            gray_diff = np.asarray(cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
+            gray_diff = np.asarray(
+                cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
         else:
             gray_diff = np.asarray(diff, dtype=np.uint8)
 
         # Count different pixels using configured per-pixel threshold
-        _, thresh_result = cv2.threshold(gray_diff, pixel_thresh, 255, cv2.THRESH_BINARY)
+        _, thresh_result = cv2.threshold(
+            gray_diff, pixel_thresh, 255, cv2.THRESH_BINARY
+        )
         thresh_uint8: NDArray[np.uint8] = np.asarray(thresh_result, dtype=np.uint8)
         diff_pixels = int(np.count_nonzero(thresh_uint8))
         total_pixels = int(thresh_uint8.size)
@@ -391,8 +397,12 @@ class ScreenshotComparator:
         actual_gray: NDArray[np.uint8]
         expected_gray: NDArray[np.uint8]
         if len(actual.shape) == 3:
-            actual_gray = np.asarray(cv2.cvtColor(actual, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
-            expected_gray = np.asarray(cv2.cvtColor(expected, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
+            actual_gray = np.asarray(
+                cv2.cvtColor(actual, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
+            expected_gray = np.asarray(
+                cv2.cvtColor(expected, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
         else:
             actual_gray = actual
             expected_gray = expected
@@ -423,7 +433,9 @@ class ScreenshotComparator:
 
         # Compute pixel-level diff percentage for dual-threshold gating
         pixel_diff = cv2.absdiff(actual_gray, expected_gray)
-        _, pixel_thresh_result = cv2.threshold(pixel_diff, pixel_thresh, 255, cv2.THRESH_BINARY)
+        _, pixel_thresh_result = cv2.threshold(
+            pixel_diff, pixel_thresh, 255, cv2.THRESH_BINARY
+        )
         diff_pixels = int(np.count_nonzero(pixel_thresh_result))
         total_pixels = int(pixel_thresh_result.size)
         diff_pct = diff_pixels / total_pixels if total_pixels > 0 else 0.0
@@ -520,7 +532,9 @@ class ScreenshotComparator:
         diff = cv2.absdiff(actual, expected)
         gray_diff_phash: NDArray[np.uint8]
         if len(diff.shape) == 3:
-            gray_diff_phash = np.asarray(cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
+            gray_diff_phash = np.asarray(
+                cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
         else:
             gray_diff_phash = np.asarray(diff, dtype=np.uint8)
         _, thresh_result = cv2.threshold(gray_diff_phash, 10, 255, cv2.THRESH_BINARY)
@@ -627,7 +641,9 @@ class ScreenshotComparator:
         diff = cv2.absdiff(actual, expected)
         gray_diff_feature: NDArray[np.uint8]
         if len(diff.shape) == 3:
-            gray_diff_feature = np.asarray(cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8)
+            gray_diff_feature = np.asarray(
+                cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY), dtype=np.uint8
+            )
         else:
             gray_diff_feature = np.asarray(diff, dtype=np.uint8)
         _, thresh_result = cv2.threshold(gray_diff_feature, 10, 255, cv2.THRESH_BINARY)
@@ -661,7 +677,9 @@ class ScreenshotComparator:
         Returns:
             List of bounding boxes for diff regions.
         """
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         regions = []
         for contour in contours:
@@ -908,7 +926,9 @@ class ScreenshotAssertion:
             if failed_gate == "diff_percentage":
                 pct_thresh = result.metadata.get("diff_percentage_threshold")
                 pct_thresh_str = f"{pct_thresh:.2%}" if pct_thresh is not None else "?"
-                parts.append(f" [failed diff_percentage gate: {diff_pct:.2%} > {pct_thresh_str}]")
+                parts.append(
+                    f" [failed diff_percentage gate: {diff_pct:.2%} > {pct_thresh_str}]"
+                )
 
             error_msg = "".join(parts)
 
@@ -954,7 +974,9 @@ def get_screenshot_comparator(
         or config is not _screenshot_comparator_config
         or environment is not _screenshot_comparator_environment
     ):
-        _screenshot_comparator = ScreenshotComparator(config=config, environment=environment)
+        _screenshot_comparator = ScreenshotComparator(
+            config=config, environment=environment
+        )
         _screenshot_comparator_config = config
         _screenshot_comparator_environment = environment
     return _screenshot_comparator

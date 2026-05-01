@@ -89,7 +89,9 @@ class FingerprintStrategy(StateDiscoveryStrategy):
         if input_data.has_render_data():
             return self._discover_from_element_ids(input_data)
 
-        logger.warning("No fingerprint or render data provided for fingerprint strategy")
+        logger.warning(
+            "No fingerprint or render data provided for fingerprint strategy"
+        )
         return StateDiscoveryResult(
             states=[],
             elements=[],
@@ -165,7 +167,9 @@ class FingerprintStrategy(StateDiscoveryStrategy):
     # Element ID fallback (when no fingerprint data available)
     # =========================================================================
 
-    def _discover_from_element_ids(self, input_data: StateDiscoveryInput) -> StateDiscoveryResult:
+    def _discover_from_element_ids(
+        self, input_data: StateDiscoveryInput
+    ) -> StateDiscoveryResult:
         """Discover states by synthesizing fingerprints from element IDs.
 
         Extracts element IDs from render log entries, creates synthetic
@@ -213,7 +217,9 @@ class FingerprintStrategy(StateDiscoveryStrategy):
             )
 
         # Step 2: Synthesize a cooccurrence export from element IDs
-        synthetic_export = self._synthesize_cooccurrence_export(render_element_ids, all_element_ids)
+        synthetic_export = self._synthesize_cooccurrence_export(
+            render_element_ids, all_element_ids
+        )
 
         # Step 3: Feed through the standard fingerprint pipeline
         self._discovery = FingerprintStateDiscovery(self._config)
@@ -227,7 +233,9 @@ class FingerprintStrategy(StateDiscoveryStrategy):
         # Build element to renders mapping
         element_to_renders: dict[str, list[str]] = {}
         for elem_id in all_element_ids:
-            render_ids = sorted(rid for rid, eids in render_element_ids if elem_id in eids)
+            render_ids = sorted(
+                rid for rid, eids in render_element_ids if elem_id in eids
+            )
             if render_ids:
                 element_to_renders[f"fp:{elem_id[:12]}"] = render_ids
 
@@ -296,7 +304,9 @@ class FingerprintStrategy(StateDiscoveryStrategy):
 
         # Also check "tree" key (alternative simple format)
         if "tree" in render_log_entry:
-            self._extract_from_dom_node(render_log_entry["tree"], element_ids, include_html_ids)
+            self._extract_from_dom_node(
+                render_log_entry["tree"], element_ids, include_html_ids
+            )
 
         return sorted(element_ids)
 
@@ -414,8 +424,12 @@ class FingerprintStrategy(StateDiscoveryStrategy):
                 for id2 in elem_ids[i + 1 :]:
                     if id2 not in cooccurrence_counts:
                         cooccurrence_counts[id2] = {}
-                    cooccurrence_counts[id1][id2] = cooccurrence_counts[id1].get(id2, 0) + 1
-                    cooccurrence_counts[id2][id1] = cooccurrence_counts[id2].get(id1, 0) + 1
+                    cooccurrence_counts[id1][id2] = (
+                        cooccurrence_counts[id1].get(id2, 0) + 1
+                    )
+                    cooccurrence_counts[id2][id1] = (
+                        cooccurrence_counts[id2].get(id1, 0) + 1
+                    )
 
         return {
             "sessionId": "synthetic-from-element-ids",
@@ -460,7 +474,9 @@ class FingerprintStrategy(StateDiscoveryStrategy):
 
             clean_name = elem_id.split(":", 1)[1] if ":" in elem_id else elem_id
 
-            render_ids = sorted(rid for rid, eids in render_element_ids if elem_id in eids)
+            render_ids = sorted(
+                rid for rid, eids in render_element_ids if elem_id in eids
+            )
 
             elements.append(
                 DiscoveredElement(
@@ -480,7 +496,9 @@ class FingerprintStrategy(StateDiscoveryStrategy):
     # Shared conversion helpers
     # =========================================================================
 
-    def _build_element_list(self, export_data: dict[str, Any]) -> list[DiscoveredElement]:
+    def _build_element_list(
+        self, export_data: dict[str, Any]
+    ) -> list[DiscoveredElement]:
         """Build element list from fingerprint details."""
         elements: list[DiscoveredElement] = []
 
@@ -495,7 +513,9 @@ class FingerprintStrategy(StateDiscoveryStrategy):
             elements.append(
                 DiscoveredElement(
                     id=f"fp:{fp_hash[:12]}",  # Shortened fingerprint hash as ID
-                    name=fp_data.get("accessibleName") or fp_data.get("role") or fp_hash[:12],
+                    name=fp_data.get("accessibleName")
+                    or fp_data.get("role")
+                    or fp_hash[:12],
                     element_type="fingerprint",
                     render_ids=render_ids,
                     fingerprint_hash=fp_hash,
@@ -562,7 +582,9 @@ class FingerprintStrategy(StateDiscoveryStrategy):
 
         return transitions
 
-    def _build_element_render_mapping(self, export_data: dict[str, Any]) -> dict[str, list[str]]:
+    def _build_element_render_mapping(
+        self, export_data: dict[str, Any]
+    ) -> dict[str, list[str]]:
         """Build element to renders mapping from presence matrix."""
         element_to_renders: dict[str, list[str]] = {}
 

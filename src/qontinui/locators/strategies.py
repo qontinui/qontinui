@@ -127,7 +127,9 @@ class VisualPatternStrategy(LocatorStrategy):
         # Import here to avoid circular dependency
         from ..find.matchers import TemplateMatcher
 
-        self.matcher = TemplateMatcher(method="TM_CCOEFF_NORMED", nms_overlap_threshold=0.3)
+        self.matcher = TemplateMatcher(
+            method="TM_CCOEFF_NORMED", nms_overlap_threshold=0.3
+        )
 
     def find(
         self,
@@ -146,7 +148,9 @@ class VisualPatternStrategy(LocatorStrategy):
             MatchResult if match found above threshold
         """
         if not isinstance(target, Pattern):
-            logger.warning(f"VisualPatternStrategy requires Pattern, got {type(target)}")
+            logger.warning(
+                f"VisualPatternStrategy requires Pattern, got {type(target)}"
+            )
             return None
 
         try:
@@ -341,7 +345,9 @@ class RelativePositionStrategy(LocatorStrategy):
 
         try:
             # Find anchor using visual pattern matching
-            anchor_result = self.visual_strategy.find(anchor_pattern, context, min_confidence)
+            anchor_result = self.visual_strategy.find(
+                anchor_pattern, context, min_confidence
+            )
             if not anchor_result:
                 return None
 
@@ -430,7 +436,9 @@ class ColorRegionStrategy(LocatorStrategy):
         if not isinstance(target, dict):
             return None
 
-        color_range = target.get("color_range")  # ((h_min, s_min, v_min), (h_max, s_max, v_max))
+        color_range = target.get(
+            "color_range"
+        )  # ((h_min, s_min, v_min), (h_max, s_max, v_max))
         min_area = target.get("min_area", 100)
 
         if not color_range:
@@ -446,7 +454,9 @@ class ColorRegionStrategy(LocatorStrategy):
             mask = cv2.inRange(screenshot_hsv, lower_bound, upper_bound)
 
             # Find contours in mask
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
 
             if not contours:
                 return None
@@ -471,7 +481,9 @@ class ColorRegionStrategy(LocatorStrategy):
             roi_mask = mask[y : y + h, x : x + w]
             match_pixels = np.sum(roi_mask > 0)
             total_pixels = w * h
-            confidence = float(match_pixels) / float(total_pixels) if total_pixels > 0 else 0.0
+            confidence = (
+                float(match_pixels) / float(total_pixels) if total_pixels > 0 else 0.0
+            )
 
             if confidence < min_confidence:
                 return None
@@ -554,7 +566,9 @@ class StructuralStrategy(LocatorStrategy):
             edges = cv2.Canny(screenshot_gray, 50, 150)
 
             # Find contours
-            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
 
             candidates = []
 

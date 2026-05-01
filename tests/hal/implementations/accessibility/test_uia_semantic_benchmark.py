@@ -258,7 +258,13 @@ class TestFuzzyMatchPerformance:
         snapshot = _make_large_snapshot(300)
         cache = SemanticSearchCache()
 
-        queries = ["Save button", "Save Document", "Save Changes", "Save File", "Save As"]
+        queries = [
+            "Save button",
+            "Save Document",
+            "Save Changes",
+            "Save File",
+            "Save As",
+        ]
 
         # First pass: cold cache
         start = time.perf_counter()
@@ -277,9 +283,9 @@ class TestFuzzyMatchPerformance:
             f"ratio_cache_size={len(cache._ratio_cache)}"
         )
 
-        assert warm_time < cold_time, (
-            f"Warm cache should be faster than cold: cold={cold_time:.3f}s warm={warm_time:.3f}s"
-        )
+        assert (
+            warm_time < cold_time
+        ), f"Warm cache should be faster than cold: cold={cold_time:.3f}s warm={warm_time:.3f}s"
 
     def test_sieve_prunes_high_fraction_of_pairs(self):
         """With min_score=0.6 on 300 varied nodes, the sieve prunes >= 90% of pairs.
@@ -310,7 +316,10 @@ class TestFuzzyMatchPerformance:
                 for kw in kws:
                     total += 1
                     sm = SequenceMatcher(None, kw, name)
-                    if sm.real_quick_ratio() < min_score or sm.quick_ratio() < min_score:
+                    if (
+                        sm.real_quick_ratio() < min_score
+                        or sm.quick_ratio() < min_score
+                    ):
                         pruned += 1
                 total += 1
                 sm = SequenceMatcher(None, q_lower, name)
@@ -318,7 +327,9 @@ class TestFuzzyMatchPerformance:
                     pruned += 1
 
         prune_pct = 100.0 * pruned / total
-        print(f"\nSieve prune rate (min_score={min_score}): {pruned}/{total} = {prune_pct:.1f}%")
+        print(
+            f"\nSieve prune rate (min_score={min_score}): {pruned}/{total} = {prune_pct:.1f}%"
+        )
 
         assert prune_pct >= 90.0, (
             f"Expected sieve to prune >= 90% of pairs at min_score={min_score}, "
@@ -340,8 +351,10 @@ class TestFuzzyMatchPerformance:
         elapsed = time.perf_counter() - start
         per_call_ms = (elapsed / 50) * 1000
 
-        print(f"\nNo-match latency: {per_call_ms:.1f} ms per call (50 calls, 300 nodes)")
-
-        assert per_call_ms < 100, (
-            f"Expected < 100 ms per call on 300-node no-match query, got {per_call_ms:.1f} ms"
+        print(
+            f"\nNo-match latency: {per_call_ms:.1f} ms per call (50 calls, 300 nodes)"
         )
+
+        assert (
+            per_call_ms < 100
+        ), f"Expected < 100 ms per call on 300-node no-match query, got {per_call_ms:.1f} ms"

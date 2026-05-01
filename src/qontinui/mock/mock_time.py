@@ -58,7 +58,9 @@ class MockTime:
         self.virtual_time: datetime = utc_now()
         self.start_time: datetime = self.virtual_time
 
-        logger.debug(f"MockTime initialized (instant_mode={instant_mode}, time_scale={time_scale})")
+        logger.debug(
+            f"MockTime initialized (instant_mode={instant_mode}, time_scale={time_scale})"
+        )
 
     def wait(self, seconds: float) -> None:
         """Wait for specified duration (mock).

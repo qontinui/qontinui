@@ -129,7 +129,9 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         # Debug: Check if transitions were actually added to states
         logger.debug("Checking states after transition loading:")
         for state in _state_service.get_all_states():
-            logger.debug(f"State '{state.name}' has {len(state.transitions)} transitions")
+            logger.debug(
+                f"State '{state.name}' has {len(state.transitions)} transitions"
+            )
 
         # Step 4: Initialize StateMemory with populated StateService
         _state_memory = StateMemory(state_service=_state_service)  # type: ignore[arg-type]
@@ -180,14 +182,18 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         # Step 8: Register all transitions with the multistate adapter
         transition_count = 0
         states_with_transitions = 0
-        _debug_print(f"Checking transitions on {len(_state_service.get_all_states())} states")
+        _debug_print(
+            f"Checking transitions on {len(_state_service.get_all_states())} states"
+        )
         for state in _state_service.get_all_states():
             _debug_print(
                 f"  State '{state.name}' (id={state.id}): {len(state.transitions)} transitions"
             )
             if state.transitions:
                 states_with_transitions += 1
-                _debug_print(f"    State '{state.name}' has {len(state.transitions)} transitions")
+                _debug_print(
+                    f"    State '{state.name}' has {len(state.transitions)} transitions"
+                )
             for transition in state.transitions:
                 _debug_print(
                     f"    Registering transition: {transition.id} from state '{state.name}'"  # type: ignore[attr-defined]
@@ -196,12 +202,18 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
                 transition_count += 1
 
         _debug_print(f"Found {states_with_transitions} states with transitions")
-        _debug_print(f"Registered {transition_count} total transitions with multistate adapter")
+        _debug_print(
+            f"Registered {transition_count} total transitions with multistate adapter"
+        )
 
         _initialized = True
-        _debug_print(f"Navigation system initialized successfully! _initialized={_initialized}")
+        _debug_print(
+            f"Navigation system initialized successfully! _initialized={_initialized}"
+        )
 
-        logger.info(f"Navigation system initialized successfully with {state_count} states")
+        logger.info(
+            f"Navigation system initialized successfully with {state_count} states"
+        )
         return True
 
     except Exception as e:
@@ -242,7 +254,9 @@ def _find_active_states_visually(states: list[Any]) -> set[int]:
         if state_id is None:
             continue
 
-        _debug_print(f"Collecting StateImages for state '{state.name}' (ID: {state_id})")
+        _debug_print(
+            f"Collecting StateImages for state '{state.name}' (ID: {state_id})"
+        )
         _debug_print(f"  State has {len(state.state_images)} StateImages")
 
         for idx, state_image in enumerate(state.state_images):
@@ -308,8 +322,12 @@ def _find_active_states_visually(states: list[Any]) -> set[int]:
             image_name = state_image.name or f"image_{i}"
 
             if result.found:
-                _debug_print(f"  FOUND! State '{state_name}' is active (StateImage '{image_name}')")
-                logger.info(f"State '{state_name}' is active (found StateImage '{image_name}')")
+                _debug_print(
+                    f"  FOUND! State '{state_name}' is active (StateImage '{image_name}')"
+                )
+                logger.info(
+                    f"State '{state_name}' is active (found StateImage '{image_name}')"
+                )
                 active_state_ids.add(state_id)
             else:
                 _debug_print(f"  StateImage '{image_name}' not found on screen")
@@ -318,8 +336,12 @@ def _find_active_states_visually(states: list[Any]) -> set[int]:
         _debug_print(f"Error in find: {e}")
         logger.warning(f"Error in parallel find operation: {e}")
 
-    _debug_print(f"FIND_STATE check complete: {len(active_state_ids)}/{len(states)} states active")
-    logger.info(f"FIND_STATE check: {len(active_state_ids)}/{len(states)} states visible on screen")
+    _debug_print(
+        f"FIND_STATE check complete: {len(active_state_ids)}/{len(states)} states active"
+    )
+    logger.info(
+        f"FIND_STATE check: {len(active_state_ids)}/{len(states)} states visible on screen"
+    )
     return active_state_ids
 
 
@@ -360,7 +382,9 @@ def open_states(state_identifiers: list[str | int]) -> bool:
 
     if not _initialized:
         _debug_print("ERROR: Navigation system not initialized!")
-        logger.error("Navigation system not initialized - call load_configuration() first")
+        logger.error(
+            "Navigation system not initialized - call load_configuration() first"
+        )
         return False
 
     if not _navigator:
@@ -426,13 +450,17 @@ def open_states(state_identifiers: list[str | int]) -> bool:
     # Log which states are missing
     missing_states = [s for s in target_states if s.id not in active_states_found]
     missing_names = [s.name for s in missing_states]
-    _debug_print(f"States not yet visible: {missing_names}. Proceeding with navigation.")
+    _debug_print(
+        f"States not yet visible: {missing_names}. Proceeding with navigation."
+    )
     logger.info(f"States not yet active: {missing_names}. Initiating navigation.")
 
     # Get current active states for debugging
     active_states = _state_memory.get_active_state_names() if _state_memory else []
     active_state_ids = list(_state_memory.active_states) if _state_memory else []
-    _debug_print(f"Current active states (from memory): {active_states} (IDs: {active_state_ids})")
+    _debug_print(
+        f"Current active states (from memory): {active_states} (IDs: {active_state_ids})"
+    )
     logger.info(f"Current active states (from memory): {active_states}")
 
     # Navigate using PathfindingNavigator with multiple targets
@@ -536,10 +564,14 @@ def reset_to_initial_state() -> bool:
         for state in _state_service.get_all_states():
             if state.is_initial and state.id is not None:
                 _state_memory.add_active_state(state.id)
-                logger.debug(f"Re-activated initial state: {state.name} (ID: {state.id})")
+                logger.debug(
+                    f"Re-activated initial state: {state.name} (ID: {state.id})"
+                )
                 initial_state_count += 1
 
-        logger.info(f"Reset complete - activated {initial_state_count} initial state(s)")
+        logger.info(
+            f"Reset complete - activated {initial_state_count} initial state(s)"
+        )
         return True
 
     except Exception as e:

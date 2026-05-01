@@ -103,7 +103,9 @@ class CachedTemplateMatcher(ImageMatcher):
             if result.hit and result.entry:
                 self._cache_hits += 1
                 coords = result.entry.coordinates
-                logger.debug(f"Cache hit for pattern '{pattern.name}' at ({coords.x}, {coords.y})")
+                logger.debug(
+                    f"Cache hit for pattern '{pattern.name}' at ({coords.x}, {coords.y})"
+                )
 
                 # Emit cache hit event
                 self._emit_cache_event(pattern, cache_hit=True)
@@ -236,14 +238,22 @@ class CachedTemplateMatcher(ImageMatcher):
                 pattern_id=pattern.id,
                 pattern_name=pattern.name,
                 cache_hit=cache_hit,
-                cache_size=len(self.cache.list_keys()) if hasattr(self.cache, "list_keys") else 0,
+                cache_size=(
+                    len(self.cache.list_keys())
+                    if hasattr(self.cache, "list_keys")
+                    else 0
+                ),
                 hit_rate=hit_rate,
                 total_hits=self._cache_hits,
                 total_misses=self._cache_misses,
                 timestamp=time.time(),
             )
 
-            event_type = EventType.HEALING_CACHE_HIT if cache_hit else EventType.HEALING_CACHE_MISS
+            event_type = (
+                EventType.HEALING_CACHE_HIT
+                if cache_hit
+                else EventType.HEALING_CACHE_MISS
+            )
             emit_event(event_type, data=event_data.to_dict())
         except Exception as e:
             logger.debug(f"Failed to emit cache event: {e}")

@@ -76,14 +76,24 @@ class AspectRegistry:
         self.lifecycle_aspect.pre_action_pause = self.config.lifecycle_pre_pause
         self.lifecycle_aspect.post_action_pause = self.config.lifecycle_post_pause
         self.lifecycle_aspect.log_events = self.config.lifecycle_log_events
-        self.lifecycle_aspect.capture_before_screenshot = self.config.lifecycle_capture_before
-        self.lifecycle_aspect.capture_after_screenshot = self.config.lifecycle_capture_after
+        self.lifecycle_aspect.capture_before_screenshot = (
+            self.config.lifecycle_capture_before
+        )
+        self.lifecycle_aspect.capture_after_screenshot = (
+            self.config.lifecycle_capture_after
+        )
 
         # Configure performance aspect
         self.performance_aspect.enabled = self.config.performance_enabled
-        self.performance_aspect.alert_threshold_ms = self.config.performance_alert_threshold_ms
-        self.performance_aspect.warning_threshold_ms = self.config.performance_warning_threshold_ms
-        self.performance_aspect.report_interval_seconds = self.config.performance_report_interval
+        self.performance_aspect.alert_threshold_ms = (
+            self.config.performance_alert_threshold_ms
+        )
+        self.performance_aspect.warning_threshold_ms = (
+            self.config.performance_warning_threshold_ms
+        )
+        self.performance_aspect.report_interval_seconds = (
+            self.config.performance_report_interval
+        )
         self.performance_aspect.track_memory = self.config.performance_track_memory
 
         # Configure state transition aspect
@@ -97,11 +107,15 @@ class AspectRegistry:
 
         # Configure error recovery aspect
         self.error_recovery_aspect.enabled = self.config.recovery_enabled
-        self.error_recovery_aspect.default_policy.max_attempts = self.config.recovery_max_attempts
+        self.error_recovery_aspect.default_policy.max_attempts = (
+            self.config.recovery_max_attempts
+        )
         self.error_recovery_aspect.default_policy.initial_delay_ms = (
             self.config.recovery_initial_delay_ms
         )
-        self.error_recovery_aspect.default_policy.max_delay_ms = self.config.recovery_max_delay_ms
+        self.error_recovery_aspect.default_policy.max_delay_ms = (
+            self.config.recovery_max_delay_ms
+        )
         self.error_recovery_aspect.default_policy.backoff_multiplier = (
             self.config.recovery_backoff_multiplier
         )
@@ -141,7 +155,9 @@ class AspectRegistry:
             "state_transition": {
                 "enabled": self.state_transition_aspect.enabled,
                 "state_count": len(self.state_transition_aspect.get_state_graph()),
-                "transition_count": len(self.state_transition_aspect.get_transition_stats()),
+                "transition_count": len(
+                    self.state_transition_aspect.get_transition_stats()
+                ),
             },
             "error_recovery": {
                 "enabled": self.error_recovery_aspect.enabled,
@@ -174,7 +190,9 @@ class AspectRegistry:
         patterns = self.state_transition_aspect.get_navigation_patterns()
         if patterns:
             pattern_lines = ["Navigation Patterns:"]
-            for pattern, count in sorted(patterns.items(), key=lambda x: x[1], reverse=True)[:10]:
+            for pattern, count in sorted(
+                patterns.items(), key=lambda x: x[1], reverse=True
+            )[:10]:
                 pattern_lines.append(f"  {' -> '.join(pattern)}: {count} occurrences")
             reports["navigation_patterns"] = "\\n".join(pattern_lines)
 

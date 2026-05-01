@@ -152,7 +152,9 @@ class StateIdentifier:
                 element_ids=list(state_element_ids),
                 page_urls=page_urls,
                 screenshot_ids=screenshot_ids,
-                element_fingerprint_hashes=group[0][2].element_hashes if group else frozenset(),
+                element_fingerprint_hashes=(
+                    group[0][2].element_hashes if group else frozenset()
+                ),
             )
             states.append(state)
 
@@ -189,11 +191,15 @@ class StateIdentifier:
                 continue
 
             # Create signature from fingerprint hashes
-            element_hashes = frozenset(self._fingerprint_hash(fp) for fp in page.fingerprints)
+            element_hashes = frozenset(
+                self._fingerprint_hash(fp) for fp in page.fingerprints
+            )
 
             # Create stable signature hash
             sorted_hashes = sorted(element_hashes)
-            signature_hash = hashlib.sha256("|".join(sorted_hashes).encode()).hexdigest()[:16]
+            signature_hash = hashlib.sha256(
+                "|".join(sorted_hashes).encode()
+            ).hexdigest()[:16]
 
             signatures[page.screenshot_id] = StateSignature(
                 signature_hash=signature_hash,
@@ -222,7 +228,9 @@ class StateIdentifier:
             fp.content_hash,
         ]
 
-        return hashlib.md5("|".join(parts).encode(), usedforsecurity=False).hexdigest()[:12]
+        return hashlib.md5("|".join(parts).encode(), usedforsecurity=False).hexdigest()[
+            :12
+        ]
 
     def _build_canonical_map(
         self,
@@ -275,7 +283,9 @@ class StateIdentifier:
         processed: set[str] = set()
 
         # Get page info
-        page_info = {page.screenshot_id: (page.url, page.screenshot_id) for page in pages}
+        page_info = {
+            page.screenshot_id: (page.url, page.screenshot_id) for page in pages
+        }
 
         # First pass: group by exact signature match
         for screenshot_id, sig in signatures.items():
@@ -313,7 +323,10 @@ class StateIdentifier:
 
         for i, sid_a in enumerate(state_ids):
             for sid_b in state_ids[i + 1 :]:
-                if merged[sid_a] != merged[merged[sid_a]] or merged[sid_b] != merged[merged[sid_b]]:
+                if (
+                    merged[sid_a] != merged[merged[sid_a]]
+                    or merged[sid_b] != merged[merged[sid_b]]
+                ):
                     continue  # Already merged
 
                 # Get representative signatures
@@ -326,7 +339,9 @@ class StateIdentifier:
                     if overlap >= self.min_matching_elements:
                         # Merge sid_b into sid_a
                         merged[sid_b] = sid_a
-                        logger.debug(f"Merging state {sid_b} into {sid_a} (overlap: {overlap:.2%})")
+                        logger.debug(
+                            f"Merging state {sid_b} into {sid_a} (overlap: {overlap:.2%})"
+                        )
 
         # Rebuild groups with merges
         final_groups: dict[str, list[tuple[str, str, StateSignature]]] = {}
@@ -425,10 +440,15 @@ class StateIdentifier:
 
         Based on element fingerprint overlap.
         """
-        if not state_a.element_fingerprint_hashes or not state_b.element_fingerprint_hashes:
+        if (
+            not state_a.element_fingerprint_hashes
+            or not state_b.element_fingerprint_hashes
+        ):
             return 0.0
 
-        intersection = state_a.element_fingerprint_hashes & state_b.element_fingerprint_hashes
+        intersection = (
+            state_a.element_fingerprint_hashes & state_b.element_fingerprint_hashes
+        )
         union = state_a.element_fingerprint_hashes | state_b.element_fingerprint_hashes
 
         if not union:

@@ -308,7 +308,9 @@ class AnalysisPipeline:
 
             # Phase 3: Image extraction
             logger.info("Phase 3: Extracting StateImages from detected states...")
-            extraction_step = self._run_image_extraction(states, session.frames, session.events)
+            extraction_step = self._run_image_extraction(
+                states, session.frames, session.events
+            )
             steps.append(extraction_step)
 
             if not extraction_step.success:
@@ -390,7 +392,9 @@ class AnalysisPipeline:
             return result
 
         except Exception as e:
-            logger.error("Pipeline analysis failed with exception: %s", e, exc_info=True)
+            logger.error(
+                "Pipeline analysis failed with exception: %s", e, exc_info=True
+            )
             errors.append(str(e))
 
             # Create error processing log
@@ -460,7 +464,9 @@ class AnalysisPipeline:
         elif phase == "transition_analysis":
             states = kwargs.get("states")  # type: ignore[assignment]
             if not states:
-                raise ValueError("transition_analysis phase requires 'states' parameter")
+                raise ValueError(
+                    "transition_analysis phase requires 'states' parameter"
+                )
             transitions, step = self._run_transition_analysis(
                 states, session.events, session.frames
             )
@@ -524,7 +530,9 @@ class AnalysisPipeline:
         """
         return self.processing_log
 
-    def compare_results(self, result1: AnalysisResult, result2: AnalysisResult) -> dict[str, Any]:
+    def compare_results(
+        self, result1: AnalysisResult, result2: AnalysisResult
+    ) -> dict[str, Any]:
         """Compare two analysis results for parameter tuning.
 
         This provides metrics to help evaluate which configuration produces
@@ -560,7 +568,8 @@ class AnalysisPipeline:
             },
             "differences": {
                 "states_delta": len(result2.states) - len(result1.states),
-                "transitions_delta": len(result2.transitions) - len(result1.transitions),
+                "transitions_delta": len(result2.transitions)
+                - len(result1.transitions),
                 "state_images_delta": sum(len(s.state_images) for s in result2.states)  # type: ignore[misc,attr-defined]
                 - sum(len(s.state_images) for s in result1.states),  # type: ignore[misc,attr-defined]
                 "duration_delta_ms": result2.processing_log.total_duration_ms
@@ -711,7 +720,9 @@ class AnalysisPipeline:
             # text fields, and other UI elements
 
             success = True
-            logger.info("Element detection complete: %d elements detected", total_elements)
+            logger.info(
+                "Element detection complete: %d elements detected", total_elements
+            )
 
         except Exception as e:
             error = str(e)
@@ -768,7 +779,9 @@ class AnalysisPipeline:
         """
         return self.metadata_generator.calculate_confidence_scores(states, transitions)
 
-    def _generate_recommendation(self, result1: AnalysisResult, result2: AnalysisResult) -> str:
+    def _generate_recommendation(
+        self, result1: AnalysisResult, result2: AnalysisResult
+    ) -> str:
         """Generate a recommendation on which result is better.
 
         Args:
@@ -788,7 +801,9 @@ class AnalysisPipeline:
             "num_transitions": len(result2.transitions),
             "errors": len(result2.processing_log.errors),
         }
-        return self.metadata_generator.generate_recommendation(result1_data, result2_data)
+        return self.metadata_generator.generate_recommendation(
+            result1_data, result2_data
+        )
 
 
 # ============================================================================
@@ -796,7 +811,9 @@ class AnalysisPipeline:
 # ============================================================================
 
 
-def load_session_from_video(video_path: str, events_path: str, fps: int = 30) -> CaptureSession:
+def load_session_from_video(
+    video_path: str, events_path: str, fps: int = 30
+) -> CaptureSession:
     """Load a capture session from video and events files.
 
     Args:

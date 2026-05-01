@@ -22,7 +22,9 @@ def _encode_array(arr: np.ndarray | None) -> str | None:
     return base64.b64encode(arr.tobytes()).decode("utf-8")
 
 
-def _decode_array(data: str | None, shape: tuple[int, ...], dtype: np.dtype) -> np.ndarray | None:
+def _decode_array(
+    data: str | None, shape: tuple[int, ...], dtype: np.dtype
+) -> np.ndarray | None:
     """Decode base64 string to numpy array."""
     if data is None:
         return None
@@ -124,11 +126,17 @@ class ClickTemplateCandidate:
             "timestamp": self.timestamp,
             "frame_number": self.frame_number,
             "primary_boundary": self.primary_boundary.to_dict(),
-            "alternative_boundaries": [b.to_dict() for b in self.alternative_boundaries],
-            "detection_strategies_used": [s.value for s in self.detection_strategies_used],
+            "alternative_boundaries": [
+                b.to_dict() for b in self.alternative_boundaries
+            ],
+            "detection_strategies_used": [
+                s.value for s in self.detection_strategies_used
+            ],
             "pixel_data_base64": self.pixel_data_base64,
             "mask_base64": self.mask_base64,
-            "pixel_shape": list(self.pixel_data.shape) if self.pixel_data is not None else None,
+            "pixel_shape": (
+                list(self.pixel_data.shape) if self.pixel_data is not None else None
+            ),
             "mask_shape": list(self.mask.shape) if self.mask is not None else None,
             "application_hint": self.application_hint,
             "created_at": self.created_at.isoformat(),

@@ -70,9 +70,7 @@ def _get_interactability_detector() -> Any | None:
         if _INTERACTABILITY_LOOKUP_FAILED:
             return None
         try:
-            from qontinui.discovery.element_detection.omniparser_detector import (
-                OmniParserDetector,
-            )
+            from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
             from qontinui.find.backends.omniparser_config import OmniParserSettings
 
             settings = OmniParserSettings()
@@ -91,7 +89,9 @@ def _get_interactability_detector() -> Any | None:
             return None
 
 
-def _gate_click_coordinate(screenshot: np.ndarray[Any, Any], x: int, y: int) -> str | None:
+def _gate_click_coordinate(
+    screenshot: np.ndarray[Any, Any], x: int, y: int
+) -> str | None:
     """Check whether a UI-TARS click coordinate lands on an interactive element.
 
     Returns None on pass (gate disabled, or point is interactive).
@@ -365,7 +365,9 @@ class UITARSExecutor:
         # fire pyautogui at an arbitrary pixel.
         gate_rejected: str | None = None
         if result.action.x is not None and result.action.y is not None:
-            gate_rejected = _gate_click_coordinate(screenshot, result.action.x, result.action.y)
+            gate_rejected = _gate_click_coordinate(
+                screenshot, result.action.x, result.action.y
+            )
         if gate_rejected is not None:
             logger.info(
                 "UI-TARS execute_action rejected by OmniParser interactability "

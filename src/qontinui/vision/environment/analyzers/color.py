@@ -255,7 +255,9 @@ class ColorPaletteAnalyzer(BaseAnalyzer[ColorPalette]):
             counts = Counter(labels)
 
             # Sort by frequency
-            sorted_indices = sorted(counts.keys(), key=lambda x: counts[x], reverse=True)
+            sorted_indices = sorted(
+                counts.keys(), key=lambda x: counts[x], reverse=True
+            )
 
             # Convert to hex colors
             colors = []
@@ -403,7 +405,9 @@ class ColorPaletteAnalyzer(BaseAnalyzer[ColorPalette]):
 
         # Associate colors with semantic keywords if OCR available
         if ocr_results:
-            keyword_colors = self._associate_colors_with_keywords(screenshots, ocr_results)
+            keyword_colors = self._associate_colors_with_keywords(
+                screenshots, ocr_results
+            )
             if "error" in keyword_colors:
                 semantic.error = keyword_colors["error"]
             if "success" in keyword_colors:
@@ -596,7 +600,9 @@ class ColorPaletteAnalyzer(BaseAnalyzer[ColorPalette]):
             else 0.6
         )
         avg_bright_change = (
-            sum(brightness_changes) / len(brightness_changes) if brightness_changes else 0.0
+            sum(brightness_changes) / len(brightness_changes)
+            if brightness_changes
+            else 0.0
         )
 
         return DisabledCharacteristics(

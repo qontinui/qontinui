@@ -197,7 +197,9 @@ class AwasDiscoveryService:
         """List all domains with cached manifests."""
         return list(self._cache.keys())
 
-    def extract_elements(self, html: str, page_url: str | None = None) -> list[AwasElement]:
+    def extract_elements(
+        self, html: str, page_url: str | None = None
+    ) -> list[AwasElement]:
         """
         Extract AWAS elements from HTML content.
 

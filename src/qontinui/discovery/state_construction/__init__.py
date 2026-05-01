@@ -23,24 +23,24 @@ Example:
 """
 
 from .element_identifier import (
-    ElementIdentifier,
-    ElementType,
-    IdentifiedElement,
-    IdentifiedRegion,
-    RegionType,
-    SpatialRelationship,
+                                 ElementIdentifier,
+                                 ElementType,
+                                 IdentifiedElement,
+                                 IdentifiedRegion,
+                                 RegionType,
+                                 SpatialRelationship,
 )
 from .ocr_name_generator import (
-    NameValidator,
-    OCRNameGenerator,
-    generate_element_name,
-    generate_state_name_from_screenshot,
+                                 NameValidator,
+                                 OCRNameGenerator,
+                                 generate_element_name,
+                                 generate_state_name_from_screenshot,
 )
 from .state_builder import (
-    FallbackElementIdentifier,
-    FallbackNameGenerator,
-    StateBuilder,
-    TransitionInfo,
+                                 FallbackElementIdentifier,
+                                 FallbackNameGenerator,
+                                 StateBuilder,
+                                 TransitionInfo,
 )
 
 __all__ = [

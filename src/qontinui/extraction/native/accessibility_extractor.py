@@ -185,7 +185,10 @@ class AccessibilityExtractor(AbstractExtractor):
 
                 state = ExtractedState(
                     id=f"a11y_state_{element.id}",
-                    name=element.name or element.aria_label or element.aria_role or "Unknown",
+                    name=element.name
+                    or element.aria_label
+                    or element.aria_role
+                    or "Unknown",
                     state_type=self._role_to_state_type(element.aria_role),
                     bbox=element.bbox,
                     element_ids=contained_ids,
@@ -261,7 +264,9 @@ class AccessibilityExtractor(AbstractExtractor):
         elif self._platform.startswith("linux") and config.use_atspi:
             self._api = LinuxATSPIAPI()
         else:
-            raise RuntimeError(f"No accessibility API available for platform: {self._platform}")
+            raise RuntimeError(
+                f"No accessibility API available for platform: {self._platform}"
+            )
 
     async def _find_target(
         self,

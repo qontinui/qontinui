@@ -98,13 +98,17 @@ class ShellActionExecutor(ActionExecutorBase):
         except ActionExecutionError:
             raise
         except Exception as e:
-            logger.error(f"Unexpected error executing {action_type}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error executing {action_type}: {e}", exc_info=True
+            )
             raise ActionExecutionError(
                 action_type=action_type,
                 reason=f"Unexpected error: {e}",
             ) from e
 
-    def _execute_shell(self, action: Action, typed_config: ShellActionConfig | None) -> bool:
+    def _execute_shell(
+        self, action: Action, typed_config: ShellActionConfig | None
+    ) -> bool:
         """Execute SHELL action - run a single command.
 
         Args:
@@ -435,8 +439,12 @@ class ShellActionExecutor(ActionExecutorBase):
                 if len(parts) >= 3:
                     drive_letter = parts[2]  # 'c' from /mnt/c/...
                     rest_of_path = "/".join(parts[3:])  # path/to/dir
-                    windows_path = f"{drive_letter.upper()}:\\{rest_of_path.replace('/', '\\')}"
-                    logger.debug(f"Converted WSL path '{path}' to Windows path '{windows_path}'")
+                    windows_path = (
+                        f"{drive_letter.upper()}:\\{rest_of_path.replace('/', '\\')}"
+                    )
+                    logger.debug(
+                        f"Converted WSL path '{path}' to Windows path '{windows_path}'"
+                    )
                     return windows_path
 
             # Also handle forward slashes that might be intended as Windows paths
@@ -445,8 +453,12 @@ class ShellActionExecutor(ActionExecutorBase):
                 if len(path) == 2 or path[2] == "/":
                     drive_letter = path[1]
                     rest_of_path = path[3:] if len(path) > 3 else ""
-                    windows_path = f"{drive_letter.upper()}:\\{rest_of_path.replace('/', '\\')}"
-                    logger.debug(f"Converted path '{path}' to Windows path '{windows_path}'")
+                    windows_path = (
+                        f"{drive_letter.upper()}:\\{rest_of_path.replace('/', '\\')}"
+                    )
+                    logger.debug(
+                        f"Converted path '{path}' to Windows path '{windows_path}'"
+                    )
                     return windows_path
 
         else:
@@ -458,7 +470,9 @@ class ShellActionExecutor(ActionExecutorBase):
                 if rest_of_path.startswith("/"):
                     rest_of_path = rest_of_path[1:]
                 unix_path = f"/mnt/{drive_letter}/{rest_of_path}"
-                logger.debug(f"Converted Windows path '{path}' to Unix path '{unix_path}'")
+                logger.debug(
+                    f"Converted Windows path '{path}' to Unix path '{unix_path}'"
+                )
                 return unix_path
 
         return path
@@ -522,7 +536,9 @@ class ShellActionExecutor(ActionExecutorBase):
             },
         )
 
-    def _execute_ai_prompt(self, action: Action, typed_config: AIPromptActionConfig | None) -> bool:
+    def _execute_ai_prompt(
+        self, action: Action, typed_config: AIPromptActionConfig | None
+    ) -> bool:
         """Execute AI_PROMPT action - invoke an AI with a prompt.
 
         This action triggers an AI assistant to execute the specified prompt.
@@ -554,7 +570,9 @@ class ShellActionExecutor(ActionExecutorBase):
             provider_name = "claude_code"
 
         description = typed_config.description or f"Execute {provider_name} prompt"
-        logger.info(f"Executing AI_PROMPT with provider '{provider_name}': {description}")
+        logger.info(
+            f"Executing AI_PROMPT with provider '{provider_name}': {description}"
+        )
 
         # Get provider from registry
         try:
@@ -569,7 +587,9 @@ class ShellActionExecutor(ActionExecutorBase):
         # Check if provider is available
         if not provider.is_available():
             available = AIProviderRegistry.list_available_providers()
-            error_msg = f"AI provider '{provider_name}' is not available on this system."
+            error_msg = (
+                f"AI provider '{provider_name}' is not available on this system."
+            )
             if available:
                 error_msg += f" Available providers: {available}"
             else:
@@ -616,9 +636,7 @@ class ShellActionExecutor(ActionExecutorBase):
         if typed_config.prompt:
             prompt_text = typed_config.prompt
         else:
-            prompt_text = (
-                f"Analyze the automation results in {results_dir} and fix any issues found."
-            )
+            prompt_text = f"Analyze the automation results in {results_dir} and fix any issues found."
 
         logger.info(f"Using prompt: {prompt_text[:100]}...")
 
@@ -699,7 +717,9 @@ class ShellActionExecutor(ActionExecutorBase):
                 if typed_config.fail_on_issues:
                     error_msg = result.error or "Analysis reported issues"
                     logger.warning(f"Analysis failed: {error_msg}")
-                    self._emit_action_failure(action, error_msg, {"provider": provider.name})
+                    self._emit_action_failure(
+                        action, error_msg, {"provider": provider.name}
+                    )
                     return False
                 else:
                     # Log but don't fail - analysis completing is success
@@ -717,7 +737,9 @@ class ShellActionExecutor(ActionExecutorBase):
         except subprocess.TimeoutExpired:
             error_msg = f"Analysis timed out after {request.timeout_seconds}s"
             logger.error(error_msg)
-            self._emit_action_failure(action, error_msg, {"timeout": request.timeout_seconds})
+            self._emit_action_failure(
+                action, error_msg, {"timeout": request.timeout_seconds}
+            )
             return False
 
         except FileNotFoundError as e:

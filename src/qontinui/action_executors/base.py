@@ -51,7 +51,9 @@ class ExecutionContext:
 
     # Workflow execution (for RUN_WORKFLOW action and navigation)
     workflow_executor: Any | None  # Reference to main workflow executor
-    execute_action: Callable[[Action], Awaitable[bool]]  # Callback to execute nested actions
+    execute_action: Callable[
+        [Action], Awaitable[bool]
+    ]  # Callback to execute nested actions
 
     # Event emission functions
     emit_event: Callable[[str, dict], None]
@@ -70,7 +72,9 @@ class ExecutionContext:
     # When automation targets a specific monitor, found coordinates need to be
     # adjusted to absolute screen coordinates for mouse operations
     monitor_index: int | None = field(default=None)  # Current target monitor (0-based)
-    monitor_offset_x: int = field(default=0)  # Monitor's left position in virtual screen
+    monitor_offset_x: int = field(
+        default=0
+    )  # Monitor's left position in virtual screen
     monitor_offset_y: int = field(default=0)  # Monitor's top position in virtual screen
 
     def update_last_action_result(self, result: ActionResult | None) -> None:
@@ -189,9 +193,13 @@ class ActionExecutorBase(ABC):
             data: Optional additional data
         """
         # Note: emit_action_event signature is (action_type, action_id, success, data)
-        self.context.emit_action_event(action.type, action.id or "unknown", True, data or {})
+        self.context.emit_action_event(
+            action.type, action.id or "unknown", True, data or {}
+        )
 
-    def _emit_action_failure(self, action: Action, error: str, data: dict | None = None) -> None:
+    def _emit_action_failure(
+        self, action: Action, error: str, data: dict | None = None
+    ) -> None:
         """Emit action failure event.
 
         Args:
@@ -211,7 +219,9 @@ class ActionExecutorBase(ABC):
             failure_data,
         )
 
-    def _get_default_timing(self, category: str, key: str, default: float = 0.0) -> float:
+    def _get_default_timing(
+        self, category: str, key: str, default: float = 0.0
+    ) -> float:
         """Get default timing value from configuration.
 
         Args:

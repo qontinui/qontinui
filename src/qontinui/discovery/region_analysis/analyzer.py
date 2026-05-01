@@ -191,10 +191,14 @@ class SpatialRelationshipAnalyzer:
         x1, y1, w1, h1 = region1.bounds
         x2, y2, w2, h2 = region2.bounds
 
-        return x1 >= x2 and y1 >= y2 and (x1 + w1) <= (x2 + w2) and (y1 + h1) <= (y2 + h2)
+        return (
+            x1 >= x2 and y1 >= y2 and (x1 + w1) <= (x2 + w2) and (y1 + h1) <= (y2 + h2)
+        )
 
     @staticmethod
-    def are_adjacent(region1: Region, region2: Region, tolerance: int = 10) -> tuple[bool, str]:
+    def are_adjacent(
+        region1: Region, region2: Region, tolerance: int = 10
+    ) -> tuple[bool, str]:
         """Check if regions are adjacent.
 
         Args:

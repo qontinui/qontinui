@@ -87,7 +87,10 @@ class TestEvaluateImageExistsCondition:
 
         # Create mock image and metadata
         mock_image = Mock()
-        mock_metadata = {"file_path": "/path/to/missing_button.png", "name": "missing_button"}
+        mock_metadata = {
+            "file_path": "/path/to/missing_button.png",
+            "name": "missing_button",
+        }
 
         # Create mock find result - NOT found
         mock_find_result = FindResult(

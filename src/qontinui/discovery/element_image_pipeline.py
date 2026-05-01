@@ -197,12 +197,17 @@ class ElementImagePipeline:
                 skipped.append({"id": elem_id, "reason": "not visible"})
                 continue
 
-            if not self.config.include_out_of_viewport and not state.get("inViewport", True):
+            if not self.config.include_out_of_viewport and not state.get(
+                "inViewport", True
+            ):
                 skipped.append({"id": elem_id, "reason": "out of viewport"})
                 continue
 
             # Category filter
-            if self.config.category_filter and category not in self.config.category_filter:
+            if (
+                self.config.category_filter
+                and category not in self.config.category_filter
+            ):
                 skipped.append({"id": elem_id, "reason": f"category={category}"})
                 continue
 
@@ -379,7 +384,9 @@ class ElementImagePipeline:
                 sha = hashlib.sha256(raw).hexdigest()
             except Exception as exc:
                 logger.warning("Failed to decode capture for %s: %s", fe.elem_id, exc)
-                result.skipped.append({"id": fe.elem_id, "reason": f"decode error: {exc}"})
+                result.skipped.append(
+                    {"id": fe.elem_id, "reason": f"decode error: {exc}"}
+                )
                 continue
 
             result.images.append(
@@ -433,7 +440,9 @@ class ElementImagePipeline:
         for state in states:
             state_id = state.get("state_id", state.get("id", ""))
             element_ids = state.get("element_ids", [])
-            state_images[state_id] = [image_by_id[eid] for eid in element_ids if eid in image_by_id]
+            state_images[state_id] = [
+                image_by_id[eid] for eid in element_ids if eid in image_by_id
+            ]
 
         return state_images
 

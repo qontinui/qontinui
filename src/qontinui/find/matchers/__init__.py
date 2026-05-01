@@ -12,4 +12,9 @@ from .cached_matcher import CachedTemplateMatcher
 from .image_matcher import ImageMatcher
 from .template_matcher import TemplateMatcher
 
-__all__ = ["ImageMatcher", "TemplateMatcher", "CachedTemplateMatcher", "BatchTemplateMatcher"]
+__all__ = [
+    "ImageMatcher",
+    "TemplateMatcher",
+    "CachedTemplateMatcher",
+    "BatchTemplateMatcher",
+]

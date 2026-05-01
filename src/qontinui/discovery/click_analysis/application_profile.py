@@ -55,7 +55,9 @@ class TuningMetrics:
             "avg_detection_time_ms": self.avg_detection_time_ms,
             "avg_confidence": self.avg_confidence,
             "tuning_iterations": self.tuning_iterations,
-            "last_tuned_at": self.last_tuned_at.isoformat() if self.last_tuned_at else None,
+            "last_tuned_at": (
+                self.last_tuned_at.isoformat() if self.last_tuned_at else None
+            ),
         }
 
     @classmethod
@@ -72,7 +74,9 @@ class TuningMetrics:
             avg_confidence=data.get("avg_confidence", 0.0),
             tuning_iterations=data.get("tuning_iterations", 0),
             last_tuned_at=(
-                datetime.fromisoformat(data["last_tuned_at"]) if data.get("last_tuned_at") else None
+                datetime.fromisoformat(data["last_tuned_at"])
+                if data.get("last_tuned_at")
+                else None
             ),
         )
 
@@ -92,7 +96,9 @@ class TuningResult:
     """
 
     config: InferenceConfig
-    strategy_rankings: list[tuple[DetectionStrategy, float]] = field(default_factory=list)
+    strategy_rankings: list[tuple[DetectionStrategy, float]] = field(
+        default_factory=list
+    )
     metrics: TuningMetrics = field(default_factory=TuningMetrics)
     success: bool = True
     error_message: str | None = None
@@ -101,7 +107,9 @@ class TuningResult:
         """Convert to dictionary for serialization."""
         return {
             "config": self.config.to_dict(),
-            "strategy_rankings": [(s.value, score) for s, score in self.strategy_rankings],
+            "strategy_rankings": [
+                (s.value, score) for s, score in self.strategy_rankings
+            ],
             "metrics": self.metrics.to_dict(),
             "success": self.success,
             "error_message": self.error_message,
@@ -147,8 +155,8 @@ class ApplicationProfile:
 
     # Learned characteristics
     avg_element_size: tuple[int, int] = (60, 30)
-    common_color_ranges: list[tuple[tuple[int, int, int], tuple[int, int, int]]] = field(
-        default_factory=list
+    common_color_ranges: list[tuple[tuple[int, int, int], tuple[int, int, int]]] = (
+        field(default_factory=list)
     )
     edge_threshold_overrides: tuple[int, int] | None = None
 
@@ -202,7 +210,9 @@ class ApplicationProfile:
             # Weighted average with existing rate
             if self.tuning_metrics.sample_count > 0:
                 old_weight = min(0.7, self.tuning_metrics.sample_count / 100)
-                self.success_rate = old_weight * self.success_rate + (1 - old_weight) * new_rate
+                self.success_rate = (
+                    old_weight * self.success_rate + (1 - old_weight) * new_rate
+                )
             else:
                 self.success_rate = new_rate
             self.updated_at = datetime.now()
@@ -219,7 +229,9 @@ class ApplicationProfile:
                 [list(low), list(high)] for low, high in self.common_color_ranges
             ],
             "edge_threshold_overrides": (
-                list(self.edge_threshold_overrides) if self.edge_threshold_overrides else None
+                list(self.edge_threshold_overrides)
+                if self.edge_threshold_overrides
+                else None
             ),
             "tuning_metrics": self.tuning_metrics.to_dict(),
             "success_rate": self.success_rate,
@@ -250,7 +262,9 @@ class ApplicationProfile:
                 )
             ],
             enable_mask_generation=config_data.get("enable_mask_generation", True),
-            enable_element_classification=config_data.get("enable_element_classification", True),
+            enable_element_classification=config_data.get(
+                "enable_element_classification", True
+            ),
             merge_nearby_boundaries=config_data.get("merge_nearby_boundaries", True),
             merge_gap=config_data.get("merge_gap", 5),
         )
@@ -290,7 +304,9 @@ class ApplicationProfile:
         )
 
     @classmethod
-    def create_default(cls, name: str, id_str: str | None = None) -> "ApplicationProfile":
+    def create_default(
+        cls, name: str, id_str: str | None = None
+    ) -> "ApplicationProfile":
         """Create a new profile with default settings.
 
         Args:

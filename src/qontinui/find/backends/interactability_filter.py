@@ -62,7 +62,9 @@ class InteractabilityFilter(DetectionBackend):
         self._iou_threshold = iou_threshold
         self._detector = detector  # lazy; only constructed on first use
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         results = self._wrapped.find(needle, haystack, config)
         if not results:
             return results
@@ -130,9 +132,7 @@ class InteractabilityFilter(DetectionBackend):
         if self._detector is not None:
             return self._detector
         try:
-            from qontinui.discovery.element_detection.omniparser_detector import (
-                OmniParserDetector,
-            )
+            from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
             from qontinui.find.backends.omniparser_config import OmniParserSettings
 
             settings = OmniParserSettings()

@@ -62,7 +62,9 @@ class Vanish(ActionInterface):
 
         object.__setattr__(action_result, "success", vanished)
         if vanished:
-            object.__setattr__(action_result, "output_text", "Element(s) vanished successfully")
+            object.__setattr__(
+                action_result, "output_text", "Element(s) vanished successfully"
+            )
         else:
             object.__setattr__(
                 action_result,

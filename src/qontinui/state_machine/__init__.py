@@ -70,44 +70,44 @@ Fingerprint-enhanced discovery example:
 
 from .config_bridge import ConfigBridge, UIBridgeStateInput, UIBridgeTransitionInput
 from .fingerprint_state_discovery import (
-    DiscoveredFingerprintState,
-    FingerprintStateDiscovery,
-    FingerprintStateDiscoveryConfig,
+                            DiscoveredFingerprintState,
+                            FingerprintStateDiscovery,
+                            FingerprintStateDiscoveryConfig,
 )
 from .fingerprint_types import (
-    ARIA_LANDMARKS,
-    BLOCKING_POSITION_ZONES,
-    GLOBAL_POSITION_ZONES,
-    POSITION_ZONES,
-    SIZE_CATEGORIES,
-    CaptureRecord,
-    CooccurrenceExport,
-    ElementFingerprint,
-    FingerprintStats,
-    PresenceMatrixEntry,
-    RepeatPattern,
-    StateCandidate,
-    TransitionRecord,
+                            ARIA_LANDMARKS,
+                            BLOCKING_POSITION_ZONES,
+                            GLOBAL_POSITION_ZONES,
+                            POSITION_ZONES,
+                            SIZE_CATEGORIES,
+                            CaptureRecord,
+                            CooccurrenceExport,
+                            ElementFingerprint,
+                            FingerprintStats,
+                            PresenceMatrixEntry,
+                            RepeatPattern,
+                            StateCandidate,
+                            TransitionRecord,
 )
 from .persistence import StateGroupRecord, StatePersistence
 from .recording_pipeline import RecordingPipeline, RecordingPipelineConfig, RecordingPipelineResult
 from .state_discovery import (
-    DiscoveredUIState,
-    StateDiscoveryConfig,
-    StateGraph,
-    StateGraphEdge,
-    StateGraphFormat,
-    StateGraphNode,
-    UIBridgeStateDiscovery,
+                            DiscoveredUIState,
+                            StateDiscoveryConfig,
+                            StateGraph,
+                            StateGraphEdge,
+                            StateGraphFormat,
+                            StateGraphNode,
+                            UIBridgeStateDiscovery,
 )
 from .transition_detector import DetectedTransition, TransitionDetector, TransitionReliability
 from .ui_bridge_runtime import (
-    TransitionExecutionResult,
-    UIBridgeRuntime,
-    UIBridgeRuntimeConfig,
-    UIBridgeState,
-    UIBridgeTransition,
-    generate_state_id,
+                            TransitionExecutionResult,
+                            UIBridgeRuntime,
+                            UIBridgeRuntimeConfig,
+                            UIBridgeState,
+                            UIBridgeTransition,
+                            generate_state_id,
 )
 
 __all__ = [

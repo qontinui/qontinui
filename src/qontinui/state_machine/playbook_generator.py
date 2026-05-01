@@ -219,7 +219,9 @@ def _build_body(
             to_names = _fingerprints_to_state_names(appeared, state_map, states)
 
             if from_names and to_names:
-                lines.append(f"- **Transition**: {', '.join(from_names)} → {', '.join(to_names)}")
+                lines.append(
+                    f"- **Transition**: {', '.join(from_names)} → {', '.join(to_names)}"
+                )
             elif to_names:
                 lines.append(f"- **Activates**: {', '.join(to_names)}")
             elif from_names:
@@ -233,15 +235,21 @@ def _build_body(
         lines.append("")
         for state in non_global:
             blocking = " (modal)" if state.blocking else ""
-            lines.append(f"- **{state.name}**{blocking}: {len(state.element_ids)} elements")
+            lines.append(
+                f"- **{state.name}**{blocking}: {len(state.element_ids)} elements"
+            )
         lines.append("")
 
         if transitions:
             lines.append("### Discovered Transitions")
             lines.append("")
             for t in transitions:
-                from_names = [state_map[s].name for s in t.from_states if s in state_map]
-                to_names = [state_map[s].name for s in t.activate_states if s in state_map]
+                from_names = [
+                    state_map[s].name for s in t.from_states if s in state_map
+                ]
+                to_names = [
+                    state_map[s].name for s in t.activate_states if s in state_map
+                ]
                 conf = t.metadata.get("confidence", 0)
                 lines.append(
                     f"- {', '.join(from_names)} → {', '.join(to_names)} (confidence: {conf:.0%})"

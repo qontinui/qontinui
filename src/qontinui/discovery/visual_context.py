@@ -156,7 +156,8 @@ class VisualDiff:
         return {
             "base64_png": self.base64_png,
             "appeared_regions": [
-                {"x": r[0], "y": r[1], "width": r[2], "height": r[3]} for r in self.appeared_regions
+                {"x": r[0], "y": r[1], "width": r[2], "height": r[3]}
+                for r in self.appeared_regions
             ],
             "disappeared_regions": [
                 {"x": r[0], "y": r[1], "width": r[2], "height": r[3]}
@@ -354,7 +355,9 @@ class VisualContextGenerator:
         # Encode to base64
         base64_png = self._encode_to_base64(annotated)
 
-        annotation_time_ms = (time.perf_counter() - start_time) * 1000 - detection_time_ms
+        annotation_time_ms = (
+            time.perf_counter() - start_time
+        ) * 1000 - detection_time_ms
 
         return AnnotatedSnapshot(
             image=annotated,
@@ -414,7 +417,9 @@ class VisualContextGenerator:
         change_percentage = (changed_pixels / total_pixels) * 100
 
         # Find contours for changed regions
-        contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         # Create diff visualization image
         # Start with a blend of before and after
@@ -565,10 +570,14 @@ class VisualContextGenerator:
         heatmap_colored = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
 
         # Blend with original screenshot
-        heatmap_image = cv2.addWeighted(screenshot, 1 - alpha, heatmap_colored, alpha, 0)
+        heatmap_image = cv2.addWeighted(
+            screenshot, 1 - alpha, heatmap_colored, alpha, 0
+        )
 
         # Add info bar
-        self._draw_info_bar(heatmap_image, f"Clickable regions: {len(clickable_regions)}")
+        self._draw_info_bar(
+            heatmap_image, f"Clickable regions: {len(clickable_regions)}"
+        )
 
         # Encode to base64
         base64_png = self._encode_to_base64(heatmap_image)
@@ -629,7 +638,9 @@ class VisualContextGenerator:
         )
 
         # Find contours
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         elements: list[DetectedElement] = []
         min_area = 100  # Minimum area to consider

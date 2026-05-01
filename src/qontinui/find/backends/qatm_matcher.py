@@ -238,7 +238,9 @@ class QATMMatcher:
 
             t_features = self._extract_features(template)
             s_features = self._extract_features(screenshot)
-            score_map, feat_ht, feat_wt = self._compute_qatm_score(t_features, s_features)
+            score_map, feat_ht, feat_wt = self._compute_qatm_score(
+                t_features, s_features
+            )
 
         # Score map has shape (Ho, Wo) = valid convolution output.
         # Each position (fy, fx) corresponds to where the template feature

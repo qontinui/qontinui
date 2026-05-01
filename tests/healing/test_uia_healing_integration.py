@@ -196,7 +196,9 @@ class TestVisionHealerUIAFailsFallsThrough:
         assert not result.success
         assert result.strategy == HealingStrategy.FAILED
         # Verify UIA was attempted (recorded in attempts list)
-        uia_attempts = [(s, msg) for s, msg in result.attempts if s == HealingStrategy.UIA_SELECTOR]
+        uia_attempts = [
+            (s, msg) for s, msg in result.attempts if s == HealingStrategy.UIA_SELECTOR
+        ]
         assert len(uia_attempts) >= 1, "UIA strategy should have been attempted"
 
 
@@ -217,7 +219,9 @@ class TestVisionHealerWithoutAccessibilitySkipsUIA:
         assert result.strategy == HealingStrategy.FAILED
 
         # No UIA attempt in the attempts list
-        uia_attempts = [(s, msg) for s, msg in result.attempts if s == HealingStrategy.UIA_SELECTOR]
+        uia_attempts = [
+            (s, msg) for s, msg in result.attempts if s == HealingStrategy.UIA_SELECTOR
+        ]
         assert len(uia_attempts) == 0, "UIA strategy should NOT have been attempted"
 
 

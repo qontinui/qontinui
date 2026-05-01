@@ -131,7 +131,9 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
 
         for obs in observations:
             before = obs.get("before_image")
-            _after = obs.get("after_image")  # noqa: F841 - kept for future state comparison
+            _after = obs.get(
+                "after_image"
+            )  # noqa: F841 - kept for future state comparison
             element_type = obs.get("element_type", "button")
 
             if element_type != "button":
@@ -157,15 +159,21 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
 
         # Create enabled state
         if len(enabled_samples) >= self.min_observations:
-            states["enabled"] = self._aggregate_state(enabled_samples, ElementStateType.ENABLED)
+            states["enabled"] = self._aggregate_state(
+                enabled_samples, ElementStateType.ENABLED
+            )
 
         # Create disabled state
         if len(disabled_samples) >= self.min_observations:
-            states["disabled"] = self._aggregate_state(disabled_samples, ElementStateType.DISABLED)
+            states["disabled"] = self._aggregate_state(
+                disabled_samples, ElementStateType.DISABLED
+            )
 
         # Create hover state
         if len(hover_samples) >= self.min_observations:
-            states["hover"] = self._aggregate_state(hover_samples, ElementStateType.HOVER)
+            states["hover"] = self._aggregate_state(
+                hover_samples, ElementStateType.HOVER
+            )
 
         # Determine best detection method
         detection_method = self._determine_detection_method(states)
@@ -210,7 +218,9 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
                 unfocused_samples.append({"image": unfocused, "signature": signature})
 
         if len(focused_samples) >= self.min_observations:
-            states["focused"] = self._aggregate_state(focused_samples, ElementStateType.FOCUSED)
+            states["focused"] = self._aggregate_state(
+                focused_samples, ElementStateType.FOCUSED
+            )
 
         if len(unfocused_samples) >= self.min_observations:
             states["unfocused"] = self._aggregate_state(
@@ -269,7 +279,9 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
                 unchecked_samples.append({"image": unchecked, "signature": signature})
 
         if len(checked_samples) >= self.min_observations:
-            states["checked"] = self._aggregate_state(checked_samples, ElementStateType.CHECKED)
+            states["checked"] = self._aggregate_state(
+                checked_samples, ElementStateType.CHECKED
+            )
 
         if len(unchecked_samples) >= self.min_observations:
             states["unchecked"] = self._aggregate_state(
@@ -526,8 +538,12 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
             # Look for diagonal edges
-            kernel_diag1 = np.array([[1, 0, -1], [0, 0, 0], [-1, 0, 1]], dtype=np.float32)
-            kernel_diag2 = np.array([[-1, 0, 1], [0, 0, 0], [1, 0, -1]], dtype=np.float32)
+            kernel_diag1 = np.array(
+                [[1, 0, -1], [0, 0, 0], [-1, 0, 1]], dtype=np.float32
+            )
+            kernel_diag2 = np.array(
+                [[-1, 0, 1], [0, 0, 0], [1, 0, -1]], dtype=np.float32
+            )
 
             diag1 = cv2.filter2D(gray, -1, kernel_diag1)
             diag2 = cv2.filter2D(gray, -1, kernel_diag2)
@@ -539,7 +555,8 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
 
         except ImportError:
             signature.has_checkmark = (
-                signature.fill_percentage is not None and signature.fill_percentage > 0.5
+                signature.fill_percentage is not None
+                and signature.fill_percentage > 0.5
             )
 
         return signature
@@ -602,12 +619,20 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
 
         signature = VisualSignature(
             color_profile=color_profile,
-            border_width=int(sum(border_widths) / len(border_widths)) if border_widths else None,
+            border_width=(
+                int(sum(border_widths) / len(border_widths)) if border_widths else None
+            ),
             has_glow=sum(has_glows) > len(has_glows) / 2 if has_glows else None,
             fill_percentage=(
-                sum(fill_percentages) / len(fill_percentages) if fill_percentages else None
+                sum(fill_percentages) / len(fill_percentages)
+                if fill_percentages
+                else None
             ),
-            has_checkmark=sum(has_checkmarks) > len(has_checkmarks) / 2 if has_checkmarks else None,
+            has_checkmark=(
+                sum(has_checkmarks) > len(has_checkmarks) / 2
+                if has_checkmarks
+                else None
+            ),
         )
 
         return ElementState(
@@ -652,7 +677,8 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
         saturations = [
             s.visual_signature.color_profile.saturation
             for s in state_list
-            if s.visual_signature.color_profile and s.visual_signature.color_profile.saturation
+            if s.visual_signature.color_profile
+            and s.visual_signature.color_profile.saturation
         ]
         if len(saturations) >= 2:
             sat_diff = max(saturations) - min(saturations)
@@ -663,7 +689,8 @@ class VisualStateLearner(BaseAnalyzer[VisualStates]):
         brightnesses = [
             s.visual_signature.color_profile.brightness
             for s in state_list
-            if s.visual_signature.color_profile and s.visual_signature.color_profile.brightness
+            if s.visual_signature.color_profile
+            and s.visual_signature.color_profile.brightness
         ]
         if len(brightnesses) >= 2:
             bright_diff = max(brightnesses) - min(brightnesses)

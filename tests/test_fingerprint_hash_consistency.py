@@ -132,7 +132,10 @@ class TestFingerprintHashConsistency:
             assert all(c in "0123456789abcdef" for c in result)
 
     def test_all_hashes_unique(self) -> None:
-        hashes = {compute_hash_sync(sp, pz, r, an, sc) for sp, pz, r, an, sc, _ in TEST_VECTORS}
+        hashes = {
+            compute_hash_sync(sp, pz, r, an, sc)
+            for sp, pz, r, an, sc, _ in TEST_VECTORS
+        }
         assert len(hashes) == len(TEST_VECTORS)
 
     def test_deterministic(self) -> None:

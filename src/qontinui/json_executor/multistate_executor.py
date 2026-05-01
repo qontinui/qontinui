@@ -346,7 +346,9 @@ class MultiStateExecutor:
                     self.state_history.append(state_name)
                     print(f"Activated state: {state_name}")
                 else:
-                    print(f"Cannot activate state '{state_name}': identifying images not found")
+                    print(
+                        f"Cannot activate state '{state_name}': identifying images not found"
+                    )
                     return False
 
         # Sync with MultiState after activations
@@ -372,7 +374,9 @@ class MultiStateExecutor:
         """Get history of visited states."""
         return self.state_history.copy()
 
-    def _find_outgoing_transitions(self, state_name: str) -> list[TaskSequenceStateTransition]:
+    def _find_outgoing_transitions(
+        self, state_name: str
+    ) -> list[TaskSequenceStateTransition]:
         """Find all transitions from a given state.
 
         This method is called by action_executor for GO_TO_STATE action.
@@ -419,7 +423,9 @@ class MultiStateExecutor:
                 target_multistate_ids.append(ms_id)
 
         if not target_multistate_ids:
-            logger.warning(f"No valid target states for pathfinding: {target_state_names}")
+            logger.warning(
+                f"No valid target states for pathfinding: {target_state_names}"
+            )
             return None
 
         # Find path using MultiState
@@ -436,7 +442,9 @@ class MultiStateExecutor:
         for multi_trans in path.transitions_sequence:
             # Extract transition ID (format: "trans_{hash_id}")
             if multi_trans.id.startswith("trans_"):
-                trans_hash = int(multi_trans.id[6:])  # Remove "trans_" prefix and convert to int
+                trans_hash = int(
+                    multi_trans.id[6:]
+                )  # Remove "trans_" prefix and convert to int
 
                 # Find the corresponding Qontinui transition by hash ID
                 for trans in self.all_transitions:

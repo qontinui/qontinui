@@ -35,7 +35,9 @@ class TemplateMatchBackend(DetectionBackend):
             self._matcher = TemplateMatcher()
         return self._matcher
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find needle template in haystack screenshot.
 
         Args:

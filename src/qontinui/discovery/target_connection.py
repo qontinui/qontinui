@@ -671,7 +671,9 @@ class WebTargetConnection(TargetConnection):
             )
 
             if not response.is_success:
-                raise RuntimeError(f"Failed to capture snapshot: {response.status_code}")
+                raise RuntimeError(
+                    f"Failed to capture snapshot: {response.status_code}"
+                )
 
             data = response.json()
 
@@ -776,7 +778,9 @@ class DesktopTargetConnection(TargetConnection):
 
         try:
             # Check runner health endpoint
-            response = await self._client.get(f"{self._connection_url.rstrip('/')}/health")
+            response = await self._client.get(
+                f"{self._connection_url.rstrip('/')}/health"
+            )
 
             if response.is_success:
                 # Check if the response indicates a connected desktop app
@@ -972,10 +976,14 @@ class DesktopTargetConnection(TargetConnection):
                     else False
                 ),
                 new_elements=(
-                    result_data.get("newElements", []) if isinstance(result_data, dict) else []
+                    result_data.get("newElements", [])
+                    if isinstance(result_data, dict)
+                    else []
                 ),
                 removed_elements=(
-                    result_data.get("removedElements", []) if isinstance(result_data, dict) else []
+                    result_data.get("removedElements", [])
+                    if isinstance(result_data, dict)
+                    else []
                 ),
             )
 
@@ -1031,11 +1039,15 @@ class DesktopTargetConnection(TargetConnection):
             result_data = data.get("data", data)
 
             elements = []
-            elem_list = result_data.get("elements", []) if isinstance(result_data, dict) else []
+            elem_list = (
+                result_data.get("elements", []) if isinstance(result_data, dict) else []
+            )
             for elem_data in elem_list:
                 elements.append(Element.from_dict(elem_data))
 
-            ts_raw = result_data.get("timestamp") if isinstance(result_data, dict) else None
+            ts_raw = (
+                result_data.get("timestamp") if isinstance(result_data, dict) else None
+            )
             if isinstance(ts_raw, int | float):
                 timestamp = datetime.fromtimestamp(ts_raw / 1000)
             elif isinstance(ts_raw, str):
@@ -1054,11 +1066,19 @@ class DesktopTargetConnection(TargetConnection):
                     if isinstance(result_data, dict)
                     else self._connection_url
                 ),
-                title=result_data.get("title", "") if isinstance(result_data, dict) else "",
-                root=result_data.get("root", {}) if isinstance(result_data, dict) else {},
+                title=(
+                    result_data.get("title", "")
+                    if isinstance(result_data, dict)
+                    else ""
+                ),
+                root=(
+                    result_data.get("root", {}) if isinstance(result_data, dict) else {}
+                ),
                 elements=elements,
                 screenshot_base64=(
-                    result_data.get("screenshotBase64") if isinstance(result_data, dict) else None
+                    result_data.get("screenshotBase64")
+                    if isinstance(result_data, dict)
+                    else None
                 ),
             )
 
@@ -1147,7 +1167,9 @@ class MobileTargetConnection(TargetConnection):
 
         try:
             # Check runner health endpoint
-            response = await self._client.get(f"{self._connection_url.rstrip('/')}/health")
+            response = await self._client.get(
+                f"{self._connection_url.rstrip('/')}/health"
+            )
 
             if response.is_success:
                 # Check if the response indicates a connected mobile app
@@ -1166,7 +1188,9 @@ class MobileTargetConnection(TargetConnection):
                     pass  # Health endpoint may not return JSON or this field
 
                 self._connected = True
-                logger.info(f"Connected to runner for mobile target at {self._connection_url}")
+                logger.info(
+                    f"Connected to runner for mobile target at {self._connection_url}"
+                )
                 return True
 
             logger.warning(
@@ -1202,7 +1226,9 @@ class MobileTargetConnection(TargetConnection):
             await self._client.aclose()
             self._client = None
         self._connected = False
-        logger.info(f"Disconnected from runner for mobile target at {self._connection_url}")
+        logger.info(
+            f"Disconnected from runner for mobile target at {self._connection_url}"
+        )
 
     async def find_elements(self, selector: str | None = None) -> list[Element]:
         """Find interactive elements via runner's UI Bridge control API.
@@ -1354,10 +1380,14 @@ class MobileTargetConnection(TargetConnection):
                     else False
                 ),
                 new_elements=(
-                    result_data.get("newElements", []) if isinstance(result_data, dict) else []
+                    result_data.get("newElements", [])
+                    if isinstance(result_data, dict)
+                    else []
                 ),
                 removed_elements=(
-                    result_data.get("removedElements", []) if isinstance(result_data, dict) else []
+                    result_data.get("removedElements", [])
+                    if isinstance(result_data, dict)
+                    else []
                 ),
             )
 
@@ -1444,11 +1474,15 @@ class MobileTargetConnection(TargetConnection):
             result_data = data.get("data", data)
 
             elements = []
-            elem_list = result_data.get("elements", []) if isinstance(result_data, dict) else []
+            elem_list = (
+                result_data.get("elements", []) if isinstance(result_data, dict) else []
+            )
             for elem_data in elem_list:
                 elements.append(Element.from_dict(elem_data))
 
-            ts_raw = result_data.get("timestamp") if isinstance(result_data, dict) else None
+            ts_raw = (
+                result_data.get("timestamp") if isinstance(result_data, dict) else None
+            )
             if isinstance(ts_raw, int | float):
                 timestamp = datetime.fromtimestamp(ts_raw / 1000)
             elif isinstance(ts_raw, str):
@@ -1467,11 +1501,19 @@ class MobileTargetConnection(TargetConnection):
                     if isinstance(result_data, dict)
                     else self._connection_url
                 ),
-                title=result_data.get("title", "") if isinstance(result_data, dict) else "",
-                root=result_data.get("root", {}) if isinstance(result_data, dict) else {},
+                title=(
+                    result_data.get("title", "")
+                    if isinstance(result_data, dict)
+                    else ""
+                ),
+                root=(
+                    result_data.get("root", {}) if isinstance(result_data, dict) else {}
+                ),
                 elements=elements,
                 screenshot_base64=(
-                    result_data.get("screenshotBase64") if isinstance(result_data, dict) else None
+                    result_data.get("screenshotBase64")
+                    if isinstance(result_data, dict)
+                    else None
                 ),
             )
 

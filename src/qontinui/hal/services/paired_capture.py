@@ -151,7 +151,8 @@ class PairedCaptureService:
                 "a11y_element_count": a11y_count,
                 "ocr_fallback_reason": (
                     "not_connected"
-                    if a11y_count == 0 and not (self._a11y and self._a11y.is_connected())
+                    if a11y_count == 0
+                    and not (self._a11y and self._a11y.is_connected())
                     else f"insufficient_elements ({a11y_count} < {self._min_a11y_elements})"
                 ),
             }
@@ -161,7 +162,9 @@ class PairedCaptureService:
 
         # Step 5: Optionally save screenshot
         if save_screenshot and result.screenshot.size != (1, 1):
-            result.screenshot_path = self._save_screenshot(result.screenshot, screenshot_dir)
+            result.screenshot_path = self._save_screenshot(
+                result.screenshot, screenshot_dir
+            )
 
         result.capture_duration_ms = (time.monotonic() - start) * 1000
         return result
@@ -207,7 +210,8 @@ class PairedCaptureService:
                 ),
                 "total_nodes": snapshot.total_nodes,
                 "interactive_nodes": snapshot.interactive_nodes,
-                "completeness": snapshot.interactive_nodes / max(snapshot.total_nodes, 1),
+                "completeness": snapshot.interactive_nodes
+                / max(snapshot.total_nodes, 1),
                 "url": snapshot.url,
                 "title": snapshot.title,
             }

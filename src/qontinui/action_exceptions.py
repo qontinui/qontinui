@@ -104,7 +104,9 @@ def action_error_context(action_type: str, **action_details: Any) -> Iterator[No
     try:
         yield
     except QontinuiException as e:
-        raise ActionExecutionError(action_type=action_type, reason=str(e), **action_details) from e
+        raise ActionExecutionError(
+            action_type=action_type, reason=str(e), **action_details
+        ) from e
     except Exception as e:
         raise ActionExecutionError(
             action_type=action_type, reason=f"Unexpected error: {e}", **action_details

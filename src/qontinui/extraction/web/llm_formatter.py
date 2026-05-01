@@ -62,7 +62,9 @@ class FormattedElementList:
         """Get element by its numeric index."""
         return self._by_index.get(index)
 
-    def get_element_by_index(self, index: int) -> InteractiveElement | FrameAwareElement | None:
+    def get_element_by_index(
+        self, index: int
+    ) -> InteractiveElement | FrameAwareElement | None:
         """Get the underlying element by index."""
         indexed = self._by_index.get(index)
         return indexed.element if indexed else None
@@ -165,7 +167,9 @@ class LLMFormatter:
         """
         tag = element.tag_name
         attrs = self._format_attributes(element)
-        text = self._truncate(element.text or element.aria_label or "", self.max_text_length)
+        text = self._truncate(
+            element.text or element.aria_label or "", self.max_text_length
+        )
 
         # Build the formatted string
         if attrs:
@@ -195,7 +199,10 @@ class LLMFormatter:
         # Element type for classification
         if self.include_type and element.element_type:
             # Only include if it adds information beyond tag name
-            if element.element_type not in [element.tag_name, f"aria_{element.aria_role}"]:
+            if element.element_type not in [
+                element.tag_name,
+                f"aria_{element.aria_role}",
+            ]:
                 attrs.append(f'type="{element.element_type}"')
 
         return " ".join(attrs)

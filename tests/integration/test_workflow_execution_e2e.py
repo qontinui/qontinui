@@ -148,7 +148,9 @@ def sample_bdo_config(mock_image):
                     {
                         "id": "action-click-login",
                         "type": "CLICK",
-                        "config": {"target": {"type": "image", "imageId": "img-login-button"}},
+                        "config": {
+                            "target": {"type": "image", "imageId": "img-login-button"}
+                        },
                     },
                 ],
             },
@@ -172,7 +174,9 @@ def sample_bdo_config(mock_image):
                     {
                         "id": "action-click-settings",
                         "type": "CLICK",
-                        "config": {"target": {"type": "image", "imageId": "img-settings-icon"}},
+                        "config": {
+                            "target": {"type": "image", "imageId": "img-settings-icon"}
+                        },
                     },
                     {
                         "id": "action-navigate-to-menu",
@@ -309,12 +313,12 @@ class TestWorkflowExecutionE2E:
         navigation_api.set_workflow_executor(mock_workflow_executor)
 
         # Verify it was set (internal check through module globals)
-        assert navigation_api._workflow_executor is not None, (
-            "Workflow executor should be set in navigation_api"
-        )
-        assert navigation_api._workflow_executor == mock_workflow_executor, (
-            "Set workflow executor should match the one provided"
-        )
+        assert (
+            navigation_api._workflow_executor is not None
+        ), "Workflow executor should be set in navigation_api"
+        assert (
+            navigation_api._workflow_executor == mock_workflow_executor
+        ), "Set workflow executor should match the one provided"
 
     def test_action_config_parsing_with_pydantic(self, sample_bdo_config):
         """Test 3: Validate that action configs parse correctly with Pydantic."""
@@ -331,7 +335,9 @@ class TestWorkflowExecutionE2E:
         # This should not raise ValidationError
         typed_config = get_typed_config(find_action)
         assert typed_config is not None, "FIND action should parse successfully"
-        assert hasattr(typed_config, "target"), "Parsed config should have target attribute"
+        assert hasattr(
+            typed_config, "target"
+        ), "Parsed config should have target attribute"
         assert typed_config.target.type == "image", "Target type should be 'image'"
 
         # Test TYPE action with text source
@@ -363,8 +369,12 @@ class TestWorkflowExecutionE2E:
 
         typed_config = get_typed_config(if_action)
         assert typed_config is not None, "IF action should parse successfully"
-        assert hasattr(typed_config, "condition"), "Parsed config should have condition attribute"
-        assert typed_config.condition.type == "variable", "Condition type should be 'variable'"
+        assert hasattr(
+            typed_config, "condition"
+        ), "Parsed config should have condition attribute"
+        assert (
+            typed_config.condition.type == "variable"
+        ), "Condition type should be 'variable'"
 
         # Test CLICK action with image target
         click_action = Action(
@@ -377,11 +387,15 @@ class TestWorkflowExecutionE2E:
         assert typed_config is not None, "CLICK action should parse successfully"
 
         # Test GO_TO_STATE action
-        goto_action = Action(id="test-goto", type="GO_TO_STATE", config={"stateIds": ["state-1"]})
+        goto_action = Action(
+            id="test-goto", type="GO_TO_STATE", config={"stateIds": ["state-1"]}
+        )
 
         typed_config = get_typed_config(goto_action)
         assert typed_config is not None, "GO_TO_STATE action should parse successfully"
-        assert hasattr(typed_config, "state_ids"), "Parsed config should have state_ids attribute"
+        assert hasattr(
+            typed_config, "state_ids"
+        ), "Parsed config should have state_ids attribute"
         assert typed_config.state_ids == ["state-1"], "State IDs should match"
 
     def test_image_finding_condition_evaluation(self, mock_image):
@@ -405,7 +419,9 @@ class TestWorkflowExecutionE2E:
         assert result is True, "Image should exist (mock returns True)"
 
         # Test with non-existent image (should raise ValueError)
-        condition_missing = ConditionConfig(type="image_exists", image_id="non-existent-image")
+        condition_missing = ConditionConfig(
+            type="image_exists", image_id="non-existent-image"
+        )
 
         with pytest.raises(ValueError, match="not found in registry"):
             evaluator.evaluate_condition(condition_missing)
@@ -464,11 +480,15 @@ class TestWorkflowExecutionE2E:
         assert evaluator.evaluate_condition(condition) is True
 
         # Test expression with variable access
-        condition = ConditionConfig(type="expression", expression="variables['x'] * 2 == 20")
+        condition = ConditionConfig(
+            type="expression", expression="variables['x'] * 2 == 20"
+        )
         assert evaluator.evaluate_condition(condition) is True
 
     @patch("qontinui.model.state.state_image.StateImage.exists")
-    def test_full_pipeline_integration(self, mock_exists, sample_bdo_config, mock_image):
+    def test_full_pipeline_integration(
+        self, mock_exists, sample_bdo_config, mock_image
+    ):
         """Test 5: Ensure all components integrate correctly in a full pipeline."""
         # Configure mock for state image existence checks
         mock_exists.return_value = True
@@ -539,7 +559,9 @@ class TestWorkflowExecutionE2E:
 
         # Verify the workflow executor is set correctly
         assert navigation_api._workflow_executor is not None
-        assert navigation_api._navigator.transition_executor.workflow_executor is not None
+        assert (
+            navigation_api._navigator.transition_executor.workflow_executor is not None
+        )
 
         # Test that actions can be parsed and validated
         test_action = Action(
@@ -564,9 +586,13 @@ class TestWorkflowExecutionE2E:
         evaluator = ConditionEvaluator(context)
 
         # Test image_exists condition
-        img_condition = ConditionConfig(type="image_exists", image_id="img-login-button")
+        img_condition = ConditionConfig(
+            type="image_exists", image_id="img-login-button"
+        )
 
-        with patch("qontinui.model.state.state_image.StateImage.exists", return_value=True):
+        with patch(
+            "qontinui.model.state.state_image.StateImage.exists", return_value=True
+        ):
             result = evaluator.evaluate_condition(img_condition)
             assert result is True
 
@@ -577,7 +603,9 @@ class TestWorkflowExecutionE2E:
         result = evaluator.evaluate_condition(var_condition)
         assert result is True
 
-    def test_transition_executor_workflow_execution(self, sample_bdo_config, mock_image):
+    def test_transition_executor_workflow_execution(
+        self, sample_bdo_config, mock_image
+    ):
         """Test that EnhancedTransitionExecutor can execute workflows through workflow_executor."""
         from qontinui.model.state.state_service import StateService
         from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
@@ -620,14 +648,16 @@ class TestWorkflowExecutionE2E:
         transition_executor.execute_transition(transition)
 
         # Verify workflow executor was called
-        assert mock_workflow_executor.execute_workflow.called, (
-            "Workflow executor should be called during transition"
-        )
-        assert mock_workflow_executor.execute_workflow.call_args[0][0] == "workflow-login", (
-            "Workflow executor should be called with correct workflow ID"
-        )
+        assert (
+            mock_workflow_executor.execute_workflow.called
+        ), "Workflow executor should be called during transition"
+        assert (
+            mock_workflow_executor.execute_workflow.call_args[0][0] == "workflow-login"
+        ), "Workflow executor should be called with correct workflow ID"
 
-    def test_navigation_with_workflow_execution_mock(self, sample_bdo_config, mock_image):
+    def test_navigation_with_workflow_execution_mock(
+        self, sample_bdo_config, mock_image
+    ):
         """Test navigation triggers workflow execution through the pipeline."""
         # Register images
         for img_config in sample_bdo_config["images"]:
@@ -645,7 +675,9 @@ class TestWorkflowExecutionE2E:
         navigation_api.set_workflow_executor(mock_workflow_executor)
 
         # Mock the state image exists checks to return True
-        with patch("qontinui.model.state.state_image.StateImage.exists", return_value=True):
+        with patch(
+            "qontinui.model.state.state_image.StateImage.exists", return_value=True
+        ):
             # Attempt navigation (this should trigger workflow execution)
             # Note: This may fail due to other reasons, but we want to verify
             # that the workflow executor is integrated correctly

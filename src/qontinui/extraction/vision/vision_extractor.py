@@ -138,7 +138,9 @@ class VisionExtractor(AbstractExtractor):
 
         # Classical CV detection
         if vision_config.use_classical_cv:
-            cv_elements = await self._detect_with_classical_cv(screenshot, vision_config)
+            cv_elements = await self._detect_with_classical_cv(
+                screenshot, vision_config
+            )
             all_elements.extend(cv_elements)
 
         # ML-based detection
@@ -152,7 +154,9 @@ class VisionExtractor(AbstractExtractor):
             all_elements.extend(ocr_elements)
 
         # Deduplicate overlapping elements
-        deduplicated = self._deduplicate_elements(all_elements, vision_config.iou_threshold)
+        deduplicated = self._deduplicate_elements(
+            all_elements, vision_config.iou_threshold
+        )
 
         return deduplicated
 
@@ -268,7 +272,9 @@ class VisionExtractor(AbstractExtractor):
         closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
         # Find contours
-        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -279,7 +285,9 @@ class VisionExtractor(AbstractExtractor):
                 continue
 
             # Approximate to polygon
-            epsilon = config.contour_approximation_epsilon * cv2.arcLength(contour, True)
+            epsilon = config.contour_approximation_epsilon * cv2.arcLength(
+                contour, True
+            )
             approx = cv2.approxPolyDP(contour, epsilon, True)
 
             # Determine element type based on shape
@@ -314,7 +322,9 @@ class VisionExtractor(AbstractExtractor):
 
             # Check if button-like dimensions
             if (
-                config.button_aspect_ratio_min < aspect_ratio < config.button_aspect_ratio_max
+                config.button_aspect_ratio_min
+                < aspect_ratio
+                < config.button_aspect_ratio_max
                 and config.button_width_min < width < config.button_width_max
                 and config.button_height_min < height < config.button_height_max
             ):

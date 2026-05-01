@@ -83,7 +83,9 @@ class LineZone:
         self._out_count = 0
         self._prev_signs.clear()
 
-    def trigger(self, detections: Detections) -> tuple[NDArray[np.bool_], NDArray[np.bool_]]:
+    def trigger(
+        self, detections: Detections
+    ) -> tuple[NDArray[np.bool_], NDArray[np.bool_]]:
         """Detect line crossings for the current frame.
 
         Args:

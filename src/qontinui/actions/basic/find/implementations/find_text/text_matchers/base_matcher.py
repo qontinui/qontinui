@@ -12,7 +12,9 @@ class BaseMatcher(ABC):
     Implements the Strategy pattern for different text matching algorithms.
     """
 
-    def __init__(self, case_sensitive: bool = False, ignore_whitespace: bool = False) -> None:
+    def __init__(
+        self, case_sensitive: bool = False, ignore_whitespace: bool = False
+    ) -> None:
         """Initialize text matcher.
 
         Args:

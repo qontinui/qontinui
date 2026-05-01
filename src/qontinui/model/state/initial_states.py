@@ -113,7 +113,9 @@ class InitialStates:
             True if successful, False if state not found
         """
         if name not in self._state_names:
-            logger.warning(f"Cannot set default state - '{name}' not found in initial states")
+            logger.warning(
+                f"Cannot set default state - '{name}' not found in initial states"
+            )
             return False
 
         self._default_state = name
@@ -189,7 +191,9 @@ class InitialStates:
 
     def __str__(self) -> str:
         """String representation."""
-        default_marker = f" (default: {self._default_state})" if self._default_state else ""
+        default_marker = (
+            f" (default: {self._default_state})" if self._default_state else ""
+        )
         return f"InitialStates[{self.size()} states{default_marker}]"
 
     def __repr__(self) -> str:

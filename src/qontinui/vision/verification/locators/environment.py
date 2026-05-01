@@ -236,7 +236,9 @@ class EnvironmentLocator(BaseLocator):
             offset_x, offset_y = parent_region.x, parent_region.y
 
         # Create color mask
-        lower = np.array([max(0, b - tolerance), max(0, g - tolerance), max(0, r - tolerance)])
+        lower = np.array(
+            [max(0, b - tolerance), max(0, g - tolerance), max(0, r - tolerance)]
+        )
         upper = np.array(
             [min(255, b + tolerance), min(255, g + tolerance), min(255, r + tolerance)]
         )
@@ -350,7 +352,9 @@ class EnvironmentLocator(BaseLocator):
         edges = cv2.Canny(gray, 50, 150)
 
         # Find contours
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         matches = []
         for contour in contours:
@@ -399,7 +403,9 @@ class EnvironmentLocator(BaseLocator):
         Returns:
             EnvironmentLocator instance.
         """
-        return cls(name, environment=environment, config=config, locator_subtype="region")
+        return cls(
+            name, environment=environment, config=config, locator_subtype="region"
+        )
 
     @classmethod
     def semantic_color(
@@ -418,7 +424,12 @@ class EnvironmentLocator(BaseLocator):
         Returns:
             EnvironmentLocator instance.
         """
-        return cls(name, environment=environment, config=config, locator_subtype="semantic_color")
+        return cls(
+            name,
+            environment=environment,
+            config=config,
+            locator_subtype="semantic_color",
+        )
 
     @classmethod
     def element_pattern(
@@ -437,7 +448,12 @@ class EnvironmentLocator(BaseLocator):
         Returns:
             EnvironmentLocator instance.
         """
-        return cls(name, environment=environment, config=config, locator_subtype="element_pattern")
+        return cls(
+            name,
+            environment=environment,
+            config=config,
+            locator_subtype="element_pattern",
+        )
 
 
 __all__ = ["EnvironmentLocator"]

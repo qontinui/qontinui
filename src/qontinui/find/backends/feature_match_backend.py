@@ -45,7 +45,9 @@ class FeatureMatchBackend(DetectionBackend):
             self._matcher = OpenCVMatcher()
         return self._matcher
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find needle using feature matching.
 
         Detects features in both needle and haystack, matches descriptors,
@@ -70,7 +72,9 @@ class FeatureMatchBackend(DetectionBackend):
 
         try:
             needle_features = matcher.find_features(needle_image, method=self._method)
-            haystack_features = matcher.find_features(haystack_image, method=self._method)
+            haystack_features = matcher.find_features(
+                haystack_image, method=self._method
+            )
 
             if not needle_features or not haystack_features:
                 return []

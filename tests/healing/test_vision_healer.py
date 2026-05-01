@@ -103,7 +103,10 @@ class TestVisionHealer:
 
         # Should get a result (success or failure)
         assert result is not None
-        assert result.strategy in [HealingStrategy.VISUAL_SEARCH, HealingStrategy.FAILED]
+        assert result.strategy in [
+            HealingStrategy.VISUAL_SEARCH,
+            HealingStrategy.FAILED,
+        ]
 
     def test_heal_with_lower_threshold(self):
         """Test visual search finds pattern with lower threshold."""

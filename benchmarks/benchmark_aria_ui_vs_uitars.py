@@ -82,9 +82,15 @@ BENCHMARK_TASKS: list[GroundingTask] = [
     GroundingTask("taskbar_search.png", "Search icon", 60, 1065, 15, "icon"),
     # --- Multi-step ambiguous (context-aware advantage) ---
     GroundingTask("form_submit_1.png", "Submit button", 600, 500, 20, "button"),
-    GroundingTask("form_submit_2.png", "Submit button (second form)", 600, 700, 20, "button"),
-    GroundingTask("wizard_next_step2.png", "Next button on step 2", 700, 550, 20, "button"),
-    GroundingTask("wizard_next_step3.png", "Next button on step 3", 700, 550, 20, "button"),
+    GroundingTask(
+        "form_submit_2.png", "Submit button (second form)", 600, 700, 20, "button"
+    ),
+    GroundingTask(
+        "wizard_next_step2.png", "Next button on step 2", 700, 550, 20, "button"
+    ),
+    GroundingTask(
+        "wizard_next_step3.png", "Next button on step 3", 700, 550, 20, "button"
+    ),
 ]
 
 
@@ -129,7 +135,9 @@ class BenchmarkResults:
         self.successful = len(successful)
         self.within_tolerance = sum(1 for a in successful if a.within_tolerance)
         self.accuracy_pct = (
-            (self.within_tolerance / self.total_tasks * 100) if self.total_tasks else 0.0
+            (self.within_tolerance / self.total_tasks * 100)
+            if self.total_tasks
+            else 0.0
         )
 
         distances = [a.distance_px for a in successful if a.distance_px is not None]
@@ -187,7 +195,9 @@ async def ground_with_aria_ui(
             error="not_found",
         )
 
-    dist = math.sqrt((location.x - task.expected_x) ** 2 + (location.y - task.expected_y) ** 2)
+    dist = math.sqrt(
+        (location.x - task.expected_x) ** 2 + (location.y - task.expected_y) ** 2
+    )
     return GroundingAttempt(
         task=task,
         backend="aria_ui",
@@ -239,7 +249,9 @@ async def ground_with_uitars(
                 error="not_found",
             )
 
-        dist = math.sqrt((result.x - task.expected_x) ** 2 + (result.y - task.expected_y) ** 2)
+        dist = math.sqrt(
+            (result.x - task.expected_x) ** 2 + (result.y - task.expected_y) ** 2
+        )
         return GroundingAttempt(
             task=task,
             backend="uitars",
@@ -302,12 +314,20 @@ async def run_benchmark(
         aria_results = BenchmarkResults(backend="aria_ui")
         print("=== Aria-UI ===")
         for task, screenshot_bytes in available_tasks:
-            attempt = await ground_with_aria_ui(screenshot_bytes, task, endpoint=aria_endpoint)
+            attempt = await ground_with_aria_ui(
+                screenshot_bytes, task, endpoint=aria_endpoint
+            )
             aria_results.attempts.append(attempt)
             status = (
-                "HIT" if attempt.within_tolerance else ("MISS" if attempt.error is None else "ERR")
+                "HIT"
+                if attempt.within_tolerance
+                else ("MISS" if attempt.error is None else "ERR")
             )
-            dist_str = f"{attempt.distance_px:.1f}px" if attempt.distance_px is not None else "N/A"
+            dist_str = (
+                f"{attempt.distance_px:.1f}px"
+                if attempt.distance_px is not None
+                else "N/A"
+            )
             print(
                 f"  [{status}] {task.element_description:<35} dist={dist_str:<10} {attempt.latency_ms:.0f}ms"
             )
@@ -321,9 +341,15 @@ async def run_benchmark(
             attempt = await ground_with_uitars(screenshot_bytes, task)
             uitars_results.attempts.append(attempt)
             status = (
-                "HIT" if attempt.within_tolerance else ("MISS" if attempt.error is None else "ERR")
+                "HIT"
+                if attempt.within_tolerance
+                else ("MISS" if attempt.error is None else "ERR")
             )
-            dist_str = f"{attempt.distance_px:.1f}px" if attempt.distance_px is not None else "N/A"
+            dist_str = (
+                f"{attempt.distance_px:.1f}px"
+                if attempt.distance_px is not None
+                else "N/A"
+            )
             print(
                 f"  [{status}] {task.element_description:<35} dist={dist_str:<10} {attempt.latency_ms:.0f}ms"
             )
@@ -345,7 +371,8 @@ def print_comparison(results: dict[str, BenchmarkResults]) -> None:
         ["Successful"] + [str(r.successful) for r in results.values()],
         ["Within tolerance"] + [str(r.within_tolerance) for r in results.values()],
         ["Accuracy %"] + [f"{r.accuracy_pct:.1f}%" for r in results.values()],
-        ["Mean distance (px)"] + [f"{r.mean_distance_px:.1f}" for r in results.values()],
+        ["Mean distance (px)"]
+        + [f"{r.mean_distance_px:.1f}" for r in results.values()],
         ["Latency mean (ms)"] + [f"{r.latency_mean_ms:.0f}" for r in results.values()],
         ["Latency p50 (ms)"] + [f"{r.latency_p50_ms:.0f}" for r in results.values()],
         ["Latency p95 (ms)"] + [f"{r.latency_p95_ms:.0f}" for r in results.values()],
@@ -357,7 +384,9 @@ def print_comparison(results: dict[str, BenchmarkResults]) -> None:
     ]
     col_widths = [max(20, w) for w in col_widths]
 
-    header_line = " | ".join(h.ljust(w) for h, w in zip(headers, col_widths, strict=True))
+    header_line = " | ".join(
+        h.ljust(w) for h, w in zip(headers, col_widths, strict=True)
+    )
     print(header_line)
     print("-" * len(header_line))
     for row in rows:
@@ -386,7 +415,9 @@ def save_results(results: dict[str, BenchmarkResults], output_path: Path) -> Non
                     "screenshot": a.task.screenshot_path,
                     "expected": [a.task.expected_x, a.task.expected_y],
                     "predicted": (
-                        [a.predicted_x, a.predicted_y] if a.predicted_x is not None else None
+                        [a.predicted_x, a.predicted_y]
+                        if a.predicted_x is not None
+                        else None
                     ),
                     "distance_px": a.distance_px,
                     "within_tolerance": a.within_tolerance,
@@ -409,8 +440,12 @@ def save_results(results: dict[str, BenchmarkResults], output_path: Path) -> Non
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Benchmark Aria-UI vs UI-TARS")
-    parser.add_argument("--aria-only", action="store_true", help="Only benchmark Aria-UI")
-    parser.add_argument("--uitars-only", action="store_true", help="Only benchmark UI-TARS")
+    parser.add_argument(
+        "--aria-only", action="store_true", help="Only benchmark Aria-UI"
+    )
+    parser.add_argument(
+        "--uitars-only", action="store_true", help="Only benchmark UI-TARS"
+    )
     parser.add_argument(
         "--aria-endpoint",
         default="http://localhost:8100",

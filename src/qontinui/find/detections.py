@@ -71,14 +71,18 @@ class Detections:
         if len(confidence) != n:
             raise ValueError(f"confidence length {len(confidence)} != xyxy length {n}")
         if len(backend_name) != n:
-            raise ValueError(f"backend_name length {len(backend_name)} != xyxy length {n}")
+            raise ValueError(
+                f"backend_name length {len(backend_name)} != xyxy length {n}"
+            )
         if label is not None and len(label) != n:
             raise ValueError(f"label length {len(label)} != xyxy length {n}")
         if class_id is not None and len(class_id) != n:
             raise ValueError(f"class_id length {len(class_id)} != xyxy length {n}")
         if normalized_xyxy is not None:
             if normalized_xyxy.shape != (n, 4):
-                raise ValueError(f"normalized_xyxy shape {normalized_xyxy.shape} != ({n}, 4)")
+                raise ValueError(
+                    f"normalized_xyxy shape {normalized_xyxy.shape} != ({n}, 4)"
+                )
 
         self.xyxy = xyxy
         self.confidence = confidence
@@ -214,7 +218,9 @@ class Detections:
     # Indexing and filtering
     # ------------------------------------------------------------------
 
-    def __getitem__(self, index: NDArray[np.bool_] | slice | int | list[int]) -> Detections:
+    def __getitem__(
+        self, index: NDArray[np.bool_] | slice | int | list[int]
+    ) -> Detections:
         """Filter detections by boolean mask, slice, integer index, or index list.
 
         Examples::
@@ -257,7 +263,9 @@ class Detections:
             label=self.label[index] if self.label is not None else None,
             class_id=self.class_id[index] if self.class_id is not None else None,
             normalized_xyxy=(
-                self.normalized_xyxy[index] if self.normalized_xyxy is not None else None
+                self.normalized_xyxy[index]
+                if self.normalized_xyxy is not None
+                else None
             ),
             data=new_data,
         )
@@ -455,7 +463,9 @@ class Detections:
     def __repr__(self) -> str:
         fields = [f"n={len(self)}"]
         if len(self) > 0:
-            fields.append(f"confidence=[{self.confidence.min():.2f}..{self.confidence.max():.2f}]")
+            fields.append(
+                f"confidence=[{self.confidence.min():.2f}..{self.confidence.max():.2f}]"
+            )
             unique_backends = np.unique(self.backend_name)
             fields.append(f"backends={list(unique_backends)}")
         return f"Detections({', '.join(fields)})"

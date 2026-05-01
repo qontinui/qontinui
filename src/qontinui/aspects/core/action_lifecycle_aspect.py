@@ -141,7 +141,9 @@ class ActionLifecycleAspect:
 
             try:
                 # Pre-execution
-                self._pre_execution(context, action_instance, action_result, object_collections)
+                self._pre_execution(
+                    context, action_instance, action_result, object_collections
+                )
 
                 # Execute action
                 result = func(action_instance, action_result, *object_collections)

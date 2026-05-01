@@ -98,7 +98,9 @@ class GroupingResult:
     @property
     def total_state_images(self) -> int:
         """Total StateImages across all states."""
-        return sum(s.state_image_count for s in self.states) + len(self.ungrouped_templates)
+        return sum(s.state_image_count for s in self.states) + len(
+            self.ungrouped_templates
+        )
 
     def get_state(self, state_id: str) -> StateGroup | None:
         """Get state by ID."""
@@ -331,7 +333,9 @@ class StateGrouper:
 
         for i, group in enumerate(grouping_result.groups):
             state_images = [
-                template_lookup[tid] for tid in group.image_ids if tid in template_lookup
+                template_lookup[tid]
+                for tid in group.image_ids
+                if tid in template_lookup
             ]
 
             if not state_images:
@@ -455,7 +459,9 @@ class StateGrouper:
             processing_time_ms=processing_time,
         )
 
-    def _generate_state_name(self, index: int, state_images: list[ApprovedTemplate]) -> str:
+    def _generate_state_name(
+        self, index: int, state_images: list[ApprovedTemplate]
+    ) -> str:
         """Generate a human-readable state name.
 
         Uses template names if available, otherwise generates generic name.
@@ -483,7 +489,9 @@ class StateGrouper:
             return named[0]
 
         # Try element types
-        element_types = [t.element_type for t in state_images if t.element_type != "unknown"]
+        element_types = [
+            t.element_type for t in state_images if t.element_type != "unknown"
+        ]
         if element_types:
             most_common = max(set(element_types), key=element_types.count)
             return f"State_{index}_{most_common}"

@@ -220,7 +220,12 @@ class TestUIAHealerStrategies:
                 "automation_id": "missingId",
                 "role": "textbox",
                 "name": "Username",
-                "bounds": (800, 800, 200, 25),  # different zone so structural won't match
+                "bounds": (
+                    800,
+                    800,
+                    200,
+                    25,
+                ),  # different zone so structural won't match
             },
         )
 

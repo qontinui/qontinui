@@ -202,7 +202,9 @@ class CoordinateService:
             y=y + monitor.y,
         )
 
-    def screen_to_monitor(self, screen_x: int, screen_y: int, monitor_index: int) -> MonitorPoint:
+    def screen_to_monitor(
+        self, screen_x: int, screen_y: int, monitor_index: int
+    ) -> MonitorPoint:
         """Convert absolute screen coordinates to monitor-relative coordinates.
 
         Takes an absolute screen point and converts it to coordinates relative
@@ -271,7 +273,9 @@ class CoordinateService:
         vd = self.get_virtual_desktop()
         return len(vd.monitors)
 
-    def to_screen(self, x: int, y: int, monitor_index: int | None = None) -> ScreenPoint:
+    def to_screen(
+        self, x: int, y: int, monitor_index: int | None = None
+    ) -> ScreenPoint:
         """Convert coordinates to absolute screen coordinates.
 
         This is the primary method for coordinate translation. It handles both

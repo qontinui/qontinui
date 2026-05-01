@@ -256,8 +256,12 @@ class TransitionDetector:
         Returns:
             Detected transition if pattern is confirmed
         """
-        before_set = set(before_states) if isinstance(before_states, list) else before_states
-        after_set = set(after_states) if isinstance(after_states, list) else after_states
+        before_set = (
+            set(before_states) if isinstance(before_states, list) else before_states
+        )
+        after_set = (
+            set(after_states) if isinstance(after_states, list) else after_states
+        )
 
         # Create action record
         record = ActionRecord(
@@ -274,7 +278,9 @@ class TransitionDetector:
 
         # Trim history if too large
         if len(self._action_history) > self.config.max_transitions * 10:
-            self._action_history = self._action_history[-self.config.max_transitions * 5 :]
+            self._action_history = self._action_history[
+                -self.config.max_transitions * 5 :
+            ]
 
         # Generate pattern signature
         signature = self._generate_pattern_signature(record)
@@ -298,7 +304,9 @@ class TransitionDetector:
         """
         # Include action type and target element
         action_type = record.action.get("type", "click")
-        element_id = record.action.get("elementId") or record.action.get("target", "unknown")
+        element_id = record.action.get("elementId") or record.action.get(
+            "target", "unknown"
+        )
 
         # Include state changes (sorted for consistency)
         activated = "|".join(sorted(record.activated_states))
@@ -314,7 +322,9 @@ class TransitionDetector:
 
         return hashlib.sha256("::".join(sig_parts).encode()).hexdigest()[:16]
 
-    def _update_transition(self, signature: str, record: ActionRecord) -> DetectedTransition | None:
+    def _update_transition(
+        self, signature: str, record: ActionRecord
+    ) -> DetectedTransition | None:
         """Update or create transition based on pattern observations.
 
         Args:
@@ -346,7 +356,9 @@ class TransitionDetector:
                 else:
                     trans.reliability.record_failure(record.duration_ms)
 
-            return trans if trans.confidence >= self.config.confidence_threshold else None
+            return (
+                trans if trans.confidence >= self.config.confidence_threshold else None
+            )
 
         # Create new transition
         trans = self._create_transition(transition_id, records)
@@ -542,7 +554,11 @@ class TransitionDetector:
         """
         threshold = min_confidence or self.config.confidence_threshold
 
-        return [trans for trans in self._transitions.values() if trans.confidence >= threshold]
+        return [
+            trans
+            for trans in self._transitions.values()
+            if trans.confidence >= threshold
+        ]
 
     def get_transition(self, transition_id: str) -> DetectedTransition | None:
         """Get a specific transition by ID.
@@ -654,7 +670,8 @@ class TransitionDetector:
             "pending_patterns": len(self._pattern_signatures) - len(self._transitions),
             "action_history_size": len(self._action_history),
             "average_confidence": (
-                sum(t.confidence for t in self._transitions.values()) / len(self._transitions)
+                sum(t.confidence for t in self._transitions.values())
+                / len(self._transitions)
                 if self._transitions
                 else 0.0
             ),
@@ -750,9 +767,9 @@ class TransitionDetector:
                 continue
 
             # Check if this is the reverse transition
-            is_reverse = set(existing.activate_states) == set(transition.exit_states) and set(
-                existing.exit_states
-            ) == set(transition.activate_states)
+            is_reverse = set(existing.activate_states) == set(
+                transition.exit_states
+            ) and set(existing.exit_states) == set(transition.activate_states)
 
             if is_reverse:
                 transition.is_bidirectional = True
@@ -794,12 +811,16 @@ class TransitionDetector:
         trans.last_observed = datetime.utcnow()
 
         # Recalculate confidence
-        records = self._pattern_signatures.get(self._get_signature_for_transition(trans), [])
+        records = self._pattern_signatures.get(
+            self._get_signature_for_transition(trans), []
+        )
         trans.confidence = self._calculate_confidence(records) if records else 0.5
 
         # Emit callback
         if self.config.on_reliability_changed and trans.reliability:
-            self.config.on_reliability_changed(transition_id, trans.reliability.success_rate)
+            self.config.on_reliability_changed(
+                transition_id, trans.reliability.success_rate
+            )
 
         return trans.reliability.success_rate if trans.reliability else None
 
@@ -854,7 +875,9 @@ class TransitionDetector:
         """
         self.config.on_transition_updated = callback
 
-    def set_on_reliability_changed(self, callback: Callable[[str, float], None] | None) -> None:
+    def set_on_reliability_changed(
+        self, callback: Callable[[str, float], None] | None
+    ) -> None:
         """Set callback for when transition reliability changes.
 
         Args:
@@ -866,7 +889,9 @@ class TransitionDetector:
     # Advanced Queries
     # =========================================================================
 
-    def get_bidirectional_pairs(self) -> list[tuple[DetectedTransition, DetectedTransition]]:
+    def get_bidirectional_pairs(
+        self,
+    ) -> list[tuple[DetectedTransition, DetectedTransition]]:
         """Get all bidirectional transition pairs.
 
         Returns:
@@ -901,7 +926,8 @@ class TransitionDetector:
             trans
             for trans in self._transitions.values()
             if any(
-                action.get("elementId") == element_id or action.get("target") == element_id
+                action.get("elementId") == element_id
+                or action.get("target") == element_id
                 for action in trans.actions
             )
         ]
@@ -925,7 +951,9 @@ class TransitionDetector:
         from collections import deque
 
         # BFS with reliability weighting
-        queue: deque[tuple[str, list[DetectedTransition], float]] = deque([(from_state, [], 1.0)])
+        queue: deque[tuple[str, list[DetectedTransition], float]] = deque(
+            [(from_state, [], 1.0)]
+        )
         visited: set[str] = set()
 
         best_path: list[DetectedTransition] = []
@@ -946,7 +974,9 @@ class TransitionDetector:
 
             # Get available transitions
             for trans in self.get_transitions_from_state(current_state):
-                reliability = trans.reliability.success_rate if trans.reliability else 0.5
+                reliability = (
+                    trans.reliability.success_rate if trans.reliability else 0.5
+                )
                 new_reliability = path_reliability * reliability
 
                 for activated in trans.activate_states:
@@ -993,10 +1023,18 @@ class TransitionDetector:
                     # Merge trans2 into trans1
                     trans1.observation_count += trans2.observation_count
                     if trans1.reliability and trans2.reliability:
-                        trans1.reliability.success_count += trans2.reliability.success_count
-                        trans1.reliability.failure_count += trans2.reliability.failure_count
-                        trans1.reliability.total_time_ms += trans2.reliability.total_time_ms
-                    trans1.confidence = self._calculate_merged_confidence(trans1, trans2)
+                        trans1.reliability.success_count += (
+                            trans2.reliability.success_count
+                        )
+                        trans1.reliability.failure_count += (
+                            trans2.reliability.failure_count
+                        )
+                        trans1.reliability.total_time_ms += (
+                            trans2.reliability.total_time_ms
+                        )
+                    trans1.confidence = self._calculate_merged_confidence(
+                        trans1, trans2
+                    )
 
                     to_remove.append(trans2.id)
                     merged_count += 1
@@ -1043,7 +1081,10 @@ class TransitionDetector:
             a2 = trans2.actions[0]
             action_sim = (
                 1.0
-                if (a1.get("type") == a2.get("type") and a1.get("elementId") == a2.get("elementId"))
+                if (
+                    a1.get("type") == a2.get("type")
+                    and a1.get("elementId") == a2.get("elementId")
+                )
                 else 0.0
             )
         else:

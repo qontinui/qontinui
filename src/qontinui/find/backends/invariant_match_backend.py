@@ -40,7 +40,9 @@ class InvariantMatchBackend(DetectionBackend):
             self._matcher = OpenCVMatcher()
         return self._matcher
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find needle template at multiple scales/rotations.
 
         Args:
@@ -74,7 +76,9 @@ class InvariantMatchBackend(DetectionBackend):
         # Pattern.pixel_data is np.ndarray (BGR) — convert to PIL RGB
         if isinstance(needle_data, np.ndarray):
             if len(needle_data.shape) == 3 and needle_data.shape[2] == 3:
-                needle_image = Image.fromarray(cv2.cvtColor(needle_data, cv2.COLOR_BGR2RGB))
+                needle_image = Image.fromarray(
+                    cv2.cvtColor(needle_data, cv2.COLOR_BGR2RGB)
+                )
             else:
                 needle_image = Image.fromarray(needle_data)
         elif isinstance(needle_data, Image.Image):
@@ -87,7 +91,9 @@ class InvariantMatchBackend(DetectionBackend):
         if not isinstance(haystack, Image.Image):
             if isinstance(haystack, np.ndarray):
                 if len(haystack.shape) == 3 and haystack.shape[2] == 3:
-                    haystack = Image.fromarray(cv2.cvtColor(haystack, cv2.COLOR_BGR2RGB))
+                    haystack = Image.fromarray(
+                        cv2.cvtColor(haystack, cv2.COLOR_BGR2RGB)
+                    )
                 else:
                     haystack = Image.fromarray(haystack)
             else:

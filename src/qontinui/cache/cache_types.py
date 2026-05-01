@@ -121,7 +121,9 @@ class CacheEntry:
                 width=vp_data["width"],
                 height=vp_data["height"],
                 sample_region=(
-                    tuple(vp_data["sample_region"]) if vp_data.get("sample_region") else None
+                    tuple(vp_data["sample_region"])
+                    if vp_data.get("sample_region")
+                    else None
                 ),
                 sample_hash=vp_data.get("sample_hash"),
             )

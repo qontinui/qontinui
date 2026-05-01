@@ -41,7 +41,9 @@ class TestIntegrationRealMonitors:
         primary = desktop.get_primary_monitor()
         assert primary is not None
         assert primary.is_primary is True
-        print(f"\nPrimary monitor: {primary.width}x{primary.height} at ({primary.x}, {primary.y})")
+        print(
+            f"\nPrimary monitor: {primary.width}x{primary.height} at ({primary.x}, {primary.y})"
+        )
 
     def test_virtual_desktop_bounds(self) -> None:
         """Test that virtual desktop bounds are calculated correctly."""
@@ -81,7 +83,9 @@ class TestIntegrationRealMonitors:
 
         # Convert to virtual coordinates
         virtual_point = service.screen_to_match(center_x, center_y)
-        print(f"Primary monitor center (virtual): ({virtual_point.x}, {virtual_point.y})")
+        print(
+            f"Primary monitor center (virtual): ({virtual_point.x}, {virtual_point.y})"
+        )
 
         # Convert back to screen coordinates
         screen_point = service.match_to_screen(virtual_point.x, virtual_point.y)
@@ -102,15 +106,15 @@ class TestIntegrationRealMonitors:
             center_y = monitor.y + monitor.height // 2
 
             detected_idx = service.get_monitor_at_point(center_x, center_y)
-            assert detected_idx == monitor.index, (
-                f"Failed to detect monitor {monitor.index} at its center"
-            )
+            assert (
+                detected_idx == monitor.index
+            ), f"Failed to detect monitor {monitor.index} at its center"
 
             # Test top-left corner
             detected_idx = service.get_monitor_at_point(monitor.x, monitor.y)
-            assert detected_idx == monitor.index, (
-                f"Failed to detect monitor {monitor.index} at its top-left"
-            )
+            assert (
+                detected_idx == monitor.index
+            ), f"Failed to detect monitor {monitor.index} at its top-left"
 
             print(f"\nMonitor {monitor.index} detection: OK")
 
@@ -127,7 +131,9 @@ class TestIntegrationRealMonitors:
             assert screen_point.y == monitor.y
 
             # Convert back
-            monitor_point = service.screen_to_monitor(monitor.x, monitor.y, monitor.index)
+            monitor_point = service.screen_to_monitor(
+                monitor.x, monitor.y, monitor.index
+            )
             assert monitor_point.x == 0
             assert monitor_point.y == 0
             assert monitor_point.monitor_index == monitor.index
@@ -224,16 +230,18 @@ class TestIntegrationMultiMonitorScenarios:
             detected = service.get_monitor_at_point(
                 monitor.x + monitor.width - 1, monitor.y + monitor.height - 1
             )
-            assert detected == i, f"Bottom-right corner (inclusive) of monitor {i} not detected"
+            assert (
+                detected == i
+            ), f"Bottom-right corner (inclusive) of monitor {i} not detected"
 
             # Just outside right edge (should NOT be on this monitor)
             detected = service.get_monitor_at_point(
                 monitor.x + monitor.width, monitor.y + monitor.height // 2
             )
             # Could be on another monitor or None
-            assert detected != i or detected is None, (
-                f"Point outside monitor {i} incorrectly detected as on monitor {i}"
-            )
+            assert (
+                detected != i or detected is None
+            ), f"Point outside monitor {i} incorrectly detected as on monitor {i}"
 
             print(f"Monitor {i} boundaries: OK")
 

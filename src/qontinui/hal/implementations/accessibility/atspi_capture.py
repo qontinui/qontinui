@@ -525,7 +525,9 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
         if not title:
             return None
         # Sanitise title into a safe filename
-        safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip()[:80]
+        safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip()[
+            :80
+        ]
         return self._persistence_dir / f"{safe}.json"
 
     async def disconnect(self) -> None:
@@ -771,7 +773,9 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
         if root is None:
             # Create empty root if capture failed
             target_name = (
-                self._get_name(self._target_element) if self._target_element else "Unknown"
+                self._get_name(self._target_element)
+                if self._target_element
+                else "Unknown"
             )
             root = AccessibilityNode(
                 ref="@e0",
@@ -811,7 +815,9 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
         # new tree so that refs from previous sessions stay valid.
         self._try_restore_persisted_refs(snapshot)
 
-        logger.info(f"Captured AT-SPI tree: {total_nodes} nodes, {interactive_nodes} interactive")
+        logger.info(
+            f"Captured AT-SPI tree: {total_nodes} nodes, {interactive_nodes} interactive"
+        )
 
         return snapshot
 
@@ -908,7 +914,9 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
             # Check name
             if selector.name is not None:
                 case_sensitive = (
-                    selector.case_sensitive if selector.case_sensitive is not None else True
+                    selector.case_sensitive
+                    if selector.case_sensitive is not None
+                    else True
                 )
                 node_name = node.name or ""
                 sel_name = selector.name
@@ -921,7 +929,9 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
             # Check name_contains
             if selector.name_contains is not None:
                 case_sensitive = (
-                    selector.case_sensitive if selector.case_sensitive is not None else True
+                    selector.case_sensitive
+                    if selector.case_sensitive is not None
+                    else True
                 )
                 node_name = node.name or ""
                 sel_contains = selector.name_contains
@@ -1061,7 +1071,14 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
             await loop.run_in_executor(
                 None,
                 lambda: subprocess.run(
-                    ["xdotool", "mousemove", str(center_x), str(center_y), "click", "1"],
+                    [
+                        "xdotool",
+                        "mousemove",
+                        str(center_x),
+                        str(center_y),
+                        "click",
+                        "1",
+                    ],
                     check=True,
                     capture_output=True,
                 ),
@@ -1238,7 +1255,14 @@ class ATSPIAccessibilityCapture(IAccessibilityCapture):
             await loop.run_in_executor(
                 None,
                 lambda: subprocess.run(
-                    ["xdotool", "mousemove", str(center_x), str(center_y), "click", "1"],
+                    [
+                        "xdotool",
+                        "mousemove",
+                        str(center_x),
+                        str(center_y),
+                        "click",
+                        "1",
+                    ],
                     check=True,
                     capture_output=True,
                 ),

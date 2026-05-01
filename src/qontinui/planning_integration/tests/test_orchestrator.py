@@ -10,10 +10,7 @@ from multistate.planning.planner import HTNPlanner, PlanResult
 from multistate.planning.world_adapter import WorldStateAdapter
 
 from qontinui.discovery.target_connection import Element
-from qontinui.planning_integration.orchestrator import (
-    run_htn_plan,
-    run_htn_plan_sync,
-)
+from qontinui.planning_integration.orchestrator import run_htn_plan, run_htn_plan_sync
 
 
 def _make_element(
@@ -35,7 +32,9 @@ def _make_element(
 def _mock_connection() -> AsyncMock:
     conn = AsyncMock()
     conn.find_elements.return_value = [
-        _make_element(id="btn-go", tag_name="button", is_visible=True, text_content="Go"),
+        _make_element(
+            id="btn-go", tag_name="button", is_visible=True, text_content="Go"
+        ),
     ]
     return conn
 
@@ -74,7 +73,9 @@ def test_run_htn_plan_success() -> None:
     )
 
     success_result = ExecutionResult(success=True)
-    with patch("qontinui.planning_integration.orchestrator.PlanExecutor") as MockExecutor:
+    with patch(
+        "qontinui.planning_integration.orchestrator.PlanExecutor"
+    ) as MockExecutor:
         instance = MockExecutor.return_value
         instance.execute.return_value = success_result
 
@@ -148,7 +149,9 @@ def test_run_htn_plan_sync_wrapper() -> None:
     )
 
     success_result = ExecutionResult(success=True)
-    with patch("qontinui.planning_integration.orchestrator.PlanExecutor") as MockExecutor:
+    with patch(
+        "qontinui.planning_integration.orchestrator.PlanExecutor"
+    ) as MockExecutor:
         instance = MockExecutor.return_value
         instance.execute.return_value = success_result
 

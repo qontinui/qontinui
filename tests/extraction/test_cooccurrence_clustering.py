@@ -62,7 +62,9 @@ def cluster_elements_by_cooccurrence(
         states[state_id] = set(cluster_elements)
 
         # Determine which screens this state is active on
-        active_screens = [screen_ids[i] for i, visible in enumerate(pattern) if visible > 0]
+        active_screens = [
+            screen_ids[i] for i, visible in enumerate(pattern) if visible > 0
+        ]
         state_screens[state_id] = active_screens
 
     return states, state_screens
@@ -73,7 +75,9 @@ def get_active_states_for_screen(
     state_screens: dict[str, list[str]],
 ) -> set[str]:
     """Get all states that are active on a given screen."""
-    return {state_id for state_id, screens in state_screens.items() if screen_id in screens}
+    return {
+        state_id for state_id, screens in state_screens.items() if screen_id in screens
+    }
 
 
 class TestCooccurrenceClustering:
@@ -121,8 +125,12 @@ class TestCooccurrenceClustering:
                 state_with_e = state_id
 
         # Verify state compositions
-        assert state_with_ab is not None, f"No state with {{a, b}} found. States: {states}"
-        assert state_with_cd is not None, f"No state with {{c, d}} found. States: {states}"
+        assert (
+            state_with_ab is not None
+        ), f"No state with {{a, b}} found. States: {states}"
+        assert (
+            state_with_cd is not None
+        ), f"No state with {{c, d}} found. States: {states}"
         assert state_with_e is not None, f"No state with {{e}} found. States: {states}"
 
         # Verify which screens each state is active on
@@ -137,9 +145,9 @@ class TestCooccurrenceClustering:
             "screen2",
         }, f"State with {{c,d}} should be active on screens 1,2, got {state_screens[state_with_cd]}"
 
-        assert set(state_screens[state_with_e]) == {"screen3"}, (
-            f"State with {{e}} should be active only on screen 3, got {state_screens[state_with_e]}"
-        )
+        assert set(state_screens[state_with_e]) == {
+            "screen3"
+        }, f"State with {{e}} should be active only on screen 3, got {state_screens[state_with_e]}"
 
         # Verify active states per screen
         screen1_states = get_active_states_for_screen("screen1", state_screens)
@@ -172,7 +180,9 @@ class TestCooccurrenceClustering:
         for state_id in sorted(states.keys()):
             elements = states[state_id]
             active_on = state_screens[state_id]
-            print(f"  {state_id}: {{{', '.join(sorted(elements))}}} - active on {active_on}")
+            print(
+                f"  {state_id}: {{{', '.join(sorted(elements))}}} - active on {active_on}"
+            )
 
         print("\nVerification (Screens -> Active States):")
         for screen_id in sorted(screens.keys()):

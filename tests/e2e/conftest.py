@@ -41,7 +41,9 @@ def pytest_configure(config: pytest.Config) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
     if config.getoption("--run-live-e2e"):
         return
     skip_live = pytest.mark.skip(reason="live_e2e tests require --run-live-e2e flag")

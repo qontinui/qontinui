@@ -110,12 +110,18 @@ class BoundingBox:
 
     def intersects(self, other: "BoundingBox") -> bool:
         return not (
-            self.x2 <= other.x or other.x2 <= self.x or self.y2 <= other.y or other.y2 <= self.y
+            self.x2 <= other.x
+            or other.x2 <= self.x
+            or self.y2 <= other.y
+            or other.y2 <= self.y
         )
 
     def contains(self, other: "BoundingBox") -> bool:
         return (
-            self.x <= other.x and self.y <= other.y and self.x2 >= other.x2 and self.y2 >= other.y2
+            self.x <= other.x
+            and self.y <= other.y
+            and self.x2 >= other.x2
+            and self.y2 >= other.y2
         )
 
 
@@ -282,7 +288,9 @@ class ExtractedState:
     bbox: BoundingBox
     state_type: StateType
     element_ids: list[str]  # Elements within this state
-    screenshot_id: str | None = None  # Reference to local screenshot file (set after capture)
+    screenshot_id: str | None = (
+        None  # Reference to local screenshot file (set after capture)
+    )
 
     # Detection info
     detection_method: str = "visibility_cluster"  # visibility_cluster, semantic, manual
@@ -341,7 +349,9 @@ class ExtractedTransition:
 
     # State changes
     causes_appear: list[str] = field(default_factory=list)  # State IDs that appear
-    causes_disappear: list[str] = field(default_factory=list)  # State IDs that disappear
+    causes_disappear: list[str] = field(
+        default_factory=list
+    )  # State IDs that disappear
 
     # Action details
     action_value: str | None = None  # For type actions, the text typed
@@ -439,7 +449,9 @@ class ExtractionResult:
             "page_extractions": [p.to_dict() for p in self.page_extractions],
             "screenshot_ids": self.screenshot_ids,
             "started_at": self.started_at.isoformat(),
-            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
             "config": self.config,
             "metadata": self.metadata,
         }
@@ -454,9 +466,13 @@ class ExtractionResult:
             config=data.get("config", {}),
             metadata=data.get("metadata", {}),
         )
-        result.elements = [ExtractedElement.from_dict(e) for e in data.get("elements", [])]
+        result.elements = [
+            ExtractedElement.from_dict(e) for e in data.get("elements", [])
+        ]
         result.states = [ExtractedState.from_dict(s) for s in data.get("states", [])]
-        result.transitions = [ExtractedTransition.from_dict(t) for t in data.get("transitions", [])]
+        result.transitions = [
+            ExtractedTransition.from_dict(t) for t in data.get("transitions", [])
+        ]
         if data.get("started_at"):
             result.started_at = datetime.fromisoformat(data["started_at"])
         if data.get("completed_at"):
@@ -635,9 +651,13 @@ class RawElement:
             screenshot_id=data["screenshot_id"],
             selector=data["selector"],
             background_color=(
-                tuple(data["background_color"]) if data.get("background_color") else None
+                tuple(data["background_color"])
+                if data.get("background_color")
+                else None
             ),
-            border_color=tuple(data["border_color"]) if data.get("border_color") else None,
+            border_color=(
+                tuple(data["border_color"]) if data.get("border_color") else None
+            ),
             text_color=tuple(data["text_color"]) if data.get("text_color") else None,
             computed_styles=data.get("computed_styles", {}),
             image_asset_id=data.get("image_asset_id"),
@@ -748,7 +768,9 @@ class ElementFingerprint:
             relative_x=data["relative_x"],
             relative_y=data["relative_y"],
             color_histogram=data.get("color_histogram", []),
-            dominant_color=tuple(data["dominant_color"]) if data.get("dominant_color") else None,
+            dominant_color=(
+                tuple(data["dominant_color"]) if data.get("dominant_color") else None
+            ),
             content_hash=data.get("content_hash", ""),
             text_length=data.get("text_length", 0),
             visual_hash=data.get("visual_hash", ""),
@@ -943,9 +965,12 @@ class ExtractedPageV2:
                 else datetime.now()
             ),
             elements=[RawElement.from_dict(e) for e in data.get("elements", [])],
-            fingerprints=[ElementFingerprint.from_dict(f) for f in data.get("fingerprints", [])],
+            fingerprints=[
+                ElementFingerprint.from_dict(f) for f in data.get("fingerprints", [])
+            ],
             element_functions=[
-                ElementFunction.from_dict(ef) for ef in data.get("element_functions", [])
+                ElementFunction.from_dict(ef)
+                for ef in data.get("element_functions", [])
             ],
             semantic_regions=[
                 SemanticRegion.from_dict(sr) for sr in data.get("semantic_regions", [])
@@ -1023,7 +1048,9 @@ class IdentifiedTransition:
             "to_state_id": self.to_state_id,
             "trigger_element_id": self.trigger_element_id,
             "trigger_type": self.trigger_type,
-            "element_function": self.element_function.to_dict() if self.element_function else None,
+            "element_function": (
+                self.element_function.to_dict() if self.element_function else None
+            ),
             "source_url": self.source_url,
             "target_url": self.target_url,
             "confidence": self.confidence,

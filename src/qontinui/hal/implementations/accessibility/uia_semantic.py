@@ -393,7 +393,10 @@ def fuzzy_match_nodes(
                         elif ident_text == node_auto_id:
                             best_type = "automation_id"
                             best_term = node_auto_id
-                        elif node.ref in spatial_labels and spatial_labels[node.ref] in ident_text:
+                        elif (
+                            node.ref in spatial_labels
+                            and spatial_labels[node.ref] in ident_text
+                        ):
                             best_type = "spatial_label"
                             best_term = ident_text
                         else:
@@ -401,7 +404,9 @@ def fuzzy_match_nodes(
                             best_term = ident_text
 
                 # Also match full description against identifier
-                full_ratio = _multi_mode_ratio(desc_lower, ident_lower, min_score, cache)
+                full_ratio = _multi_mode_ratio(
+                    desc_lower, ident_lower, min_score, cache
+                )
                 full_weighted = full_ratio * weight
                 if full_weighted > best_score:
                     best_score = full_weighted
@@ -411,7 +416,10 @@ def fuzzy_match_nodes(
                     elif ident_text == node_auto_id:
                         best_type = "automation_id"
                         best_term = node_auto_id
-                    elif node.ref in spatial_labels and spatial_labels[node.ref] in ident_text:
+                    elif (
+                        node.ref in spatial_labels
+                        and spatial_labels[node.ref] in ident_text
+                    ):
                         best_type = "spatial_label"
                         best_term = ident_text
                     else:
@@ -460,7 +468,9 @@ def format_nodes_for_llm(
         name_str = f' "{node.name}"' if node.name else ""
         value_str = f' = "{node.value}"' if node.value else ""
         auto_id = f" [id={node.automation_id}]" if node.automation_id else ""
-        lines.append(f"[{i}] {node.ref}: {node.role.value}{name_str}{value_str}{auto_id}")
+        lines.append(
+            f"[{i}] {node.ref}: {node.role.value}{name_str}{value_str}{auto_id}"
+        )
 
     if len(nodes) > max_elements:
         lines.append(f"... ({len(nodes)} total, showing first {max_elements})")

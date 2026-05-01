@@ -17,7 +17,9 @@ from qontinui.cache.action_cache import ActionCache, get_action_cache, set_actio
 class MockPattern:
     """Mock Pattern for testing."""
 
-    def __init__(self, name: str = "test_pattern", pixel_data: np.ndarray | None = None):
+    def __init__(
+        self, name: str = "test_pattern", pixel_data: np.ndarray | None = None
+    ):
         self.name = name
         if pixel_data is None:
             self.pixel_data = np.random.randint(0, 255, (50, 50, 3), dtype=np.uint8)
@@ -54,7 +56,9 @@ class TestActionCache:
         """Test that build_key produces consistent keys."""
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = ActionCache(cache_dir=tmpdir)
-            pattern = MockPattern(name="test", pixel_data=np.zeros((10, 10, 3), dtype=np.uint8))
+            pattern = MockPattern(
+                name="test", pixel_data=np.zeros((10, 10, 3), dtype=np.uint8)
+            )
 
             key1 = cache.build_key(pattern)
             key2 = cache.build_key(pattern)
@@ -211,7 +215,13 @@ class TestActionCache:
             region = MockRegion(x=100, y=100, width=50, height=50)
 
             key = cache.build_key(pattern)
-            cache.store(key, coordinates=(125, 125), region=region, confidence=0.9, pattern=pattern)
+            cache.store(
+                key,
+                coordinates=(125, 125),
+                region=region,
+                confidence=0.9,
+                pattern=pattern,
+            )
 
             # Create screenshot with matching region
             screenshot = np.zeros((500, 500, 3), dtype=np.uint8)
@@ -234,7 +244,13 @@ class TestActionCache:
             region = MockRegion(x=100, y=100, width=50, height=50)
 
             key = cache.build_key(pattern)
-            cache.store(key, coordinates=(125, 125), region=region, confidence=0.9, pattern=pattern)
+            cache.store(
+                key,
+                coordinates=(125, 125),
+                region=region,
+                confidence=0.9,
+                pattern=pattern,
+            )
 
             # Create screenshot with completely different pattern (checkerboard)
             screenshot = np.zeros((500, 500, 3), dtype=np.uint8)

@@ -72,9 +72,13 @@ def match_element_by_description(
             continue
 
         label_lower = label.lower().strip()
-        elem_type = element_types[i] if element_types and i < len(element_types) else None
+        elem_type = (
+            element_types[i] if element_types and i < len(element_types) else None
+        )
 
-        score, match_type = _score_match(desc_lower, desc_keywords, label_lower, elem_type)
+        score, match_type = _score_match(
+            desc_lower, desc_keywords, label_lower, elem_type
+        )
 
         if score >= min_similarity:
             matches.append(
@@ -128,7 +132,12 @@ def _score_match(
 
     # Weighted combination — coverage weighted highest because Florence-2
     # captions are typically much longer than the user's description.
-    combined = fuzzy_score * 0.25 + keyword_score * 0.25 + coverage_score * 0.35 + type_bonus * 0.15
+    combined = (
+        fuzzy_score * 0.25
+        + keyword_score * 0.25
+        + coverage_score * 0.35
+        + type_bonus * 0.15
+    )
 
     match_type = "fuzzy" if fuzzy_score > keyword_score else "keyword"
     return (combined, match_type)

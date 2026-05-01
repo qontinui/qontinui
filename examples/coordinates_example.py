@@ -85,11 +85,17 @@ def main():
 
         # Convert monitor-relative to screen
         monitor_rel_x, monitor_rel_y = 100, 100
-        screen_point = service.monitor_to_screen(monitor_rel_x, monitor_rel_y, monitor.index)
-        print(f"  Monitor-relative ({monitor_rel_x}, {monitor_rel_y}) -> {screen_point}")
+        screen_point = service.monitor_to_screen(
+            monitor_rel_x, monitor_rel_y, monitor.index
+        )
+        print(
+            f"  Monitor-relative ({monitor_rel_x}, {monitor_rel_y}) -> {screen_point}"
+        )
 
         # Convert screen back to monitor-relative
-        monitor_point = service.screen_to_monitor(screen_point.x, screen_point.y, monitor.index)
+        monitor_point = service.screen_to_monitor(
+            screen_point.x, screen_point.y, monitor.index
+        )
         print(
             f"  Back to monitor-relative: ({monitor_point.x}, {monitor_point.y}) "
             f"on monitor {monitor_point.monitor_index}"
@@ -99,7 +105,9 @@ def main():
         center_x = monitor.x + monitor.width // 2
         center_y = monitor.y + monitor.height // 2
         detected = service.get_monitor_at_point(center_x, center_y)
-        print(f"  Center point ({center_x}, {center_y}) detected as monitor: {detected}")
+        print(
+            f"  Center point ({center_x}, {center_y}) detected as monitor: {detected}"
+        )
         print()
 
     # Example 4: Type safety demonstration

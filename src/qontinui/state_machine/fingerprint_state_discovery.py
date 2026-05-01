@@ -97,7 +97,9 @@ class FingerprintStateDiscoveryConfig:
 
     # Size weighting
     use_size_weighting: bool = True
-    size_weights: dict[str, float] = field(default_factory=lambda: DEFAULT_SIZE_WEIGHTS.copy())
+    size_weights: dict[str, float] = field(
+        default_factory=lambda: DEFAULT_SIZE_WEIGHTS.copy()
+    )
 
     # Semantic matching
     enable_semantic_matching: bool = True
@@ -187,13 +189,17 @@ class FingerprintStateDiscovery:
 
         # Capture tracking
         self._captures: list[CaptureRecord] = []
-        self._capture_fingerprints: dict[str, set[str]] = {}  # capture_id -> fingerprints
+        self._capture_fingerprints: dict[str, set[str]] = (
+            {}
+        )  # capture_id -> fingerprints
 
         # Transition tracking
         self._transitions: list[TransitionRecord] = []
 
         # Co-occurrence data
-        self._cooccurrence_counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self._cooccurrence_counts: dict[str, dict[str, int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
         self._fingerprint_appearance_count: dict[str, int] = defaultdict(int)
 
         # State candidates (from UI Bridge or computed)
@@ -295,7 +301,9 @@ class FingerprintStateDiscovery:
         if self.config.treat_header_footer_as_global:
             self._identify_global_fingerprints()
 
-        logger.debug(f"Processed capture {capture.capture_id}: {len(fp_hashes)} fingerprints")
+        logger.debug(
+            f"Processed capture {capture.capture_id}: {len(fp_hashes)} fingerprints"
+        )
 
     def discover_states(self) -> list[DiscoveredFingerprintState]:
         """Run state discovery and return discovered states.
@@ -413,7 +421,9 @@ class FingerprintStateDiscovery:
         else:
             return "state-specific"
 
-    def _filter_global_elements(self, fingerprint_hashes: list[str]) -> tuple[list[str], list[str]]:
+    def _filter_global_elements(
+        self, fingerprint_hashes: list[str]
+    ) -> tuple[list[str], list[str]]:
         """Separate global elements from state-specific elements.
 
         Args:
@@ -616,7 +626,9 @@ class FingerprintStateDiscovery:
 
         return self.config.size_weights.get(fingerprint.size_category, 0.5)
 
-    def _calculate_weighted_cooccurrence(self, group1: list[str], group2: list[str]) -> float:
+    def _calculate_weighted_cooccurrence(
+        self, group1: list[str], group2: list[str]
+    ) -> float:
         """Calculate size-weighted co-occurrence between two groups.
 
         Elements are weighted by their visual size, so larger elements
@@ -708,7 +720,9 @@ class FingerprintStateDiscovery:
                 continue
 
             # Apply repeat pattern deduplication
-            deduped_fingerprints = self._dedupe_repeating_elements(candidate.fingerprints)
+            deduped_fingerprints = self._dedupe_repeating_elements(
+                candidate.fingerprints
+            )
 
             # Skip candidates with too few elements
             if len(deduped_fingerprints) < self.config.min_state_elements:
@@ -719,18 +733,23 @@ class FingerprintStateDiscovery:
                 continue
 
             # Separate global and state-specific fingerprints
-            global_fps, specific_fps = self._filter_global_elements(deduped_fingerprints)
+            global_fps, specific_fps = self._filter_global_elements(
+                deduped_fingerprints
+            )
 
             # Create states based on scope
             if self.config.treat_header_footer_as_global and global_fps:
                 # Create a global state from global fingerprints
-                self._create_state_from_fingerprints(global_fps, is_global=True, is_modal=False)
+                self._create_state_from_fingerprints(
+                    global_fps, is_global=True, is_modal=False
+                )
 
             if specific_fps:
                 # Determine if this is a modal state
                 is_modal = (
                     self.config.auto_detect_modal_states
-                    and self._get_dominant_position_zone(specific_fps) in BLOCKING_POSITION_ZONES
+                    and self._get_dominant_position_zone(specific_fps)
+                    in BLOCKING_POSITION_ZONES
                 )
 
                 # Create state from state-specific fingerprints
@@ -1010,8 +1029,12 @@ class FingerprintStateDiscovery:
 
         for record in self._transitions:
             # Find states affected by this transition
-            before_state = self._find_state_for_fingerprints(record.disappeared_fingerprints)
-            after_state = self._find_state_for_fingerprints(record.appeared_fingerprints)
+            before_state = self._find_state_for_fingerprints(
+                record.disappeared_fingerprints
+            )
+            after_state = self._find_state_for_fingerprints(
+                record.appeared_fingerprints
+            )
 
             if before_state and after_state and before_state != after_state:
                 transition = {

@@ -447,7 +447,9 @@ class TestVLLMProvider:
 
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "choices": [{"message": {"content": "Thought: Test\nAction: click(100, 200)"}}],
+            "choices": [
+                {"message": {"content": "Thought: Test\nAction: click(100, 200)"}}
+            ],
             "usage": {"completion_tokens": 10},
         }
         mock_client = MagicMock()

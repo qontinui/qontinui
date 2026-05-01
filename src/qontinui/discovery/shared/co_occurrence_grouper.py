@@ -169,13 +169,17 @@ class CoOccurrenceGrouper:
             total_frames = len(all_frames) if all_frames else 0
 
         # Build co-occurrence matrix
-        co_occurrence_ratio = self._build_co_occurrence_matrix(image_frame_map, image_ids)
+        co_occurrence_ratio = self._build_co_occurrence_matrix(
+            image_frame_map, image_ids
+        )
 
         # Group images
         if self.strict_mode:
             groups = self._group_strict(image_frame_map, image_ids)
         else:
-            groups = self._group_by_threshold(image_frame_map, image_ids, co_occurrence_ratio)
+            groups = self._group_by_threshold(
+                image_frame_map, image_ids, co_occurrence_ratio
+            )
 
         # Find ungrouped images
         grouped_ids: set[str] = set()
@@ -332,7 +336,9 @@ class CoOccurrenceGrouper:
         return groups
 
 
-def invert_frame_template_map(frame_template_map: dict[int, set[str]]) -> dict[str, set[int]]:
+def invert_frame_template_map(
+    frame_template_map: dict[int, set[str]]
+) -> dict[str, set[int]]:
     """Convert frame→templates to template→frames mapping.
 
     Input Capture's CoOccurrenceAnalyzer produces frame_template_map.

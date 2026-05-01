@@ -56,7 +56,10 @@ class ButtonNameRule(AccessibilityRule):
             role == "button"
             or element_type == "button"
             or tag_name == "button"
-            or (tag_name == "input" and element.get("inputType") in ["button", "submit", "reset"])
+            or (
+                tag_name == "input"
+                and element.get("inputType") in ["button", "submit", "reset"]
+            )
         )
 
     def check(self, element: dict[str, Any]) -> list[AccessibilityIssue]:
@@ -130,7 +133,14 @@ class LinkNameRule(AccessibilityRule):
             ]
 
         # Check for generic link text
-        generic_texts = ["click here", "here", "read more", "more", "link", "learn more"]
+        generic_texts = [
+            "click here",
+            "here",
+            "read more",
+            "more",
+            "link",
+            "learn more",
+        ]
         if accessible_name.strip().lower() in generic_texts:
             return [
                 self._create_issue(
@@ -182,7 +192,9 @@ class FormInputLabelRule(AccessibilityRule):
         form_roles = ["textbox", "searchbox", "spinbutton", "combobox", "listbox"]
         form_types = ["input", "textarea", "select"]
 
-        return role in form_roles or element_type in form_types or tag_name in form_types
+        return (
+            role in form_roles or element_type in form_types or tag_name in form_types
+        )
 
     def check(self, element: dict[str, Any]) -> list[AccessibilityIssue]:
         """Check if form input has a label."""
@@ -330,7 +342,15 @@ class KeyboardAccessRule(AccessibilityRule):
             return True
 
         # Check element type
-        interactive_types = ["button", "input", "link", "checkbox", "radio", "select", "tab"]
+        interactive_types = [
+            "button",
+            "input",
+            "link",
+            "checkbox",
+            "radio",
+            "select",
+            "tab",
+        ]
         if element_type in interactive_types:
             return True
 

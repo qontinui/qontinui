@@ -54,7 +54,9 @@ def _mock_atspi_element(
 
     # Children
     el.childCount = len(children)
-    el.getChildAtIndex.side_effect = lambda i: children[i] if i < len(children) else None
+    el.getChildAtIndex.side_effect = lambda i: (
+        children[i] if i < len(children) else None
+    )
 
     # Extents (component interface)
     if extents is not None:
@@ -445,7 +447,9 @@ class TestPlatformGuard:
         ):
             capture = ATSPIAccessibilityCapture()
             # _atspi is None, _ensure_atspi_available will check _is_linux
-            result = asyncio.get_event_loop().run_until_complete(capture.connect(target="anything"))
+            result = asyncio.get_event_loop().run_until_complete(
+                capture.connect(target="anything")
+            )
             assert result is False
 
     def test_atspi_ensure_available_returns_true_when_already_loaded(self):

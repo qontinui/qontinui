@@ -209,7 +209,9 @@ class EnhancedVariableContext:
                     logger.debug(f"Retrieved {scope} variable '{name}'")
                     return storage[name]
                 else:
-                    logger.debug(f"Variable '{name}' not found in {scope} scope, returning default")
+                    logger.debug(
+                        f"Variable '{name}' not found in {scope} scope, returning default"
+                    )
                     return default
 
             # Otherwise, search with precedence: execution -> workflow -> global
@@ -472,9 +474,13 @@ class EnhancedVariableContext:
                     json.dump(storage, f, indent=2, ensure_ascii=False)
                 logger.info(f"Saved {len(storage)} {scope} variables to {target_file}")
             except (TypeError, ValueError) as e:
-                raise ValueError(f"Failed to serialize {scope} variables to JSON: {e}") from e
+                raise ValueError(
+                    f"Failed to serialize {scope} variables to JSON: {e}"
+                ) from e
             except OSError as e:
-                raise OSError(f"Failed to write {scope} variables to {target_file}: {e}") from e
+                raise OSError(
+                    f"Failed to write {scope} variables to {target_file}: {e}"
+                ) from e
 
     def load_from_file(self, scope: Literal["workflow", "global"]) -> int:
         """Load variables from JSON file.
@@ -517,7 +523,9 @@ class EnhancedVariableContext:
                 )
 
             if not target_file.exists():
-                logger.warning(f"{scope.capitalize()} variables file not found: {target_file}")
+                logger.warning(
+                    f"{scope.capitalize()} variables file not found: {target_file}"
+                )
                 return 0
 
             # Read JSON
@@ -535,13 +543,17 @@ class EnhancedVariableContext:
                 storage.clear()
                 storage.update(loaded_vars)
 
-                logger.info(f"Loaded {len(loaded_vars)} {scope} variables from {target_file}")
+                logger.info(
+                    f"Loaded {len(loaded_vars)} {scope} variables from {target_file}"
+                )
                 return len(loaded_vars)
 
             except json.JSONDecodeError as e:
                 raise ValueError(f"Failed to parse JSON from {target_file}: {e}") from e
             except OSError as e:
-                raise OSError(f"Failed to read {scope} variables from {target_file}: {e}") from e
+                raise OSError(
+                    f"Failed to read {scope} variables from {target_file}: {e}"
+                ) from e
 
     def get_change_history(self) -> list[dict[str, Any]]:
         """Get history of variable changes.

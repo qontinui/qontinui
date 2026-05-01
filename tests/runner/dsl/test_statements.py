@@ -464,7 +464,9 @@ class TestReturnStatement:
 
     def test_to_dict_with_value(self):
         """Test converting to dictionary with value."""
-        stmt = ReturnStatement(value=LiteralExpression(value_type="string", value="success"))
+        stmt = ReturnStatement(
+            value=LiteralExpression(value_type="string", value="success")
+        )
 
         result = stmt.to_dict()
 
@@ -507,7 +509,9 @@ class TestReturnStatement:
 
     def test_round_trip_serialization(self):
         """Test round-trip serialization."""
-        original = ReturnStatement(value=LiteralExpression(value_type="double", value=3.14))
+        original = ReturnStatement(
+            value=LiteralExpression(value_type="double", value=3.14)
+        )
 
         serialized = original.to_dict()
         restored = ReturnStatement.from_dict(serialized)

@@ -98,7 +98,9 @@ def benchmark_config_loading(
         Benchmark results dictionary
     """
     print(f"\n{'=' * 60}")
-    print(f"Benchmarking {config_size} config: {num_workflows} workflows, {num_actions} actions")
+    print(
+        f"Benchmarking {config_size} config: {num_workflows} workflows, {num_actions} actions"
+    )
     print(f"{'=' * 60}")
 
     # Generate mock config
@@ -217,7 +219,9 @@ def run_all_benchmarks() -> list[dict[str, Any]]:
     print(f"{'-' * 45}")
 
     for result in results:
-        print(f"{result['config_size']:<15} {result['parse_time_ms']:<15.1f} {result['grade']:<15}")
+        print(
+            f"{result['config_size']:<15} {result['parse_time_ms']:<15.1f} {result['grade']:<15}"
+        )
 
     return results
 

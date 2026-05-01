@@ -21,12 +21,18 @@ class StateImage:
     frequency: float  # Percentage of screenshots containing this element
     screenshot_ids: list[str] = field(default_factory=list)
     pixel_data: np.ndarray[Any, Any] | None = None
-    mask: np.ndarray[Any, Any] | None = None  # Mask array (0.0-1.0), shape (height, width)
+    mask: np.ndarray[Any, Any] | None = (
+        None  # Mask array (0.0-1.0), shape (height, width)
+    )
     created_at: datetime = field(default_factory=datetime.now)
     tags: list[str] = field(default_factory=list)
     dark_pixel_percentage: float | None = None  # Calculated only for active mask pixels
-    light_pixel_percentage: float | None = None  # Calculated only for active mask pixels
-    mask_density: float = 1.0  # Percentage of active pixels in mask (1.0 = full rectangle)
+    light_pixel_percentage: float | None = (
+        None  # Calculated only for active mask pixels
+    )
+    mask_density: float = (
+        1.0  # Percentage of active pixels in mask (1.0 = full rectangle)
+    )
 
     @property
     def width(self) -> int:
@@ -50,7 +56,10 @@ class StateImage:
     def overlaps(self, other: "StateImage") -> bool:
         """Check if this StateImage overlaps with another."""
         return not (
-            self.x2 < other.x or other.x2 < self.x or self.y2 < other.y or other.y2 < self.y
+            self.x2 < other.x
+            or other.x2 < self.x
+            or self.y2 < other.y
+            or other.y2 < self.y
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -161,7 +170,9 @@ class AnalysisConfig:
     enable_rectangle_decomposition: bool = True
     enable_cooccurrence_analysis: bool = True
     processing_mode: str = "full"  # 'full', 'quick', 'custom'
-    similarity_threshold: float = 0.95  # Similarity threshold for matching regions (0.0-1.0)
+    similarity_threshold: float = (
+        0.95  # Similarity threshold for matching regions (0.0-1.0)
+    )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""

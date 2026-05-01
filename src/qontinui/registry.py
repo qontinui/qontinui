@@ -73,23 +73,25 @@ logger = logging.getLogger(__name__)
 
 # Global registries - private to this module
 _image_registry: dict[str, Image] = {}
-_image_metadata_registry: dict[
-    str, dict[str, Any]
-] = {}  # Stores {image_id: {file_path: str, name: str, monitors: list[int] | None}}
+_image_metadata_registry: dict[str, dict[str, Any]] = (
+    {}
+)  # Stores {image_id: {file_path: str, name: str, monitors: list[int] | None}}
 _workflow_registry: dict[str, Any] = {}
 _workflow_names: dict[str, str] = {}  # Stores {workflow_id: workflow_name}
-_workflow_definitions: dict[
-    str, dict[str, Any]
-] = {}  # Stores full workflow definitions for graph workflows
+_workflow_definitions: dict[str, dict[str, Any]] = (
+    {}
+)  # Stores full workflow definitions for graph workflows
 # StateRegion and StateLocation registries
-_region_registry: dict[
-    str, dict[str, Any]
-] = {}  # Stores {region_id: {x, y, width, height, monitors, name}}
-_location_registry: dict[str, dict[str, Any]] = {}  # Stores {location_id: {x, y, monitors, name}}
+_region_registry: dict[str, dict[str, Any]] = (
+    {}
+)  # Stores {region_id: {x, y, width, height, monitors, name}}
+_location_registry: dict[str, dict[str, Any]] = (
+    {}
+)  # Stores {location_id: {x, y, monitors, name}}
 # StateImage to pattern image IDs mapping (supports multi-pattern StateImages)
-_state_image_patterns_registry: dict[
-    str, list[str]
-] = {}  # Stores {state_image_id: [pattern_image_id1, pattern_image_id2, ...]}
+_state_image_patterns_registry: dict[str, list[str]] = (
+    {}
+)  # Stores {state_image_id: [pattern_image_id1, pattern_image_id2, ...]}
 
 
 def register_image(
@@ -119,7 +121,9 @@ def register_image(
         >>> registry.register_image("submit_button", img, file_path="button.png", name="Submit Button", monitors=[0])
     """
     if image_id in _image_registry:
-        logger.warning(f"Image '{image_id}' already registered - replacing with new image")
+        logger.warning(
+            f"Image '{image_id}' already registered - replacing with new image"
+        )
     _image_registry[image_id] = image
 
     # Store metadata if provided
@@ -133,7 +137,9 @@ def register_image(
     logger.debug(f"Registered image: {image_id} (monitors={monitors})")
 
 
-def register_workflow(workflow_id: str, workflow: Any, workflow_name: str | None = None) -> None:
+def register_workflow(
+    workflow_id: str, workflow: Any, workflow_name: str | None = None
+) -> None:
     """Register a workflow for use by the library.
 
     This should be called by the runner after loading workflows from configuration.
@@ -263,7 +269,9 @@ def clear_images() -> None:
     logger.debug("Cleared all registered images and metadata")
 
 
-def register_workflow_definition(workflow_id: str, workflow_def: dict[str, Any]) -> None:
+def register_workflow_definition(
+    workflow_id: str, workflow_def: dict[str, Any]
+) -> None:
     """Register a full workflow definition (for graph workflows).
 
     This stores the complete workflow definition including connections, metadata, etc.
@@ -284,7 +292,9 @@ def register_workflow_definition(workflow_id: str, workflow_def: dict[str, Any])
         >>> registry.register_workflow_definition("my-workflow", workflow_def)
     """
     if workflow_id in _workflow_definitions:
-        logger.warning(f"Workflow definition '{workflow_id}' already registered - replacing")
+        logger.warning(
+            f"Workflow definition '{workflow_id}' already registered - replacing"
+        )
     _workflow_definitions[workflow_id] = workflow_def
     logger.debug(f"Registered workflow definition: {workflow_id}")
 
@@ -542,9 +552,13 @@ def register_state_image_patterns(
         ... )
     """
     if state_image_id in _state_image_patterns_registry:
-        logger.warning(f"StateImage patterns for '{state_image_id}' already registered - replacing")
+        logger.warning(
+            f"StateImage patterns for '{state_image_id}' already registered - replacing"
+        )
     _state_image_patterns_registry[state_image_id] = pattern_image_ids
-    logger.debug(f"Registered StateImage patterns: {state_image_id} -> {pattern_image_ids}")
+    logger.debug(
+        f"Registered StateImage patterns: {state_image_id} -> {pattern_image_ids}"
+    )
 
 
 def get_state_image_pattern_ids(state_image_id: str) -> list[str] | None:

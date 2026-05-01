@@ -34,7 +34,9 @@ class ReliabilityAwarePathFinder:
     """
 
     path_finder: "PathFinder"
-    reliability: TransitionReliability = field(default_factory=get_transition_reliability)
+    reliability: TransitionReliability = field(
+        default_factory=get_transition_reliability
+    )
 
     # Configuration
     reliability_weight: float = 0.5
@@ -199,7 +201,9 @@ class ReliabilityAwarePathFinder:
                 )
                 total_reliability += reliability
 
-        avg_reliability = total_reliability / len(path.transitions) if path.transitions else 1.0
+        avg_reliability = (
+            total_reliability / len(path.transitions) if path.transitions else 1.0
+        )
 
         return {
             "avg_reliability": avg_reliability,

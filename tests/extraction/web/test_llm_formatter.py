@@ -77,7 +77,9 @@ class TestLLMFormatter:
     def test_format_with_aria_label(self) -> None:
         """Test formatting element with aria-label."""
         formatter = LLMFormatter()
-        elements = [create_test_element("btn1", "button", text="X", aria_label="Close dialog")]
+        elements = [
+            create_test_element("btn1", "button", text="X", aria_label="Close dialog")
+        ]
 
         result = formatter.format_elements(elements)
 
@@ -89,7 +91,9 @@ class TestLLMFormatter:
         formatter = LLMFormatter(max_text_length=20)
         elements = [
             create_test_element(
-                "btn1", "button", text="This is a very long button text that should be truncated"
+                "btn1",
+                "button",
+                text="This is a very long button text that should be truncated",
             )
         ]
 

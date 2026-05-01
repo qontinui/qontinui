@@ -92,7 +92,9 @@ class StateDiscoveryService:
                 strategy_metadata={"error": "no_suitable_strategy"},
             )
 
-        logger.info(f"Using {selected_strategy.strategy_type.value} strategy for discovery")
+        logger.info(
+            f"Using {selected_strategy.strategy_type.value} strategy for discovery"
+        )
 
         # Run discovery
         return selected_strategy.discover(input_data)

@@ -94,7 +94,9 @@ class UITARSProviderBase(ABC):
             thought.reasoning = thought_match.group(1).strip()
 
         # Parse Action
-        action_match = re.search(r"Action:\s*(\w+)\(([^)]*)\)", raw_output, re.IGNORECASE)
+        action_match = re.search(
+            r"Action:\s*(\w+)\(([^)]*)\)", raw_output, re.IGNORECASE
+        )
         if action_match:
             action_type_str = action_match.group(1).lower()
             params_str = action_match.group(2).strip()
@@ -112,14 +114,18 @@ class UITARSProviderBase(ABC):
                 "wait": UITARSActionType.WAIT,
                 "done": UITARSActionType.DONE,
             }
-            action.action_type = action_type_map.get(action_type_str, UITARSActionType.WAIT)
+            action.action_type = action_type_map.get(
+                action_type_str, UITARSActionType.WAIT
+            )
 
             # Parse parameters based on action type
             action = self._parse_action_params(action, params_str)
 
         return thought, action
 
-    def _parse_action_params(self, action: UITARSAction, params_str: str) -> UITARSAction:
+    def _parse_action_params(
+        self, action: UITARSAction, params_str: str
+    ) -> UITARSAction:
         """Parse action parameters from string.
 
         Args:
@@ -293,7 +299,9 @@ class HuggingFaceEndpointProvider(UITARSProviderBase):
 
         # Add system prompt if provided
         if request.system_prompt or self.settings.system_prompt:
-            payload["system_prompt"] = request.system_prompt or self.settings.system_prompt
+            payload["system_prompt"] = (
+                request.system_prompt or self.settings.system_prompt
+            )
 
         try:
             response = self._client.post(
@@ -372,7 +380,9 @@ class LocalTransformersProvider(UITARSProviderBase):
                 torch_dtype = torch.float32
 
             # Load processor
-            self._processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+            self._processor = AutoProcessor.from_pretrained(
+                model_id, trust_remote_code=True
+            )
 
             # Load model with quantization if configured
             if self.settings.quantization == "int4":
@@ -415,7 +425,9 @@ class LocalTransformersProvider(UITARSProviderBase):
                         trust_remote_code=True,
                     )
                 except ImportError:
-                    logger.warning("bitsandbytes not installed, falling back to float16")
+                    logger.warning(
+                        "bitsandbytes not installed, falling back to float16"
+                    )
                     self._model = AutoModelForImageTextToText.from_pretrained(
                         model_id,
                         torch_dtype=torch_dtype,
@@ -506,7 +518,9 @@ class LocalTransformersProvider(UITARSProviderBase):
                 outputs = self._model.generate(
                     **inputs,
                     max_new_tokens=request.max_new_tokens,
-                    temperature=request.temperature if request.temperature > 0 else None,
+                    temperature=(
+                        request.temperature if request.temperature > 0 else None
+                    ),
                     do_sample=request.temperature > 0,
                     top_p=self.settings.top_p if request.temperature > 0 else None,
                     pad_token_id=self._processor.tokenizer.eos_token_id,
@@ -514,7 +528,9 @@ class LocalTransformersProvider(UITARSProviderBase):
 
             # Decode output
             generated_ids = outputs[0][inputs["input_ids"].shape[1] :]
-            raw_output = self._processor.tokenizer.decode(generated_ids, skip_special_tokens=True)
+            raw_output = self._processor.tokenizer.decode(
+                generated_ids, skip_special_tokens=True
+            )
 
             inference_time = (time.time() - start_time) * 1000
             thought, action = self.parse_output(raw_output)

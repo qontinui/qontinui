@@ -158,12 +158,17 @@ class TestFindDelegation:
     """Test that Find delegates to FindAction correctly."""
 
     @pytest.mark.asyncio
-    async def test_execute_delegates_to_find_action(self, sample_pattern, mock_find_result):
+    async def test_execute_delegates_to_find_action(
+        self, sample_pattern, mock_find_result
+    ):
         """Test that execute() calls FindAction.find()."""
         find = Find(sample_pattern)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ) as mock_find:
             result = await find.execute()
 
@@ -179,12 +184,17 @@ class TestFindDelegation:
             assert isinstance(options_arg, FindOptions)
 
     @pytest.mark.asyncio
-    async def test_execute_passes_similarity_to_options(self, sample_pattern, mock_find_result):
+    async def test_execute_passes_similarity_to_options(
+        self, sample_pattern, mock_find_result
+    ):
         """Test that similarity is passed to FindOptions."""
         find = Find(sample_pattern).similarity(0.9)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ) as mock_find:
             await find.execute()
 
@@ -192,12 +202,17 @@ class TestFindDelegation:
             assert options_arg.similarity == 0.9
 
     @pytest.mark.asyncio
-    async def test_execute_passes_find_all_to_options(self, sample_pattern, mock_find_result):
+    async def test_execute_passes_find_all_to_options(
+        self, sample_pattern, mock_find_result
+    ):
         """Test that find_all is passed to FindOptions."""
         find = Find(sample_pattern).find_all(True)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ) as mock_find:
             await find.execute()
 
@@ -205,13 +220,18 @@ class TestFindDelegation:
             assert options_arg.find_all is True
 
     @pytest.mark.asyncio
-    async def test_execute_passes_search_region_to_options(self, sample_pattern, mock_find_result):
+    async def test_execute_passes_search_region_to_options(
+        self, sample_pattern, mock_find_result
+    ):
         """Test that search_region is passed to FindOptions."""
         region = Region(10, 20, 100, 200)
         find = Find(sample_pattern).search_region(region)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ) as mock_find:
             await find.execute()
 
@@ -228,7 +248,10 @@ class TestFindResultConversion:
         find = Find(sample_pattern)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ):
             result = await find.execute()
 
@@ -240,7 +263,10 @@ class TestFindResultConversion:
         find = Find(sample_pattern)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ):
             result = await find.execute()
 
@@ -257,7 +283,10 @@ class TestFindResultConversion:
         find = Find(sample_pattern)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_empty_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_empty_find_result,
         ):
             result = await find.execute()
 
@@ -275,14 +304,19 @@ class TestFindConvenienceMethods:
         find_obj = Find(sample_pattern)
 
         with patch.object(
-            find_obj._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find_obj._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ):
             match = await find_obj.find()
 
             assert isinstance(match, Match)
 
     @pytest.mark.asyncio
-    async def test_find_returns_none_when_not_found(self, sample_pattern, mock_empty_find_result):
+    async def test_find_returns_none_when_not_found(
+        self, sample_pattern, mock_empty_find_result
+    ):
         """Test find() returns None when no match."""
         find_obj = Find(sample_pattern)
 
@@ -302,7 +336,10 @@ class TestFindConvenienceMethods:
         find_obj = Find(sample_pattern)
 
         with patch.object(
-            find_obj._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find_obj._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ):
             assert await find_obj.exists() is True
 
@@ -396,7 +433,10 @@ class TestFindImageDelegation:
         find.grayscale(True)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ) as mock_find:
             await find.execute()
 
@@ -404,14 +444,19 @@ class TestFindImageDelegation:
             assert options_arg.grayscale is True
 
     @pytest.mark.asyncio
-    async def test_edge_detection_passed_to_options(self, sample_pattern, mock_find_result):
+    async def test_edge_detection_passed_to_options(
+        self, sample_pattern, mock_find_result
+    ):
         """Test that edge_detection option is passed to FindOptions."""
         find = FindImage()
         find._target = sample_pattern
         find.edges(True)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ) as mock_find:
             await find.execute()
 
@@ -419,14 +464,19 @@ class TestFindImageDelegation:
             assert options_arg.edge_detection is True
 
     @pytest.mark.asyncio
-    async def test_scale_invariant_passed_to_options(self, sample_pattern, mock_find_result):
+    async def test_scale_invariant_passed_to_options(
+        self, sample_pattern, mock_find_result
+    ):
         """Test that scale_invariant option is passed to FindOptions."""
         find = FindImage()
         find._target = sample_pattern
         find.scale_invariant(True)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ) as mock_find:
             await find.execute()
 
@@ -434,14 +484,19 @@ class TestFindImageDelegation:
             assert options_arg.scale_invariant is True
 
     @pytest.mark.asyncio
-    async def test_color_tolerance_passed_to_options(self, sample_pattern, mock_find_result):
+    async def test_color_tolerance_passed_to_options(
+        self, sample_pattern, mock_find_result
+    ):
         """Test that color_tolerance option is passed to FindOptions."""
         find = FindImage()
         find._target = sample_pattern
         find.color_tolerance(100)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ) as mock_find:
             await find.execute()
 
@@ -458,7 +513,10 @@ class TestFindImageDelegation:
         find.similarity(0.75)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ) as mock_find:
             await find.execute()
 
@@ -482,7 +540,10 @@ class TestMatchesCollection:
         find = Find(sample_pattern)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ):
             result = await find.execute()
             matches = result.matches
@@ -497,7 +558,10 @@ class TestMatchesCollection:
         find = Find(sample_pattern)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ):
             result = await find.execute()
             matches = result.matches
@@ -511,7 +575,10 @@ class TestMatchesCollection:
         find = Find(sample_pattern)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ):
             result = await find.execute()
 
@@ -732,7 +799,10 @@ class TestFindIntegration:
         find = Find(sample_pattern)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ):
             result = await find.execute()
 
@@ -740,12 +810,17 @@ class TestFindIntegration:
             assert result.duration >= 0
 
     @pytest.mark.asyncio
-    async def test_find_result_pattern_preserved(self, sample_pattern, mock_find_result):
+    async def test_find_result_pattern_preserved(
+        self, sample_pattern, mock_find_result
+    ):
         """Test that pattern is preserved in results."""
         find = Find(sample_pattern)
 
         with patch.object(
-            find._find_action, "find", new_callable=AsyncMock, return_value=mock_find_result
+            find._find_action,
+            "find",
+            new_callable=AsyncMock,
+            return_value=mock_find_result,
         ):
             result = await find.execute()
 

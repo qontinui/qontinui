@@ -158,7 +158,12 @@ class TestImageMatchingStateMachineBuilder:
         builder.screenshots["screen1"] = np.ones((100, 100, 3), dtype=np.uint8) * 200
 
         elements = {
-            "screen1": [{"id": "background", "bbox": {"x": 10, "y": 10, "width": 50, "height": 50}}]
+            "screen1": [
+                {
+                    "id": "background",
+                    "bbox": {"x": 10, "y": 10, "width": 50, "height": 50},
+                }
+            ]
         }
 
         builder.extract_and_track_images(elements)

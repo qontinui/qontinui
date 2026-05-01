@@ -86,13 +86,17 @@ class KeyboardActionExecutor(ActionExecutorBase):
             # Re-raise our own exceptions
             raise
         except Exception as e:
-            logger.error(f"Unexpected error executing {action_type}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error executing {action_type}: {e}", exc_info=True
+            )
             raise ActionExecutionError(
                 action_type=action_type,
                 reason=f"Unexpected error: {e}",
             ) from e
 
-    def _execute_key_down(self, action: Action, typed_config: KeyDownActionConfig | None) -> bool:
+    def _execute_key_down(
+        self, action: Action, typed_config: KeyDownActionConfig | None
+    ) -> bool:
         """Execute KEY_DOWN action - press and hold key.
 
         This is a pure action that only presses the key down.
@@ -134,7 +138,9 @@ class KeyboardActionExecutor(ActionExecutorBase):
             self._emit_action_failure(action, str(e), {"key": key})
             return False
 
-    def _execute_key_up(self, action: Action, typed_config: KeyUpActionConfig | None) -> bool:
+    def _execute_key_up(
+        self, action: Action, typed_config: KeyUpActionConfig | None
+    ) -> bool:
         """Execute KEY_UP action - release key.
 
         This is a pure action that only releases the key.
@@ -175,7 +181,9 @@ class KeyboardActionExecutor(ActionExecutorBase):
             self._emit_action_failure(action, str(e), {"key": key})
             return False
 
-    def _execute_key_press(self, action: Action, typed_config: KeyPressActionConfig | None) -> bool:
+    def _execute_key_press(
+        self, action: Action, typed_config: KeyPressActionConfig | None
+    ) -> bool:
         """Execute KEY_PRESS action - press and release key(s).
 
         This is a pure action that presses and immediately releases key(s).
@@ -214,7 +222,9 @@ class KeyboardActionExecutor(ActionExecutorBase):
             self._emit_action_failure(action, str(e), {"keys": keys})
             return False
 
-    async def _execute_type(self, action: Action, typed_config: TypeActionConfig | None) -> bool:
+    async def _execute_type(
+        self, action: Action, typed_config: TypeActionConfig | None
+    ) -> bool:
         """Execute TYPE action with variable resolution and state string lookup.
 
         Supports:
@@ -254,7 +264,9 @@ class KeyboardActionExecutor(ActionExecutorBase):
             state_id = typed_config.text_source.state_id
             string_ids = typed_config.text_source.string_ids
 
-            logger.debug(f"Looking for state string: state_id={state_id}, string_ids={string_ids}")
+            logger.debug(
+                f"Looking for state string: state_id={state_id}, string_ids={string_ids}"
+            )
 
             if state_id and string_ids:
                 # Access state_map through context.config
@@ -349,9 +361,13 @@ class KeyboardActionExecutor(ActionExecutorBase):
                             "success": True,
                         },
                     )
-                    self._emit_action_success(action, {"text": text, "length": len(text)})
+                    self._emit_action_success(
+                        action, {"text": text, "length": len(text)}
+                    )
                 else:
-                    self._emit_action_failure(action, "accessibility type failed", {"text": text})
+                    self._emit_action_failure(
+                        action, "accessibility type failed", {"text": text}
+                    )
                 return a11y_result.success
 
         # Type the text if we have it

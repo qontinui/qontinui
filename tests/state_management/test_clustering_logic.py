@@ -85,9 +85,9 @@ class TestClusteringLogic:
 
         # 4. Assertions
         # Expectation: ALL 3 merged into 1 unique TrackedImage
-        assert len(builder.tracked_images) == 1, (
-            f"Expected 1 merged menu bar, but found {len(builder.tracked_images)}"
-        )
+        assert (
+            len(builder.tracked_images) == 1
+        ), f"Expected 1 merged menu bar, but found {len(builder.tracked_images)}"
 
         merged_menu = builder.tracked_images[0]
         assert merged_menu.screens_found == {"screen1", "screen2", "screen3"}
@@ -106,9 +106,9 @@ class TestClusteringLogic:
         assert set(state["screensFound"]) == {"screen1", "screen2", "screen3"}
         # Updated behavior: We now create one stateImage PER SCREEN to ensure correct bounding boxes per screen.
         # So for 3 screens, we expect 3 stateImages in the merged state.
-        assert len(state["stateImages"]) == 3, (
-            "Should have 3 stateImages (one per screen) for correct bbox tracking"
-        )
+        assert (
+            len(state["stateImages"]) == 3
+        ), "Should have 3 stateImages (one per screen) for correct bbox tracking"
 
         # Verify screensFound covers all
         screens_found = set()
@@ -139,7 +139,9 @@ class TestClusteringLogic:
             name="Btn",
             source_screenshot_id="screen2",
             source_bbox={"x": 0, "y": 0, "width": 101, "height": 21},  # 1px larger
-            image_data=np.random.randint(0, 255, (21, 101, 3), dtype=np.uint8),  # Different array
+            image_data=np.random.randint(
+                0, 255, (21, 101, 3), dtype=np.uint8
+            ),  # Different array
             screens_found={"screen2"},
         )
 
@@ -165,7 +167,9 @@ class TestClusteringLogic:
                 # PROVE it fails with high threshold
                 pass
             else:
-                pytest.fail("Expected deduplication to FAIL with threshold 0.8 and match 0.75")
+                pytest.fail(
+                    "Expected deduplication to FAIL with threshold 0.8 and match 0.75"
+                )
 
             # Reset
             builder.tracked_images = [img1, img2]

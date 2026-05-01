@@ -334,7 +334,9 @@ class StateExecutionAPI:
             List of permitted-trigger dictionaries. See
             :class:`multistate.core.trigger_introspection.PermittedTrigger`.
         """
-        return self.state_memory.multistate_adapter.get_permitted_triggers(active_state_ids)
+        return self.state_memory.multistate_adapter.get_permitted_triggers(
+            active_state_ids
+        )
 
     def get_blocked_triggers(
         self, active_state_ids: list[str] | None = None
@@ -351,7 +353,9 @@ class StateExecutionAPI:
             List of blocked-trigger dictionaries. See
             :class:`multistate.core.trigger_introspection.BlockedTrigger`.
         """
-        return self.state_memory.multistate_adapter.get_blocked_triggers(active_state_ids)
+        return self.state_memory.multistate_adapter.get_blocked_triggers(
+            active_state_ids
+        )
 
     def get_mermaid_diagram(self, active_state_ids: list[str] | None = None) -> str:
         """Return a Mermaid ``stateDiagram-v2`` source for the loaded machine.
@@ -366,4 +370,6 @@ class StateExecutionAPI:
         Returns:
             Mermaid diagram source string.
         """
-        return self.state_memory.multistate_adapter.get_mermaid_diagram(active_state_ids)
+        return self.state_memory.multistate_adapter.get_mermaid_diagram(
+            active_state_ids
+        )

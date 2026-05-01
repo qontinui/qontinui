@@ -209,7 +209,9 @@ class CDPAccessibilityCapture(IAccessibilityCapture):
         if self._ws_url is None:
             return None
         # Sanitise URL into a safe filename
-        safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in self._ws_url).strip()[:80]
+        safe = "".join(
+            c if c.isalnum() or c in " -_" else "_" for c in self._ws_url
+        ).strip()[:80]
         return self._persistence_dir / f"{safe}.json"
 
     async def _send_command(
@@ -242,7 +244,9 @@ class CDPAccessibilityCapture(IAccessibilityCapture):
             message["params"] = params
 
         # Create future for response
-        future: asyncio.Future[dict[str, Any]] = asyncio.get_event_loop().create_future()
+        future: asyncio.Future[dict[str, Any]] = (
+            asyncio.get_event_loop().create_future()
+        )
         self._pending_responses[msg_id] = future
 
         try:
@@ -271,7 +275,9 @@ class CDPAccessibilityCapture(IAccessibilityCapture):
                         if future and not future.done():
                             if "error" in data:
                                 future.set_exception(
-                                    RuntimeError(data["error"].get("message", "CDP error"))
+                                    RuntimeError(
+                                        data["error"].get("message", "CDP error")
+                                    )
                                 )
                             else:
                                 future.set_result(data.get("result", {}))
@@ -682,7 +688,9 @@ class CDPAccessibilityCapture(IAccessibilityCapture):
             return None
 
         except Exception as e:
-            logger.debug(f"Failed to get bounds for backend node {backend_node_id}: {e}")
+            logger.debug(
+                f"Failed to get bounds for backend node {backend_node_id}: {e}"
+            )
             return None
 
     async def _get_bounds_for_ref(self, ref: str) -> AccessibilityBounds | None:
@@ -1058,7 +1066,9 @@ class CDPAccessibilityCapture(IAccessibilityCapture):
                 {"text": text},
             )
 
-            logger.info(f"Typed into {ref}: {text[:20]}{'...' if len(text) > 20 else ''}")
+            logger.info(
+                f"Typed into {ref}: {text[:20]}{'...' if len(text) > 20 else ''}"
+            )
             return True
 
         except Exception as e:

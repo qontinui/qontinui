@@ -538,7 +538,11 @@ class StatePersistence:
     # =========================================================================
 
     def save_state_group(
-        self, group_id: str, name: str, state_ids: list[str], metadata: dict[str, Any] | None = None
+        self,
+        group_id: str,
+        name: str,
+        state_ids: list[str],
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """Save or update a state group.
 

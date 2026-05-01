@@ -138,7 +138,9 @@ class TestLlmFallbackTriggeredWhenFuzzyBelowThreshold:
         the LLM client's complete() should be invoked."""
         capture = _make_capture()
         llm_client = _make_llm_client("INDEX: 2\nCONFIDENCE: 0.95")
-        backend = SemanticAccessibilityBackend(capture, llm_client=llm_client, llm_threshold=0.7)
+        backend = SemanticAccessibilityBackend(
+            capture, llm_client=llm_client, llm_threshold=0.7
+        )
 
         low_matches = [_low_score_match(NODES[0], 0.3)]
 
@@ -161,7 +163,9 @@ class TestLlmFallbackNotTriggeredWhenFuzzyAboveThreshold:
         """When best fuzzy score >= llm_threshold, LLM is NOT called."""
         capture = _make_capture()
         llm_client = _make_llm_client()
-        backend = SemanticAccessibilityBackend(capture, llm_client=llm_client, llm_threshold=0.7)
+        backend = SemanticAccessibilityBackend(
+            capture, llm_client=llm_client, llm_threshold=0.7
+        )
 
         high_matches = [_high_score_match(NODES[2], 0.9)]
 
@@ -203,7 +207,9 @@ class TestLlmFindParsesValidResponse:
         at index 2 with confidence 0.95 and match_type 'llm'."""
         capture = _make_capture()
         llm_client = _make_llm_client("INDEX: 2\nCONFIDENCE: 0.95")
-        backend = SemanticAccessibilityBackend(capture, llm_client=llm_client, llm_threshold=0.7)
+        backend = SemanticAccessibilityBackend(
+            capture, llm_client=llm_client, llm_threshold=0.7
+        )
 
         low_matches = [_low_score_match(NODES[0], 0.2)]
 
@@ -231,7 +237,9 @@ class TestLlmFindHandlesNoneResponse:
         """LLM returning 'INDEX: none' should yield empty results."""
         capture = _make_capture()
         llm_client = _make_llm_client("INDEX: none\nCONFIDENCE: 0.0")
-        backend = SemanticAccessibilityBackend(capture, llm_client=llm_client, llm_threshold=0.7)
+        backend = SemanticAccessibilityBackend(
+            capture, llm_client=llm_client, llm_threshold=0.7
+        )
 
         low_matches = [_low_score_match(NODES[0], 0.2)]
 
@@ -252,7 +260,9 @@ class TestLlmFindHandlesOutOfBoundsIndex:
         """LLM returning an index beyond the node list should yield empty results."""
         capture = _make_capture()
         llm_client = _make_llm_client("INDEX: 999\nCONFIDENCE: 0.8")
-        backend = SemanticAccessibilityBackend(capture, llm_client=llm_client, llm_threshold=0.7)
+        backend = SemanticAccessibilityBackend(
+            capture, llm_client=llm_client, llm_threshold=0.7
+        )
 
         low_matches = [_low_score_match(NODES[0], 0.2)]
 
@@ -272,7 +282,9 @@ class TestLlmFindHandlesLowConfidence:
         """LLM returning confidence below min_confidence should yield empty results."""
         capture = _make_capture()
         llm_client = _make_llm_client("INDEX: 1\nCONFIDENCE: 0.3")
-        backend = SemanticAccessibilityBackend(capture, llm_client=llm_client, llm_threshold=0.7)
+        backend = SemanticAccessibilityBackend(
+            capture, llm_client=llm_client, llm_threshold=0.7
+        )
 
         low_matches = [_low_score_match(NODES[0], 0.2)]
 
@@ -293,7 +305,9 @@ class TestLlmFindHandlesMalformedResponse:
         """LLM returning garbage text should yield empty results without crash."""
         capture = _make_capture()
         llm_client = _make_llm_client("Sorry, I cannot help with that request.")
-        backend = SemanticAccessibilityBackend(capture, llm_client=llm_client, llm_threshold=0.7)
+        backend = SemanticAccessibilityBackend(
+            capture, llm_client=llm_client, llm_threshold=0.7
+        )
 
         low_matches = [_low_score_match(NODES[0], 0.2)]
 

@@ -121,7 +121,9 @@ class ProcessRepetitionOptionsBuilder:
         self.delay = delay
         return self
 
-    def set_until_success(self, until_success: bool) -> "ProcessRepetitionOptionsBuilder":
+    def set_until_success(
+        self, until_success: bool
+    ) -> "ProcessRepetitionOptionsBuilder":
         """Set whether to stop early on success.
 
         Args:

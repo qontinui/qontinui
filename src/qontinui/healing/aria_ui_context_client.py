@@ -52,7 +52,9 @@ class AriaUIContextClient(AriaUIClient):
             max_history: Maximum number of history entries to include.
             model: Model name override.
         """
-        super().__init__(endpoint=endpoint, timeout=timeout, model=model or self.MODEL_NAME)
+        super().__init__(
+            endpoint=endpoint, timeout=timeout, model=model or self.MODEL_NAME
+        )
         self._max_history = max_history
 
     def find_element(

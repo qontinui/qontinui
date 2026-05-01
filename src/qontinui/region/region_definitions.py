@@ -75,7 +75,9 @@ class RegionDefinitions:
         """
         return self.define(name, builder.build())
 
-    def define_dynamic(self, name: str, factory: Callable[[], Region]) -> "RegionDefinitions":
+    def define_dynamic(
+        self, name: str, factory: Callable[[], Region]
+    ) -> "RegionDefinitions":
         """Define a dynamic region that's evaluated when accessed.
 
         Args:
@@ -208,4 +210,6 @@ class RegionDefinitions:
         self.define("footer", Region(0, screen.height - 100, screen.width, 100))
         self.define("sidebar_left", Region(0, 0, 250, screen.height))
         self.define("sidebar_right", Region(screen.width - 250, 0, 250, screen.height))
-        self.define("content", Region(250, 100, screen.width - 500, screen.height - 200))
+        self.define(
+            "content", Region(250, 100, screen.width - 500, screen.height - 200)
+        )

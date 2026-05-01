@@ -205,7 +205,9 @@ class TrajectoryConverter:
             first_step = steps[0]
 
             # Generate state name from thought
-            thought_text = first_step.thought.reasoning[:50] if first_step.thought else ""
+            thought_text = (
+                first_step.thought.reasoning[:50] if first_step.thought else ""
+            )
             state_name = self._generate_state_name(thought_text, i)
 
             # Get screenshot path
@@ -220,7 +222,9 @@ class TrajectoryConverter:
                 source_step_index=first_step.step_index,
                 confidence=1.0,
                 metadata={
-                    "thought": first_step.thought.reasoning if first_step.thought else None,
+                    "thought": (
+                        first_step.thought.reasoning if first_step.thought else None
+                    ),
                     "step_count": len(steps),
                     "step_indices": [s.step_index for s in steps],
                 },
@@ -364,7 +368,9 @@ class TrajectoryConverter:
                     "to_state": t.to_state_id,
                     "action_type": t.action_type,
                     "target": (
-                        {"x": t.target_x, "y": t.target_y} if t.target_x is not None else None
+                        {"x": t.target_x, "y": t.target_y}
+                        if t.target_x is not None
+                        else None
                     ),
                     "action_value": t.action_value,
                     "thought": t.thought,

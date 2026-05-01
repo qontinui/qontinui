@@ -47,9 +47,13 @@ def create_state_discovery_workflow() -> Workflow:
         ],
         connections=Connections(
             root={
-                "find_buttons": {"main": [[{"action": "find_icons", "type": "main", "index": 0}]]},
+                "find_buttons": {
+                    "main": [[{"action": "find_icons", "type": "main", "index": 0}]]
+                },
                 "find_icons": {
-                    "main": [[{"action": "find_text_fields", "type": "main", "index": 0}]]
+                    "main": [
+                        [{"action": "find_text_fields", "type": "main", "index": 0}]
+                    ]
                 },
             }
         ),

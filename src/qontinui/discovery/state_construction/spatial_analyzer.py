@@ -77,7 +77,9 @@ class SpatialAnalyzer:
         # Calculate distance between centers
         center1 = (x1 + w1 / 2, y1 + h1 / 2)
         center2 = (x2 + w2 / 2, y2 + h2 / 2)
-        distance = np.sqrt((center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2)
+        distance = np.sqrt(
+            (center2[0] - center1[0]) ** 2 + (center2[1] - center1[1]) ** 2
+        )
 
         properties = {}
         relationship = "none"

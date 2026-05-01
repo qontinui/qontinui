@@ -88,7 +88,9 @@ class _RunRecorder:
         try:
             import psycopg  # type: ignore[import-not-found]
         except ImportError:
-            logger.warning("psycopg not available — VGA run history will not be persisted")
+            logger.warning(
+                "psycopg not available — VGA run history will not be persisted"
+            )
             self._disabled = True
             return self
         try:
@@ -219,7 +221,15 @@ def _load_state_machine_from_pg(pg_url: str, sm_id: UUID) -> VgaStateMachine:
             if row is None:
                 raise RuntimeError(f"state machine {sm_id} not found")
 
-            _id, name, target_process, target_os, grounding_model, private, state_graph = row
+            (
+                _id,
+                name,
+                target_process,
+                target_os,
+                grounding_model,
+                private,
+                state_graph,
+            ) = row
 
             # state_graph is JSONB — psycopg returns it as a dict already.
             # The builder stores the canonical JSON inside this column; we
@@ -244,7 +254,9 @@ def _load_actions(actions_path: Path) -> list[VgaAction]:
     """Parse the action-sequence JSON file into :class:`VgaAction` models."""
     payload = json.loads(actions_path.read_text(encoding="utf-8"))
     if not isinstance(payload, list):
-        raise RuntimeError(f"action sequence must be a JSON list; got {type(payload).__name__}")
+        raise RuntimeError(
+            f"action sequence must be a JSON list; got {type(payload).__name__}"
+        )
     return [VgaAction.model_validate(item) for item in payload]
 
 
@@ -305,7 +317,9 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 shadow_logger = ShadowSampleLogger(pg_url=args.pg_url)
             except Exception:
-                logger.exception("Failed to construct ShadowSampleLogger; continuing without it")
+                logger.exception(
+                    "Failed to construct ShadowSampleLogger; continuing without it"
+                )
                 shadow_logger = None
         runtime = _build_runtime(shadow_logger=shadow_logger)
     except Exception as exc:

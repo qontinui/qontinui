@@ -69,7 +69,9 @@ class TestHighlightAction:
         )
 
         # Mock the overlay
-        with patch("src.qontinui.action_executors.mouse.HighlightOverlay") as mock_overlay_class:
+        with patch(
+            "src.qontinui.action_executors.mouse.HighlightOverlay"
+        ) as mock_overlay_class:
             mock_overlay = MagicMock()
             mock_overlay_class.return_value = mock_overlay
 
@@ -105,7 +107,9 @@ class TestHighlightAction:
         )
 
         # Mock the overlay
-        with patch("src.qontinui.action_executors.mouse.HighlightOverlay") as mock_overlay_class:
+        with patch(
+            "src.qontinui.action_executors.mouse.HighlightOverlay"
+        ) as mock_overlay_class:
             mock_overlay = MagicMock()
             mock_overlay_class.return_value = mock_overlay
 
@@ -141,7 +145,9 @@ class TestHighlightAction:
         )
 
         # Mock the overlay
-        with patch("src.qontinui.action_executors.mouse.HighlightOverlay") as mock_overlay_class:
+        with patch(
+            "src.qontinui.action_executors.mouse.HighlightOverlay"
+        ) as mock_overlay_class:
             mock_overlay = MagicMock()
             mock_overlay_class.return_value = mock_overlay
 
@@ -174,7 +180,9 @@ class TestHighlightAction:
         )
 
         # Mock the overlay
-        with patch("src.qontinui.action_executors.mouse.HighlightOverlay") as mock_overlay_class:
+        with patch(
+            "src.qontinui.action_executors.mouse.HighlightOverlay"
+        ) as mock_overlay_class:
             mock_overlay = MagicMock()
             mock_overlay_class.return_value = mock_overlay
 
@@ -227,7 +235,9 @@ class TestHighlightAction:
         )
 
         # Mock the overlay to raise an exception
-        with patch("src.qontinui.action_executors.mouse.HighlightOverlay") as mock_overlay_class:
+        with patch(
+            "src.qontinui.action_executors.mouse.HighlightOverlay"
+        ) as mock_overlay_class:
             mock_overlay_class.side_effect = RuntimeError("Overlay creation failed")
 
             # Act

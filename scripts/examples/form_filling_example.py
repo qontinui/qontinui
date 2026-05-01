@@ -405,8 +405,12 @@ async def demo_find_multiple(demo: FormFillingDemo, url: str):
 
             if results:
                 for result in results:
-                    text = result.element.text[:30] if result.element.text else "(no text)"
-                    logger.info(f"  [{result.index}] <{result.element.tag_name}> {text}")
+                    text = (
+                        result.element.text[:30] if result.element.text else "(no text)"
+                    )
+                    logger.info(
+                        f"  [{result.index}] <{result.element.tag_name}> {text}"
+                    )
                     logger.info(f"       Confidence: {result.confidence:.2f}")
             else:
                 logger.info("  No matches found")

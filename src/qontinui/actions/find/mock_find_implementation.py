@@ -22,7 +22,9 @@ from .matches import Matches
 logger = logging.getLogger(__name__)
 
 # Flag to enable API-based historical data fetching
-USE_API_HISTORICAL_DATA = os.getenv("QONTINUI_USE_API_HISTORICAL_DATA", "true").lower() == "true"
+USE_API_HISTORICAL_DATA = (
+    os.getenv("QONTINUI_USE_API_HISTORICAL_DATA", "true").lower() == "true"
+)
 
 
 class MockFindImplementation:
@@ -174,11 +176,15 @@ class MockFindImplementation:
         )
 
         if snapshot and hasattr(snapshot, "matches") and snapshot.matches:
-            logger.debug(f"Using local historical snapshot with {len(snapshot.matches)} matches")
+            logger.debug(
+                f"Using local historical snapshot with {len(snapshot.matches)} matches"
+            )
             return snapshot.matches  # type: ignore[no-any-return]
 
         if snapshot and hasattr(snapshot, "match_list") and snapshot.match_list:
-            logger.debug(f"Using local historical snapshot with {len(snapshot.match_list)} matches")
+            logger.debug(
+                f"Using local historical snapshot with {len(snapshot.match_list)} matches"
+            )
             return snapshot.match_list  # type: ignore[no-any-return]
 
         return []
@@ -260,7 +266,10 @@ class MockFindImplementation:
         """
         # Check if pattern's owner state is active
         if hasattr(pattern, "owner_state_name") and pattern.owner_state_name:
-            if pattern.owner_state_name not in active_states and pattern.owner_state_name != "NULL":
+            if (
+                pattern.owner_state_name not in active_states
+                and pattern.owner_state_name != "NULL"
+            ):
                 logger.debug(f"Pattern's state '{pattern.owner_state_name}' not active")
                 return []
 
@@ -273,7 +282,10 @@ class MockFindImplementation:
         ):
             if pattern.owner_state_name != "NULL":
                 probability = (
-                    self.state_management.get_state_probability(pattern.owner_state_name) / 100.0
+                    self.state_management.get_state_probability(
+                        pattern.owner_state_name
+                    )
+                    / 100.0
                 )
 
         if random.random() >= probability:

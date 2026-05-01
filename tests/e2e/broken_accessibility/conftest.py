@@ -32,14 +32,20 @@ logger = logging.getLogger(__name__)
 _STACK = os.environ.get("QONTINUI_E2E_OMNIPARSER_STACK", "proxy").lower()
 if _STACK == "standalone":
     OMNIPARSER_COMPOSE_FILE = (
-        Path(__file__).resolve().parents[3] / "docker" / "omniparser" / "docker-compose.yml"
+        Path(__file__).resolve().parents[3]
+        / "docker"
+        / "omniparser"
+        / "docker-compose.yml"
     )
     OMNIPARSER_COMPOSE_SERVICES: list[str] = []  # bring up everything
     OMNIPARSER_BASE_URL = "http://localhost:8080"
     OMNIPARSER_HEALTH_URL = "http://localhost:8080/health"
 else:
     OMNIPARSER_COMPOSE_FILE = (
-        Path(__file__).resolve().parents[3] / "docker" / "ai-proxy" / "docker-compose.yml"
+        Path(__file__).resolve().parents[3]
+        / "docker"
+        / "ai-proxy"
+        / "docker-compose.yml"
     )
     # Start only proxy + omniparser — llama-swap is behind the ``full``
     # profile and not needed for the broken-accessibility suite.
@@ -107,7 +113,9 @@ def omniparser_service() -> Iterator[str]:
         timeout=300,
     )
     if up.returncode != 0:
-        pytest.skip(f"docker compose up failed (rc={up.returncode}): stderr={up.stderr[:500]}")
+        pytest.skip(
+            f"docker compose up failed (rc={up.returncode}): stderr={up.stderr[:500]}"
+        )
 
     ready = _wait_for_health(OMNIPARSER_HEALTH_URL, OMNIPARSER_STARTUP_TIMEOUT_S)
     if not ready:
@@ -176,7 +184,11 @@ def _wait_for_window(title_fragment: str, timeout_s: float = 15.0) -> bool:
 
     deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
-        wins = [w for w in gw.getAllWindows() if title_fragment.lower() in (w.title or "").lower()]
+        wins = [
+            w
+            for w in gw.getAllWindows()
+            if title_fragment.lower() in (w.title or "").lower()
+        ]
         if any(w.visible and w.width > 0 for w in wins):
             return True
         time.sleep(0.25)

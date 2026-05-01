@@ -135,7 +135,9 @@ class Matches:
         MatchSorters.by_similarity(self._matches, reverse)
         return self
 
-    def sort_by_position(self, top_to_bottom: bool = True, left_to_right: bool = True) -> "Matches":
+    def sort_by_position(
+        self, top_to_bottom: bool = True, left_to_right: bool = True
+    ) -> "Matches":
         """Sort matches by position.
 
         Args:

@@ -19,12 +19,7 @@ truth for both the Rust judge and this Python client.
 
 from .pixel_diff import pixel_diff_verdict
 from .record_action_verification import record_wsm_verdict
-from .wsm_client import (
-    WSMClient,
-    WSMVerdict,
-    load_prompt_config,
-    verify_action,
-)
+from .wsm_client import WSMClient, WSMVerdict, load_prompt_config, verify_action
 
 __all__ = [
     "WSMVerdict",

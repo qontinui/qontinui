@@ -193,7 +193,9 @@ class EnhancedStateMemory(StateMemory):
             return
 
         group_states = self.state_groups[group_name]
-        logger.info(f"Deactivating group '{group_name}' with {len(group_states)} states")
+        logger.info(
+            f"Deactivating group '{group_name}' with {len(group_states)} states"
+        )
 
         # Deactivate all states together
         self.active_states.difference_update(group_states)

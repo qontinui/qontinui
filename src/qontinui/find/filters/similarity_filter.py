@@ -36,7 +36,9 @@ class SimilarityFilter(MatchFilter):
             ValueError: If min_similarity is not in range [0.0, 1.0]
         """
         if not 0.0 <= min_similarity <= 1.0:
-            raise ValueError(f"min_similarity must be in [0.0, 1.0], got {min_similarity}")
+            raise ValueError(
+                f"min_similarity must be in [0.0, 1.0], got {min_similarity}"
+            )
         self.min_similarity = min_similarity
 
     def filter(self, matches: list[Match]) -> list[Match]:
@@ -58,10 +60,14 @@ class SimilarityFilter(MatchFilter):
         for match in matches:
             # Validate similarity score
             if not isinstance(match.similarity, int | float):
-                raise ValueError(f"Match has invalid similarity score: {match.similarity}")
+                raise ValueError(
+                    f"Match has invalid similarity score: {match.similarity}"
+                )
 
             if not 0.0 <= match.similarity <= 1.0:
-                raise ValueError(f"Match similarity must be in [0.0, 1.0], got {match.similarity}")
+                raise ValueError(
+                    f"Match similarity must be in [0.0, 1.0], got {match.similarity}"
+                )
 
             # Keep matches that meet or exceed threshold
             if match.similarity >= self.min_similarity:

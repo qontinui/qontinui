@@ -127,7 +127,9 @@ class ApprovedTemplate:
             element_type=boundary_data.get("element_type", "unknown"),
             mask=np.array(boundary_data["mask"]) if boundary_data.get("mask") else None,
             pixel_data=(
-                np.array(boundary_data["pixel_data"]) if boundary_data.get("pixel_data") else None
+                np.array(boundary_data["pixel_data"])
+                if boundary_data.get("pixel_data")
+                else None
             ),
             metadata=boundary_data.get("metadata", {}),
         )

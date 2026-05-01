@@ -357,7 +357,11 @@ class TestDiscoverStatesFromRenders:
                         "tag": "div",
                         "attributes": {"data-testid": "app"},
                         "children": [
-                            {"tag": "nav", "attributes": {"data-ui-id": "nav"}, "children": []},
+                            {
+                                "tag": "nav",
+                                "attributes": {"data-ui-id": "nav"},
+                                "children": [],
+                            },
                             {
                                 "tag": "main",
                                 "attributes": {"data-testid": "dashboard"},
@@ -376,13 +380,21 @@ class TestDiscoverStatesFromRenders:
                         "tag": "div",
                         "attributes": {"data-testid": "app"},
                         "children": [
-                            {"tag": "nav", "attributes": {"data-ui-id": "nav"}, "children": []},
+                            {
+                                "tag": "nav",
+                                "attributes": {"data-ui-id": "nav"},
+                                "children": [],
+                            },
                             {
                                 "tag": "main",
                                 "attributes": {"data-testid": "dashboard"},
                                 "children": [],
                             },
-                            {"tag": "div", "attributes": {"data-testid": "modal"}, "children": []},
+                            {
+                                "tag": "div",
+                                "attributes": {"data-testid": "modal"},
+                                "children": [],
+                            },
                         ],
                     },
                 },
@@ -396,7 +408,11 @@ class TestDiscoverStatesFromRenders:
                         "tag": "div",
                         "attributes": {"data-testid": "app"},
                         "children": [
-                            {"tag": "nav", "attributes": {"data-ui-id": "nav"}, "children": []},
+                            {
+                                "tag": "nav",
+                                "attributes": {"data-ui-id": "nav"},
+                                "children": [],
+                            },
                             {
                                 "tag": "main",
                                 "attributes": {"data-testid": "settings"},
@@ -471,8 +487,12 @@ class TestHelperFunctions:
 
         result = discover_states_from_renders(renders)
 
-        r1_elements = get_elements_by_render("r1", result.element_to_renders, result.elements)
-        r2_elements = get_elements_by_render("r2", result.element_to_renders, result.elements)
+        r1_elements = get_elements_by_render(
+            "r1", result.element_to_renders, result.elements
+        )
+        r2_elements = get_elements_by_render(
+            "r2", result.element_to_renders, result.elements
+        )
 
         r1_ids = {e.id for e in r1_elements}
         r2_ids = {e.id for e in r2_elements}

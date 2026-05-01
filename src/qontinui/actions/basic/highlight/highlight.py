@@ -52,10 +52,14 @@ class Highlight(ActionInterface):
         highlight_options = action_result.action_config
 
         # Find regions to highlight
-        regions = await self._find_regions_to_highlight(action_result, object_collections)
+        regions = await self._find_regions_to_highlight(
+            action_result, object_collections
+        )
         if not regions:
             object.__setattr__(action_result, "success", False)
-            object.__setattr__(action_result, "output_text", "No regions found to highlight")
+            object.__setattr__(
+                action_result, "output_text", "No regions found to highlight"
+            )
             return
 
         # Perform highlighting
@@ -108,7 +112,9 @@ class Highlight(ActionInterface):
             results = await self.find_action.find(patterns, options)
 
             service = CoordinateService.get_instance()
-            for result, (_, _, monitor_index) in zip(results, patterns_with_info, strict=False):
+            for result, (_, _, monitor_index) in zip(
+                results, patterns_with_info, strict=False
+            ):
                 if result.found:
                     # Extract and translate regions from all matches
                     for match in result.matches:

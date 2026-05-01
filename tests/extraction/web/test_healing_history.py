@@ -308,15 +308,22 @@ class TestHealingHistory:
         history = HealingHistory()
 
         assert history._extract_url_pattern("https://example.com/page") == "example.com"
-        assert history._extract_url_pattern("https://sub.example.com/page") == "sub.example.com"
-        assert history._extract_url_pattern("http://localhost:3000/") == "localhost:3000"
+        assert (
+            history._extract_url_pattern("https://sub.example.com/page")
+            == "sub.example.com"
+        )
+        assert (
+            history._extract_url_pattern("http://localhost:3000/") == "localhost:3000"
+        )
 
     def test_extract_selector_pattern(self) -> None:
         """Test selector pattern extraction."""
         history = HealingHistory()
 
         # nth-child should be generalized
-        pattern = history._extract_selector_pattern("div.container > button:nth-child(3)")
+        pattern = history._extract_selector_pattern(
+            "div.container > button:nth-child(3)"
+        )
         assert ":nth-*" in pattern
         assert "3" not in pattern
 

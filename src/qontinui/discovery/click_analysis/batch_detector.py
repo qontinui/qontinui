@@ -213,7 +213,9 @@ class BatchDetector:
                 click_location=location,
                 frame_id=str(i),
             )
-            for i, (frame, location) in enumerate(zip(frames, click_locations, strict=True))
+            for i, (frame, location) in enumerate(
+                zip(frames, click_locations, strict=True)
+            )
         ]
 
         results = self.detect_batch(items)
@@ -265,11 +267,15 @@ class BatchDetector:
                 if candidates:
                     for candidate in candidates:
                         if self.config.enable_element_classification:
-                            element_type, confidence = context_analyzer.get_element_type_confidence(
-                                frame, candidate, click_location
+                            element_type, confidence = (
+                                context_analyzer.get_element_type_confidence(
+                                    frame, candidate, click_location
+                                )
                             )
                             candidate.element_type = element_type
-                            candidate.confidence = (candidate.confidence + confidence) / 2
+                            candidate.confidence = (
+                                candidate.confidence + confidence
+                            ) / 2
 
                     candidates.sort(key=lambda c: -c.confidence)
 
@@ -317,11 +323,15 @@ class BatchDetector:
                 if candidates:
                     for candidate in candidates:
                         if self.config.enable_element_classification:
-                            element_type, confidence = context_analyzer.get_element_type_confidence(
-                                frame, candidate, click_location
+                            element_type, confidence = (
+                                context_analyzer.get_element_type_confidence(
+                                    frame, candidate, click_location
+                                )
                             )
                             candidate.element_type = element_type
-                            candidate.confidence = (candidate.confidence + confidence) / 2
+                            candidate.confidence = (
+                                candidate.confidence + confidence
+                            ) / 2
 
                     candidates.sort(key=lambda c: -c.confidence)
 

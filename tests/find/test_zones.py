@@ -47,10 +47,7 @@ import pytest
 from qontinui.find.detections import Detections
 from qontinui.find.line_zone import LineZone, Point
 from qontinui.find.zones import PolygonZone, Position
-from qontinui.state_management.zone_condition import (
-    ZoneCondition,
-    ZoneConditionEvaluator,
-)
+from qontinui.state_management.zone_condition import ZoneCondition, ZoneConditionEvaluator
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -76,7 +73,12 @@ def _make_dets_at(centers: list[tuple[int, int]], box_size: int = 20) -> Detecti
     n = len(centers)
     xyxy = np.empty((n, 4), dtype=np.int_)
     for i, (cx, cy) in enumerate(centers):
-        xyxy[i] = [cx - box_size // 2, cy - box_size // 2, cx + box_size // 2, cy + box_size // 2]
+        xyxy[i] = [
+            cx - box_size // 2,
+            cy - box_size // 2,
+            cx + box_size // 2,
+            cy + box_size // 2,
+        ]
     return Detections(
         xyxy=xyxy,
         confidence=np.ones(n, dtype=np.float64),
@@ -343,8 +345,12 @@ class TestZoneConditionEvaluator:
         evaluator = ZoneConditionEvaluator()
         zone1 = _square_zone(0, 0, 500)
         zone2 = _square_zone(0, 0, 50)  # small zone
-        evaluator.register("big", ZoneCondition(zone=zone1, operator=">=", count_threshold=1))
-        evaluator.register("small", ZoneCondition(zone=zone2, operator=">=", count_threshold=1))
+        evaluator.register(
+            "big", ZoneCondition(zone=zone1, operator=">=", count_threshold=1)
+        )
+        evaluator.register(
+            "small", ZoneCondition(zone=zone2, operator=">=", count_threshold=1)
+        )
 
         dets = _make_dets_at([(250, 250)])  # inside big, outside small
         results = evaluator.evaluate_all(dets)
@@ -354,8 +360,12 @@ class TestZoneConditionEvaluator:
     def test_triggered(self):
         evaluator = ZoneConditionEvaluator()
         zone = _square_zone(0, 0, 500)
-        evaluator.register("yes", ZoneCondition(zone=zone, operator=">=", count_threshold=1))
-        evaluator.register("no", ZoneCondition(zone=zone, operator=">=", count_threshold=99))
+        evaluator.register(
+            "yes", ZoneCondition(zone=zone, operator=">=", count_threshold=1)
+        )
+        evaluator.register(
+            "no", ZoneCondition(zone=zone, operator=">=", count_threshold=99)
+        )
 
         dets = _make_dets_at([(100, 100)])
         triggered = evaluator.triggered(dets)
@@ -365,7 +375,9 @@ class TestZoneConditionEvaluator:
     def test_unregister(self):
         evaluator = ZoneConditionEvaluator()
         zone = _square_zone(0, 0, 500)
-        evaluator.register("a", ZoneCondition(zone=zone, operator=">=", count_threshold=1))
+        evaluator.register(
+            "a", ZoneCondition(zone=zone, operator=">=", count_threshold=1)
+        )
         evaluator.unregister("a")
         assert "a" not in evaluator.conditions
 

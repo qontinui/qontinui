@@ -165,7 +165,9 @@ class TransitionReliability:
 
             # Trim old entries
             if len(self._history[key]) > self.max_history_per_transition:
-                self._history[key] = self._history[key][-self.max_history_per_transition :]
+                self._history[key] = self._history[key][
+                    -self.max_history_per_transition :
+                ]
 
         logger.debug(
             f"Recorded {'success' if success else 'failure'} for {from_state} -> {to_state}"
@@ -340,7 +342,9 @@ class TransitionReliability:
         all_stats = self.get_all_stats()
         return [s for s in all_stats if s.is_failing and s.failures >= min_failures]
 
-    def clear_history(self, from_state: str | None = None, to_state: str | None = None) -> int:
+    def clear_history(
+        self, from_state: str | None = None, to_state: str | None = None
+    ) -> int:
         """Clear transition history.
 
         Args:

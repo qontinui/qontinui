@@ -299,7 +299,9 @@ class FeatureIdentifier:
                 defining.add(element.element_id)
 
             # Check visual distinctiveness
-            if screenshot is not None and self._is_visually_distinctive(element, screenshot):
+            if screenshot is not None and self._is_visually_distinctive(
+                element, screenshot
+            ):
                 defining.add(element.element_id)
 
         return defining
@@ -318,12 +320,15 @@ class FeatureIdentifier:
         similar_count = sum(
             1
             for e in all_elements
-            if e.element_type == element.element_type and e.element_id != element.element_id
+            if e.element_type == element.element_type
+            and e.element_id != element.element_id
         )
 
         return similar_count == 0
 
-    def _is_visually_distinctive(self, element: Element, screenshot: np.ndarray) -> bool:
+    def _is_visually_distinctive(
+        self, element: Element, screenshot: np.ndarray
+    ) -> bool:
         """Check if an element is visually distinctive.
 
         Args:
@@ -367,7 +372,9 @@ class FeatureIdentifier:
 
         # Analyze shape using contours
         edges = cv2.Canny(gray, 50, 150)
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         # Multiple distinct contours suggest complex shape
         is_shape_distinctive = len(contours) > 3

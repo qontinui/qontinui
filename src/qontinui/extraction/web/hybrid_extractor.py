@@ -131,7 +131,9 @@ class HybridContext:
     screenshot_format: str = "jpeg"
 
     # DOM context
-    elements: list[InteractiveElement] | list[FrameAwareElement] = field(default_factory=list)
+    elements: list[InteractiveElement] | list[FrameAwareElement] = field(
+        default_factory=list
+    )
     elements_formatted: str = ""  # LLM-friendly format
 
     # Accessibility context (optional)
@@ -152,12 +154,15 @@ class HybridContext:
             "url": self.url,
             "title": self.title,
             "viewport": list(self.viewport),
-            "screenshot_base64": self.screenshot_base64[:100] + "...",  # Truncate for display
+            "screenshot_base64": self.screenshot_base64[:100]
+            + "...",  # Truncate for display
             "screenshot_format": self.screenshot_format,
             "element_count": len(self.elements),
             "elements_formatted": self.elements_formatted,
             "accessibility_tree_text": (
-                self.accessibility_tree_text[:500] + "..." if self.accessibility_tree_text else ""
+                self.accessibility_tree_text[:500] + "..."
+                if self.accessibility_tree_text
+                else ""
             ),
             "scroll_x": self.scroll_x,
             "scroll_y": self.scroll_y,
@@ -276,7 +281,9 @@ class HybridExtractor:
         self.parallel_extraction = parallel_extraction
 
         self.formatter = LLMFormatter()
-        self.a11y_extractor = AccessibilityExtractor() if include_accessibility else None
+        self.a11y_extractor = (
+            AccessibilityExtractor() if include_accessibility else None
+        )
 
     async def extract(self, page: Page) -> HybridContext:
         """
@@ -297,9 +304,9 @@ class HybridExtractor:
         viewport = page.viewport_size or {"width": 1920, "height": 1080}
 
         # Define extraction tasks
-        async def extract_elements() -> tuple[
-            list[InteractiveElement] | list[FrameAwareElement], int, bool
-        ]:
+        async def extract_elements() -> (
+            tuple[list[InteractiveElement] | list[FrameAwareElement], int, bool]
+        ):
             """Extract interactive elements."""
             if self.include_iframes:
                 frame_result = await extract_across_frames(
@@ -316,7 +323,9 @@ class HybridExtractor:
                 from .interactive_element_extractor import InteractiveElementExtractor
 
                 extractor = InteractiveElementExtractor()
-                elements = await extractor.extract_interactive_elements(page, "hybrid_extract")
+                elements = await extractor.extract_interactive_elements(
+                    page, "hybrid_extract"
+                )
                 return elements[: self.max_elements], 1, False
 
         async def extract_a11y() -> str:
@@ -396,7 +405,8 @@ class HybridExtractor:
         if context.elements:
             # Convert to InteractiveElement list if frame-aware
             plain_elements = [
-                e.element if isinstance(e, FrameAwareElement) else e for e in context.elements
+                e.element if isinstance(e, FrameAwareElement) else e
+                for e in context.elements
             ]
             # Use existing extractor or create temporary one
             a11y = self.a11y_extractor or AccessibilityExtractor()
@@ -513,7 +523,8 @@ class StateTracker:
         diff: dict[str, Any] = {
             "url_changed": before.context.url != after.context.url,
             "title_changed": before.context.title != after.context.title,
-            "element_count_changed": len(before.context.elements) != len(after.context.elements),
+            "element_count_changed": len(before.context.elements)
+            != len(after.context.elements),
             "state_hash_changed": before.state_hash != after.state_hash,
         }
 

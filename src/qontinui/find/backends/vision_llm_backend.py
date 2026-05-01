@@ -28,7 +28,9 @@ class VisionLLMBackend(DetectionBackend):
     def __init__(self, llm_client: Any) -> None:
         self._client = llm_client
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find element by asking a vision LLM.
 
         Args:

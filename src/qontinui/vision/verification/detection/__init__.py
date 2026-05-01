@@ -10,9 +10,9 @@ discovered GUI environment for improved accuracy:
 
 from qontinui.vision.verification.detection.ocr import OCREngine, OCRResult, get_ocr_engine
 from qontinui.vision.verification.detection.template import (
-    TemplateEngine,
-    TemplateMatch,
-    get_template_engine,
+                                                        TemplateEngine,
+                                                        TemplateMatch,
+                                                        get_template_engine,
 )
 
 __all__ = [

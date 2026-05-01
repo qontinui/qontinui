@@ -317,7 +317,9 @@ class ShellScriptActionConfig(BaseModel):
     exit_code_variable: str | None = Field(None, alias="exitCodeVariable")
     capture_stderr: bool | None = Field(False, alias="captureStderr")
     stderr_variable: str | None = Field(None, alias="stderrVariable")
-    timeout: int | None = Field(60000, description="Script timeout in ms (default: 60s)")
+    timeout: int | None = Field(
+        60000, description="Script timeout in ms (default: 60s)"
+    )
     fail_on_error: bool | None = Field(True, alias="failOnError")
     description: str | None = None
 

@@ -81,7 +81,9 @@ class OpenAIProvider(EmbeddingProvider):
             )
 
         # Get API base URL
-        self._api_base = config.api_base or os.getenv("OPENAI_API_BASE") or self.DEFAULT_API_BASE
+        self._api_base = (
+            config.api_base or os.getenv("OPENAI_API_BASE") or self.DEFAULT_API_BASE
+        )
 
         # Initialize HTTP client
         self._client = httpx.Client(

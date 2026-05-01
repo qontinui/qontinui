@@ -127,7 +127,9 @@ class StabilityDetector:
 
         # Ensure same size
         if frame1.shape != frame2.shape:
-            frame2 = cv2.resize(frame2, (frame1.shape[1], frame1.shape[0])).astype(np.uint8)
+            frame2 = cv2.resize(frame2, (frame1.shape[1], frame1.shape[0])).astype(
+                np.uint8
+            )
 
         # Convert to grayscale for comparison
         if len(frame1.shape) == 3:
@@ -174,7 +176,9 @@ class StabilityDetector:
         _, thresh = cv2.threshold(diff, 10, 255, cv2.THRESH_BINARY)
 
         # Find contours
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         regions = []
         for contour in contours:
@@ -254,7 +258,9 @@ class StabilityDetector:
                 # Find unstable regions from last comparison
                 unstable_regions = []
                 if last_frame is not None and current_frame is not None:
-                    unstable_regions = self.find_changed_regions(last_frame, current_frame)
+                    unstable_regions = self.find_changed_regions(
+                        last_frame, current_frame
+                    )
 
                 return StabilityResult(
                     is_stable=False,
@@ -330,7 +336,9 @@ class AnimationDetector:
 
         # Calculate changes between consecutive frames
         for i in range(1, len(frames)):
-            change = self._stability_detector.calculate_change(frames[i - 1], frames[i], region)
+            change = self._stability_detector.calculate_change(
+                frames[i - 1], frames[i], region
+            )
             changes.append(change)
 
         duration_ms = int((time.monotonic() - start_time) * 1000)

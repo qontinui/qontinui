@@ -87,13 +87,17 @@ class StateTransitionsJointTable:
                 self._add_single_transition(state_name, transition, entry)
 
             # Update statistics
-            self._total_transitions = sum(len(e.transitions) for e in self._table.values())
+            self._total_transitions = sum(
+                len(e.transitions) for e in self._table.values()
+            )
 
             import time
 
             self._last_update_time = time.time()  # type: ignore[assignment]
 
-            logger.debug(f"Added {len(transitions)} transitions for state: {state_name}")
+            logger.debug(
+                f"Added {len(transitions)} transitions for state: {state_name}"
+            )
             logger.debug(f"Total transitions in joint table: {self._total_transitions}")
 
     def _add_single_transition(
@@ -239,10 +243,16 @@ class StateTransitionsJointTable:
                 if hasattr(transition, "to_state") and transition.to_state == to_state:
                     return transition
 
-                if hasattr(transition, "activate_names") and to_state in transition.activate_names:
+                if (
+                    hasattr(transition, "activate_names")
+                    and to_state in transition.activate_names
+                ):
                     return transition
 
-                if hasattr(transition, "target_state") and transition.target_state == to_state:
+                if (
+                    hasattr(transition, "target_state")
+                    and transition.target_state == to_state
+                ):
                     return transition
 
             return None
@@ -279,7 +289,9 @@ class StateTransitionsJointTable:
                 self._reachability_map[source_state].discard(state_name)
 
             # Update statistics
-            self._total_transitions = sum(len(e.transitions) for e in self._table.values())
+            self._total_transitions = sum(
+                len(e.transitions) for e in self._table.values()
+            )
 
             logger.info(f"Removed state from joint table: {state_name}")
             return True
@@ -370,11 +382,15 @@ class StateTransitionsJointTable:
                             f"Reverse map references non-existent source: {source} -> {target}"
                         )
                     elif target not in self._reachability_map.get(source, set()):
-                        issues.append(f"Reverse map inconsistency: {source} -> {target}")
+                        issues.append(
+                            f"Reverse map inconsistency: {source} -> {target}"
+                        )
 
             # Check for isolated states (no incoming or outgoing)
             for state in registered:
-                has_outgoing = state in self._reachability_map and self._reachability_map[state]
+                has_outgoing = (
+                    state in self._reachability_map and self._reachability_map[state]
+                )
                 has_incoming = state in self._reverse_map and self._reverse_map[state]
 
                 if not has_outgoing and not has_incoming and state in self._table:

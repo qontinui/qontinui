@@ -115,7 +115,9 @@ def extract_event_handlers(
     return handlers
 
 
-def trace_state_changes(handler: dict, state_variables: list[StateVariable]) -> list[str]:
+def trace_state_changes(
+    handler: dict, state_variables: list[StateVariable]
+) -> list[str]:
     """
     Trace which state setters are called in a handler.
 

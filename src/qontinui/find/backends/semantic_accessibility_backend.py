@@ -64,7 +64,9 @@ class SemanticAccessibilityBackend(DetectionBackend):
             self._cache = SemanticSearchCache()
         return self._cache
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find elements by natural-language description.
 
         Args:
@@ -190,7 +192,12 @@ class SemanticAccessibilityBackend(DetectionBackend):
             if hasattr(bounds, "x"):
                 x, y, w, h = bounds.x, bounds.y, bounds.width, bounds.height
             elif isinstance(bounds, list | tuple) and len(bounds) >= 4:
-                x, y, w, h = int(bounds[0]), int(bounds[1]), int(bounds[2]), int(bounds[3])
+                x, y, w, h = (
+                    int(bounds[0]),
+                    int(bounds[1]),
+                    int(bounds[2]),
+                    int(bounds[3]),
+                )
             else:
                 return []
 
@@ -236,7 +243,12 @@ class SemanticAccessibilityBackend(DetectionBackend):
             if hasattr(bounds, "x"):
                 x, y, w, h = bounds.x, bounds.y, bounds.width, bounds.height
             elif isinstance(bounds, list | tuple) and len(bounds) >= 4:
-                x, y, w, h = int(bounds[0]), int(bounds[1]), int(bounds[2]), int(bounds[3])
+                x, y, w, h = (
+                    int(bounds[0]),
+                    int(bounds[1]),
+                    int(bounds[2]),
+                    int(bounds[3]),
+                )
             else:
                 continue
 

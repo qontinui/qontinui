@@ -34,7 +34,9 @@ logger = logging.getLogger(__name__)
 
 
 # Type for progress callback
-ProgressCallback = Callable[[dict[str, Any]], Awaitable[None]] | Callable[[dict[str, Any]], None]
+ProgressCallback = (
+    Callable[[dict[str, Any]], Awaitable[None]] | Callable[[dict[str, Any]], None]
+)
 
 
 class WebExtractor:
@@ -69,7 +71,9 @@ class WebExtractor:
         elif config.output_dir:
             self.storage_dir = Path(config.output_dir)
         else:
-            self.storage_dir = Path.home() / ".qontinui" / "extraction" / self.extraction_id
+            self.storage_dir = (
+                Path.home() / ".qontinui" / "extraction" / self.extraction_id
+            )
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self.screenshots_dir = self.storage_dir / "screenshots"
         self.screenshots_dir.mkdir(exist_ok=True)
@@ -241,7 +245,9 @@ class WebExtractor:
         page_width = await self.page.evaluate("document.body.scrollWidth")
         page_height = await self.page.evaluate("document.body.scrollHeight")
         # Use page dimensions as the effective viewport for the screenshot
-        effective_viewport = (page_width, page_height) if page_width and page_height else viewport
+        effective_viewport = (
+            (page_width, page_height) if page_width and page_height else viewport
+        )
 
         # Extract elements
         elements = await self.element_classifier.extract_all_elements(
@@ -321,10 +327,15 @@ class WebExtractor:
 
         for region in regions:
             # Find elements contained in this region
-            contained_elements = [e.id for e in elements if region.bbox.contains(e.bbox)]
+            contained_elements = [
+                e.id for e in elements if region.bbox.contains(e.bbox)
+            ]
 
             # Generate name from region type and aria label
-            name = region.aria_label or f"{region.region_type.value.replace('_', ' ').title()}"
+            name = (
+                region.aria_label
+                or f"{region.region_type.value.replace('_', ' ').title()}"
+            )
 
             state = ExtractedState(
                 id=region.id.replace("region_", "state_"),
@@ -439,7 +450,9 @@ class WebExtractor:
             scroll_state_counter += 1
 
             # Scroll to next position
-            next_scroll = min(current_scroll + scroll_step, page_height - viewport_height)
+            next_scroll = min(
+                current_scroll + scroll_step, page_height - viewport_height
+            )
             await self.page.evaluate(f"window.scrollTo(0, {next_scroll})")
             await self._wait_for_stability()
 
@@ -564,7 +577,9 @@ class WebExtractor:
         await self._wait_for_stability()
 
         total_scroll_states = len(scroll_positions)  # Includes initial state
-        total_scroll_transitions = (total_scroll_states - 1) * 2  # Up and down for each pair
+        total_scroll_transitions = (
+            total_scroll_states - 1
+        ) * 2  # Up and down for each pair
         logger.info(
             f"Extracted {total_scroll_states} scroll states and "
             f"{total_scroll_transitions} scroll transitions for {url}"
@@ -631,7 +646,10 @@ class WebExtractor:
             new_region_ids = []
 
             for region in new_regions:
-                if region.metadata.get("matched_selector") not in existing_state_selectors:
+                if (
+                    region.metadata.get("matched_selector")
+                    not in existing_state_selectors
+                ):
                     # This is a new region - likely a dropdown/tooltip
                     screenshot_id = await self._capture_screenshot()
                     states = await self._regions_to_states(

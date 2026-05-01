@@ -140,7 +140,9 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
         # Update result with new data (combine parent result with additional Next.js data)
         result.routes = list(result.routes) + self._additional_routes
         result.components = list(result.components) + self._additional_components
-        result.state_variables = list(result.state_variables) + self._additional_state_variables
+        result.state_variables = (
+            list(result.state_variables) + self._additional_state_variables
+        )
         result.api_calls = list(result.api_calls) + self._additional_api_calls
 
         # Note: metadata fields would be added here if StaticAnalysisResult supported them
@@ -202,5 +204,7 @@ class NextJSStaticAnalyzer(ReactStaticAnalyzer):
     def supports_framework(cls, framework: FrameworkType) -> bool:
         """Check if this analyzer supports Next.js."""
         # Support both enum naming conventions (NEXT_JS from config, NEXT from base)
-        framework_value = framework.value if hasattr(framework, "value") else str(framework)
+        framework_value = (
+            framework.value if hasattr(framework, "value") else str(framework)
+        )
         return framework_value in ("next_js", "next")

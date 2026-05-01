@@ -111,7 +111,9 @@ class HintGenerator:
                 continue
 
             # Find event handlers attached to this component
-            component_handlers = [h for h in event_handlers if h.trigger_element == component.id]
+            component_handlers = [
+                h for h in event_handlers if h.trigger_element == component.id
+            ]
 
             if not component_handlers:
                 continue
@@ -124,7 +126,8 @@ class HintGenerator:
 
             # Check if conditionally rendered
             is_conditional = any(
-                component.id in cr.renders_when_true or component.id in cr.renders_when_false
+                component.id in cr.renders_when_true
+                or component.id in cr.renders_when_false
                 for cr in conditional_renders
             )
 

@@ -109,7 +109,9 @@ class TestAwasExecutor:
     def test_build_url_with_query_params(self, executor, sample_manifest):
         """Test building URL with query parameters."""
         action = sample_manifest.get_action("get_users")
-        url = executor._build_url(sample_manifest, action, {"limit": 20, "active": True})
+        url = executor._build_url(
+            sample_manifest, action, {"limit": 20, "active": True}
+        )
 
         assert "limit=20" in url
         assert "active=true" in url
@@ -148,7 +150,9 @@ class TestAwasExecutor:
 
     def test_build_auth_headers_bearer(self, executor, sample_manifest):
         """Test building bearer token auth headers."""
-        headers = executor._build_auth_headers(sample_manifest, {"token": "my-secret-token"})
+        headers = executor._build_auth_headers(
+            sample_manifest, {"token": "my-secret-token"}
+        )
 
         assert headers.get("Authorization") == "Bearer my-secret-token"
 
@@ -175,7 +179,9 @@ class TestAwasExecutor:
             auth=AwasAuth(type=AwasAuthType.BASIC),
         )
 
-        headers = executor._build_auth_headers(manifest, {"username": "user", "password": "pass"})
+        headers = executor._build_auth_headers(
+            manifest, {"username": "user", "password": "pass"}
+        )
 
         # Basic auth should be base64 encoded
         assert "Authorization" in headers

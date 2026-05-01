@@ -77,19 +77,29 @@ class HALConfig:
 
     # Backend selections
     capture_backend: str = field(
-        default_factory=lambda: os.getenv("QONTINUI_CAPTURE_BACKEND", CaptureBackend.MSS.value)
+        default_factory=lambda: os.getenv(
+            "QONTINUI_CAPTURE_BACKEND", CaptureBackend.MSS.value
+        )
     )
     input_backend: str = field(
-        default_factory=lambda: os.getenv("QONTINUI_INPUT_BACKEND", InputBackend.PYNPUT.value)
+        default_factory=lambda: os.getenv(
+            "QONTINUI_INPUT_BACKEND", InputBackend.PYNPUT.value
+        )
     )
     matcher_backend: str = field(
-        default_factory=lambda: os.getenv("QONTINUI_MATCHER_BACKEND", MatcherBackend.OPENCV.value)
+        default_factory=lambda: os.getenv(
+            "QONTINUI_MATCHER_BACKEND", MatcherBackend.OPENCV.value
+        )
     )
     ocr_backend: str = field(
-        default_factory=lambda: os.getenv("QONTINUI_OCR_BACKEND", OCRBackend.EASYOCR.value)
+        default_factory=lambda: os.getenv(
+            "QONTINUI_OCR_BACKEND", OCRBackend.EASYOCR.value
+        )
     )
     platform_override: str = field(
-        default_factory=lambda: os.getenv("QONTINUI_PLATFORM_OVERRIDE", PlatformOverride.AUTO.value)
+        default_factory=lambda: os.getenv(
+            "QONTINUI_PLATFORM_OVERRIDE", PlatformOverride.AUTO.value
+        )
     )
     accessibility_backend: str = field(
         default_factory=lambda: os.getenv(
@@ -99,10 +109,14 @@ class HALConfig:
 
     # Accessibility settings
     accessibility_cdp_host: str = field(
-        default_factory=lambda: os.getenv("QONTINUI_ACCESSIBILITY_CDP_HOST", "localhost")
+        default_factory=lambda: os.getenv(
+            "QONTINUI_ACCESSIBILITY_CDP_HOST", "localhost"
+        )
     )
     accessibility_cdp_port: int = field(
-        default_factory=lambda: int(os.getenv("QONTINUI_ACCESSIBILITY_CDP_PORT", "9222"))
+        default_factory=lambda: int(
+            os.getenv("QONTINUI_ACCESSIBILITY_CDP_PORT", "9222")
+        )
     )
 
     # Performance settings
@@ -118,12 +132,14 @@ class HALConfig:
         default_factory=lambda: int(os.getenv("QONTINUI_MATCHER_THREADS", "4"))
     )
     ocr_gpu_enabled: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_OCR_GPU_ENABLED", "false").lower() == "true"
+        default_factory=lambda: os.getenv("QONTINUI_OCR_GPU_ENABLED", "false").lower()
+        == "true"
     )
 
     # Fallback settings
     use_fallback: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_USE_FALLBACK", "true").lower() == "true"
+        default_factory=lambda: os.getenv("QONTINUI_USE_FALLBACK", "true").lower()
+        == "true"
     )
     fallback_to_pyautogui: bool = field(
         default_factory=lambda: (
@@ -133,25 +149,31 @@ class HALConfig:
 
     # Debug settings
     debug_mode: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_HAL_DEBUG", "false").lower() == "true"
+        default_factory=lambda: os.getenv("QONTINUI_HAL_DEBUG", "false").lower()
+        == "true"
     )
     log_performance: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_LOG_PERFORMANCE", "false").lower() == "true"
+        default_factory=lambda: os.getenv("QONTINUI_LOG_PERFORMANCE", "false").lower()
+        == "true"
     )
 
     # Feature flags
     enable_multi_monitor: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_MULTI_MONITOR", "true").lower() == "true"
+        default_factory=lambda: os.getenv("QONTINUI_MULTI_MONITOR", "true").lower()
+        == "true"
     )
     enable_dpi_scaling: bool = field(
-        default_factory=lambda: os.getenv("QONTINUI_DPI_SCALING", "true").lower() == "true"
+        default_factory=lambda: os.getenv("QONTINUI_DPI_SCALING", "true").lower()
+        == "true"
     )
 
     # Paths
     screenshot_dir: str = field(
         default_factory=lambda: os.getenv("QONTINUI_SCREENSHOT_DIR", "./screenshots")
     )
-    temp_dir: str = field(default_factory=lambda: os.getenv("QONTINUI_TEMP_DIR", "/tmp/qontinui"))
+    temp_dir: str = field(
+        default_factory=lambda: os.getenv("QONTINUI_TEMP_DIR", "/tmp/qontinui")
+    )
 
     def validate(self) -> bool:
         """Validate configuration settings.
@@ -179,7 +201,9 @@ class HALConfig:
             raise ValueError(f"Invalid platform override: {self.platform_override}")
 
         if self.accessibility_backend not in [b.value for b in AccessibilityBackend]:
-            raise ValueError(f"Invalid accessibility backend: {self.accessibility_backend}")
+            raise ValueError(
+                f"Invalid accessibility backend: {self.accessibility_backend}"
+            )
 
         # Validate numeric settings
         if self.capture_cache_ttl < 0:

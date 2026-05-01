@@ -361,7 +361,10 @@ class SafePlaywrightStateCollector:
                     if on_progress:
                         percent = min(
                             int(
-                                (len(visited_urls) / (len(visited_urls) + len(urls_to_visit) + 1))
+                                (
+                                    len(visited_urls)
+                                    / (len(visited_urls) + len(urls_to_visit) + 1)
+                                )
                                 * 80
                             ),
                             80,
@@ -382,7 +385,9 @@ class SafePlaywrightStateCollector:
 
                         for element in elements[:max_elements_per_page]:
                             # Analyze risk
-                            risk, reason = await self.analyzer.analyze_risk(element, self._page)
+                            risk, reason = await self.analyzer.analyze_risk(
+                                element, self._page
+                            )
 
                             # Extract element data
                             extracted = await self._extract_element_data(
@@ -418,7 +423,11 @@ class SafePlaywrightStateCollector:
                                     await self._page.wait_for_timeout(500)
 
                                     # Check for unexpected dialog
-                                    dismissed = await self.dialog_handler.dismiss_dialog(self._page)
+                                    dismissed = (
+                                        await self.dialog_handler.dismiss_dialog(
+                                            self._page
+                                        )
+                                    )
                                     if dismissed:
                                         skipped.append(
                                             {
@@ -430,18 +439,23 @@ class SafePlaywrightStateCollector:
                                             }
                                         )
                                         await self._page.goto(current_url)
-                                        await self._page.wait_for_load_state("networkidle")
+                                        await self._page.wait_for_load_state(
+                                            "networkidle"
+                                        )
                                         continue
 
                                     # Capture after state
-                                    extracted.page_screenshot_after = await self._take_screenshot(
-                                        self._page
+                                    extracted.page_screenshot_after = (
+                                        await self._take_screenshot(self._page)
                                     )
                                     extracted.was_clicked = True
 
                                     # Check if we navigated to a new page
                                     new_url = self._page.url
-                                    if new_url != current_url and new_url not in visited_urls:
+                                    if (
+                                        new_url != current_url
+                                        and new_url not in visited_urls
+                                    ):
                                         visited_urls.add(new_url)
                                         if depth + 1 <= max_depth:
                                             urls_to_visit.append((new_url, depth + 1))
@@ -529,7 +543,9 @@ class SafePlaywrightStateCollector:
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
-                context = await browser.new_context(viewport={"width": 1920, "height": 1080})
+                context = await browser.new_context(
+                    viewport={"width": 1920, "height": 1080}
+                )
                 page = await context.new_page()
 
                 await page.goto(url)
@@ -546,7 +562,9 @@ class SafePlaywrightStateCollector:
                     risk, reason = await self.analyzer.analyze_risk(element, page)
 
                     # Extract element data
-                    extracted = await self._extract_element_data(element, page, page_screenshot)
+                    extracted = await self._extract_element_data(
+                        element, page, page_screenshot
+                    )
 
                     if not extracted:
                         continue
@@ -697,7 +715,9 @@ async def collect_with_enhanced_extraction(
             extractor = InteractiveElementExtractor(
                 options=ExtractionOptions(include_shadow_dom=include_shadow_dom)
             )
-            elements = await extractor.extract_interactive_elements(page, "enhanced_extract")
+            elements = await extractor.extract_interactive_elements(
+                page, "enhanced_extract"
+            )
 
         await browser.close()
 

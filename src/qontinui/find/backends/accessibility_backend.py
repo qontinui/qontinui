@@ -28,7 +28,9 @@ class AccessibilityBackend(DetectionBackend):
     def __init__(self, capture: Any) -> None:
         self._capture = capture
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find elements in the accessibility tree.
 
         Args:
@@ -74,9 +76,19 @@ class AccessibilityBackend(DetectionBackend):
 
                 # Handle both AccessibilityBounds objects and tuples
                 if hasattr(bounds, "x"):
-                    x, y, w, h = int(bounds.x), int(bounds.y), int(bounds.width), int(bounds.height)
+                    x, y, w, h = (
+                        int(bounds.x),
+                        int(bounds.y),
+                        int(bounds.width),
+                        int(bounds.height),
+                    )
                 elif isinstance(bounds, list | tuple) and len(bounds) >= 4:
-                    x, y, w, h = int(bounds[0]), int(bounds[1]), int(bounds[2]), int(bounds[3])
+                    x, y, w, h = (
+                        int(bounds[0]),
+                        int(bounds[1]),
+                        int(bounds[2]),
+                        int(bounds[3]),
+                    )
                 else:
                     continue
 

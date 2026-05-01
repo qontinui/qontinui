@@ -86,7 +86,9 @@ class FindAndClickOptionsBuilder(ActionConfigBuilder):
             self.find_options = PatternFindOptions()
             self.click_options = ClickOptionsBuilder().build()
 
-    def set_find_options(self, options: PatternFindOptions) -> "FindAndClickOptionsBuilder":
+    def set_find_options(
+        self, options: PatternFindOptions
+    ) -> "FindAndClickOptionsBuilder":
         """Set find options.
 
         Args:
@@ -180,7 +182,9 @@ class FindAndClick(ActionInterface):
         """
         return ActionType.FIND_AND_CLICK  # type: ignore[no-any-return, attr-defined]
 
-    async def perform(self, matches: ActionResult, *object_collections: ObjectCollection) -> None:
+    async def perform(
+        self, matches: ActionResult, *object_collections: ObjectCollection
+    ) -> None:
         """Find element and click on it.
 
         Executes:
@@ -229,7 +233,9 @@ class FindAndClick(ActionInterface):
             )
             results = await self.find_action.find(patterns, find_opts)
 
-            for result, (_, _, monitor_index) in zip(results, patterns_with_info, strict=False):
+            for result, (_, _, monitor_index) in zip(
+                results, patterns_with_info, strict=False
+            ):
                 if result.found:
                     for match in result.matches:
                         # Translate match coordinates to screen space
@@ -250,7 +256,9 @@ class FindAndClick(ActionInterface):
                                 target=translated_location,
                                 score=match.similarity,
                             )
-                            translated_match = FindMatch(match_object=translated_match_obj)
+                            translated_match = FindMatch(
+                                match_object=translated_match_obj
+                            )
                             found_matches.append(translated_match)
                             matches.add_match(translated_match)  # type: ignore[attr-defined]
                         else:

@@ -206,7 +206,9 @@ class TestSemanticSearchCache:
         from qontinui.hal.implementations.accessibility.uia_semantic import SemanticMatch
 
         results = [
-            SemanticMatch(node=node, score=0.9, match_type="exact_name", matched_term="Save")
+            SemanticMatch(
+                node=node, score=0.9, match_type="exact_name", matched_term="Save"
+            )
         ]
         cache.put("notepad", "Save button", results)
 
@@ -306,9 +308,9 @@ class TestSpatialLabelInference:
         assert "@edit" in refs, f"Expected @edit in matches, got: {refs}"
 
         edit_match = next(m for m in matches if m.node.ref == "@edit")
-        assert edit_match.match_type == "spatial_label", (
-            f"Expected match_type='spatial_label', got '{edit_match.match_type}'"
-        )
+        assert (
+            edit_match.match_type == "spatial_label"
+        ), f"Expected match_type='spatial_label', got '{edit_match.match_type}'"
 
     def test_unlabeled_edit_matches_label_above(self):
         """An unlabeled Edit below a 'Password:' Static should match via spatial label."""

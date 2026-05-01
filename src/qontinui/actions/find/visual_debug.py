@@ -48,7 +48,9 @@ class VisualDebugGenerator:
             result = int(round(float(value)))
             return result
         except (ValueError, TypeError) as e:
-            logger.error(f"Failed to convert {name}={value} (type={type(value)}) to int: {e}")
+            logger.error(
+                f"Failed to convert {name}={value} (type={type(value)}) to int: {e}"
+            )
             return 0
 
     # ------------------------------------------------------------------
@@ -191,7 +193,9 @@ class VisualDebugGenerator:
                     f"[VISUAL_DEBUG] Drawing non-match boxes from {len(top_matches)} top matches"
                 )
                 logger.info(f"[VISUAL_DEBUG] Threshold for red boxes: {threshold}")
-                logger.info(f"[VISUAL_DEBUG] Number of green boxes drawn: {len(matches)}")
+                logger.info(
+                    f"[VISUAL_DEBUG] Number of green boxes drawn: {len(matches)}"
+                )
 
                 # Build a set of match coordinates to identify which top_matches were returned
                 returned_match_coords = set()
@@ -201,7 +205,9 @@ class VisualDebugGenerator:
                     returned_match_coords.add((x, y))
 
                 # Sort top_matches by confidence (ascending) so we draw worst first, best last
-                sorted_top_matches = sorted(top_matches, key=lambda tm: tm.get("confidence", 0.0))
+                sorted_top_matches = sorted(
+                    top_matches, key=lambda tm: tm.get("confidence", 0.0)
+                )
 
                 for idx, top_match in enumerate(sorted_top_matches):
                     try:
@@ -234,9 +240,15 @@ class VisualDebugGenerator:
                             label_text = f"NO MATCH {confidence:.1%}"
 
                         # Get template size from debug data
-                        template_size = debug_data.get("template_size", {"width": 0, "height": 0})
-                        w = self._safe_int(template_size.get("width", 0), "template.width")
-                        h = self._safe_int(template_size.get("height", 0), "template.height")
+                        template_size = debug_data.get(
+                            "template_size", {"width": 0, "height": 0}
+                        )
+                        w = self._safe_int(
+                            template_size.get("width", 0), "template.width"
+                        )
+                        h = self._safe_int(
+                            template_size.get("height", 0), "template.height"
+                        )
 
                         logger.debug(
                             f"[VISUAL_DEBUG] Drawing {label_text} at ({x}, {y}): w={w}, h={h}, conf={confidence:.3f}"
@@ -274,7 +286,9 @@ class VisualDebugGenerator:
                         logger.warning(f"Skipping non-match box due to error: {e}")
 
             # Step 2: Draw actual returned matches (green) LAST so they appear on top
-            logger.debug(f"[VISUAL_DEBUG] Drawing {num_matches} green match boxes on top")
+            logger.debug(
+                f"[VISUAL_DEBUG] Drawing {num_matches} green match boxes on top"
+            )
             for idx, match in enumerate(matches):
                 try:
                     raw_x = match.target.region.x
@@ -289,7 +303,9 @@ class VisualDebugGenerator:
                     h = self._safe_int(raw_h, f"match[{idx}].h")
                     confidence = match.similarity
 
-                    logger.debug(f"[VISUAL_DEBUG] Match {idx}: x={x}, y={y}, w={w}, h={h}")
+                    logger.debug(
+                        f"[VISUAL_DEBUG] Match {idx}: x={x}, y={y}, w={w}, h={h}"
+                    )
 
                     # Validate coordinates
                     if w <= 0 or h <= 0:
@@ -303,7 +319,9 @@ class VisualDebugGenerator:
                     pt2 = (x + w, y + h)
 
                     # Draw green box
-                    cv2.rectangle(annotated, pt1, pt2, self.COLOR_MATCH, self.BOX_THICKNESS)
+                    cv2.rectangle(
+                        annotated, pt1, pt2, self.COLOR_MATCH, self.BOX_THICKNESS
+                    )
 
                     # Draw confidence label
                     self._draw_label(
@@ -419,7 +437,9 @@ class VisualDebugGenerator:
             cv2.LINE_AA,
         )
 
-    def _draw_threshold_info(self, image: np.ndarray, threshold: float, match_count: int) -> None:
+    def _draw_threshold_info(
+        self, image: np.ndarray, threshold: float, match_count: int
+    ) -> None:
         """Draw threshold and match count info at top of image.
 
         Args:

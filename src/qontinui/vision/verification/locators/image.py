@@ -162,7 +162,9 @@ class ImageLocator(BaseLocator):
         # Convert to grayscale if needed
         if self._grayscale:
             if len(search_area.shape) == 3:
-                search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY).astype(np.uint8)
+                search_area = cv2.cvtColor(search_area, cv2.COLOR_BGR2GRAY).astype(
+                    np.uint8
+                )
             if len(template.shape) == 3:
                 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY).astype(np.uint8)
 
@@ -223,7 +225,9 @@ class ImageLocator(BaseLocator):
             # Cast result to float64 and locations to proper tuple type
             result_f64 = result.astype(np.float64)
             locations_tuple = (locations[0], locations[1])
-            matches = self._non_max_suppression(result_f64, locations_tuple, w, h, threshold)
+            matches = self._non_max_suppression(
+                result_f64, locations_tuple, w, h, threshold
+            )
 
         return matches
 
@@ -265,7 +269,9 @@ class ImageLocator(BaseLocator):
             ).astype(np.uint8)
 
             # Find matches at this scale
-            matches = self._find_single_scale(search_area, scaled_template, threshold, method)
+            matches = self._find_single_scale(
+                search_area, scaled_template, threshold, method
+            )
 
             # Add scale info to metadata
             for match in matches:
@@ -325,7 +331,9 @@ class ImageLocator(BaseLocator):
             if not is_duplicate:
                 matches.append(
                     LocatorMatch(
-                        bounds=BoundingBox(x=int(x), y=int(y), width=width, height=height),
+                        bounds=BoundingBox(
+                            x=int(x), y=int(y), width=width, height=height
+                        ),
                         confidence=float(confidence),
                     )
                 )

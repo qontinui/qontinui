@@ -60,13 +60,21 @@ class AwasScope(BaseModel):
 class AwasAuth(BaseModel):
     """Authentication configuration for AWAS manifest."""
 
-    type: AwasAuthType = Field(default=AwasAuthType.NONE, description="Authentication type")
-    token_endpoint: str | None = Field(default=None, description="OAuth2 token endpoint")
-    authorization_url: str | None = Field(default=None, description="OAuth2 authorization URL")
+    type: AwasAuthType = Field(
+        default=AwasAuthType.NONE, description="Authentication type"
+    )
+    token_endpoint: str | None = Field(
+        default=None, description="OAuth2 token endpoint"
+    )
+    authorization_url: str | None = Field(
+        default=None, description="OAuth2 authorization URL"
+    )
     header_name: str | None = Field(
         default=None, description="Header name for API key authentication"
     )
-    scopes: list[AwasScope] = Field(default_factory=list, description="Available OAuth2 scopes")
+    scopes: list[AwasScope] = Field(
+        default_factory=list, description="Available OAuth2 scopes"
+    )
 
 
 class AwasParameter(BaseModel):
@@ -77,10 +85,16 @@ class AwasParameter(BaseModel):
     type: str = Field(
         default="string", description="Parameter type (string, integer, boolean, etc.)"
     )
-    required: bool = Field(default=False, description="Whether the parameter is required")
+    required: bool = Field(
+        default=False, description="Whether the parameter is required"
+    )
     description: str | None = Field(default=None, description="Parameter description")
-    default: Any | None = Field(default=None, description="Default value if not provided")
-    enum: list[str] | None = Field(default=None, description="Allowed values for the parameter")
+    default: Any | None = Field(
+        default=None, description="Default value if not provided"
+    )
+    enum: list[str] | None = Field(
+        default=None, description="Allowed values for the parameter"
+    )
 
 
 class AwasAction(BaseModel):
@@ -91,16 +105,24 @@ class AwasAction(BaseModel):
     method: HttpMethod = Field(..., description="HTTP method")
     endpoint: str = Field(..., description="API endpoint path (relative to base_url)")
     intent: str = Field(..., description="Description of what this action does")
-    side_effect: bool = Field(default=False, description="Whether this action modifies data")
-    parameters: list[AwasParameter] = Field(default_factory=list, description="Action parameters")
+    side_effect: bool = Field(
+        default=False, description="Whether this action modifies data"
+    )
+    parameters: list[AwasParameter] = Field(
+        default_factory=list, description="Action parameters"
+    )
     input_schema: dict[str, Any] | None = Field(
         default=None, description="JSON Schema for request body validation"
     )
     output_schema: dict[str, Any] | None = Field(
         default=None, description="JSON Schema for response structure"
     )
-    required_scopes: list[str] = Field(default_factory=list, description="Required OAuth2 scopes")
-    rate_limit: int | None = Field(default=None, description="Rate limit in requests per minute")
+    required_scopes: list[str] = Field(
+        default_factory=list, description="Required OAuth2 scopes"
+    )
+    rate_limit: int | None = Field(
+        default=None, description="Rate limit in requests per minute"
+    )
 
     @property
     def is_read_only(self) -> bool:
@@ -129,8 +151,12 @@ class AwasManifest(BaseModel):
         alias="baseUrl",
         description="Base URL for all action endpoints",
     )
-    actions: list[AwasAction] = Field(default_factory=list, description="Available actions")
-    auth: AwasAuth | None = Field(default=None, description="Authentication configuration")
+    actions: list[AwasAction] = Field(
+        default_factory=list, description="Available actions"
+    )
+    auth: AwasAuth | None = Field(
+        default=None, description="Authentication configuration"
+    )
     conformance_level: ConformanceLevel = Field(
         alias="conformanceLevel",
         default=ConformanceLevel.L1,
@@ -181,7 +207,8 @@ class AwasElement(BaseModel):
         default_factory=dict, description="Parameter bindings from data-awas-param-*"
     )
     trigger: str | None = Field(
-        default=None, description="Trigger type from data-awas-trigger (click, submit, etc.)"
+        default=None,
+        description="Trigger type from data-awas-trigger (click, submit, etc.)",
     )
     bounds: dict[str, int] | None = Field(
         default=None, description="Element bounding box {x, y, width, height}"
@@ -194,7 +221,13 @@ class AwasActionResult(BaseModel):
     success: bool = Field(..., description="Whether the action succeeded")
     action_id: str = Field(..., description="ID of the executed action")
     status_code: int = Field(..., description="HTTP status code")
-    response_body: Any | None = Field(default=None, description="Response body (parsed JSON)")
-    response_time_ms: int = Field(default=0, description="Response time in milliseconds")
+    response_body: Any | None = Field(
+        default=None, description="Response body (parsed JSON)"
+    )
+    response_time_ms: int = Field(
+        default=0, description="Response time in milliseconds"
+    )
     error: str | None = Field(default=None, description="Error message if failed")
-    headers: dict[str, str] = Field(default_factory=dict, description="Response headers")
+    headers: dict[str, str] = Field(
+        default_factory=dict, description="Response headers"
+    )

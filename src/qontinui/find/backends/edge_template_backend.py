@@ -95,7 +95,9 @@ class EdgeTemplateMatchBackend(DetectionBackend):
 
         return None
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find needle in haystack using edge-map template matching.
 
         Args:
@@ -165,7 +167,11 @@ class EdgeTemplateMatchBackend(DetectionBackend):
     ) -> list[DetectionResult]:
         """Apply non-maximum suppression and return DetectionResults."""
         candidates = [
-            (locations[0][i], locations[1][i], float(result[locations[0][i], locations[1][i]]))
+            (
+                locations[0][i],
+                locations[1][i],
+                float(result[locations[0][i], locations[1][i]]),
+            )
             for i in range(len(locations[0]))
         ]
         candidates.sort(key=lambda c: c[2], reverse=True)

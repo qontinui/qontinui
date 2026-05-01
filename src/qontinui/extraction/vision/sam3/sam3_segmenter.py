@@ -123,7 +123,9 @@ class SAM3Segmenter:
                 return False
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
-            sam_model = sam_model_registry[self.config.model_type](checkpoint=checkpoint)
+            sam_model = sam_model_registry[self.config.model_type](
+                checkpoint=checkpoint
+            )
             sam_model.to(device)
             self._sam_model = sam_model
 
@@ -307,11 +309,15 @@ class SAM3Segmenter:
 
         for i, val in enumerate(flat):
             if val != current_val:
-                runs.append({"start": start, "length": i - start, "value": int(current_val)})
+                runs.append(
+                    {"start": start, "length": i - start, "value": int(current_val)}
+                )
                 start = i
                 current_val = val
 
-        runs.append({"start": start, "length": len(flat) - start, "value": int(current_val)})
+        runs.append(
+            {"start": start, "length": len(flat) - start, "value": int(current_val)}
+        )
 
         return {
             "shape": list(mask.shape),

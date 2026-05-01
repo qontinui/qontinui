@@ -103,8 +103,12 @@ class ExplorationStep:
             "timestamp": self.timestamp.isoformat(),
             "elementId": self.element_id,
             "action": self.action,
-            "actionResult": self.action_result.to_dict() if self.action_result else None,
-            "snapshotBefore": self.snapshot_before.to_dict() if self.snapshot_before else None,
+            "actionResult": (
+                self.action_result.to_dict() if self.action_result else None
+            ),
+            "snapshotBefore": (
+                self.snapshot_before.to_dict() if self.snapshot_before else None
+            ),
             "snapshotAfter": self.snapshot_after.to_dict(),
             "depth": self.depth,
             "parentStepId": self.parent_step_id,
@@ -154,7 +158,9 @@ class ExplorationResult:
             "startTime": self.start_time.isoformat(),
             "endTime": self.end_time.isoformat() if self.end_time else None,
             "stateDiscoveryResult": (
-                self.state_discovery_result.to_dict() if self.state_discovery_result else None
+                self.state_discovery_result.to_dict()
+                if self.state_discovery_result
+                else None
             ),
             "cooccurrenceExport": self.cooccurrence_export,
         }
@@ -461,11 +467,15 @@ class UIBridgeExplorer:
         self._uses_capture_session = config.target_type == "extension"
         self._capture_session_active = False
         self._last_capture_id: str | None = None
-        self._element_fingerprints: dict[str, str] = {}  # element_id -> fingerprint_hash
+        self._element_fingerprints: dict[str, str] = (
+            {}
+        )  # element_id -> fingerprint_hash
 
         # Navigation history tracking for smarter back navigation
         self._url_history: list[str] = []  # URLs visited during exploration
-        self._state_history: list[str] = []  # State fingerprint hashes for visited states
+        self._state_history: list[str] = (
+            []
+        )  # State fingerprint hashes for visited states
 
     async def __aenter__(self) -> Self:
         """Async context manager entry."""
@@ -560,7 +570,9 @@ class UIBridgeExplorer:
             logger.warning(f"Failed to start capture session: {e}")
             return False
 
-    async def _create_capture(self, triggered_by: dict[str, Any] | None = None) -> str | None:
+    async def _create_capture(
+        self, triggered_by: dict[str, Any] | None = None
+    ) -> str | None:
         """Create a capture in the active session.
 
         Args:
@@ -605,7 +617,9 @@ class UIBridgeExplorer:
             return
 
         # Get fingerprint hash for the target element
-        target_fingerprint = self._element_fingerprints.get(target_element_id, target_element_id)
+        target_fingerprint = self._element_fingerprints.get(
+            target_element_id, target_element_id
+        )
 
         try:
             await ext_conn.record_action(
@@ -733,7 +747,9 @@ class UIBridgeExplorer:
             result.steps.append(initial_step)
 
             if self._config.record_render_logs:
-                result.render_logs.append(self._snapshot_to_render_log(initial_snapshot))
+                result.render_logs.append(
+                    self._snapshot_to_render_log(initial_snapshot)
+                )
 
             # Report progress after initial capture
             if not self._report_progress(
@@ -770,14 +786,18 @@ class UIBridgeExplorer:
 
         # Run state discovery - prefer fingerprint-based if we have export data
         if cooccurrence_export:
-            logger.info("Running fingerprint-based state discovery from capture session")
+            logger.info(
+                "Running fingerprint-based state discovery from capture session"
+            )
             result.state_discovery_result = discover_states_from_renders(
                 renders=result.render_logs,
                 cooccurrence_export=cooccurrence_export,
             )
         elif result.render_logs:
             logger.info("Running render-log-based state discovery")
-            result.state_discovery_result = discover_states_from_renders(result.render_logs)
+            result.state_discovery_result = discover_states_from_renders(
+                result.render_logs
+            )
 
         return result
 
@@ -820,7 +840,9 @@ class UIBridgeExplorer:
         # Get and prioritize elements
         elements = snapshot.elements
         safe_elements = [e for e in elements if self._safety_filter.is_safe(e)]
-        prioritized = self._prioritizer.prioritize(safe_elements, self._explored_elements)
+        prioritized = self._prioritizer.prioritize(
+            safe_elements, self._explored_elements
+        )
 
         # Limit elements per page
         elements_to_explore = prioritized[: self._config.max_elements_per_page]
@@ -1055,7 +1077,9 @@ class UIBridgeExplorer:
             await asyncio.sleep(0.2)
 
         # All strategies failed
-        logger.warning("All navigate back strategies failed, continuing from current state")
+        logger.warning(
+            "All navigate back strategies failed, continuing from current state"
+        )
         return False
 
     async def _try_navigate_back_once(self) -> bool:
@@ -1094,7 +1118,9 @@ class UIBridgeExplorer:
         if self._url_history and len(self._url_history) > 1:
             try:
                 prev_url = self._url_history[-2]
-                logger.debug(f"Navigate back: trying to navigate to previous URL: {prev_url}")
+                logger.debug(
+                    f"Navigate back: trying to navigate to previous URL: {prev_url}"
+                )
                 await self._connection.execute_action(
                     element_id="__browser__",
                     action="navigate",
@@ -1213,7 +1239,9 @@ class UIBridgeExplorer:
 
             # Check for close button by common class names
             class_attr = element.attributes.get("class", "").lower()
-            if any(cls in class_attr for cls in ["close", "modal-close", "dialog-close"]):
+            if any(
+                cls in class_attr for cls in ["close", "modal-close", "dialog-close"]
+            ):
                 return element
 
             # Check title attribute

@@ -40,7 +40,9 @@ def get_all_rules(level: WCAGLevel = WCAGLevel.AA) -> list[AccessibilityRule]:
     level_order = {"A": 1, "AA": 2, "AAA": 3}
     max_level = level_order.get(level.value, 2)
 
-    return [rule for rule in all_rules if level_order.get(rule.level.value, 1) <= max_level]
+    return [
+        rule for rule in all_rules if level_order.get(rule.level.value, 1) <= max_level
+    ]
 
 
 __all__ = [

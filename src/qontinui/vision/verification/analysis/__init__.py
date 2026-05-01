@@ -7,23 +7,23 @@ Provides specialized analysis capabilities:
 """
 
 from qontinui.vision.verification.analysis.layout import (
-    AlignmentGroup,
-    GridAnalysis,
-    LayoutAnalyzer,
-    LayoutStructure,
+                                                          AlignmentGroup,
+                                                          GridAnalysis,
+                                                          LayoutAnalyzer,
+                                                          LayoutStructure,
 )
 from qontinui.vision.verification.analysis.relationships import (
-    Element,
-    ElementGroup,
-    ElementRelationship,
-    RelationshipAnalyzer,
-    RelationshipType,
+                                                          Element,
+                                                          ElementGroup,
+                                                          ElementRelationship,
+                                                          RelationshipAnalyzer,
+                                                          RelationshipType,
 )
 from qontinui.vision.verification.analysis.text_metrics import (
-    TextLine,
-    TextMetrics,
-    TextMetricsAnalyzer,
-    TextWord,
+                                                          TextLine,
+                                                          TextMetrics,
+                                                          TextMetricsAnalyzer,
+                                                          TextWord,
 )
 
 __all__ = [

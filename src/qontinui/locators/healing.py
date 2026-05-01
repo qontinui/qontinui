@@ -119,7 +119,9 @@ class HealingManager:
         self.config = config or HealingConfig()
 
         # Create multi-strategy locator with configured strategies
-        self.locator = MultiStrategyLocator.create_with_strategies(*self.config.fallback_strategies)
+        self.locator = MultiStrategyLocator.create_with_strategies(
+            *self.config.fallback_strategies
+        )
 
         # Healing history
         self._healing_history: list[HealingAttempt] = []
@@ -206,10 +208,12 @@ class HealingManager:
                 location_y = None
                 if result.match_result and result.match_result.region:
                     location_x = (
-                        result.match_result.region.x + result.match_result.region.width // 2
+                        result.match_result.region.x
+                        + result.match_result.region.width // 2
                     )
                     location_y = (
-                        result.match_result.region.y + result.match_result.region.height // 2
+                        result.match_result.region.y
+                        + result.match_result.region.height // 2
                     )
 
                 self._emit_event(
@@ -229,7 +233,9 @@ class HealingManager:
                     self._emit_metrics_event()
 
         elif not result.found:
-            logger.warning(f"Healing failed for pattern {pattern_id} - no strategy succeeded")
+            logger.warning(
+                f"Healing failed for pattern {pattern_id} - no strategy succeeded"
+            )
 
             # Emit failure event
             if self.config.emit_events:
@@ -399,7 +405,9 @@ class HealingManager:
 
                 pattern.mask = np.ones(new_pixel_data.shape[:2], dtype=np.float32)
 
-            logger.info(f"Updated pattern {pattern.id} with new pixel data from healed match")
+            logger.info(
+                f"Updated pattern {pattern.id} with new pixel data from healed match"
+            )
 
             # Call update callback if registered
             if pattern.id in self._update_callbacks:
@@ -521,7 +529,10 @@ class HealingManager:
                     successful_uses=successful_uses,
                     timestamp=time.time(),
                 )
-                emit_event(EventType.HEALING_RELIABILITY_CHANGED, data=reliability_data.to_dict())
+                emit_event(
+                    EventType.HEALING_RELIABILITY_CHANGED,
+                    data=reliability_data.to_dict(),
+                )
         except Exception as e:
             logger.error(f"Failed to emit reliability change event: {e}", exc_info=True)
 

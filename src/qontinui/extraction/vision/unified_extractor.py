@@ -109,7 +109,9 @@ class UnifiedVisionExtractor:
             result.contour_results = contour_results
 
             if edge_overlay is not None and self.config.save_debug_images:
-                result.edge_overlay_image = self.edge_detector.get_overlay_base64(edge_overlay)
+                result.edge_overlay_image = self.edge_detector.get_overlay_base64(
+                    edge_overlay
+                )
                 result.contour_overlay_image = result.edge_overlay_image
 
         except Exception as e:
@@ -119,11 +121,15 @@ class UnifiedVisionExtractor:
 
         # Run SAM3 segmentation
         try:
-            sam_results, sam_overlay = self.sam_segmenter.segment(screenshot, screenshot_id)
+            sam_results, sam_overlay = self.sam_segmenter.segment(
+                screenshot, screenshot_id
+            )
             result.sam3_segments = sam_results
 
             if sam_overlay is not None and self.config.save_debug_images:
-                result.sam3_mask_image = self.sam_segmenter.get_overlay_base64(sam_overlay)
+                result.sam3_mask_image = self.sam_segmenter.get_overlay_base64(
+                    sam_overlay
+                )
 
         except Exception as e:
             logger.error(f"SAM3 segmentation failed: {e}")
@@ -132,11 +138,15 @@ class UnifiedVisionExtractor:
 
         # Run OCR detection
         try:
-            ocr_results, ocr_overlay = self.ocr_detector.detect(screenshot, screenshot_id)
+            ocr_results, ocr_overlay = self.ocr_detector.detect(
+                screenshot, screenshot_id
+            )
             result.ocr_results = ocr_results
 
             if ocr_overlay is not None and self.config.save_debug_images:
-                result.ocr_overlay_image = self.ocr_detector.get_overlay_base64(ocr_overlay)
+                result.ocr_overlay_image = self.ocr_detector.get_overlay_base64(
+                    ocr_overlay
+                )
 
         except Exception as e:
             logger.error(f"OCR detection failed: {e}")

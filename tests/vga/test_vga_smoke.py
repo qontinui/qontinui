@@ -23,14 +23,7 @@ from uuid import uuid4
 import pytest
 from PIL import Image
 
-from qontinui.vga import (
-    BBox,
-    VgaClient,
-    VgaElement,
-    VgaState,
-    VgaStateMachine,
-    VgaTransition,
-)
+from qontinui.vga import BBox, VgaClient, VgaElement, VgaState, VgaStateMachine, VgaTransition
 from qontinui.vga.client import VgaClientError
 from qontinui.vga.correction_log import CorrectionLogger
 
@@ -178,7 +171,9 @@ def test_client_ground_raises_on_unparseable() -> None:
     client = VgaClient()
     png = _make_png_bytes()
 
-    with mock.patch("urllib.request.urlopen", return_value=_fake_response("the model rambled")):
+    with mock.patch(
+        "urllib.request.urlopen", return_value=_fake_response("the model rambled")
+    ):
         with pytest.raises(VgaClientError):
             client.ground(png, "Whatever")
 

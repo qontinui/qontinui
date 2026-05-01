@@ -71,12 +71,15 @@ class TemplateGridDetector(BaseRegionAnalyzer):
         best_score = 0
 
         for template_info in templates[:3]:  # Try top 3 templates
-            regions = self._match_template_and_extract_grid(gray, image, template_info, params)
+            regions = self._match_template_and_extract_grid(
+                gray, image, template_info, params
+            )
 
             if regions:
                 # Score based on number of cells found
                 score = sum(
-                    r.metadata.get("grid_rows", 0) * r.metadata.get("grid_cols", 0) for r in regions
+                    r.metadata.get("grid_rows", 0) * r.metadata.get("grid_cols", 0)
+                    for r in regions
                 )
                 if score > best_score:
                     best_score = score
@@ -103,7 +106,9 @@ class TemplateGridDetector(BaseRegionAnalyzer):
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         # Filter contours for potential inventory cells
         for contour in contours:
@@ -134,7 +139,9 @@ class TemplateGridDetector(BaseRegionAnalyzer):
                 {
                     "template": template,
                     "color_template": (
-                        color_img[y : y + h, x : x + w] if len(color_img.shape) == 3 else None
+                        color_img[y : y + h, x : x + w]
+                        if len(color_img.shape) == 3
+                        else None
                     ),
                     "bbox": (x, y, w, h),
                     "score": score,
@@ -168,7 +175,9 @@ class TemplateGridDetector(BaseRegionAnalyzer):
             return []
 
         # Non-maximum suppression to remove overlapping matches
-        matches = self._non_max_suppression(matches, t_w, t_h, result, params["match_threshold"])
+        matches = self._non_max_suppression(
+            matches, t_w, t_h, result, params["match_threshold"]
+        )
 
         if len(matches) < params["min_grid_rows"] * params["min_grid_cols"]:
             return []
@@ -229,9 +238,13 @@ class TemplateGridDetector(BaseRegionAnalyzer):
                 dx = abs(x2 - x1)
                 dy = abs(y2 - y1)
 
-                if dy < 5 and cell_width * 0.8 <= dx <= cell_width * 3:  # Horizontal neighbors
+                if (
+                    dy < 5 and cell_width * 0.8 <= dx <= cell_width * 3
+                ):  # Horizontal neighbors
                     spacings_x.append(dx)
-                if dx < 5 and cell_height * 0.8 <= dy <= cell_height * 3:  # Vertical neighbors
+                if (
+                    dx < 5 and cell_height * 0.8 <= dy <= cell_height * 3
+                ):  # Vertical neighbors
                     spacings_y.append(dy)
 
         if not spacings_x or not spacings_y:

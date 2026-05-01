@@ -106,7 +106,9 @@ class BatchTemplateMatcher:
         screenshot_bgr = self._convert_to_opencv(screenshot)
 
         # Apply search region
-        search_img, offset_x, offset_y = self._apply_search_region(screenshot_bgr, search_region)
+        search_img, offset_x, offset_y = self._apply_search_region(
+            screenshot_bgr, search_region
+        )
 
         # Separate masked vs unmasked patterns
         # MTM has limited mask support, so masked patterns fall back to sequential
@@ -323,7 +325,9 @@ class BatchTemplateMatcher:
             ) from e
 
         screenshot_bgr = self._convert_to_opencv(screenshot)
-        search_img, offset_x, offset_y = self._apply_search_region(screenshot_bgr, search_region)
+        search_img, offset_x, offset_y = self._apply_search_region(
+            screenshot_bgr, search_region
+        )
         img_h, img_w = search_img.shape[:2]
 
         # Separate masked vs unmasked
@@ -393,7 +397,9 @@ class BatchTemplateMatcher:
                 # Cross-scale NMS per pattern
                 for name in list(results.keys()):
                     if len(results[name]) > 1:
-                        results[name] = self._nms_matches(results[name], self.nms_overlap_threshold)
+                        results[name] = self._nms_matches(
+                            results[name], self.nms_overlap_threshold
+                        )
 
         # Sequential fallback for masked patterns (no multi-scale via MTM)
         if masked_patterns:

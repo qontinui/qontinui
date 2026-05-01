@@ -62,9 +62,13 @@ class ConnectionRouter:
             ValueError: If routing fails due to invalid result or missing connections
         """
         # Validate result structure
-        is_valid, error_msg = self.resolver.validate_result_structure(action, execution_result)
+        is_valid, error_msg = self.resolver.validate_result_structure(
+            action, execution_result
+        )
         if not is_valid:
-            raise ValueError(f"Invalid execution result for {action.type} action: {error_msg}")
+            raise ValueError(
+                f"Invalid execution result for {action.type} action: {error_msg}"
+            )
 
         # Determine output type from result
         output_type = self.resolver.resolve(action, execution_result)
@@ -182,7 +186,9 @@ class ConnectionRouter:
 
         return len(errors) == 0, errors
 
-    def get_routing_options(self, action: Action, connections: Connections) -> dict[str, list[str]]:
+    def get_routing_options(
+        self, action: Action, connections: Connections
+    ) -> dict[str, list[str]]:
         """
         Get all possible routing options for an action.
 
@@ -338,7 +344,11 @@ class ConnectionRouter:
                         incoming[conn.action].append((source_id, output_type))
 
         # Return only convergence points (multiple incoming)
-        return {action_id: sources for action_id, sources in incoming.items() if len(sources) > 1}
+        return {
+            action_id: sources
+            for action_id, sources in incoming.items()
+            if len(sources) > 1
+        }
 
     def get_critical_path(self, workflow: Workflow) -> list[str]:
         """
@@ -388,7 +398,9 @@ class ConnectionRouter:
         all_action_ids = [a.id for a in workflow.actions]
 
         # Calculate metrics
-        convergence = self.analyze_convergence_points(workflow.connections, all_action_ids)
+        convergence = self.analyze_convergence_points(
+            workflow.connections, all_action_ids
+        )
         critical_path = self.get_critical_path(workflow)
 
         metrics = {
@@ -396,7 +408,9 @@ class ConnectionRouter:
             "entry_points": len(entry_points),
             "convergence_points": len(convergence),
             "critical_path_length": len(critical_path),
-            "max_convergence": (max([len(v) for v in convergence.values()]) if convergence else 0),
+            "max_convergence": (
+                max([len(v) for v in convergence.values()]) if convergence else 0
+            ),
         }
 
         # Count branching points

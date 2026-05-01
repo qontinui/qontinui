@@ -55,7 +55,9 @@ class ClaudeCodeProvider(AIProvider):
         """
         import os
 
-        self._runner_url = runner_url or os.environ.get("QONTINUI_RUNNER_URL", DEFAULT_RUNNER_URL)
+        self._runner_url = runner_url or os.environ.get(
+            "QONTINUI_RUNNER_URL", DEFAULT_RUNNER_URL
+        )
 
     @property
     def name(self) -> str:
@@ -125,10 +127,14 @@ class ClaudeCodeProvider(AIProvider):
                 result.error = "Failed to submit prompt to runner"
                 return result
 
-            logger.info(f"Task submitted: {task_run_id} (timeout: {request.timeout_seconds}s)")
+            logger.info(
+                f"Task submitted: {task_run_id} (timeout: {request.timeout_seconds}s)"
+            )
 
             # Poll for completion
-            output, error = self._poll_task_completion(task_run_id, request.timeout_seconds)
+            output, error = self._poll_task_completion(
+                task_run_id, request.timeout_seconds
+            )
 
             if error:
                 result.error = error
@@ -196,7 +202,9 @@ class ClaudeCodeProvider(AIProvider):
             logger.info(f"Streaming task: {task_run_id}")
 
             # Poll and stream output
-            async for chunk in self._poll_task_output_async(task_run_id, request.timeout_seconds):
+            async for chunk in self._poll_task_output_async(
+                task_run_id, request.timeout_seconds
+            ):
                 yield chunk
 
         except TimeoutError:
@@ -351,7 +359,9 @@ class ClaudeCodeProvider(AIProvider):
                 raise TimeoutError()
 
             # Fetch task status (sync call in async context)
-            task = await asyncio.get_event_loop().run_in_executor(None, self._fetch_task, url)
+            task = await asyncio.get_event_loop().run_in_executor(
+                None, self._fetch_task, url
+            )
 
             if task is None:
                 yield f"[ERROR: Task not found: {task_run_id}]\n"

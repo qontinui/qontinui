@@ -231,7 +231,9 @@ def format_integration_test_results(
                 if result.get("success"):
                     lines.append("    Result: SUCCESS")
                 else:
-                    lines.append(f"    Result: FAILED - {result.get('error', 'Unknown error')}")
+                    lines.append(
+                        f"    Result: FAILED - {result.get('error', 'Unknown error')}"
+                    )
 
             elif step_type == "state_update":
                 activated = step.get("activated", [])

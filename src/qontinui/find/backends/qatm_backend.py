@@ -73,7 +73,9 @@ class QATMBackend(DetectionBackend):
             self._matcher = QATMMatcher(self._settings)
         return self._matcher
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find needle template in haystack screenshot using QATM.
 
         Args:
@@ -106,7 +108,9 @@ class QATMBackend(DetectionBackend):
                 region_offset_x, region_offset_y = rx, ry
 
         matcher = self._get_matcher()
-        min_confidence = config.get("min_confidence", self._settings.confidence_threshold)
+        min_confidence = config.get(
+            "min_confidence", self._settings.confidence_threshold
+        )
         find_all = config.get("find_all", False)
 
         try:

@@ -38,7 +38,9 @@ class DescriptionGenerator(ABC):
         pass
 
     @abstractmethod
-    def batch_generate(self, image: np.ndarray[Any, Any], regions: list[Any]) -> list[str]:
+    def batch_generate(
+        self, image: np.ndarray[Any, Any], regions: list[Any]
+    ) -> list[str]:
         """Generate descriptions for multiple regions in batch.
 
         More efficient than calling generate() multiple times.

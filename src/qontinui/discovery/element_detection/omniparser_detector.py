@@ -279,10 +279,14 @@ class OmniParserDetector(BaseAnalyzer):
         if params.get("enable_captioning", True) and raw_boxes:
             non_text_indices = [i for i in range(len(raw_boxes)) if i not in ocr_map]
             if non_text_indices:
-                caption_map = self._run_captioning(pil_img, raw_boxes, non_text_indices, params)
+                caption_map = self._run_captioning(
+                    pil_img, raw_boxes, non_text_indices, params
+                )
 
         elapsed_ms = (time.perf_counter() - t0) * 1000
-        logger.debug("OmniParser detected %d elements in %.0fms", len(raw_boxes), elapsed_ms)
+        logger.debug(
+            "OmniParser detected %d elements in %.0fms", len(raw_boxes), elapsed_ms
+        )
         self._last_used = time.perf_counter()
 
         # Build DetectedElement list
@@ -478,7 +482,11 @@ class OmniParserDetector(BaseAnalyzer):
             from ultralytics import YOLO
 
             yolo_path = self._settings.model_path or self._settings.yolo_model
-            if not _Path(yolo_path).exists() and "/" in yolo_path and not yolo_path.endswith(".pt"):
+            if (
+                not _Path(yolo_path).exists()
+                and "/" in yolo_path
+                and not yolo_path.endswith(".pt")
+            ):
                 from huggingface_hub import hf_hub_download
 
                 logger.info(
@@ -568,7 +576,9 @@ class OmniParserDetector(BaseAnalyzer):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _classify_element(label: str | None, width: int, height: int, cls_id: float) -> str:
+    def _classify_element(
+        label: str | None, width: int, height: int, cls_id: float
+    ) -> str:
         """Infer element_type from label text, size, and YOLO class."""
         if label:
             ll = label.lower()

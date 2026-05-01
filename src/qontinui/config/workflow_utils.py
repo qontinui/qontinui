@@ -86,7 +86,9 @@ def resolve_initial_states(
         wf_id = workflow.get("id")
         if wf_id == workflow_id:
             # Check both camelCase and snake_case
-            initial_ids = workflow.get("initialStateIds") or workflow.get("initial_state_ids")
+            initial_ids = workflow.get("initialStateIds") or workflow.get(
+                "initial_state_ids"
+            )
             if initial_ids and len(initial_ids) > 0:
                 states_info = _get_state_info_for_ids(config, initial_ids)
                 return ResolvedInitialStates(
@@ -148,7 +150,9 @@ def get_initial_states_source(
     workflows = config.get("workflows", [])
     for workflow in workflows:
         if workflow.get("id") == workflow_id:
-            initial_ids = workflow.get("initialStateIds") or workflow.get("initial_state_ids")
+            initial_ids = workflow.get("initialStateIds") or workflow.get(
+                "initial_state_ids"
+            )
             if initial_ids and len(initial_ids) > 0:
                 return "workflow"
             break

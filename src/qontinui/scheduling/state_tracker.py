@@ -176,7 +176,9 @@ class StateTracker:
         for state in exited_states:
             if state in self._state_entry_time:
                 duration = (now - self._state_entry_time[state]).total_seconds()
-                self._state_duration[state] = self._state_duration.get(state, 0) + duration
+                self._state_duration[state] = (
+                    self._state_duration.get(state, 0) + duration
+                )
                 del self._state_entry_time[state]
 
         # Record entry for new states
@@ -194,7 +196,9 @@ class StateTracker:
         stats = {}
         now = utc_now()
 
-        for state in set(self._state_entry_count.keys()) | set(self._state_duration.keys()):
+        for state in set(self._state_entry_count.keys()) | set(
+            self._state_duration.keys()
+        ):
             state_stats = {
                 "entry_count": self._state_entry_count.get(state, 0),
                 "total_duration": self._state_duration.get(state, 0),

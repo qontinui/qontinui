@@ -272,9 +272,11 @@ class VisionExpect:
 
                     # Save failure screenshots
                     if self._config.screenshot.capture_on_failure:
-                        screenshot_path, annotated_path = self._screenshot_manager.save_failure(
-                            screenshot,
-                            assertion_id=self._assertion_id,
+                        screenshot_path, annotated_path = (
+                            self._screenshot_manager.save_failure(
+                                screenshot,
+                                assertion_id=self._assertion_id,
+                            )
                         )
                         result.screenshot_path = str(screenshot_path)
                         if annotated_path:
@@ -312,7 +314,10 @@ class VisionExpect:
 
             if matches:
                 builder.set_matches(
-                    [m.to_schema(self._locator.locator_type, i) for i, m in enumerate(matches)]
+                    [
+                        m.to_schema(self._locator.locator_type, i)
+                        for i, m in enumerate(matches)
+                    ]
                 )
                 builder.set_actual(f"found {len(matches)} match(es)")
                 return True, builder
@@ -429,7 +434,9 @@ class VisionExpect:
         Returns:
             Assertion result.
         """
-        return await self.to_have_text(expected_text, exact=False, case_sensitive=case_sensitive)
+        return await self.to_have_text(
+            expected_text, exact=False, case_sensitive=case_sensitive
+        )
 
     async def to_match_text(
         self,
@@ -473,13 +480,18 @@ class VisionExpect:
 
             if matches:
                 builder.set_matches(
-                    [m.to_schema(self._locator.locator_type, i) for i, m in enumerate(matches)]
+                    [
+                        m.to_schema(self._locator.locator_type, i)
+                        for i, m in enumerate(matches)
+                    ]
                 )
 
             if actual_count == count:
                 return True, builder
             else:
-                builder.set_suggestion(f"Expected {count} elements but found {actual_count}.")
+                builder.set_suggestion(
+                    f"Expected {count} elements but found {actual_count}."
+                )
                 return False, builder
 
         return await self._poll_until(check, "to_have_count")
@@ -509,7 +521,10 @@ class VisionExpect:
 
             if matches:
                 builder.set_matches(
-                    [m.to_schema(self._locator.locator_type, i) for i, m in enumerate(matches)]
+                    [
+                        m.to_schema(self._locator.locator_type, i)
+                        for i, m in enumerate(matches)
+                    ]
                 )
 
             if min_count <= actual_count <= max_count:
@@ -539,7 +554,10 @@ class VisionExpect:
 
             if matches:
                 builder.set_matches(
-                    [m.to_schema(self._locator.locator_type, i) for i, m in enumerate(matches)]
+                    [
+                        m.to_schema(self._locator.locator_type, i)
+                        for i, m in enumerate(matches)
+                    ]
                 )
 
             if actual_count >= min_count:
@@ -572,7 +590,10 @@ class VisionExpect:
 
             if matches:
                 builder.set_matches(
-                    [m.to_schema(self._locator.locator_type, i) for i, m in enumerate(matches)]
+                    [
+                        m.to_schema(self._locator.locator_type, i)
+                        for i, m in enumerate(matches)
+                    ]
                 )
 
             if actual_count <= max_count:
@@ -660,8 +681,13 @@ class VisionExpect:
                 return False, builder
 
             # Check state using environment if available
-            if self._environment is not None and self._config.environment.use_learned_states:
-                is_state = self._check_state_with_environment(screenshot, match, state_name)
+            if (
+                self._environment is not None
+                and self._config.environment.use_learned_states
+            ):
+                is_state = self._check_state_with_environment(
+                    screenshot, match, state_name
+                )
                 builder.set_actual(state_name if is_state else f"not {state_name}")
                 return is_state, builder
 
@@ -959,7 +985,9 @@ def locator(
             region = BoundingBox(**region)
         return RegionLocator.from_bounds(region, config=config, **options)
     elif semantic is not None and environment is not None:
-        return EnvironmentLocator.element_pattern(semantic, environment=environment, config=config)
+        return EnvironmentLocator.element_pattern(
+            semantic, environment=environment, config=config
+        )
     else:
         raise ValueError("Must specify one of: image, text, region, or semantic")
 

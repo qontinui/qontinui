@@ -58,7 +58,9 @@ class LabelAnnotator(Annotator):
             x1, y1 = int(detections.xyxy[i, 0]), int(detections.xyxy[i, 1])
             text = self.label_fn(detections, i)
 
-            (tw, th), _ = cv2.getTextSize(text, self._font, self.font_scale, self.thickness)
+            (tw, th), _ = cv2.getTextSize(
+                text, self._font, self.font_scale, self.thickness
+            )
 
             # Position label above the box
             label_y = y1 - 5

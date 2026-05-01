@@ -74,7 +74,11 @@ class ElementProposer:
         Returns:
             A list of proposals, deduplicated by pixel proximity.
         """
-        cats = list(categories) if categories is not None else list(DEFAULT_PROPOSAL_CATEGORIES)
+        cats = (
+            list(categories)
+            if categories is not None
+            else list(DEFAULT_PROPOSAL_CATEGORIES)
+        )
         proposals: list[ElementProposal] = []
 
         for category in cats:
@@ -85,7 +89,9 @@ class ElementProposer:
                     prompt_template=PROPOSE_CATEGORY_PROMPT_TEMPLATE,
                 )
             except VgaClientError:
-                logger.debug("proposer: client error for category=%s", category, exc_info=True)
+                logger.debug(
+                    "proposer: client error for category=%s", category, exc_info=True
+                )
                 continue
 
             if result.confidence <= 0.0:

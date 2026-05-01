@@ -96,7 +96,9 @@ def create_executor(action_type: str, context: ExecutionContext) -> ActionExecut
         f.write(f"[{utc_now().isoformat()}] create_executor called\n")
         f.write(f"[{utc_now().isoformat()}]   action_type: {action_type}\n")
         f.write(f"[{utc_now().isoformat()}]   executor_class: {executor_class}\n")
-        f.write(f"[{utc_now().isoformat()}]   registry keys: {list(_executor_registry.keys())}\n")
+        f.write(
+            f"[{utc_now().isoformat()}]   registry keys: {list(_executor_registry.keys())}\n"
+        )
 
     if executor_class is None:
         raise ActionExecutionError(

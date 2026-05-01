@@ -46,10 +46,14 @@ class MouseMove(Action):
             ActionResult
         """
         move_duration = (
-            duration if duration is not None else getattr(self._config, "_move_duration", 0.5)
+            duration
+            if duration is not None
+            else getattr(self._config, "_move_duration", 0.5)
         )
 
-        return self.execute(lambda: self._pure.mouse_move(x, y, move_duration), target=(x, y))
+        return self.execute(
+            lambda: self._pure.mouse_move(x, y, move_duration), target=(x, y)
+        )
 
 
 class MouseClick(Action):
@@ -205,7 +209,9 @@ class MouseDrag(Action):
         self._config = config
         self._pure = pure_actions if pure_actions is not None else PureActions()
 
-    def execute_from_to(self, start_x: int, start_y: int, end_x: int, end_y: int) -> ActionResult:
+    def execute_from_to(
+        self, start_x: int, start_y: int, end_x: int, end_y: int
+    ) -> ActionResult:
         """Execute drag from start to end position.
 
         Args:
@@ -288,7 +294,9 @@ class MouseWheel(Action):
         Returns:
             ActionResult
         """
-        scroll_amount = clicks if clicks is not None else getattr(self._config, "_scroll_amount", 3)
+        scroll_amount = (
+            clicks if clicks is not None else getattr(self._config, "_scroll_amount", 3)
+        )
         direction = getattr(self._config, "_scroll_direction", "down")
 
         # Convert direction to scroll clicks

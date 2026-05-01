@@ -58,7 +58,9 @@ from qontinui.reporting.events import EventCollector, EventType
 class FakeBackend(DetectionBackend):
     """Backend that returns configurable results."""
 
-    def __init__(self, name: str, cost: float, results: list[DetectionResult] | None = None):
+    def __init__(
+        self, name: str, cost: float, results: list[DetectionResult] | None = None
+    ):
         self._name = name
         self._cost = cost
         self._results = results or []

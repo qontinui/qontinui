@@ -345,14 +345,18 @@ async def verify_action(
     just with a conservative label.
     """
     try:
-        async with WSMClient(endpoint=endpoint, model=model, timeout_s=timeout_s) as client:
+        async with WSMClient(
+            endpoint=endpoint, model=model, timeout_s=timeout_s
+        ) as client:
             return await asyncio.wait_for(
                 client.verify(before_png_bytes, after_png_bytes, intent, goal),
                 timeout=timeout_s,
             )
     except TimeoutError:
         pd_success, pd_reason = pixel_diff_verdict(before_png_bytes, after_png_bytes)
-        logger.warning("WSM verify timed out after %.1fs; falling back to pixel diff", timeout_s)
+        logger.warning(
+            "WSM verify timed out after %.1fs; falling back to pixel diff", timeout_s
+        )
         return WSMVerdict(
             success=pd_success,
             confidence=0.0,

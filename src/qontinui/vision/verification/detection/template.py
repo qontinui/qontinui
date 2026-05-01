@@ -477,10 +477,14 @@ class TemplateEngine:
             if new_h > search_area.shape[0] or new_w > search_area.shape[1]:
                 continue
 
-            scaled_template = cv2.resize(template, (new_w, new_h), interpolation=cv2.INTER_AREA)
+            scaled_template = cv2.resize(
+                template, (new_w, new_h), interpolation=cv2.INTER_AREA
+            )
             scaled_template_uint8: NDArray[np.uint8] = scaled_template.astype(np.uint8)
 
-            matches = self._find_single_scale(search_area, scaled_template_uint8, threshold)
+            matches = self._find_single_scale(
+                search_area, scaled_template_uint8, threshold
+            )
 
             # Add scale info
             for match in matches:
@@ -535,7 +539,9 @@ class TemplateEngine:
             if not is_duplicate:
                 matches.append(
                     TemplateMatch(
-                        bounds=BoundingBox(x=int(x), y=int(y), width=width, height=height),
+                        bounds=BoundingBox(
+                            x=int(x), y=int(y), width=width, height=height
+                        ),
                         confidence=float(confidence),
                     )
                 )
@@ -677,7 +683,9 @@ class TemplateEngine:
         edges = cv2.dilate(edges, kernel, iterations=1)
 
         # Find contours
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         matches = []
         for contour in contours:
@@ -696,7 +704,9 @@ class TemplateEngine:
             aspect_ratio = w / h if h > 0 else 0
 
             # Calculate confidence based on how well it matches pattern
-            confidence = self._calculate_pattern_confidence(search_area, x, y, w, h, pattern)
+            confidence = self._calculate_pattern_confidence(
+                search_area, x, y, w, h, pattern
+            )
 
             if confidence >= 0.5:  # Lower threshold for heuristic detection
                 matches.append(
@@ -758,7 +768,11 @@ class TemplateEngine:
                 r, g, b = int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16)
 
                 # Calculate distance
-                dist = abs(avg_color[2] - r) + abs(avg_color[1] - g) + abs(avg_color[0] - b)
+                dist = (
+                    abs(avg_color[2] - r)
+                    + abs(avg_color[1] - g)
+                    + abs(avg_color[0] - b)
+                )
                 if dist < 100:  # Close color match
                     confidence += 0.2
                     break

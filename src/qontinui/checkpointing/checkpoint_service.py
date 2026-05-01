@@ -156,7 +156,9 @@ class CheckpointService:
         except ScreenCaptureException:
             raise
         except Exception as e:
-            raise ScreenCaptureException(f"Failed to capture checkpoint '{name}': {e}") from e
+            raise ScreenCaptureException(
+                f"Failed to capture checkpoint '{name}': {e}"
+            ) from e
 
     def save_screenshot(
         self,
@@ -197,7 +199,9 @@ class CheckpointService:
             return saved_path
 
         except Exception as e:
-            raise ScreenCaptureException(f"Failed to save screenshot '{name}': {e}") from e
+            raise ScreenCaptureException(
+                f"Failed to save screenshot '{name}': {e}"
+            ) from e
 
     def _extract_ocr_data(
         self,

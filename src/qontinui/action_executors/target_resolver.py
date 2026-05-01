@@ -64,7 +64,9 @@ class TargetResolver:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
@@ -130,7 +132,9 @@ class TargetResolver:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
@@ -170,7 +174,9 @@ class TargetResolver:
             # Check if this is a StateImage with multi-pattern mapping
             pattern_ids = registry.get_state_image_pattern_ids(image_id)
             if pattern_ids:
-                log_debug(f"  Expanding StateImage {image_id} to patterns: {pattern_ids}")
+                log_debug(
+                    f"  Expanding StateImage {image_id} to patterns: {pattern_ids}"
+                )
                 expanded_image_ids.extend(pattern_ids)
                 # Get monitors from StateImage metadata (monitors are registered on StateImage ID)
                 if state_image_monitors is None:
@@ -190,7 +196,9 @@ class TargetResolver:
                             state_image_monitors,
                         )
                     else:
-                        logger.warning("[TARGET_RESOLVER] No monitors in StateImage metadata!")
+                        logger.warning(
+                            "[TARGET_RESOLVER] No monitors in StateImage metadata!"
+                        )
             else:
                 # Not a StateImage, use as-is
                 expanded_image_ids.append(image_id)
@@ -219,7 +227,9 @@ class TargetResolver:
             monitors_from_meta = metadata.get("monitors")
             if state_image_monitors is None and monitors_from_meta:
                 state_image_monitors = monitors_from_meta  # type: ignore[assignment]
-                log_debug(f"    Got monitors from StateImage config: {state_image_monitors}")
+                log_debug(
+                    f"    Got monitors from StateImage config: {state_image_monitors}"
+                )
 
             file_path = metadata.get("file_path")
             if not file_path:
@@ -256,11 +266,17 @@ class TargetResolver:
             resolved_monitor = getattr(self.context, "monitor_index", None)
             log_debug(f"  Using monitor from ExecutionContext: {resolved_monitor}")
             # Also log to standard logger for visibility
-            logger.info(f"[TARGET_RESOLVER] ExecutionContext.monitor_index = {resolved_monitor}")
-            logger.debug("[TARGET_RESOLVER] DEBUG: context.monitor_index = %s", resolved_monitor)
+            logger.info(
+                f"[TARGET_RESOLVER] ExecutionContext.monitor_index = {resolved_monitor}"
+            )
+            logger.debug(
+                "[TARGET_RESOLVER] DEBUG: context.monitor_index = %s", resolved_monitor
+            )
 
         if strategy == "BEST" and len(patterns) > 1:
-            log_debug("  BEST strategy with multiple patterns - finding all and picking best")
+            log_debug(
+                "  BEST strategy with multiple patterns - finding all and picking best"
+            )
             # Find all patterns and pick the one with highest score
             best_result = None
             best_score = 0.0
@@ -294,7 +310,9 @@ class TargetResolver:
                 # Convert FindResult to ActionResult
                 # Pass monitor_index so coordinate transformation knows which system to use
                 builder = (
-                    ActionResultBuilder().with_success(True).with_monitor_index(resolved_monitor)
+                    ActionResultBuilder()
+                    .with_success(True)
+                    .with_monitor_index(resolved_monitor)
                 )
                 for match_obj in best_result.matches:
                     # Set search_image from the Pattern that was used
@@ -373,7 +391,9 @@ class TargetResolver:
 
         if result:
             log_debug(f"  result.success: {result.success}")
-            log_debug(f"  result.matches count: {len(result.matches) if result.matches else 0}")
+            log_debug(
+                f"  result.matches count: {len(result.matches) if result.matches else 0}"
+            )
             self.context.update_last_action_result(result)
             log_debug("  Updated context.last_action_result")
             return result
@@ -433,7 +453,9 @@ class TargetResolver:
             target=Location(
                 x=center_x,
                 y=center_y,
-                region=Region(x=region.x, y=region.y, width=region.width, height=region.height),
+                region=Region(
+                    x=region.x, y=region.y, width=region.width, height=region.height
+                ),
             ),
         )
         find_match = FindMatch(match_object=model_match)
@@ -455,7 +477,9 @@ class TargetResolver:
             logger.error("Last Find Result requested but no previous result available")
             return None
 
-    def _resolve_state_region_target(self, target: StateRegionTarget) -> ActionResult | None:
+    def _resolve_state_region_target(
+        self, target: StateRegionTarget
+    ) -> ActionResult | None:
         """Resolve StateRegionTarget by looking up region from registry.
 
         Uses the region's configured monitors instead of a global default.
@@ -499,7 +523,9 @@ class TargetResolver:
                 service = CoordinateService.get_instance()
 
                 # Translate center coordinates
-                center_screen = service.monitor_to_screen(center_x, center_y, target_monitor)
+                center_screen = service.monitor_to_screen(
+                    center_x, center_y, target_monitor
+                )
                 center_x = center_screen.x
                 center_y = center_screen.y
 
@@ -510,7 +536,9 @@ class TargetResolver:
 
                 logger.debug(f"Translated to absolute: center=({center_x}, {center_y})")
             except Exception as e:
-                logger.warning(f"Failed to translate coordinates for monitor {target_monitor}: {e}")
+                logger.warning(
+                    f"Failed to translate coordinates for monitor {target_monitor}: {e}"
+                )
 
         # Create match for full region with target at center
         model_match = ModelMatch(
@@ -527,7 +555,9 @@ class TargetResolver:
         self.context.update_last_action_result(result)
         return result
 
-    def _resolve_state_location_target(self, target: StateLocationTarget) -> ActionResult | None:
+    def _resolve_state_location_target(
+        self, target: StateLocationTarget
+    ) -> ActionResult | None:
         """Resolve StateLocationTarget by looking up location from registry.
 
         Uses the location's configured monitors instead of a global default.
@@ -569,7 +599,9 @@ class TargetResolver:
 
                 logger.debug(f"Translated to absolute: ({x}, {y})")
             except Exception as e:
-                logger.warning(f"Failed to translate coordinates for monitor {target_monitor}: {e}")
+                logger.warning(
+                    f"Failed to translate coordinates for monitor {target_monitor}: {e}"
+                )
 
         # Create match at location
         model_match = ModelMatch(
@@ -586,7 +618,9 @@ class TargetResolver:
         self.context.update_last_action_result(result)
         return result
 
-    async def _resolve_state_image_target(self, target: StateImageTarget) -> ActionResult | None:
+    async def _resolve_state_image_target(
+        self, target: StateImageTarget
+    ) -> ActionResult | None:
         """Resolve StateImageTarget by converting to ImageTarget and using same logic.
 
         StateImageTarget is used by navigation systems to verify state by finding
@@ -607,7 +641,9 @@ class TargetResolver:
         def log_debug(msg: str) -> None:
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")

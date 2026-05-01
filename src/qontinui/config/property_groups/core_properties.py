@@ -12,11 +12,21 @@ class CoreConfig(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    image_path: str = Field(default="classpath:images/", description="Path to image resources")
-    mock: bool = Field(default=False, description="Enable mock mode for testing without GUI")
-    headless: bool = Field(default=False, description="Run in headless mode without display")
-    sikuli_jar_path: str | None = Field(default=None, description="Path to SikuliX jar file")
-    tesseract_path: str | None = Field(default=None, description="Path to Tesseract executable")
+    image_path: str = Field(
+        default="classpath:images/", description="Path to image resources"
+    )
+    mock: bool = Field(
+        default=False, description="Enable mock mode for testing without GUI"
+    )
+    headless: bool = Field(
+        default=False, description="Run in headless mode without display"
+    )
+    sikuli_jar_path: str | None = Field(
+        default=None, description="Path to SikuliX jar file"
+    )
+    tesseract_path: str | None = Field(
+        default=None, description="Path to Tesseract executable"
+    )
     image_cache_size: int = Field(
         default=100, ge=0, description="Maximum number of images to cache"
     )
@@ -97,7 +107,9 @@ class CoreProperties(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    core: CoreConfig = Field(default_factory=CoreConfig, description="Core framework settings")
+    core: CoreConfig = Field(
+        default_factory=CoreConfig, description="Core framework settings"
+    )
     startup: StartupConfig = Field(
         default_factory=StartupConfig, description="Startup configuration"
     )

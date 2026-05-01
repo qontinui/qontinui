@@ -57,12 +57,16 @@ class StateExtractor:
 
         try:
             for state in states:
-                extracted_images = self.extractor.extract_from_state(state, frames, events)
+                extracted_images = self.extractor.extract_from_state(
+                    state, frames, events
+                )
                 state.state_images = extracted_images  # type: ignore[attr-defined]
                 total_images += len(extracted_images)
 
             success = True
-            logger.info("Image extraction complete: %d total images extracted", total_images)
+            logger.info(
+                "Image extraction complete: %d total images extracted", total_images
+            )
 
             for state in states:
                 logger.debug("  - %s: %d StateImages", state.name, len(state.state_images))  # type: ignore[attr-defined]

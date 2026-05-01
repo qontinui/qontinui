@@ -50,7 +50,9 @@ class PatternLoader:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] PATTERN_LOADER: {msg}\n")
@@ -146,7 +148,9 @@ class PatternLoader:
         def log_debug(msg: str):
             """Helper to write timestamped debug messages."""
             try:
-                debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
+                debug_log = os.path.join(
+                    tempfile.gettempdir(), "qontinui_find_debug.log"
+                )
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] PATTERN_LOADER: {msg}\n")
@@ -232,7 +236,9 @@ class PatternLoader:
         logger.error(f"Image not found in config: {image_id}")
         return None
 
-    def _build_pattern_from_config(self, pattern_config: dict, image_id: str) -> Pattern | None:
+    def _build_pattern_from_config(
+        self, pattern_config: dict, image_id: str
+    ) -> Pattern | None:
         """Build pattern from config dict.
 
         Args:

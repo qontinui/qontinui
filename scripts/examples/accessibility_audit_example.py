@@ -256,7 +256,9 @@ class AccessibilityAuditor:
 
             # Check input elements
             if elem.tag_name == "input":
-                has_label = bool(elem.aria_label or item.a11y_name or item.a11y_description)
+                has_label = bool(
+                    elem.aria_label or item.a11y_name or item.a11y_description
+                )
                 if not has_label:
                     issues.append(
                         AccessibilityIssue(
@@ -286,7 +288,9 @@ class AccessibilityAuditor:
                         message=f"Element has low accessibility match confidence ({item.match_confidence:.2f})",
                         element_info={
                             "tag": item.element.tag_name,
-                            "text": item.element.text[:30] if item.element.text else None,
+                            "text": (
+                                item.element.text[:30] if item.element.text else None
+                            ),
                         },
                     )
                 )
@@ -382,7 +386,9 @@ async def demo_enrichment(page: Page):
     logger.info("\n--- Enriched element examples ---")
     for item in enriched[:10]:
         elem = item.element
-        logger.info(f"\n<{elem.tag_name}> {elem.text[:30] if elem.text else '(no text)'}")
+        logger.info(
+            f"\n<{elem.tag_name}> {elem.text[:30] if elem.text else '(no text)'}"
+        )
         logger.info(f"  DOM selector: {elem.selector}")
         logger.info(f"  A11y role: {item.a11y_role or '(none)'}")
         logger.info(f"  A11y name: {item.a11y_name or '(none)'}")
@@ -450,7 +456,9 @@ async def demo_full_audit(page: Page, output_path: Path | None = None):
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Accessibility audit example using qontinui")
+    parser = argparse.ArgumentParser(
+        description="Accessibility audit example using qontinui"
+    )
     parser.add_argument(
         "--url",
         default="https://github.com",

@@ -90,7 +90,9 @@ class JsonSerializer(Serializer):
             logger.debug("json_serialized", path=str(path), size=path.stat().st_size)
 
         except Exception as e:
-            raise StorageWriteException(key=path.stem, storage_type="JSON", reason=str(e)) from e
+            raise StorageWriteException(
+                key=path.stem, storage_type="JSON", reason=str(e)
+            ) from e
 
     def deserialize(self, path: Path) -> Any:
         """Deserialize data from JSON file.
@@ -113,7 +115,9 @@ class JsonSerializer(Serializer):
             return data
 
         except Exception as e:
-            raise StorageReadException(key=path.stem, storage_type="JSON", reason=str(e)) from e
+            raise StorageReadException(
+                key=path.stem, storage_type="JSON", reason=str(e)
+            ) from e
 
     @property
     def file_extension(self) -> str:
@@ -175,7 +179,9 @@ class PickleSerializer(Serializer):
             )
 
         except Exception as e:
-            raise StorageWriteException(key=path.stem, storage_type="Pickle", reason=str(e)) from e
+            raise StorageWriteException(
+                key=path.stem, storage_type="Pickle", reason=str(e)
+            ) from e
 
     def deserialize(self, path: Path) -> Any:
         """Deserialize data from Pickle file.
@@ -216,7 +222,9 @@ class PickleSerializer(Serializer):
             return data
 
         except Exception as e:
-            raise StorageReadException(key=path.stem, storage_type="Pickle", reason=str(e)) from e
+            raise StorageReadException(
+                key=path.stem, storage_type="Pickle", reason=str(e)
+            ) from e
 
     @property
     def file_extension(self) -> str:

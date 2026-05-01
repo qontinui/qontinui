@@ -27,44 +27,44 @@ Usage:
 
 # Unified extraction architecture (new)
 from .abstract_extractor import (
-    AbstractExtractor,
-    ExtractionContext,
-    ExtractionError,
-    ScreenshotError,
+                               AbstractExtractor,
+                               ExtractionContext,
+                               ExtractionError,
+                               ScreenshotError,
 )
 from .abstract_extractor import ExtractedElement as UnifiedExtractedElement
 from .abstract_extractor import ExtractedState as UnifiedExtractedState
 from .abstract_extractor import ExtractedTransition as UnifiedExtractedTransition
 from .abstract_extractor import ExtractionResult as UnifiedExtractionResult
 from .extractor_config import (
-    AccessibilityConfig,
-    ConfidenceThreshold,
-    DOMConfig,
-    ElementFilter,
-    ExtractionBackend,
-    ExtractorConfig,
-    HybridConfig,
-    HybridStrategy,
-    SizeThreshold,
-    VisionConfig,
+                               AccessibilityConfig,
+                               ConfidenceThreshold,
+                               DOMConfig,
+                               ElementFilter,
+                               ExtractionBackend,
+                               ExtractorConfig,
+                               HybridConfig,
+                               HybridStrategy,
+                               SizeThreshold,
+                               VisionConfig,
 )
 
 # Existing extraction components
 from .matching import StateMatcher
 from .models.base import (
-    BoundingBox,
-    ConfigError,
-    CorrelatedState,
-    ExtractionConfig,
-    ExtractionMode,
-    ExtractionResult,
-    ExtractionTarget,
-    FrameworkType,
-    InferredTransition,
-    RuntimeExtractionResult,
-    Screenshot,
-    StaticAnalysisResult,
-    Viewport,
+                               BoundingBox,
+                               ConfigError,
+                               CorrelatedState,
+                               ExtractionConfig,
+                               ExtractionMode,
+                               ExtractionResult,
+                               ExtractionTarget,
+                               FrameworkType,
+                               InferredTransition,
+                               RuntimeExtractionResult,
+                               Screenshot,
+                               StaticAnalysisResult,
+                               Viewport,
 )
 from .models.composite import ApplicationStateStructure, CompositeStateStructure, StateStructure
 from .models.correlated import EvidenceType, MatchingEvidence, VerifiedTransition

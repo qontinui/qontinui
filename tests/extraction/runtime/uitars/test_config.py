@@ -52,7 +52,9 @@ class TestUITARSSettings:
         )
 
         assert settings.provider == "cloud"
-        assert settings.huggingface_endpoint == "https://test.endpoint.huggingface.cloud"
+        assert (
+            settings.huggingface_endpoint == "https://test.endpoint.huggingface.cloud"
+        )
         assert settings.huggingface_api_token == "hf_test_token"
         assert settings.model_size == "7B"
         assert settings.is_cloud() is True

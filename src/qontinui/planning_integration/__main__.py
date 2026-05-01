@@ -103,9 +103,7 @@ def main() -> None:
         from multistate.planning.registry import create_default_registry
         from multistate.planning.world_adapter import WorldStateAdapter
 
-        from qontinui.planning_integration.action_handlers import (
-            create_action_handlers,
-        )
+        from qontinui.planning_integration.action_handlers import create_action_handlers
         from qontinui.planning_integration.world_state_bridge import (
             create_world_state_snapshot,
             populate_blackboard,
@@ -171,7 +169,9 @@ def main() -> None:
                 connection = run_async_safe(connection_cm.__aenter__())
                 logger.info("Connected to UI Bridge at %s", ui_bridge_url)
             except Exception as exc:
-                logger.warning("UI Bridge connection failed: %s - continuing without", exc)
+                logger.warning(
+                    "UI Bridge connection failed: %s - continuing without", exc
+                )
                 connection = None
                 connection_cm = None
 
@@ -190,7 +190,9 @@ def main() -> None:
                     methods_directory,
                 )
             except Exception as exc:
-                logger.warning("Failed to load methods from %s: %s", methods_directory, exc)
+                logger.warning(
+                    "Failed to load methods from %s: %s", methods_directory, exc
+                )
         planner = registry.build_planner()
 
         # If no connection, do plan-only (no execution)
@@ -230,7 +232,8 @@ def main() -> None:
                 elapsed = (time.time() - start) * 1000
                 # Plan-only: report as "plan_found but not executed"
                 actions_summary = "; ".join(
-                    " ".join(str(a) for a in action) for action in plan_result.actions[:5]
+                    " ".join(str(a) for a in action)
+                    for action in plan_result.actions[:5]
                 )
                 if len(plan_result.actions) > 5:
                     actions_summary += f"... (+{len(plan_result.actions) - 5} more)"
@@ -260,7 +263,9 @@ def main() -> None:
 
         # Full orchestration: snapshot world state from UI Bridge + plan + execute
         try:
-            world_state = run_async_safe(create_world_state_snapshot(adapter, connection))
+            world_state = run_async_safe(
+                create_world_state_snapshot(adapter, connection)
+            )
         except Exception as exc:
             _emit(_failure(start, f"World state snapshot failed: {exc}", str(exc)))
             return
@@ -353,7 +358,9 @@ def main() -> None:
 
         elapsed = (time.time() - start) * 1000
         steps_succeeded = sum(
-            1 for s in exec_result.steps_executed if getattr(s.status, "value", "") == "success"
+            1
+            for s in exec_result.steps_executed
+            if getattr(s.status, "value", "") == "success"
         )
 
         actions_summary = "; ".join(

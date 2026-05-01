@@ -206,7 +206,9 @@ class NaturalLanguageSelector:
             result = self._parse_selection_response(response, elements)
 
             if result.confidence < self.confidence_threshold:
-                logger.warning(f"Low confidence ({result.confidence:.2f}) for: {description}")
+                logger.warning(
+                    f"Low confidence ({result.confidence:.2f}) for: {description}"
+                )
 
             return result
 
@@ -253,7 +255,9 @@ class NaturalLanguageSelector:
         try:
             response = await self.llm.complete(prompt)
             results = self._parse_multi_response(response, elements)
-            return sorted(results, key=lambda r: r.confidence, reverse=True)[:max_results]
+            return sorted(results, key=lambda r: r.confidence, reverse=True)[
+                :max_results
+            ]
 
         except Exception as e:
             logger.error(f"LLM multi-selection failed: {e}")
@@ -471,7 +475,9 @@ Your response:"""
         if alt_match:
             alt_str = alt_match.group(1).strip().lower()
             if alt_str != "none":
-                alternatives = [int(x.strip()) for x in alt_str.split(",") if x.strip().isdigit()]
+                alternatives = [
+                    int(x.strip()) for x in alt_str.split(",") if x.strip().isdigit()
+                ]
 
         # Get the element
         element = None

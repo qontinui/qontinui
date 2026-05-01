@@ -58,7 +58,9 @@ class SwitchExecutor:
         self.condition_evaluator = ConditionEvaluator(context)
         logger.debug("SwitchExecutor initialized with context")
 
-    def execute_switch(self, action: Action, config: SwitchActionConfig) -> dict[str, Any]:
+    def execute_switch(
+        self, action: Action, config: SwitchActionConfig
+    ) -> dict[str, Any]:
         """Execute a SWITCH action (case-based branching).
 
         Evaluates the expression and executes the action sequence from the
@@ -142,17 +144,23 @@ class SwitchExecutor:
 
         except ValueError as e:
             # Expression evaluation error
-            logger.error("SWITCH expression evaluation failed: %s", str(e), exc_info=True)
+            logger.error(
+                "SWITCH expression evaluation failed: %s", str(e), exc_info=True
+            )
             result["success"] = False
             if isinstance(result["errors"], list):
-                result["errors"].append({"type": "ExpressionEvaluationError", "message": str(e)})
+                result["errors"].append(
+                    {"type": "ExpressionEvaluationError", "message": str(e)}
+                )
 
         except TypeError as e:
             # Type error during expression evaluation
             logger.error("SWITCH expression type error: %s", str(e), exc_info=True)
             result["success"] = False
             if isinstance(result["errors"], list):
-                result["errors"].append({"type": "ExpressionTypeError", "message": str(e)})
+                result["errors"].append(
+                    {"type": "ExpressionTypeError", "message": str(e)}
+                )
 
         except Exception as e:
             # Unexpected error
@@ -261,7 +269,9 @@ class SwitchExecutor:
                 # orchestration including error handling, event emission, etc.
                 # Note: execute_action is a method that may be added to ExecutionContext
                 # If it doesn't exist, we'll catch the AttributeError below
-                success = getattr(self.context, "execute_action", lambda x: False)(action)
+                success = getattr(self.context, "execute_action", lambda x: False)(
+                    action
+                )
 
                 # Track execution
                 if not success:
@@ -278,7 +288,9 @@ class SwitchExecutor:
 
             except Exception as e:
                 # Unexpected exception during action execution
-                logger.error("Action %s raised exception: %s", action_id, str(e), exc_info=True)
+                logger.error(
+                    "Action %s raised exception: %s", action_id, str(e), exc_info=True
+                )
                 errors_list.append(
                     {
                         "action_id": action_id,

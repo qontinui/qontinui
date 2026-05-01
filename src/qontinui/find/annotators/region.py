@@ -52,6 +52,8 @@ class RegionAnnotator(Annotator):
         if self.border_thickness > 0:
             for i in range(len(detections)):
                 x1, y1, x2, y2 = (int(v) for v in detections.xyxy[i])
-                cv2.rectangle(scene, (x1, y1), (x2, y2), self.border_color, self.border_thickness)
+                cv2.rectangle(
+                    scene, (x1, y1), (x2, y2), self.border_color, self.border_thickness
+                )
 
         return scene

@@ -186,7 +186,9 @@ class RelationshipAnalyzer:
                             source_id=source.id,
                             target_id=target.id,
                             relationship_type=RelationshipType.CONTAINS,
-                            confidence=self._containment_confidence(source.bounds, target.bounds),
+                            confidence=self._containment_confidence(
+                                source.bounds, target.bounds
+                            ),
                         )
                     )
 
@@ -236,7 +238,9 @@ class RelationshipAnalyzer:
                                 target_id=target.id,
                                 relationship_type=RelationshipType.LABELS,
                                 confidence=0.8,
-                                distance=self._center_distance(source.bounds, target.bounds),
+                                distance=self._center_distance(
+                                    source.bounds, target.bounds
+                                ),
                             )
                         )
 
@@ -436,7 +440,10 @@ class RelationshipAnalyzer:
 
             # Check if candidate is in the same container
             candidate_containers = self.find_containers(candidate, elements)
-            if candidate_containers and candidate_containers[0].id == immediate_container.id:
+            if (
+                candidate_containers
+                and candidate_containers[0].id == immediate_container.id
+            ):
                 siblings.append(candidate)
 
         return siblings
@@ -515,7 +522,12 @@ class RelationshipAnalyzer:
         b_bottom = b.y + b.height
 
         # Check for overlap
-        if a_left < b_right and a_right > b_left and a_top < b_bottom and a_bottom > b_top:
+        if (
+            a_left < b_right
+            and a_right > b_left
+            and a_top < b_bottom
+            and a_bottom > b_top
+        ):
             return None  # Overlapping
 
         # Calculate distances in each direction
@@ -632,7 +644,9 @@ class RelationshipAnalyzer:
         # Find text elements that could be labels
         text_elements = [e for e in elements if e.element_type == "text"]
         input_elements = [
-            e for e in elements if e.element_type in ("input", "button", "checkbox", "dropdown")
+            e
+            for e in elements
+            if e.element_type in ("input", "button", "checkbox", "dropdown")
         ]
 
         for input_elem in input_elements:
@@ -702,7 +716,10 @@ class RelationshipAnalyzer:
                 candidate = sorted_elements[j]
 
                 # Check vertical alignment (same column)
-                if abs(candidate.bounds.x - base_elem.bounds.x) <= self._alignment_tolerance * 2:
+                if (
+                    abs(candidate.bounds.x - base_elem.bounds.x)
+                    <= self._alignment_tolerance * 2
+                ):
                     # Check similar width
                     if (
                         abs(candidate.bounds.width - base_elem.bounds.width)
@@ -722,10 +739,14 @@ class RelationshipAnalyzer:
 
                 if spacings:
                     avg_spacing = sum(spacings) / len(spacings)
-                    spacing_variance = sum((s - avg_spacing) ** 2 for s in spacings) / len(spacings)
+                    spacing_variance = sum(
+                        (s - avg_spacing) ** 2 for s in spacings
+                    ) / len(spacings)
 
                     # Low variance means consistent spacing
-                    if spacing_variance < avg_spacing * 0.5 or all(s >= 0 for s in spacings):
+                    if spacing_variance < avg_spacing * 0.5 or all(
+                        s >= 0 for s in spacings
+                    ):
                         # Create group
                         min_x = min(e.bounds.x for e in list_items)
                         min_y = min(e.bounds.y for e in list_items)

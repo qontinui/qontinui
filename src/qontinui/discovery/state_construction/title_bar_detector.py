@@ -69,7 +69,9 @@ class TitleBarDetector:
                 # Analyze characteristics
                 if self._has_title_bar_characteristics(region):
                     # Look for actual width (might not span full screen)
-                    actual_bounds = self._find_actual_title_bar_bounds(screenshot, y, bar_height)
+                    actual_bounds = self._find_actual_title_bar_bounds(
+                        screenshot, y, bar_height
+                    )
 
                     if actual_bounds:
                         x, y_pos, w, h = actual_bounds

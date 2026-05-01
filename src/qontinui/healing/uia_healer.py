@@ -223,7 +223,9 @@ class UIAHealer:
                         duration_ms=elapsed,
                     )
 
-            attempts.append((HealingStrategy.UIA_SELECTOR, f"{strategy_name}: no match"))
+            attempts.append(
+                (HealingStrategy.UIA_SELECTOR, f"{strategy_name}: no match")
+            )
 
         elapsed = (time.perf_counter() - start) * 1000
         return HealingResult(

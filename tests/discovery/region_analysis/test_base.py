@@ -562,7 +562,9 @@ class RegionPerformanceTest:
             screenshot = generator.generate(
                 width=1024,
                 height=768,
-                elements=[ElementSpec("rectangle", x=100, y=100, width=400, height=300)],
+                elements=[
+                    ElementSpec("rectangle", x=100, y=100, width=400, height=300)
+                ],
             )
 
         times = []
@@ -700,7 +702,9 @@ def are_regions_adjacent(
     return False
 
 
-def assert_region_valid(region: tuple[int, int, int, int], max_width: int, max_height: int):
+def assert_region_valid(
+    region: tuple[int, int, int, int], max_width: int, max_height: int
+):
     """
     Assert that a region is valid.
 

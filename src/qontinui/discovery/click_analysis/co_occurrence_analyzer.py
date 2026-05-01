@@ -61,7 +61,10 @@ class CoOccurrenceResult:
         if self.co_occurrence_matrix is None:
             return 0.0
 
-        if template_id_1 not in self.template_ids or template_id_2 not in self.template_ids:
+        if (
+            template_id_1 not in self.template_ids
+            or template_id_2 not in self.template_ids
+        ):
             return 0.0
 
         i = self.template_ids.index(template_id_1)
@@ -79,7 +82,9 @@ class CoOccurrenceResult:
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
-            "frame_template_map": {str(k): list(v) for k, v in self.frame_template_map.items()},
+            "frame_template_map": {
+                str(k): list(v) for k, v in self.frame_template_map.items()
+            },
             "template_frame_counts": self.template_frame_counts,
             "co_occurrence_matrix": (
                 self.co_occurrence_matrix.tolist()
@@ -243,7 +248,9 @@ class CoOccurrenceAnalyzer:
 
         # Build co-occurrence matrix
         template_ids = [t.id for t in templates]
-        co_occurrence_matrix = self._build_co_occurrence_matrix(frame_template_map, template_ids)
+        co_occurrence_matrix = self._build_co_occurrence_matrix(
+            frame_template_map, template_ids
+        )
 
         processing_time = (time.time() - start_time) * 1000
 
@@ -316,7 +323,9 @@ class CoOccurrenceAnalyzer:
                 gray_frame = screenshot
 
             # Detect templates
-            present_templates = self._detect_templates_in_frame(gray_frame, template_images)
+            present_templates = self._detect_templates_in_frame(
+                gray_frame, template_images
+            )
 
             if present_templates:
                 frame_template_map[frame_num] = present_templates
@@ -325,7 +334,9 @@ class CoOccurrenceAnalyzer:
 
         # Build co-occurrence matrix
         template_ids = [t.id for t in templates]
-        co_occurrence_matrix = self._build_co_occurrence_matrix(frame_template_map, template_ids)
+        co_occurrence_matrix = self._build_co_occurrence_matrix(
+            frame_template_map, template_ids
+        )
 
         processing_time = (time.time() - start_time) * 1000
 
@@ -343,7 +354,9 @@ class CoOccurrenceAnalyzer:
             },
         )
 
-    def _prepare_template_images(self, templates: list[ApprovedTemplate]) -> dict[str, np.ndarray]:
+    def _prepare_template_images(
+        self, templates: list[ApprovedTemplate]
+    ) -> dict[str, np.ndarray]:
         """Prepare template images for matching.
 
         Args:
@@ -390,7 +403,10 @@ class CoOccurrenceAnalyzer:
 
         for template_id, template_img in template_images.items():
             # Skip if template is larger than frame
-            if template_img.shape[0] > frame.shape[0] or template_img.shape[1] > frame.shape[1]:
+            if (
+                template_img.shape[0] > frame.shape[0]
+                or template_img.shape[1] > frame.shape[1]
+            ):
                 continue
 
             try:

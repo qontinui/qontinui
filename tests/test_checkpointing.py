@@ -242,7 +242,9 @@ class TestCheckpointService:
         assert service.output_dir == temp_output_dir
         assert service.has_ocr is False
 
-    def test_initialization_with_ocr(self, mock_screen_capture, mock_ocr_engine, temp_output_dir):
+    def test_initialization_with_ocr(
+        self, mock_screen_capture, mock_ocr_engine, temp_output_dir
+    ):
         """Test CheckpointService initialization with OCR."""
         service = CheckpointService(
             screen_capture=mock_screen_capture,

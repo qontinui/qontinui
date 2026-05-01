@@ -276,8 +276,12 @@ class OpenCVMatcher(IPatternMatcher):
                 return []
 
             # Extract descriptors
-            desc1 = np.array([f.descriptor for f in features1 if f.descriptor is not None])
-            desc2 = np.array([f.descriptor for f in features2 if f.descriptor is not None])
+            desc1 = np.array(
+                [f.descriptor for f in features1 if f.descriptor is not None]
+            )
+            desc2 = np.array(
+                [f.descriptor for f in features2 if f.descriptor is not None]
+            )
 
             if desc1.size == 0 or desc2.size == 0:
                 return []
@@ -306,7 +310,9 @@ class OpenCVMatcher(IPatternMatcher):
                 f2 = features2[match.trainIdx]
                 matched_pairs.append((f1, f2))
 
-            logger.debug("features_matched", count=len(matched_pairs), threshold=threshold)
+            logger.debug(
+                "features_matched", count=len(matched_pairs), threshold=threshold
+            )
 
             return matched_pairs
 
@@ -355,7 +361,9 @@ class OpenCVMatcher(IPatternMatcher):
                 resized_needle = cv2.resize(gray_needle, (new_width, new_height))
 
                 # Match template
-                result = cv2.matchTemplate(gray_haystack, resized_needle, cv2.TM_CCOEFF_NORMED)
+                result = cv2.matchTemplate(
+                    gray_haystack, resized_needle, cv2.TM_CCOEFF_NORMED
+                )
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
                 if max_val >= confidence and max_val > best_confidence:
@@ -502,7 +510,9 @@ class OpenCVMatcher(IPatternMatcher):
 
                 # Choose interpolation method
                 interp = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LINEAR
-                scaled_needle = cv2.resize(needle_work, (new_w, new_h), interpolation=interp)
+                scaled_needle = cv2.resize(
+                    needle_work, (new_w, new_h), interpolation=interp
+                )
 
                 for angle in rotations:
                     if angle != 0.0:
@@ -517,7 +527,9 @@ class OpenCVMatcher(IPatternMatcher):
                         match_needle = scaled_needle
                         match_w, match_h = new_w, new_h
 
-                    result = cv2.matchTemplate(haystack_work, match_needle, cv2.TM_CCOEFF_NORMED)
+                    result = cv2.matchTemplate(
+                        haystack_work, match_needle, cv2.TM_CCOEFF_NORMED
+                    )
                     _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
                     if max_val >= confidence and max_val > best_conf:
@@ -556,7 +568,9 @@ class OpenCVMatcher(IPatternMatcher):
             return None
 
     @staticmethod
-    def _rotate_template(template: np.ndarray[Any, Any], angle: float) -> np.ndarray[Any, Any]:
+    def _rotate_template(
+        template: np.ndarray[Any, Any], angle: float
+    ) -> np.ndarray[Any, Any]:
         """Rotate a template image around its center.
 
         Expands the canvas so the rotated template is fully visible.
@@ -643,7 +657,9 @@ class OpenCVMatcher(IPatternMatcher):
                     continue
 
                 interp = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LINEAR
-                scaled_needle = cv2.resize(needle_work, (new_w, new_h), interpolation=interp)
+                scaled_needle = cv2.resize(
+                    needle_work, (new_w, new_h), interpolation=interp
+                )
 
                 for angle in rotations:
                     if angle != 0.0:
@@ -657,7 +673,9 @@ class OpenCVMatcher(IPatternMatcher):
                         match_needle = scaled_needle
                         match_w, match_h = new_w, new_h
 
-                    result = cv2.matchTemplate(haystack_work, match_needle, cv2.TM_CCOEFF_NORMED)
+                    result = cv2.matchTemplate(
+                        haystack_work, match_needle, cv2.TM_CCOEFF_NORMED
+                    )
 
                     # Extract all locations above confidence
                     locations = np.where(result >= confidence)
@@ -752,10 +770,14 @@ class OpenCVMatcher(IPatternMatcher):
             cv2_img = self._pil_to_cv2(image2)
 
             # Calculate histograms
-            hist1 = cv2.calcHist([cv1], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+            hist1 = cv2.calcHist(
+                [cv1], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256]
+            )
             hist1 = cv2.normalize(hist1, hist1).flatten()
 
-            hist2 = cv2.calcHist([cv2_img], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+            hist2 = cv2.calcHist(
+                [cv2_img], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256]
+            )
             hist2 = cv2.normalize(hist2, hist2).flatten()
 
             # Compare histograms

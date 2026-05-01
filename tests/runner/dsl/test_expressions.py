@@ -592,7 +592,9 @@ class TestMethodCallExpression:
             "expressionType": "methodCall",
             "object": "service",
             "method": "execute",
-            "arguments": [{"expressionType": "literal", "valueType": "integer", "value": 42}],
+            "arguments": [
+                {"expressionType": "literal", "valueType": "integer", "value": 42}
+            ],
         }
 
         expr = MethodCallExpression.from_dict(data)
@@ -722,7 +724,9 @@ class TestBuilderExpression:
         """Test BuilderMethodCall from_dict."""
         data = {
             "method": "setProperty",
-            "arguments": [{"expressionType": "literal", "valueType": "integer", "value": 100}],
+            "arguments": [
+                {"expressionType": "literal", "valueType": "integer", "value": 100}
+            ],
         }
 
         method_call = BuilderMethodCall.from_dict(data)

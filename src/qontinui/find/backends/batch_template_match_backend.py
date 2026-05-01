@@ -37,7 +37,9 @@ class BatchTemplateMatchBackend(DetectionBackend):
             )
         return self._matcher
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find multiple template needles in haystack screenshot.
 
         Args:
@@ -56,7 +58,9 @@ class BatchTemplateMatchBackend(DetectionBackend):
         elif isinstance(needle, list) and all(isinstance(p, Pattern) for p in needle):
             patterns = needle
         else:
-            logger.debug("BatchTemplateMatchBackend: needle is not Pattern(s), skipping")
+            logger.debug(
+                "BatchTemplateMatchBackend: needle is not Pattern(s), skipping"
+            )
             return []
 
         matcher = self._get_matcher()

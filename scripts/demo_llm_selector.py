@@ -161,7 +161,9 @@ async def demo_fallback(url: str) -> None:
             results = fallback.find_by_role(role, elements)
             logger.info(f"  Role '{role}': Found {len(results)} elements")
             for r in results[:3]:
-                inner = r.element.element if hasattr(r.element, "element") else r.element
+                inner = (
+                    r.element.element if hasattr(r.element, "element") else r.element
+                )
                 text = inner.text[:30] if inner.text else "(no text)"
                 logger.info(f"    [{r.index}] {text}")
 
@@ -203,7 +205,9 @@ async def run_demo(url: str, llm_client, provider_name: str) -> None:
 
             if result.found:
                 inner = (
-                    result.element.element if hasattr(result.element, "element") else result.element
+                    result.element.element
+                    if hasattr(result.element, "element")
+                    else result.element
                 )
                 text = inner.text[:40] if inner.text else "(no text)"
                 logger.info(f"  Found: [{result.index}] <{inner.tag_name}> {text}")
@@ -228,7 +232,9 @@ async def run_demo(url: str, llm_client, provider_name: str) -> None:
 
             if result.found:
                 inner = (
-                    result.element.element if hasattr(result.element, "element") else result.element
+                    result.element.element
+                    if hasattr(result.element, "element")
+                    else result.element
                 )
                 logger.info(f"  Element: [{result.index}] <{inner.tag_name}>")
                 logger.info(f"  Action: {action}")

@@ -30,7 +30,9 @@ def _debug_print(msg: str) -> None:
 
 
 # Add multistate to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../../multistate/src"))
+sys.path.insert(
+    0, os.path.join(os.path.dirname(__file__), "../../../../multistate/src")
+)
 
 from multistate.core.state import State as MultiState  # noqa: E402
 from multistate.dynamics.hidden_states import HiddenStateManager  # noqa: E402
@@ -129,7 +131,9 @@ class MultiStateAdapter:
 
         # Create mapping (only if qontinui_state has a valid ID)
         if qontinui_state.id is None:
-            raise ValueError(f"Cannot register state '{qontinui_state.name}' without an ID")
+            raise ValueError(
+                f"Cannot register state '{qontinui_state.name}' without an ID"
+            )
 
         mapping = StateMapping(
             qontinui_id=qontinui_state.id,
@@ -147,7 +151,9 @@ class MultiStateAdapter:
 
         return multistate
 
-    def register_qontinui_transition(self, transition: StateTransition) -> MultiTransition:
+    def register_qontinui_transition(
+        self, transition: StateTransition
+    ) -> MultiTransition:
         """Register a Qontinui transition in MultiState framework.
 
         Args:
@@ -174,7 +180,9 @@ class MultiStateAdapter:
                         f"  from_state {state_id} -> '{self.state_mappings[state_id].multistate_id}'"
                     )
                 else:
-                    _debug_print(f"  ERROR: from_state {state_id} NOT in state_mappings!")
+                    _debug_print(
+                        f"  ERROR: from_state {state_id} NOT in state_mappings!"
+                    )
                     logger.error(
                         f"Transition {transition.id}: from_state ID {state_id} not found in state_mappings. "
                         f"Available mappings: {list(self.state_mappings.keys())}"
@@ -188,7 +196,9 @@ class MultiStateAdapter:
                     f"  activate {state_id} -> '{self.state_mappings[state_id].multistate_id}'"
                 )
             else:
-                _debug_print(f"  ERROR: activate state {state_id} NOT in state_mappings!")
+                _debug_print(
+                    f"  ERROR: activate state {state_id} NOT in state_mappings!"
+                )
                 logger.error(
                     f"Transition {transition.id}: activate state ID {state_id} not found in state_mappings. "
                     f"Available mappings: {list(self.state_mappings.keys())}"
@@ -291,9 +301,13 @@ class MultiStateAdapter:
             if state_id in self.state_mappings:
                 mapping = self.state_mappings[state_id]
                 current_multi.add(mapping.multistate_state)
-                _debug_print(f"Current state {state_id} -> multistate '{mapping.multistate_id}'")
+                _debug_print(
+                    f"Current state {state_id} -> multistate '{mapping.multistate_id}'"
+                )
             else:
-                _debug_print(f"ERROR: Current state ID {state_id} NOT in state_mappings!")
+                _debug_print(
+                    f"ERROR: Current state ID {state_id} NOT in state_mappings!"
+                )
                 logger.error(
                     f"Current state ID {state_id} not found in state_mappings! "
                     f"Available mappings: {list(self.state_mappings.keys())}"
@@ -312,9 +326,13 @@ class MultiStateAdapter:
             if state_id in self.state_mappings:
                 mapping = self.state_mappings[state_id]
                 target_multi.add(mapping.multistate_state)
-                _debug_print(f"Target state {state_id} -> multistate '{mapping.multistate_id}'")
+                _debug_print(
+                    f"Target state {state_id} -> multistate '{mapping.multistate_id}'"
+                )
             else:
-                _debug_print(f"ERROR: Target state ID {state_id} NOT in state_mappings!")
+                _debug_print(
+                    f"ERROR: Target state ID {state_id} NOT in state_mappings!"
+                )
                 logger.error(
                     f"Target state ID {state_id} not found in state_mappings! "
                     f"Available mappings: {list(self.state_mappings.keys())}"
@@ -329,7 +347,9 @@ class MultiStateAdapter:
         target_ids = [ms.id for ms in target_multi]
         from_ids = {ms.id for ms in current_multi}
 
-        _debug_print(f"Calling manager.find_path_to: from_ids={from_ids}, target_ids={target_ids}")
+        _debug_print(
+            f"Calling manager.find_path_to: from_ids={from_ids}, target_ids={target_ids}"
+        )
 
         logger.info(
             f"Finding path: from={from_ids} to={target_ids}, "
@@ -369,7 +389,9 @@ class MultiStateAdapter:
                 f"GO_TO_STATE: Target states {target_state_ids} already active - "
                 f"transition skipped (no actions needed)"
             )
-            _debug_print("Target states already reached - returning empty transition list")
+            _debug_print(
+                "Target states already reached - returning empty transition list"
+            )
             return []
 
         logger.info(f"Found path with {len(path.transitions_sequence)} transitions")
@@ -378,7 +400,9 @@ class MultiStateAdapter:
         for multi_transition in path.transitions_sequence:
             # Extract the ID from the MultiState Transition object
             multi_transition_id = (
-                multi_transition.id if hasattr(multi_transition, "id") else str(multi_transition)
+                multi_transition.id
+                if hasattr(multi_transition, "id")
+                else str(multi_transition)
             )
             _debug_print(f"Processing transition: id={multi_transition_id}")
 
@@ -386,7 +410,9 @@ class MultiStateAdapter:
                 _debug_print(
                     f"  Found in transition_mappings: {self.transition_mappings[multi_transition_id]}"
                 )
-                qontinui_transitions.append(self.transition_mappings[multi_transition_id])
+                qontinui_transitions.append(
+                    self.transition_mappings[multi_transition_id]
+                )
             else:
                 _debug_print(
                     f"  ERROR: Transition '{multi_transition_id}' NOT in mappings! Available: {list(self.transition_mappings.keys())}"
@@ -531,7 +557,9 @@ class MultiStateAdapter:
 
     # ==================== Trigger Introspection ====================
 
-    def _resolve_multistate_active_set(self, active_state_ids: list[str] | None) -> set[Any] | None:
+    def _resolve_multistate_active_set(
+        self, active_state_ids: list[str] | None
+    ) -> set[Any] | None:
         """Resolve caller-provided state IDs to MultiState ``State`` objects.
 
         Accepts either MultiState IDs (e.g. ``"state_login"``) or the string
@@ -562,7 +590,9 @@ class MultiStateAdapter:
             if qid in self.state_mappings:
                 resolved.add(self.state_mappings[qid].multistate_state)
             else:
-                logger.warning("Introspection: Qontinui state id %s has no MultiState mapping", qid)
+                logger.warning(
+                    "Introspection: Qontinui state id %s has no MultiState mapping", qid
+                )
         return resolved
 
     def _with_temporary_active_states(

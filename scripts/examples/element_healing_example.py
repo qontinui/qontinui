@@ -111,7 +111,9 @@ async def demo_selector_variations(page: Page):
     logger.info(f"\nAttempts made: {len(result.attempts)}")
     for attempt in result.attempts[:5]:  # Show first 5 attempts
         status = "SUCCESS" if attempt.success else "failed"
-        logger.info(f"  - [{attempt.strategy}] {attempt.selector_tried[:50]}... ({status})")
+        logger.info(
+            f"  - [{attempt.strategy}] {attempt.selector_tried[:50]}... ({status})"
+        )
 
 
 async def demo_text_and_aria_healing(page: Page):

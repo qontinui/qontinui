@@ -208,11 +208,15 @@ def extract_elements_from_render(
 
     # Extract from componentTree (simple format)
     if "componentTree" in render_log_entry:
-        _extract_from_dom_element(render_log_entry["componentTree"], element_ids, include_html_ids)
+        _extract_from_dom_element(
+            render_log_entry["componentTree"], element_ids, include_html_ids
+        )
 
     # Also check "tree" key (alternative simple format)
     if "tree" in render_log_entry:
-        _extract_from_dom_element(render_log_entry["tree"], element_ids, include_html_ids)
+        _extract_from_dom_element(
+            render_log_entry["tree"], element_ids, include_html_ids
+        )
 
     return sorted(element_ids)
 
@@ -369,7 +373,9 @@ def get_elements_by_render(
         List of UIBridgeElements present in the specified render
     """
     element_ids = {
-        elem_id for elem_id, render_ids in element_to_renders.items() if render_id in render_ids
+        elem_id
+        for elem_id, render_ids in element_to_renders.items()
+        if render_id in render_ids
     }
     return [elem for elem in all_elements if elem.id in element_ids]
 

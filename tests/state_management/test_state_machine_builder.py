@@ -409,7 +409,9 @@ class TestStateMachineBuilder:
             }
         ]
 
-        states, transitions = build_state_machine_from_extraction(annotations, transitions_data)
+        states, transitions = build_state_machine_from_extraction(
+            annotations, transitions_data
+        )
 
         # Should create states and at least try to derive transitions
         assert len(states) >= 2

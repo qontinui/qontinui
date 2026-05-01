@@ -101,7 +101,9 @@ class GridDetector:
 
         return grid_regions
 
-    def _cluster_parallel_lines(self, lines: list[tuple], tolerance: int = 10) -> list[list[tuple]]:
+    def _cluster_parallel_lines(
+        self, lines: list[tuple], tolerance: int = 10
+    ) -> list[list[tuple]]:
         """Cluster parallel lines that are close together.
 
         Args:
@@ -169,7 +171,10 @@ class GridDetector:
         cell_height = height / rows if rows > 0 else 0
 
         # Cells should be reasonable size
-        if cell_width < self.grid_cell_min_size or cell_height < self.grid_cell_min_size:
+        if (
+            cell_width < self.grid_cell_min_size
+            or cell_height < self.grid_cell_min_size
+        ):
             return None
 
         properties = {
@@ -188,7 +193,9 @@ class GridDetector:
             sub_elements=[],
         )
 
-    def _calculate_grid_regularity(self, h_lines: list[tuple], v_lines: list[tuple]) -> float:
+    def _calculate_grid_regularity(
+        self, h_lines: list[tuple], v_lines: list[tuple]
+    ) -> float:
         """Calculate how regular/uniform a grid pattern is.
 
         Measures spacing consistency using coefficient of variation.
@@ -201,8 +208,12 @@ class GridDetector:
             Regularity score (0.0 to 1.0, higher is more regular)
         """
         # Check spacing consistency
-        h_spacings = [h_lines[i + 1][0] - h_lines[i][0] for i in range(len(h_lines) - 1)]
-        v_spacings = [v_lines[i + 1][0] - v_lines[i][0] for i in range(len(v_lines) - 1)]
+        h_spacings = [
+            h_lines[i + 1][0] - h_lines[i][0] for i in range(len(h_lines) - 1)
+        ]
+        v_spacings = [
+            v_lines[i + 1][0] - v_lines[i][0] for i in range(len(v_lines) - 1)
+        ]
 
         if not h_spacings or not v_spacings:
             return 0.0

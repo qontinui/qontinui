@@ -114,7 +114,9 @@ class StateCacheManager:
             # If all cached states are active, evict oldest active state
             if evicted is None and self._cache_order:
                 evicted = self._cache_order.pop(0)
-                logger.warning(f"Evicted active state '{evicted}' from cache (all states active)")
+                logger.warning(
+                    f"Evicted active state '{evicted}' from cache (all states active)"
+                )
                 break
 
     def clear(self) -> None:

@@ -149,15 +149,23 @@ class RecordingPipeline:
             )
 
             # Also include states that didn't change (stable states)
-            before_capture = _find_capture(export.presence_matrix, record.before_capture_id)
-            after_capture = _find_capture(export.presence_matrix, record.after_capture_id)
+            before_capture = _find_capture(
+                export.presence_matrix, record.before_capture_id
+            )
+            after_capture = _find_capture(
+                export.presence_matrix, record.after_capture_id
+            )
 
             all_before = set()
             all_after = set()
             if before_capture:
-                all_before = _map_fingerprints_to_states(before_capture.fingerprints, state_index)
+                all_before = _map_fingerprints_to_states(
+                    before_capture.fingerprints, state_index
+                )
             if after_capture:
-                all_after = _map_fingerprints_to_states(after_capture.fingerprints, state_index)
+                all_after = _map_fingerprints_to_states(
+                    after_capture.fingerprints, state_index
+                )
 
             if all_before or all_after:
                 detector.record_action(
@@ -172,7 +180,9 @@ class RecordingPipeline:
                 )
 
         # 6. Get confidence-scored transitions
-        detected = detector.get_detected_transitions(min_confidence=self.config.min_confidence)
+        detected = detector.get_detected_transitions(
+            min_confidence=self.config.min_confidence
+        )
         logger.info(
             "Detected %d transitions with confidence >= %.2f",
             len(detected),
@@ -294,7 +304,9 @@ class RecordingPipeline:
                 existing_t = existing_transition_sigs[sig]
                 old_conf = existing_t.metadata.get("confidence", 0.5)
                 new_conf = new_t.metadata.get("confidence", 0.5)
-                existing_t.metadata["confidence"] = min(1.0, (old_conf + new_conf) / 2 + 0.05)
+                existing_t.metadata["confidence"] = min(
+                    1.0, (old_conf + new_conf) / 2 + 0.05
+                )
                 existing_t.metadata["observation_count"] = (
                     existing_t.metadata.get("observation_count", 1) + 1
                 )
@@ -323,7 +335,9 @@ class RecordingPipeline:
             state_count=len(merged_states),
             transition_count=len(merged_transitions),
             session_id=new_result.session_id,
-            global_state_count=sum(1 for s in merged_states if s.metadata.get("is_global", False)),
+            global_state_count=sum(
+                1 for s in merged_states if s.metadata.get("is_global", False)
+            ),
             modal_state_count=sum(1 for s in merged_states if s.blocking),
         )
 
@@ -369,7 +383,11 @@ def _find_capture(
 ) -> Any | None:
     """Find a capture record by ID in the presence matrix."""
     for entry in presence_matrix:
-        entry_id = entry.capture_id if hasattr(entry, "capture_id") else entry.get("captureId", "")
+        entry_id = (
+            entry.capture_id
+            if hasattr(entry, "capture_id")
+            else entry.get("captureId", "")
+        )
         if entry_id == capture_id:
             return entry
     return None

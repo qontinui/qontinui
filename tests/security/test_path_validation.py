@@ -159,7 +159,9 @@ class TestSecurityDocumentation:
 
         assert docstring is not None
         assert "DO NOT" in docstring or "Never" in docstring
-        assert any(word in docstring.lower() for word in ["network", "upload", "untrusted"])
+        assert any(
+            word in docstring.lower() for word in ["network", "upload", "untrusted"]
+        )
 
     def test_security_docs_referenced(self):
         """Test that security documentation is referenced."""

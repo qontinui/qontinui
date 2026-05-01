@@ -18,7 +18,9 @@ class TestAstScanner:
         scanner = AstSecurityScanner(ScanConfig.default_enforce())
         result = scanner.scan("import os\nos.system('rm -rf /')")
         assert result.has_blocking_violations
-        assert any(v.category == "import" and "os" in v.pattern for v in result.violations)
+        assert any(
+            v.category == "import" and "os" in v.pattern for v in result.violations
+        )
 
     def test_blocks_subprocess_from_import(self):
         scanner = AstSecurityScanner(ScanConfig.default_enforce())

@@ -309,7 +309,9 @@ async def test_accessibility_extraction(page, url: str) -> ValidationResult:
             details={
                 "total_nodes": node_count,
                 "roles": dict(sorted(roles.items(), key=lambda x: -x[1])[:10]),
-                "tree_preview": a11y_tree.to_text()[:500] if a11y_tree.root else "Empty tree",
+                "tree_preview": (
+                    a11y_tree.to_text()[:500] if a11y_tree.root else "Empty tree"
+                ),
             },
         )
 
@@ -450,7 +452,9 @@ async def test_full_extraction(page, url: str) -> ValidationResult:
             elements = result
             frame_count = 1
 
-        shadow_elements = [el for el in elements if hasattr(el, "shadow_path") and el.shadow_path]
+        shadow_elements = [
+            el for el in elements if hasattr(el, "shadow_path") and el.shadow_path
+        ]
 
         return ValidationResult(
             test_name=test_name,
@@ -481,7 +485,9 @@ async def test_full_extraction(page, url: str) -> ValidationResult:
         )
 
 
-async def run_validation(urls: list[str], headless: bool = True) -> list[ValidationResult]:
+async def run_validation(
+    urls: list[str], headless: bool = True
+) -> list[ValidationResult]:
     """Run all validation tests on given URLs."""
     all_results = []
 
@@ -517,8 +523,16 @@ async def run_validation(urls: list[str], headless: bool = True) -> list[Validat
                 logger.info(
                     f"  {status} {result.test_name}: "
                     f"{result.elements_found} elements"
-                    + (f" (shadow: {result.shadow_elements})" if result.shadow_elements else "")
-                    + (f" (iframes: {result.iframe_elements})" if result.iframe_elements else "")
+                    + (
+                        f" (shadow: {result.shadow_elements})"
+                        if result.shadow_elements
+                        else ""
+                    )
+                    + (
+                        f" (iframes: {result.iframe_elements})"
+                        if result.iframe_elements
+                        else ""
+                    )
                     + (f" ERROR: {result.error}" if result.error else "")
                 )
 

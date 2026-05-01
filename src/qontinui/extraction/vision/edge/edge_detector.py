@@ -83,7 +83,9 @@ class EdgeDetector:
         closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
 
         # Find contours with hierarchy
-        contours, hierarchy = cv2.findContours(closed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(
+            closed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         # Process contours
         edge_results: list[EdgeDetectionResult] = []
@@ -234,7 +236,11 @@ class EdgeDetector:
         # Check if rectangular (4 vertices)
         if vertex_count == 4:
             # Button-like: rectangular, moderate aspect ratio
-            if 1.5 < aspect_ratio < 6.0 and 30 < bbox.width < 300 and 20 < bbox.height < 60:
+            if (
+                1.5 < aspect_ratio < 6.0
+                and 30 < bbox.width < 300
+                and 20 < bbox.height < 60
+            ):
                 return "button"
             # Input field: wide and short
             if aspect_ratio > 4.0 and bbox.height < 50:

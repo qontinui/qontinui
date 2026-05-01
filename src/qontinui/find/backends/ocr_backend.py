@@ -27,7 +27,9 @@ class OCRBackend(DetectionBackend):
     def __init__(self, ocr_engine: Any) -> None:
         self._engine = ocr_engine
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find text needle in haystack screenshot using OCR.
 
         Args:

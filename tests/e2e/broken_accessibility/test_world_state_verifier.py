@@ -61,7 +61,9 @@ def _png_bytes_from_bgr(bgr_array) -> bytes:
 @pytest.fixture(scope="module")
 def wsm_client() -> WorldStateVerifierClient:
     """Shared WSM client. Skips the module if the endpoint isn't reachable."""
-    endpoint = os.environ.get("QONTINUI_WORLD_STATE_VERIFIER_ENDPOINT", "http://127.0.0.1:8100")
+    endpoint = os.environ.get(
+        "QONTINUI_WORLD_STATE_VERIFIER_ENDPOINT", "http://127.0.0.1:8100"
+    )
     model = os.environ.get("QONTINUI_WORLD_STATE_VERIFIER_MODEL", "cua-wsm")
     client = WorldStateVerifierClient(endpoint=endpoint, model=model)
     if not client.is_reachable():

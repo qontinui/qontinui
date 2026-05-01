@@ -101,9 +101,13 @@ class VisionHealer:
                     if uia_result and uia_result.success:
                         self._successful_heals += 1
                         uia_result.duration_ms = (time.time() - start_time) * 1000
-                        self._emit_healing_succeeded(uia_result, context, "uia_selector")
+                        self._emit_healing_succeeded(
+                            uia_result, context, "uia_selector"
+                        )
                         return uia_result
-                    attempts.append((HealingStrategy.UIA_SELECTOR, "UIA re-match failed"))
+                    attempts.append(
+                        (HealingStrategy.UIA_SELECTOR, "UIA re-match failed")
+                    )
                     self._emit_strategy_failed("uia_selector", "UIA re-match failed")
             except Exception as e:
                 logger.debug("UIA healing skipped: %s", e)
@@ -126,8 +130,12 @@ class VisionHealer:
                 )
                 self._emit_healing_succeeded(result, context, "visual_search")
                 return result
-            attempts.append((HealingStrategy.VISUAL_SEARCH, "Pattern not found in expanded search"))
-            self._emit_strategy_failed("visual_search", "Pattern not found in expanded search")
+            attempts.append(
+                (HealingStrategy.VISUAL_SEARCH, "Pattern not found in expanded search")
+            )
+            self._emit_strategy_failed(
+                "visual_search", "Pattern not found in expanded search"
+            )
 
         # Strategy 2: Vision LLM (only if enabled)
         if self.config.llm_mode != LLMMode.DISABLED:
@@ -301,7 +309,10 @@ class VisionHealer:
 
             if location:
                 # Validate coordinates are within bounds
-                if 0 <= location.x < screenshot.shape[1] and 0 <= location.y < screenshot.shape[0]:
+                if (
+                    0 <= location.x < screenshot.shape[1]
+                    and 0 <= location.y < screenshot.shape[0]
+                ):
                     logger.info(
                         f"LLM found element at ({location.x}, {location.y}) "
                         f"with confidence {location.confidence:.2f}"
@@ -468,7 +479,8 @@ class VisionHealer:
             metrics_data = HealingMetricsData(
                 total_attempts=int(stats["total_attempts"]),
                 successful_heals=int(stats["successful_heals"]),
-                failed_heals=int(stats["total_attempts"]) - int(stats["successful_heals"]),
+                failed_heals=int(stats["total_attempts"])
+                - int(stats["successful_heals"]),
                 healing_rate=float(stats["success_rate"]) / 100.0,
                 llm_calls=int(stats["llm_calls"]),
                 timestamp=time.time(),

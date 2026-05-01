@@ -32,7 +32,9 @@ class BoundaryDetector:
         self.config = config
         self.detector = StateBoundaryDetector(config=config)
 
-    def detect_states(self, frames: list[Frame]) -> tuple[list[DetectedState], ProcessingStep]:
+    def detect_states(
+        self, frames: list[Frame]
+    ) -> tuple[list[DetectedState], ProcessingStep]:
         """Run state boundary detection.
 
         Args:

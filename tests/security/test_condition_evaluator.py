@@ -57,7 +57,9 @@ class TestConditionEvaluatorSafety:
         evaluator = ConditionEvaluator(context)
 
         # Trying to use __import__ should fail due to empty builtins
-        config = ConditionConfig(type="expression", expression="__import__('os').system('ls')")
+        config = ConditionConfig(
+            type="expression", expression="__import__('os').system('ls')"
+        )
 
         with pytest.raises(ValueError, match="Invalid expression"):
             evaluator.evaluate_condition(config)
@@ -91,7 +93,9 @@ class TestConditionEvaluatorErrorHandling:
         context = ExecutionContext({"x": "string", "y": 5})
         evaluator = ConditionEvaluator(context)
 
-        config = ConditionConfig(type="expression", expression="x + y")  # Can't add string and int
+        config = ConditionConfig(
+            type="expression", expression="x + y"
+        )  # Can't add string and int
 
         with pytest.raises(ValueError, match="Invalid expression"):
             evaluator.evaluate_condition(config)
@@ -138,9 +142,9 @@ class TestConditionTypes:
                 expected_value=expected_value,
             )
             result = evaluator.evaluate_condition(config)
-            assert result == expected_result, (
-                f"Failed for operator {operator} with expected {expected_value}"
-            )
+            assert (
+                result == expected_result
+            ), f"Failed for operator {operator} with expected {expected_value}"
 
     def test_contains_operator(self):
         """Test the contains operator."""
@@ -232,7 +236,9 @@ class TestSecurityDocumentation:
 
         assert docstring is not None
         assert "DO NOT use this with" in docstring
-        assert any(word in docstring.lower() for word in ["user", "untrusted", "external"])
+        assert any(
+            word in docstring.lower() for word in ["user", "untrusted", "external"]
+        )
 
     def test_mitigations_documented(self):
         """Test that security mitigations are documented."""
@@ -240,7 +246,10 @@ class TestSecurityDocumentation:
 
         assert docstring is not None
         assert "__builtins__" in docstring
-        assert any(word in docstring.lower() for word in ["prevent", "restricted", "mitigation"])
+        assert any(
+            word in docstring.lower()
+            for word in ["prevent", "restricted", "mitigation"]
+        )
 
     def test_security_docs_referenced(self):
         """Test that security documentation is referenced."""

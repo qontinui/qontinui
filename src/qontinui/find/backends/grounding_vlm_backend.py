@@ -78,7 +78,9 @@ class GroundingVLMBackend(DetectionBackend):
         """Return True — availability is checked lazily on first call."""
         return True
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Locate an element by sending the screenshot to the grounding model.
 
         Args:

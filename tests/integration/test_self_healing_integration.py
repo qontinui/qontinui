@@ -319,7 +319,11 @@ class TestCacheMiss:
         # Replace with a different gradient (inverted)
         for i in range(50):
             for j in range(100):
-                modified_screenshot[100 + i, 100 + j] = [255 - int(j * 2.55), 255 - int(i * 5.1), 0]
+                modified_screenshot[100 + i, 100 + j] = [
+                    255 - int(j * 2.55),
+                    255 - int(i * 5.1),
+                    0,
+                ]
 
         # Cache should invalidate because visual validation fails
         result = action_cache.try_get(
@@ -392,7 +396,10 @@ class TestVisualSearchFallback:
         # Visual search tries multiple scales, should eventually find it
         # This may fail as exact scale matching is tricky
         # The key test is that the system ATTEMPTS multi-scale search
-        assert result.strategy in [HealingStrategy.VISUAL_SEARCH, HealingStrategy.FAILED]
+        assert result.strategy in [
+            HealingStrategy.VISUAL_SEARCH,
+            HealingStrategy.FAILED,
+        ]
 
     def test_visual_search_tracks_statistics(
         self,
@@ -476,7 +483,9 @@ class TestReliabilityTracking:
 
         # Record some failures
         reliability_tracker.record_success(from_state, to_state)
-        reliability_tracker.record_failure(from_state, to_state, reason="Element not found")
+        reliability_tracker.record_failure(
+            from_state, to_state, reason="Element not found"
+        )
         reliability_tracker.record_failure(from_state, to_state, reason="Timeout")
 
         reliability = reliability_tracker.get_reliability(from_state, to_state)
@@ -496,7 +505,9 @@ class TestReliabilityTracking:
             reliability_tracker.record_success(from_state, to_state)
 
         # Record recent failures
-        reliability_tracker.record_failure(from_state, to_state, reason="Failed recently")
+        reliability_tracker.record_failure(
+            from_state, to_state, reason="Failed recently"
+        )
         reliability_tracker.record_failure(from_state, to_state, reason="Failed again")
 
         reliability = reliability_tracker.get_reliability(from_state, to_state)
@@ -544,8 +555,12 @@ class TestReliabilityTracking:
         for _ in range(10):
             reliability_tracker.record_failure(unreliable_from, unreliable_to)
 
-        reliable_cost = reliability_tracker.get_cost_multiplier(reliable_from, reliable_to)
-        unreliable_cost = reliability_tracker.get_cost_multiplier(unreliable_from, unreliable_to)
+        reliable_cost = reliability_tracker.get_cost_multiplier(
+            reliable_from, reliable_to
+        )
+        unreliable_cost = reliability_tracker.get_cost_multiplier(
+            unreliable_from, unreliable_to
+        )
 
         assert unreliable_cost > reliable_cost
         # Reliable should be near min (1.0)
@@ -749,7 +764,9 @@ class TestVisualValidation:
 
         # Add two distinct, well-separated changes with high contrast
         # Use filled rectangles that are far apart to ensure separate detection
-        cv2.rectangle(post_screenshot, (50, 50), (150, 150), (0, 0, 0), -1)  # Black, top-left area
+        cv2.rectangle(
+            post_screenshot, (50, 50), (150, 150), (0, 0, 0), -1
+        )  # Black, top-left area
         cv2.rectangle(
             post_screenshot, (600, 450), (700, 550), (255, 255, 255), -1
         )  # White, bottom-right
@@ -805,7 +822,9 @@ class TestSelfHealingEndToEnd:
 
         # Step 3: Simulate action with visual change
         post_screenshot = sample_screenshot.copy()
-        cv2.rectangle(post_screenshot, (0, 0), (800, 100), (0, 100, 0), -1)  # New banner
+        cv2.rectangle(
+            post_screenshot, (0, 0), (800, 100), (0, 100, 0), -1
+        )  # New banner
 
         # Step 4: Validate action caused change
         validation_result = visual_validator.validate(
@@ -863,10 +882,26 @@ class TestSelfHealingEndToEnd:
 
         # Step 3: Store healed location in cache
         region = Region(
-            x=healing_result.location.region[0] if healing_result.location.region else 0,
-            y=healing_result.location.region[1] if healing_result.location.region else 0,
-            width=healing_result.location.region[2] if healing_result.location.region else 100,
-            height=healing_result.location.region[3] if healing_result.location.region else 50,
+            x=(
+                healing_result.location.region[0]
+                if healing_result.location.region
+                else 0
+            ),
+            y=(
+                healing_result.location.region[1]
+                if healing_result.location.region
+                else 0
+            ),
+            width=(
+                healing_result.location.region[2]
+                if healing_result.location.region
+                else 100
+            ),
+            height=(
+                healing_result.location.region[3]
+                if healing_result.location.region
+                else 50
+            ),
         )
         action_cache.store(
             key=cache_key,
@@ -897,7 +932,9 @@ class TestSelfHealingEndToEnd:
         if validation_result.success:
             reliability_tracker.record_success(from_state, to_state)
         else:
-            reliability_tracker.record_failure(from_state, to_state, reason="No visual change")
+            reliability_tracker.record_failure(
+                from_state, to_state, reason="No visual change"
+            )
 
         # Step 6: Verify future cache hit
         future_result = action_cache.try_get(
@@ -1080,7 +1117,10 @@ class TestEdgeCases:
         )
 
         # Should still attempt healing
-        assert result.strategy in [HealingStrategy.VISUAL_SEARCH, HealingStrategy.FAILED]
+        assert result.strategy in [
+            HealingStrategy.VISUAL_SEARCH,
+            HealingStrategy.FAILED,
+        ]
 
     def test_validation_with_identical_screenshots(
         self,

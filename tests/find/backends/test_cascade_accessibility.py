@@ -278,19 +278,25 @@ class TestCascadeBackendOrdering:
         assert cascade.backends[0].estimated_cost_ms() == 5.0
 
         # Find semantic backend and verify its cost
-        sem_backends = [b for b in cascade.backends if b.name == "semantic_accessibility"]
+        sem_backends = [
+            b for b in cascade.backends if b.name == "semantic_accessibility"
+        ]
         assert len(sem_backends) == 1
         assert sem_backends[0].estimated_cost_ms() == 10.0
 
         # Semantic should come before template-based backends
         sem_idx = next(
-            i for i, b in enumerate(cascade.backends) if b.name == "semantic_accessibility"
+            i
+            for i, b in enumerate(cascade.backends)
+            if b.name == "semantic_accessibility"
         )
-        template_indices = [i for i, b in enumerate(cascade.backends) if "template" in b.name]
+        template_indices = [
+            i for i, b in enumerate(cascade.backends) if "template" in b.name
+        ]
         if template_indices:
-            assert sem_idx < min(template_indices), (
-                "Semantic backend should come before template backends"
-            )
+            assert sem_idx < min(
+                template_indices
+            ), "Semantic backend should come before template backends"
 
 
 class TestCascadeTimeBudget:
@@ -334,7 +340,10 @@ class TestCascadeTimeBudget:
         """When max_time_ms is None, all backends are tried."""
         b1 = StubBackend("b1", cost=10, supported_types=["template"])
         b2 = StubBackend(
-            "b2", cost=20, supported_types=["template"], results=[_make_result(0.95, "b2")]
+            "b2",
+            cost=20,
+            supported_types=["template"],
+            results=[_make_result(0.95, "b2")],
         )
 
         cascade = CascadeDetector(backends=[b1, b2])

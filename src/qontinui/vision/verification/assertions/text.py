@@ -228,7 +228,9 @@ class TextAssertion:
                 # Get region from locator if not provided
                 search_region = region
                 if search_region is None and self._locator is not None:
-                    search_region = await self._get_region_from_locator(current_screenshot)
+                    search_region = await self._get_region_from_locator(
+                        current_screenshot
+                    )
 
                 # Extract text
                 actual_text, ocr_results = await self._extract_text(
@@ -237,7 +239,9 @@ class TextAssertion:
                 last_actual_text = actual_text
 
                 # Check match
-                if self._text_matches(actual_text, expected_text, exact, case_sensitive, regex):
+                if self._text_matches(
+                    actual_text, expected_text, exact, case_sensitive, regex
+                ):
                     elapsed_ms = int((time.monotonic() - start_time) * 1000)
 
                     # Build match from region

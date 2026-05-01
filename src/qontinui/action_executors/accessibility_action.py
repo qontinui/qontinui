@@ -106,7 +106,9 @@ async def try_accessibility_click(
     # Fallback: direct click_by_ref without pattern strategy
     try:
         ok = await capture.click_by_ref(ref)
-        return AccessibilityActionResult(handled=True, success=bool(ok), wait_after_s=0.05)
+        return AccessibilityActionResult(
+            handled=True, success=bool(ok), wait_after_s=0.05
+        )
     except Exception as exc:
         logger.warning("click_by_ref failed for %s: %s", ref, exc)
         return AccessibilityActionResult(handled=True, success=False)
@@ -161,7 +163,9 @@ async def try_accessibility_type(
     # Fallback: direct type_by_ref without pattern strategy
     try:
         ok = await capture.type_by_ref(ref, text, clear_first=clear_first)
-        return AccessibilityActionResult(handled=True, success=bool(ok), wait_after_s=0.03)
+        return AccessibilityActionResult(
+            handled=True, success=bool(ok), wait_after_s=0.03
+        )
     except Exception as exc:
         logger.warning("type_by_ref failed for %s: %s", ref, exc)
         return AccessibilityActionResult(handled=True, success=False)
@@ -182,7 +186,9 @@ def _get_capture(hal_container: Any) -> Any | None:
     # Guard: only use if the capture is connected
     is_connected = getattr(capture, "is_connected", None)
     if callable(is_connected) and not is_connected():
-        logger.debug("accessibility_capture not connected — skipping accessibility path")
+        logger.debug(
+            "accessibility_capture not connected — skipping accessibility path"
+        )
         return None
     return capture
 
@@ -257,7 +263,11 @@ def _build_node(ref: str, role_str: str | None, match: Any) -> Any | None:
                 # Try via match_object
                 mo = getattr(match, "match_object", None)
                 if mo is not None:
-                    region = mo.get_region() if callable(getattr(mo, "get_region", None)) else None
+                    region = (
+                        mo.get_region()
+                        if callable(getattr(mo, "get_region", None))
+                        else None
+                    )
             if region is not None:
                 bounds = AccessibilityBounds(
                     x=int(getattr(region, "x", 0)),
@@ -271,7 +281,9 @@ def _build_node(ref: str, role_str: str | None, match: Any) -> Any | None:
         return AccessibilityNode(ref=ref, role=role, bounds=bounds)
 
     except ImportError:
-        logger.debug("qontinui_schemas not available — skipping AccessibilityNode construction")
+        logger.debug(
+            "qontinui_schemas not available — skipping AccessibilityNode construction"
+        )
         return None
     except Exception as exc:
         logger.debug("Failed to construct AccessibilityNode for %s: %s", ref, exc)

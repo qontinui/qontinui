@@ -4,11 +4,11 @@ Core pattern matching and finding functionality.
 """
 
 from .annotators import (
-    Annotator,
-    BoundingBoxAnnotator,
-    ConfidenceBarAnnotator,
-    LabelAnnotator,
-    RegionAnnotator,
+                         Annotator,
+                         BoundingBoxAnnotator,
+                         ConfidenceBarAnnotator,
+                         LabelAnnotator,
+                         RegionAnnotator,
 )
 from .detections import Detections
 from .find import Find

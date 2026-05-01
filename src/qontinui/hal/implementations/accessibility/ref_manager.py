@@ -184,7 +184,9 @@ class RefManager:
 
             entries[ref] = {
                 "automation_id": node.automation_id,
-                "role": getattr(node.role, "value", str(node.role)) if node.role else None,
+                "role": (
+                    getattr(node.role, "value", str(node.role)) if node.role else None
+                ),
                 "name": node.name,
                 "class_name": node.class_name,
                 "bounds": bounds,
@@ -214,7 +216,9 @@ class RefManager:
             return {}
 
         try:
-            data: dict[str, dict[str, Any]] = json.loads(path.read_text(encoding="utf-8"))
+            data: dict[str, dict[str, Any]] = json.loads(
+                path.read_text(encoding="utf-8")
+            )
             logger.debug("Loaded %d ref fingerprints from %s", len(data), path)
             return data
         except (json.JSONDecodeError, OSError) as e:

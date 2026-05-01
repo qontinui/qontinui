@@ -53,7 +53,9 @@ class DetectionResult:
         return (self.x, self.y, self.width, self.height)
 
     @property
-    def normalized_bounds(self) -> tuple[float, float | None, float | None, float | None] | None:
+    def normalized_bounds(
+        self,
+    ) -> tuple[float, float | None, float | None, float | None] | None:
         """Normalized bounding box as (x, y, width, height) in 0.0-1.0 range.
 
         Returns None if coordinates have not been normalized yet.
@@ -101,7 +103,9 @@ class DetectionBackend(ABC):
     """
 
     @abstractmethod
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find needle in haystack.
 
         Args:

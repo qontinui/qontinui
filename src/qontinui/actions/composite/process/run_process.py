@@ -113,9 +113,13 @@ class RunProcess(ActionInterface):
 
         # Execute with repetition
         if repetition.get_until_success():
-            self._execute_until_success(workflow, repetition, action_result, object_collections)
+            self._execute_until_success(
+                workflow, repetition, action_result, object_collections
+            )
         else:
-            self._execute_fixed_count(workflow, repetition, action_result, object_collections)
+            self._execute_fixed_count(
+                workflow, repetition, action_result, object_collections
+            )
 
     def _get_workflow(self, workflow_id: str) -> Workflow | Process | None:
         """Get a workflow by ID from the configuration.

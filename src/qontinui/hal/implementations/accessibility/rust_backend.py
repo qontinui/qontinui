@@ -66,7 +66,9 @@ class RustBackendCapture(IAccessibilityCapture):
             self._session = aiohttp.ClientSession(timeout=self._timeout)
         return self._session
 
-    async def _post(self, path: str, json: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def _post(
+        self, path: str, json: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Make a POST request to the runner API.
 
         Args:
@@ -85,12 +87,16 @@ class RustBackendCapture(IAccessibilityCapture):
             async with session.post(url, json=json or {}) as resp:
                 if resp.status >= 400:
                     body = await resp.text()
-                    raise RuntimeError(f"Runner API error {resp.status} on POST {path}: {body}")
+                    raise RuntimeError(
+                        f"Runner API error {resp.status} on POST {path}: {body}"
+                    )
                 return cast(dict[str, Any], await resp.json())
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Failed to reach runner at {url}: {e}") from e
 
-    async def _get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def _get(
+        self, path: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Make a GET request to the runner API.
 
         Args:
@@ -109,7 +115,9 @@ class RustBackendCapture(IAccessibilityCapture):
             async with session.get(url, params=params) as resp:
                 if resp.status >= 400:
                     body = await resp.text()
-                    raise RuntimeError(f"Runner API error {resp.status} on GET {path}: {body}")
+                    raise RuntimeError(
+                        f"Runner API error {resp.status} on GET {path}: {body}"
+                    )
                 return cast(dict[str, Any], await resp.json())
         except aiohttp.ClientError as e:
             raise RuntimeError(f"Failed to reach runner at {url}: {e}") from e
@@ -172,7 +180,9 @@ class RustBackendCapture(IAccessibilityCapture):
         try:
             await self._post("/a11y/disconnect")
         except RuntimeError:
-            logger.debug("Disconnect request failed (runner may be down)", exc_info=True)
+            logger.debug(
+                "Disconnect request failed (runner may be down)", exc_info=True
+            )
         finally:
             self._connected = False
             self._last_snapshot = None
@@ -360,7 +370,9 @@ class RustBackendCapture(IAccessibilityCapture):
 
                 # 2. Check use_rust_accessibility setting
                 try:
-                    async with session.get(f"{runner_url}/settings/accessibility") as settings_resp:
+                    async with session.get(
+                        f"{runner_url}/settings/accessibility"
+                    ) as settings_resp:
                         if settings_resp.status == 200:
                             data = await settings_resp.json()
                             # The runner wraps responses in ApiResponse with a

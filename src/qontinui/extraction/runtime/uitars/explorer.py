@@ -251,7 +251,8 @@ class UITARSExplorer(RuntimeExtractor):
         # Build config
         if config is None:
             config = UITARSExplorationConfig(
-                goal=goal or "Explore this application and discover all available features",
+                goal=goal
+                or "Explore this application and discover all available features",
             )
         elif goal:
             config.goal = goal
@@ -335,8 +336,12 @@ class UITARSExplorer(RuntimeExtractor):
                     step_index=step_index,
                     thought=result.thought,
                     action=result.action,
-                    screenshot_before=screenshot if not config.save_screenshots else None,
-                    screenshot_after=screenshot_after if not config.save_screenshots else None,
+                    screenshot_before=(
+                        screenshot if not config.save_screenshots else None
+                    ),
+                    screenshot_after=(
+                        screenshot_after if not config.save_screenshots else None
+                    ),
                     execution_time_ms=(time.time() - step_start) * 1000,
                     success=success,
                 )
@@ -380,7 +385,9 @@ class UITARSExplorer(RuntimeExtractor):
                         else UITARSStep(
                             step_index=step_index,
                             thought=type("Thought", (), {"reasoning": str(e)})(),
-                            action=type("Action", (), {"action_type": UITARSActionType.WAIT})(),
+                            action=type(
+                                "Action", (), {"action_type": UITARSActionType.WAIT}
+                            )(),
                         ).thought
                     ),
                     action=(
@@ -389,7 +396,9 @@ class UITARSExplorer(RuntimeExtractor):
                         else UITARSStep(
                             step_index=step_index,
                             thought=type("Thought", (), {"reasoning": str(e)})(),
-                            action=type("Action", (), {"action_type": UITARSActionType.WAIT})(),
+                            action=type(
+                                "Action", (), {"action_type": UITARSActionType.WAIT}
+                            )(),
                         ).action
                     ),
                     success=False,

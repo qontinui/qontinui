@@ -142,7 +142,9 @@ class PerformanceMonitoringAspect:
         # Trend detection
         self._performance_trends: dict[str, deque[float]] = {}
 
-    def monitor(self, name: str | None = None, track_args: bool = False) -> Callable[..., Any]:
+    def monitor(
+        self, name: str | None = None, track_args: bool = False
+    ) -> Callable[..., Any]:
         """Decorator to monitor method performance.
 
         Args:
@@ -192,7 +194,9 @@ class PerformanceMonitoringAspect:
                         end_memory = self._get_memory_usage()
                         memory_delta = end_memory - start_memory
                         if memory_delta > 100:  # More than 100MB
-                            logger.warning(f"{operation_name} used {memory_delta:.2f}MB of memory")
+                            logger.warning(
+                                f"{operation_name} used {memory_delta:.2f}MB of memory"
+                            )
 
                     # Check if report is due
                     self._check_report_interval()
@@ -201,7 +205,9 @@ class PerformanceMonitoringAspect:
 
         return decorator
 
-    def _update_stats(self, method_name: str, duration_ms: float, success: bool) -> None:
+    def _update_stats(
+        self, method_name: str, duration_ms: float, success: bool
+    ) -> None:
         """Update performance statistics.
 
         Args:
@@ -220,7 +226,9 @@ class PerformanceMonitoringAspect:
                 self._performance_trends[method_name] = deque(maxlen=100)
             self._performance_trends[method_name].append(duration_ms)
 
-    def _check_performance_threshold(self, method_name: str, duration_ms: float) -> None:
+    def _check_performance_threshold(
+        self, method_name: str, duration_ms: float
+    ) -> None:
         """Check if operation exceeded performance thresholds.
 
         Args:
@@ -233,7 +241,9 @@ class PerformanceMonitoringAspect:
                 f"(threshold: {self.alert_threshold_ms}ms)"
             )
         elif duration_ms > self.warning_threshold_ms:
-            logger.warning(f"Performance warning: {method_name} took {duration_ms:.2f}ms")
+            logger.warning(
+                f"Performance warning: {method_name} took {duration_ms:.2f}ms"
+            )
 
     def _check_report_interval(self) -> None:
         """Check if it's time to generate a performance report."""
@@ -275,7 +285,9 @@ class PerformanceMonitoringAspect:
             List of (method_name, average_time_ms) tuples
         """
         with self._stats_lock:
-            operations = [(name, stats.average_time_ms) for name, stats in self._stats.items()]
+            operations = [
+                (name, stats.average_time_ms) for name, stats in self._stats.items()
+            ]
             operations.sort(key=lambda x: x[1], reverse=True)
             return operations[:limit]
 

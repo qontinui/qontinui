@@ -161,7 +161,9 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             raise
 
         except Exception as e:
-            logger.error(f"Unexpected error executing {action_type}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error executing {action_type}: {e}", exc_info=True
+            )
             raise ActionExecutionError(
                 action_type=action_type,
                 reason=f"Control flow execution failed: {e}",
@@ -311,7 +313,9 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             self._emit_action_failure(action, str(e))
             return False
 
-    def _execute_try_catch(self, action: Action, typed_config: TryCatchActionConfig) -> bool:
+    def _execute_try_catch(
+        self, action: Action, typed_config: TryCatchActionConfig
+    ) -> bool:
         """Execute TRY_CATCH action via wrapped executor.
 
         Args:
@@ -333,8 +337,12 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
                     {
                         "branch_taken": result.get("branch_taken"),
                         "try_actions_executed": result.get("try_actions_executed", 0),
-                        "catch_actions_executed": result.get("catch_actions_executed", 0),
-                        "finally_actions_executed": result.get("finally_actions_executed", 0),
+                        "catch_actions_executed": result.get(
+                            "catch_actions_executed", 0
+                        ),
+                        "finally_actions_executed": result.get(
+                            "finally_actions_executed", 0
+                        ),
                         "error_caught": result.get("error_caught"),
                     },
                 )
@@ -382,11 +390,17 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             # Expected exception - re-raise to propagate
             self._emit_action_success(
                 action,
-                {"message": (typed_config.message if typed_config else "Break triggered")},
+                {
+                    "message": (
+                        typed_config.message if typed_config else "Break triggered"
+                    )
+                },
             )
             raise
 
-    def _execute_continue(self, action: Action, typed_config: ContinueActionConfig) -> bool:
+    def _execute_continue(
+        self, action: Action, typed_config: ContinueActionConfig
+    ) -> bool:
         """Execute CONTINUE action via wrapped executor.
 
         Args:
@@ -412,7 +426,11 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             # Expected exception - re-raise to propagate
             self._emit_action_success(
                 action,
-                {"message": (typed_config.message if typed_config else "Continue triggered")},
+                {
+                    "message": (
+                        typed_config.message if typed_config else "Continue triggered"
+                    )
+                },
             )
             raise
 

@@ -70,7 +70,9 @@ class AwasRuntimeExtractor(RuntimeExtractor):
             ConnectionError: If no AWAS manifest is found.
         """
         if not target.url:
-            raise ValueError("ExtractionTarget must have a URL for AwasRuntimeExtractor")
+            raise ValueError(
+                "ExtractionTarget must have a URL for AwasRuntimeExtractor"
+            )
 
         try:
             self._manifest = await self.discovery.discover(target.url)
@@ -93,7 +95,9 @@ class AwasRuntimeExtractor(RuntimeExtractor):
             raise
         except Exception as e:
             logger.error(f"Failed to connect to {target.url}: {e}")
-            raise ConnectionError(f"Failed to discover AWAS manifest at {target.url}") from e
+            raise ConnectionError(
+                f"Failed to discover AWAS manifest at {target.url}"
+            ) from e
 
     async def disconnect(self) -> None:
         """Disconnect and clean up."""
@@ -185,7 +189,9 @@ class AwasRuntimeExtractor(RuntimeExtractor):
 
         return ExtractedElement(
             id=f"awas_elem_{action.id}",
-            bbox=WebBoundingBox(x=0, y=index * 50, width=200, height=40),  # Placeholder bounds
+            bbox=WebBoundingBox(
+                x=0, y=index * 50, width=200, height=40
+            ),  # Placeholder bounds
             element_type=element_type,
             selector=selector,
             tag_name="button" if action.side_effect else "a",

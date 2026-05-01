@@ -111,11 +111,13 @@ class AccessibilityValidator:
 
         # Consider critical/serious issues as blocking for compliance
         blocking_a = any(
-            issue.severity in (AccessibilitySeverity.CRITICAL, AccessibilitySeverity.SERIOUS)
+            issue.severity
+            in (AccessibilitySeverity.CRITICAL, AccessibilitySeverity.SERIOUS)
             for issue in level_a_issues
         )
         blocking_aa = any(
-            issue.severity in (AccessibilitySeverity.CRITICAL, AccessibilitySeverity.SERIOUS)
+            issue.severity
+            in (AccessibilitySeverity.CRITICAL, AccessibilitySeverity.SERIOUS)
             for issue in level_aa_issues
         )
 
@@ -158,9 +160,13 @@ class AccessibilityValidator:
             return "No accessibility issues found. Page meets WCAG 2.1 AA standards."
 
         # Count by severity
-        critical = sum(1 for i in issues if i.severity == AccessibilitySeverity.CRITICAL)
+        critical = sum(
+            1 for i in issues if i.severity == AccessibilitySeverity.CRITICAL
+        )
         serious = sum(1 for i in issues if i.severity == AccessibilitySeverity.SERIOUS)
-        moderate = sum(1 for i in issues if i.severity == AccessibilitySeverity.MODERATE)
+        moderate = sum(
+            1 for i in issues if i.severity == AccessibilitySeverity.MODERATE
+        )
         minor = sum(1 for i in issues if i.severity == AccessibilitySeverity.MINOR)
 
         parts = []
@@ -187,7 +193,9 @@ class AccessibilityValidator:
         else:
             compliance_str = "Does not meet WCAG 2.1 A compliance."
 
-        return f"Found {total} accessibility issues ({issues_summary}). {compliance_str}"
+        return (
+            f"Found {total} accessibility issues ({issues_summary}). {compliance_str}"
+        )
 
     def add_rule(self, rule: AccessibilityRule) -> None:
         """Add a custom rule to the validator.

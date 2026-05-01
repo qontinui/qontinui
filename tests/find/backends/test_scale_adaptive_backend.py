@@ -27,11 +27,7 @@ from qontinui.find.backends._feature_cache import (
     hash_screenshot,
 )
 from qontinui.find.backends.base import DetectionBackend
-from qontinui.find.backends.scale_adaptive_backend import (
-    ENV_FLAG,
-    ScaleAdaptiveBackend,
-    is_enabled,
-)
+from qontinui.find.backends.scale_adaptive_backend import ENV_FLAG, ScaleAdaptiveBackend, is_enabled
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -281,7 +277,11 @@ _DATASET = _load_dataset()
 @pytest.mark.parametrize(
     "record",
     _DATASET,
-    ids=[rec.get("id", f"rec_{i}") for i, rec in enumerate(_DATASET)] if _DATASET else None,
+    ids=(
+        [rec.get("id", f"rec_{i}") for i, rec in enumerate(_DATASET)]
+        if _DATASET
+        else None
+    ),
 )
 def test_regression_by_tag(record: dict[str, Any], enabled_env: None) -> None:
     """Smoke-run the backend against a tagged eval record.

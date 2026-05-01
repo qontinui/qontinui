@@ -320,7 +320,9 @@ class HealingConfig:
             if env == "production":
                 return cls.disabled()
             # Dev mode: auto-enable if endpoint is reachable (quick probe)
-            endpoint = os.environ.get("QONTINUI_ARIA_UI_ENDPOINT", "http://localhost:8100")
+            endpoint = os.environ.get(
+                "QONTINUI_ARIA_UI_ENDPOINT", "http://localhost:8100"
+            )
             if not cls._is_endpoint_reachable(endpoint):
                 return cls.disabled()
 

@@ -74,7 +74,9 @@ class VisionActionExecutor(ActionExecutorBase):
                 reason=f"Unknown vision action type: {action.type}",
             )
 
-    async def _execute_find(self, action: Action, typed_config: FindActionConfig) -> bool:
+    async def _execute_find(
+        self, action: Action, typed_config: FindActionConfig
+    ) -> bool:
         """Execute FIND action - locate image and store ActionResult.
 
         Args:
@@ -125,7 +127,9 @@ class VisionActionExecutor(ActionExecutorBase):
                 log_debug(f"  Result type: {type(result)}")
                 log_debug(f"  Result.success: {result.success}")
                 log_debug(f"  Result.matches: {result.matches}")
-                log_debug(f"  Result.matches count: {len(result.matches) if result.matches else 0}")
+                log_debug(
+                    f"  Result.matches count: {len(result.matches) if result.matches else 0}"
+                )
 
                 if result.matches:
                     for i, match in enumerate(result.matches):
@@ -139,7 +143,9 @@ class VisionActionExecutor(ActionExecutorBase):
 
             if result and result.success:
                 log_debug("STEP 3: SUCCESS - Result has matches")
-                logger.info(f"FIND action succeeded: found {len(result.matches)} matches")
+                logger.info(
+                    f"FIND action succeeded: found {len(result.matches)} matches"
+                )
                 log_debug("FIND ACTION RETURNING: True")
                 log_debug("=" * 80 + "\n")
                 return True
@@ -172,7 +178,9 @@ class VisionActionExecutor(ActionExecutorBase):
             log_debug("=" * 80 + "\n")
             return False
 
-    async def _execute_vanish(self, action: Action, typed_config: VanishActionConfig) -> bool:
+    async def _execute_vanish(
+        self, action: Action, typed_config: VanishActionConfig
+    ) -> bool:
         """Execute VANISH action - wait for image to disappear.
 
         Args:
@@ -191,7 +199,9 @@ class VisionActionExecutor(ActionExecutorBase):
         timeout_seconds = max_wait_time / 1000.0
         poll_seconds = poll_interval / 1000.0
 
-        logger.debug(f"VANISH timeout: {timeout_seconds}s, poll interval: {poll_seconds}s")
+        logger.debug(
+            f"VANISH timeout: {timeout_seconds}s, poll interval: {poll_seconds}s"
+        )
 
         try:
             start_time = self.context.time.now()
@@ -202,7 +212,9 @@ class VisionActionExecutor(ActionExecutorBase):
                 result = await self.target_resolver.resolve(typed_config.target)
 
                 if result is None or not result.success:
-                    logger.info(f"VANISH action succeeded: element vanished after {elapsed:.2f}s")
+                    logger.info(
+                        f"VANISH action succeeded: element vanished after {elapsed:.2f}s"
+                    )
                     return True
 
                 # Wait before next poll

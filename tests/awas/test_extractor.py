@@ -469,7 +469,9 @@ class TestAwasRuntimeExtractorInteraction:
             return_value=httpx.Response(200, json=SAMPLE_MANIFEST)
         )
         respx.get("https://api.test.com/items/item123").mock(
-            return_value=httpx.Response(200, json={"id": "item123", "name": "Test Item"})
+            return_value=httpx.Response(
+                200, json={"id": "item123", "name": "Test Item"}
+            )
         )
 
         extractor = AwasRuntimeExtractor()
@@ -593,7 +595,9 @@ class TestAwasRuntimeExtractorPriority:
 
         # Pre-populate cache
         discovery = AwasDiscoveryService()
-        manifest = AwasManifest(app_name="Cached", base_url="https://cached.example.com")
+        manifest = AwasManifest(
+            app_name="Cached", base_url="https://cached.example.com"
+        )
         discovery._cache["https://cached.example.com"] = CacheEntry(manifest)
 
         # Create new extractor which will use the shared cache
@@ -603,7 +607,10 @@ class TestAwasRuntimeExtractorPriority:
         # This would return True if the extractor's discovery instance has the cache
         # But in practice, each extractor creates its own AwasDiscoveryService
         # The test shows the expected behavior when cache IS populated
-        assert extractor.discovery.get_cached_manifest("https://cached.example.com") is not None
+        assert (
+            extractor.discovery.get_cached_manifest("https://cached.example.com")
+            is not None
+        )
 
 
 class TestAwasRuntimeExtractorDirectExecution:
@@ -754,4 +761,7 @@ class TestAwasRuntimeExtractorScreenshot:
         assert screenshot.id.startswith("awas_placeholder_")
         assert screenshot.viewport.width == 1920
         assert screenshot.viewport.height == 1080
-        assert "AWAS extraction does not capture screenshots" in screenshot.metadata["note"]
+        assert (
+            "AWAS extraction does not capture screenshots"
+            in screenshot.metadata["note"]
+        )

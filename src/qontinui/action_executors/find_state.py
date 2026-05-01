@@ -112,7 +112,9 @@ class FindStateExecutor(ActionExecutorBase):
                         image_to_state[image_id] = state_id
                 elif state_image.image:
                     # Use image name or generate ID
-                    img_name = state_image.name or getattr(state_image.image, "name", None)
+                    img_name = state_image.name or getattr(
+                        state_image.image, "name", None
+                    )
                     if img_name:
                         image_to_state[img_name] = state_id
 
@@ -125,14 +127,18 @@ class FindStateExecutor(ActionExecutorBase):
             )
             return False
 
-        logger.debug(f"Collected {len(image_to_state)} image(s) across {len(state_ids)} state(s)")
+        logger.debug(
+            f"Collected {len(image_to_state)} image(s) across {len(state_ids)} state(s)"
+        )
 
         # Perform FIND ALL operation on all images
         active_states = await self._find_all_images(image_to_state, config, action)
 
         # Store result
         if config.output_variable and active_states:
-            self.context.variable_context.set_variable(config.output_variable, list(active_states))
+            self.context.variable_context.set_variable(
+                config.output_variable, list(active_states)
+            )
 
         # Emit success event with results
         self._emit_action_success(
@@ -144,11 +150,15 @@ class FindStateExecutor(ActionExecutorBase):
             },
         )
 
-        logger.info(f"FIND_STATE complete: {len(active_states)}/{len(state_ids)} states active")
+        logger.info(
+            f"FIND_STATE complete: {len(active_states)}/{len(state_ids)} states active"
+        )
 
         return len(active_states) > 0
 
-    def _execute_without_state_map(self, action: Action, config: FindStateActionConfig) -> bool:
+    def _execute_without_state_map(
+        self, action: Action, config: FindStateActionConfig
+    ) -> bool:
         """Execute FIND_STATE when state_map is not available.
 
         Falls back to searching for images registered under the state IDs.
@@ -253,9 +263,13 @@ class FindStateExecutor(ActionExecutorBase):
         results = await find_action.find(patterns, options)
 
         # Map results back to states
-        for result, (_, image_id, state_id) in zip(results, patterns_with_info, strict=False):
+        for result, (_, image_id, state_id) in zip(
+            results, patterns_with_info, strict=False
+        ):
             if result.found:
-                logger.debug(f"Image '{image_id}' found -> state '{state_id}' is active")
+                logger.debug(
+                    f"Image '{image_id}' found -> state '{state_id}' is active"
+                )
                 active_states.add(state_id)
 
         return active_states

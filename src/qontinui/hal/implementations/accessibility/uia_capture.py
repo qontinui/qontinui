@@ -206,7 +206,10 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
                 def find_by_title() -> Any:
                     root = auto.GetRootControl()
                     for window in root.GetChildren():
-                        if hasattr(window, "Name") and target.lower() in window.Name.lower():
+                        if (
+                            hasattr(window, "Name")
+                            and target.lower() in window.Name.lower()
+                        ):
                             return window
                     return None
 
@@ -242,7 +245,9 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
         if not title:
             return None
         # Sanitise title into a safe filename
-        safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip()[:80]
+        safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip()[
+            :80
+        ]
         return self._persistence_dir / f"{safe}.json"
 
     async def disconnect(self) -> None:
@@ -498,7 +503,9 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
         # new tree so that refs from previous sessions stay valid.
         self._try_restore_persisted_refs(snapshot)
 
-        logger.info(f"Captured UIA tree: {total_nodes} nodes, {interactive_nodes} interactive")
+        logger.info(
+            f"Captured UIA tree: {total_nodes} nodes, {interactive_nodes} interactive"
+        )
 
         return snapshot
 
@@ -595,7 +602,9 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
             # Check name
             if selector.name is not None:
                 case_sensitive = (
-                    selector.case_sensitive if selector.case_sensitive is not None else True
+                    selector.case_sensitive
+                    if selector.case_sensitive is not None
+                    else True
                 )
                 node_name = node.name or ""
                 sel_name = selector.name
@@ -608,7 +617,9 @@ class UIAAccessibilityCapture(IAccessibilityCapture):
             # Check name_contains
             if selector.name_contains is not None:
                 case_sensitive = (
-                    selector.case_sensitive if selector.case_sensitive is not None else True
+                    selector.case_sensitive
+                    if selector.case_sensitive is not None
+                    else True
                 )
                 node_name = node.name or ""
                 sel_contains = selector.name_contains

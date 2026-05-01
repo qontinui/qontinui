@@ -68,7 +68,9 @@ class VirtualDesktopInfo:
     monitors: tuple[MonitorInfo, ...]
 
     @classmethod
-    def from_mss_monitors(cls, mss_monitors: list[dict[str, int]]) -> "VirtualDesktopInfo":
+    def from_mss_monitors(
+        cls, mss_monitors: list[dict[str, int]]
+    ) -> "VirtualDesktopInfo":
         """Create VirtualDesktopInfo from MSS monitor list.
 
         MSS provides a special monitor list where:

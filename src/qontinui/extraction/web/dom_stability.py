@@ -524,7 +524,9 @@ class LazyContentLoader:
             # Check if we've reached the end
             current_snapshot = result.final_snapshot
             if current_snapshot:
-                new_elements = current_snapshot.element_count - initial_snapshot.element_count
+                new_elements = (
+                    current_snapshot.element_count - initial_snapshot.element_count
+                )
                 elements_loaded = max(elements_loaded, new_elements)
 
                 # Check if at bottom/top
@@ -550,7 +552,9 @@ class LazyContentLoader:
             "scroll_count": scroll_count,
             "elements_loaded": elements_loaded,
             "initial_element_count": initial_snapshot.element_count,
-            "final_element_count": (current_snapshot.element_count if current_snapshot else 0),
+            "final_element_count": (
+                current_snapshot.element_count if current_snapshot else 0
+            ),
         }
 
     async def click_load_more(
@@ -610,7 +614,8 @@ class LazyContentLoader:
             "click_count": click_count,
             "initial_element_count": initial_snapshot.element_count,
             "final_element_count": final_snapshot.element_count,
-            "elements_added": final_snapshot.element_count - initial_snapshot.element_count,
+            "elements_added": final_snapshot.element_count
+            - initial_snapshot.element_count,
         }
 
 
@@ -662,7 +667,9 @@ class ContentChangeDetector:
 
         # Calculate change metrics
         element_diff = abs(current.element_count - self.baseline_snapshot.element_count)
-        element_change_ratio = element_diff / max(self.baseline_snapshot.element_count, 1)
+        element_change_ratio = element_diff / max(
+            self.baseline_snapshot.element_count, 1
+        )
 
         hash_changed = current.content_hash != self.baseline_snapshot.content_hash
 

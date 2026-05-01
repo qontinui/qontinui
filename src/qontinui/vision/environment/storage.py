@@ -239,7 +239,9 @@ def export_environment_summary(
     )
 
     for elem_type, pattern in environment.element_patterns.patterns.items():
-        lines.append(f"- {elem_type}: {pattern.shape.value}, {pattern.detection_count} instances")
+        lines.append(
+            f"- {elem_type}: {pattern.shape.value}, {pattern.detection_count} instances"
+        )
 
     lines.append("")
 

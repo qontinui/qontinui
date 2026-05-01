@@ -102,4 +102,6 @@ class FindAction:
             return cast(FindResult, results[0])
 
         # Handle multiple patterns
-        return cast(list[FindResult], await self._wrapper.find(pattern, options, max_concurrent))
+        return cast(
+            list[FindResult], await self._wrapper.find(pattern, options, max_concurrent)
+        )

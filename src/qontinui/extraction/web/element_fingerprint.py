@@ -90,7 +90,9 @@ class ElementFingerprintGenerator:
         size_class = self._classify_size(element.bbox.width, element.bbox.height)
 
         # Position region
-        position_region = self._classify_position(element.bbox, viewport_size[0], viewport_size[1])
+        position_region = self._classify_position(
+            element.bbox, viewport_size[0], viewport_size[1]
+        )
 
         # Relative position (0.0 to 1.0)
         relative_x = (element.bbox.x + element.bbox.width / 2) / viewport_size[0]
@@ -114,9 +116,11 @@ class ElementFingerprintGenerator:
             content_hash=content_hash,
             text_length=len(element.text_content or ""),
             has_text=bool(element.text_content),
-            has_border=element.border_color is not None and element.border_color[3] > 10,
+            has_border=element.border_color is not None
+            and element.border_color[3] > 10,
             has_background=(
-                element.background_color is not None and element.background_color[3] > 10
+                element.background_color is not None
+                and element.background_color[3] > 10
             ),
         )
 

@@ -191,8 +191,12 @@ class TestUIBridgeRuntime:
         runtime = UIBridgeRuntime(client)
 
         # Register states first
-        runtime.register_state(UIBridgeState(id="state_a", name="State A", element_ids=["a1"]))
-        runtime.register_state(UIBridgeState(id="state_b", name="State B", element_ids=["b1"]))
+        runtime.register_state(
+            UIBridgeState(id="state_a", name="State A", element_ids=["a1"])
+        )
+        runtime.register_state(
+            UIBridgeState(id="state_b", name="State B", element_ids=["b1"])
+        )
 
         # Register transition
         transition = UIBridgeTransition(
@@ -215,10 +219,14 @@ class TestUIBridgeRuntime:
 
         # Register states
         runtime.register_state(
-            UIBridgeState(id="dashboard", name="Dashboard", element_ids=["nav", "sidebar"])
+            UIBridgeState(
+                id="dashboard", name="Dashboard", element_ids=["nav", "sidebar"]
+            )
         )
         runtime.register_state(
-            UIBridgeState(id="settings", name="Settings", element_ids=["settings-panel"])
+            UIBridgeState(
+                id="settings", name="Settings", element_ids=["settings-panel"]
+            )
         )
 
         # Set visible elements to match dashboard
@@ -236,7 +244,9 @@ class TestUIBridgeRuntime:
         runtime = UIBridgeRuntime(client, config)
 
         # Register states and transition
-        runtime.register_state(UIBridgeState(id="login", name="Login", element_ids=["login-form"]))
+        runtime.register_state(
+            UIBridgeState(id="login", name="Login", element_ids=["login-form"])
+        )
         runtime.register_state(
             UIBridgeState(id="dashboard", name="Dashboard", element_ids=["dashboard"])
         )

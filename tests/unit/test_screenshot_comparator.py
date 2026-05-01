@@ -40,7 +40,9 @@ def _image_with_block(
     return img
 
 
-def _add_antialiasing_noise(image: np.ndarray, seed: int = 42, intensity: int = 3) -> np.ndarray:
+def _add_antialiasing_noise(
+    image: np.ndarray, seed: int = 42, intensity: int = 3
+) -> np.ndarray:
     """Add small per-pixel noise simulating antialiasing/subpixel rendering."""
     rng = np.random.RandomState(seed)
     noise = rng.randint(-intensity, intensity + 1, image.shape, dtype=np.int16)
@@ -227,9 +229,13 @@ class TestGaussianBlur:
         comparator = ScreenshotComparator(config=config)
 
         # Without blur — noise causes more diff pixels
-        result_no_blur = comparator.compare(noisy, base, method="pixel", threshold=0.5, blur=False)
+        result_no_blur = comparator.compare(
+            noisy, base, method="pixel", threshold=0.5, blur=False
+        )
         # With blur — noise is smoothed, fewer diff pixels
-        result_blur = comparator.compare(noisy, base, method="pixel", threshold=0.5, blur=True)
+        result_blur = comparator.compare(
+            noisy, base, method="pixel", threshold=0.5, blur=True
+        )
 
         pct_no_blur = result_no_blur.metadata["diff_pixel_percentage"]
         pct_blur = result_blur.metadata["diff_pixel_percentage"]
@@ -246,7 +252,9 @@ class TestGaussianBlur:
         changed[10:40, 10:40] = (255, 0, 0)
 
         comparator = ScreenshotComparator()
-        result = comparator.compare(changed, base, method="pixel", threshold=0.99, blur=True)
+        result = comparator.compare(
+            changed, base, method="pixel", threshold=0.99, blur=True
+        )
 
         assert result.matches is False
         assert result.metadata["diff_pixel_percentage"] > 0.05  # >5%

@@ -635,7 +635,9 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
-        return await self.to_be_aligned_with(reference, Alignment.MIDDLE, screenshot, tolerance)
+        return await self.to_be_aligned_with(
+            reference, Alignment.MIDDLE, screenshot, tolerance
+        )
 
     async def to_be_vertically_aligned(
         self,
@@ -653,7 +655,9 @@ class SpatialAssertion:
         Returns:
             Assertion result.
         """
-        return await self.to_be_aligned_with(reference, Alignment.CENTER, screenshot, tolerance)
+        return await self.to_be_aligned_with(
+            reference, Alignment.CENTER, screenshot, tolerance
+        )
 
     async def to_be_near(
         self,
@@ -763,7 +767,9 @@ class SpatialAssertion:
                 duration_ms=elapsed_ms,
             )
 
-        overlap_area = self._calculate_overlap_area(target_match.bounds, other_match.bounds)
+        overlap_area = self._calculate_overlap_area(
+            target_match.bounds, other_match.bounds
+        )
         overlaps = overlap_area >= min_overlap_area
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
@@ -831,7 +837,9 @@ class SpatialAssertion:
                 duration_ms=elapsed_ms,
             )
 
-        overlap_area = self._calculate_overlap_area(target_match.bounds, other_match.bounds)
+        overlap_area = self._calculate_overlap_area(
+            target_match.bounds, other_match.bounds
+        )
         no_overlap = overlap_area == 0
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)

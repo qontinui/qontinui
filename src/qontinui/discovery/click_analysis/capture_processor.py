@@ -224,7 +224,9 @@ class CaptureProcessor:
         )
 
         strategies_attempted: list[DetectionStrategy] = [
-            s for s in self.config.preferred_strategies if s != DetectionStrategy.FIXED_SIZE
+            s
+            for s in self.config.preferred_strategies
+            if s != DetectionStrategy.FIXED_SIZE
         ]
 
         if candidates:

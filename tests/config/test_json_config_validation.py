@@ -81,9 +81,9 @@ class TestJSONConfigValidation:
 
         # Verify base settings were parsed correctly
         assert action.base is not None, "Base settings should be present"
-        assert action.base.pause_after_end == 10000, (
-            "pauseAfterEnd should be parsed as pause_after_end and equal 10000"
-        )
+        assert (
+            action.base.pause_after_end == 10000
+        ), "pauseAfterEnd should be parsed as pause_after_end and equal 10000"
 
     def test_action_base_settings_snakecase_fails(self):
         """Test that snake_case in JSON does NOT work (should use camelCase)."""
@@ -133,7 +133,9 @@ class TestJSONConfigValidation:
         action_dict = {
             "id": "action-1",
             "type": "CLICK",
-            "config": {"target": {"type": "coordinates", "coordinates": {"x": 100, "y": 200}}},
+            "config": {
+                "target": {"type": "coordinates", "coordinates": {"x": 100, "y": 200}}
+            },
         }
 
         action = Action(**action_dict)
@@ -144,7 +146,9 @@ class TestJSONConfigValidation:
         action_dict = {
             "id": "action-1",
             "type": "CLICK",
-            "config": {"target": {"type": "coordinates", "coordinates": {"x": 100, "y": 200}}},
+            "config": {
+                "target": {"type": "coordinates", "coordinates": {"x": 100, "y": 200}}
+            },
             "base": {},
         }
 
@@ -160,7 +164,9 @@ class TestRealConfigFiles:
     def test_bdo_config_56(self):
         """Test that bdo_config (56).json parses correctly."""
         # Path to the actual config file
-        config_path = Path(__file__).parent.parent.parent.parent.parent / "bdo_config (56).json"
+        config_path = (
+            Path(__file__).parent.parent.parent.parent.parent / "bdo_config (56).json"
+        )
 
         # Skip if file doesn't exist (CI/CD environments)
         if not config_path.exists():
@@ -180,7 +186,9 @@ class TestRealConfigFiles:
                     )
 
         # Verify at least one action has base settings
-        assert len(actions_with_base) > 0, "Expected at least one action with base settings"
+        assert (
+            len(actions_with_base) > 0
+        ), "Expected at least one action with base settings"
 
         # Verify all base settings were parsed correctly
         for action_info in actions_with_base:
@@ -188,21 +196,21 @@ class TestRealConfigFiles:
 
             # If pauseAfterEnd is set, it should be parsed correctly
             if base.pause_after_end is not None:
-                assert isinstance(base.pause_after_end, int), (
-                    f"Action {action_info['id']}: pause_after_end should be int, got {type(base.pause_after_end)}"
-                )
-                assert base.pause_after_end >= 0, (
-                    f"Action {action_info['id']}: pause_after_end should be non-negative"
-                )
+                assert isinstance(
+                    base.pause_after_end, int
+                ), f"Action {action_info['id']}: pause_after_end should be int, got {type(base.pause_after_end)}"
+                assert (
+                    base.pause_after_end >= 0
+                ), f"Action {action_info['id']}: pause_after_end should be non-negative"
 
             # If pauseBeforeBegin is set, it should be parsed correctly
             if base.pause_before_begin is not None:
-                assert isinstance(base.pause_before_begin, int), (
-                    f"Action {action_info['id']}: pause_before_begin should be int, got {type(base.pause_before_begin)}"
-                )
-                assert base.pause_before_begin >= 0, (
-                    f"Action {action_info['id']}: pause_before_begin should be non-negative"
-                )
+                assert isinstance(
+                    base.pause_before_begin, int
+                ), f"Action {action_info['id']}: pause_before_begin should be int, got {type(base.pause_before_begin)}"
+                assert (
+                    base.pause_before_begin >= 0
+                ), f"Action {action_info['id']}: pause_before_begin should be non-negative"
 
     def test_all_config_files_in_parent_dir(self):
         """Test all bdo_config*.json files in the parent directory."""

@@ -82,7 +82,9 @@ class BaseAnalyzer[T](ABC):
         elif sample_count >= optimal_samples:
             sample_factor = 1.0
         else:
-            sample_factor = (sample_count - min_samples) / (optimal_samples - min_samples)
+            sample_factor = (sample_count - min_samples) / (
+                optimal_samples - min_samples
+            )
 
         return min(1.0, sample_factor * consistency_score)
 

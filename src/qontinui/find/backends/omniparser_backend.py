@@ -38,7 +38,9 @@ class OmniParserBackend(DetectionBackend):
             self._detector = OmniParserDetector(settings=self._settings)
         return self._detector
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Find needle in haystack using OmniParser.
 
         Args:
@@ -129,9 +131,15 @@ class OmniParserBackend(DetectionBackend):
         if not isinstance(needle, np.ndarray):
             return self._convert_all(elements)
 
-        needle_gray = cv2.cvtColor(needle, cv2.COLOR_BGR2GRAY) if len(needle.shape) == 3 else needle
+        needle_gray = (
+            cv2.cvtColor(needle, cv2.COLOR_BGR2GRAY)
+            if len(needle.shape) == 3
+            else needle
+        )
         haystack_gray = (
-            cv2.cvtColor(haystack, cv2.COLOR_BGR2GRAY) if len(haystack.shape) == 3 else haystack
+            cv2.cvtColor(haystack, cv2.COLOR_BGR2GRAY)
+            if len(haystack.shape) == 3
+            else haystack
         )
 
         results: list[DetectionResult] = []
@@ -144,7 +152,9 @@ class OmniParserBackend(DetectionBackend):
             # Resize needle to match crop size for comparison
             try:
                 resized_needle = cv2.resize(needle_gray, (crop.shape[1], crop.shape[0]))
-                match_result = cv2.matchTemplate(crop, resized_needle, cv2.TM_CCOEFF_NORMED)
+                match_result = cv2.matchTemplate(
+                    crop, resized_needle, cv2.TM_CCOEFF_NORMED
+                )
                 similarity = float(match_result.max())
             except Exception:
                 continue

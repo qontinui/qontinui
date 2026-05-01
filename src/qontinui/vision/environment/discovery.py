@@ -136,7 +136,9 @@ class GUIEnvironmentDiscovery:
                 )
             )
 
-    def _load_screenshot(self, source: str | Path | NDArray[np.uint8]) -> NDArray[np.uint8]:
+    def _load_screenshot(
+        self, source: str | Path | NDArray[np.uint8]
+    ) -> NDArray[np.uint8]:
         """Load a screenshot from various sources.
 
         Args:
@@ -250,7 +252,9 @@ class GUIEnvironmentDiscovery:
         tasks: dict[str, asyncio.Task[Any]] = {}
 
         if include_colors:
-            tasks["colors"] = asyncio.create_task(self._color_analyzer.analyze(loaded_screenshots))
+            tasks["colors"] = asyncio.create_task(
+                self._color_analyzer.analyze(loaded_screenshots)
+            )
 
         if include_typography:
             tasks["typography"] = asyncio.create_task(
@@ -258,7 +262,9 @@ class GUIEnvironmentDiscovery:
             )
 
         if include_layout:
-            tasks["layout"] = asyncio.create_task(self._layout_analyzer.analyze(loaded_screenshots))
+            tasks["layout"] = asyncio.create_task(
+                self._layout_analyzer.analyze(loaded_screenshots)
+            )
 
         if include_dynamic:
             tasks["dynamic"] = asyncio.create_task(
@@ -304,9 +310,13 @@ class GUIEnvironmentDiscovery:
                 self._typography_analyzer.confidence if include_typography else 0.0
             ),
             layout_analysis=self._layout_analyzer.confidence if include_layout else 0.0,
-            dynamic_detection=self._dynamic_detector.confidence if include_dynamic else 0.0,
+            dynamic_detection=(
+                self._dynamic_detector.confidence if include_dynamic else 0.0
+            ),
             state_learning=0.0,  # No state learning in passive mode
-            element_detection=self._element_detector.confidence if include_elements else 0.0,
+            element_detection=(
+                self._element_detector.confidence if include_elements else 0.0
+            ),
         )
 
         self._environment = GUIEnvironment(

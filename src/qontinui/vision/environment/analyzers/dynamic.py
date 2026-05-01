@@ -90,7 +90,9 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
         # Detect always-changing regions from idle frames or consecutive screenshots
         frames_to_analyze = idle_frames if idle_frames else screenshots
         if len(frames_to_analyze) >= 2:
-            always_changing = self._detect_always_changing(frames_to_analyze, ocr_results)
+            always_changing = self._detect_always_changing(
+                frames_to_analyze, ocr_results
+            )
 
         # Detect conditionally-changing regions from action pairs
         if action_pairs:
@@ -156,7 +158,9 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
             regex_pattern = None
 
             if ocr_results and len(ocr_results) > 0:
-                pattern, regex_pattern = self._detect_pattern(bbox, frames[0], ocr_results[0])
+                pattern, regex_pattern = self._detect_pattern(
+                    bbox, frames[0], ocr_results[0]
+                )
 
             # Determine if this should be auto-masked
             auto_mask = pattern in ["timestamp", "counter", "elapsed", "percentage"]
@@ -222,7 +226,9 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
             binary = cv2.dilate(binary, kernel, iterations=2).astype(np.uint8)
 
             # Find contours
-            contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
 
             for contour in contours:
                 x, y, w, h = cv2.boundingRect(contour)
@@ -522,7 +528,10 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
                 # Simplified: check variance of distances from mean
                 mean_x = sum(c[0] for c in centers) / len(centers)
                 mean_y = sum(c[1] for c in centers) / len(centers)
-                distances = [np.sqrt((c[0] - mean_x) ** 2 + (c[1] - mean_y) ** 2) for c in centers]
+                distances = [
+                    np.sqrt((c[0] - mean_x) ** 2 + (c[1] - mean_y) ** 2)
+                    for c in centers
+                ]
                 if np.std(distances) < np.mean(distances) * 0.3:
                     return True
 
@@ -555,7 +564,9 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
 
         # Progress bar: fill ratio should increase monotonically
         if len(fill_ratios) >= 3:
-            diffs = [fill_ratios[i + 1] - fill_ratios[i] for i in range(len(fill_ratios) - 1)]
+            diffs = [
+                fill_ratios[i + 1] - fill_ratios[i] for i in range(len(fill_ratios) - 1)
+            ]
             if all(d >= 0 for d in diffs) and sum(diffs) > 0.1:
                 return True
 
@@ -578,10 +589,15 @@ class DynamicRegionDetector(BaseAnalyzer[DynamicRegions]):
 
         if len(brightnesses) >= 4:
             # Look for oscillation
-            diffs = [brightnesses[i + 1] - brightnesses[i] for i in range(len(brightnesses) - 1)]
+            diffs = [
+                brightnesses[i + 1] - brightnesses[i]
+                for i in range(len(brightnesses) - 1)
+            ]
 
             # Pulse: should have alternating positive/negative diffs
-            sign_changes = sum(1 for i in range(len(diffs) - 1) if diffs[i] * diffs[i + 1] < 0)
+            sign_changes = sum(
+                1 for i in range(len(diffs) - 1) if diffs[i] * diffs[i + 1] < 0
+            )
 
             if sign_changes >= len(diffs) * 0.5:
                 return True

@@ -170,7 +170,9 @@ async def _perform_pattern_action(
             message="" if ok else f"{pattern_action} returned False for {node.ref}",
         )
     except Exception as exc:
-        logger.debug("Pattern action %r failed for %s: %s", pattern_action, node.ref, exc)
+        logger.debug(
+            "Pattern action %r failed for %s: %s", pattern_action, node.ref, exc
+        )
         return ActionResult(
             success=False,
             action_performed=pattern_action,
@@ -207,7 +209,9 @@ class ButtonStrategy(ActionStrategy):
             return result
 
         # Fallback: generic click at center coordinates.
-        logger.debug("ButtonStrategy: invoke failed, falling back to click_center (%s)", node.ref)
+        logger.debug(
+            "ButtonStrategy: invoke failed, falling back to click_center (%s)", node.ref
+        )
         return await _click_center(node, capture)
 
 
@@ -242,13 +246,16 @@ class ComboBoxStrategy(ActionStrategy):
                     return ActionResult(
                         success=True,
                         action_performed="expand_collapse+select_item",
-                        wait_after_s=_POST_ACTION_WAIT_S.get(node.role, _DEFAULT_WAIT_S),
+                        wait_after_s=_POST_ACTION_WAIT_S.get(
+                            node.role, _DEFAULT_WAIT_S
+                        ),
                     )
             return result
 
         # Fallback 1: click to open.
         logger.debug(
-            "ComboBoxStrategy: expand_collapse failed, falling back to click (%s)", node.ref
+            "ComboBoxStrategy: expand_collapse failed, falling back to click (%s)",
+            node.ref,
         )
         click_result = await _click_center(node, capture)
         if not click_result.success:
@@ -297,7 +304,10 @@ class TreeItemStrategy(ActionStrategy):
             return result
 
         # Fallback: generic click.
-        logger.debug("TreeItemStrategy: select failed, falling back to click_center (%s)", node.ref)
+        logger.debug(
+            "TreeItemStrategy: select failed, falling back to click_center (%s)",
+            node.ref,
+        )
         return await _click_center(node, capture)
 
 
@@ -322,7 +332,10 @@ class MenuItemStrategy(ActionStrategy):
         if result.success:
             return result
 
-        logger.debug("MenuItemStrategy: invoke failed, falling back to click_center (%s)", node.ref)
+        logger.debug(
+            "MenuItemStrategy: invoke failed, falling back to click_center (%s)",
+            node.ref,
+        )
         return await _click_center(node, capture)
 
 
@@ -347,7 +360,10 @@ class CheckboxStrategy(ActionStrategy):
         if result.success:
             return result
 
-        logger.debug("CheckboxStrategy: toggle failed, falling back to click_center (%s)", node.ref)
+        logger.debug(
+            "CheckboxStrategy: toggle failed, falling back to click_center (%s)",
+            node.ref,
+        )
         return await _click_center(node, capture)
 
 
@@ -370,12 +386,17 @@ class SliderStrategy(ActionStrategy):
     ) -> ActionResult:
         target_value = kwargs.get("value")
         if target_value is not None:
-            result = await _perform_pattern_action(node, f"set_range_value:{target_value}", capture)
+            result = await _perform_pattern_action(
+                node, f"set_range_value:{target_value}", capture
+            )
             if result.success:
                 return result
 
         # Fallback: click at the center (or proportional position if bounds available).
-        logger.debug("SliderStrategy: set_range_value failed, falling back to click (%s)", node.ref)
+        logger.debug(
+            "SliderStrategy: set_range_value failed, falling back to click (%s)",
+            node.ref,
+        )
         return await _click_center(node, capture)
 
 
@@ -406,14 +427,19 @@ class TextBoxStrategy(ActionStrategy):
                 return result
 
         # Fallback: click to focus then type via the capture interface.
-        logger.debug("TextBoxStrategy: set_value failed, falling back to click+type (%s)", node.ref)
+        logger.debug(
+            "TextBoxStrategy: set_value failed, falling back to click+type (%s)",
+            node.ref,
+        )
         click_result = await _click_center(node, capture)
         if not click_result.success:
             return click_result
 
         if text:
             try:
-                ok = await capture.type_by_ref(node.ref, str(text), clear_first=clear_first)
+                ok = await capture.type_by_ref(
+                    node.ref, str(text), clear_first=clear_first
+                )
                 return ActionResult(
                     success=ok,
                     action_performed="click_then_type",
@@ -421,7 +447,9 @@ class TextBoxStrategy(ActionStrategy):
                     message="" if ok else f"type_by_ref returned False for {node.ref}",
                 )
             except Exception as exc:
-                logger.warning("TextBoxStrategy type_by_ref failed for %s: %s", node.ref, exc)
+                logger.warning(
+                    "TextBoxStrategy type_by_ref failed for %s: %s", node.ref, exc
+                )
                 return ActionResult(
                     success=False,
                     action_performed="click_then_type",
@@ -475,7 +503,9 @@ class ActionDispatchRegistry:
                            ``QONTINUI_ACTION_SPEED_PROFILE`` environment
                            variable, defaulting to ``"default"``.
         """
-        resolved = speed_profile or os.environ.get("QONTINUI_ACTION_SPEED_PROFILE", "default")
+        resolved = speed_profile or os.environ.get(
+            "QONTINUI_ACTION_SPEED_PROFILE", "default"
+        )
         self._speed_multiplier: float = self._SPEED_MULTIPLIERS.get(resolved, 1.0)
         self._strategies: dict[AccessibilityRole, ActionStrategy] = {}
         self._register_defaults()

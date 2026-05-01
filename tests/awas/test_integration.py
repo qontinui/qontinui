@@ -65,7 +65,10 @@ SAMPLE_MANIFEST_L2 = {
                 }
             ],
             "inputSchema": {"type": "object"},
-            "outputSchema": {"type": "object", "properties": {"id": {"type": "string"}}},
+            "outputSchema": {
+                "type": "object",
+                "properties": {"id": {"type": "string"}},
+            },
         },
     ],
     "auth": {"type": "bearer_token"},
@@ -170,7 +173,9 @@ class TestIntegrationDiscoverAndExecute:
         )
 
         manifest = await discovery.discover("https://example.com")
-        result = await executor.execute(manifest, "get_user", params={"user_id": "abc123"})
+        result = await executor.execute(
+            manifest, "get_user", params={"user_id": "abc123"}
+        )
 
         assert result.success is True
         assert result.response_body["id"] == "abc123"
@@ -196,7 +201,9 @@ class TestIntegrationDiscoverAndExecute:
         manifest = await discovery.discover("https://example.com")
 
         # Without auth - should fail
-        result_no_auth = await executor.execute(manifest, "get_user", params={"user_id": "user1"})
+        result_no_auth = await executor.execute(
+            manifest, "get_user", params={"user_id": "user1"}
+        )
         assert result_no_auth.success is False
         assert result_no_auth.status_code == 401
 
@@ -224,9 +231,9 @@ class TestManifestCaching:
     async def test_manifest_is_cached(self, discovery):
         """Test that manifest is cached after first fetch."""
         # Mock manifest endpoint - should only be called once
-        manifest_route = respx.get("https://example.com/.well-known/ai-actions.json").mock(
-            return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L1)
-        )
+        manifest_route = respx.get(
+            "https://example.com/.well-known/ai-actions.json"
+        ).mock(return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L1))
 
         # First discovery
         manifest1 = await discovery.discover("https://example.com")
@@ -245,9 +252,9 @@ class TestManifestCaching:
         """Test that cache expires after TTL."""
         import asyncio
 
-        manifest_route = respx.get("https://example.com/.well-known/ai-actions.json").mock(
-            return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L1)
-        )
+        manifest_route = respx.get(
+            "https://example.com/.well-known/ai-actions.json"
+        ).mock(return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L1))
 
         # First discovery
         await discovery.discover("https://example.com")
@@ -473,7 +480,9 @@ class TestConformanceLevels:
             return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L2)
         )
         respx.get("https://api.example.com/users/test123").mock(
-            return_value=httpx.Response(200, json={"id": "test123", "email": "test@example.com"})
+            return_value=httpx.Response(
+                200, json={"id": "test123", "email": "test@example.com"}
+            )
         )
 
         manifest = await discovery.discover("https://l2.example.com")
@@ -490,7 +499,9 @@ class TestConformanceLevels:
         assert action.parameters[0].location == ParameterLocation.PATH
 
         # Execute with params
-        result = await executor.execute(manifest, "get_user", params={"user_id": "test123"})
+        result = await executor.execute(
+            manifest, "get_user", params={"user_id": "test123"}
+        )
         assert result.success is True
         assert result.response_body["id"] == "test123"
 
@@ -501,7 +512,9 @@ class TestConformanceLevels:
         respx.get("https://l3.example.com/.well-known/ai-actions.json").mock(
             return_value=httpx.Response(200, json=SAMPLE_MANIFEST_L3)
         )
-        respx.delete("https://api.example.com/users/del123").mock(return_value=httpx.Response(204))
+        respx.delete("https://api.example.com/users/del123").mock(
+            return_value=httpx.Response(204)
+        )
 
         manifest = await discovery.discover("https://l3.example.com")
 
@@ -525,7 +538,9 @@ class TestConformanceLevels:
         assert action.side_effect is True
 
         # Execute action
-        result = await executor.execute(manifest, "delete_user", params={"user_id": "del123"})
+        result = await executor.execute(
+            manifest, "delete_user", params={"user_id": "del123"}
+        )
         assert result.success is True
         assert result.status_code == 204
 

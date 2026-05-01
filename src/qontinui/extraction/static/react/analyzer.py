@@ -146,7 +146,9 @@ class ReactStaticAnalyzer(StaticAnalyzer):
                         logger.error(error_msg)
                         self._errors.append(error_msg)
             except Exception as e:
-                error_msg = f"Error parsing batch {batch_start // batch_size + 1}: {str(e)}"
+                error_msg = (
+                    f"Error parsing batch {batch_start // batch_size + 1}: {str(e)}"
+                )
                 logger.error(error_msg)
                 self._errors.append(error_msg)
 
@@ -174,14 +176,16 @@ class ReactStaticAnalyzer(StaticAnalyzer):
         )
 
         # Generate hints for runtime state discovery
-        state_hints, state_image_hints, transition_hints = self.hint_generator.generate_hints(
-            components=components,
-            state_variables=state_variables,
-            conditional_renders=conditional_renders,
-            event_handlers=event_handlers,
-            routes=self.route_analyzer.get_routes(),
-            visibility_states=visibility_states,
-            navigation_links=self.route_analyzer.get_navigation_links(),
+        state_hints, state_image_hints, transition_hints = (
+            self.hint_generator.generate_hints(
+                components=components,
+                state_variables=state_variables,
+                conditional_renders=conditional_renders,
+                event_handlers=event_handlers,
+                routes=self.route_analyzer.get_routes(),
+                visibility_states=visibility_states,
+                navigation_links=self.route_analyzer.get_navigation_links(),
+            )
         )
 
         logger.info(
@@ -340,7 +344,9 @@ class ReactStaticAnalyzer(StaticAnalyzer):
 
         return files
 
-    def _get_component_parse_result(self, parse_result: dict, component_name: str) -> dict:
+    def _get_component_parse_result(
+        self, parse_result: dict, component_name: str
+    ) -> dict:
         """
         Get parse result scoped to a specific component.
 

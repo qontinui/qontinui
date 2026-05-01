@@ -57,7 +57,9 @@ class Scroll(ActionInterface):
         location = await self._find_scroll_location(action_result, object_collections)
         if not location:
             object.__setattr__(action_result, "success", False)
-            object.__setattr__(action_result, "output_text", "Could not find location to scroll")
+            object.__setattr__(
+                action_result, "output_text", "Could not find location to scroll"
+            )
             return
 
         # Perform the scroll operations
@@ -110,7 +112,9 @@ class Scroll(ActionInterface):
             results = await self.find_action.find(patterns, options)
 
             service = CoordinateService.get_instance()
-            for result, (_, monitor_index) in zip(results, patterns_with_info, strict=False):
+            for result, (_, monitor_index) in zip(
+                results, patterns_with_info, strict=False
+            ):
                 if result.found and result.best_match:
                     # Translate coordinates to screen space
                     screen_point = service.to_screen(

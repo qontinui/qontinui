@@ -19,7 +19,9 @@ if "qontinui" not in sys.modules:
     # Create a stub module
     stub = types.ModuleType("qontinui")
     stub.__path__ = [str(Path(__file__).parent.parent.parent / "src" / "qontinui")]
-    stub.__file__ = str(Path(__file__).parent.parent.parent / "src" / "qontinui" / "__init__.py")
+    stub.__file__ = str(
+        Path(__file__).parent.parent.parent / "src" / "qontinui" / "__init__.py"
+    )
     sys.modules["qontinui"] = stub
 
 
@@ -49,7 +51,9 @@ def _setup_extraction_stubs():
     sys.modules["qontinui.extraction"] = extraction
 
     # Create web.models stubs
-    extraction_web = _create_stub_module("qontinui.extraction.web", f"{_src_path}/extraction/web")
+    extraction_web = _create_stub_module(
+        "qontinui.extraction.web", f"{_src_path}/extraction/web"
+    )
     sys.modules["qontinui.extraction.web"] = extraction_web
 
     # Create stub classes that the extractor needs
@@ -82,7 +86,12 @@ def _setup_extraction_stubs():
         height: int = 0
 
         def to_dict(self) -> dict[str, Any]:
-            return {"x": self.x, "y": self.y, "width": self.width, "height": self.height}
+            return {
+                "x": self.x,
+                "y": self.y,
+                "width": self.width,
+                "height": self.height,
+            }
 
     @dataclass
     class ExtractedElement:
@@ -338,7 +347,9 @@ def _setup_extraction_stubs():
             pass
 
         @abstractmethod
-        async def capture_screenshot(self, region: BoundingBox | None = None) -> Screenshot:
+        async def capture_screenshot(
+            self, region: BoundingBox | None = None
+        ) -> Screenshot:
             pass
 
         @abstractmethod

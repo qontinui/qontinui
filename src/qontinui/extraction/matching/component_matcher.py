@@ -309,7 +309,10 @@ class ComponentMatcher:
 
         for element in elements:
             # Check selector
-            if component_lower in element.selector.lower() or component_kebab in element.selector:
+            if (
+                component_lower in element.selector.lower()
+                or component_kebab in element.selector
+            ):
                 evidence.append(
                     MatchingEvidence(
                         evidence_type=EvidenceType.NAME_MATCH,

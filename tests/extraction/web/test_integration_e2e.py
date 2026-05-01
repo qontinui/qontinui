@@ -33,9 +33,12 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
     )
-    config.addinivalue_line("markers", "network: marks tests as requiring network access")
     config.addinivalue_line(
-        "markers", "cdp_required: marks tests as requiring CDP (Chrome DevTools Protocol)"
+        "markers", "network: marks tests as requiring network access"
+    )
+    config.addinivalue_line(
+        "markers",
+        "cdp_required: marks tests as requiring CDP (Chrome DevTools Protocol)",
     )
 
 
@@ -208,7 +211,9 @@ class TestFullExtractionPipeline:
 
         # Navigate to example.com (simple, reliable test target)
         try:
-            await page.goto("https://example.com", wait_until="networkidle", timeout=30000)
+            await page.goto(
+                "https://example.com", wait_until="networkidle", timeout=30000
+            )
         except Exception as e:
             pytest.skip(f"Network unavailable: {e}")
 
@@ -275,7 +280,10 @@ class TestFullExtractionPipeline:
         # Verify element properties
         submit_btn = next((e for e in elements if e.text == "Submit"), None)
         assert submit_btn is not None
-        assert submit_btn.selector == "#submit-btn" or "submit" in submit_btn.selector.lower()
+        assert (
+            submit_btn.selector == "#submit-btn"
+            or "submit" in submit_btn.selector.lower()
+        )
 
         # Verify bounding boxes
         for element in elements:
@@ -317,7 +325,9 @@ class TestShadowDOMExtraction:
         assert len(shadow_elements) >= 1  # At least one element from shadow DOM
 
         # Verify the shadow button was found
-        shadow_button = next((e for e in elements if e.text and "Shadow Button" in e.text), None)
+        shadow_button = next(
+            (e for e in elements if e.text and "Shadow Button" in e.text), None
+        )
         assert shadow_button is not None
 
     async def test_shadow_dom_disabled(self, page) -> None:
@@ -548,7 +558,11 @@ class TestSelectorHealing:
 
         assert result2.success is True
         # History lookup is tried first, so if selector still works, it should use that
-        assert result2.strategy_used in ["history_lookup", "selector_variation", "text_match"]
+        assert result2.strategy_used in [
+            "history_lookup",
+            "selector_variation",
+            "text_match",
+        ]
 
 
 # ============================================================================
@@ -660,13 +674,17 @@ MATCH: 2, 0.85, Third link"""
         elements = await extractor.extract_interactive_elements(page, "test")
 
         # Configure mock for action selection
-        mock_llm_client.responses["click the submit"] = """INDEX: 0
+        mock_llm_client.responses[
+            "click the submit"
+        ] = """INDEX: 0
 ACTION: click
 CONFIDENCE: 0.95
 REASONING: User wants to click the submit button"""
 
         selector = NaturalLanguageSelector(llm_client=mock_llm_client)
-        result, action = await selector.select_action("click the submit button", elements)
+        result, action = await selector.select_action(
+            "click the submit button", elements
+        )
 
         assert result.found is True
         assert action in ["click", "type", "hover", "focus", "select"]
@@ -979,7 +997,9 @@ class TestNetworkErrorHandling:
 
         # Extract should still work with timeout
         extractor = InteractiveElementExtractor()
-        elements = await extractor.extract_interactive_elements(page, "timeout_test", timeout=10.0)
+        elements = await extractor.extract_interactive_elements(
+            page, "timeout_test", timeout=10.0
+        )
 
         # Should still extract elements
         assert isinstance(elements, list)
@@ -1002,7 +1022,9 @@ class TestRealWebsiteIntegration:
         )
 
         try:
-            await page.goto("https://example.com", wait_until="networkidle", timeout=30000)
+            await page.goto(
+                "https://example.com", wait_until="networkidle", timeout=30000
+            )
         except Exception as e:
             pytest.skip(f"Network unavailable: {e}")
 
@@ -1022,7 +1044,9 @@ class TestRealWebsiteIntegration:
         from qontinui.extraction.web.hybrid_extractor import HybridExtractor
 
         try:
-            await page.goto("https://example.com", wait_until="networkidle", timeout=30000)
+            await page.goto(
+                "https://example.com", wait_until="networkidle", timeout=30000
+            )
         except Exception as e:
             pytest.skip(f"Network unavailable: {e}")
 
@@ -1034,7 +1058,9 @@ class TestRealWebsiteIntegration:
         assert context.screenshot_base64 != ""
         assert len(context.elements) >= 1
 
-    async def test_example_com_natural_language_selection(self, page, mock_llm_client) -> None:
+    async def test_example_com_natural_language_selection(
+        self, page, mock_llm_client
+    ) -> None:
         """Test natural language selection on example.com."""
         from qontinui.extraction.web.interactive_element_extractor import (
             InteractiveElementExtractor,
@@ -1042,7 +1068,9 @@ class TestRealWebsiteIntegration:
         from qontinui.extraction.web.natural_language_selector import NaturalLanguageSelector
 
         try:
-            await page.goto("https://example.com", wait_until="networkidle", timeout=30000)
+            await page.goto(
+                "https://example.com", wait_until="networkidle", timeout=30000
+            )
         except Exception as e:
             pytest.skip(f"Network unavailable: {e}")
 

@@ -196,7 +196,9 @@ class A11yTree:
             self._find_by_role_recursive(self.root, role, results)
         return results
 
-    def _find_by_role_recursive(self, node: A11yNode, role: str, results: list[A11yNode]) -> None:
+    def _find_by_role_recursive(
+        self, node: A11yNode, role: str, results: list[A11yNode]
+    ) -> None:
         if node.role == role:
             results.append(node)
         for child in node.children:
@@ -327,7 +329,11 @@ class AccessibilityExtractor:
         page_id = id(page)
 
         # Check if we have a cached client for this page
-        if self._cache_cdp_session and self._cached_client and self._cached_page_id == page_id:
+        if (
+            self._cache_cdp_session
+            and self._cached_client
+            and self._cached_page_id == page_id
+        ):
             return self._cached_client
 
         # Create new client
@@ -393,7 +399,9 @@ class AccessibilityExtractor:
             )
             return result if isinstance(result, A11yTree) else A11yTree()
         except ExtractionTimeoutError:
-            logger.warning("Accessibility tree extraction timed out, returning empty tree")
+            logger.warning(
+                "Accessibility tree extraction timed out, returning empty tree"
+            )
             return A11yTree()
 
     async def _extract_tree_with_retry(self, page: Page) -> A11yTree:
@@ -417,7 +425,9 @@ class AccessibilityExtractor:
                 root = self._build_tree_from_cdp_nodes(nodes)
                 tree = A11yTree(root=root)
 
-                logger.info(f"Extracted accessibility tree with {tree.node_count} nodes")
+                logger.info(
+                    f"Extracted accessibility tree with {tree.node_count} nodes"
+                )
                 return tree
 
             except Exception as e:
@@ -478,7 +488,9 @@ class AccessibilityExtractor:
             name = name_obj.get("value", "") if isinstance(name_obj, dict) else ""
 
             desc_obj = cdp_node.get("description", {})
-            description = desc_obj.get("value", "") if isinstance(desc_obj, dict) else ""
+            description = (
+                desc_obj.get("value", "") if isinstance(desc_obj, dict) else ""
+            )
 
             # Get role
             role_obj = cdp_node.get("role", {})
@@ -681,7 +693,9 @@ class AccessibilityExtractor:
             enriched.append(enriched_elem)
 
         matched_count = sum(1 for e in enriched if e.match_confidence > 0)
-        logger.info(f"Enriched {len(elements)} elements with a11y data ({matched_count} matched)")
+        logger.info(
+            f"Enriched {len(elements)} elements with a11y data ({matched_count} matched)"
+        )
 
         return enriched
 

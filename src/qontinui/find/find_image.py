@@ -123,7 +123,9 @@ class FindImage(Find):
         Returns:
             Self for chaining
         """
-        region = Region(location.x - radius, location.y - radius, radius * 2, radius * 2)
+        region = Region(
+            location.x - radius, location.y - radius, radius * 2, radius * 2
+        )
         self.search_region(region)
         return self
 
@@ -260,7 +262,10 @@ class FindImage(Find):
         search_region = None
         if isinstance(self._search_region, Region):
             search_region = self._search_region
-        elif isinstance(self._search_region, SearchRegions) and self._search_region.regions:
+        elif (
+            isinstance(self._search_region, SearchRegions)
+            and self._search_region.regions
+        ):
             search_region = self._search_region.regions[0]
 
         options = NewFindOptions(
@@ -305,8 +310,11 @@ class FindImage(Find):
         # Convert SearchRegions to Region if needed for results
         search_region_for_results = (
             self._search_region.regions[0]
-            if isinstance(self._search_region, SearchRegions) and self._search_region.regions
-            else (self._search_region if isinstance(self._search_region, Region) else None)
+            if isinstance(self._search_region, SearchRegions)
+            and self._search_region.regions
+            else (
+                self._search_region if isinstance(self._search_region, Region) else None
+            )
         )
 
         return FindResults(

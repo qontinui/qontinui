@@ -76,7 +76,9 @@ class RegionCollectionBuilder:
         for region in regions:
             if isinstance(region, Region):
                 # Convert Region to StateRegion
-                state_region = StateRegion(region=region, name=getattr(region, "name", None))
+                state_region = StateRegion(
+                    region=region, name=getattr(region, "name", None)
+                )
                 self.state_regions.append(state_region)
             elif isinstance(region, StateRegion):
                 self.state_regions.append(region)
@@ -94,7 +96,9 @@ class RegionCollectionBuilder:
         self.state_regions = regions
         return self
 
-    def with_grid_subregions(self, rows: int, columns: int, *regions) -> RegionCollectionBuilder:
+    def with_grid_subregions(
+        self, rows: int, columns: int, *regions
+    ) -> RegionCollectionBuilder:
         """Add grid subregions from regions.
 
         Args:
@@ -117,13 +121,17 @@ class RegionCollectionBuilder:
                     self.state_regions.append(state_region)
             elif isinstance(region, StateRegion):
                 # Split state region's underlying region into grid
-                grid_regions = self._create_grid_regions(region.get_search_region(), rows, columns)
+                grid_regions = self._create_grid_regions(
+                    region.get_search_region(), rows, columns
+                )
                 for grid_region in grid_regions:
                     state_region = StateRegion(region=grid_region)
                     self.state_regions.append(state_region)
         return self
 
-    def _create_grid_regions(self, region: Region, rows: int, columns: int) -> list[Region]:
+    def _create_grid_regions(
+        self, region: Region, rows: int, columns: int
+    ) -> list[Region]:
         """Create grid of subregions from a region.
 
         Args:

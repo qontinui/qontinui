@@ -100,7 +100,9 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
 
         # Identify common text regions
         shape = screenshots[0].shape[:2]
-        text_regions = self._identify_text_regions(all_detections, (int(shape[0]), int(shape[1])))
+        text_regions = self._identify_text_regions(
+            all_detections, (int(shape[0]), int(shape[1]))
+        )
 
         # Detect languages
         languages = self._detect_languages(all_detections)
@@ -178,7 +180,9 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
                     pil_image = Image.fromarray(rgb)
 
                     # Get detailed output with bounding boxes
-                    data = pytesseract.image_to_data(pil_image, output_type=pytesseract.Output.DICT)
+                    data = pytesseract.image_to_data(
+                        pil_image, output_type=pytesseract.Output.DICT
+                    )
 
                     detections = []
                     for i, text in enumerate(data["text"]):
@@ -283,7 +287,8 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
             height = detection["height"]
             # Round to nearest cluster center
             cluster_center = (
-                round(height / self.size_cluster_tolerance) * self.size_cluster_tolerance
+                round(height / self.size_cluster_tolerance)
+                * self.size_cluster_tolerance
             )
             clusters[cluster_center].append(detection)
 
@@ -391,7 +396,9 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
 
             samples.append(
                 DetectedFont(
-                    sample_region=BoundingBox(x=int(x), y=int(y), width=int(w), height=int(h)),
+                    sample_region=BoundingBox(
+                        x=int(x), y=int(y), width=int(w), height=int(h)
+                    ),
                     estimated_family=font_family,
                     size_px=height,
                     weight=weight,
@@ -593,7 +600,9 @@ class TypographyAnalyzer(BaseAnalyzer[Typography]):
 
             if len(region_detections) >= 2:
                 # Calculate average text size in region
-                avg_size = sum(d["height"] for d in region_detections) / len(region_detections)
+                avg_size = sum(d["height"] for d in region_detections) / len(
+                    region_detections
+                )
 
                 # Get sample content
                 sample_content = [d["text"] for d in region_detections[:5] if d["text"]]

@@ -81,9 +81,9 @@ class ResultMerger:
 
         # Limit to max candidates
         if len(deduplicated) > self.config.max_candidates:
-            deduplicated = sorted(deduplicated, key=lambda c: c.confidence, reverse=True)[
-                : self.config.max_candidates
-            ]
+            deduplicated = sorted(
+                deduplicated, key=lambda c: c.confidence, reverse=True
+            )[: self.config.max_candidates]
 
         logger.info(f"Final candidates after deduplication: {len(deduplicated)}")
 
@@ -186,7 +186,11 @@ class ResultMerger:
         vertex_count = result.vertex_count
 
         if vertex_count == 4:
-            if 1.5 < aspect_ratio < 6.0 and 30 < bbox.width < 300 and 20 < bbox.height < 60:
+            if (
+                1.5 < aspect_ratio < 6.0
+                and 30 < bbox.width < 300
+                and 20 < bbox.height < 60
+            ):
                 return "button"
             if aspect_ratio > 4.0 and bbox.height < 50:
                 return "input"
@@ -287,7 +291,9 @@ class ResultMerger:
 
         # Sort by confidence (descending) to prefer higher confidence
         if self.config.prefer_higher_confidence:
-            sorted_candidates = sorted(candidates, key=lambda c: c.confidence, reverse=True)
+            sorted_candidates = sorted(
+                candidates, key=lambda c: c.confidence, reverse=True
+            )
         else:
             sorted_candidates = list(candidates)
 
@@ -304,11 +310,15 @@ class ResultMerger:
                     # Merge: keep higher confidence, combine metadata
                     if candidate.confidence > kept_candidate.confidence:
                         # Replace with higher confidence candidate
-                        merged_candidate = self._merge_candidates(candidate, kept_candidate)
+                        merged_candidate = self._merge_candidates(
+                            candidate, kept_candidate
+                        )
                         kept[idx] = merged_candidate
                     else:
                         # Keep existing, add metadata from new
-                        merged_candidate = self._merge_candidates(kept_candidate, candidate)
+                        merged_candidate = self._merge_candidates(
+                            kept_candidate, candidate
+                        )
                         kept[idx] = merged_candidate
 
                     merged = True
@@ -354,7 +364,8 @@ class ResultMerger:
             bbox=primary.bbox,
             confidence=primary.confidence,
             screenshot_id=primary.screenshot_id,
-            cropped_image_path=primary.cropped_image_path or secondary.cropped_image_path,
+            cropped_image_path=primary.cropped_image_path
+            or secondary.cropped_image_path,
             category=primary.category,
             text=text,
             description=description,

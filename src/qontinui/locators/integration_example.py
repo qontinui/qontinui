@@ -102,7 +102,9 @@ class SelfHealingActions:
             return (
                 ActionResultBuilder()
                 .with_success(False)
-                .with_output_text(f"Pattern {pattern.name} not found after healing attempts")
+                .with_output_text(
+                    f"Pattern {pattern.name} not found after healing attempts"
+                )
                 .build()
             )
 

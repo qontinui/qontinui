@@ -197,7 +197,9 @@ class AstSecurityScanner(ast.NodeVisitor):
         if isinstance(node.func, ast.Name) and node.func.id == "getattr":
             if len(node.args) >= 2:
                 attr_arg = node.args[1]
-                if isinstance(attr_arg, ast.Constant) and isinstance(attr_arg.value, str):
+                if isinstance(attr_arg, ast.Constant) and isinstance(
+                    attr_arg.value, str
+                ):
                     for denied in self.config.denied_attribute_patterns:
                         if attr_arg.value == denied or denied in attr_arg.value:
                             self._violations.append(

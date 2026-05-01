@@ -115,7 +115,9 @@ class CascadeDetector(DetectionBackend):
     def terminal_fallback(self) -> DetectionBackend | None:
         return self._terminal_fallback
 
-    def _maybe_wrap_prefilter(self, backends: list[DetectionBackend]) -> list[DetectionBackend]:
+    def _maybe_wrap_prefilter(
+        self, backends: list[DetectionBackend]
+    ) -> list[DetectionBackend]:
         """Wrap high-cost backends with InteractabilityFilter if env flag on.
 
         Wrap threshold defaults to 1000ms: Template/Feature/Invariant/QATM/OCR
@@ -181,7 +183,9 @@ class CascadeDetector(DetectionBackend):
         """Remove a backend by name."""
         self._backends = [b for b in self._backends if b.name != name]
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         """Run the cascade: try backends cheapest-first until one succeeds.
 
         Config keys:
@@ -364,7 +368,9 @@ class CascadeDetector(DetectionBackend):
         Used by the bypass path to wait until every a11y-tier backend has
         had a chance to run before giving up on accessibility.
         """
-        a11y_in_order = [b for b in ordered if b.name in self._accessibility_backend_names]
+        a11y_in_order = [
+            b for b in ordered if b.name in self._accessibility_backend_names
+        ]
         if not a11y_in_order:
             return False
         return current is a11y_in_order[-1]
@@ -426,7 +432,9 @@ class CascadeDetector(DetectionBackend):
         )
         if results:
             total_ms = (time.perf_counter() - cascade_t0) * 1000
-            self._emit_cascade_hit(needle_label, fb.name, 1, results[0].confidence, total_ms)
+            self._emit_cascade_hit(
+                needle_label, fb.name, 1, results[0].confidence, total_ms
+            )
             return self._normalize_results(results, haystack)
         return []
 
@@ -456,10 +464,14 @@ class CascadeDetector(DetectionBackend):
         except Exception:
             pass
 
-        return Detections.from_detection_results(results, screen_width=width, screen_height=height)
+        return Detections.from_detection_results(
+            results, screen_width=width, screen_height=height
+        )
 
     @staticmethod
-    def _normalize_results(results: list[DetectionResult], haystack: Any) -> list[DetectionResult]:
+    def _normalize_results(
+        results: list[DetectionResult], haystack: Any
+    ) -> list[DetectionResult]:
         """Normalize result coordinates to 0.0-1.0 range using haystack dimensions.
 
         Tries to extract width/height from the haystack (PIL Image or numpy array).
@@ -509,7 +521,9 @@ class CascadeDetector(DetectionBackend):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _emit_cascade_started(needle_label: str, needle_type: str, min_confidence: float) -> None:
+    def _emit_cascade_started(
+        needle_label: str, needle_type: str, min_confidence: float
+    ) -> None:
         try:
             from ...reporting.events import EventType, emit_event
 
@@ -662,10 +676,14 @@ class CascadeDetector(DetectionBackend):
                 from .semantic_accessibility_backend import SemanticAccessibilityBackend
 
                 backends.append(
-                    SemanticAccessibilityBackend(accessibility_capture, llm_client=llm_client)
+                    SemanticAccessibilityBackend(
+                        accessibility_capture, llm_client=llm_client
+                    )
                 )
             except ImportError:
-                logger.debug("CascadeDetector: SemanticAccessibilityBackend unavailable")
+                logger.debug(
+                    "CascadeDetector: SemanticAccessibilityBackend unavailable"
+                )
 
         # Template matching (always available — uses OpenCV)
         try:
@@ -783,7 +801,9 @@ class CascadeDetector(DetectionBackend):
         try:
             from .omniparser_service_backend import OmniParserServiceBackend
 
-            backends.append(OmniParserServiceBackend())  # is_available() checks enabled + provider
+            backends.append(
+                OmniParserServiceBackend()
+            )  # is_available() checks enabled + provider
         except ImportError:
             pass
 

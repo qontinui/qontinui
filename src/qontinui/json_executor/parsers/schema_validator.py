@@ -58,7 +58,9 @@ class SchemaValidator:
             for workflow in data["workflows"]:
                 if isinstance(workflow, dict):
                     has_connections = "connections" in workflow
-                    has_actions = "actions" in workflow and isinstance(workflow["actions"], list)
+                    has_actions = "actions" in workflow and isinstance(
+                        workflow["actions"], list
+                    )
 
                     # Reject if workflow has neither connections nor actions
                     if not has_connections and not has_actions:

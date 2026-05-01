@@ -129,7 +129,9 @@ class EventMonitor:
             # Get process name from PID
             app_name = self._get_process_name_windows(pid.value)
 
-            return WindowInfo(app_name=app_name, window_title=window_title, pid=pid.value)
+            return WindowInfo(
+                app_name=app_name, window_title=window_title, pid=pid.value
+            )
         except Exception as e:
             logger.debug("Windows active window detection failed: %s", e)
             return WindowInfo(app_name="", window_title="")
@@ -146,7 +148,9 @@ class EventMonitor:
             kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
             psapi = ctypes.windll.psapi  # type: ignore[attr-defined]
 
-            handle = kernel32.OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, False, pid)
+            handle = kernel32.OpenProcess(
+                PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, False, pid
+            )
             if not handle:
                 return ""
 
@@ -202,7 +206,9 @@ class EventMonitor:
                     text=True,
                     timeout=2,
                 )
-                pid = int(wid_result.stdout.strip()) if wid_result.returncode == 0 else 0
+                pid = (
+                    int(wid_result.stdout.strip()) if wid_result.returncode == 0 else 0
+                )
                 app_name = self._get_process_name_linux(pid) if pid else ""
                 return WindowInfo(app_name=app_name, window_title=title, pid=pid)
         except FileNotFoundError:
@@ -264,7 +270,9 @@ class EventMonitor:
         try:
             import subprocess
 
-            result = subprocess.run(["pbpaste"], capture_output=True, text=True, timeout=2)
+            result = subprocess.run(
+                ["pbpaste"], capture_output=True, text=True, timeout=2
+            )
             return result.stdout if result.returncode == 0 else None
         except Exception:
             return None

@@ -388,7 +388,9 @@ def _execute_code(
         entry_point = func.input_schema["_entry_point"]
 
     # Restricted builtins
-    builtins_dict = __builtins__ if isinstance(__builtins__, dict) else __builtins__.__dict__
+    builtins_dict = (
+        __builtins__ if isinstance(__builtins__, dict) else __builtins__.__dict__
+    )
     restricted_builtins = {
         k: v
         for k, v in builtins_dict.items()

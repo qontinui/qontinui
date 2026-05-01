@@ -864,7 +864,9 @@ class ReliabilityChangeData:
             pattern_name=data.get("pattern_name"),
             new_score=data["new_score"],
             old_score=data["old_score"],
-            change_amount=data.get("change_amount", abs(data["new_score"] - data["old_score"])),
+            change_amount=data.get(
+                "change_amount", abs(data["new_score"] - data["old_score"])
+            ),
             total_uses=data.get("total_uses", 0),
             successful_uses=data.get("successful_uses", 0),
             timestamp=data["timestamp"],

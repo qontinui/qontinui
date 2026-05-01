@@ -23,7 +23,9 @@ class TestScreenPoint:
     def test_immutable(self) -> None:
         """Test that ScreenPoint is immutable."""
         point = ScreenPoint(100, 200)
-        with pytest.raises(Exception):  # dataclass frozen=True raises FrozenInstanceError
+        with pytest.raises(
+            Exception
+        ):  # dataclass frozen=True raises FrozenInstanceError
             point.x = 300  # type: ignore
 
     def test_equality(self) -> None:
@@ -113,7 +115,9 @@ class TestMonitorInfo:
 
     def test_creation(self) -> None:
         """Test creating MonitorInfo."""
-        monitor = MonitorInfo(index=0, x=0, y=0, width=1920, height=1080, is_primary=True)
+        monitor = MonitorInfo(
+            index=0, x=0, y=0, width=1920, height=1080, is_primary=True
+        )
 
         assert monitor.index == 0
         assert monitor.x == 0
@@ -124,14 +128,18 @@ class TestMonitorInfo:
 
     def test_bounds_property(self) -> None:
         """Test bounds property returns correct tuple."""
-        monitor = MonitorInfo(index=0, x=100, y=200, width=1920, height=1080, is_primary=False)
+        monitor = MonitorInfo(
+            index=0, x=100, y=200, width=1920, height=1080, is_primary=False
+        )
 
         bounds = monitor.bounds
         assert bounds == (100, 200, 1920, 1080)
 
     def test_contains_point_inside(self) -> None:
         """Test contains_point for point inside monitor bounds."""
-        monitor = MonitorInfo(index=0, x=0, y=0, width=1920, height=1080, is_primary=True)
+        monitor = MonitorInfo(
+            index=0, x=0, y=0, width=1920, height=1080, is_primary=True
+        )
 
         # Test center point
         assert monitor.contains_point(960, 540) is True
@@ -144,7 +152,9 @@ class TestMonitorInfo:
 
     def test_contains_point_outside(self) -> None:
         """Test contains_point for point outside monitor bounds."""
-        monitor = MonitorInfo(index=0, x=0, y=0, width=1920, height=1080, is_primary=True)
+        monitor = MonitorInfo(
+            index=0, x=0, y=0, width=1920, height=1080, is_primary=True
+        )
 
         # Outside to the right
         assert monitor.contains_point(1920, 540) is False
@@ -158,7 +168,9 @@ class TestMonitorInfo:
     def test_contains_point_negative_coordinates(self) -> None:
         """Test contains_point for monitor with negative coordinates."""
         # Monitor positioned to the left of primary
-        monitor = MonitorInfo(index=1, x=-1920, y=0, width=1920, height=1080, is_primary=False)
+        monitor = MonitorInfo(
+            index=1, x=-1920, y=0, width=1920, height=1080, is_primary=False
+        )
 
         # Point inside left monitor
         assert monitor.contains_point(-1000, 500) is True
@@ -174,7 +186,9 @@ class TestMonitorInfo:
 
     def test_repr_primary(self) -> None:
         """Test repr for primary monitor."""
-        monitor = MonitorInfo(index=0, x=0, y=0, width=1920, height=1080, is_primary=True)
+        monitor = MonitorInfo(
+            index=0, x=0, y=0, width=1920, height=1080, is_primary=True
+        )
 
         repr_str = repr(monitor)
         assert "index=0" in repr_str
@@ -184,7 +198,9 @@ class TestMonitorInfo:
 
     def test_repr_non_primary(self) -> None:
         """Test repr for non-primary monitor."""
-        monitor = MonitorInfo(index=1, x=1920, y=0, width=1920, height=1080, is_primary=False)
+        monitor = MonitorInfo(
+            index=1, x=1920, y=0, width=1920, height=1080, is_primary=False
+        )
 
         repr_str = repr(monitor)
         assert "index=1" in repr_str

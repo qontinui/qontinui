@@ -187,7 +187,9 @@ class StateMachineState:
             "name": self.name,
             "description": self.description,
             "stateImages": state_images,
-            "screensFound": list(self.screen_ids),  # Which screenshots this state appears on
+            "screensFound": list(
+                self.screen_ids
+            ),  # Which screenshots this state appears on
             "regions": [],  # User-defined semantic areas
             "locations": [],  # User-defined click points
             "strings": [],  # User-defined text with special meaning
@@ -316,7 +318,9 @@ class StateMachineBuilder:
     def _extract_images(self) -> None:
         """Extract all images/elements from annotations."""
         for annotation in self.annotations:
-            screenshot_id = annotation.get("screenshot_id", annotation.get("screenshotId", ""))
+            screenshot_id = annotation.get(
+                "screenshot_id", annotation.get("screenshotId", "")
+            )
             source_url = annotation.get("source_url", annotation.get("sourceUrl", ""))
 
             screen = ScreenInfo(screenshot_id=screenshot_id, source_url=source_url)
@@ -339,9 +343,13 @@ class StateMachineBuilder:
                 image = ExtractedImage(
                     id=str(uuid4()),
                     element_id=elem.get("id", str(uuid4())),
-                    name=elem.get("name") or elem.get("text") or elem.get("elementType", "unknown"),
+                    name=elem.get("name")
+                    or elem.get("text")
+                    or elem.get("elementType", "unknown"),
                     text=elem.get("text"),
-                    element_type=elem.get("element_type", elem.get("elementType", "unknown")),
+                    element_type=elem.get(
+                        "element_type", elem.get("elementType", "unknown")
+                    ),
                     bbox=bbox,
                     screenshot_id=screenshot_id,
                     source_url=source_url,
@@ -457,7 +465,9 @@ class StateMachineBuilder:
         for trans in self.raw_transitions:
             source_url = trans.get("source_url", trans.get("sourceUrl", ""))
             target_url = trans.get("target_url", trans.get("targetUrl", ""))
-            trigger_selector = trans.get("trigger_selector", trans.get("triggerSelector"))
+            trigger_selector = trans.get(
+                "trigger_selector", trans.get("triggerSelector")
+            )
             trigger_text = trans.get("trigger_text", trans.get("triggerText"))
 
             # Find source and target screens
@@ -518,7 +528,9 @@ class StateMachineBuilder:
                     trigger_element=trigger_element,
                     source_url=source_url,
                     target_url=target_url,
-                    trigger_type=trans.get("trigger_type", trans.get("triggerType", "click")),
+                    trigger_type=trans.get(
+                        "trigger_type", trans.get("triggerType", "click")
+                    ),
                 )
                 self.transitions.append(transition)
 
@@ -606,7 +618,9 @@ class ImageMatch:
 
     screenshot_id: str
     found: bool
-    bbox: dict[str, float] | None = None  # Where it was found (may differ from original)
+    bbox: dict[str, float] | None = (
+        None  # Where it was found (may differ from original)
+    )
     confidence: float = 0.0
 
 
@@ -619,8 +633,12 @@ class TrackedImage:
     source_screenshot_id: str  # Screenshot where this image was first found
     source_bbox: dict[str, float]  # Original bounding box
     image_data: Any = None  # Cropped image data (np.ndarray, lazy import)
-    screens_found: set[str] = field(default_factory=set)  # Screenshots where this image appears
-    matches: dict[str, ImageMatch] = field(default_factory=dict)  # screenshot_id -> match result
+    screens_found: set[str] = field(
+        default_factory=set
+    )  # Screenshots where this image appears
+    matches: dict[str, ImageMatch] = field(
+        default_factory=dict
+    )  # screenshot_id -> match result
     element_type: str = "unknown"
     text: str | None = None
     selector: str | None = None
@@ -659,10 +677,12 @@ class ImageMatchingStateMachineBuilder:
 
         self.screenshots_dir = Path(screenshots_dir)
         self.similarity_threshold = similarity_threshold
-        self.screenshots: dict[str, Any] = {}  # screenshot_id -> image array (np.ndarray)
-        self.candidate_elements: dict[
-            str, list[dict[str, Any]]
-        ] = {}  # screenshot_id -> list of elements
+        self.screenshots: dict[str, Any] = (
+            {}
+        )  # screenshot_id -> image array (np.ndarray)
+        self.candidate_elements: dict[str, list[dict[str, Any]]] = (
+            {}
+        )  # screenshot_id -> list of elements
         self.tracked_images: list[TrackedImage] = []
         self.states: list[dict[str, Any]] = []
 
@@ -704,7 +724,9 @@ class ImageMatchingStateMachineBuilder:
         # First, extract all images from their source screenshots
         for screenshot_id, elements in elements_by_screenshot.items():
             if screenshot_id not in self.screenshots:
-                logger.warning(f"Screenshot {screenshot_id} not loaded, skipping elements")
+                logger.warning(
+                    f"Screenshot {screenshot_id} not loaded, skipping elements"
+                )
                 continue
 
             screenshot = self.screenshots[screenshot_id]
@@ -834,8 +856,13 @@ class ImageMatchingStateMachineBuilder:
 
                         score = 0.0
                         # Ensure small fits inside big
-                        if small.shape[0] <= big.shape[0] and small.shape[1] <= big.shape[1]:
-                            res = self._cv2.matchTemplate(big, small, self._cv2.TM_CCOEFF_NORMED)
+                        if (
+                            small.shape[0] <= big.shape[0]
+                            and small.shape[1] <= big.shape[1]
+                        ):
+                            res = self._cv2.matchTemplate(
+                                big, small, self._cv2.TM_CCOEFF_NORMED
+                            )
                             _, max_val, _, _ = self._cv2.minMaxLoc(res)
                             score = float(max_val)
                         else:
@@ -866,12 +893,17 @@ class ImageMatchingStateMachineBuilder:
                         if score >= self.similarity_threshold:
                             union(tracked.id, other_tracked.id)
                             # Store match info for later bbox alignment
-                            if tracked.matches.get(other_tracked.source_screenshot_id) is None:
-                                tracked.matches[other_tracked.source_screenshot_id] = ImageMatch(
-                                    screenshot_id=other_tracked.source_screenshot_id,
-                                    found=True,
-                                    confidence=score,
-                                    bbox=other_tracked.source_bbox,
+                            if (
+                                tracked.matches.get(other_tracked.source_screenshot_id)
+                                is None
+                            ):
+                                tracked.matches[other_tracked.source_screenshot_id] = (
+                                    ImageMatch(
+                                        screenshot_id=other_tracked.source_screenshot_id,
+                                        found=True,
+                                        confidence=score,
+                                        bbox=other_tracked.source_bbox,
+                                    )
                                 )
                 except Exception as e:
                     logger.warning(
@@ -880,7 +912,9 @@ class ImageMatchingStateMachineBuilder:
                     continue
 
         duration_dedup = time.time() - start_dedup
-        logger.info(f"[PERF_DEBUG] Pairwise deduplication finished in {duration_dedup:.2f}s")
+        logger.info(
+            f"[PERF_DEBUG] Pairwise deduplication finished in {duration_dedup:.2f}s"
+        )
 
         # Merge groups
         groups: dict[str, list[TrackedImage]] = defaultdict(list)
@@ -947,7 +981,9 @@ class ImageMatchingStateMachineBuilder:
         Images that appear on the exact same set of screenshots belong to the same state.
         """
         # Group images by their screen set
-        screen_set_to_images: dict[frozenset[str], list[TrackedImage]] = defaultdict(list)
+        screen_set_to_images: dict[frozenset[str], list[TrackedImage]] = defaultdict(
+            list
+        )
 
         for tracked in self.tracked_images:
             screen_set = frozenset(tracked.screens_found)
@@ -980,7 +1016,9 @@ class ImageMatchingStateMachineBuilder:
             if len(screen_list) <= 3:
                 screens_str = ", ".join(screen_list)
             else:
-                screens_str = f"{', '.join(screen_list[:3])} (+{len(screen_list) - 3} more)"
+                screens_str = (
+                    f"{', '.join(screen_list[:3])} (+{len(screen_list) - 3} more)"
+                )
 
             state_id = str(uuid4())
             state_name = f"State {state_index}"
@@ -1000,7 +1038,11 @@ class ImageMatchingStateMachineBuilder:
                     if sid == img.source_screenshot_id:
                         bbox = img.source_bbox
                         bbox_source = "source"
-                    elif sid in img.matches and img.matches[sid].found and img.matches[sid].bbox:
+                    elif (
+                        sid in img.matches
+                        and img.matches[sid].found
+                        and img.matches[sid].bbox
+                    ):
                         # bbox is confirmed non-None by the condition check
                         bbox = img.matches[sid].bbox  # type: ignore[assignment]
                         bbox_source = "match"
@@ -1055,7 +1097,9 @@ class ImageMatchingStateMachineBuilder:
                 "name": state_name,
                 "description": f"{len(images)} images appearing on {len(screen_set)} screenshots: {screens_str}",
                 "stateImages": state_images,
-                "screensFound": list(screen_set),  # Which screenshots this state appears on
+                "screensFound": list(
+                    screen_set
+                ),  # Which screenshots this state appears on
                 "regions": [],
                 "locations": [],
                 "strings": [],
@@ -1069,7 +1113,9 @@ class ImageMatchingStateMachineBuilder:
             states_config.append(state_config)
             state_index += 1
 
-        logger.info(f"Clustered {len(self.tracked_images)} images into {len(states_config)} states")
+        logger.info(
+            f"Clustered {len(self.tracked_images)} images into {len(states_config)} states"
+        )
         return states_config
 
     def _derive_transitions(
@@ -1172,7 +1218,10 @@ class ImageMatchingStateMachineBuilder:
         Returns:
             Tuple of (states_config, transitions_config)
         """
-        print("[IMAGE_MATCHING_DEBUG] ImageMatchingStateMachineBuilder.build() called", flush=True)
+        print(
+            "[IMAGE_MATCHING_DEBUG] ImageMatchingStateMachineBuilder.build() called",
+            flush=True,
+        )
         print(
             f"[IMAGE_MATCHING_DEBUG] elements_by_screenshot has {len(elements_by_screenshot)} screenshots",
             flush=True,
@@ -1180,24 +1229,34 @@ class ImageMatchingStateMachineBuilder:
 
         # Load screenshots
         screenshot_ids = list(elements_by_screenshot.keys())
-        print(f"[IMAGE_MATCHING_DEBUG] Loading screenshots: {screenshot_ids}", flush=True)
+        print(
+            f"[IMAGE_MATCHING_DEBUG] Loading screenshots: {screenshot_ids}", flush=True
+        )
         self.load_screenshots(screenshot_ids)
 
         if not self.screenshots:
             print("[IMAGE_MATCHING_DEBUG] No screenshots loaded!", flush=True)
             logger.error("No screenshots loaded, cannot build state machine")
             return [], []
-        print(f"[IMAGE_MATCHING_DEBUG] Loaded {len(self.screenshots)} screenshots", flush=True)
+        print(
+            f"[IMAGE_MATCHING_DEBUG] Loaded {len(self.screenshots)} screenshots",
+            flush=True,
+        )
 
         # Extract images from each screenshot
-        print("[IMAGE_MATCHING_DEBUG] Extracting images from screenshots...", flush=True)
+        print(
+            "[IMAGE_MATCHING_DEBUG] Extracting images from screenshots...", flush=True
+        )
         self.extract_and_track_images(elements_by_screenshot)
 
         if not self.tracked_images:
             print("[IMAGE_MATCHING_DEBUG] No images extracted!", flush=True)
             logger.warning("No images extracted, returning empty state machine")
             return [], []
-        print(f"[IMAGE_MATCHING_DEBUG] Extracted {len(self.tracked_images)} images", flush=True)
+        print(
+            f"[IMAGE_MATCHING_DEBUG] Extracted {len(self.tracked_images)} images",
+            flush=True,
+        )
 
         # Deduplicate images that represent the same visual element
         print("[IMAGE_MATCHING_DEBUG] Deduplicating images...", flush=True)
@@ -1266,12 +1325,21 @@ def build_state_machine_from_extraction_result(
     Returns:
         Tuple of (states_config, transitions_config) ready for project configuration.
     """
-    print("[IMAGE_MATCHING_DEBUG] build_state_machine_from_extraction_result called", flush=True)
+    print(
+        "[IMAGE_MATCHING_DEBUG] build_state_machine_from_extraction_result called",
+        flush=True,
+    )
     print(f"[IMAGE_MATCHING_DEBUG] screenshots_dir: {screenshots_dir}", flush=True)
-    print(f"[IMAGE_MATCHING_DEBUG] similarity_threshold: {similarity_threshold}", flush=True)
+    print(
+        f"[IMAGE_MATCHING_DEBUG] similarity_threshold: {similarity_threshold}",
+        flush=True,
+    )
 
     screenshots_dir = Path(screenshots_dir)
-    print(f"[IMAGE_MATCHING_DEBUG] screenshots_dir exists: {screenshots_dir.exists()}", flush=True)
+    print(
+        f"[IMAGE_MATCHING_DEBUG] screenshots_dir exists: {screenshots_dir.exists()}",
+        flush=True,
+    )
     if screenshots_dir.exists():
         files = list(screenshots_dir.iterdir())
         print(
@@ -1285,7 +1353,10 @@ def build_state_machine_from_extraction_result(
     extraction_state_to_screenshot: dict[str, str] = {}
 
     runtime_result = extraction_result.runtime_extraction
-    print(f"[IMAGE_MATCHING_DEBUG] runtime_result exists: {runtime_result is not None}", flush=True)
+    print(
+        f"[IMAGE_MATCHING_DEBUG] runtime_result exists: {runtime_result is not None}",
+        flush=True,
+    )
     if runtime_result and runtime_result.states:
         print(
             f"[IMAGE_MATCHING_DEBUG] Found {len(runtime_result.states)} ExtractedStates",
@@ -1302,7 +1373,9 @@ def build_state_machine_from_extraction_result(
 
         for i, runtime_state in enumerate(runtime_result.states):
             # Get screenshot_id - ExtractedState has screenshot_id directly (not screenshot.id)
-            screenshot_id = getattr(runtime_state, "screenshot_id", None) or runtime_state.id
+            screenshot_id = (
+                getattr(runtime_state, "screenshot_id", None) or runtime_state.id
+            )
             extraction_state_to_screenshot[runtime_state.id] = screenshot_id
             print(
                 f"[IMAGE_MATCHING_DEBUG] Processing state {i}: screenshot_id={screenshot_id}",
@@ -1311,7 +1384,10 @@ def build_state_machine_from_extraction_result(
 
             # Get elements - ExtractedState has element_ids, we look them up in element_map
             element_ids = getattr(runtime_state, "element_ids", [])
-            print(f"[IMAGE_MATCHING_DEBUG]   Has {len(element_ids)} element_ids", flush=True)
+            print(
+                f"[IMAGE_MATCHING_DEBUG]   Has {len(element_ids)} element_ids",
+                flush=True,
+            )
 
             elements = []
             for elem_id in element_ids:
@@ -1325,7 +1401,8 @@ def build_state_machine_from_extraction_result(
 
                 elem_dict = {
                     "id": elem.id,
-                    "name": getattr(elem, "name", None) or getattr(elem, "text_content", None),
+                    "name": getattr(elem, "name", None)
+                    or getattr(elem, "text_content", None),
                     "text": getattr(elem, "text_content", None),
                     "element_type": (
                         elem.element_type.value
@@ -1354,7 +1431,10 @@ def build_state_machine_from_extraction_result(
                 flush=True,
             )
     else:
-        print("[IMAGE_MATCHING_DEBUG] No ExtractedStates in extraction result!", flush=True)
+        print(
+            "[IMAGE_MATCHING_DEBUG] No ExtractedStates in extraction result!",
+            flush=True,
+        )
         logger.warning("No ExtractedStates in extraction result")
 
     print(
@@ -1362,12 +1442,18 @@ def build_state_machine_from_extraction_result(
         flush=True,
     )
     if not elements_by_screenshot:
-        print("[IMAGE_MATCHING_DEBUG] No elements found, returning empty state machine", flush=True)
+        print(
+            "[IMAGE_MATCHING_DEBUG] No elements found, returning empty state machine",
+            flush=True,
+        )
         logger.error("No elements found in extraction result")
         return [], []
 
     # Build state machine using image matching
-    print("[IMAGE_MATCHING_DEBUG] Creating ImageMatchingStateMachineBuilder...", flush=True)
+    print(
+        "[IMAGE_MATCHING_DEBUG] Creating ImageMatchingStateMachineBuilder...",
+        flush=True,
+    )
     try:
         builder = ImageMatchingStateMachineBuilder(
             screenshots_dir=screenshots_dir,

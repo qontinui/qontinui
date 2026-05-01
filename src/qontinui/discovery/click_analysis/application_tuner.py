@@ -95,7 +95,9 @@ class ApplicationTuner:
             logger.info(f"Optimal color tolerance: {color_tolerance}")
 
             # Step 3: Rank detection strategies
-            strategy_rankings = self.rank_strategies(screenshots, known_elements, click_locations)
+            strategy_rankings = self.rank_strategies(
+                screenshots, known_elements, click_locations
+            )
             logger.info(f"Strategy rankings: {strategy_rankings[:3]}")
 
             # Step 4: Analyze element characteristics
@@ -210,11 +212,15 @@ class ApplicationTuner:
 
                 # Check for closed contours
                 closed_count = sum(
-                    1 for c in contours if cv2.arcLength(c, True) > 0 and cv2.contourArea(c) > 100
+                    1
+                    for c in contours
+                    if cv2.arcLength(c, True) > 0 and cv2.contourArea(c) > 100
                 )
                 closed_ratio = closed_count / max(1, contour_count)
 
-                score = float(0.3 * count_score + 0.3 * density_score + 0.4 * closed_ratio)
+                score = float(
+                    0.3 * count_score + 0.3 * density_score + 0.4 * closed_ratio
+                )
                 total_score += score
 
             avg_score = total_score / len(screenshots)
@@ -387,7 +393,9 @@ class ApplicationTuner:
         self,
         screenshots: list[np.ndarray],
         known_elements: list[InferredBoundingBox] | None = None,
-    ) -> tuple[tuple[int, int], list[tuple[tuple[int, int, int], tuple[int, int, int]]]]:
+    ) -> tuple[
+        tuple[int, int], list[tuple[tuple[int, int, int], tuple[int, int, int]]]
+    ]:
         """Analyze common element characteristics in screenshots.
 
         Args:
@@ -466,7 +474,12 @@ class ApplicationTuner:
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
         best_labels = np.zeros((len(color_array), 1), dtype=np.int32)
         _, labels, centers = cv2.kmeans(
-            color_array, n_clusters, best_labels, criteria, 10, cv2.KMEANS_RANDOM_CENTERS
+            color_array,
+            n_clusters,
+            best_labels,
+            criteria,
+            10,
+            cv2.KMEANS_RANDOM_CENTERS,
         )
 
         # Build ranges around centers
@@ -554,13 +567,24 @@ class ApplicationTuner:
             old_weight = min(0.7, profile.tuning_metrics.sample_count / 100)
             new_weight = 1 - old_weight
 
-            result.metrics.sample_count = profile.tuning_metrics.sample_count + len(new_screenshots)
-            result.metrics.tuning_iterations = profile.tuning_metrics.tuning_iterations + 1
+            result.metrics.sample_count = profile.tuning_metrics.sample_count + len(
+                new_screenshots
+            )
+            result.metrics.tuning_iterations = (
+                profile.tuning_metrics.tuning_iterations + 1
+            )
 
             # Weighted average of scores
-            for attr in ["edge_score", "contour_score", "color_score", "flood_fill_score"]:
+            for attr in [
+                "edge_score",
+                "contour_score",
+                "color_score",
+                "flood_fill_score",
+            ]:
                 old_val = getattr(profile.tuning_metrics, attr)
                 new_val = getattr(result.metrics, attr)
-                setattr(result.metrics, attr, old_weight * old_val + new_weight * new_val)
+                setattr(
+                    result.metrics, attr, old_weight * old_val + new_weight * new_val
+                )
 
         return result

@@ -86,7 +86,9 @@ class Action:
         Returns:
             An ActionResult containing all results from the action execution
         """
-        return await self.perform_with_description("", action_config, *object_collections)
+        return await self.perform_with_description(
+            "", action_config, *object_collections
+        )
 
     async def perform_with_description(
         self,
@@ -120,13 +122,17 @@ class Action:
                     action_config, ActionResultBuilder().build(), object_collections
                 )
             else:
-                logger.warning("Action chain executor not available for chained actions")
+                logger.warning(
+                    "Action chain executor not available for chained actions"
+                )
                 return ActionResultBuilder().build()
 
         # Single action execution
         action = self.action_service.get_action(action_config)
         if action is None:
-            logger.warning("Not a valid Action for %s", action_config.__class__.__name__)
+            logger.warning(
+                "Not a valid Action for %s", action_config.__class__.__name__
+            )
             return ActionResultBuilder().build()
 
         # Always use action execution for lifecycle management
@@ -190,7 +196,9 @@ class Action:
         # If we have StateImages, we need to chain Find -> Click
         if state_images:
             # First, find the images
-            image_collection = ObjectCollectionBuilder().with_images(*state_images).build()
+            image_collection = (
+                ObjectCollectionBuilder().with_images(*state_images).build()
+            )
             find_config = PatternFindOptionsBuilder().build()
             find_result = await self.perform(find_config, image_collection)
 
@@ -243,7 +251,9 @@ class Action:
         # return self.perform(config, collection)
         return ActionResultBuilder().build()  # Placeholder
 
-    def execute(self, action_func: Callable[[], Any], target: Any | None = None) -> ActionResult:
+    def execute(
+        self, action_func: Callable[[], Any], target: Any | None = None
+    ) -> ActionResult:
         """Execute a primitive action function with lifecycle management.
 
         Used by primitive actions (mouse, keyboard) to wrap their operations

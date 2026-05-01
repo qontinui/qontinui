@@ -61,11 +61,17 @@ class TestMaskedMatching:
         screenshot = Image.from_numpy(screenshot_data, name="screenshot")
 
         # Execute find with mask - should match despite different top bars
-        results = Find(template_pattern).similarity(0.85).screenshot(screenshot).execute()
+        results = (
+            Find(template_pattern).similarity(0.85).screenshot(screenshot).execute()
+        )
 
         # Verify match was found
-        assert len(results.matches) > 0, "Mask should allow match despite different top bars"
-        assert results.matches.first.similarity >= 0.85, "Match confidence should be high"
+        assert (
+            len(results.matches) > 0
+        ), "Mask should allow match despite different top bars"
+        assert (
+            results.matches.first.similarity >= 0.85
+        ), "Match confidence should be high"
 
     @skip_without_display
     def test_unmasked_pattern_fails_with_differences(self):
@@ -96,10 +102,14 @@ class TestMaskedMatching:
         screenshot = Image.from_numpy(screenshot_data, name="screenshot")
 
         # Execute find without mask - should NOT match due to different top bars
-        results = Find(template_pattern).similarity(0.85).screenshot(screenshot).execute()
+        results = (
+            Find(template_pattern).similarity(0.85).screenshot(screenshot).execute()
+        )
 
         # Verify match was NOT found
-        assert len(results.matches) == 0, "Should not match when top bars differ without mask"
+        assert (
+            len(results.matches) == 0
+        ), "Should not match when top bars differ without mask"
 
     @skip_without_display
     def test_mask_with_perfect_match(self):
@@ -127,13 +137,15 @@ class TestMaskedMatching:
         screenshot = Image.from_numpy(screenshot_data)
 
         # Find with mask
-        results = Find(template_pattern).similarity(0.95).screenshot(screenshot).execute()
+        results = (
+            Find(template_pattern).similarity(0.95).screenshot(screenshot).execute()
+        )
 
         # Should find perfect match
         assert len(results.matches) > 0, "Should find perfect match with mask"
-        assert results.matches.first.similarity >= 0.95, (
-            "Perfect match should have very high confidence"
-        )
+        assert (
+            results.matches.first.similarity >= 0.95
+        ), "Perfect match should have very high confidence"
 
     @skip_without_display
     def test_image_converts_to_pattern_with_full_mask(self):
@@ -152,7 +164,9 @@ class TestMaskedMatching:
         results = Find(test_image).similarity(0.90).screenshot(screenshot).execute()
 
         # Should find match (Image gets converted to Pattern with all-ones mask)
-        assert len(results.matches) > 0, "Image should work in Find (converts to Pattern)"
+        assert (
+            len(results.matches) > 0
+        ), "Image should work in Find (converts to Pattern)"
 
 
 if __name__ == "__main__":

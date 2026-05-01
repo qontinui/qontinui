@@ -179,7 +179,9 @@ class RealFindImplementation:
             return pattern
 
         # Check if any preprocessing is needed
-        if not (options.grayscale or options.edge_detection or options.color_tolerance > 0):
+        if not (
+            options.grayscale or options.edge_detection or options.color_tolerance > 0
+        ):
             return pattern
 
         # Preprocess the template
@@ -227,7 +229,10 @@ class RealFindImplementation:
                 return batch_results
 
         # Fallback: sequential per-pattern matching
-        tasks = [asyncio.to_thread(self._execute_single, pattern, options) for pattern in patterns]
+        tasks = [
+            asyncio.to_thread(self._execute_single, pattern, options)
+            for pattern in patterns
+        ]
 
         # Execute all searches concurrently
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -275,7 +280,9 @@ class RealFindImplementation:
         try:
             from ...find.matchers.batch_template_matcher import BatchTemplateMatcher
         except ImportError:
-            logger.debug("Batch matching unavailable: Multi-Template-Matching not installed")
+            logger.debug(
+                "Batch matching unavailable: Multi-Template-Matching not installed"
+            )
             return None
 
         start_time = time.time()
@@ -366,7 +373,9 @@ class RealFindImplementation:
                         "pattern_name": pattern.name,
                         "found": found,
                         "match_count": len(matches_list),
-                        "best_score": matches_list[0].similarity if matches_list else 0.0,
+                        "best_score": (
+                            matches_list[0].similarity if matches_list else 0.0
+                        ),
                         "duration_ms": total_ms,
                         "batch_matching": True,
                     },
@@ -422,10 +431,16 @@ class RealFindImplementation:
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] RealFindImplementation.execute() ENTRY\n")
-                    f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
-                    f.write(f"[{ts}]   pattern.pixel_data is None: {pattern.pixel_data is None}\n")
+                    f.write(
+                        f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n"
+                    )
+                    f.write(
+                        f"[{ts}]   pattern.pixel_data is None: {pattern.pixel_data is None}\n"
+                    )
                     if pattern.pixel_data is not None:
-                        f.write(f"[{ts}]   pattern.pixel_data.shape={pattern.pixel_data.shape}\n")
+                        f.write(
+                            f"[{ts}]   pattern.pixel_data.shape={pattern.pixel_data.shape}\n"
+                        )
                     f.write(
                         f"[{ts}]   FindOptions: similarity={options.similarity}, find_all={options.find_all}\n"
                     )
@@ -439,9 +454,13 @@ class RealFindImplementation:
         logger.debug(
             f"[FIND_DEBUG] RealFindImplementation.execute() ENTRY - pattern.id={pattern.id}, pattern.name={pattern.name}"
         )
-        logger.debug(f"[FIND_DEBUG] Pattern pixel_data is None: {pattern.pixel_data is None}")
+        logger.debug(
+            f"[FIND_DEBUG] Pattern pixel_data is None: {pattern.pixel_data is None}"
+        )
         if pattern.pixel_data is not None:
-            logger.debug(f"[FIND_DEBUG] Pattern pixel_data shape: {pattern.pixel_data.shape}")
+            logger.debug(
+                f"[FIND_DEBUG] Pattern pixel_data shape: {pattern.pixel_data.shape}"
+            )
         logger.debug(
             f"[FIND_DEBUG] FindOptions: similarity={options.similarity}, find_all={options.find_all}"
         )
@@ -456,7 +475,9 @@ class RealFindImplementation:
         settings = FrameworkSettings.get_instance()
         collect_debug = options.collect_debug or settings.image_debug.emit_match_details
 
-        logger.debug(f"[DEBUG_FEATURE] emit_match_details={collect_debug} for image {pattern.id}")
+        logger.debug(
+            f"[DEBUG_FEATURE] emit_match_details={collect_debug} for image {pattern.id}"
+        )
 
         try:
             # Capture screenshot and record timestamp
@@ -481,7 +502,9 @@ class RealFindImplementation:
 
             # Convert screenshot to numpy array for cache/healing operations
             screenshot_array: np.ndarray = (
-                np.array(screenshot) if not isinstance(screenshot, np.ndarray) else screenshot
+                np.array(screenshot)
+                if not isinstance(screenshot, np.ndarray)
+                else screenshot
             )
 
             # ================================================================
@@ -493,7 +516,9 @@ class RealFindImplementation:
             healed = False
 
             if options.use_cache:
-                matches, cache_hit = self._try_cache_lookup(pattern, screenshot_array, options)
+                matches, cache_hit = self._try_cache_lookup(
+                    pattern, screenshot_array, options
+                )
                 if cache_hit:
                     logger.info(f"[FIND] Cache hit for pattern {pattern.name}")
                     debug_data = {"source": "cache"}
@@ -506,20 +531,31 @@ class RealFindImplementation:
                 preprocessed_screenshot: Any = screenshot_array
                 preprocessed_pattern = pattern
 
-                if options.grayscale or options.edge_detection or options.color_tolerance > 0:
+                if (
+                    options.grayscale
+                    or options.edge_detection
+                    or options.color_tolerance > 0
+                ):
                     logger.debug(
                         f"[FIND_DEBUG] Applying preprocessing: grayscale={options.grayscale}, "
                         f"edge_detection={options.edge_detection}, color_tolerance={options.color_tolerance}"
                     )
                     # Ensure BGR format
-                    if len(screenshot_array.shape) == 3 and screenshot_array.shape[2] == 4:
+                    if (
+                        len(screenshot_array.shape) == 3
+                        and screenshot_array.shape[2] == 4
+                    ):
                         screenshot_array = screenshot_array[:, :, :3]
 
-                    preprocessed_screenshot = self._preprocess_image(screenshot_array, options)
+                    preprocessed_screenshot = self._preprocess_image(
+                        screenshot_array, options
+                    )
                     preprocessed_pattern = self._preprocess_pattern(pattern, options)
 
                 # Perform template matching with debug support
-                logger.debug("[FIND_DEBUG] Calling template_matcher.find_matches_with_debug()")
+                logger.debug(
+                    "[FIND_DEBUG] Calling template_matcher.find_matches_with_debug()"
+                )
                 matching_start_time = time.time()
                 region_tuple = (
                     (
@@ -541,8 +577,16 @@ class RealFindImplementation:
                 )
                 # Convert find.match.Match to model.match.Match
                 for fm in raw_matches:
-                    target = fm.match_object.target if hasattr(fm, "match_object") else fm.location
-                    score = fm.match_object.score if hasattr(fm, "match_object") else fm.similarity
+                    target = (
+                        fm.match_object.target
+                        if hasattr(fm, "match_object")
+                        else fm.location
+                    )
+                    score = (
+                        fm.match_object.score
+                        if hasattr(fm, "match_object")
+                        else fm.similarity
+                    )
                     matches.append(
                         ModelMatch(
                             score=score,
@@ -575,7 +619,9 @@ class RealFindImplementation:
                         if debug_data is None:
                             debug_data = {}
                         debug_data["source"] = "cascade"
-                        logger.info(f"[FIND] Cascade fallback succeeded for {pattern.name}")
+                        logger.info(
+                            f"[FIND] Cascade fallback succeeded for {pattern.name}"
+                        )
 
                 # ================================================================
                 # STEP 3: Self-healing fallback (if template matching failed)
@@ -584,14 +630,18 @@ class RealFindImplementation:
                     logger.info(
                         f"[FIND] Template matching failed for {pattern.name}, attempting healing"
                     )
-                    healed_matches = self._try_healing(pattern, screenshot_array, options)
+                    healed_matches = self._try_healing(
+                        pattern, screenshot_array, options
+                    )
                     if healed_matches:
                         matches = healed_matches
                         healed = True
                         if debug_data is None:
                             debug_data = {}
                         debug_data["source"] = "healing"
-                        logger.info(f"[FIND] Healing succeeded for pattern {pattern.name}")
+                        logger.info(
+                            f"[FIND] Healing succeeded for pattern {pattern.name}"
+                        )
 
                 # ================================================================
                 # STEP 4: Store successful matches in cache (if enabled)
@@ -619,7 +669,9 @@ class RealFindImplementation:
                 if visual_debug_image:
                     logger.info("[REAL_FIND] Visual debug image generated successfully")
                 else:
-                    logger.warning("[REAL_FIND] Visual debug image generation returned None")
+                    logger.warning(
+                        "[REAL_FIND] Visual debug image generation returned None"
+                    )
 
             # ================================================================
             # STEP 5: Optional visual validation
@@ -731,7 +783,9 @@ class RealFindImplementation:
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(f"[{ts}] _emit_image_recognition_event CALLED\n")
-                    f.write(f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n")
+                    f.write(
+                        f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n"
+                    )
                     f.write(f"[{ts}]   matches count={len(matches)}\n")
                     f.write(f"[{ts}]   found={len(matches) > 0}\n")
             except Exception:
@@ -743,9 +797,13 @@ class RealFindImplementation:
 
         # Get pattern name with fallback - use pattern.id as it's the filename
         # pattern.name might be empty, but pattern.id contains the actual filename
-        pattern_name = pattern.name if pattern.name and pattern.name.strip() else pattern.id
+        pattern_name = (
+            pattern.name if pattern.name and pattern.name.strip() else pattern.id
+        )
 
-        logger.debug(f"Pattern name='{pattern.name}', id='{pattern.id}', using='{pattern_name}'")
+        logger.debug(
+            f"Pattern name='{pattern.name}', id='{pattern.id}', using='{pattern_name}'"
+        )
 
         # Build location with full region info (x, y, width, height)
         location = None
@@ -760,7 +818,9 @@ class RealFindImplementation:
 
         # Build event data
         # Debug: Log the monitor_index value
-        logger.info(f"[EVENT] Building event data with monitor_index={options.monitor_index}")
+        logger.info(
+            f"[EVENT] Building event data with monitor_index={options.monitor_index}"
+        )
         event_data = {
             "image_id": pattern.id,
             "pattern_name": pattern_name,
@@ -794,7 +854,9 @@ class RealFindImplementation:
 
             # Add screenshot dimensions to event data
             event_data["screenshot_size"] = (screenshot_width, screenshot_height)
-            logger.debug(f"[EVENT] Screenshot dimensions: {screenshot_width}x{screenshot_height}")
+            logger.debug(
+                f"[EVENT] Screenshot dimensions: {screenshot_width}x{screenshot_height}"
+            )
 
             screenshot_image = self._encode_screenshot(screenshot)
             if screenshot_image:
@@ -847,20 +909,28 @@ class RealFindImplementation:
         # Add visual debug image if available
         if visual_debug_image:
             event_data["visual_debug_image"] = visual_debug_image
-            event_data["debug_visual_base64"] = visual_debug_image  # Alias for spec compliance
+            event_data["debug_visual_base64"] = (
+                visual_debug_image  # Alias for spec compliance
+            )
 
         # Add timestamp
         event_data["timestamp"] = time.time()
 
         # Emit MATCH_ATTEMPTED event (EventTranslator listens for this)
-        logger.debug(f"[FIND_DEBUG] Emitting MATCH_ATTEMPTED event for pattern {pattern.id}")
+        logger.debug(
+            f"[FIND_DEBUG] Emitting MATCH_ATTEMPTED event for pattern {pattern.id}"
+        )
 
         if _file_debug:
             try:
                 with open(debug_log, "a", encoding="utf-8") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] About to call emit_event(EventType.MATCH_ATTEMPTED, ...)\n")
-                    f.write(f"[{ts}]   EventType.MATCH_ATTEMPTED={EventType.MATCH_ATTEMPTED}\n")
+                    f.write(
+                        f"[{ts}] About to call emit_event(EventType.MATCH_ATTEMPTED, ...)\n"
+                    )
+                    f.write(
+                        f"[{ts}]   EventType.MATCH_ATTEMPTED={EventType.MATCH_ATTEMPTED}\n"
+                    )
                     f.write(f"[{ts}]   event_data keys={list(event_data.keys())}\n")
             except Exception:
                 pass
@@ -920,8 +990,12 @@ class RealFindImplementation:
             if scale_factor != 1.0:
                 new_w = int(t_w * scale_factor)
                 new_h = int(t_h * scale_factor)
-                interpolation = cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
-                template = cv2.resize(template, (new_w, new_h), interpolation=interpolation)
+                interpolation = (
+                    cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
+                )
+                template = cv2.resize(
+                    template, (new_w, new_h), interpolation=interpolation
+                )
 
             # Encode as PNG
             success, buffer = cv2.imencode(".png", template)
@@ -969,7 +1043,9 @@ class RealFindImplementation:
 
             # Log original dimensions
             s_h, s_w = screenshot.shape[:2]
-            logger.debug(f"[SCREENSHOT] Encoding screenshot with original size: {s_w}x{s_h}")
+            logger.debug(
+                f"[SCREENSHOT] Encoding screenshot with original size: {s_w}x{s_h}"
+            )
 
             # Encode as JPEG with quality 85 for reasonable file size
             # JPEG is much smaller than PNG for photos/screenshots
@@ -992,7 +1068,9 @@ class RealFindImplementation:
             logger.error(f"Failed to encode screenshot: {e}")
             return None
 
-    def _encode_matched_region(self, screenshot: Any, location: dict, template: Any) -> str | None:
+    def _encode_matched_region(
+        self, screenshot: Any, location: dict, template: Any
+    ) -> str | None:
         """Extract and encode the matched region from the screenshot.
 
         This crops the screenshot at the match location and encodes it as a base64 PNG
@@ -1052,7 +1130,9 @@ class RealFindImplementation:
             matched_region = screenshot[y:y2, x:x2]
 
             if matched_region.size == 0:
-                logger.warning(f"[MATCHED_REGION] Empty crop at ({x}, {y}) size {width}x{height}")
+                logger.warning(
+                    f"[MATCHED_REGION] Empty crop at ({x}, {y}) size {width}x{height}"
+                )
                 return None
 
             # Scale for visibility (same logic as template)
@@ -1071,7 +1151,9 @@ class RealFindImplementation:
             if scale_factor != 1.0:
                 new_w = int(m_w * scale_factor)
                 new_h = int(m_h * scale_factor)
-                interpolation = cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
+                interpolation = (
+                    cv2.INTER_CUBIC if scale_factor > 1.0 else cv2.INTER_AREA
+                )
                 matched_region = cv2.resize(
                     matched_region, (new_w, new_h), interpolation=interpolation
                 )
@@ -1159,7 +1241,9 @@ class RealFindImplementation:
 
                 return [match], True
 
-            logger.debug(f"[CACHE_MISS] No valid cache entry for pattern {pattern.name}")
+            logger.debug(
+                f"[CACHE_MISS] No valid cache entry for pattern {pattern.name}"
+            )
             return [], False
 
         except Exception as e:
@@ -1213,9 +1297,13 @@ class RealFindImplementation:
                 # shared match_settings object.
                 ms = MatchSettings(
                     preferred_backend="invariant_template",
-                    min_confidence=match_settings.min_confidence if match_settings else 0.8,
+                    min_confidence=(
+                        match_settings.min_confidence if match_settings else 0.8
+                    ),
                     max_backends=match_settings.max_backends if match_settings else 5,
-                    search_region=match_settings.search_region if match_settings else None,
+                    search_region=(
+                        match_settings.search_region if match_settings else None
+                    ),
                 )
                 if options.rotation_invariant:
                     config["invariant_rotations"] = [0.0, 90.0, 180.0, 270.0]
@@ -1277,10 +1365,14 @@ class RealFindImplementation:
             )
 
             # Get pattern pixel data for visual search
-            pattern_pixels = pattern.pixel_data if pattern.pixel_data is not None else None
+            pattern_pixels = (
+                pattern.pixel_data if pattern.pixel_data is not None else None
+            )
 
             # Attempt healing
-            logger.info(f"[HEALING] Attempting to heal failed lookup for '{description}'")
+            logger.info(
+                f"[HEALING] Attempting to heal failed lookup for '{description}'"
+            )
             result = healer.heal(screenshot, context, pattern_pixels)
 
             if result.success and result.location:
@@ -1413,7 +1505,9 @@ class RealFindImplementation:
                     f"{result.actual_change_percentage:.2f}%"
                 )
             else:
-                logger.warning(f"[VALIDATION_WARNING] No visual change detected: {result.message}")
+                logger.warning(
+                    f"[VALIDATION_WARNING] No visual change detected: {result.message}"
+                )
 
             return result
 

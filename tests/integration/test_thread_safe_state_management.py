@@ -47,7 +47,10 @@ class TestStateRegistryStressTests:
                     errors.append(e)
 
         # Start all threads
-        threads = [threading.Thread(target=register_states, args=(i,)) for i in range(num_threads)]
+        threads = [
+            threading.Thread(target=register_states, args=(i,))
+            for i in range(num_threads)
+        ]
         start_time = time.time()
 
         for t in threads:
@@ -99,7 +102,9 @@ class TestStateRegistryStressTests:
                     # Various lookup operations
                     state_class = registry.get_state(state_name)
                     state_id = registry.get_state_id(state_name)
-                    state_by_id = registry.get_state_by_id(state_id) if state_id else None
+                    state_by_id = (
+                        registry.get_state_by_id(state_id) if state_id else None
+                    )
 
                     # Verify
                     assert state_class is not None
@@ -111,7 +116,10 @@ class TestStateRegistryStressTests:
                     errors.append(e)
 
         # Execute lookups
-        threads = [threading.Thread(target=perform_lookups, args=(i,)) for i in range(num_threads)]
+        threads = [
+            threading.Thread(target=perform_lookups, args=(i,))
+            for i in range(num_threads)
+        ]
         start_time = time.time()
 
         for t in threads:
@@ -247,7 +255,8 @@ class TestConcurrentGroupOperations:
 
         # Execute registrations
         threads = [
-            threading.Thread(target=register_grouped_states, args=(i,)) for i in range(num_threads)
+            threading.Thread(target=register_grouped_states, args=(i,))
+            for i in range(num_threads)
         ]
         for t in threads:
             t.start()
@@ -347,7 +356,8 @@ class TestConcurrentProfileOperations:
 
         # Execute registrations
         threads = [
-            threading.Thread(target=register_initial_states, args=(i,)) for i in range(num_threads)
+            threading.Thread(target=register_initial_states, args=(i,))
+            for i in range(num_threads)
         ]
         for t in threads:
             t.start()
@@ -441,7 +451,8 @@ class TestStateRegistryDataIntegrity:
 
         # Execute
         threads = [
-            threading.Thread(target=register_and_collect_id, args=(i,)) for i in range(num_threads)
+            threading.Thread(target=register_and_collect_id, args=(i,))
+            for i in range(num_threads)
         ]
         for t in threads:
             t.start()
@@ -477,7 +488,10 @@ class TestStateRegistryDataIntegrity:
                     errors.append(e)
 
         # Execute
-        threads = [threading.Thread(target=register_states, args=(i,)) for i in range(num_threads)]
+        threads = [
+            threading.Thread(target=register_states, args=(i,))
+            for i in range(num_threads)
+        ]
         for t in threads:
             t.start()
         for t in threads:
@@ -532,7 +546,8 @@ class TestStateRegistryDataIntegrity:
 
         # Execute
         threads = [
-            threading.Thread(target=complex_operations, args=(i,)) for i in range(num_threads)
+            threading.Thread(target=complex_operations, args=(i,))
+            for i in range(num_threads)
         ]
         for t in threads:
             t.start()

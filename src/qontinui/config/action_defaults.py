@@ -45,7 +45,9 @@ class KeyboardActionDefaults:
 
     # Hotkey timing
     hotkey_hold_duration: float = 0.05  # How long to hold hotkey combination
-    hotkey_press_interval: float = 0.01  # Delay between pressing each key in combination
+    hotkey_press_interval: float = (
+        0.01  # Delay between pressing each key in combination
+    )
 
 
 @dataclass

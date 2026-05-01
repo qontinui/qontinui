@@ -54,7 +54,9 @@ class StubAccessibilityCapture:
     accessibility" scenario.
     """
 
-    def __init__(self, responses: dict[tuple[str, str], list[tuple[int, int, int, int, str]]]):
+    def __init__(
+        self, responses: dict[tuple[str, str], list[tuple[int, int, int, int, str]]]
+    ):
         self._responses = responses
 
     def is_connected(self) -> bool:
@@ -126,15 +128,21 @@ class SyntheticCandidateBackend(DetectionBackend):
     fake candidates and verify it drops the non-interactive ones.
     """
 
-    def __init__(self, candidates: list[DetectionResult], cost_ms: float = 2000.0) -> None:
+    def __init__(
+        self, candidates: list[DetectionResult], cost_ms: float = 2000.0
+    ) -> None:
         self._candidates = candidates
         self._cost = cost_ms
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         # Return copies so filter mutations don't leak across calls.
         import dataclasses
 
-        return [dataclasses.replace(c, metadata=dict(c.metadata)) for c in self._candidates]
+        return [
+            dataclasses.replace(c, metadata=dict(c.metadata)) for c in self._candidates
+        ]
 
     def supports(self, needle_type: str) -> bool:
         return True
@@ -161,9 +169,7 @@ def _build_service_cascade(
     feature/OCR to keep the test focused on the bypass path.
     """
     from qontinui.find.backends.accessibility_backend import AccessibilityBackend
-    from qontinui.find.backends.semantic_accessibility_backend import (
-        SemanticAccessibilityBackend,
-    )
+    from qontinui.find.backends.semantic_accessibility_backend import SemanticAccessibilityBackend
 
     backends: list[DetectionBackend] = [
         AccessibilityBackend(accessibility_capture),
@@ -172,7 +178,9 @@ def _build_service_cascade(
     ]
     cascade = CascadeDetector(backends=backends)
     # terminal fallback should auto-register to omniparser_service
-    assert cascade.terminal_fallback is not None, "expected auto-registered terminal fallback"
+    assert (
+        cascade.terminal_fallback is not None
+    ), "expected auto-registered terminal fallback"
     assert cascade.terminal_fallback.name == "omniparser_service"
     return cascade
 
@@ -197,7 +205,9 @@ def test_notepad_accessibility_short_circuits(
 
     # Stub says "File" menu is at a known bbox — real coords don't matter
     # for the test, we're proving the cascade terminates on a11y.
-    capture = StubAccessibilityCapture(responses={("label", "File"): [(10, 30, 40, 20, "File")]})
+    capture = StubAccessibilityCapture(
+        responses={("label", "File"): [(10, 30, 40, 20, "File")]}
+    )
     cascade = _build_service_cascade(capture)
 
     results = cascade.find(
@@ -248,9 +258,12 @@ def test_mspaint_empty_accessibility_triggers_bypass(
     # Whether Florence-2 caption matching found "pencil tool" specifically
     # is a semantic-matcher concern, not a cascade wiring concern.
     bypass_logged = any(
-        "bypassing to terminal fallback omniparser_service" in rec.message for rec in caplog.records
+        "bypassing to terminal fallback omniparser_service" in rec.message
+        for rec in caplog.records
     )
-    assert bypass_logged, "expected accessibility-empty bypass to fire and name omniparser_service"
+    assert (
+        bypass_logged
+    ), "expected accessibility-empty bypass to fire and name omniparser_service"
 
     # Port-agnostic: the backend may be on :8080 (standalone compose)
     # or behind the ai-proxy on :8888. Both routes terminate at the
@@ -258,9 +271,9 @@ def test_mspaint_empty_accessibility_triggers_bypass(
     service_called = any(
         "POST http" in rec.message and "/parse" in rec.message for rec in caplog.records
     )
-    assert service_called, (
-        "expected the terminal fallback to actually call the OmniParser /parse endpoint"
-    )
+    assert (
+        service_called
+    ), "expected the terminal fallback to actually call the OmniParser /parse endpoint"
 
 
 # ---------------------------------------------------------------------------
@@ -286,9 +299,7 @@ def test_interactability_filter_drops_canvas_interior(
 
     The filter should drop all 3 fake_* and keep all 3 real_*.
     """
-    from qontinui.discovery.element_detection.omniparser_detector import (
-        OmniParserDetector,
-    )
+    from qontinui.discovery.element_detection.omniparser_detector import OmniParserDetector
     from qontinui.find.backends.omniparser_config import OmniParserSettings
 
     live_app("mspaint.exe", window_title="Paint")

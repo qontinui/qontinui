@@ -64,7 +64,9 @@ class FindWrapper:
             except Exception:
                 pass  # Graceful degradation — no accessibility
 
-            self._real_impl = RealFindImplementation(accessibility_capture=accessibility_capture)
+            self._real_impl = RealFindImplementation(
+                accessibility_capture=accessibility_capture
+            )
         return self._real_impl
 
     async def find(
@@ -95,7 +97,9 @@ class FindWrapper:
         if is_mock:
             results = await self.mock_implementation.execute(patterns, options)
         else:
-            results = await self.real_implementation.execute(patterns, options, max_concurrent)
+            results = await self.real_implementation.execute(
+                patterns, options, max_concurrent
+            )
 
         found_count = sum(1 for r in results if r.found)
         logger.debug(f"FindWrapper.find: {found_count}/{len(results)} patterns found")

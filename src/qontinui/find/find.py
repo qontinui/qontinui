@@ -127,7 +127,9 @@ class Find:
         if isinstance(region, SearchRegions):
             self._search_region = region
         elif isinstance(region, Region):
-            self._search_region = Region(region.x, region.y, region.width, region.height)
+            self._search_region = Region(
+                region.x, region.y, region.width, region.height
+            )
         return self
 
     def timeout(self, seconds: float) -> Find:
@@ -244,7 +246,10 @@ class Find:
         search_region = None
         if isinstance(self._search_region, Region):
             search_region = self._search_region
-        elif isinstance(self._search_region, SearchRegions) and self._search_region.regions:
+        elif (
+            isinstance(self._search_region, SearchRegions)
+            and self._search_region.regions
+        ):
             # Use first region from SearchRegions
             search_region = self._search_region.regions[0]
 
@@ -284,8 +289,11 @@ class Find:
         # Convert SearchRegions to Region if needed for results
         search_region_for_results = (
             self._search_region.regions[0]
-            if isinstance(self._search_region, SearchRegions) and self._search_region.regions
-            else (self._search_region if isinstance(self._search_region, Region) else None)
+            if isinstance(self._search_region, SearchRegions)
+            and self._search_region.regions
+            else (
+                self._search_region if isinstance(self._search_region, Region) else None
+            )
         )
 
         return FindResults(

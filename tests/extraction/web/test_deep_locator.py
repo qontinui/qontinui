@@ -145,7 +145,9 @@ class TestDeepLocatorEdgeCases:
 
     def test_frame_selector_with_attributes(self) -> None:
         """Test frame selector with complex attributes."""
-        locator = build_deep_locator(['iframe[name="content"]', 'iframe[src*="widget"]'], "button")
+        locator = build_deep_locator(
+            ['iframe[name="content"]', 'iframe[src*="widget"]'], "button"
+        )
         assert 'iframe[name="content"]' in locator
         assert 'iframe[src*="widget"]' in locator
         assert locator.count(" >> ") == 2

@@ -144,7 +144,9 @@ async def benchmark_basic_extraction(page: Page, iterations: int) -> BenchmarkRe
     )
 
 
-async def benchmark_shadow_dom_extraction(page: Page, iterations: int) -> BenchmarkResult:
+async def benchmark_shadow_dom_extraction(
+    page: Page, iterations: int
+) -> BenchmarkResult:
     """Benchmark extraction with shadow DOM enabled."""
     options = ExtractionOptions(
         include_shadow_dom=True,
@@ -170,7 +172,9 @@ async def benchmark_shadow_dom_extraction(page: Page, iterations: int) -> Benchm
     )
 
 
-async def benchmark_cursor_pointer_extraction(page: Page, iterations: int) -> BenchmarkResult:
+async def benchmark_cursor_pointer_extraction(
+    page: Page, iterations: int
+) -> BenchmarkResult:
     """Benchmark extraction with cursor:pointer detection."""
     options = ExtractionOptions(
         include_shadow_dom=False,
@@ -218,7 +222,9 @@ async def benchmark_iframe_extraction(page: Page, iterations: int) -> BenchmarkR
     )
 
 
-async def benchmark_accessibility_extraction(page: Page, iterations: int) -> BenchmarkResult:
+async def benchmark_accessibility_extraction(
+    page: Page, iterations: int
+) -> BenchmarkResult:
     """Benchmark accessibility tree extraction."""
 
     async def run():
@@ -423,7 +429,9 @@ def print_results(results: PageBenchmarkResults) -> None:
     print(f"{'=' * 80}")
 
     # Header
-    print(f"{'Benchmark':<30} {'Mean':>10} {'Median':>10} {'StdDev':>10} {'Elements':>10}")
+    print(
+        f"{'Benchmark':<30} {'Mean':>10} {'Median':>10} {'StdDev':>10} {'Elements':>10}"
+    )
     print(f"{'-' * 30} {'-' * 10} {'-' * 10} {'-' * 10} {'-' * 10}")
 
     # Results
@@ -460,13 +468,19 @@ def print_comparison(all_results: list[PageBenchmarkResults]) -> None:
         print(f"  {'-' * 50} {'-' * 12} {'-' * 10}")
 
         for page_result in all_results:
-            bench = next((b for b in page_result.benchmarks if b.name == bench_name), None)
+            bench = next(
+                (b for b in page_result.benchmarks if b.name == bench_name), None
+            )
             if bench:
                 # Truncate URL for display
                 url_display = (
-                    page_result.url[:47] + "..." if len(page_result.url) > 50 else page_result.url
+                    page_result.url[:47] + "..."
+                    if len(page_result.url) > 50
+                    else page_result.url
                 )
-                print(f"  {url_display:<50} {bench.mean_ms:>10.1f}ms {bench.elements_found:>10}")
+                print(
+                    f"  {url_display:<50} {bench.mean_ms:>10.1f}ms {bench.elements_found:>10}"
+                )
 
 
 def calculate_overhead(all_results: list[PageBenchmarkResults]) -> None:
@@ -476,19 +490,25 @@ def calculate_overhead(all_results: list[PageBenchmarkResults]) -> None:
     print(f"{'=' * 80}")
 
     for page_result in all_results:
-        basic = next((b for b in page_result.benchmarks if b.name == "basic_extraction"), None)
+        basic = next(
+            (b for b in page_result.benchmarks if b.name == "basic_extraction"), None
+        )
         if not basic or basic.mean_ms == 0:
             continue
 
         print(f"\n{page_result.url}")
-        print(f"  Basic extraction: {basic.mean_ms:.1f}ms ({basic.elements_found} elements)")
+        print(
+            f"  Basic extraction: {basic.mean_ms:.1f}ms ({basic.elements_found} elements)"
+        )
 
         for bench in page_result.benchmarks:
             if bench.name == "basic_extraction" or bench.mean_ms == 0:
                 continue
 
             overhead_ms = bench.mean_ms - basic.mean_ms
-            overhead_pct = (overhead_ms / basic.mean_ms) * 100 if basic.mean_ms > 0 else 0
+            overhead_pct = (
+                (overhead_ms / basic.mean_ms) * 100 if basic.mean_ms > 0 else 0
+            )
 
             sign = "+" if overhead_ms >= 0 else ""
             print(
@@ -564,7 +584,9 @@ async def main():
 
                 # Actual benchmark
                 print("  Running benchmarks...")
-                results = await run_benchmarks_on_page(page, url, args.iterations, args.benchmarks)
+                results = await run_benchmarks_on_page(
+                    page, url, args.iterations, args.benchmarks
+                )
                 all_results.append(results)
 
                 # Print results for this page
@@ -575,7 +597,9 @@ async def main():
                 all_results.append(
                     PageBenchmarkResults(
                         url=url,
-                        benchmarks=[BenchmarkResult(name="error", extra_data={"error": str(e)})],
+                        benchmarks=[
+                            BenchmarkResult(name="error", extra_data={"error": str(e)})
+                        ],
                     )
                 )
 

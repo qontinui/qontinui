@@ -142,7 +142,9 @@ class TestSelectorHealerVariations:
         """Test removing nth-child from selector."""
         healer = SelectorHealer()
 
-        variations = healer._generate_selector_variations("div.container > button:nth-child(2)")
+        variations = healer._generate_selector_variations(
+            "div.container > button:nth-child(2)"
+        )
 
         # Should include version without nth-child
         assert "div.container > button" in variations

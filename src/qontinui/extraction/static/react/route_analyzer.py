@@ -28,7 +28,9 @@ class RouteAnalyzer:
         self.api_calls: list[APICallDefinition] = []
         self.navigation_links: list[dict] = []
 
-    def extract_routes(self, file_path: Path, parse_result: dict) -> list[RouteDefinition]:
+    def extract_routes(
+        self, file_path: Path, parse_result: dict
+    ) -> list[RouteDefinition]:
         """
         Extract route definitions (Next.js App Router, Pages Router, etc.).
 
@@ -82,7 +84,9 @@ class RouteAnalyzer:
         self.routes.extend(routes)
         return routes
 
-    def extract_api_calls(self, parse_result: dict, file_path: Path) -> list[APICallDefinition]:
+    def extract_api_calls(
+        self, parse_result: dict, file_path: Path
+    ) -> list[APICallDefinition]:
         """
         Extract API calls from the file.
 
@@ -238,7 +242,9 @@ class RouteAnalyzer:
             return APICallType.FETCH
         elif "query" in lower_name or "mutation" in lower_name:
             return APICallType.REACT_QUERY
-        elif any(method in lower_name for method in ["get", "post", "put", "delete", "patch"]):
+        elif any(
+            method in lower_name for method in ["get", "post", "put", "delete", "patch"]
+        ):
             return APICallType.AXIOS
         else:
             return APICallType.FETCH

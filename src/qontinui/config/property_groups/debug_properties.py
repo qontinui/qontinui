@@ -15,14 +15,22 @@ class TestingConfig(BaseModel):
     timeout_multiplier: float = Field(
         default=2.0, ge=1.0, description="Multiply timeouts during testing"
     )
-    retry_failed: bool = Field(default=True, description="Automatically retry failed tests")
+    retry_failed: bool = Field(
+        default=True, description="Automatically retry failed tests"
+    )
     max_retries: int = Field(default=3, ge=0, description="Maximum test retry attempts")
     screenshot_on_failure: bool = Field(
         default=True, description="Capture screenshot on test failure"
     )
-    verbose_logging: bool = Field(default=True, description="Enable verbose logging during tests")
-    parallel_execution: bool = Field(default=False, description="Enable parallel test execution")
-    random_seed: int | None = Field(default=None, description="Random seed for reproducible tests")
+    verbose_logging: bool = Field(
+        default=True, description="Enable verbose logging during tests"
+    )
+    parallel_execution: bool = Field(
+        default=False, description="Enable parallel test execution"
+    )
+    random_seed: int | None = Field(
+        default=None, description="Random seed for reproducible tests"
+    )
     iteration: int = Field(default=1, ge=1, description="Current test iteration")
     send_logs: bool = Field(default=True, description="Send logs to external systems")
 
@@ -32,12 +40,16 @@ class GuiAccessConfig(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    report_problems: bool = Field(default=True, description="Report GUI access problems")
+    report_problems: bool = Field(
+        default=True, description="Report GUI access problems"
+    )
     verbose_errors: bool = Field(default=True, description="Show verbose error details")
     suggest_solutions: bool = Field(
         default=True, description="Suggest solutions for detected problems"
     )
-    check_on_startup: bool = Field(default=True, description="Check GUI access on startup")
+    check_on_startup: bool = Field(
+        default=True, description="Check GUI access on startup"
+    )
     continue_on_error: bool = Field(
         default=True, description="Continue execution despite GUI problems"
     )
@@ -57,7 +69,9 @@ class ConsoleActionConfig(BaseModel):
         pattern="^(QUIET|NORMAL|VERBOSE)$",
         description="Verbosity level",
     )
-    show_timing: bool = Field(default=True, description="Show timing information for actions")
+    show_timing: bool = Field(
+        default=True, description="Show timing information for actions"
+    )
     use_colors: bool = Field(default=True, description="Use colored output (ANSI)")
     use_icons: bool = Field(default=True, description="Use unicode icons in output")
 
@@ -70,7 +84,9 @@ class ConsoleActionConfig(BaseModel):
     )
 
     # Action reporting settings
-    console_actions: bool = Field(default=True, description="Enable console action output")
+    console_actions: bool = Field(
+        default=True, description="Enable console action output"
+    )
     report_individual_actions: bool = Field(
         default=True, description="Report each individual action as it executes"
     )

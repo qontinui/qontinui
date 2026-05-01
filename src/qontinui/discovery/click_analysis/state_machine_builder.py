@@ -276,7 +276,9 @@ class StateMachineResult:
                     "name": s.name,
                     "description": s.description,
                     "isInitial": s.is_initial,
-                    "stateImages": [{"id": si.id, "name": si.name} for si in s.state_images],
+                    "stateImages": [
+                        {"id": si.id, "name": si.name} for si in s.state_images
+                    ],
                 }
                 for s in self.states
             ],
@@ -476,7 +478,9 @@ class ClickToStateMachineBuilder:
 
         return templates
 
-    def _create_state_images(self, templates: list[ApprovedTemplate]) -> list[StateImageDef]:
+    def _create_state_images(
+        self, templates: list[ApprovedTemplate]
+    ) -> list[StateImageDef]:
         """Convert approved templates to StateImage definitions.
 
         Args:
@@ -534,7 +538,9 @@ class ClickToStateMachineBuilder:
         Returns:
             CoOccurrenceResult with frame-to-template mapping
         """
-        analyzer = CoOccurrenceAnalyzer(similarity_threshold=self.default_similarity_threshold)
+        analyzer = CoOccurrenceAnalyzer(
+            similarity_threshold=self.default_similarity_threshold
+        )
         return analyzer.analyze_video(
             video_path=video_path,
             templates=templates,
@@ -565,7 +571,9 @@ class ClickToStateMachineBuilder:
             return self._state_grouper.group_by_state_hints(templates)
         elif method == "co_occurrence":
             # Pass the frame-to-template mapping from co-occurrence analysis
-            frames = co_occurrence_data.frame_template_map if co_occurrence_data else None
+            frames = (
+                co_occurrence_data.frame_template_map if co_occurrence_data else None
+            )
             return self._state_grouper.group_by_co_occurrence(templates, frames)
         elif method == "single_state":
             return self._state_grouper.create_single_state(templates)

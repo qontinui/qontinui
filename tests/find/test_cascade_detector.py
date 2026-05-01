@@ -440,15 +440,21 @@ class TestBackendManagement:
 
 class TestDetectionResult:
     def test_center(self):
-        r = DetectionResult(x=100, y=200, width=50, height=30, confidence=0.9, backend_name="test")
+        r = DetectionResult(
+            x=100, y=200, width=50, height=30, confidence=0.9, backend_name="test"
+        )
         assert r.center == (125, 215)
 
     def test_bounds(self):
-        r = DetectionResult(x=10, y=20, width=30, height=40, confidence=0.5, backend_name="test")
+        r = DetectionResult(
+            x=10, y=20, width=30, height=40, confidence=0.5, backend_name="test"
+        )
         assert r.bounds == (10, 20, 30, 40)
 
     def test_normalize(self):
-        r = DetectionResult(x=100, y=200, width=50, height=30, confidence=0.9, backend_name="test")
+        r = DetectionResult(
+            x=100, y=200, width=50, height=30, confidence=0.9, backend_name="test"
+        )
         rn = r.normalize(1920, 1080)
         assert rn.normalized_x == pytest.approx(100 / 1920)
         assert rn.normalized_y == pytest.approx(200 / 1080)
@@ -458,16 +464,22 @@ class TestDetectionResult:
         assert r.normalized_x is None
 
     def test_normalize_zero_dimensions(self):
-        r = DetectionResult(x=100, y=200, width=50, height=30, confidence=0.9, backend_name="test")
+        r = DetectionResult(
+            x=100, y=200, width=50, height=30, confidence=0.9, backend_name="test"
+        )
         rn = r.normalize(0, 0)
         assert rn.normalized_x is None
 
     def test_normalized_bounds_none_before_normalize(self):
-        r = DetectionResult(x=10, y=20, width=30, height=40, confidence=0.5, backend_name="test")
+        r = DetectionResult(
+            x=10, y=20, width=30, height=40, confidence=0.5, backend_name="test"
+        )
         assert r.normalized_bounds is None
 
     def test_normalized_bounds_after_normalize(self):
-        r = DetectionResult(x=100, y=200, width=50, height=30, confidence=0.9, backend_name="test")
+        r = DetectionResult(
+            x=100, y=200, width=50, height=30, confidence=0.9, backend_name="test"
+        )
         rn = r.normalize(1000, 1000)
         nb = rn.normalized_bounds
         assert nb is not None

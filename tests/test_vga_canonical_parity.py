@@ -57,7 +57,9 @@ def _read_expected() -> str:
 
 def test_fixtures_exist() -> None:
     assert INPUT_FIXTURE.is_file(), f"missing input fixture: {INPUT_FIXTURE}"
-    assert EXPECTED_FIXTURE.is_file(), f"missing expected canonical fixture: {EXPECTED_FIXTURE}"
+    assert (
+        EXPECTED_FIXTURE.is_file()
+    ), f"missing expected canonical fixture: {EXPECTED_FIXTURE}"
 
 
 def test_expected_has_no_trailing_newline() -> None:

@@ -34,6 +34,4 @@ class StatesRegisteredEvent:
         Returns:
             Human-readable event description
         """
-        return (
-            f"StatesRegisteredEvent(states={self.state_count}, transitions={self.transition_count})"
-        )
+        return f"StatesRegisteredEvent(states={self.state_count}, transitions={self.transition_count})"

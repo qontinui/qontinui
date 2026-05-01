@@ -202,7 +202,9 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
             edges = cv2.Canny(gray, 50, 150)
 
             # Find contours
-            contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+            )
 
             for contour in contours:
                 # Get bounding rectangle
@@ -425,7 +427,9 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
 
             for corner in corners:
                 gray = (
-                    cv2.cvtColor(corner, cv2.COLOR_BGR2GRAY) if len(corner.shape) == 3 else corner
+                    cv2.cvtColor(corner, cv2.COLOR_BGR2GRAY)
+                    if len(corner.shape) == 3
+                    else corner
                 )
                 # Check if corners have empty (background) pixels in diagonal
                 ch, cw = gray.shape
@@ -510,12 +514,16 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
 
         # Get typical colors
         colors: list[str] = [
-            c for e in elements if (c := e.get("color")) is not None and isinstance(c, str)
+            c
+            for e in elements
+            if (c := e.get("color")) is not None and isinstance(c, str)
         ]
         color_counts: dict[str, int] = defaultdict(int)
         for c in colors:
             color_counts[c] += 1
-        typical_colors = [c for c, _ in sorted(color_counts.items(), key=lambda x: -x[1])[:5]]
+        typical_colors = [
+            c for c, _ in sorted(color_counts.items(), key=lambda x: -x[1])[:5]
+        ]
 
         # Get most common shape
         shapes = [e.get("shape", ElementShape.RECTANGLE) for e in elements]
@@ -525,8 +533,12 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
         most_common_shape = max(shape_counts.keys(), key=lambda s: shape_counts[s])
 
         # Estimate corner radius
-        corner_radii = [e.get("corner_radius", 0) for e in elements if e.get("corner_radius")]
-        avg_corner_radius = int(sum(corner_radii) / len(corner_radii)) if corner_radii else None
+        corner_radii = [
+            e.get("corner_radius", 0) for e in elements if e.get("corner_radius")
+        ]
+        avg_corner_radius = (
+            int(sum(corner_radii) / len(corner_radii)) if corner_radii else None
+        )
 
         # Detect shadow (simplified)
         has_shadow = self._detect_shadow_pattern(elements, screenshots)
@@ -648,7 +660,11 @@ class ElementPatternDetector(BaseAnalyzer[ElementPatterns]):
 
             # Resize to 8x8
             small = cv2.resize(image, (8, 8))
-            gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY) if len(small.shape) == 3 else small
+            gray = (
+                cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+                if len(small.shape) == 3
+                else small
+            )
 
             # Compute average
             avg = gray.mean()

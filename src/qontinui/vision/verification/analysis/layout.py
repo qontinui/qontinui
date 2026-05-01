@@ -123,10 +123,14 @@ class GridAnalysis:
             return False
 
         row_variance = (
-            np.std(self.row_heights) / np.mean(self.row_heights) if self.row_heights else 0
+            np.std(self.row_heights) / np.mean(self.row_heights)
+            if self.row_heights
+            else 0
         )
         col_variance = (
-            np.std(self.column_widths) / np.mean(self.column_widths) if self.column_widths else 0
+            np.std(self.column_widths) / np.mean(self.column_widths)
+            if self.column_widths
+            else 0
         )
 
         return bool(row_variance < 0.1 and col_variance < 0.1)
@@ -260,7 +264,12 @@ class LayoutAnalyzer:
                     # Save current group if large enough
                     if len(current_group) >= min_group_size:
                         avg_pos = int(
-                            np.mean([self._get_edge_position(e, edge) for e in current_group])
+                            np.mean(
+                                [
+                                    self._get_edge_position(e, edge)
+                                    for e in current_group
+                                ]
+                            )
                         )
                         groups.append(
                             AlignmentGroup(
@@ -277,7 +286,9 @@ class LayoutAnalyzer:
 
             # Don't forget last group
             if len(current_group) >= min_group_size:
-                avg_pos = int(np.mean([self._get_edge_position(e, edge) for e in current_group]))
+                avg_pos = int(
+                    np.mean([self._get_edge_position(e, edge) for e in current_group])
+                )
                 groups.append(
                     AlignmentGroup(
                         edge=edge,
@@ -382,14 +393,20 @@ class LayoutAnalyzer:
                 # Calculate cell bounds
                 cell_x = sorted_cols[col_idx]
                 cell_y = sorted_rows[row_idx]
-                cell_w = col_widths[col_idx] if col_idx < len(col_widths) else elem.width
-                cell_h = row_heights[row_idx] if row_idx < len(row_heights) else elem.height
+                cell_w = (
+                    col_widths[col_idx] if col_idx < len(col_widths) else elem.width
+                )
+                cell_h = (
+                    row_heights[row_idx] if row_idx < len(row_heights) else elem.height
+                )
 
                 cells.append(
                     GridCell(
                         row=row_idx,
                         column=col_idx,
-                        bounds=BoundingBox(x=cell_x, y=cell_y, width=cell_w, height=cell_h),
+                        bounds=BoundingBox(
+                            x=cell_x, y=cell_y, width=cell_w, height=cell_h
+                        ),
                         content=elem,
                     )
                 )
@@ -398,7 +415,9 @@ class LayoutAnalyzer:
         row_gaps = []
         for i in range(1, len(sorted_rows)):
             gap = sorted_rows[i] - (
-                sorted_rows[i - 1] + row_heights[i - 1] if i - 1 < len(row_heights) else 0
+                sorted_rows[i - 1] + row_heights[i - 1]
+                if i - 1 < len(row_heights)
+                else 0
             )
             row_gaps.append(max(0, gap))
 
@@ -415,7 +434,9 @@ class LayoutAnalyzer:
             min_y = min(c.bounds.y for c in cells)
             max_x = max(c.bounds.x + c.bounds.width for c in cells)
             max_y = max(c.bounds.y + c.bounds.height for c in cells)
-            bounds = BoundingBox(x=min_x, y=min_y, width=max_x - min_x, height=max_y - min_y)
+            bounds = BoundingBox(
+                x=min_x, y=min_y, width=max_x - min_x, height=max_y - min_y
+            )
         else:
             bounds = BoundingBox(x=0, y=0, width=0, height=0)
 
@@ -614,7 +635,9 @@ class LayoutAnalyzer:
         min_y = min(e.y for e in elements)
         max_x = max(e.x + e.width for e in elements)
         max_y = max(e.y + e.height for e in elements)
-        bounds = BoundingBox(x=min_x, y=min_y, width=max_x - min_x, height=max_y - min_y)
+        bounds = BoundingBox(
+            x=min_x, y=min_y, width=max_x - min_x, height=max_y - min_y
+        )
 
         # Find alignment groups
         alignment_groups = self.find_alignment_groups(elements)

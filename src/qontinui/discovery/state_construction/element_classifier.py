@@ -131,7 +131,9 @@ class ElementClassifier:
             properties["relative_x"] = state_image.x / screen_width
             properties["relative_y"] = state_image.y / screen_height
             properties["in_top_region"] = state_image.y < screen_height * 0.15
-            properties["in_corner"] = self._is_in_corner(state_image, screen_width, screen_height)
+            properties["in_corner"] = self._is_in_corner(
+                state_image, screen_width, screen_height
+            )
 
         return properties
 
@@ -176,7 +178,9 @@ class ElementClassifier:
 
         return features
 
-    def _is_window_control(self, state_image: StateImage, properties: dict[str, Any]) -> bool:
+    def _is_window_control(
+        self, state_image: StateImage, properties: dict[str, Any]
+    ) -> bool:
         """Check if element appears to be a window control button.
 
         Args:
@@ -224,7 +228,9 @@ class ElementClassifier:
 
         # Button-like aspect ratio
         if not (
-            self.button_aspect_ratio_range[0] <= aspect_ratio <= self.button_aspect_ratio_range[1]
+            self.button_aspect_ratio_range[0]
+            <= aspect_ratio
+            <= self.button_aspect_ratio_range[1]
         ):
             return False
 
@@ -291,7 +297,9 @@ class ElementClassifier:
         # Should have clear edges (border) but not too complex
         return 0.1 <= edge_density <= 0.5  # type: ignore[no-any-return]
 
-    def _is_likely_logo(self, state_image: StateImage, properties: dict[str, Any]) -> bool:
+    def _is_likely_logo(
+        self, state_image: StateImage, properties: dict[str, Any]
+    ) -> bool:
         """Check if element is likely a logo.
 
         Args:
@@ -320,7 +328,9 @@ class ElementClassifier:
 
         return True
 
-    def _is_in_corner(self, state_image: StateImage, screen_width: int, screen_height: int) -> bool:
+    def _is_in_corner(
+        self, state_image: StateImage, screen_width: int, screen_height: int
+    ) -> bool:
         """Check if element is in a screen corner.
 
         Args:

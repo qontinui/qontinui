@@ -122,7 +122,9 @@ class ExecutionController:
         """
         self.status = ExecutionStatus.FAILED
         self.end_time = utc_now()
-        self._errors.append({"time": utc_now(), "error": error, "action": self._current_action})
+        self._errors.append(
+            {"time": utc_now(), "error": error, "action": self._current_action}
+        )
 
     def cancel(self) -> None:
         """Mark execution as cancelled."""

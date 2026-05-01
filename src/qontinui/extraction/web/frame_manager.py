@@ -172,8 +172,12 @@ class FrameExtractionResult:
     errors: list[str] = field(default_factory=list)
 
     # Lookup maps for fast access
-    _element_by_encoded_id: dict[str, FrameAwareElement] = field(default_factory=dict, repr=False)
-    _elements_by_frame: dict[int, list[FrameAwareElement]] = field(default_factory=dict, repr=False)
+    _element_by_encoded_id: dict[str, FrameAwareElement] = field(
+        default_factory=dict, repr=False
+    )
+    _elements_by_frame: dict[int, list[FrameAwareElement]] = field(
+        default_factory=dict, repr=False
+    )
 
     def __post_init__(self) -> None:
         self._build_indexes()

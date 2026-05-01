@@ -89,7 +89,9 @@ class ClickContextAnalyzer:
             # Color uniformity (low std = uniform)
             hue_std = np.std(hsv[:, :, 0])
             sat_std = np.std(hsv[:, :, 1])
-            features["color_uniformity"] = 1.0 - min(1.0, (float(hue_std) + float(sat_std)) / 180)
+            features["color_uniformity"] = 1.0 - min(
+                1.0, (float(hue_std) + float(sat_std)) / 180
+            )
 
             # Average saturation (buttons often have saturated colors)
             features["avg_saturation"] = float(np.mean(hsv[:, :, 1])) / 255.0
@@ -118,12 +120,16 @@ class ClickContextAnalyzer:
 
             border_edges = np.sum(edges[border_mask] > 0)
             total_border = np.sum(border_mask)
-            features["border_strength"] = border_edges / total_border if total_border > 0 else 0.0
+            features["border_strength"] = (
+                border_edges / total_border if total_border > 0 else 0.0
+            )
         else:
             features["border_strength"] = 0.0
 
         # Rectangularity (how rectangular is the content)
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
             contour_area = cv2.contourArea(largest_contour)

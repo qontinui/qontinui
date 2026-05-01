@@ -40,7 +40,9 @@ class OmniParserServiceBackend(DetectionBackend):
             )
         return self._client
 
-    def find(self, needle: Any, haystack: Any, config: dict[str, Any]) -> list[DetectionResult]:
+    def find(
+        self, needle: Any, haystack: Any, config: dict[str, Any]
+    ) -> list[DetectionResult]:
         if not isinstance(haystack, np.ndarray):
             logger.warning("OmniParserServiceBackend expects numpy array haystack")
             return []
@@ -62,7 +64,9 @@ class OmniParserServiceBackend(DetectionBackend):
                 "/parse",
                 files={"image": ("screenshot.png", img_bytes, "image/png")},
                 data={
-                    "iou_threshold": str(config.get("iou_threshold", self._settings.iou_threshold)),
+                    "iou_threshold": str(
+                        config.get("iou_threshold", self._settings.iou_threshold)
+                    ),
                     "confidence_threshold": str(
                         config.get(
                             "confidence_threshold",
@@ -82,7 +86,9 @@ class OmniParserServiceBackend(DetectionBackend):
 
         # If needle is a description, filter by semantic matching
         needle_type = config.get("needle_type", "template")
-        if needle_type in ("description", "semantic", "text") and isinstance(needle, str):
+        if needle_type in ("description", "semantic", "text") and isinstance(
+            needle, str
+        ):
             return self._filter_by_description(needle, elements, config)
 
         return elements

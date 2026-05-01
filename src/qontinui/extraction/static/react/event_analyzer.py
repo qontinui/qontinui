@@ -45,7 +45,9 @@ class EventAnalyzer:
         conditionals.extend(
             jsx_module.extract_logical_and(component_parse, component_name, file_path)
         )
-        conditionals.extend(jsx_module.extract_ternary(component_parse, component_name, file_path))
+        conditionals.extend(
+            jsx_module.extract_ternary(component_parse, component_name, file_path)
+        )
         conditionals.extend(
             jsx_module.extract_early_returns(component_parse, component_name, file_path)
         )

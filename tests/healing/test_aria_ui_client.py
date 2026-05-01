@@ -92,7 +92,10 @@ class TestExtractCoordinates:
 
     def test_embedded_in_text(self):
         """Should extract coordinates embedded in surrounding text."""
-        assert AriaUIClient._extract_coordinates("some text [100, 200] more text") == (100, 200)
+        assert AriaUIClient._extract_coordinates("some text [100, 200] more text") == (
+            100,
+            200,
+        )
 
     def test_no_coordinates(self):
         """Should return None when no coordinates are present."""
@@ -189,7 +192,9 @@ class TestParseAriaResponse:
     def test_unparseable_response(self):
         """Should return None for unparseable response."""
         context = _make_context()
-        result = self.client._parse_aria_response("I cannot determine the location", context)
+        result = self.client._parse_aria_response(
+            "I cannot determine the location", context
+        )
 
         assert result is None
 
@@ -410,12 +415,16 @@ class TestBuildContextMessages:
     """Tests for AriaUIContextClient._build_context_messages."""
 
     def setup_method(self):
-        self.client = AriaUIContextClient(endpoint="http://localhost:8100", max_history=3)
+        self.client = AriaUIContextClient(
+            endpoint="http://localhost:8100", max_history=3
+        )
 
     def test_no_history_just_current(self):
         """Should produce a single user message when history is empty."""
         context = _make_context(description="Click Submit")
-        messages = self.client._build_context_messages(FAKE_SCREENSHOT, context, action_history=[])
+        messages = self.client._build_context_messages(
+            FAKE_SCREENSHOT, context, action_history=[]
+        )
 
         # Only the final grounding turn
         assert len(messages) == 1
@@ -463,7 +472,9 @@ class TestBuildContextMessages:
             (b"recent_2", "Recent action 2"),
         ]
         context = _make_context()
-        messages = client._build_context_messages(FAKE_SCREENSHOT, context, action_history=history)
+        messages = client._build_context_messages(
+            FAKE_SCREENSHOT, context, action_history=history
+        )
 
         # max_history=2 -> 2 pairs + 1 current = 5
         assert len(messages) == 5
@@ -487,7 +498,9 @@ class TestBuildContextMessages:
     def test_current_screenshot_is_base64_encoded(self):
         """Should base64-encode the current screenshot in the final message."""
         context = _make_context()
-        messages = self.client._build_context_messages(FAKE_SCREENSHOT, context, action_history=[])
+        messages = self.client._build_context_messages(
+            FAKE_SCREENSHOT, context, action_history=[]
+        )
 
         expected_b64 = base64.b64encode(FAKE_SCREENSHOT).decode("utf-8")
         image_url = messages[0]["content"][0]["image_url"]["url"]
@@ -513,7 +526,9 @@ class TestBuildContextMessages:
             (b"third", "Third action"),
         ]
         context = _make_context()
-        messages = client._build_context_messages(FAKE_SCREENSHOT, context, action_history=history)
+        messages = client._build_context_messages(
+            FAKE_SCREENSHOT, context, action_history=history
+        )
 
         # 1 pair + 1 current = 3
         assert len(messages) == 3
@@ -597,7 +612,9 @@ class TestAriaUIContextClientFindElementWithHistory:
         context = _make_context(screenshot_shape=(1080, 1920))
 
         with patch.dict("sys.modules", {"httpx": mock_httpx}):
-            result = self.client.find_element_with_history(FAKE_SCREENSHOT, context, history)
+            result = self.client.find_element_with_history(
+                FAKE_SCREENSHOT, context, history
+            )
 
         assert result is not None
         # 300/1000 * 1920 = 576, 700/1000 * 1080 = 756
@@ -621,7 +638,9 @@ class TestAriaUIContextClientFindElementWithHistory:
         context = _make_context()
 
         with patch.dict("sys.modules", {"httpx": mock_httpx}):
-            result = self.client.find_element_with_history(FAKE_SCREENSHOT, context, history)
+            result = self.client.find_element_with_history(
+                FAKE_SCREENSHOT, context, history
+            )
 
         assert result is None
 
@@ -637,7 +656,9 @@ class TestAriaUIContextClientFindElementWithHistory:
         context = _make_context()
 
         with patch.dict("sys.modules", {"httpx": mock_httpx}):
-            result = self.client.find_element_with_history(FAKE_SCREENSHOT, context, history)
+            result = self.client.find_element_with_history(
+                FAKE_SCREENSHOT, context, history
+            )
 
         assert result is None
 

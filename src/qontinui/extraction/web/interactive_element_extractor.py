@@ -180,7 +180,9 @@ class ExtractionOptions:
         if self.min_height < 1:
             raise ValidationError(f"min_height must be >= 1, got {self.min_height}")
         if self.max_shadow_depth < 0:
-            raise ValidationError(f"max_shadow_depth must be >= 0, got {self.max_shadow_depth}")
+            raise ValidationError(
+                f"max_shadow_depth must be >= 0, got {self.max_shadow_depth}"
+            )
         if self.max_cursor_pointer_text_length < 1:
             raise ValidationError(
                 f"max_cursor_pointer_text_length must be >= 1, got {self.max_cursor_pointer_text_length}"
@@ -198,7 +200,9 @@ class ExtractionOptions:
         if self.retry_delay < 0:
             raise ValidationError(f"retry_delay must be >= 0, got {self.retry_delay}")
         if self.timeout_seconds <= 0:
-            raise ValidationError(f"timeout_seconds must be > 0, got {self.timeout_seconds}")
+            raise ValidationError(
+                f"timeout_seconds must be > 0, got {self.timeout_seconds}"
+            )
 
 
 # Tags to skip (not visible/not useful)
@@ -279,7 +283,9 @@ class InteractiveElementExtractor:
             ElementExtractionError: If extraction fails after retries.
             ExtractionTimeoutError: If extraction times out.
         """
-        actual_timeout = timeout if timeout is not None else self.options.timeout_seconds
+        actual_timeout = (
+            timeout if timeout is not None else self.options.timeout_seconds
+        )
         result = await with_timeout(
             self._extract_interactive_elements_impl(page, screenshot_id, min_size),
             timeout_seconds=actual_timeout,
@@ -329,7 +335,9 @@ class InteractiveElementExtractor:
 
         # Should never reach here
         if last_error:
-            raise ElementExtractionError(f"Extraction failed: {last_error}") from last_error
+            raise ElementExtractionError(
+                f"Extraction failed: {last_error}"
+            ) from last_error
         return []
 
     async def _do_extraction(
@@ -572,8 +580,12 @@ class InteractiveElementExtractor:
             # Log summary
             type_counts: dict[str, int] = {}
             for elem in elements:
-                type_counts[elem.element_type] = type_counts.get(elem.element_type, 0) + 1
-            logger.info(f"Extracted {len(elements)} interactive elements: {type_counts}")
+                type_counts[elem.element_type] = (
+                    type_counts.get(elem.element_type, 0) + 1
+                )
+            logger.info(
+                f"Extracted {len(elements)} interactive elements: {type_counts}"
+            )
 
             return elements
 

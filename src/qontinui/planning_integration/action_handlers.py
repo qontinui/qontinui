@@ -95,7 +95,9 @@ def create_action_handlers(
         element = _find_element(blackboard, element_id)
 
         if element.bbox is None:
-            raise RuntimeError(f"Element '{element_id}' has no bounding box; cannot click")
+            raise RuntimeError(
+                f"Element '{element_id}' has no bounding box; cannot click"
+            )
 
         cx, cy = element.bbox.center
         hal.mouse_controller.mouse_click(int(cx), int(cy))
@@ -134,7 +136,9 @@ def create_action_handlers(
         logger.debug("navigate_path: %s", target_state)
         success = mgr.navigate_to([target_state])
         if not success:
-            raise RuntimeError(f"navigate_path failed: could not reach '{target_state}'")
+            raise RuntimeError(
+                f"navigate_path failed: could not reach '{target_state}'"
+            )
         logger.info("Navigated to state '%s'", target_state)
 
     # ------------------------------------------------------------------
@@ -170,7 +174,9 @@ def create_action_handlers(
         for attempt in range(_MAX_POLL_RETRIES):
             active = mgr.get_active_states()
             if target_state in active:
-                logger.info("State '%s' became active (attempt %d)", target_state, attempt + 1)
+                logger.info(
+                    "State '%s' became active (attempt %d)", target_state, attempt + 1
+                )
                 return
             time.sleep(_POLL_INTERVAL_S)
 
@@ -202,7 +208,9 @@ def create_action_handlers(
                         element_id,
                         attempt + 1,
                     )
-                    blackboard.set("_ui_elements", {e.id: e.is_visible for e in elements})
+                    blackboard.set(
+                        "_ui_elements", {e.id: e.is_visible for e in elements}
+                    )
                     blackboard.set("_raw_elements", elements)
                     return
             time.sleep(_POLL_INTERVAL_S)

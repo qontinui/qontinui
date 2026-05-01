@@ -74,7 +74,10 @@ class BoundingBox:
     def contains(self, other: "BoundingBox") -> bool:
         """Check if this bounding box fully contains another."""
         return (
-            self.x <= other.x and self.y <= other.y and self.x2 >= other.x2 and self.y2 >= other.y2
+            self.x <= other.x
+            and self.y <= other.y
+            and self.x2 >= other.x2
+            and self.y2 >= other.y2
         )
 
 
@@ -118,7 +121,9 @@ class ExtractedStateImageCandidate:
             "bbox": self.bbox.to_dict(),
             "confidence": self.confidence,
             "screenshot_id": self.screenshot_id,
-            "cropped_image_path": str(self.cropped_image_path) if self.cropped_image_path else None,
+            "cropped_image_path": (
+                str(self.cropped_image_path) if self.cropped_image_path else None
+            ),
             "category": self.category,
             "text": self.text,
             "description": self.description,
@@ -137,7 +142,9 @@ class ExtractedStateImageCandidate:
             confidence=data["confidence"],
             screenshot_id=data["screenshot_id"],
             cropped_image_path=(
-                Path(data["cropped_image_path"]) if data.get("cropped_image_path") else None
+                Path(data["cropped_image_path"])
+                if data.get("cropped_image_path")
+                else None
             ),
             category=data.get("category"),
             text=data.get("text"),
@@ -369,14 +376,22 @@ class VisionExtractionResult:
                 else None
             ),
             "sam3_segments": (
-                [s.to_dict() for s in self.sam3_segments] if self.sam3_segments else None
+                [s.to_dict() for s in self.sam3_segments]
+                if self.sam3_segments
+                else None
             ),
-            "ocr_results": [o.to_dict() for o in self.ocr_results] if self.ocr_results else None,
+            "ocr_results": (
+                [o.to_dict() for o in self.ocr_results] if self.ocr_results else None
+            ),
             "contour_results": (
-                [c.to_dict() for c in self.contour_results] if self.contour_results else None
+                [c.to_dict() for c in self.contour_results]
+                if self.contour_results
+                else None
             ),
             "template_matches": (
-                [t.to_dict() for t in self.template_matches] if self.template_matches else None
+                [t.to_dict() for t in self.template_matches]
+                if self.template_matches
+                else None
             ),
             "screenshots": [s.to_dict() for s in self.screenshots],
             "edge_overlay_image": self.edge_overlay_image,
@@ -384,7 +399,9 @@ class VisionExtractionResult:
             "sam3_mask_image": self.sam3_mask_image,
             "ocr_overlay_image": self.ocr_overlay_image,
             "started_at": self.started_at.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
             "duration_ms": self.duration_ms,
             "errors": self.errors,
             "warnings": self.warnings,
@@ -502,7 +519,9 @@ class VisionExtractionConfig:
                 "enabled": self.template.enabled,
                 "match_threshold": self.template.match_threshold,
                 "template_dir": (
-                    str(self.template.template_dir) if self.template.template_dir else None
+                    str(self.template.template_dir)
+                    if self.template.template_dir
+                    else None
                 ),
             },
             "fusion": {

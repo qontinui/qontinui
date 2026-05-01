@@ -129,7 +129,9 @@ class CorrectionLogger:
     # Reading
     # ------------------------------------------------------------------
 
-    def iter_entries(self, include_private: bool = False) -> Generator[dict, None, None]:
+    def iter_entries(
+        self, include_private: bool = False
+    ) -> Generator[dict, None, None]:
         """Yield one parsed entry per JSONL line.
 
         Args:
@@ -187,4 +189,6 @@ class CorrectionLogger:
                 tp = entry.get("target_process", "unknown")
                 per_target[tp] = per_target.get(tp, 0) + 1
 
-        return CorrectionStats(total=total, per_target_process=per_target, since_v5=total)
+        return CorrectionStats(
+            total=total, per_target_process=per_target, since_v5=total
+        )

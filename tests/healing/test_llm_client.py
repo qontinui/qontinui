@@ -92,7 +92,9 @@ class TestDisabledVisionClient:
         result = client.find_element(b"", basic_context)
         assert result is None
 
-    def test_works_with_minimal_context(self, sample_screenshot, context_without_extras):
+    def test_works_with_minimal_context(
+        self, sample_screenshot, context_without_extras
+    ):
         """Disabled client works with minimal context."""
         client = DisabledVisionClient()
         result = client.find_element(sample_screenshot, context_without_extras)
@@ -318,7 +320,9 @@ class TestLocalVisionClient:
         mock_httpx.Client.return_value = mock_client_ctx
         mock_httpx.HTTPError = Exception
 
-        mock_client_instance.post.side_effect = mock_httpx.HTTPError("Connection refused")
+        mock_client_instance.post.side_effect = mock_httpx.HTTPError(
+            "Connection refused"
+        )
 
         with patch.dict(sys.modules, {"httpx": mock_httpx}):
             client = LocalVisionClient()
@@ -347,7 +351,9 @@ class TestLocalVisionClient:
 
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"models": [{"name": "llava:7b"}, {"name": "llama2:13b"}]}
+        mock_response.json.return_value = {
+            "models": [{"name": "llava:7b"}, {"name": "llama2:13b"}]
+        }
         mock_client_instance.get.return_value = mock_response
 
         with patch.dict(sys.modules, {"httpx": mock_httpx}):
@@ -365,7 +371,9 @@ class TestLocalVisionClient:
 
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"models": [{"name": "llama2:7b"}]}  # Different model
+        mock_response.json.return_value = {
+            "models": [{"name": "llama2:7b"}]
+        }  # Different model
         mock_client_instance.get.return_value = mock_response
 
         with patch.dict(sys.modules, {"httpx": mock_httpx}):
@@ -472,7 +480,9 @@ class TestRemoteVisionClientOpenAI:
         mock_httpx.Client.return_value = mock_client_ctx
         mock_httpx.HTTPError = Exception
 
-        mock_client_instance.post.side_effect = mock_httpx.HTTPError("Rate limit exceeded")
+        mock_client_instance.post.side_effect = mock_httpx.HTTPError(
+            "Rate limit exceeded"
+        )
 
         with patch.dict(sys.modules, {"httpx": mock_httpx}):
             client = RemoteVisionClient(provider="openai", api_key="sk-test")
@@ -480,7 +490,9 @@ class TestRemoteVisionClientOpenAI:
 
         assert result is None
 
-    def test_find_element_invalid_response_format(self, sample_screenshot, basic_context):
+    def test_find_element_invalid_response_format(
+        self, sample_screenshot, basic_context
+    ):
         """Test OpenAI with unexpected response format."""
         mock_httpx = MagicMock()
         mock_client_instance = MagicMock()
@@ -570,7 +582,9 @@ class TestRemoteVisionClientAnthropic:
         mock_httpx.Client.return_value = mock_client_ctx
 
         mock_response = MagicMock()
-        mock_response.json.return_value = {"content": [{"text": "COORDINATES: 500,600"}]}
+        mock_response.json.return_value = {
+            "content": [{"text": "COORDINATES: 500,600"}]
+        }
         mock_response.raise_for_status = MagicMock()
         mock_client_instance.post.return_value = mock_response
 
@@ -596,7 +610,9 @@ class TestRemoteVisionClientAnthropic:
         mock_httpx.Client.return_value = mock_client_ctx
 
         mock_response = MagicMock()
-        mock_response.json.return_value = {"content": [{"text": "COORDINATES: 100,100"}]}
+        mock_response.json.return_value = {
+            "content": [{"text": "COORDINATES: 100,100"}]
+        }
         mock_response.raise_for_status = MagicMock()
         mock_client_instance.post.return_value = mock_response
 
