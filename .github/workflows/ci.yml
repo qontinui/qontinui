@@ -16,6 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # qontinui's pyproject.toml has a path-dep on ../qontinui-schemas
+      # (see pyproject.toml: `qontinui-schemas = { path = "../qontinui-schemas", develop = true }`).
+      # actions/checkout@v4 refuses `path:` outside the workspace, so clone
+      # it via git directly. Pattern mirrors qontinui-web/backend-ci.yml.
+      - name: Checkout sibling repo (qontinui-schemas)
+        run: |
+          cd "$GITHUB_WORKSPACE/.."
+          git clone --depth 1 https://github.com/qontinui/qontinui-schemas.git
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -74,6 +83,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # Same sibling-repo path-dep as the test job (see test job comment).
+      - name: Checkout sibling repo (qontinui-schemas)
+        run: |
+          cd "$GITHUB_WORKSPACE/.."
+          git clone --depth 1 https://github.com/qontinui/qontinui-schemas.git
 
       - name: Set up Python
         uses: actions/setup-python@v5
