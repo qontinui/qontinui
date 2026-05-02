@@ -122,6 +122,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: validate-configs
     if: always()  # Run even if validate-configs is skipped
+    permissions:
+      contents: read
+      pull-requests: write  # PR-comment step posts to issues/comments API
 
     steps:
       - name: Checkout code
