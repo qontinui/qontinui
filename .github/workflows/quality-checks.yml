@@ -124,7 +124,11 @@ jobs:
     if: always()  # Run even if validate-configs is skipped
     permissions:
       contents: read
-      pull-requests: write  # PR-comment step posts to issues/comments API
+      # The "Comment PR with summary" step at the bottom of this job posts
+      # to the GitHub Issues API (PR comments are issue comments). Default
+      # GITHUB_TOKEN doesn't include issues/PR write, so the API returns
+      # 403 "Resource not accessible by integration" without this grant.
+      pull-requests: write
 
     steps:
       - name: Checkout code
