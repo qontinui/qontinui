@@ -14,11 +14,11 @@ jobs:
         python-version: ["3.12"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # qontinui's pyproject.toml has a path-dep on ../qontinui-schemas
       # (see pyproject.toml: `qontinui-schemas = { path = "../qontinui-schemas", develop = true }`).
-      # actions/checkout@v4 refuses `path:` outside the workspace, so clone
+      # actions/checkout@v5 refuses `path:` outside the workspace, so clone
       # it via git directly. Pattern mirrors qontinui-web/backend-ci.yml.
       - name: Checkout sibling repo (qontinui-schemas)
         run: |
@@ -82,7 +82,7 @@ jobs:
     needs: test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Same sibling-repo path-dep as the test job (see test job comment).
       - name: Checkout sibling repo (qontinui-schemas)
@@ -122,7 +122,7 @@ jobs:
       security-events: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
