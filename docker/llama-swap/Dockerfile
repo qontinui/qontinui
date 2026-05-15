@@ -73,6 +73,23 @@ RUN python3 -m venv /opt/venvs/aria-ui --system-site-packages && \
     requests \
     huggingface_hub
 
+# --- PaddleOCR virtualenv ---
+# Phase 4 of the UI Bridge Vision Pipeline plan: runner's OcrClient routes
+# `model: paddleocr` requests through llama-swap, and docker/paddleocr/serve.py
+# satisfies the OpenAI chat-completions contract by wrapping PaddleOCR.
+# Isolated venv because paddlepaddle pins incompatible numpy/protobuf versus
+# vLLM. CPU-only paddlepaddle wheel — the container already has CUDA from
+# the base image, so a GPU variant is a `paddlepaddle-gpu==2.6.1.post120`
+# swap when a host needs it.
+RUN python3 -m venv /opt/venvs/paddleocr --system-site-packages && \
+    /opt/venvs/paddleocr/bin/pip install --no-cache-dir \
+    paddlepaddle==2.6.1 \
+    paddleocr==2.7.0.3 \
+    fastapi==0.115.5 \
+    "uvicorn[standard]==0.32.1" \
+    Pillow==11.0.0 \
+    numpy==1.26.4
+
 # Copy llama-swap binary
 COPY --from=llama-swap-download /install/bin/llama-swap /usr/local/bin/llama-swap
 COPY --from=llama-swap-download /install/llama-swap-version /etc/llama-swap-version
@@ -80,6 +97,7 @@ COPY --from=llama-swap-download /install/llama-swap-version /etc/llama-swap-vers
 # Copy backend serving scripts
 # Build context is docker/ (parent dir), set in docker-compose.yml
 COPY aria-ui/serve.py /opt/backends/aria-ui/serve.py
+COPY paddleocr/serve.py /opt/backends/paddleocr/serve.py
 
 # Copy llama-swap config
 COPY llama-swap/config.yaml /etc/llama-swap/config.yaml

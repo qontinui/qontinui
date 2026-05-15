@@ -152,6 +152,26 @@ models:
   #   aliases:
   #     - grounding-v6
 
+  # --- PaddleOCR: classical OCR engine wrapped in an OpenAI-compatible shim ---
+  # The qontinui-runner's OcrClient (Phase 4 of the UI Bridge Vision Pipeline)
+  # POSTs to /v1/chat/completions with an image_url + an OCR prompt, expecting
+  # the response's message.content to be a JSON array of {bbox, text, confidence}.
+  # PaddleOCR isn't a chat model, so docker/paddleocr/serve.py wraps it with a
+  # FastAPI façade that satisfies the contract. CPU-only by default; build a
+  # GPU variant by switching the Dockerfile to paddlepaddle-gpu pinned to the
+  # host CUDA before re-running docker compose build.
+  paddleocr:
+    cmd: >
+      /opt/venvs/paddleocr/bin/python3 /opt/backends/paddleocr/serve.py
+      --host 127.0.0.1
+      --port ${PORT}
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - paddle-ocr
+      - ocr
+
   # --- CUA World State Model: 7B VLM judge for action verification ---
   # SEAgent's verifier; Qwen2.5-VL-7B-Instruct fine-tune.
   # Consumed by qontinui-runner's WorldStateVerifier via /v1/chat/completions.
