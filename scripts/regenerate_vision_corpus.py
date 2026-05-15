@@ -79,9 +79,17 @@ def _try_import_python_analyzers() -> dict[str, Any] | None:
     try:
         from qontinui.vision.environment.analyzers import (  # type: ignore[import-untyped]
             color as _color,
+        )
+        from qontinui.vision.environment.analyzers import (
             dynamic as _dynamic,
+        )
+        from qontinui.vision.environment.analyzers import (
             elements as _elements,
+        )
+        from qontinui.vision.environment.analyzers import (
             layout as _layout,
+        )
+        from qontinui.vision.environment.analyzers import (
             typography as _typography,
         )
         from qontinui.vision.verification import expect as _expect  # type: ignore[import-untyped]
@@ -228,9 +236,7 @@ def main() -> int:
             except Exception:  # noqa: BLE001
                 pass
 
-        golden_path.write_text(
-            json.dumps(new_golden, indent=2) + "\n", encoding="utf-8"
-        )
+        golden_path.write_text(json.dumps(new_golden, indent=2) + "\n", encoding="utf-8")
         logger.info("wrote %s", golden_path.relative_to(golden_dir.parent))
         written += 1
 
