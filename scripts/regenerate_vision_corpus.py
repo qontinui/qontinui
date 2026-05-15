@@ -78,11 +78,11 @@ def _try_import_python_analyzers() -> dict[str, Any] | None:
     docstring)."""
     try:
         from qontinui.vision.environment.analyzers import (  # type: ignore[import-untyped]
-            layout as _layout,
-            typography as _typography,
             color as _color,
             dynamic as _dynamic,
             elements as _elements,
+            layout as _layout,
+            typography as _typography,
         )
         from qontinui.vision.verification import expect as _expect  # type: ignore[import-untyped]
     except ImportError as e:
