@@ -129,8 +129,8 @@ def _extract_image_bytes(messages: list[ChatMessage]) -> bytes | None:
 def _run_paddleocr(image_bytes: bytes) -> list[dict[str, Any]]:
     """Run PaddleOCR on raw image bytes; return blocks in the shape the
     runner's OcrClient expects."""
-    from PIL import Image  # type: ignore[import-not-found]
     import numpy as np  # type: ignore[import-not-found]
+    from PIL import Image  # type: ignore[import-not-found]
 
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     arr = np.array(img)
