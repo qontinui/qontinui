@@ -162,12 +162,14 @@ jobs:
       - name: Install qontinui-devtools (resolves ../qontinui and ../qontinui-schemas path-deps)
         working-directory: qontinui-devtools
         run: |
-          # qontinui-devtools/poetry.lock can drift from its pyproject.toml between
-          # repos (the workspace pulls a fresh qontinui-devtools clone above). Regenerate
-          # the lock to match pyproject.toml without updating transitive deps before
-          # installing; otherwise `poetry install` aborts with
-          # "pyproject.toml changed significantly since poetry.lock was last generated".
-          poetry lock --no-update
+          # qontinui-devtools/poetry.lock can drift from its pyproject.toml.
+          # Regenerate to match pyproject.toml before installing; otherwise
+          # `poetry install` aborts with "pyproject.toml changed significantly
+          # since poetry.lock was last generated". In Poetry 2.x, `poetry lock`
+          # without flags is the equivalent of the old `--no-update` (matches
+          # pyproject without bumping transitive dep versions); the old flag
+          # was removed.
+          poetry lock
           poetry install
 
       - name: Create reports directory
