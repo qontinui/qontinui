@@ -1,24 +1,20 @@
-"""Property groups for Qontinui configuration.
+"""Backwards-compatibility shim for property_groups.
 
-This package organizes configuration properties into themed groups:
-- core_properties: Core application settings
-- input_properties: Mouse/keyboard settings
-- vision_properties: Vision/image finding settings
-- timing_properties: Timing/wait settings
-- output_properties: Screenshot/recording/dataset settings
-- logging_properties: Logging settings
-- debug_properties: Debug/testing settings
-- display_properties: Visual/monitor/capture settings
+The property_group pydantic models now live in qontinui-schemas so they can
+be shared between the runner (qontinui) and the web tier (qontinui-web).
+This package re-exports the schemas versions for legacy import paths.
 """
 
-from .core_properties import CoreProperties
-from .debug_properties import DebugProperties
-from .display_properties import DisplayProperties
-from .input_properties import InputProperties
-from .logging_properties import LoggingProperties
-from .output_properties import OutputProperties
-from .timing_properties import TimingProperties
-from .vision_properties import VisionProperties
+from qontinui_schemas.config.property_groups import (  # noqa: F401
+    CoreProperties,
+    DebugProperties,
+    DisplayProperties,
+    InputProperties,
+    LoggingProperties,
+    OutputProperties,
+    TimingProperties,
+    VisionProperties,
+)
 
 __all__ = [
     "CoreProperties",
