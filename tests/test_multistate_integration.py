@@ -10,7 +10,16 @@ Demonstrates how Qontinui can now leverage MultiState's advanced features:
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
+# `multistate` is a sibling repo (D:/qontinui-root/multistate) that is not on
+# PyPI and is not a declared dependency of qontinui. The test imports below
+# pull in `qontinui.multistate_integration.*`, which transitively imports
+# `multistate`. Skip the whole module when the sibling isn't installed so
+# pytest collection doesn't fail for contributors who haven't cloned it.
+pytest.importorskip("multistate")
 
 
 from qontinui.model.state.state import State
