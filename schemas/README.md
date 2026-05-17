@@ -164,7 +164,7 @@ All action types have corresponding configuration schemas:
 If the Pydantic models are updated, regenerate the schemas by running:
 
 ```bash
-cd /mnt/c/Users/jspin/Documents/qontinui-root/qontinui
+cd path/to/qontinui
 python scripts/export_schemas.py
 ```
 

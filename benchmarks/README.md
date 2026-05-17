@@ -17,7 +17,7 @@ The benchmarks measure five key areas of system performance:
 ### Run All Benchmarks
 
 ```bash
-cd /mnt/c/Users/jspin/Documents/qontinui-root/qontinui
+cd path/to/qontinui
 python -m benchmarks.run_all_benchmarks
 ```
 
@@ -211,7 +211,7 @@ Threading:
 Make sure you're running from the correct directory:
 
 ```bash
-cd /mnt/c/Users/jspin/Documents/qontinui-root/qontinui
+cd path/to/qontinui
 python -m benchmarks.run_all_benchmarks
 ```
 
@@ -261,8 +261,8 @@ jobs:
 
 ## Related Documentation
 
-- `/mnt/c/Users/jspin/Documents/qontinui-root/PERFORMANCE_BENCHMARKS.md` - Full benchmarking documentation
-- `/mnt/c/Users/jspin/Documents/qontinui-root/qontinui/tests/integration/test_performance_regression.py` - Performance regression tests
+- `../PERFORMANCE_BENCHMARKS.md` - Full benchmarking documentation (at the parent workspace root)
+- `../tests/integration/test_performance_regression.py` - Performance regression tests
 
 ## Version History
 
