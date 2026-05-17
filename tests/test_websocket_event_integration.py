@@ -19,7 +19,7 @@ import numpy as np
 from qontinui import Find, Image
 from qontinui.action_executors.delegating_executor import DelegatingActionExecutor
 from qontinui.config import Action
-from qontinui.config.schema import TypeConfig
+from qontinui.config.schema import TypeActionConfig
 from qontinui.reporting import Event, EventType, get_event_registry, register_callback
 from qontinui.wrappers import Mouse
 
@@ -162,7 +162,7 @@ class TestWebSocketEventIntegration:
         action = Action(
             id="test_type_action",
             type="TYPE",
-            config=TypeConfig(text="test@example.com"),
+            config=TypeActionConfig(text="test@example.com"),
         )
 
         # Record time before execution

@@ -8,7 +8,10 @@ import pytest
 from PIL import Image
 
 from qontinui.masks import MaskGenerator, MaskType
-from qontinui.patterns import MaskedPattern
+
+# Note: MaskedPattern was removed from qontinui.patterns; the dedicated
+# TestMaskedPattern suite below has been dropped. The other mask tests
+# (mask generation, base64 encoding) still exercise the live API.
 
 
 class TestMaskGeneration:
@@ -109,98 +112,6 @@ class TestMaskGeneration:
             [mask1, mask2], "weighted", weights=[0.7, 0.3]
         )
         assert weighted.shape == (100, 100)
-
-
-class TestMaskedPattern:
-    """Test MaskedPattern operations."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        # Create test pattern
-        self.image = np.random.randint(0, 255, (50, 50, 3), dtype=np.uint8)
-        self.mask = np.ones((50, 50), dtype=np.float32)
-        self.mask[10:40, 10:40] = 0.5  # Partial mask in center
-
-        self.pattern = MaskedPattern(
-            id="test_pattern",
-            name="Test Pattern",
-            pixel_data=self.image,
-            mask=self.mask,
-        )
-
-    def test_pattern_creation(self):
-        """Test creating a masked pattern."""
-        assert self.pattern.id == "test_pattern"
-        assert self.pattern.name == "Test Pattern"
-        assert self.pattern.width == 50
-        assert self.pattern.height == 50
-        assert self.pattern.mask_density > 0
-        assert self.pattern.active_pixel_count > 0
-
-    def test_similarity_calculation(self):
-        """Test similarity calculation with masks."""
-        # Same image should have high similarity
-        similarity = self.pattern.calculate_similarity(self.image)
-        assert similarity == 1.0
-
-        # Different image should have lower similarity
-        different = np.zeros_like(self.image)
-        similarity = self.pattern.calculate_similarity(different)
-        assert similarity < 1.0
-
-        # Test with different mask
-        other_mask = np.ones((50, 50), dtype=np.float32)
-        other_mask[:25, :] = 0  # Top half masked out
-        similarity = self.pattern.calculate_similarity(self.image, other_mask)
-        assert 0 <= similarity <= 1.0
-
-    def test_mask_optimization(self):
-        """Test mask optimization with samples."""
-        # Create positive samples (similar images)
-        positive_samples = []
-        for _ in range(3):
-            sample = self.image.copy()
-            # Add small variations
-            noise = np.random.randint(-5, 5, sample.shape)
-            sample = np.clip(sample + noise, 0, 255).astype(np.uint8)
-            positive_samples.append(sample)
-
-        # Optimize mask by stability
-        optimized_mask, metrics = self.pattern.optimize_mask(
-            positive_samples, method="stability"
-        )
-
-        assert optimized_mask.shape == self.mask.shape
-        assert "method" in metrics
-        assert metrics["method"] == "stability"
-        assert "mask_density" in metrics
-
-    def test_pattern_serialization(self):
-        """Test pattern to_dict conversion."""
-        data = self.pattern.to_dict()
-
-        assert data["id"] == "test_pattern"
-        assert data["name"] == "Test Pattern"
-        assert data["width"] == 50
-        assert data["height"] == 50
-        assert "mask_density" in data
-        assert "active_pixels" in data
-        assert "pixel_hash" in data
-
-    def test_add_variation(self):
-        """Test adding variations to pattern."""
-        initial_count = len(self.pattern.variations)
-
-        # Add a variation
-        variation = self.image.copy()
-        self.pattern.add_variation(variation)
-
-        assert len(self.pattern.variations) == initial_count + 1
-
-        # Should fail with wrong shape
-        wrong_shape = np.zeros((60, 60, 3), dtype=np.uint8)
-        with pytest.raises(ValueError):
-            self.pattern.add_variation(wrong_shape)
 
 
 class TestMaskAPI:
