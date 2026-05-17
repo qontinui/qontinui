@@ -1,13 +1,7 @@
 name: Deploy Documentation
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'docs/**'
-      - 'src/qontinui/**/*.py'
-      - '.github/workflows/docs.yml'
-  workflow_dispatch:
+  workflow_dispatch:  # disabled push trigger; failing for unclear reason — investigate then re-enable
 
 permissions:
   contents: read
