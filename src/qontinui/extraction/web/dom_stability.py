@@ -128,7 +128,7 @@ class DOMSnapshot:
     scroll_position: tuple[int, int]
     document_height: int
 
-    def differs_from(self, other: "DOMSnapshot") -> bool:
+    def differs_from(self, other: DOMSnapshot) -> bool:
         """Check if this snapshot differs significantly from another."""
         if self.element_count != other.element_count:
             return True

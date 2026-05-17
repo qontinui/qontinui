@@ -175,7 +175,7 @@ class HealingRecord:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "HealingRecord":
+    def from_dict(cls, data: dict[str, Any]) -> HealingRecord:
         return cls(
             original_selector=data["original_selector"],
             healed_selector=data["healed_selector"],

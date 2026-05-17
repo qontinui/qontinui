@@ -118,7 +118,7 @@ class FrameInfo:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "FrameInfo":
+    def from_dict(cls, data: dict[str, Any]) -> FrameInfo:
         return cls(
             frame_id=data["frame_id"],
             name=data["name"],
@@ -156,7 +156,7 @@ class FrameAwareElement:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "FrameAwareElement":
+    def from_dict(cls, data: dict[str, Any]) -> FrameAwareElement:
         return cls(
             frame_id=data["frame_id"],
             frame_selector=data["frame_selector"],

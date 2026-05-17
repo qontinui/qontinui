@@ -119,7 +119,7 @@ class A11yNode:
 
     # Structure
     level: int | None = None  # Heading level, tree level
-    children: list["A11yNode"] = field(default_factory=list)
+    children: list[A11yNode] = field(default_factory=list)
 
     # For matching with DOM elements
     dom_selector: str | None = None
@@ -142,7 +142,7 @@ class A11yNode:
         }
 
     @classmethod
-    def from_playwright(cls, pw_node: dict[str, Any]) -> "A11yNode":
+    def from_playwright(cls, pw_node: dict[str, Any]) -> A11yNode:
         """Create from Playwright accessibility snapshot node."""
         return cls(
             role=pw_node.get("role", ""),
