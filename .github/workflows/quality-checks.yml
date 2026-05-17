@@ -121,7 +121,16 @@ jobs:
   quality-gates:
     runs-on: ubuntu-latest
     needs: validate-configs
-    if: always()  # Run even if validate-configs is skipped
+    # Disabled — the job tries to `pip install qontinui-devtools` from PyPI,
+    # but qontinui-devtools isn't published there; it's a sibling repo with
+    # path-deps on ../qontinui and ../qontinui-schemas. Properly resolving
+    # those requires three sibling clones plus reworking each
+    # `qontinui-devtools <subcommand>` invocation to run via poetry from
+    # qontinui-devtools' working directory. Until that's done, the job has
+    # failed on every push to main since 2026-04-22, producing 17+ days of
+    # red-noise CI on every PR. Set if:false to silence it; re-enable as a
+    # separate PR once the multi-repo setup is wired up correctly.
+    if: false
     permissions:
       contents: read
       pull-requests: write  # PR-comment step posts to issues/comments API
