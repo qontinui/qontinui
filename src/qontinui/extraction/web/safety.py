@@ -5,11 +5,14 @@ This module provides mechanisms to prevent automated Playwright crawlers
 from clicking dangerous buttons like "Delete Account", "Purchase", etc.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import ElementHandle, Page
+if TYPE_CHECKING:
+    from playwright.async_api import ElementHandle, Page
 
 
 class ActionRisk(Enum):
@@ -454,7 +457,7 @@ class ElementRiskAssessment:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ElementRiskAssessment":
+    def from_dict(cls, data: dict[str, Any]) -> ElementRiskAssessment:
         return cls(
             element_id=data["element_id"],
             selector=data["selector"],
