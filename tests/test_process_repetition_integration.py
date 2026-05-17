@@ -3,7 +3,7 @@
 import sys
 from dataclasses import dataclass
 
-sys.path.insert(0, "/home/jspinak/qontinui_parent_directory/qontinui/src")
+sys.path.insert(0, "/home/jspinak/qontinui-root/qontinui/src")
 
 from qontinui.json_executor.action_executor import ActionExecutor
 from qontinui.json_executor.config_parser import Action, Process, QontinuiConfig

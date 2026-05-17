@@ -9,7 +9,7 @@ This guide provides practical examples for using the Qontinui performance benchm
 The easiest way to get started:
 
 ```bash
-cd /mnt/c/Users/jspin/Documents/qontinui_parent/qontinui
+cd /mnt/c/Users/jspin/Documents/qontinui-root/qontinui
 python -m benchmarks.run_all_benchmarks
 ```
 
@@ -465,7 +465,7 @@ ModuleNotFoundError: No module named 'benchmarks'
 **Solution:**
 ```bash
 # Make sure you're in the right directory
-cd /mnt/c/Users/jspin/Documents/qontinui_parent/qontinui
+cd /mnt/c/Users/jspin/Documents/qontinui-root/qontinui
 
 # Run as module
 python -m benchmarks.run_all_benchmarks
@@ -505,8 +505,8 @@ MemoryError: Unable to allocate array
 
 If you encounter issues:
 
-1. Check the README: `/mnt/c/Users/jspin/Documents/qontinui_parent/qontinui/benchmarks/README.md`
-2. Check main documentation: `/mnt/c/Users/jspin/Documents/qontinui_parent/PERFORMANCE_BENCHMARKS.md`
+1. Check the README: `/mnt/c/Users/jspin/Documents/qontinui-root/qontinui/benchmarks/README.md`
+2. Check main documentation: `/mnt/c/Users/jspin/Documents/qontinui-root/PERFORMANCE_BENCHMARKS.md`
 3. Review benchmark source code for implementation details
 4. Check existing performance tests: `tests/integration/test_performance_regression.py`
 

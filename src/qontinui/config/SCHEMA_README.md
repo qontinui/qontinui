@@ -494,5 +494,5 @@ When adding new action types:
 
 ## See Also
 
-- TypeScript schema: `/home/jspinak/qontinui_parent_directory/qontinui-web/frontend/src/lib/action-schema/`
+- TypeScript schema: `/home/jspinak/qontinui-root/qontinui-web/frontend/src/lib/action-schema/`
 - Qontinui documentation: [Coming soon]

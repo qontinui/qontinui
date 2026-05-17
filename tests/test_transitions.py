@@ -20,18 +20,18 @@ SETUP INSTRUCTIONS:
 To run these tests, you need to:
 
 1. Install dependencies:
-   cd /mnt/c/Users/jspin/Documents/qontinui_parent/qontinui
+   cd /mnt/c/Users/jspin/Documents/qontinui-root/qontinui
    pip install -e .
    pip install pytest pytest-mock
 
 2. Run all tests:
-   PYTHONPATH=/mnt/c/Users/jspin/Documents/qontinui_parent/qontinui/src pytest tests/test_transitions.py -v
+   PYTHONPATH=/mnt/c/Users/jspin/Documents/qontinui-root/qontinui/src pytest tests/test_transitions.py -v
 
 3. Run specific test:
-   PYTHONPATH=/mnt/c/Users/jspin/Documents/qontinui_parent/qontinui/src pytest tests/test_transitions.py::test_outgoing_transition_multi_state_activation -v
+   PYTHONPATH=/mnt/c/Users/jspin/Documents/qontinui-root/qontinui/src pytest tests/test_transitions.py::test_outgoing_transition_multi_state_activation -v
 
 4. Run tests with coverage:
-   PYTHONPATH=/mnt/c/Users/jspin/Documents/qontinui_parent/qontinui/src pytest tests/test_transitions.py --cov=qontinui.json_executor --cov=qontinui.state_management -v
+   PYTHONPATH=/mnt/c/Users/jspin/Documents/qontinui-root/qontinui/src pytest tests/test_transitions.py --cov=qontinui.json_executor --cov=qontinui.state_management -v
 
 TEST CATEGORIES:
 ----------------

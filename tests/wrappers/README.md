@@ -37,7 +37,7 @@ Comprehensive test suite for the Brobot-style wrapper architecture implementatio
 ### Run All Wrapper Tests
 
 ```bash
-cd /home/jspinak/qontinui_parent_directory/qontinui
+cd /home/jspinak/qontinui-root/qontinui
 pytest tests/wrappers/ -v
 ```
 
@@ -145,10 +145,10 @@ def teardown_method(self):
 
 **Solution:** Ensure qontinui is installed or PYTHONPATH is set:
 ```bash
-cd /home/jspinak/qontinui_parent_directory/qontinui
+cd /home/jspinak/qontinui-root/qontinui
 pip install -e .
 # or
-export PYTHONPATH=/home/jspinak/qontinui_parent_directory/qontinui/src:$PYTHONPATH
+export PYTHONPATH=/home/jspinak/qontinui-root/qontinui/src:$PYTHONPATH
 ```
 
 ### Environment Variable Conflicts
