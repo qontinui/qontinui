@@ -68,7 +68,7 @@ class SemanticMatch:
 
     @property
     def ref(self) -> str:
-        return self.node.ref
+        return str(self.node.ref)
 
 
 @dataclass

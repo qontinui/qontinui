@@ -59,7 +59,12 @@ class UIAElementFingerprint:
                     node.bounds.height,
                 )
             elif isinstance(node.bounds, list | tuple) and len(node.bounds) >= 4:
-                bounds = tuple(int(v) for v in node.bounds[:4])
+                bounds = (
+                    int(node.bounds[0]),
+                    int(node.bounds[1]),
+                    int(node.bounds[2]),
+                    int(node.bounds[3]),
+                )
 
         return cls(
             automation_id=node.automation_id,
