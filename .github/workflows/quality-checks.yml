@@ -121,34 +121,48 @@ jobs:
   quality-gates:
     runs-on: ubuntu-latest
     needs: validate-configs
-    # Disabled — the job tries to `pip install qontinui-devtools` from PyPI,
-    # but qontinui-devtools isn't published there; it's a sibling repo with
-    # path-deps on ../qontinui and ../qontinui-schemas. Properly resolving
-    # those requires three sibling clones plus reworking each
-    # `qontinui-devtools <subcommand>` invocation to run via poetry from
-    # qontinui-devtools' working directory. Until that's done, the job has
-    # failed on every push to main since 2026-04-22, producing 17+ days of
-    # red-noise CI on every PR. Set if:false to silence it; re-enable as a
-    # separate PR once the multi-repo setup is wired up correctly.
-    if: false
+    if: always()  # Run even if validate-configs is skipped
     permissions:
       contents: read
       pull-requests: write  # PR-comment step posts to issues/comments API
 
     steps:
-      - name: Checkout code
+      # qontinui-devtools is not on PyPI — it's a sibling repo with path-deps on
+      # `../qontinui` and `../qontinui-schemas` (see qontinui-devtools/pyproject.toml).
+      # Resolve those by checking out all three repos as siblings under
+      # $GITHUB_WORKSPACE and using poetry to install from inside the
+      # qontinui-devtools directory. Mirrors the validate-configs job above.
+      - name: Checkout qontinui code
         uses: actions/checkout@v5
+        with:
+          path: qontinui
+
+      - name: Checkout qontinui-devtools (sibling repo)
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.repository_owner }}/qontinui-devtools
+          path: qontinui-devtools
+
+      - name: Checkout qontinui-schemas (sibling, path-dep of qontinui-devtools)
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.repository_owner }}/qontinui-schemas
+          path: qontinui-schemas
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
 
-      - name: Install qontinui-devtools
+      - name: Install Poetry
         run: |
-          pip install --upgrade pip
-          pip install qontinui-devtools
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install qontinui-devtools (resolves ../qontinui and ../qontinui-schemas path-deps)
+        working-directory: qontinui-devtools
+        run: |
+          poetry install
 
       - name: Create reports directory
         run: mkdir -p /tmp/quality-reports
@@ -156,9 +170,10 @@ jobs:
       # Circular Dependency Check
       - name: Check for new circular dependencies
         id: circular-deps
+        working-directory: qontinui-devtools
         run: |
           echo "Checking for circular dependencies..."
-          qontinui-devtools import check src/ --format json --output /tmp/quality-reports/circular_deps.json
+          poetry run qontinui-devtools import check ../qontinui/src/ --format json --output /tmp/quality-reports/circular_deps.json
 
           # We currently have 0 circular dependencies after fixes
           CYCLES=$(jq '.cycles | length' /tmp/quality-reports/circular_deps.json)
@@ -176,9 +191,10 @@ jobs:
       # God Class Check
       - name: Check for new god classes
         id: god-classes
+        working-directory: qontinui-devtools
         run: |
           echo "Analyzing god classes..."
-          qontinui-devtools architecture god-classes src/ --threshold 0.9 --format json --output /tmp/quality-reports/god_classes.json
+          poetry run qontinui-devtools architecture god-classes ../qontinui/src/ --threshold 0.9 --format json --output /tmp/quality-reports/god_classes.json
 
           # Count critical god classes (>500 lines OR >30 methods)
           # Current baseline: 43 critical god classes
@@ -197,9 +213,10 @@ jobs:
       # Security Vulnerability Scan
       - name: Security vulnerability scan
         id: security
+        working-directory: qontinui-devtools
         run: |
           echo "Running security scan..."
-          qontinui-devtools security scan src/ --severity high --format json --output /tmp/quality-reports/security.json
+          poetry run qontinui-devtools security scan ../qontinui/src/ --severity high --format json --output /tmp/quality-reports/security.json
 
           # Count critical vulnerabilities
           # Current baseline: 20 critical issues (out of 25 real, 117 total)
@@ -221,9 +238,10 @@ jobs:
       # Type Coverage Check
       - name: Type hint coverage check
         id: type-coverage
+        working-directory: qontinui-devtools
         run: |
           echo "Checking type coverage..."
-          qontinui-devtools types coverage src/ --format json --output /tmp/quality-reports/types.json
+          poetry run qontinui-devtools types coverage ../qontinui/src/ --format json --output /tmp/quality-reports/types.json
 
           # Maintain at least 85% type coverage (current: 89.8%)
           COVERAGE=$(jq '.overall_coverage.coverage_percentage' /tmp/quality-reports/types.json)
@@ -241,9 +259,10 @@ jobs:
       # Race Condition Detection
       - name: Race condition detection
         id: race-conditions
+        working-directory: qontinui-devtools
         run: |
           echo "Detecting race conditions..."
-          qontinui-devtools concurrency detect src/ --format json --output /tmp/quality-reports/race.json
+          poetry run qontinui-devtools concurrency detect ../qontinui/src/ --format json --output /tmp/quality-reports/race.json
 
           # Count critical race conditions
           # Current baseline: 474 critical (out of 601 total)
@@ -266,9 +285,10 @@ jobs:
       # Architecture Complexity Check
       - name: Check architecture complexity
         id: complexity
+        working-directory: qontinui-devtools
         run: |
           echo "Analyzing architecture complexity..."
-          qontinui-devtools architecture analyze src/ --format json --output /tmp/quality-reports/architecture.json
+          poetry run qontinui-devtools architecture analyze ../qontinui/src/ --format json --output /tmp/quality-reports/architecture.json
 
           # Check for excessive coupling
           AVG_COUPLING=$(jq '.metrics.average_coupling // 0' /tmp/quality-reports/architecture.json)
