@@ -146,6 +146,12 @@ jobs:
           repository: ${{ github.repository_owner }}/qontinui-devtools
           path: qontinui-devtools
 
+      - name: Checkout qontinui-schemas (imported by qontinui-devtools at startup)
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.repository_owner }}/qontinui-schemas
+          path: qontinui-schemas
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -156,15 +162,17 @@ jobs:
           # qontinui-devtools' pyproject.toml has path-deps on ../qontinui and
           # ../qontinui-schemas. qontinui in turn pins torch/torchvision to a
           # custom poetry source `pytorch-cu128` that qontinui-devtools' poetry
-          # doesn't see. Trying to resolve the full dep tree fails. But the 6
-          # subcommands here only walk source files via paths — they don't
-          # need qontinui or qontinui-schemas as Python imports.
+          # doesn't see, so the full Poetry-managed dep tree fails to resolve.
+          # The 6 subcommands here only walk source files via paths — they
+          # don't need qontinui as a Python import. BUT qontinui-devtools
+          # itself does `from qontinui_schemas.common import utc_now` at
+          # startup, so qontinui-schemas IS needed as an installed package.
           #
-          # So: install qontinui-devtools with --no-deps (skip the whole tree),
-          # then pip-install just the runtime libraries the subcommands need
-          # (the ones listed in qontinui-devtools/pyproject.toml's
-          # [tool.poetry.dependencies], minus qontinui/qontinui-schemas/python).
+          # So: install qontinui-schemas (with deps — it's small, just pydantic
+          # models), then install qontinui-devtools with --no-deps and add
+          # just the runtime libraries the 6 subcommands actually need.
           pip install --upgrade pip
+          pip install ./qontinui-schemas
           pip install --no-deps ./qontinui-devtools
           pip install \
             'click>=8.1.7,<9' \
