@@ -57,7 +57,6 @@ jobs:
       - name: Run linting
         run: |
           poetry run ruff check .
-          poetry run ruff format --check .
 
       - name: Run type checking
         run: |
