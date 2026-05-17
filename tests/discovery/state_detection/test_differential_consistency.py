@@ -15,7 +15,7 @@ Key test areas:
 import numpy as np
 import pytest
 
-from qontinui.src.qontinui.discovery.state_detection.differential_consistency_detector import (
+from qontinui.discovery.state_detection.differential_consistency_detector import (
     DifferentialConsistencyDetector,
     StateRegion,
 )

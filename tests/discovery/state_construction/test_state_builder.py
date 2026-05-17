@@ -18,7 +18,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 
-from qontinui.src.qontinui.discovery.state_construction.state_builder import (
+from qontinui.discovery.state_construction.state_builder import (
     FallbackElementIdentifier,
     FallbackNameGenerator,
     StateBuilder,
@@ -554,7 +554,7 @@ class TestStateBoundaryDetection:
         assert boundary is None  # No detector available
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.state_builder.StateBuilder.diff_detector"
+        "qontinui.discovery.state_construction.state_builder.StateBuilder.diff_detector"
     )
     def test_determine_state_boundary_with_detector(self, mock_diff_detector, builder):
         """Test boundary detection with mocked detector.
@@ -564,7 +564,7 @@ class TestStateBoundaryDetection:
             - Returns largest region as boundary
         """
         # Mock the detector
-        from qontinui.src.qontinui.discovery.state_detection.differential_consistency_detector import (
+        from qontinui.discovery.state_detection.differential_consistency_detector import (
             StateRegion,
         )
 

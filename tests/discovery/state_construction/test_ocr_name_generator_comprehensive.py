@@ -18,7 +18,7 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pytest
 
-from qontinui.src.qontinui.discovery.state_construction.ocr_name_generator import (
+from qontinui.discovery.state_construction.ocr_name_generator import (
     NameValidator,
     OCRNameGenerator,
     generate_element_name,
@@ -35,11 +35,11 @@ class TestOCREngineSelection:
     """Test OCR engine selection and initialization."""
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
         True,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
         True,
     )
     def test_auto_prefers_easyocr(self):
@@ -49,17 +49,17 @@ class TestOCREngineSelection:
             - EasyOCR is selected over tesseract when both available
         """
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+            "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
         ):
             generator = OCRNameGenerator(engine="auto")
             assert generator.engine == "easyocr"
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
         False,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
         True,
     )
     def test_auto_fallback_to_tesseract(self):
@@ -72,11 +72,11 @@ class TestOCREngineSelection:
         assert generator.engine == "tesseract"
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
         False,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
         False,
     )
     def test_auto_raises_when_none_available(self):
@@ -93,7 +93,7 @@ class TestOCREngineSelection:
         assert "easyocr" in str(exc_info.value).lower()
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
         False,
     )
     def test_explicit_tesseract_unavailable(self):
@@ -108,7 +108,7 @@ class TestOCREngineSelection:
         assert "tesseract not available" in str(exc_info.value).lower()
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
         False,
     )
     def test_explicit_easyocr_unavailable(self):
@@ -123,11 +123,11 @@ class TestOCREngineSelection:
         assert "easyocr not available" in str(exc_info.value).lower()
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
         True,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+        "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
     )
     def test_easyocr_reader_initialization(self, mock_reader_class):
         """Test that easyocr reader is initialized correctly.
@@ -150,11 +150,11 @@ class TestTextExtractionMocked:
     def mock_generator_easyocr(self):
         """Create generator with mocked easyocr."""
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+            "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
             True,
         ):
             with patch(
-                "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+                "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
             ) as mock_reader_class:
                 mock_reader = Mock()
                 mock_reader_class.return_value = mock_reader
@@ -166,7 +166,7 @@ class TestTextExtractionMocked:
     def mock_generator_tesseract(self):
         """Create generator with mocked tesseract."""
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+            "qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
             True,
         ):
             generator = OCRNameGenerator(engine="tesseract")
@@ -202,7 +202,7 @@ class TestTextExtractionMocked:
         assert text == ""
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
     )
     def test_extract_text_tesseract_success(
         self, mock_pytesseract, mock_generator_tesseract
@@ -221,7 +221,7 @@ class TestTextExtractionMocked:
         assert text == "Main Menu"
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
     )
     def test_extract_text_tesseract_empty(
         self, mock_pytesseract, mock_generator_tesseract
@@ -272,11 +272,11 @@ class TestProminentTextExtraction:
     def mock_generator_easyocr(self):
         """Create generator with mocked easyocr."""
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+            "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
             True,
         ):
             with patch(
-                "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+                "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
             ) as mock_reader_class:
                 mock_reader = Mock()
                 mock_reader_class.return_value = mock_reader
@@ -325,11 +325,11 @@ class TestProminentTextExtraction:
         assert text == ""
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
         True,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
     )
     def test_extract_prominent_tesseract_largest_height(self, mock_pytesseract):
         """Test tesseract prominence based on font height.
@@ -352,11 +352,11 @@ class TestProminentTextExtraction:
         assert text == "Large"
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
         True,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
     )
     def test_extract_prominent_tesseract_confidence_filter(self, mock_pytesseract):
         """Test that low-confidence text is filtered out.
@@ -386,11 +386,11 @@ class TestGenerateNameFromImage:
     def mock_generator(self):
         """Create generator with mocked extraction."""
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+            "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
             True,
         ):
             with patch(
-                "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+                "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
             ):
                 generator = OCRNameGenerator(engine="easyocr")
                 return generator
@@ -462,11 +462,11 @@ class TestGenerateStateName:
     def mock_generator(self):
         """Create generator with mocked extraction."""
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+            "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
             True,
         ):
             with patch(
-                "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+                "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
             ):
                 generator = OCRNameGenerator(engine="easyocr")
                 return generator
@@ -583,11 +583,11 @@ class TestTextSanitizationComprehensive:
     def generator(self):
         """Create generator (engine doesn't matter for sanitization)."""
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+            "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
             True,
         ):
             with patch(
-                "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+                "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
             ):
                 return OCRNameGenerator(engine="easyocr")
 
@@ -779,11 +779,11 @@ class TestEmptyAndCorruptImages:
     def mock_generator(self):
         """Create generator with mocked extraction."""
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+            "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
             True,
         ):
             with patch(
-                "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+                "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
             ):
                 return OCRNameGenerator(engine="easyocr")
 
@@ -847,11 +847,11 @@ class TestConvenienceFunctionsWithMocking:
     """Test convenience functions with mocked OCR."""
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
         True,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+        "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
     )
     def test_generate_element_name_convenience(self, mock_reader_class):
         """Test convenience function for element names.
@@ -870,11 +870,11 @@ class TestConvenienceFunctionsWithMocking:
         assert name.isidentifier()
 
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
         True,
     )
     @patch(
-        "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+        "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
     )
     def test_generate_state_name_convenience(self, mock_reader_class):
         """Test convenience function for state names.
@@ -900,11 +900,11 @@ class TestIntegrationWithSyntheticScreenshots:
     def mock_generator(self):
         """Create generator with mocked extraction."""
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+            "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
             True,
         ):
             with patch(
-                "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+                "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
             ):
                 return OCRNameGenerator(engine="easyocr")
 
@@ -947,11 +947,11 @@ class TestErrorRecovery:
     def mock_generator(self):
         """Create generator with mocked extraction."""
         with patch(
-            "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
+            "qontinui.discovery.state_construction.ocr_name_generator.HAS_EASYOCR",
             True,
         ):
             with patch(
-                "qontinui.src.qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
+                "qontinui.discovery.state_construction.ocr_name_generator.easyocr.Reader"
             ):
                 return OCRNameGenerator(engine="easyocr")
 
