@@ -87,7 +87,7 @@
 ## File Structure
 
 ```
-/mnt/c/Users/Joshua/Documents/qontinui-root/qontinui/src/qontinui/rag/
+src/qontinui/rag/
 ├── __init__.py                      ✅
 ├── vector_db.py                     ✅
 ├── models.py                        ✅
