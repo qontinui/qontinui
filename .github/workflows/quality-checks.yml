@@ -173,6 +173,10 @@ jobs:
           # just the runtime libraries the 6 subcommands actually need.
           pip install --upgrade pip
           pip install ./qontinui-schemas
+          # qontinui itself also needs to be importable: qontinui-devtools eagerly
+          # imports `from qontinui.hal import HALConfig` in its testing module.
+          # --no-deps to skip torch/torchvision (pytorch-cu128 source issue).
+          pip install --no-deps ./qontinui
           pip install --no-deps ./qontinui-devtools
           pip install \
             'click>=8.1.7,<9' \
