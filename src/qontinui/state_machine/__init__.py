@@ -100,7 +100,12 @@ from .state_discovery import (
                             StateGraphNode,
                             UIBridgeStateDiscovery,
 )
-from .transition_detector import DetectedTransition, TransitionDetector, TransitionReliability
+from .transition_detector import (
+                            DetectedTransition,
+                            TransitionDetector,
+                            TransitionDetectorConfig,
+                            TransitionReliability,
+)
 from .ui_bridge_runtime import (
                             TransitionExecutionResult,
                             UIBridgeRuntime,
@@ -152,6 +157,7 @@ __all__ = [
     "StateGraphFormat",
     # Transition Detection
     "TransitionDetector",
+    "TransitionDetectorConfig",
     "DetectedTransition",
     "TransitionReliability",
     # Persistence

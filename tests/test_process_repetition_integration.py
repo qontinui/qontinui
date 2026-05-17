@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 sys.path.insert(0, "/home/jspinak/qontinui-root/qontinui/src")
 
-from qontinui.json_executor.action_executor import ActionExecutor
+from qontinui.action_executors import DelegatingActionExecutor as ActionExecutor
 from qontinui.json_executor.config_parser import Action, Process, QontinuiConfig
 
 
