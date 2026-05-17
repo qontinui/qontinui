@@ -79,32 +79,39 @@ HAS_BITSANDBYTES = False
 HAS_MSS = False
 HAS_PYAUTOGUI = False
 
+# Use a broad Exception catch (not just ImportError) because these optional
+# dependencies have transitive imports that can fail in surprising ways. For
+# example, `pyautogui` imports `pyscreeze`, which probes `cv2.__version__` at
+# module load — and in test environments where `cv2` has been replaced by a
+# `MagicMock`, that access raises `AttributeError` rather than `ImportError`.
+# Treating any failure as "dependency unavailable" is the safe behaviour for
+# probing optional capabilities.
 try:
     import transformers  # noqa: F401
 
     HAS_TRANSFORMERS = True
-except ImportError:
+except Exception:
     pass
 
 try:
     import bitsandbytes  # noqa: F401
 
     HAS_BITSANDBYTES = True
-except ImportError:
+except Exception:
     pass
 
 try:
     import mss  # noqa: F401
 
     HAS_MSS = True
-except ImportError:
+except Exception:
     pass
 
 try:
     import pyautogui  # noqa: F401
 
     HAS_PYAUTOGUI = True
-except ImportError:
+except Exception:
     pass
 
 # UI-TARS is available if core dependencies are present
