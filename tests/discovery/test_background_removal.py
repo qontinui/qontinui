@@ -2,7 +2,8 @@
 
 import numpy as np
 import pytest
-from discovery.background_removal import (
+
+from qontinui.discovery.background_removal import (
     BackgroundRemovalAnalyzer,
     BackgroundRemovalConfig,
     remove_backgrounds_simple,

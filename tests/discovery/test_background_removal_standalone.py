@@ -7,7 +7,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import numpy as np
-from discovery.background_removal import (
+
+from qontinui.discovery.background_removal import (
     BackgroundRemovalAnalyzer,
     BackgroundRemovalConfig,
     remove_backgrounds_simple,
