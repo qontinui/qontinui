@@ -7,8 +7,10 @@ to mock or live implementation based on execution mode.
 from __future__ import annotations
 
 import logging
+import tempfile
 import threading
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from qontinui_schemas.common import utc_now
@@ -22,6 +24,10 @@ from ..mock.mock_mode_manager import MockModeManager
 from ..reporting import EventType, emit_event
 
 logger = logging.getLogger(__name__)
+
+# Best-effort debug log written to the OS temp dir. Errors are swallowed so the
+# wrapper degrades gracefully when the path isn't writable.
+_DEBUG_LOG_PATH = Path(tempfile.gettempdir()) / "qontinui_mouse_wrapper_debug.log"
 
 
 class Mouse:
@@ -78,12 +84,8 @@ class Mouse:
         """
         is_mock = MockModeManager.is_mock_mode()
 
-        # Debug logging to file for troubleshooting
-        debug_log_path = (
-            r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
-        )
         try:
-            with open(debug_log_path, "a") as f:
+            with open(_DEBUG_LOG_PATH, "a") as f:
                 ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 f.write(
                     f"[{ts}] Mouse.move() called: x={x}, y={y}, duration={duration}, is_mock={is_mock}\n"
@@ -98,7 +100,7 @@ class Mouse:
             controller = cls._get_controller()
             # Debug: log controller info
             try:
-                with open(debug_log_path, "a") as f:
+                with open(_DEBUG_LOG_PATH, "a") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] Mouse.move() calling controller.mouse_move(), controller type: {type(controller).__name__}\n"
@@ -107,7 +109,7 @@ class Mouse:
                 pass
             result = controller.mouse_move(x, y, duration)
             try:
-                with open(debug_log_path, "a") as f:
+                with open(_DEBUG_LOG_PATH, "a") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] Mouse.move() controller.mouse_move() returned: {result}\n"
@@ -250,12 +252,8 @@ class Mouse:
         Returns:
             True if successful
         """
-        # Debug logging to file for troubleshooting
-        debug_log_path = (
-            r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
-        )
         try:
-            with open(debug_log_path, "a") as f:
+            with open(_DEBUG_LOG_PATH, "a") as f:
                 ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 is_mock = MockModeManager.is_mock_mode()
                 f.write(
@@ -270,7 +268,7 @@ class Mouse:
             controller = cls._get_controller()
             # Debug: log controller info
             try:
-                with open(debug_log_path, "a") as f:
+                with open(_DEBUG_LOG_PATH, "a") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] Mouse.down() calling controller.mouse_down(), controller type: {type(controller).__name__}\n"
@@ -279,7 +277,7 @@ class Mouse:
                 pass
             result = controller.mouse_down(x, y, button)
             try:
-                with open(debug_log_path, "a") as f:
+                with open(_DEBUG_LOG_PATH, "a") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] Mouse.down() controller.mouse_down() returned: {result}\n"
@@ -305,12 +303,8 @@ class Mouse:
         Returns:
             True if successful
         """
-        # Debug logging to file for troubleshooting
-        debug_log_path = (
-            r"C:\Users\Joshua\AppData\Local\Temp\qontinui_mouse_wrapper_debug.log"
-        )
         try:
-            with open(debug_log_path, "a") as f:
+            with open(_DEBUG_LOG_PATH, "a") as f:
                 ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                 is_mock = MockModeManager.is_mock_mode()
                 f.write(
@@ -325,7 +319,7 @@ class Mouse:
             controller = cls._get_controller()
             # Debug: log controller info
             try:
-                with open(debug_log_path, "a") as f:
+                with open(_DEBUG_LOG_PATH, "a") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] Mouse.up() calling controller.mouse_up(), controller type: {type(controller).__name__}\n"
@@ -334,7 +328,7 @@ class Mouse:
                 pass
             result = controller.mouse_up(x, y, button)
             try:
-                with open(debug_log_path, "a") as f:
+                with open(_DEBUG_LOG_PATH, "a") as f:
                     ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     f.write(
                         f"[{ts}] Mouse.up() controller.mouse_up() returned: {result}\n"
