@@ -75,12 +75,15 @@ See Also
 - exceptions: FrameExtractionError and retry utilities
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import Frame, Page
+if TYPE_CHECKING:
+    from playwright.async_api import Frame, Page
 
 from .exceptions import with_timeout
 from .models import BoundingBox, InteractiveElement

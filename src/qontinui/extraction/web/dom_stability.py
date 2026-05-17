@@ -103,14 +103,17 @@ See Also
 - hybrid_extractor: Uses stability before context extraction
 """
 
+from __future__ import annotations
+
 import asyncio
 import hashlib
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import Page
+if TYPE_CHECKING:
+    from playwright.async_api import Page
 
 logger = logging.getLogger(__name__)
 

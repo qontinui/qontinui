@@ -5,11 +5,14 @@ Detects UI regions (menus, dialogs, navigation bars, etc.) that
 represent potential states in the GUI.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from playwright.async_api import ElementHandle, Page
+if TYPE_CHECKING:
+    from playwright.async_api import ElementHandle, Page
 
 from .models import BoundingBox, StateType
 

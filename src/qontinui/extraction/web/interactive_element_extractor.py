@@ -87,9 +87,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .frame_manager import FrameExtractionResult
+    from playwright.async_api import Page
 
-from playwright.async_api import Page
+    from .frame_manager import FrameExtractionResult
 
 from .exceptions import ElementExtractionError, ShadowDOMError, ValidationError, with_timeout
 from .models import BoundingBox, InteractiveElement

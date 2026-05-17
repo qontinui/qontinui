@@ -77,12 +77,15 @@ See Also
 - llm_formatter: Format elements for LLM consumption
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import Page
+if TYPE_CHECKING:
+    from playwright.async_api import Page
 
 from .exceptions import ExtractionTimeoutError, with_timeout
 from .models import InteractiveElement
