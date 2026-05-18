@@ -4,25 +4,6 @@ Tests for accessibility_extractor module.
 Tests accessibility tree extraction and merging with DOM data.
 """
 
-import pytest
-
-# TODO: real fix needed. On CI, importing ``qontinui.extraction.web``
-# submodules aborts during pytest collection with:
-#   ImportError: cannot import name 'InteractiveElement'
-#   from 'qontinui.extraction.web.models' (unknown location)
-# Earlier `importorskip("qontinui.extraction.web.models")` didn't catch
-# this — models.py is pure stdlib and imports cleanly in isolation; the
-# cascade actually fires when accessibility_extractor.py loads. Try the
-# real import inside try/except so pytest skips this whole module when
-# the cascade fires instead of failing collection.
-try:
-    import qontinui.extraction.web.accessibility_extractor  # noqa: F401
-except ImportError as _exc:
-    pytest.skip(
-        f"qontinui.extraction.web.accessibility_extractor broken in this env: {_exc}",
-        allow_module_level=True,
-    )
-
 from qontinui.extraction.web.accessibility_extractor import (
     A11yNode,
     A11yTree,

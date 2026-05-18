@@ -4,23 +4,6 @@ Tests for hybrid_extractor module.
 Tests combined DOM + screenshot context extraction for LLMs.
 """
 
-import pytest
-
-# TODO: real fix needed. On CI, importing ``qontinui.extraction.web``
-# submodules aborts during pytest collection (the cascade reports
-# "cannot import name 'InteractiveElement' from
-# 'qontinui.extraction.web.models' (unknown location)"). Earlier
-# ``importorskip("qontinui.extraction.web.models")`` didn't catch this —
-# models.py is pure stdlib and imports cleanly on its own. Try the real
-# import inside try/except so pytest skips the whole module.
-try:
-    import qontinui.extraction.web.hybrid_extractor  # noqa: F401
-except ImportError as _exc:
-    pytest.skip(
-        f"qontinui.extraction.web.hybrid_extractor broken in this env: {_exc}",
-        allow_module_level=True,
-    )
-
 from qontinui.extraction.web.hybrid_extractor import HybridContext, PageState, build_llm_prompt
 from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 
