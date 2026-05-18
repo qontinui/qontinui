@@ -28,11 +28,17 @@ _AFFECTED_TESTS = [
 ]
 
 try:
-    import qontinui.extraction.web  # noqa: F401
+    # Probe a SUBMODULE, not the top-level package. The package's __init__.py
+    # uses __getattr__ for lazy submodule imports, so `import qontinui.extraction.web`
+    # succeeds even when the cascade is firing -- pytest then collects the 7
+    # affected files and each errors on its own `from .X import ...`. Probing a
+    # specific submodule (the one PR #20's PR body called out as where the
+    # cascade actually fires) matches what PR #20's per-file blocks did.
+    import qontinui.extraction.web.accessibility_extractor  # noqa: F401
 except Exception as exc:  # noqa: BLE001 -- broad: any package-init failure should trigger the skip
     # Skip the whole directory so the cascade doesn't take the tests job down.
     # The exception text is intentionally surfaced in the comment below for triage.
-    _SKIP_REASON = f"qontinui.extraction.web package init failed: {exc}"
+    _SKIP_REASON = f"qontinui.extraction.web.accessibility_extractor import failed: {exc}"
     collect_ignore_glob = _AFFECTED_TESTS
 else:
     collect_ignore_glob = []
