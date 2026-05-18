@@ -7,7 +7,6 @@ Ensures tasks run with proper state context and validation.
 import asyncio
 import logging
 import threading
-import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, cast
@@ -66,6 +65,18 @@ class StateAwareScheduler:
         # Control
         self._running = False
         self._lock = threading.Lock()
+        self._stop_event = threading.Event()
+
+        # Ensure leaked schedulers (e.g. tests that forget to call shutdown())
+        # don't keep non-daemon worker threads alive at interpreter exit.
+        # We must register via threading._register_atexit (not atexit.register):
+        # ThreadPoolExecutor's _python_exit uses the SAME mechanism, and
+        # threading._shutdown drains threading._atexits BEFORE the atexit
+        # module fires its handlers. If we used atexit.register, _python_exit
+        # would join our still-blocked workers first and hang forever.
+        # Registering here (after concurrent.futures.thread import-time)
+        # means our cleanup runs in LIFO order BEFORE _python_exit.
+        threading._register_atexit(self._cleanup_at_exit)  # type: ignore[attr-defined]
 
         logger.info("StateAwareScheduler initialized")
 
@@ -186,7 +197,12 @@ class StateAwareScheduler:
 
                     # For interval-based schedules, sleep
                     if schedule.interval_seconds:
-                        time.sleep(schedule.interval_seconds)
+                        # Use an interruptible wait so shutdown() can wake us.
+                        if self._stop_event.wait(schedule.interval_seconds):
+                            record.status = "completed"
+                            record.end_time = utc_now()
+                            record.iteration_count = iteration_count
+                            break
                     else:
                         # Single execution
                         record.status = "success"
@@ -436,6 +452,24 @@ class StateAwareScheduler:
                 return cancelled
             return False
 
+    def _cleanup_at_exit(self):
+        """Interpreter-shutdown cleanup. Called via threading._register_atexit.
+
+        Runs BEFORE concurrent.futures.thread._python_exit, so setting
+        the stop event here wakes any worker still parked in
+        self._stop_event.wait(interval), letting them exit before
+        _python_exit tries to join() them.
+
+        Avoids self.shutdown() to skip its logging calls, which can hit
+        a partially-torn-down logging subsystem during interpreter exit
+        and produce noisy "I/O operation on closed file" tracebacks.
+        """
+        try:
+            self._stop_event.set()
+            self.executor.shutdown(wait=False)
+        except Exception:  # noqa: BLE001 — best-effort cleanup at exit
+            pass
+
     def shutdown(self, wait: bool = True):
         """Shutdown the scheduler.
 
@@ -443,6 +477,9 @@ class StateAwareScheduler:
             wait: Whether to wait for pending tasks
         """
         logger.info("Shutting down StateAwareScheduler")
+        # Wake any worker thread parked in self._stop_event.wait(interval)
+        # so the executor can actually finish shutting down.
+        self._stop_event.set()
         self.executor.shutdown(wait=wait)
         logger.info("StateAwareScheduler shutdown complete")
 
