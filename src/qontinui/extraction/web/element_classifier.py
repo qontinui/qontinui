@@ -5,10 +5,13 @@ Classifies DOM elements by analyzing their tag name, ARIA role,
 attributes, and visual characteristics.
 """
 
-import logging
-from typing import Any, cast
+from __future__ import annotations
 
-from playwright.async_api import ElementHandle, Page
+import logging
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from playwright.async_api import ElementHandle, Page
 
 from .models import BoundingBox, ElementType, ExtractedElement
 

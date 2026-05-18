@@ -84,6 +84,8 @@ See Also
 - interactive_element_extractor: Source of element data
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
@@ -91,9 +93,10 @@ import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import ElementHandle, Page
+if TYPE_CHECKING:
+    from playwright.async_api import ElementHandle, Page
 
 from .models import BoundingBox, InteractiveElement
 from .natural_language_selector import LLMClient, NaturalLanguageSelector
@@ -172,7 +175,7 @@ class HealingRecord:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "HealingRecord":
+    def from_dict(cls, data: dict[str, Any]) -> HealingRecord:
         return cls(
             original_selector=data["original_selector"],
             healed_selector=data["healed_selector"],

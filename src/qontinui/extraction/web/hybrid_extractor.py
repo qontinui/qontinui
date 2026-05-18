@@ -92,13 +92,16 @@ See Also
 - llm_clients: LLM client adapters
 """
 
+from __future__ import annotations
+
 import asyncio
 import base64
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import Page
+if TYPE_CHECKING:
+    from playwright.async_api import Page
 
 from .accessibility_extractor import AccessibilityExtractor, EnrichedElement
 from .frame_manager import FrameAwareElement, extract_across_frames

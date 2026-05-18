@@ -7,10 +7,14 @@ to actual Playwright locators, handling frame traversal transparently.
 Inspired by Stagehand's deep locator syntax.
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from playwright.async_api import ElementHandle, Frame, Locator, Page
+if TYPE_CHECKING:
+    from playwright.async_api import ElementHandle, Frame, Locator, Page
 
 logger = logging.getLogger(__name__)
 

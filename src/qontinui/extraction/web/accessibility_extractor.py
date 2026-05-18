@@ -77,12 +77,15 @@ See Also
 - llm_formatter: Format elements for LLM consumption
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from playwright.async_api import Page
+if TYPE_CHECKING:
+    from playwright.async_api import Page
 
 from .exceptions import ExtractionTimeoutError, with_timeout
 from .models import InteractiveElement
@@ -116,7 +119,7 @@ class A11yNode:
 
     # Structure
     level: int | None = None  # Heading level, tree level
-    children: list["A11yNode"] = field(default_factory=list)
+    children: list[A11yNode] = field(default_factory=list)
 
     # For matching with DOM elements
     dom_selector: str | None = None
@@ -139,7 +142,7 @@ class A11yNode:
         }
 
     @classmethod
-    def from_playwright(cls, pw_node: dict[str, Any]) -> "A11yNode":
+    def from_playwright(cls, pw_node: dict[str, Any]) -> A11yNode:
         """Create from Playwright accessibility snapshot node."""
         return cls(
             role=pw_node.get("role", ""),
