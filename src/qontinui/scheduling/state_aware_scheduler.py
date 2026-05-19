@@ -269,8 +269,25 @@ class StateAwareScheduler:
                 f"Checking only inactive states: {states_to_check} (active states: {active_states})"
             )
 
-        # If all required states are already active and we're in CHECK_INACTIVE_ONLY mode
+        # If all required states are already active and we're in CHECK_INACTIVE_ONLY mode,
+        # skip state detection — but forbidden_states must still be honored.
         if not states_to_check and schedule.check_mode == CheckMode.CHECK_INACTIVE_ONLY:
+            forbidden_found = [
+                state
+                for state in schedule.forbidden_states
+                if state in active_state_set
+            ]
+            if forbidden_found:
+                logger.warning(f"Forbidden states are active: {forbidden_found}")
+                return StateCheckResult(
+                    timestamp=timestamp,
+                    required_states=schedule.required_states,
+                    forbidden_states=schedule.forbidden_states,
+                    active_states=active_states,
+                    check_passed=False,
+                    check_mode=schedule.check_mode,
+                    error_message=f"Forbidden states active: {forbidden_found}",
+                )
             logger.debug(
                 "All required states are already active, skipping state detection"
             )
