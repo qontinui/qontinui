@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ..actions.basic.find.find import Find
     from ..model.match.match import Match
 
-from ..actions.action_result import ActionResult
+from ..actions.action_result import ActionResultBuilder
 from ..actions.object_collection import ObjectCollection
 from ..model.state.state import State
 from ..model.state.state_service import StateService
@@ -278,10 +278,11 @@ class StateDetector:
 
         # Perform find operation
         try:
-            result = ActionResult()  # type: ignore[call-arg]
-            await self.find_action.perform(result, collection)
-            if result and not result.is_empty():  # type: ignore[attr-defined]
-                return cast(list[Match], result.get_match_list())  # type: ignore[attr-defined]
+            builder = ActionResultBuilder()
+            await self.find_action.perform(builder, collection)
+            result = builder.build()
+            if result.matches:
+                return cast(list[Match], list(result.matches))
         except Exception as e:
             logger.error(f"Error searching for state {state.name}: {e}")
 

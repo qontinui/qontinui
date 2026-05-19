@@ -10,7 +10,7 @@ from typing import Any
 from ....model.action.action_record import ActionRecord
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from .action_builders import ClickBuilder, DragBuilder, TypeBuilder
@@ -138,7 +138,7 @@ class ActionChain(ActionInterface):
         return ActionType.FIND
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the action chain using the Qontinui framework pattern.
 
@@ -150,11 +150,11 @@ class ActionChain(ActionInterface):
         success = self.execute()
 
         # Update matches with results
-        object.__setattr__(matches, "success", success)
+        matches.with_success(success)
 
         # Add execution history to matches
         for record in self._mode.execution_history:
-            matches.add_execution_record(record)  # type: ignore[arg-type, attr-defined]
+            matches.add_execution_record(record)  # type: ignore[arg-type]
 
     def add(
         self, action: ActionInterface, target: Any | None = None, **kwargs

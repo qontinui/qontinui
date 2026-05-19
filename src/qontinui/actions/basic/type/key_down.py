@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from qontinui.hal.factory import HALFactory
 
 from ....action_interface import ActionInterface
-from ....action_result import ActionResult
+from ....action_result import ActionResultBuilder
 from ....action_type import ActionType
 from ....object_collection import ObjectCollection
 from .key_down_options import KeyDownOptions
@@ -43,7 +43,7 @@ class KeyDown(ActionInterface):
         return ActionType.KEY_DOWN
 
     def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Press and hold keyboard keys.
 
@@ -58,7 +58,7 @@ class KeyDown(ActionInterface):
         - Platform-specific key handling may affect combinations
 
         Args:
-            matches: ActionResult with configuration
+            matches: ActionResultBuilder with configuration
             object_collections: Collections containing keys to press
         """
         # Get configuration
@@ -97,4 +97,4 @@ class KeyDown(ActionInterface):
                 if i < len(strings) - 1:
                     time.sleep(options.get_pause_between_keys())
 
-        matches.success = True
+        matches.with_success(True)

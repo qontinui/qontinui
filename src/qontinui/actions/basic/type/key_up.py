@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass
 
 from ....action_interface import ActionInterface
-from ....action_result import ActionResult
+from ....action_result import ActionResultBuilder
 from ....action_type import ActionType
 from ....hal.factory import HALFactory
 from ....object_collection import ObjectCollection
@@ -42,7 +42,7 @@ class KeyUp(ActionInterface):
         return ActionType.KEY_UP
 
     def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Release keyboard keys.
 
@@ -57,7 +57,7 @@ class KeyUp(ActionInterface):
         - Completes keyboard shortcut sequences
 
         Args:
-            matches: ActionResult with configuration
+            matches: ActionResultBuilder with configuration
             object_collections: Collections containing keys to release
         """
         # Get configuration
@@ -104,4 +104,4 @@ class KeyUp(ActionInterface):
                 controller.key_up(modifier.lower())
                 logger.debug(f"Key up: {modifier} (modifier)")
 
-        matches.success = True
+        matches.with_success(True)

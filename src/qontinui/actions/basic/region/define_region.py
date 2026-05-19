@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 from .....actions.find import FindAction, FindOptions
 from ....action_interface import ActionInterface
-from ....action_result import ActionResult
+from ....action_result import ActionResultBuilder
 from ....hal.factory import HALFactory
 from ....model.element.location import Location
 from ....model.element.region import Region
@@ -24,7 +24,7 @@ class DefineWithWindow:
     """Define region as focused window bounds."""
 
     def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Define region as active window.
 
@@ -39,8 +39,8 @@ class DefineWithWindow:
 
         match = Match(target=Location(region=region), score=1.0)
         matches.add_match(match)
-        matches.defined_region = region
-        matches.success = True
+        matches.add_defined_region(region)
+        matches.with_success(True)
 
         logger.debug(f"Defined region as window: {region}")
 
@@ -52,7 +52,7 @@ class DefineWithMatch:
     find_action: FindAction = field(default_factory=FindAction)
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Define region relative to matches.
 
@@ -135,8 +135,8 @@ class DefineWithMatch:
         else:
             region = base_region
 
-        matches.defined_region = region
-        matches.success = True
+        matches.add_defined_region(region)
+        matches.with_success(True)
 
         logger.debug(f"Defined region {options.define_as.name}: {region}")
 
@@ -148,7 +148,7 @@ class DefineInsideAnchors:
     find_action: FindAction = field(default_factory=FindAction)
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Define smallest region containing all anchors.
 
@@ -194,8 +194,8 @@ class DefineInsideAnchors:
             region.width += options.expand_width
             region.height += options.expand_height
 
-        matches.defined_region = region
-        matches.success = True
+        matches.add_defined_region(region)
+        matches.with_success(True)
 
         logger.debug(f"Defined region inside anchors: {region}")
 
@@ -207,7 +207,7 @@ class DefineOutsideAnchors:
     find_action: FindAction = field(default_factory=FindAction)
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Define largest region containing all anchors.
 
@@ -268,8 +268,8 @@ class DefineOutsideAnchors:
             region.width += options.expand_width
             region.height += options.expand_height
 
-        matches.defined_region = region
-        matches.success = True
+        matches.add_defined_region(region)
+        matches.with_success(True)
 
         logger.debug(f"Defined region outside anchors: {region}")
 
@@ -281,7 +281,7 @@ class DefineIncludingMatches:
     find_action: FindAction = field(default_factory=FindAction)
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Define region including all matches.
 
@@ -332,8 +332,8 @@ class DefineIncludingMatches:
             region.width += options.expand_width
             region.height += options.expand_height
 
-        matches.defined_region = region
-        matches.success = True
+        matches.add_defined_region(region)
+        matches.with_success(True)
 
         logger.debug(f"Defined region including matches: {region}")
 
@@ -379,7 +379,7 @@ class DefineRegion(ActionInterface):
         return "DEFINE"
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Perform region definition.
 

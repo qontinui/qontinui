@@ -9,7 +9,7 @@ from typing import Any
 
 from ....actions.find import FindAction, FindOptions
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResultBuilder
 from ...object_collection import ObjectCollection
 from .vanish_options import VanishOptions
 
@@ -35,7 +35,7 @@ class Vanish(ActionInterface):
         self.find_action = find_action or FindAction()
 
     async def perform(
-        self, action_result: ActionResult, *object_collections: ObjectCollection
+        self, action_result: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the vanish operation.
 
@@ -47,7 +47,7 @@ class Vanish(ActionInterface):
             object_collections: Collections defining what should vanish
         """
         if not isinstance(action_result.action_config, VanishOptions):
-            object.__setattr__(action_result, "success", False)
+            action_result.with_success(False)
             return
 
         vanish_options = action_result.action_config
@@ -60,21 +60,17 @@ class Vanish(ActionInterface):
             vanish_options.get_poll_interval(),
         )
 
-        object.__setattr__(action_result, "success", vanished)
+        action_result.with_success(vanished)
         if vanished:
-            object.__setattr__(
-                action_result, "output_text", "Element(s) vanished successfully"
-            )
+            action_result.with_output_text("Element(s) vanished successfully")
         else:
-            object.__setattr__(
-                action_result,
-                "output_text",
+            action_result.with_output_text(
                 f"Element(s) still present after {vanish_options.get_max_wait_time()} seconds",
             )
 
     async def _wait_for_vanish(
         self,
-        action_result: ActionResult,
+        action_result: ActionResultBuilder,
         object_collections: tuple[Any, ...],
         max_wait: float,
         poll_interval: float,
@@ -102,10 +98,8 @@ class Vanish(ActionInterface):
             # Check if elements are still present
             if await self._elements_are_gone(object_collections):
                 # Elements have vanished
-                object.__setattr__(
-                    action_result,
-                    "duration",
-                    timedelta(seconds=time.time() - start_time),
+                action_result.with_timing(
+                    duration=timedelta(seconds=time.time() - start_time)
                 )
                 return True
 
@@ -113,7 +107,7 @@ class Vanish(ActionInterface):
             await asyncio.sleep(poll_interval)
 
         # Timeout - elements still present
-        object.__setattr__(action_result, "duration", timedelta(seconds=max_wait))
+        action_result.with_timing(duration=timedelta(seconds=max_wait))
         return False
 
     async def _elements_are_gone(self, object_collections: tuple[Any, ...]) -> bool:

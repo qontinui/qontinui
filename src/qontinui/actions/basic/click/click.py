@@ -13,6 +13,10 @@ from ....model.match import Match as ModelMatch
 from ...action_interface import ActionInterface
 from ...action_result import ActionResult, ActionResultBuilder
 from ...action_type import ActionType
+
+# ActionResult is retained here only for the ActionResultFactory placeholder class
+# below (which still constructs frozen results). The perform() method uses
+# ActionResultBuilder.
 from ...object_collection import ObjectCollection
 from .click_options import ClickOptions, ClickOptionsBuilder
 
@@ -103,8 +107,8 @@ class Click(ActionInterface):
 
         log_debug(f"execute() called with target type: {type(target).__name__}")
 
-        # Initialize ActionResult with stored ClickOptions
-        matches = ActionResultBuilder(self.options).build()
+        # Initialize ActionResultBuilder with stored ClickOptions
+        matches = ActionResultBuilder(self.options)
         if target is None:
             log_debug("Target is None, returning False")
             return False
@@ -141,7 +145,7 @@ class Click(ActionInterface):
         return matches.success
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute click operations on provided locations, regions, or existing matches.
 
@@ -155,7 +159,7 @@ class Click(ActionInterface):
         - DOES NOT process StateImages (those require Find first)
 
         Args:
-            matches: The ActionResult containing configuration and any pre-existing matches
+            matches: The ActionResultBuilder containing configuration and any pre-existing matches
             object_collections: Collections containing locations, regions, or matches to click
 
         Raises:
@@ -214,7 +218,7 @@ class Click(ActionInterface):
                 # Wrap in find Match for compatibility with match_list
                 find_match = FindMatch(match_object=model_match)
                 self._click(state_location.location, click_options, model_match)
-                matches.matches.append(find_match)  # type: ignore[attr-defined]
+                matches.add_match(find_match)
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(
                     object_collections
@@ -231,7 +235,7 @@ class Click(ActionInterface):
                 # Wrap in find Match for compatibility with match_list
                 find_match = FindMatch(match_object=model_match)
                 self._click(location, click_options, model_match)
-                matches.matches.append(find_match)  # type: ignore[attr-defined]
+                matches.add_match(find_match)
                 clicked_count += 1
                 if self.time and clicked_count < self._get_total_targets(
                     object_collections
@@ -239,7 +243,7 @@ class Click(ActionInterface):
                     self.time.wait(click_options.get_pause_between_individual_actions())
 
         # Set success based on whether we clicked anything
-        object.__setattr__(matches, "success", clicked_count > 0)
+        matches.with_success(clicked_count > 0)
 
     def _get_total_targets(
         self, object_collections: tuple[ObjectCollection, ...]
@@ -363,6 +367,6 @@ class ActionResultFactory:
         Returns:
             New ActionResult instance
         """
-        result = ActionResultBuilder(action_config).build()
-        object.__setattr__(result, "action_description", description)
-        return result
+        return (
+            ActionResultBuilder(action_config).with_description(description).build()
+        )

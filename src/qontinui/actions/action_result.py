@@ -156,6 +156,25 @@ class ActionResultBuilder:
         self._end_time: datetime | None = None
         self._monitor_index: int | None = None
 
+    @property
+    def action_config(self) -> ActionConfig | None:
+        return self._action_config
+
+    @property
+    def matches(self) -> tuple[Match, ...]:
+        with self._lock:
+            return tuple(self._matches)
+
+    @property
+    def success(self) -> bool:
+        return self._success
+
+    def clear_matches(self) -> ActionResultBuilder:
+        with self._lock:
+            self._matches.clear()
+            self._active_states.clear()
+        return self
+
     def with_success(self, success: bool) -> ActionResultBuilder:
         """Set success status.
 
@@ -327,6 +346,11 @@ class ActionResultBuilder:
             self._start_time = start
             self._end_time = end
             self._duration = duration
+        return self
+
+    def with_active_states(self, states: set[str]) -> ActionResultBuilder:
+        with self._lock:
+            self._active_states = set(states)
         return self
 
     def with_monitor_index(self, monitor_index: int | None) -> ActionResultBuilder:

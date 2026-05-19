@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass
 
 from ....action_interface import ActionInterface
-from ....action_result import ActionResult
+from ....action_result import ActionResultBuilder
 from ....action_type import ActionType
 from ....hal.factory import HALFactory
 from ....object_collection import ObjectCollection
@@ -43,7 +43,7 @@ class MouseDown(ActionInterface):
         return ActionType.MOUSE_DOWN
 
     def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Press and hold mouse button.
 
@@ -53,7 +53,7 @@ class MouseDown(ActionInterface):
         - Some applications have timeouts for sustained presses
 
         Args:
-            matches: ActionResult with configuration
+            matches: ActionResultBuilder with configuration
             object_collections: Not used for this action
         """
         # Get configuration
@@ -84,4 +84,4 @@ class MouseDown(ActionInterface):
         if press_options.pause_after_press > 0:
             time.sleep(press_options.pause_after_press)
 
-        matches.success = True
+        matches.with_success(True)

@@ -8,7 +8,7 @@ import time
 from dataclasses import dataclass
 
 from ....action_interface import ActionInterface
-from ....action_result import ActionResult
+from ....action_result import ActionResultBuilder
 from ....action_type import ActionType
 from ....hal.factory import HALFactory
 from ....object_collection import ObjectCollection
@@ -43,7 +43,7 @@ class MouseUp(ActionInterface):
         return ActionType.MOUSE_UP
 
     def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Release mouse button.
 
@@ -53,7 +53,7 @@ class MouseUp(ActionInterface):
         - Completes drag operations when preceded by MouseDown and MouseMove
 
         Args:
-            matches: ActionResult with configuration
+            matches: ActionResultBuilder with configuration
             object_collections: Not used for this action
         """
         # Get configuration
@@ -84,4 +84,4 @@ class MouseUp(ActionInterface):
         if press_options.pause_after_release > 0:
             time.sleep(press_options.pause_after_release)
 
-        matches.success = True
+        matches.with_success(True)

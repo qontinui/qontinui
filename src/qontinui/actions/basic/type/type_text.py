@@ -7,7 +7,7 @@ from typing import Optional
 
 from ....model.state.state_string import StateString
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from .type_options import TypeOptions
@@ -76,12 +76,12 @@ class TypeText(ActionInterface):
         return ActionType.TYPE
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Type text strings from the object collections.
 
         Args:
-            matches: The ActionResult containing configuration
+            matches: The ActionResultBuilder containing configuration
             object_collections: Collections containing StateString objects to type
 
         Raises:

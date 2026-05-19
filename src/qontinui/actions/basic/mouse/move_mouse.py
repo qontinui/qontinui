@@ -11,8 +11,9 @@ logger = logging.getLogger(__name__)
 from ....actions.find import FindAction, FindOptions
 from ....coordinates import CoordinateService
 from ....model.element.location import Location
+from ....model.match.match import Match as ModelMatch
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 
@@ -82,14 +83,17 @@ class MoveMouse(ActionInterface):
         return ActionType.MOVE
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Move mouse to locations specified in object collections.
 
         Args:
-            matches: The ActionResult containing configuration and to populate with results
+            matches: The ActionResultBuilder containing configuration and to populate with results
             object_collections: Collections containing targets to move to
         """
+        # Local import to avoid circular dep through find.match → actions.
+        from ....find.match import Match as FindMatch
+
         # Get the configuration - MouseMoveOptions or any ActionConfig is acceptable
         # since MoveMouse mainly uses Find and basic timing
         config = matches.action_config
@@ -103,14 +107,7 @@ class MoveMouse(ActionInterface):
                     location = state_location.location
                     if self.move_mouse_wrapper:
                         self.move_mouse_wrapper.move(location)
-                    matches.add_match_location(location)  # type: ignore[attr-defined]
-                    # Create a Match object for success determination
-                    from ....find.match import Match
-                    from ....model.match import Match as MatchObject
-
-                    match_obj = MatchObject(target=location, score=1.0)
-                    match = Match(match_object=match_obj)
-                    matches.add(match)  # type: ignore[attr-defined]
+                    matches.add_match(FindMatch(match_object=ModelMatch(target=location, score=1.0)))
 
             # Check if we have regions
             state_regions = obj_coll.state_regions
@@ -120,14 +117,7 @@ class MoveMouse(ActionInterface):
                     location = state_region.get_search_region().get_center()
                     if self.move_mouse_wrapper:
                         self.move_mouse_wrapper.move(location)
-                    matches.add_match_location(location)  # type: ignore[attr-defined]
-                    # Create a Match object for success determination
-                    from ....find.match import Match
-                    from ....model.match import Match as MatchObject
-
-                    match_obj = MatchObject(target=location, score=1.0)
-                    match = Match(match_object=match_obj)
-                    matches.add(match)  # type: ignore[attr-defined]
+                    matches.add_match(FindMatch(match_object=ModelMatch(target=location, score=1.0)))
 
             # Only use find if we have images/patterns to search for
             state_images = obj_coll.state_images
@@ -161,16 +151,14 @@ class MoveMouse(ActionInterface):
                             location = Location(screen_point.x, screen_point.y)
                             if self.move_mouse_wrapper:
                                 self.move_mouse_wrapper.move(location)
-                            matches.add_match_location(location)  # type: ignore[attr-defined]
-                            # Create a Match object for success determination
-                            from ....find.match import Match
-                            from ....model.match import Match as MatchObject
-
-                            match_obj = MatchObject(
-                                target=location, score=result.best_match.similarity
+                            matches.add_match(
+                                FindMatch(
+                                    match_object=ModelMatch(
+                                        target=location,
+                                        score=result.best_match.similarity,
+                                    )
+                                )
                             )
-                            match = Match(match_object=match_obj)
-                            matches.add(match)  # type: ignore[attr-defined]
 
             logger.debug("finished move")
 

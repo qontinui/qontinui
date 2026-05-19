@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 from ....actions.find import FindAction
 from ....actions.find import FindOptions as NewFindOptions
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from .base_find_options import BaseFindOptions
@@ -77,7 +77,7 @@ class Find(ActionInterface):
         return ActionType.FIND
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the find operation to locate GUI elements on screen.
 
@@ -92,7 +92,7 @@ class Find(ActionInterface):
         - Wait.pauseAfterEnd - Post-action delays
 
         Args:
-            matches: The ActionResult to populate with found matches. Must contain
+            matches: The ActionResultBuilder to populate with found matches. Must contain
                     valid BaseFindOptions configuration.
             object_collections: The collections containing patterns, regions, and other
                               objects to find. At least one collection must be provided.
@@ -126,13 +126,15 @@ class Find(ActionInterface):
             for result in results:
                 if result.found:
                     for match in result.matches:
-                        matches.add_match(match)  # type: ignore[attr-defined]
+                        # find_action returns model.match.Match; ActionResult stores find.match.Match.
+                        # Pre-existing class duality predates this refactor — see PLAN follow-up.
+                        matches.add_match(match)  # type: ignore[arg-type]
 
         # Set success based on whether matches were found
         if matches.matches:
-            object.__setattr__(matches, "success", True)
+            matches.with_success(True)
         else:
-            object.__setattr__(matches, "success", False)
+            matches.with_success(False)
 
 
 class FindPipeline:
@@ -145,18 +147,18 @@ class FindPipeline:
     def execute(
         self,
         find_options: BaseFindOptions,
-        matches: ActionResult,
+        matches: ActionResultBuilder,
         object_collections: tuple[Any, ...],
     ) -> None:
         """Execute the find pipeline.
 
         Args:
             find_options: Configuration for the find operation
-            matches: Result container to populate
+            matches: Result builder to populate
             object_collections: Objects to find
         """
         # Placeholder implementation
         logger.debug(
             "Executing find with strategy: %s", find_options.get_find_strategy()
         )
-        object.__setattr__(matches, "success", False)
+        matches.with_success(False)
