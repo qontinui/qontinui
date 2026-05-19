@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.0.0",
   "metadata": {
     "name": "Test Workflow - Collections",
     "description": "Test workflow for MAP, FILTER, SORT, and REDUCE operations"
@@ -15,7 +15,13 @@
     }
   ],
   "transitions": [],
-  "processes": [
+  "images": [],
+  "schedules": [],
+  "execution_settings": {
+    "failure_strategy": "stop",
+    "max_retries": 3
+  },
+  "workflows": [
     {
       "id": "process-collections-test",
       "name": "Collections Test Process",
@@ -26,7 +32,17 @@
           "type": "SET_VARIABLE",
           "config": {
             "variableName": "numbers",
-            "value": [5, 2, 8, 1, 9, 3, 7, 4, 6],
+            "value": [
+              5,
+              2,
+              8,
+              1,
+              9,
+              3,
+              7,
+              4,
+              6
+            ],
             "scope": "local"
           }
         },
@@ -75,13 +91,9 @@
             "outputVariable": "total"
           }
         }
-      ]
+      ],
+      "version": "1.0.0",
+      "connections": {}
     }
-  ],
-  "images": [],
-  "schedules": [],
-  "execution_settings": {
-    "failure_strategy": "stop",
-    "max_retries": 3
-  }
+  ]
 }

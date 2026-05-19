@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.0.0",
   "metadata": {
     "name": "Test Workflow - If/Else",
     "description": "Test workflow for IF/ELSE conditional functionality"
@@ -15,7 +15,13 @@
     }
   ],
   "transitions": [],
-  "processes": [
+  "images": [],
+  "schedules": [],
+  "execution_settings": {
+    "failure_strategy": "stop",
+    "max_retries": 3
+  },
+  "workflows": [
     {
       "id": "process-if-test",
       "name": "If/Else Test Process",
@@ -66,13 +72,9 @@
             "scope": "local"
           }
         }
-      ]
+      ],
+      "version": "1.0.0",
+      "connections": {}
     }
-  ],
-  "images": [],
-  "schedules": [],
-  "execution_settings": {
-    "failure_strategy": "stop",
-    "max_retries": 3
-  }
+  ]
 }
