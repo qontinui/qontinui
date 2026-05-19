@@ -151,6 +151,34 @@ class Mouse:
             return controller.mouse_move_relative(dx, dy, duration)
 
     @classmethod
+    def _emit_mouse_clicked(
+        cls,
+        x: int | None,
+        y: int | None,
+        button: MouseButton,
+        clicks: int,
+        is_mock: bool,
+    ) -> None:
+        """Emit a MOUSE_CLICKED event with standard metadata.
+
+        Shared by all public click entrypoints so every click path is
+        equally observable over the WebSocket event bridge.
+        """
+        emit_event(
+            EventType.MOUSE_CLICKED,
+            data={
+                "x": x,
+                "y": y,
+                "button": button.value,
+                "clicks": clicks,
+                "click_type": "double" if clicks > 1 else "single",
+                "target_type": "coordinates",
+                "timestamp": time.time(),
+                "mode": "mock" if is_mock else "live",
+            },
+        )
+
+    @classmethod
     def click(
         cls,
         x: int | None = None,
@@ -181,19 +209,7 @@ class Mouse:
 
         # Emit event after successful click
         if result:
-            emit_event(
-                EventType.MOUSE_CLICKED,
-                data={
-                    "x": x,
-                    "y": y,
-                    "button": button.value,
-                    "clicks": clicks,
-                    "click_type": "double" if clicks > 1 else "single",
-                    "target_type": "coordinates",
-                    "timestamp": time.time(),
-                    "mode": "mock" if is_mock else "live",
-                },
-            )
+            cls._emit_mouse_clicked(x, y, button, clicks, is_mock)
 
         return result
 
@@ -209,11 +225,19 @@ class Mouse:
         Returns:
             True if successful
         """
-        if MockModeManager.is_mock_mode():
-            return cls._mock_input.click_at(x, y, button)
+        is_mock = MockModeManager.is_mock_mode()
+
+        if is_mock:
+            result = cls._mock_input.click_at(x, y, button)
         else:
             controller = cls._get_controller()
-            return controller.click_at(x, y, button)
+            result = controller.click_at(x, y, button)
+
+        # Emit event after successful click (parity with click())
+        if result:
+            cls._emit_mouse_clicked(x, y, button, clicks=1, is_mock=is_mock)
+
+        return result
 
     @classmethod
     def double_click_at(
