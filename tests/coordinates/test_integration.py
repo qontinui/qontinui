@@ -7,6 +7,7 @@ They should work on any monitor configuration (single, dual, triple, etc.).
 import pytest
 
 from qontinui.coordinates.service import CoordinateService
+from tests._env_probe import HAS_FUNCTIONAL_DISPLAY
 
 
 class TestIntegrationRealMonitors:
@@ -150,6 +151,10 @@ class TestIntegrationRealMonitors:
         assert "CoordinateService" in repr_str
         assert "monitors=" in repr_str
 
+    @pytest.mark.skipif(
+        not HAS_FUNCTIONAL_DISPLAY,
+        reason="enumerates real monitors via mss; needs a functional display",
+    )
     def test_refresh_maintains_accuracy(self) -> None:
         """Test that refresh() maintains accurate monitor detection."""
         service = CoordinateService.get_instance()

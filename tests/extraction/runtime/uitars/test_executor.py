@@ -7,6 +7,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import numpy as np
 import pytest
 
+from tests._env_probe import HAS_FUNCTIONAL_DISPLAY
+
+# The executor takes a screenshot via mss before calling the (mocked)
+# inference / pyautogui path; on headless Linux the mss screenshot
+# fails at xcb.connect(display=None) regardless of mocks.
+_NEEDS_DISPLAY = pytest.mark.skipif(
+    not HAS_FUNCTIONAL_DISPLAY,
+    reason="executor's screenshot path uses mss; needs a functional display",
+)
+
 # Add src to path for direct import
 src_path = Path(__file__).parent.parent.parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
@@ -85,6 +95,7 @@ class TestUITARSExecutor:
         assert self.executor._local_grounder == grounder
 
     @pytest.mark.asyncio
+    @_NEEDS_DISPLAY
     async def test_ground_element_success(self):
         """Test successful element grounding."""
         # Set up mock inference result
@@ -111,6 +122,7 @@ class TestUITARSExecutor:
         assert result.element_description == "Submit button"
 
     @pytest.mark.asyncio
+    @_NEEDS_DISPLAY
     async def test_ground_element_failure(self):
         """Test failed element grounding."""
         # Set up mock with no coordinates
@@ -131,6 +143,7 @@ class TestUITARSExecutor:
         assert result.confidence == 0.0
 
     @pytest.mark.asyncio
+    @_NEEDS_DISPLAY
     async def test_execute_action_success(self):
         """Test successful action execution."""
         import sys
@@ -178,6 +191,7 @@ class TestUITARSExecutor:
         self.mock_provider.infer.assert_not_called()
 
     @pytest.mark.asyncio
+    @_NEEDS_DISPLAY
     async def test_hybrid_ground_fallback_to_uitars(self):
         """Test hybrid grounding falls back to UI-TARS on low confidence."""
         # Local grounder with low confidence
@@ -210,6 +224,7 @@ class TestUITARSExecutor:
         assert result.confidence == 0.9
 
     @pytest.mark.asyncio
+    @_NEEDS_DISPLAY
     async def test_hybrid_ground_no_grounder(self):
         """Test hybrid grounding with no local grounder configured."""
         # Set up UI-TARS response
