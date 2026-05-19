@@ -7,23 +7,6 @@ Tests persistent history, learning from past repairs, and strategy statistics.
 import tempfile
 from pathlib import Path
 
-import pytest
-
-# TODO: real fix needed. On CI, importing ``qontinui.extraction.web``
-# submodules aborts during pytest collection (the cascade reports
-# "cannot import name 'InteractiveElement' from
-# 'qontinui.extraction.web.models' (unknown location)"). Earlier
-# ``importorskip("qontinui.extraction.web.models")`` didn't catch this —
-# models.py is pure stdlib and imports cleanly on its own. Try the real
-# import inside try/except so pytest skips the whole module.
-try:
-    import qontinui.extraction.web.selector_healer  # noqa: F401
-except ImportError as _exc:
-    pytest.skip(
-        f"qontinui.extraction.web.selector_healer broken in this env: {_exc}",
-        allow_module_level=True,
-    )
-
 from qontinui.extraction.web.models import BoundingBox, InteractiveElement
 from qontinui.extraction.web.selector_healer import (
     HealingHistory,
