@@ -69,6 +69,7 @@ webdriver-manager = "^4.0.2"
 click = "^8.1"
 httpx = "^0.28"
 aiohttp = "^3.9"  # CDP WebSocket for accessibility capture
+yarl = "<1.24"  # 1.24.0 wheels lack cp312-manylinux ABI tags as of 2026-05-19; pin transitive dep until upstream republishes
 
 # Optional: UI-TARS quantization support (for local inference on consumer GPUs)
 bitsandbytes = { version = "^0.45", optional = true }
