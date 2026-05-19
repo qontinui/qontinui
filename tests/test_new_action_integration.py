@@ -30,9 +30,9 @@ logger = logging.getLogger(__name__)
 @pytest.fixture(autouse=True)
 def enable_mock_mode():
     """Enable mock mode for all tests to avoid GUI automation."""
-    MockModeManager.enable_mock_mode()
+    MockModeManager.set_mock_mode(True)
     yield
-    MockModeManager.disable_mock_mode()
+    MockModeManager.set_mock_mode(False)
 
 
 @pytest.fixture

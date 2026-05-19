@@ -108,8 +108,10 @@ class OCRNameGenerator:
                 raise ValueError("EasyOCR not available. Install: pip install easyocr")
             return "easyocr"
 
-        # Fallback with auto-selection
-        return self._select_engine("auto")
+        raise ValueError(
+            f"Unknown OCR engine: {requested!r}. "
+            "Valid engines are 'auto', 'tesseract', or 'easyocr'."
+        )
 
     def generate_name_from_image(
         self, image: np.ndarray, context: str = "generic"
@@ -406,16 +408,15 @@ class OCRNameGenerator:
             'player_1_inventory'
         """
         if not text:
-            return ""
+            return "unnamed"
 
         # Convert to lowercase
         text = text.lower()
 
-        # Replace common separators with underscores
-        text = re.sub(r"[\s\-./\\:]+", "_", text)
-
-        # Remove special characters (keep only alphanumeric and underscores)
-        text = re.sub(r"[^a-z0-9_]", "", text)
+        # Any run of non-alphanumeric characters is a token boundary and
+        # becomes a single underscore. Deleting them instead would silently
+        # merge semantically distinct tokens (e.g. "Hello@World" -> "helloworld").
+        text = re.sub(r"[^a-z0-9]+", "_", text)
 
         # Remove consecutive underscores
         text = re.sub(r"_+", "_", text)
@@ -448,8 +449,11 @@ class OCRNameGenerator:
         Returns:
             Fallback identifier
         """
-        # Use image dimensions in name for uniqueness
-        h, w = image.shape[:2]
+        # Use image dimensions in name for uniqueness. Tolerate any
+        # array rank (1-D, 0-D, >3-D) instead of assuming a 2-D+ image.
+        shape = image.shape
+        h = int(shape[0]) if len(shape) >= 1 else 0
+        w = int(shape[1]) if len(shape) >= 2 else 1
 
         # Create hash for uniqueness
         img_hash = hash(image.tobytes()) % 1000
