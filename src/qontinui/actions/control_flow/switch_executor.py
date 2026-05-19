@@ -12,6 +12,7 @@ from qontinui.config import Action, SwitchActionConfig
 from qontinui.orchestration.execution_context import ExecutionContext
 
 from .condition_evaluator import ConditionEvaluator
+from .exceptions import BreakLoop, ContinueLoop
 
 logger = logging.getLogger(__name__)
 
@@ -222,14 +223,11 @@ class SwitchExecutor:
             return bool(expression_value == case_value)
 
     async def _execute_action_sequence(self, action_ids: list[str]) -> dict[str, Any]:
-        """Execute a sequence of actions.
+        """Execute a sequence of actions by ID via the context callback.
 
-        Executes each action in the sequence using the ExecutionContext's
-        execute_action callback. Collects execution statistics and errors
-        for all actions in the sequence.
-
-        Note: This method is shared conceptually with ConditionalExecutor and
-        LoopExecutor but implemented separately to maintain executor independence.
+        Passes the action_id STRING straight to the context's execute_action
+        callback (the legacy ControlFlowExecutor contract). The callback —
+        one layer up, supplied by the user — owns id→action resolution.
 
         Args:
             action_ids: List of action IDs to execute in sequence
@@ -246,51 +244,32 @@ class SwitchExecutor:
         errors_list: list[dict[str, Any]] = []
         result: dict[str, Any] = {"actions_executed": 0, "errors": errors_list}
 
+        execute_action = getattr(self.context, "execute_action", None)
+        if execute_action is None:
+            logger.warning(
+                "No execute_action callback in context, skipping %d actions",
+                len(action_ids),
+            )
+            return result
+
         for action_id in action_ids:
             logger.debug("Executing action: %s", action_id)
-
             try:
-                # Get action from config
-                action = self._get_action_by_id(action_id)
-                if not action:
-                    logger.error("Action not found: %s", action_id)
-                    errors_list.append(
-                        {
-                            "action_id": action_id,
-                            "type": "ActionNotFound",
-                            "message": f"Action with ID '{action_id}' not found in workflow",
-                        }
-                    )
-                    result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
-                    continue
-
-                # Execute action via context callback
-                # The ExecutionContext.execute_action method handles all the
-                # orchestration including error handling, event emission, etc.
-                execute_action = getattr(self.context, "execute_action", None)
-                if execute_action is None:
-                    success = False
-                else:
-                    success = await execute_action(action)
-
-                # Track execution
+                action_result = await execute_action(action_id)
+                success = action_result.get("success", True)
                 if not success:
-                    logger.warning("Action %s failed", action_id)
                     errors_list.append(
                         {
                             "action_id": action_id,
-                            "type": "ActionExecutionFailed",
-                            "message": "Action execution returned false",
+                            "message": action_result.get("error", "Action failed"),
                         }
                     )
-
                 result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
-
+            except (BreakLoop, ContinueLoop):
+                result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
+                raise
             except Exception as e:
-                # Unexpected exception during action execution
-                logger.error(
-                    "Action %s raised exception: %s", action_id, str(e), exc_info=True
-                )
+                logger.error("Action %s raised: %s", action_id, e, exc_info=True)
                 errors_list.append(
                     {
                         "action_id": action_id,
@@ -299,36 +278,4 @@ class SwitchExecutor:
                     }
                 )
                 result["actions_executed"] = result["actions_executed"] + 1  # type: ignore[assignment]
-
         return result
-
-    def _get_action_by_id(self, action_id: str) -> Action | None:
-        """Get action from config by ID.
-
-        Searches through the workflow configuration to find an action
-        with the specified ID.
-
-        Args:
-            action_id: Action ID to search for
-
-        Returns:
-            Action if found, None otherwise
-        """
-        config = getattr(self.context, "config", None)
-        if not config or not hasattr(config, "workflow"):
-            logger.warning("No workflow config available to find action: %s", action_id)
-            return None
-
-        workflow = getattr(config, "workflow", None)
-        if not workflow or not hasattr(workflow, "actions"):
-            logger.warning("Workflow has no actions list")
-            return None
-
-        # Search for action by ID
-        actions = getattr(workflow, "actions", [])
-        for action in actions:
-            if hasattr(action, "id") and action.id == action_id:
-                return action  # type: ignore[no-any-return]
-
-        logger.debug("Action not found: %s", action_id)
-        return None

@@ -107,12 +107,22 @@ class LoopExecutor:
             logger.info("Loop broken: %s", e.message)
             result["stopped_early"] = True
             result["break_message"] = e.message
+            # Recover the iteration count the inner loop accrued before the
+            # break — its partial result dict was never merged (the await
+            # raised before result.update() could run).
+            result["iterations_completed"] = e.iterations_completed
 
         except ValueError as e:
             logger.error("Loop configuration error: %s", str(e))
             result["success"] = False
             if isinstance(result["errors"], list):
                 errors_list.append({"type": "ValueError", "message": str(e)})
+
+        except KeyError as e:
+            logger.error("Loop variable lookup error: %s", str(e))
+            result["success"] = False
+            if isinstance(result["errors"], list):
+                errors_list.append({"type": "KeyError", "message": str(e)})
 
         except RuntimeError as e:
             logger.error("Loop execution error: %s", str(e))
@@ -174,6 +184,7 @@ class LoopExecutor:
                 # Execute actions in this iteration
                 exec_result = await self._execute_action_sequence(config.actions)
                 errors_list.extend(exec_result["errors"])
+                result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
 
                 # Check if we should break on error
                 if exec_result["errors"] and config.break_on_error:
@@ -185,12 +196,13 @@ class LoopExecutor:
                 result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
                 continue
 
-            except BreakLoop:
-                # Let BreakLoop propagate up
+            except BreakLoop as exc:
+                # Count this iteration, then thread the running total onto the
+                # exception. execute_loop never gets to merge this result dict
+                # on the raise path, so it recovers the count from exc instead.
                 result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
+                exc.iterations_completed = result["iterations_completed"]  # type: ignore[assignment]
                 raise
-
-            result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
 
         return result
 
@@ -247,6 +259,7 @@ class LoopExecutor:
                 # Execute actions in this iteration
                 exec_result = await self._execute_action_sequence(config.actions)
                 errors_list.extend(exec_result["errors"])
+                result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
 
                 # Check if we should break on error
                 if exec_result["errors"] and config.break_on_error:
@@ -259,12 +272,14 @@ class LoopExecutor:
                 iteration += 1
                 continue
 
-            except BreakLoop:
-                # Let BreakLoop propagate up
+            except BreakLoop as exc:
+                # Count this iteration, then thread the running total onto the
+                # exception. execute_loop never gets to merge this result dict
+                # on the raise path, so it recovers the count from exc instead.
                 result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
+                exc.iterations_completed = result["iterations_completed"]  # type: ignore[assignment]
                 raise
 
-            result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
             iteration += 1
 
         if iteration >= max_iterations:
@@ -296,20 +311,9 @@ class LoopExecutor:
             raise ValueError("FOREACH loop requires 'collection' to be specified")
 
         # Get collection items
-        try:
-            items = self._get_collection(config.collection)
-        except ValueError as e:
-            logger.error("Failed to get collection for FOREACH: %s", str(e))
-            return {
-                "iterations_completed": 0,
-                "errors": [{"type": "ValueError", "message": str(e)}],
-            }
-        except KeyError as e:
-            logger.error("Collection variable not found for FOREACH: %s", str(e))
-            return {
-                "iterations_completed": 0,
-                "errors": [{"type": "KeyError", "message": str(e)}],
-            }
+        # Let _get_collection's ValueError/KeyError propagate to execute_loop's
+        # outer catch — matches FOR/WHILE precondition-error handling.
+        items = self._get_collection(config.collection)
 
         if not items:
             logger.info("FOREACH collection is empty, skipping loop")
@@ -341,6 +345,7 @@ class LoopExecutor:
                 # Execute actions in this iteration
                 exec_result = await self._execute_action_sequence(config.actions)
                 errors_list.extend(exec_result["errors"])
+                result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
 
                 # Check if we should break on error
                 if exec_result["errors"] and config.break_on_error:
@@ -352,12 +357,13 @@ class LoopExecutor:
                 result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
                 continue
 
-            except BreakLoop:
-                # Let BreakLoop propagate up
+            except BreakLoop as exc:
+                # Count this iteration, then thread the running total onto the
+                # exception. execute_loop never gets to merge this result dict
+                # on the raise path, so it recovers the count from exc instead.
                 result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
+                exc.iterations_completed = result["iterations_completed"]  # type: ignore[assignment]
                 raise
-
-            result["iterations_completed"] = result["iterations_completed"] + 1  # type: ignore[assignment]
 
         return result
 

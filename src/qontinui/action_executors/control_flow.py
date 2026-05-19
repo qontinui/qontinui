@@ -488,6 +488,10 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
 
                 return {"success": success}
 
+            except (BreakLoop, ContinueLoop):
+                # Control-flow signals must propagate to the loop executor,
+                # not be swallowed as action failures.
+                raise
             except Exception as e:
                 logger.error(f"Error executing action {action_id}: {e}")
                 return {"success": False, "error": str(e)}
