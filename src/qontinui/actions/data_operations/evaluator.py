@@ -101,6 +101,48 @@ class SafeEvaluator:
     }
 
     @classmethod
+    def _validate_ast_safe(cls, tree: ast.AST) -> None:
+        """Validate that every node in an AST is safe to evaluate.
+
+        Checks both the node-type whitelist and the function-call allowlist.
+        Shared by ``safe_eval`` and ``is_safe_expression`` so their notions
+        of "safe" can never drift apart (a previous divergence let
+        ``is_safe_expression`` approve ``__import__('os')``).
+
+        Raises:
+            ValueError: If any node or function call is not whitelisted.
+        """
+        for node in ast.walk(tree):
+            if type(node) not in cls.ALLOWED_NODES:
+                raise ValueError(
+                    f"Unsafe operation in expression: {type(node).__name__}"
+                )
+
+            # Block dunder / private attribute access. This closes the classic
+            # sandbox-escape gadget chain
+            # ``[].__class__.__bases__[0].__subclasses__()`` while still
+            # permitting ordinary method calls like ``s.upper()``.
+            if isinstance(node, ast.Attribute) and node.attr.startswith("_"):
+                raise ValueError(
+                    f"Unsafe attribute access: {node.attr}"
+                )
+
+            # Extra validation for function calls
+            if isinstance(node, ast.Call):
+                # Only allow calls to functions in SAFE_FUNCTIONS
+                if isinstance(node.func, ast.Name):
+                    func_name = node.func.id
+                    if func_name not in cls.SAFE_FUNCTIONS:
+                        raise ValueError(f"Unsafe function call: {func_name}")
+                elif isinstance(node.func, ast.Attribute):
+                    # Allow method calls on safe objects (list.append, str.upper, ...)
+                    pass
+                else:
+                    raise ValueError(
+                        f"Unsafe function call type: {type(node.func).__name__}"
+                    )
+
+    @classmethod
     def safe_eval(cls, expression: str, context: dict[str, Any]) -> Any:
         """Safely evaluate a Python expression.
 
@@ -166,7 +208,7 @@ class SafeEvaluator:
             >>> SafeEvaluator.safe_eval("max(numbers)", {"numbers": [1, 5, 3]})
             5
         """
-        if not expression or not isinstance(expression, str):
+        if not isinstance(expression, str) or not expression.strip():
             raise ValueError("Expression must be a non-empty string")
 
         expression = expression.strip()
@@ -176,27 +218,9 @@ class SafeEvaluator:
             # Parse the expression
             tree = ast.parse(expression, mode="eval")
 
-            # Validate all nodes are safe
-            for node in ast.walk(tree):
-                if type(node) not in cls.ALLOWED_NODES:
-                    raise ValueError(
-                        f"Unsafe operation in expression: {type(node).__name__}"
-                    )
-
-                # Extra validation for function calls
-                if isinstance(node, ast.Call):
-                    # Only allow calls to functions in SAFE_FUNCTIONS
-                    if isinstance(node.func, ast.Name):
-                        func_name = node.func.id
-                        if func_name not in cls.SAFE_FUNCTIONS:
-                            raise ValueError(f"Unsafe function call: {func_name}")
-                    elif isinstance(node.func, ast.Attribute):
-                        # Allow method calls on safe objects (like list.append, str.upper, etc.)
-                        pass
-                    else:
-                        raise ValueError(
-                            f"Unsafe function call type: {type(node.func).__name__}"
-                        )
+            # Validate all nodes (and any function calls) are safe. The same
+            # check is used by is_safe_expression so the two cannot diverge.
+            cls._validate_ast_safe(tree)
 
             # Create safe namespace
             safe_namespace = {
@@ -241,12 +265,12 @@ class SafeEvaluator:
             >>> SafeEvaluator.is_safe_expression("open('file.txt')")
             False
         """
+        if not isinstance(expression, str) or not expression.strip():
+            return False
         try:
             tree = ast.parse(expression, mode="eval")
-            for node in ast.walk(tree):
-                if type(node) not in cls.ALLOWED_NODES:
-                    return False
+            cls._validate_ast_safe(tree)
             return True
         except (SyntaxError, ValueError):
-            # Invalid Python expression
+            # Invalid or unsafe Python expression
             return False
