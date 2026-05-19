@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 from ....model.element.location import Location
 from ....model.match import Match as ModelMatch
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 from .click_options import ClickOptions, ClickOptionsBuilder
@@ -104,7 +104,7 @@ class Click(ActionInterface):
         log_debug(f"execute() called with target type: {type(target).__name__}")
 
         # Initialize ActionResult with stored ClickOptions
-        matches = ActionResult(self.options)  # type: ignore[arg-type,call-arg]
+        matches = ActionResultBuilder(self.options).build()
         if target is None:
             log_debug("Target is None, returning False")
             return False
@@ -363,6 +363,6 @@ class ActionResultFactory:
         Returns:
             New ActionResult instance
         """
-        result = ActionResult(action_config)  # type: ignore[call-arg]
+        result = ActionResultBuilder(action_config).build()
         object.__setattr__(result, "action_description", description)
         return result

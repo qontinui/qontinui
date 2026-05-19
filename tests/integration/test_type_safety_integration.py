@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from qontinui.actions.action_result import ActionResult
+from qontinui.actions.action_result import ActionResult, ActionResultBuilder
 from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import StateRegistry
 from qontinui.hal.implementations.keyboard_operations import KeyboardOperations
@@ -24,19 +24,21 @@ class TestTypeHintUsage:
     """Test that type hints are used correctly throughout the codebase."""
 
     def test_action_result_type_hints(self):
-        """Test ActionResult has correct type hints."""
-        result = ActionResult()
+        """Test ActionResult has correct type hints (immutable model)."""
+        result = ActionResultBuilder().build()
 
         # These should all have proper types
         assert isinstance(result.success, bool)
         assert isinstance(result.output_text, str)
-        assert isinstance(result.match_list, list)
-        assert isinstance(result.active_states, set)
+        # matches is an immutable tuple in the frozen dataclass
+        assert isinstance(result.matches, tuple)
+        # active_states is an immutable frozenset
+        assert isinstance(result.active_states, frozenset)
         assert isinstance(result.times_acted_on, int)
 
         # Property access should work
         assert isinstance(result.is_success, bool)
-        assert isinstance(result.matches, list)
+        assert isinstance(result.match_count, int)
 
     def test_state_registry_type_hints(self):
         """Test StateRegistry has correct type hints."""
@@ -227,23 +229,22 @@ class TestTypeCompatibility:
     """Test type compatibility across components."""
 
     def test_action_result_match_list_type(self):
-        """Test match_list maintains type consistency."""
-        result = ActionResult()
+        """Test matches tuple maintains type consistency."""
 
         # Mock match
         class MockMatch:
             def __init__(self, value: int):
                 self.value = value
 
-        # Add matches
+        # Build via builder
         match1 = MockMatch(1)
         match2 = MockMatch(2)
 
-        result.add(match1, match2)
+        result = ActionResultBuilder().add_match(match1).add_match(match2).build()
 
         # Verify type consistency
-        assert len(result.match_list) == 2
-        assert all(isinstance(m, MockMatch) for m in result.match_list)
+        assert len(result.matches) == 2
+        assert all(isinstance(m, MockMatch) for m in result.matches)
 
     def test_state_registry_type_preservation(self):
         """Test StateRegistry preserves state types."""
@@ -273,12 +274,12 @@ class TestTypeCompatibility:
 
     def test_dataclass_types(self):
         """Test dataclass types work correctly."""
-        # ActionResult is a dataclass-like structure
-        result = ActionResult()
+        # ActionResult is a frozen dataclass
+        result = ActionResultBuilder().build()
 
         # Should have all expected attributes
         assert hasattr(result, "success")
-        assert hasattr(result, "match_list")
+        assert hasattr(result, "matches")
         assert hasattr(result, "active_states")
 
         # StateRegistry is a dataclass
@@ -293,14 +294,14 @@ class TestGenericTypeSupport:
     """Test generic type support."""
 
     def test_list_type_hints(self):
-        """Test List type hints work correctly."""
-        result = ActionResult()
+        """Test tuple/list type hints work correctly on the frozen result."""
+        result = ActionResultBuilder().build()
 
-        # match_list is List[Match]
-        assert isinstance(result.match_list, list)
+        # matches is tuple[Match, ...] in the frozen dataclass
+        assert isinstance(result.matches, tuple)
 
         # Can iterate
-        for _ in result.match_list:
+        for _ in result.matches:
             pass
 
     def test_dict_type_hints(self):
@@ -316,14 +317,18 @@ class TestGenericTypeSupport:
             assert isinstance(state_class, type)
 
     def test_set_type_hints(self):
-        """Test Set type hints work correctly."""
-        result = ActionResult()
+        """Test frozenset type hints work correctly on the frozen result.
 
-        # active_states is set[str]
-        assert isinstance(result.active_states, set)
+        ActionResult.active_states is now a frozenset (immutable). The builder
+        is the only path to populate it.
+        """
+        # Manually populate via the builder's internal set, which becomes
+        # a frozenset on build().
+        builder = ActionResultBuilder()
+        builder._active_states.add("test_state")
+        result = builder.build()
 
-        # Can add strings
-        result.active_states.add("test_state")
+        assert isinstance(result.active_states, frozenset)
         assert "test_state" in result.active_states
 
 
