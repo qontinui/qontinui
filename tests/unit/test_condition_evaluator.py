@@ -5,12 +5,7 @@ Tests cover success cases, error handling, and proper integration with the regis
 and FindAction components.
 """
 
-import sys
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-
-# Mock cv2 before importing qontinui modules to avoid DLL issues in tests
-if "cv2" not in sys.modules:
-    sys.modules["cv2"] = MagicMock()
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 

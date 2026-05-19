@@ -7,15 +7,10 @@ MIGRATION: These tests ensure backward compatibility during the transition.
 After Phase 4 (migrate all usages), these tests can be removed.
 """
 
-import sys
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import numpy as np
 import pytest
-
-# Mock cv2 before importing qontinui modules to avoid DLL issues in tests
-if "cv2" not in sys.modules:
-    sys.modules["cv2"] = MagicMock()
 
 from qontinui.actions.find.find_options import FindOptions
 from qontinui.actions.find.find_result import FindResult
