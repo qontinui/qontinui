@@ -15,6 +15,7 @@ import time
 from unittest.mock import MagicMock
 
 import numpy as np
+import pytest
 
 from qontinui import Find, Image
 from qontinui.action_executors.delegating_executor import DelegatingActionExecutor
@@ -38,7 +39,8 @@ class TestWebSocketEventIntegration:
         registry = get_event_registry()
         registry.clear()
 
-    def test_match_attempted_event_has_timestamps(self):
+    @pytest.mark.asyncio
+    async def test_match_attempted_event_has_timestamps(self):
         """Verify MATCH_ATTEMPTED events include both screenshot_timestamp and timestamp."""
         # Create test image and screenshot
         test_image_data = np.zeros((50, 50, 3), dtype=np.uint8)
@@ -60,7 +62,7 @@ class TestWebSocketEventIntegration:
         time_before = time.time()
 
         # Execute find operation
-        Find(test_image).similarity(0.80).screenshot(screenshot).execute()
+        await Find(test_image).similarity(0.80).screenshot(screenshot).execute()
 
         # Record time after execution
         time_after = time.time()
@@ -96,7 +98,8 @@ class TestWebSocketEventIntegration:
 
         print(f"✓ MATCH_ATTEMPTED event has timestamp: {timestamp}")
 
-    def test_match_attempted_event_has_debug_visual_base64(self):
+    @pytest.mark.asyncio
+    async def test_match_attempted_event_has_debug_visual_base64(self):
         """Verify MATCH_ATTEMPTED events include debug_visual_base64 field."""
         # Create test image and screenshot
         test_image_data = np.zeros((30, 30, 3), dtype=np.uint8)
@@ -113,7 +116,7 @@ class TestWebSocketEventIntegration:
         )
 
         # Execute find with debug visuals enabled
-        Find(test_image).similarity(0.80).screenshot(screenshot).execute()
+        await Find(test_image).similarity(0.80).screenshot(screenshot).execute()
 
         # Verify event was emitted
         assert len(events_received) > 0, "MATCH_ATTEMPTED event should be emitted"
@@ -258,9 +261,10 @@ class TestWebSocketEventIntegration:
 
         print(f"✓ MOUSE_CLICKED event has complete metadata: {list(event_data.keys())}")
 
-    def test_action_completed_event_has_timestamp(self):
+    @pytest.mark.asyncio
+    async def test_action_completed_event_has_timestamp(self):
         """Verify ACTION_COMPLETED events (via emit_action_event) include timestamp."""
-        from qontinui.config.parser import ConfigParser
+        from qontinui.json_executor.config_parser import ConfigParser
 
         # Create minimal config
         config_data = {
@@ -269,6 +273,7 @@ class TestWebSocketEventIntegration:
                 {
                     "id": "test_workflow",
                     "name": "Test Workflow",
+                    "version": "1.0.0",
                     "actions": [
                         {
                             "id": "test_click",
@@ -281,12 +286,13 @@ class TestWebSocketEventIntegration:
                             },
                         }
                     ],
+                    "connections": {},
                 }
             ],
         }
 
         # Parse config
-        config = ConfigParser().parse(config_data)
+        config = ConfigParser().parse_config(config_data)
 
         # Create executor
         executor = DelegatingActionExecutor(config)
@@ -308,7 +314,7 @@ class TestWebSocketEventIntegration:
 
         # Execute the click action
         action = config.workflows[0].actions[0]
-        executor.execute_action(action)
+        await executor.execute_action(action)
 
         # Record time after execution
         time_after = time.time()
