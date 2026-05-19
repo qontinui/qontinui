@@ -397,11 +397,17 @@ class DataOperationsExecutor:
             else:
                 input_str = str(config.input)
 
+            # StringExecutor's contract is a plain dict; config.parameters is
+            # a typed Pydantic model, so normalize before delegating.
+            parameters = config.parameters
+            if parameters is not None and hasattr(parameters, "model_dump"):
+                parameters = parameters.model_dump(exclude_none=True)
+
             # Perform operation using StringExecutor
             result_str = self._string_executor.execute(
                 config.operation,
                 input_str,
-                config.parameters,  # type: ignore[arg-type]
+                parameters,
             )
 
             # Store result
