@@ -268,15 +268,30 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         High consistency = pixel changes similarly across all examples
         Low consistency = pixel changes randomly
 
-        Formula: consistency = mean_diff / (std_diff + epsilon)
-        - High mean + low std = consistent change
-        - Low mean or high std = inconsistent change
+        The score is an *absolute* per-pixel property and must not depend on
+        the most extreme pixel elsewhere in the image. It is the product of
+        two bounded factors:
+
+        - change strength:   1 - exp(-mean_diff / CHANGE_SCALE)
+          Rejects pixels that barely change at all (static background / noise),
+          while saturating quickly so any genuine, repeatable change counts.
+        - reliability:       mean_diff / (mean_diff + std_diff + epsilon)
+          Approaches 1 when the change is repeatable (std << mean) and 0 when
+          it is erratic (std >> mean).
+
+        consistency = change_strength * reliability  (always in [0, 1])
+
+        This replaces image-relative min/max scaling, which wrongly collapsed
+        a perfectly consistent but modest change to ~0 whenever a single
+        higher-amplitude pixel existed elsewhere (e.g. a dialog interior being
+        suppressed by its own brighter border).
 
         Args:
             diff_images: Array of shape (N, H, W) with difference values
             method: Normalization method:
-                - 'minmax': Normalize to [0, 1] range (default)
-                - 'zscore': Z-score normalization then clip
+                - 'minmax': Absolute bounded normalization (default)
+                - 'zscore': Z-score normalization then sigmoid (relative;
+                  ranks pixels against each other within the image)
 
         Returns:
             Consistency map (H, W) with scores 0.0-1.0
@@ -285,15 +300,26 @@ class DifferentialConsistencyDetector(MultiScreenshotDetector):
         mean_diff = np.mean(diff_images, axis=0)
         std_diff = np.std(diff_images, axis=0)
 
-        # Consistency score: high mean + low std = consistent change
         # Add small epsilon to avoid division by zero
         epsilon = 1.0
-        consistency = mean_diff / (std_diff + epsilon)
 
-        # Normalize to 0-1 range
         if method == "minmax":
-            consistency = cv2.normalize(consistency, None, 0.0, 1.0, cv2.NORM_MINMAX)  # type: ignore[call-overload]
+            # Absolute, bounded consistency in [0, 1] (see docstring). This is
+            # independent of any other pixel's amplitude, so a modest but
+            # perfectly repeatable change scores high regardless of brighter
+            # edges elsewhere.
+            #
+            # CHANGE_SCALE controls how quickly the change-strength gate
+            # saturates. A few grey levels of repeatable change is a real UI
+            # element, so the gate must saturate fast; only ~zero change
+            # (static background / sensor noise) should be rejected.
+            change_scale = 5.0
+            change_strength = 1.0 - np.exp(-mean_diff / change_scale)
+            reliability = mean_diff / (mean_diff + std_diff + epsilon)
+            consistency = change_strength * reliability
         elif method == "zscore":
+            # Relative ranking of pixels against each other within the image.
+            consistency = mean_diff / (std_diff + epsilon)
             # Z-score normalization
             mean_val = np.mean(consistency)
             std_val = np.std(consistency)
