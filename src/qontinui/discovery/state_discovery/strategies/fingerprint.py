@@ -226,18 +226,26 @@ class FingerprintStrategy(StateDiscoveryStrategy):
         self._discovery.load_cooccurrence_export(synthetic_export)
         fp_states = self._discovery.discover_states()
 
-        # Step 4: Convert to unified types
+        # Step 4: Convert to unified types.
+        # In the ID-fallback path the synthetic fingerprint "hash" *is* the
+        # canonical element ID (e.g. "reg:a", "testid:app"). It must be passed
+        # through unchanged — no "fp:" prefix and no 12-char truncation, which
+        # would corrupt the IDs and silently collide long ones.
         elements = self._build_id_element_list(all_element_ids, render_element_ids)
-        states = self._convert_states(fp_states)
+        states = self._convert_states(
+            fp_states,
+            id_passthrough=True,
+            render_element_ids=render_element_ids,
+        )
 
-        # Build element to renders mapping
+        # Build element to renders mapping (canonical IDs, no fp: prefix)
         element_to_renders: dict[str, list[str]] = {}
         for elem_id in all_element_ids:
             render_ids = sorted(
                 rid for rid, eids in render_element_ids if elem_id in eids
             )
             if render_ids:
-                element_to_renders[f"fp:{elem_id[:12]}"] = render_ids
+                element_to_renders[elem_id] = render_ids
 
         stats = self._discovery.get_statistics()
 
@@ -480,7 +488,7 @@ class FingerprintStrategy(StateDiscoveryStrategy):
 
             elements.append(
                 DiscoveredElement(
-                    id=f"fp:{elem_id[:12]}",
+                    id=elem_id,
                     name=clean_name,
                     element_type=elem_type,
                     render_ids=render_ids,
@@ -531,20 +539,51 @@ class FingerprintStrategy(StateDiscoveryStrategy):
 
         return elements
 
-    def _convert_states(self, fp_states: list[Any]) -> list[DiscoveredState]:
-        """Convert fingerprint states to unified format."""
+    def _convert_states(
+        self,
+        fp_states: list[Any],
+        id_passthrough: bool = False,
+        render_element_ids: list[tuple[str, list[str]]] | None = None,
+    ) -> list[DiscoveredState]:
+        """Convert fingerprint states to unified format.
+
+        Args:
+            fp_states: Fingerprint states from the discovery pipeline
+            id_passthrough: When True (ID-fallback path), the fingerprint
+                hashes are already canonical element IDs and are kept as-is.
+                When False (true fingerprint path), hashes are opaque and are
+                shortened with an "fp:" prefix for display.
+            render_element_ids: Optional (render_id, element_ids) tuples used
+                to derive each state's render IDs (the renders in which all of
+                the state's elements co-occur). Only meaningful with
+                id_passthrough, where hashes are canonical element IDs.
+        """
         unified_states: list[DiscoveredState] = []
 
         for fp_state in fp_states:
             # Convert fingerprint hashes to element IDs
-            element_ids = [f"fp:{h[:12]}" for h in fp_state.fingerprint_hashes]
+            if id_passthrough:
+                element_ids = list(fp_state.fingerprint_hashes)
+            else:
+                element_ids = [f"fp:{h[:12]}" for h in fp_state.fingerprint_hashes]
+
+            # Derive render IDs: the renders in which the full element set of
+            # this state co-occurs (intersection across the state's elements).
+            render_ids: list[str] = []
+            if id_passthrough and render_element_ids is not None and element_ids:
+                element_set = set(element_ids)
+                render_ids = sorted(
+                    rid
+                    for rid, eids in render_element_ids
+                    if element_set.issubset(set(eids))
+                )
 
             unified_states.append(
                 DiscoveredState(
                     id=fp_state.state_id,
                     name=fp_state.name,
                     element_ids=element_ids,
-                    render_ids=[],  # Not directly available from fingerprint states
+                    render_ids=render_ids,
                     confidence=fp_state.confidence,
                     position_zone=fp_state.position_zone,
                     landmark_context=fp_state.landmark_context,
