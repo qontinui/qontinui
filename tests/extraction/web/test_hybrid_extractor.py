@@ -249,7 +249,8 @@ class TestHybridExtractorConfig:
 
         extractor = HybridExtractor()
 
-        assert extractor.include_accessibility is True
+        # Accessibility is OFF by default (perf); other options ON.
+        assert extractor.include_accessibility is False
         assert extractor.include_shadow_dom is True
         assert extractor.include_iframes is True
         assert extractor.screenshot_format == "jpeg"

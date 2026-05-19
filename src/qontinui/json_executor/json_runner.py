@@ -1,11 +1,43 @@
 """Main runner for executing Qontinui JSON configurations."""
 
+import asyncio
+from collections.abc import Coroutine
 from typing import Any
 
 from ..monitor.monitor_manager import MonitorManager
 from ..scheduling import SchedulerExecutor
 from .config_parser import ConfigParser, QontinuiConfig
 from .state_executor import StateExecutor
+
+
+def _run_coroutine_sync(coro: Coroutine[Any, Any, Any]) -> Any:
+    """Drive a coroutine to completion from synchronous code.
+
+    The action-execution pipeline is async (control-flow executors await
+    condition evaluation). The runner's public API is synchronous, so this
+    bridges the two. If a loop is already running on this thread the
+    coroutine is executed on a dedicated loop in a worker thread to avoid
+    re-entrancy errors.
+
+    Args:
+        coro: The coroutine to run.
+
+    Returns:
+        The coroutine's result.
+    """
+    try:
+        running_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        running_loop = None
+
+    if running_loop is None:
+        return asyncio.run(coro)
+
+    # A loop is already running on this thread; execute on a separate thread.
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
 
 
 class JSONRunner:
@@ -319,14 +351,28 @@ class JSONRunner:
         if not self.state_executor.current_state:
             self.state_executor.initialize()
 
-        # Execute the workflow through state executor's action executor
+        # Actions referenced as children of control-flow actions
+        # (then/else branches, loop/try bodies, switch cases) must only
+        # execute through their parent, not as standalone top-level actions.
+        child_action_ids = self._collect_child_action_ids(workflow)
+
+        # Execute the workflow through state executor's action executor.
+        # execute_action is a coroutine (async cascade for control-flow
+        # condition evaluation), so drive it to completion synchronously here.
         for action in workflow.actions:
             # Check stop flag before each action
             if self._should_stop:
                 print("\n=== Execution Stopped by User ===")
                 return False
 
-            if not self.state_executor.action_executor.execute_action(action):
+            # Skip actions owned by a control-flow parent
+            if action.id in child_action_ids:
+                continue
+
+            success = _run_coroutine_sync(
+                self.state_executor.action_executor.execute_action(action)
+            )
+            if not success:
                 print(f"Action {action.id} failed in workflow {workflow.name}")
                 if (
                     self.config.execution_settings is not None
@@ -339,6 +385,48 @@ class JSONRunner:
         print(f"State history: {self.state_executor.get_state_history()}")
 
         return True
+
+    @staticmethod
+    def _collect_child_action_ids(workflow: Any) -> set[str]:
+        """Collect IDs of actions owned by control-flow parents.
+
+        Control-flow actions (IF, LOOP, SWITCH, TRY_CATCH, ...) reference
+        their child actions by ID inside their config (``thenActions``,
+        ``elseActions``, ``actions``, switch cases, etc.). Those children
+        must run only through their parent, never as standalone top-level
+        actions. This walks every action config and treats any string that
+        matches another action's ID as an owned child reference.
+
+        Args:
+            workflow: The workflow whose actions to analyze.
+
+        Returns:
+            Set of action IDs that are owned by a control-flow parent.
+        """
+        all_ids = {a.id for a in workflow.actions}
+
+        def collect_ids(node: Any, found: set[str]) -> None:
+            if isinstance(node, dict):
+                for value in node.values():
+                    collect_ids(value, found)
+            elif isinstance(node, list):
+                for item in node:
+                    collect_ids(item, found)
+            elif isinstance(node, str) and node in all_ids:
+                found.add(node)
+
+        child_ids: set[str] = set()
+        for action in workflow.actions:
+            config = getattr(action, "config", None)
+            if config is None:
+                continue
+            referenced: set[str] = set()
+            collect_ids(config, referenced)
+            # An action never owns itself.
+            referenced.discard(action.id)
+            child_ids |= referenced
+
+        return child_ids
 
     def _configure_monitor(self, monitor_index: int):
         """Configure the monitor manager to use specified monitor.

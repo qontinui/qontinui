@@ -195,6 +195,10 @@ class FindAndClick(ActionInterface):
             matches: ActionResult with configuration
             object_collections: Objects to find and click
         """
+        # Local imports to avoid circular dep through find.match → actions.
+        from ....find.match import Match as FindMatch
+        from ....model.match import Match as ModelMatch
+
         # Get configuration
         if isinstance(matches.action_config, FindAndClickOptions):
             options = matches.action_config
@@ -243,10 +247,6 @@ class FindAndClick(ActionInterface):
                             screen_point = service.to_screen(
                                 match.target.x, match.target.y, monitor_index
                             )
-                            # Create a new match with translated coordinates
-                            from ....find.match import Match as FindMatch
-                            from ....model.match import Match as ModelMatch
-
                             translated_location = Location(
                                 x=screen_point.x,
                                 y=screen_point.y,
@@ -262,9 +262,9 @@ class FindAndClick(ActionInterface):
                             found_matches.append(translated_match)
                             matches.add_match(translated_match)
                         else:
-                            found_matches.append(match)
-                            # Class duality (see find.py:129) — pre-existing.
-                            matches.add_match(match)  # type: ignore[arg-type]
+                            wrapped = FindMatch(match_object=match)
+                            found_matches.append(wrapped)
+                            matches.add_match(wrapped)
 
         if not found_matches:
             matches.with_success(False)

@@ -376,16 +376,27 @@ class TestOptionalTypeHandling:
     """Test Optional type handling."""
 
     def test_optional_return_types(self):
-        """Test functions with Optional return types."""
+        """Test the StateRegistry lookup contract.
+
+        Registry lookups (get_state, get_state_id) raise StateNotFoundException
+        when the state is missing; has_state is the non-raising predicate.
+        """
+        import pytest
+
+        from qontinui.state_exceptions import StateNotFoundException
+
         registry = StateRegistry()
 
-        # get_state returns Optional[type]
-        result = registry.get_state("nonexistent")
-        assert result is None
+        # has_state is the non-raising predicate.
+        assert registry.has_state("nonexistent") is False
 
-        # get_state_id returns Optional[int]
-        result_id = registry.get_state_id("nonexistent")
-        assert result_id is None
+        # get_state raises StateNotFoundException for missing states.
+        with pytest.raises(StateNotFoundException):
+            registry.get_state("nonexistent")
+
+        # get_state_id also raises StateNotFoundException for missing states.
+        with pytest.raises(StateNotFoundException):
+            registry.get_state_id("nonexistent")
 
     def test_optional_parameters(self):
         """Test functions with Optional parameters."""

@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.0.0",
   "metadata": {
     "name": "Test Workflow - Variables",
     "description": "Test workflow for SET_VARIABLE and GET_VARIABLE functionality"
@@ -15,7 +15,13 @@
     }
   ],
   "transitions": [],
-  "processes": [
+  "images": [],
+  "schedules": [],
+  "execution_settings": {
+    "failure_strategy": "stop",
+    "max_retries": 3
+  },
+  "workflows": [
     {
       "id": "process-variables-test",
       "name": "Variables Test Process",
@@ -64,7 +70,11 @@
           "type": "MATH_OPERATION",
           "config": {
             "operation": "ADD",
-            "operands": [10, 20, 30],
+            "operands": [
+              10,
+              20,
+              30
+            ],
             "outputVariable": "sum"
           }
         },
@@ -75,18 +85,18 @@
             "operation": "CONCAT",
             "input": "Hello",
             "parameters": {
-              "strings": [" ", "World", "!"]
+              "strings": [
+                " ",
+                "World",
+                "!"
+              ]
             },
             "outputVariable": "message"
           }
         }
-      ]
+      ],
+      "version": "1.0.0",
+      "connections": {}
     }
-  ],
-  "images": [],
-  "schedules": [],
-  "execution_settings": {
-    "failure_strategy": "stop",
-    "max_retries": 3
-  }
+  ]
 }

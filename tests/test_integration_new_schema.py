@@ -196,14 +196,14 @@ def test_json_import_and_validation():
     print("✓ JSON imported and validated successfully")
 
 
-def test_loop_execution():
+async def test_loop_execution():
     """Test 3: Execute LOOP action."""
     print("\nExecuting LOOP action...")
 
     # Track executed actions
     executed_actions = []
 
-    def mock_executor(action_id: str, variables: dict) -> dict:
+    async def mock_executor(action_id: str, variables: dict) -> dict:
         executed_actions.append({"action_id": action_id, "variables": variables.copy()})
         return {"success": True}
 
@@ -223,7 +223,7 @@ def test_loop_execution():
     )
 
     # Execute
-    result = executor.execute_loop(loop_action)
+    result = await executor.execute_loop(loop_action)
 
     print(f"Loop completed: {result['iterations_completed']} iterations")
     print(f"Actions executed: {len(executed_actions)}")
@@ -240,23 +240,15 @@ def test_loop_execution():
     print("✓ LOOP action executed successfully")
 
 
-def test_if_else_execution():
+async def test_if_else_execution():
     """Test 4: Execute IF/ELSE action."""
     print("\nExecuting IF/ELSE action...")
 
     executed_actions = []
 
-    def mock_executor(action_id: str, variables: dict) -> dict:
+    async def mock_executor(action_id: str, variables: dict) -> dict:
         executed_actions.append(action_id)
         return {"success": True}
-
-    # Create executor
-    executor = ControlFlowExecutor(action_executor=mock_executor)
-
-    # Test THEN branch
-    print("\n  Testing THEN branch (condition true)...")
-    executed_actions.clear()
-    executor.variables = {"temperature": 25}
 
     if_action = Action(
         id="test-if",
@@ -273,7 +265,16 @@ def test_if_else_execution():
         },
     )
 
-    result = executor.execute_if(if_action)
+    # Test THEN branch. Variables must be supplied at construction time so
+    # they are wired into the executor's ExecutionContext (reassigning
+    # executor.variables after construction does not propagate).
+    print("\n  Testing THEN branch (condition true)...")
+    executed_actions.clear()
+    executor = ControlFlowExecutor(
+        action_executor=mock_executor, variables={"temperature": 25}
+    )
+
+    result = await executor.execute_if(if_action)
 
     print(f"    Condition result: {result['condition_result']}")
     print(f"    Branch taken: {result['branch_taken']}")
@@ -287,9 +288,11 @@ def test_if_else_execution():
     # Test ELSE branch
     print("\n  Testing ELSE branch (condition false)...")
     executed_actions.clear()
-    executor.variables = {"temperature": 15}
+    executor = ControlFlowExecutor(
+        action_executor=mock_executor, variables={"temperature": 15}
+    )
 
-    result = executor.execute_if(if_action)
+    result = await executor.execute_if(if_action)
 
     print(f"    Condition result: {result['condition_result']}")
     print(f"    Branch taken: {result['branch_taken']}")
@@ -568,7 +571,7 @@ def test_new_format_validation():
             "config": {
                 "target": {
                     "type": "image",
-                    "imageId": "button-1"
+                    "imageIds": ["button-1"]
                 },
                 "numberOfClicks": 1,
                 "mouseButton": "LEFT"

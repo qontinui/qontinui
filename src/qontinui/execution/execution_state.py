@@ -50,24 +50,10 @@ class ExecutionState:
             enable_history=enable_history,
         )
 
-        # Initialize tracker with references to controller's internal state
-        state = self._controller._get_internal_state()
-        self._tracker = ExecutionTracker(
-            workflow_id=state["workflow_id"],
-            status=state["status"],
-            start_time=state["start_time"],
-            end_time=state["end_time"],
-            visited=state["visited"],
-            pending=state["pending"],
-            current_action=state["current_action"],
-            iteration_count=state["iteration_count"],
-            history=state["history"],
-            action_records=state["action_records"],
-            context=state["context"],
-            errors=state["errors"],
-            paused=state["paused"],
-            max_iterations=state["max_iterations"],
-        )
+        # Initialize tracker with a live reference to the controller. The tracker
+        # reads state through the controller so lifecycle transitions are always
+        # reflected (CQS: controller mutates, tracker queries the same state).
+        self._tracker = ExecutionTracker(self._controller)
 
         # Store for direct access
         self.workflow_id = workflow_id
@@ -142,6 +128,10 @@ class ExecutionState:
     ) -> None:
         """Add an action to the pending queue."""
         self._controller.add_pending(action_id, input_index, context, depth)
+
+    def add_pending_front(self, pending: PendingAction) -> None:
+        """Re-insert a pending action at the front of the queue."""
+        self._controller.add_pending_front(pending)
 
     def get_next_pending(self) -> PendingAction | None:
         """Get the next pending action from the queue."""

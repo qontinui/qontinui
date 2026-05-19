@@ -87,9 +87,16 @@ class RoutingContext:
         )
 
         self.records.append(record)
+
+        # Visit count tracks how many times an action is *entered* during
+        # traversal. The origin action is entered when first seen as a source;
+        # every routed target is entered each time it is reached.
+        if from_action not in self.visited_actions:
+            self.action_visit_count[from_action] += 1
+        self.action_visit_count[to_action] += 1
+
         self.visited_actions.add(from_action)
         self.visited_actions.add(to_action)
-        self.action_visit_count[from_action] += 1
         self.output_usage[from_action][output_type] += 1
 
     def enter_action(self, action_id: str, output_type: str = "main") -> None:

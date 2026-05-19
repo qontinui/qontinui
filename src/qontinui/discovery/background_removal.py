@@ -117,15 +117,40 @@ class BackgroundRemovalAnalyzer:
         height, width = screenshots[0].shape[:2]
         background_mask = np.zeros((height, width), dtype=np.uint8)
 
-        # Strategy 1: Temporal variance (pixels that change between screenshots)
-        if (
+        # Strategy 1: Temporal variance (pixels that change between screenshots).
+        #
+        # This is the authoritative signal for this module's purpose: removing
+        # *dynamic* backgrounds while preserving UI elements that remain fixed in
+        # position. A pixel that is temporally stable across screenshots is, by
+        # definition, a fixed element and must be treated as foreground -- even if
+        # it happens to be flat-colored or low-edge (e.g. a solid icon or button).
+        #
+        # The single-frame heuristics below (edge density, uniformity) are weak
+        # priors that cannot distinguish a static foreground element from
+        # background on their own. They are therefore only allowed to *refine*
+        # the classification of pixels that temporal variance has not already
+        # established as stable foreground -- never to promote a temporally
+        # stable pixel to background.
+        temporal_available = (
             self.config.use_temporal_variance
             and len(screenshots) >= self.config.min_screenshots_for_variance
-        ):
+        )
+        stable_foreground = np.zeros((height, width), dtype=bool)
+
+        if temporal_available:
             variance_mask = self._detect_by_temporal_variance(screenshots)
             background_mask = cv2.bitwise_or(background_mask, variance_mask).astype(
                 np.uint8
             )
+            # Pixels that did NOT vary across screenshots are fixed UI elements.
+            #
+            # Only honor this protection when temporal variance actually produced
+            # a meaningful background signal. If no pixel varied enough to clear
+            # the variance threshold there is no dynamic background to anchor on,
+            # so the single-frame heuristics must remain free to classify the
+            # frame on their own (the temporal signal carries no information).
+            if np.any(variance_mask > 0):
+                stable_foreground = variance_mask == 0
             logger.debug(
                 f"Temporal variance detected {np.sum(variance_mask > 0)} background pixels"
             )
@@ -133,6 +158,9 @@ class BackgroundRemovalAnalyzer:
         # Strategy 2: Edge density (low edge regions are likely background)
         if self.config.use_edge_density:
             edge_mask = self._detect_by_edge_density(screenshots[0])
+            if temporal_available:
+                edge_mask = edge_mask.copy()
+                edge_mask[stable_foreground] = 0
             background_mask = cv2.bitwise_or(background_mask, edge_mask).astype(
                 np.uint8
             )
@@ -143,6 +171,9 @@ class BackgroundRemovalAnalyzer:
         # Strategy 3: Uniformity (large uniform regions are likely background)
         if self.config.use_uniformity:
             uniformity_mask = self._detect_by_uniformity(screenshots[0])
+            if temporal_available:
+                uniformity_mask = uniformity_mask.copy()
+                uniformity_mask[stable_foreground] = 0
             background_mask = cv2.bitwise_or(background_mask, uniformity_mask).astype(
                 np.uint8
             )
@@ -239,13 +270,22 @@ class BackgroundRemovalAnalyzer:
 
     def _detect_by_uniformity(self, screenshot: np.ndarray) -> np.ndarray:
         """
-        Detect background by finding large uniform color regions
+        Detect background by finding large uniform regions that match the
+        dominant background color.
+
+        Uniformity alone does NOT imply background: a solid-colored icon or
+        button is perfectly uniform yet is a foreground element. The
+        distinguishing property of background is that it is both uniform *and*
+        consistent with the image's dominant (most common) color. A uniform
+        region whose color is distinct from that dominant color is a foreground
+        element sitting on top of the background and must not be removed.
 
         Args:
             screenshot: Single screenshot image
 
         Returns:
-            Binary mask where 255 = background (uniform regions)
+            Binary mask where 255 = background (uniform regions matching the
+            dominant background color)
         """
         height, width = screenshot.shape[:2]
 
@@ -257,6 +297,20 @@ class BackgroundRemovalAnalyzer:
                 cv2.cvtColor(screenshot, cv2.COLOR_GRAY2BGR), cv2.COLOR_BGR2LAB
             )
 
+        # Estimate the dominant background color as the per-channel median of
+        # the image. The background is, by construction, the largest region, so
+        # the median is a robust estimate that is unaffected by smaller
+        # foreground elements.
+        dominant_color = np.median(
+            lab.reshape(-1, 3).astype(np.float32), axis=0
+        )
+
+        # Distance from the dominant color beyond which a uniform region is
+        # considered a distinct (foreground) element rather than background.
+        # Reuse the uniformity threshold so a single knob governs "how close to
+        # the background color counts as background".
+        color_match_threshold = self.config.uniformity_threshold
+
         # Calculate local standard deviation
         region_size = self.config.uniformity_region_size
         uniformity_mask = np.zeros((height, width), dtype=np.uint8)
@@ -266,14 +320,24 @@ class BackgroundRemovalAnalyzer:
                 y_end = min(y + region_size, height)
                 x_end = min(x + region_size, width)
 
-                region = lab[y:y_end, x:x_end]
+                region = lab[y:y_end, x:x_end].astype(np.float32)
 
                 # Calculate std dev for each channel
                 std_devs = [np.std(region[:, :, i]) for i in range(3)]
                 avg_std = np.mean(std_devs)
 
-                # Mark as background if very uniform
-                if avg_std < self.config.uniformity_threshold:
+                # Only uniform regions can be background.
+                if avg_std >= self.config.uniformity_threshold:
+                    continue
+
+                # A uniform region is background only if its color matches the
+                # dominant background color; otherwise it is a solid foreground
+                # element (icon/button) and must be preserved.
+                region_mean = region.reshape(-1, 3).mean(axis=0)
+                color_distance = float(
+                    np.linalg.norm(region_mean - dominant_color)
+                )
+                if color_distance < color_match_threshold:
                     uniformity_mask[y:y_end, x:x_end] = 255
 
         return uniformity_mask

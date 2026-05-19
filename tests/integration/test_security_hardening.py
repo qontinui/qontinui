@@ -294,8 +294,9 @@ class TestPathValidation:
 
     def test_absolute_vs_relative_paths(self):
         """Test handling of absolute vs relative paths."""
-        # Absolute paths
-        abs_path = Path("/tmp/test.txt")
+        # Absolute paths (use the platform temp dir so this is OS-portable —
+        # a hardcoded POSIX "/tmp/..." is not absolute on Windows)
+        abs_path = Path(tempfile.gettempdir()) / "test.txt"
         assert abs_path.is_absolute()
 
         # Relative paths

@@ -710,7 +710,16 @@ class UIBridgeRuntime:
             if self.config.state_activation_delay_ms > 0:
                 time.sleep(self.config.state_activation_delay_ms / 1000)
 
-            # Update multistate manager
+            # Update multistate manager. The runtime is *driving* the UI: the
+            # transition's actions have already executed and mutated the real
+            # UI, so the manager must record the transition rather than reject
+            # it on a stale precondition. Ensure the transition's from_states
+            # are active before delegating so the manager bookkeeping stays
+            # consistent with the UI we just acted on.
+            if transition.from_states:
+                current = set(self.manager.active_states)
+                if not set(transition.from_states).issubset(current):
+                    self.manager.activate_states(set(transition.from_states))
             self.manager.execute_transition(transition_id)
 
             duration_ms = (time.time() - start_time) * 1000

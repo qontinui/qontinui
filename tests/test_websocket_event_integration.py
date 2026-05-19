@@ -354,7 +354,8 @@ class TestWebSocketEventIntegration:
 
         print(f"✓ ACTION_COMPLETED event has timestamp in data payload: {timestamp}")
 
-    def test_all_events_have_millisecond_precision_timestamps(self):
+    @pytest.mark.asyncio
+    async def test_all_events_have_millisecond_precision_timestamps(self):
         """Verify all timestamps have millisecond precision (not just second precision)."""
         # This test checks that time.time() is used (which has microsecond precision)
         # rather than int(time.time()) which would only have second precision
@@ -368,26 +369,35 @@ class TestWebSocketEventIntegration:
         register_callback(EventType.MATCH_ATTEMPTED, collect_all_events)
         register_callback(EventType.MOUSE_CLICKED, collect_all_events)
 
-        # Execute various actions
+        # Execute various actions — Find.execute() is async, must be awaited or
+        # the coroutine never runs and this test passes vacuously.
         test_image = Image.from_numpy(
             np.zeros((30, 30, 3), dtype=np.uint8), name="precision-test"
         )
         screenshot = Image.from_numpy(np.zeros((100, 100, 3), dtype=np.uint8))
-        Find(test_image).screenshot(screenshot).execute()
+        await Find(test_image).screenshot(screenshot).execute()
 
         Mouse.click_at(50, 50)
 
+        # Must have actually produced events with timestamps — otherwise the
+        # assertion below silently passes against an empty list.
+        timestamped_events = [
+            event for event in events_received if "timestamp" in event.data
+        ]
+        assert (
+            timestamped_events
+        ), "No events with timestamps were received; precision check is vacuous"
+
         # Verify timestamps have decimal precision
-        for event in events_received:
-            if "timestamp" in event.data:
-                timestamp = event.data["timestamp"]
-                # Check that timestamp has fractional component (millisecond precision)
-                assert timestamp != int(
-                    timestamp
-                ), f"Timestamp should have millisecond precision, got {timestamp}"
-                print(
-                    f"✓ {event.type} timestamp has millisecond precision: {timestamp}"
-                )
+        for event in timestamped_events:
+            timestamp = event.data["timestamp"]
+            # Check that timestamp has fractional component (millisecond precision)
+            assert timestamp != int(
+                timestamp
+            ), f"Timestamp should have millisecond precision, got {timestamp}"
+            print(
+                f"✓ {event.type} timestamp has millisecond precision: {timestamp}"
+            )
 
 
 if __name__ == "__main__":

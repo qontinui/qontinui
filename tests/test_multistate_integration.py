@@ -23,7 +23,7 @@ pytest.importorskip("multistate")
 
 
 from qontinui.model.state.state import State
-from qontinui.model.transition.enhanced_state_transition import StateTransition
+from qontinui.model.transition.enhanced_state_transition import CodeStateTransition
 from qontinui.multistate_integration.enhanced_state_memory import EnhancedStateMemory
 from qontinui.multistate_integration.enhanced_transition_executor import (
     EnhancedTransitionExecutor,
@@ -49,10 +49,13 @@ class MockStateService:
         self.states[3] = State(id=3, name="Sidebar")
         self.states[4] = State(id=4, name="Content Area")
 
-        # Dialog states
-        self.states[10] = State(id=10, name="Settings Dialog", blocking=True)
-        self.states[11] = State(id=11, name="File Open Dialog", blocking=True)
-        self.states[12] = State(id=12, name="Save Confirmation Modal", blocking=True)
+        # Dialog states (blocking is a property setter post-DDD refactor; assign after construction)
+        self.states[10] = State(id=10, name="Settings Dialog")
+        self.states[10].blocking = True
+        self.states[11] = State(id=11, name="File Open Dialog")
+        self.states[11].blocking = True
+        self.states[12] = State(id=12, name="Save Confirmation Modal")
+        self.states[12].blocking = True
 
         # Feature states
         self.states[20] = State(id=20, name="Search Panel")
@@ -120,13 +123,14 @@ def test_phased_transition_executor():
     memory.add_state(1, activate=True)
 
     # Create transition to open workspace
-    workspace_transition = StateTransition(
+    # path_cost replaces score (score is read-only @property; path_cost is the dataclass field, int-typed)
+    workspace_transition = CodeStateTransition(
         id=1,
         name="Open Workspace",
         from_states={1},
         activate={2, 3, 4},  # Toolbar, Sidebar, Content
         exit=set(),
-        score=0.5,
+        path_cost=1,
     )
 
     # Execute with dry run first
@@ -141,13 +145,13 @@ def test_phased_transition_executor():
     print(f"Active states after: {memory.active_states}")
 
     # Create failing transition (to non-existent state)
-    bad_transition = StateTransition(
+    bad_transition = CodeStateTransition(
         id=2,
         name="Bad Transition",
         from_states={1},
         activate={999},  # Non-existent
         exit=set(),
-        score=0.5,
+        path_cost=1,
     )
 
     print("\nTrying invalid transition...")
@@ -170,41 +174,41 @@ def test_multi_target_pathfinding():
     memory = EnhancedStateMemory(state_service)
     navigator = PathfindingNavigator(memory)
 
-    # Register transitions
+    # Register transitions (integer path_cost preserves relative ordering; was float score=)
     transitions = [
         # Main to workspace
-        StateTransition(
+        CodeStateTransition(
             id=1,
             name="Open Workspace",
             from_states={1},
             activate={2, 3, 4},
             exit=set(),
-            score=1.0,
+            path_cost=2,
         ),
         # Workspace to panels
-        StateTransition(
+        CodeStateTransition(
             id=2,
             name="Show Search",
             from_states={2, 3, 4},
             activate={20},
             exit=set(),
-            score=0.5,
+            path_cost=1,
         ),
-        StateTransition(
+        CodeStateTransition(
             id=3,
             name="Show Properties",
             from_states={2, 3, 4},
             activate={21},
             exit=set(),
-            score=0.5,
+            path_cost=1,
         ),
-        StateTransition(
+        CodeStateTransition(
             id=4,
             name="Show Debug",
             from_states={2, 3, 4},
             activate={22},
             exit=set(),
-            score=0.5,
+            path_cost=1,
         ),
     ]
 

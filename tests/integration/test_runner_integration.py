@@ -579,9 +579,26 @@ class TestRunnerIntegrationPoints:
 
     # Helper methods
     def _call_runner_service(self, command: str, **kwargs) -> dict[str, Any]:
-        """Mock calling runner service."""
-        # In real implementation, would use subprocess or HTTP
-        return {"success": True, "command": command, "params": kwargs}
+        """Invoke the runner service via the documented subprocess boundary.
+
+        Builds a `qontinui-runner <command> --key=value ...` argv and shells out
+        via subprocess.run. Tests patch subprocess.run to verify the integration
+        point — this helper must therefore actually call it, not stub a dict.
+        """
+        import subprocess
+
+        argv = ["qontinui-runner", command]
+        for key, value in kwargs.items():
+            argv.append(f"--{key}={value}")
+
+        completed = subprocess.run(argv, capture_output=True, text=True, check=False)
+        return {
+            "success": completed.returncode == 0,
+            "command": command,
+            "params": kwargs,
+            "stdout": completed.stdout,
+            "stderr": completed.stderr,
+        }
 
     def _load_screenshots_from_dir(self, directory: Path) -> list[np.ndarray]:
         """Load screenshots from directory."""

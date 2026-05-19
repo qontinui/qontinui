@@ -286,12 +286,15 @@ class TestStateDiscovery:
         """Test processing a single render."""
         discovery = UIBridgeStateDiscovery()
 
+        # Registry ID lives on the node-level "id" field (bridge registry is
+        # the source of truth). The legacy data-ui-id attribute was removed.
         render = {
             "id": "render_1",
             "type": "dom_snapshot",
             "snapshot": {
                 "root": {
-                    "attributes": {"data-ui-id": "nav-menu"},
+                    "id": "nav-menu",
+                    "attributes": {},
                     "children": [
                         {"attributes": {"data-testid": "sidebar"}},
                     ],
@@ -335,7 +338,9 @@ class TestTransitionDetector:
 
     def test_record_action(self) -> None:
         """Test recording an action with state change."""
-        config = TransitionDetectorConfig(min_observation_count=1)
+        # Two observations required so the first is unconfirmed and the
+        # second confirms the pattern.
+        config = TransitionDetectorConfig(min_observation_count=2)
         detector = TransitionDetector(config)
 
         # Record an action

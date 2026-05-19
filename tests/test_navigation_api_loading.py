@@ -18,8 +18,8 @@ def test_load_bdo_config():
     from qontinui import navigation_api, registry
     from qontinui.model.element.image import Image
 
-    # Load the configuration file
-    config_path = Path(__file__).parent.parent.parent / "bdo_config (47).json"
+    # Load the configuration file (in-tree fixture so a fresh CI checkout works)
+    config_path = Path(__file__).parent / "data" / "bdo_config.json"
     assert config_path.exists(), f"Config file not found at {config_path}"
 
     with open(config_path) as f:
@@ -114,8 +114,8 @@ def test_transition_mapping():
     from qontinui import navigation_api, registry
     from qontinui.model.element.image import Image
 
-    # Load the configuration file
-    config_path = Path(__file__).parent.parent.parent / "bdo_config (47).json"
+    # Load the configuration file (in-tree fixture so a fresh CI checkout works)
+    config_path = Path(__file__).parent / "data" / "bdo_config.json"
     with open(config_path) as f:
         config = json.load(f)
 

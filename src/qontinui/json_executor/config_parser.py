@@ -885,6 +885,7 @@ class QontinuiConfig(BaseModel):
     # Runtime data
     image_directory: Path | None = None
     workflow_map: dict[str, Workflow] = Field(default_factory=dict)
+    action_map: dict[str, Any] = Field(default_factory=dict)
     state_map: dict[str, State] = Field(default_factory=dict)
     image_map: dict[str, ImageAsset] = Field(default_factory=dict)
     schedule_map: dict[str, Any] = Field(
@@ -912,6 +913,13 @@ class QontinuiConfig(BaseModel):
 
         parser = WorkflowParser()
         self.workflow_map = parser.build_workflow_map(self.workflows)
+        # Flatten every action across all workflows by ID so control-flow
+        # executors can resolve nested action references (then/else/loop body).
+        self.action_map = {
+            action.id: action
+            for workflow in self.workflows
+            for action in workflow.actions
+        }
         self.state_map = {s.id: s for s in self.states}
         self.schedule_map = {s.id: s for s in self.schedules}
 
