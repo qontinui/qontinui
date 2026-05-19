@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from ..model.state.state_image import StateImage
+    from .internal.execution.action_chain_executor import ActionChainExecutor
 
+from .action_chain_options import ActionChainOptions
 from .action_config import ActionConfig
 
 logger = logging.getLogger(__name__)
@@ -113,17 +115,16 @@ class Action:
         for obj_coll in object_collections:
             obj_coll.reset_times_acted_on()
 
-        # Check if this config has subsequent actions chained
-        subsequent_actions = action_config.get_subsequent_actions()
-        if subsequent_actions:
-            # Execute the chain
+        # Execute the chain when the config is an ActionChainOptions.
+        # execute_chain reads chained_actions / initial_action / strategy directly
+        # from the ActionChainOptions; the base ActionConfig.subsequent_actions list
+        # is independent and not consumed here.
+        if isinstance(action_config, ActionChainOptions):
             if self.action_chain_executor:
-                # action_chain_executor is typed against the local placeholder at line 293;
-                # the real ActionChainExecutor accepts ActionResultBuilder.
                 return await self.action_chain_executor.execute_chain(
                     action_config,
-                    ActionResultBuilder(),  # type: ignore[arg-type]
-                    object_collections,
+                    ActionResultBuilder(),
+                    *object_collections,
                 )
             else:
                 logger.warning(
@@ -291,13 +292,3 @@ class Action:
 
         # Already an action_result.ActionResult
         return cast(ActionResult, result)
-
-
-# Forward reference for dependencies not yet implemented
-class ActionChainExecutor:
-    """Placeholder for ActionChainExecutor class."""
-
-    async def execute_chain(
-        self, config: ActionConfig, result: ActionResult, collections: tuple[Any, ...]
-    ) -> ActionResult:
-        return result

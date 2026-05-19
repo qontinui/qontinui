@@ -100,6 +100,9 @@ class Find(ActionInterface):
         Raises:
             ValueError: If matches does not contain BaseFindOptions configuration
         """
+        # Local import to avoid circular dep through find.match → actions.
+        from ....find.match import Match as FindMatch
+
         # Validate configuration
         action_config = matches.action_config
         if not isinstance(action_config, BaseFindOptions):
@@ -126,9 +129,7 @@ class Find(ActionInterface):
             for result in results:
                 if result.found:
                     for match in result.matches:
-                        # find_action returns model.match.Match; ActionResult stores find.match.Match.
-                        # Pre-existing class duality predates this refactor — see PLAN follow-up.
-                        matches.add_match(match)  # type: ignore[arg-type]
+                        matches.add_match(FindMatch(match_object=match))
 
         # Set success based on whether matches were found
         if matches.matches:

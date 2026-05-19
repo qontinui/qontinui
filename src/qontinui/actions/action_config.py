@@ -7,7 +7,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from .action_result import ActionResult
 
 
 class Illustrate(Enum):
@@ -347,10 +350,3 @@ class ActionConfigBuilder(ABC):
             Configured ActionConfig instance
         """
         pass
-
-
-# Forward reference
-class ActionResult:
-    """Placeholder for ActionResult class."""
-
-    pass
