@@ -139,7 +139,8 @@ class TestSemanticObject(unittest.TestCase):
 
         obj.set_text("Hello World")
         self.assertEqual(obj.get_text(), "Hello World")
-        self.assertEqual(obj.get_attribute("text"), "Hello World")
+        # set_text stores under the typed "ocr_text" attribute key.
+        self.assertEqual(obj.get_attribute("ocr_text"), "Hello World")
 
     def test_distance_calculation(self):
         """Test distance between objects."""

@@ -150,9 +150,9 @@ class TestDOMStabilityWaiterConfig:
         """Test default configuration."""
         waiter = DOMStabilityWaiter()
 
-        assert waiter.stability_threshold_ms == 500
-        assert waiter.max_wait_ms == 10000
-        assert waiter.poll_interval_ms == 100
+        assert waiter.stability_threshold_ms == 100
+        assert waiter.max_wait_ms == 5000
+        assert waiter.poll_interval_ms == 50
 
     def test_custom_config(self) -> None:
         """Test custom configuration."""

@@ -19,11 +19,17 @@ def sample_config(tmp_path):
     """Create a minimal valid config for testing."""
     config = {
         "version": "2.0.0",
-        "metadata": {"name": "Test Config", "description": "Test automation"},
+        "metadata": {
+            "name": "Test Config",
+            "description": "Test automation",
+            "created": "2026-01-01T00:00:00Z",
+            "modified": "2026-01-01T00:00:00Z",
+        },
         "states": [
             {
                 "id": "state-1",
                 "name": "Initial State",
+                "position": {"x": 0, "y": 0},
                 "is_initial": True,
                 "outgoing_transitions": [],
                 "incoming_transitions": [],

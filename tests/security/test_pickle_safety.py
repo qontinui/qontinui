@@ -10,6 +10,14 @@ from pathlib import Path
 import pytest
 
 from qontinui.persistence.serializers import JsonSerializer, PickleSerializer
+from qontinui.storage_ai_exceptions import StorageReadException, StorageWriteException
+
+
+class _PickleSafetyCustomObject:
+    """Module-level class so pickle can locate it (function-local classes are unpicklable)."""
+
+    def __init__(self):
+        self.value = 42
 
 
 class TestPickleNormalOperation:
@@ -137,19 +145,27 @@ class TestErrorHandling:
     """Test that serialization errors are handled properly."""
 
     def test_deserialize_nonexistent_file(self, tmp_path: Path):
-        """Test that deserializing non-existent file raises error."""
+        """Test that deserializing non-existent file raises wrapped error.
+
+        The persistence layer wraps low-level I/O errors in StorageReadException
+        as a deliberate post-refactor contract.
+        """
         serializer = PickleSerializer()
         file_path = tmp_path / "nonexistent.pkl"
 
-        with pytest.raises((FileNotFoundError, OSError)):
+        with pytest.raises(StorageReadException):
             serializer.deserialize(file_path)
 
     def test_serialize_to_invalid_path(self):
-        """Test that serializing to invalid path raises error."""
+        """Test that serializing to invalid path raises wrapped error.
+
+        The persistence layer wraps low-level I/O errors in StorageWriteException
+        as a deliberate post-refactor contract.
+        """
         serializer = PickleSerializer()
         invalid_path = Path("/invalid/path/that/does/not/exist/file.pkl")
 
-        with pytest.raises((FileNotFoundError, OSError, PermissionError)):
+        with pytest.raises(StorageWriteException):
             serializer.serialize({"data": "value"}, invalid_path)
 
 
@@ -204,18 +220,14 @@ class TestComparisonWithJson:
         """Test that pickle handles complex Python objects."""
         pickle_serializer = PickleSerializer()
 
-        # Custom class
-        class CustomObject:
-            def __init__(self):
-                self.value = 42
-
-        data = {"obj": CustomObject()}
+        # Use module-level class so pickle can locate it on load.
+        data = {"obj": _PickleSafetyCustomObject()}
         file_path = tmp_path / "test.pkl"
 
         pickle_serializer.serialize(data, file_path)
         loaded = pickle_serializer.deserialize(file_path)
 
-        assert isinstance(loaded["obj"], CustomObject)
+        assert isinstance(loaded["obj"], _PickleSafetyCustomObject)
         assert loaded["obj"].value == 42
 
 
