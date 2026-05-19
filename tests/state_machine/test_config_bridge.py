@@ -297,7 +297,12 @@ class TestConfigBridge:
         dashboard = next(s for s in config["states"] if s["id"] == "dashboard")
         assert len(dashboard["regions"]) == 3
         for region in dashboard["regions"]:
-            assert "bounds" in region
+            # Region geometry is stored as flat x/y/width/height keys
+            # (not a nested "bounds" object).
+            assert "x" in region
+            assert "y" in region
+            assert "width" in region
+            assert "height" in region
             assert region["isSearchRegion"] is True
 
     def test_config_is_json_serializable(self) -> None:
