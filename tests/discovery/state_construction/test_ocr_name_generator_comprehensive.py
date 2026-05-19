@@ -202,7 +202,12 @@ class TestTextExtractionMocked:
         assert text == ""
 
     @patch(
-        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        True,
+    )
+    @patch(
+        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract",
+        create=True,
     )
     def test_extract_text_tesseract_success(
         self, mock_pytesseract, mock_generator_tesseract
@@ -221,7 +226,12 @@ class TestTextExtractionMocked:
         assert text == "Main Menu"
 
     @patch(
-        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+        "qontinui.discovery.state_construction.ocr_name_generator.HAS_TESSERACT",
+        True,
+    )
+    @patch(
+        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract",
+        create=True,
     )
     def test_extract_text_tesseract_empty(
         self, mock_pytesseract, mock_generator_tesseract
@@ -329,7 +339,8 @@ class TestProminentTextExtraction:
         True,
     )
     @patch(
-        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract",
+        create=True,
     )
     def test_extract_prominent_tesseract_largest_height(self, mock_pytesseract):
         """Test tesseract prominence based on font height.
@@ -356,7 +367,8 @@ class TestProminentTextExtraction:
         True,
     )
     @patch(
-        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract"
+        "qontinui.discovery.state_construction.ocr_name_generator.pytesseract",
+        create=True,
     )
     def test_extract_prominent_tesseract_confidence_filter(self, mock_pytesseract):
         """Test that low-confidence text is filtered out.

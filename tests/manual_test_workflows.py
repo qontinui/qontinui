@@ -21,7 +21,7 @@ def test_loop_workflow():
     print("TEST: FOR Loop Workflow")
     print("=" * 70)
 
-    MockModeManager.enable_mock_mode()
+    MockModeManager.set_mock_mode(True)
 
     workflow_path = Path(__file__).parent / "test_workflow_loop.json"
     runner = JSONRunner(str(workflow_path))
@@ -50,7 +50,7 @@ def test_if_workflow():
     print("TEST: IF/ELSE Workflow")
     print("=" * 70)
 
-    MockModeManager.enable_mock_mode()
+    MockModeManager.set_mock_mode(True)
 
     workflow_path = Path(__file__).parent / "test_workflow_if.json"
     runner = JSONRunner(str(workflow_path))
@@ -81,7 +81,7 @@ def test_variables_workflow():
     print("TEST: Variable Operations Workflow")
     print("=" * 70)
 
-    MockModeManager.enable_mock_mode()
+    MockModeManager.set_mock_mode(True)
 
     workflow_path = Path(__file__).parent / "test_workflow_variables.json"
     runner = JSONRunner(str(workflow_path))
@@ -118,7 +118,7 @@ def test_collections_workflow():
     print("TEST: Collection Operations Workflow")
     print("=" * 70)
 
-    MockModeManager.enable_mock_mode()
+    MockModeManager.set_mock_mode(True)
 
     workflow_path = Path(__file__).parent / "test_workflow_collections.json"
     runner = JSONRunner(str(workflow_path))
