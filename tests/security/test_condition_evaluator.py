@@ -227,7 +227,7 @@ class TestSecurityDocumentation:
         docstring = ConditionEvaluator._evaluate_expression_condition.__doc__
 
         assert docstring is not None
-        assert "SECURITY WARNING" in docstring
+        assert "SECURITY NOTE" in docstring
         assert "TRUSTED INPUT ONLY" in docstring
 
     def test_dangerous_usage_documented(self):
@@ -235,7 +235,7 @@ class TestSecurityDocumentation:
         docstring = ConditionEvaluator._evaluate_expression_condition.__doc__
 
         assert docstring is not None
-        assert "DO NOT use this with" in docstring
+        assert "Do not use with" in docstring
         assert any(
             word in docstring.lower() for word in ["user", "untrusted", "external"]
         )
@@ -245,7 +245,7 @@ class TestSecurityDocumentation:
         docstring = ConditionEvaluator._evaluate_expression_condition.__doc__
 
         assert docstring is not None
-        assert "__builtins__" in docstring
+        assert "SafeEvaluator" in docstring
         assert any(
             word in docstring.lower()
             for word in ["prevent", "restricted", "mitigation"]
