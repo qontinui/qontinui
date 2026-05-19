@@ -15,21 +15,21 @@ def sample_objects():
         SemanticObject(
             id="button1",
             object_type=ObjectType.BUTTON,
-            location=PixelLocation(x=100, y=100, width=80, height=30),
+            location=PixelLocation.from_rectangle(x=100, y=100, width=80, height=30),
             description="Submit button",
             confidence=0.95,
         ),
         SemanticObject(
             id="text1",
             object_type=ObjectType.TEXT,
-            location=PixelLocation(x=100, y=150, width=200, height=20),
+            location=PixelLocation.from_rectangle(x=100, y=150, width=200, height=20),
             description="Login form",
             confidence=0.88,
         ),
         SemanticObject(
             id="button2",
             object_type=ObjectType.BUTTON,
-            location=PixelLocation(x=100, y=200, width=80, height=30),
+            location=PixelLocation.from_rectangle(x=100, y=200, width=80, height=30),
             description="Cancel button",
             confidence=0.92,
         ),
@@ -203,21 +203,21 @@ class TestSceneAnalyzer:
         container = SemanticObject(
             id="container",
             object_type=ObjectType.WINDOW,
-            location=PixelLocation(x=0, y=0, width=400, height=400),
+            location=PixelLocation.from_rectangle(x=0, y=0, width=400, height=400),
             description="Container window",
             confidence=0.9,
         )
         child1 = SemanticObject(
             id="child1",
             object_type=ObjectType.BUTTON,
-            location=PixelLocation(x=50, y=50, width=80, height=30),
+            location=PixelLocation.from_rectangle(x=50, y=50, width=80, height=30),
             description="Child button",
             confidence=0.9,
         )
         child2 = SemanticObject(
             id="child2",
             object_type=ObjectType.TEXT,
-            location=PixelLocation(x=50, y=100, width=200, height=20),
+            location=PixelLocation.from_rectangle(x=50, y=100, width=200, height=20),
             description="Child text",
             confidence=0.9,
         )
