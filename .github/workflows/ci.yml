@@ -163,9 +163,15 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          poetry run pytest --cov=src/qontinui --cov-report=xml --cov-report=term
+          # Use xvfb-run to provide DISPLAY *and* a per-run ~/.Xauthority.
+          # pynput's X backend requires Xauthority to exist; a bare
+          # `Xvfb :99 &` + `export DISPLAY=:99` was insufficient and
+          # caused every test to ERROR at collection with
+          #   ImportError: this platform is not supported:
+          #     ~/.Xauthority: [Errno 2] No such file or directory
+          # (the cascade through qontinui.__init__ → healing → hal →
+          # keyboard_operations → from pynput import keyboard).
+          xvfb-run -a poetry run pytest --cov=src/qontinui --cov-report=xml --cov-report=term
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
