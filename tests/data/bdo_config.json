@@ -1,0 +1,93 @@
+{
+  "version": "1.0",
+  "name": "navigation_api loading test fixture",
+  "description": "Minimal in-tree config exercising the navigation_api state/transition loaders. Contains Main (initial), Processing and Inventory states plus outgoing transitions from Main, with numeric-suffixed transition IDs so _extract_numeric_id produces stable integer IDs.",
+  "images": [
+    {
+      "id": "image-main-marker",
+      "name": "main-marker"
+    },
+    {
+      "id": "image-processing-marker",
+      "name": "processing-marker"
+    },
+    {
+      "id": "image-inventory-marker",
+      "name": "inventory-marker"
+    }
+  ],
+  "processes": [
+    {
+      "id": "process-go-processing",
+      "name": "Go To Processing"
+    },
+    {
+      "id": "process-go-inventory",
+      "name": "Go To Inventory"
+    }
+  ],
+  "states": [
+    {
+      "id": "state-main",
+      "name": "Main",
+      "description": "Initial / home state",
+      "identifyingImages": ["image-main-marker"],
+      "position": {"x": 100, "y": 100},
+      "isInitial": true
+    },
+    {
+      "id": "state-processing",
+      "name": "Processing",
+      "description": "Processing screen",
+      "identifyingImages": ["image-processing-marker"],
+      "position": {"x": 400, "y": 100},
+      "isInitial": false
+    },
+    {
+      "id": "state-inventory",
+      "name": "Inventory",
+      "description": "Inventory screen",
+      "identifyingImages": ["image-inventory-marker"],
+      "position": {"x": 700, "y": 100},
+      "isInitial": false
+    }
+  ],
+  "transitions": [
+    {
+      "id": "transition-1759519237001",
+      "type": "OutgoingTransition",
+      "fromState": "state-main",
+      "toState": "state-processing",
+      "workflows": ["process-go-processing"],
+      "timeout": 10000,
+      "retryCount": 3,
+      "staysVisible": false,
+      "activateStates": [],
+      "deactivateStates": []
+    },
+    {
+      "id": "transition-1759519237002",
+      "type": "OutgoingTransition",
+      "fromState": "state-main",
+      "toState": "state-inventory",
+      "workflows": ["process-go-inventory"],
+      "timeout": 10000,
+      "retryCount": 3,
+      "staysVisible": false,
+      "activateStates": [],
+      "deactivateStates": []
+    },
+    {
+      "id": "transition-1759519237003",
+      "type": "OutgoingTransition",
+      "fromState": "state-processing",
+      "toState": "state-main",
+      "workflows": ["process-go-processing"],
+      "timeout": 10000,
+      "retryCount": 3,
+      "staysVisible": false,
+      "activateStates": [],
+      "deactivateStates": []
+    }
+  ]
+}
