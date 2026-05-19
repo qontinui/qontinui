@@ -1,9 +1,4 @@
-import sys
 from unittest.mock import MagicMock, patch
-
-# Mock cv2 to avoid DLL issues
-mock_cv2 = MagicMock()
-sys.modules["cv2"] = mock_cv2
 
 import numpy as np
 import pytest

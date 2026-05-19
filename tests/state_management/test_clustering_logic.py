@@ -1,12 +1,7 @@
-import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
-
-# Mock cv2 to avoid DLL issues
-mock_cv2 = MagicMock()
-sys.modules["cv2"] = mock_cv2
 
 from qontinui.state_management.builders.state_machine_builder import (
     ImageMatchingStateMachineBuilder,

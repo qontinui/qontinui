@@ -5,16 +5,12 @@ and can be parsed by Pydantic models without silent failures.
 """
 
 import json
-import sys
 from pathlib import Path
-from unittest import mock
 
 import pytest
 
-# Mock cv2 to avoid OpenCV dependency issues in WSL
-sys.modules["cv2"] = mock.MagicMock()
-from qontinui.config.models.action import Action  # noqa: E402
-from qontinui.config.models.execution import BaseActionSettings  # noqa: E402
+from qontinui.config.models.action import Action
+from qontinui.config.models.execution import BaseActionSettings
 
 
 class TestJSONConfigValidation:
