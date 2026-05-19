@@ -14,6 +14,7 @@ from qontinui.actions.action_result import ActionResultBuilder
 from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import StateRegistry
 from qontinui.exceptions import InputControlError
+from qontinui.state_exceptions import StateNotFoundException
 from qontinui.hal.implementations.keyboard_operations import KeyboardOperations
 from qontinui.hal.implementations.mouse_operations import MouseOperations
 from qontinui.hal.interfaces.input_controller import Key
@@ -125,15 +126,17 @@ class TestStateRegistryErrorHandling:
             registry.register_state(None)  # type: ignore
 
     def test_lookup_nonexistent_state(self):
-        """Test lookup of nonexistent state returns None."""
+        """Lookup of a nonexistent state: has_state is the non-raising
+        predicate; get_state/get_state_id raise StateNotFoundException."""
         registry = StateRegistry()
 
-        # Should return None, not error
-        result = registry.get_state("nonexistent")
-        assert result is None
+        assert registry.has_state("nonexistent") is False
 
-        result_id = registry.get_state_id("nonexistent")
-        assert result_id is None
+        with pytest.raises(StateNotFoundException):
+            registry.get_state("nonexistent")
+
+        with pytest.raises(StateNotFoundException):
+            registry.get_state_id("nonexistent")
 
     def test_concurrent_error_isolation(self):
         """Test that errors in one thread don't affect others."""
