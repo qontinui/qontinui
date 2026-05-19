@@ -263,11 +263,14 @@ class TestUnknownConditionType:
     """Test handling of unknown condition types."""
 
     def test_unknown_type_raises_error(self):
-        """Test that unknown condition types raise ValueError."""
-        context = ExecutionContext({})
-        evaluator = ConditionEvaluator(context)
+        """Test that unknown condition types are rejected.
 
-        config = ConditionConfig(type="unknown_type")  # type: ignore
+        Unknown condition types are rejected at the Pydantic validation
+        layer (ConditionConfig.type is a Literal of the supported types),
+        so constructing a ConditionConfig with an unknown type raises
+        ValidationError before it can be evaluated.
+        """
+        from pydantic import ValidationError
 
-        with pytest.raises(ValueError, match="Unknown condition type"):
-            evaluator.evaluate_condition(config)
+        with pytest.raises(ValidationError):
+            ConditionConfig(type="unknown_type")  # type: ignore

@@ -836,7 +836,15 @@ def test_get_all_variables():
 
 
 def test_invalid_loop_type():
-    """Test error handling for invalid loop type."""
+    """Test error handling for invalid loop type.
+
+    Invalid loop types are rejected at the Pydantic validation layer
+    (LoopActionConfig.loop_type is a Literal["FOR", "WHILE", "FOREACH"]),
+    so the executor surfaces this as a ValidationError rather than a
+    success=False result.
+    """
+    from pydantic import ValidationError
+
     executor = ControlFlowExecutor()
 
     action = Action(
@@ -845,10 +853,8 @@ def test_invalid_loop_type():
         config={"loopType": "INVALID", "actions": []},
     )
 
-    result = executor.execute_loop(action)
-
-    assert result["success"] is False
-    assert len(result["errors"]) > 0
+    with pytest.raises(ValidationError):
+        executor.execute_loop(action)
 
 
 def test_for_loop_missing_iterations():
