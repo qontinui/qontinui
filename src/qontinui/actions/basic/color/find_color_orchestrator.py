@@ -9,7 +9,7 @@ from typing import Any
 
 import numpy as np
 
-from ....action_result import ActionResult
+from ....action_result import ActionResultBuilder
 from ....model.match.match import Match
 from ....object_collection import ObjectCollection
 from .color_find_options import ColorFindOptions, ColorStrategy
@@ -33,12 +33,12 @@ class FindColorOrchestrator:
         self._classification_strategy = ClassificationStrategy()
 
     def find(
-        self, matches: ActionResult, object_collections: list[ObjectCollection]
+        self, matches: ActionResultBuilder, object_collections: list[ObjectCollection]
     ) -> None:
         """Find matches based on color.
 
         Args:
-            matches: ActionResult to populate with found matches
+            matches: ActionResultBuilder to populate with found matches
             object_collections: List of object collections containing targets and options
         """
         if not object_collections:

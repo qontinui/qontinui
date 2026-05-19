@@ -45,7 +45,7 @@ class ActionChainExecutor:
     async def execute_chain(
         self,
         chain_options: ActionChainOptions,
-        initial_result: ActionResult,
+        initial_result: ActionResultBuilder,
         *object_collections: ObjectCollection,
     ) -> ActionResult:
         """Execute a chain of actions according to the specified chaining strategy.
@@ -163,7 +163,7 @@ class ActionChainExecutor:
         # Update the action configuration to search within these regions
         # This is a simplified approach - in full implementation would modify search regions
         # For now, execute with the original configuration
-        return await self._execute_action(next_action, ActionResultBuilder().build())
+        return await self._execute_action(next_action, ActionResultBuilder())
 
     async def _execute_confirming_action(
         self,
@@ -184,24 +184,24 @@ class ActionChainExecutor:
         # Execute the action with original collections
         # The action should confirm the previous results
         return await self._execute_action(
-            next_action, ActionResultBuilder().build(), original_collections
+            next_action, ActionResultBuilder(), original_collections
         )
 
     async def _execute_action(
         self,
         action_config: ActionConfig,
-        result: ActionResult,
+        result: ActionResultBuilder,
         object_collections: tuple[Any, ...] = (),
     ) -> ActionResult:
         """Execute a single action.
 
         Args:
             action_config: Configuration for the action
-            result: Result container
+            result: Result builder to populate
             object_collections: Object collections for the action
 
         Returns:
-            Result of the action execution
+            Built ActionResult after action execution
         """
         if self.action_service:
             action = self.action_service.get_action(action_config)
@@ -213,7 +213,7 @@ class ActionChainExecutor:
                 else:
                     # Direct execution
                     await action.perform(result, *object_collections)
-                    return result
+                    return result.build()
 
         # No action found or service not available
         return ActionResultBuilder().with_success(False).build()
@@ -261,6 +261,5 @@ class ActionExecution:
         """
         builder = ActionResultBuilder(config)
         builder.with_description(description)
-        result = builder.build()
-        await action.perform(result, *collections)
-        return result
+        await action.perform(builder, *collections)
+        return builder.build()

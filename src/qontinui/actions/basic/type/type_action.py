@@ -9,7 +9,7 @@ from typing import Any, cast
 
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 
@@ -133,7 +133,7 @@ class TypeAction(ActionInterface):
         return ActionType.TYPE
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the type action using the Qontinui framework pattern.
 
@@ -154,9 +154,9 @@ class TypeAction(ActionInterface):
         success = self.execute(text_to_type)
 
         # Update matches with results
-        object.__setattr__(matches, "success", success)
+        matches.with_success(success)
         if success:
-            matches.add_text_result(text_to_type)  # type: ignore[attr-defined]
+            matches.add_text(text_to_type)
 
     def execute(self, text: str, target: Any | None = None) -> bool:
         """Execute type action.

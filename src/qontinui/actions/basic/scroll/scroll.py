@@ -10,7 +10,7 @@ from ....actions.find import FindAction, FindOptions
 from ....coordinates import CoordinateService
 from ....model.element.location import Location
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResultBuilder
 from ...object_collection import ObjectCollection
 from .scroll_options import ScrollDirection, ScrollOptions
 
@@ -36,7 +36,7 @@ class Scroll(ActionInterface):
         self.find_action = find_action or FindAction()
 
     async def perform(
-        self, action_result: ActionResult, *object_collections: ObjectCollection
+        self, action_result: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the scroll operation.
 
@@ -48,7 +48,7 @@ class Scroll(ActionInterface):
             object_collections: Collections defining what/where to scroll
         """
         if not isinstance(action_result.action_config, ScrollOptions):
-            object.__setattr__(action_result, "success", False)
+            action_result.with_success(False)
             return
 
         scroll_options = action_result.action_config
@@ -56,10 +56,8 @@ class Scroll(ActionInterface):
         # Find the location to scroll at
         location = await self._find_scroll_location(action_result, object_collections)
         if not location:
-            object.__setattr__(action_result, "success", False)
-            object.__setattr__(
-                action_result, "output_text", "Could not find location to scroll"
-            )
+            action_result.with_success(False)
+            action_result.with_output_text("Could not find location to scroll")
             return
 
         # Perform the scroll operations
@@ -71,16 +69,14 @@ class Scroll(ActionInterface):
             scroll_options.get_delay_between_scrolls(),
         )
 
-        object.__setattr__(action_result, "success", success)
+        action_result.with_success(success)
         if success:
-            object.__setattr__(
-                action_result,
-                "output_text",
+            action_result.with_output_text(
                 f"Scrolled {scroll_options.get_direction().name} {scroll_options.get_clicks()} times",
             )
 
     async def _find_scroll_location(
-        self, action_result: ActionResult, object_collections: tuple[Any, ...]
+        self, action_result: ActionResultBuilder, object_collections: tuple[Any, ...]
     ) -> Location | None:
         """Find the location to scroll at.
 

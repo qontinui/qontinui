@@ -12,7 +12,7 @@ from ...coordinates import CoordinateService
 from ...model.element.location import Location
 from ..action_config import ActionConfig, ActionConfigBuilder
 from ..action_interface import ActionInterface
-from ..action_result import ActionResult, ActionResultBuilder
+from ..action_result import ActionResultBuilder
 from ..action_type import ActionType
 from ..basic.click.click import Click
 from ..basic.click.click_options import ClickOptions, ClickOptionsBuilder
@@ -183,7 +183,7 @@ class FindAndClick(ActionInterface):
         return ActionType.FIND_AND_CLICK  # type: ignore[no-any-return, attr-defined]
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Find element and click on it.
 
@@ -260,18 +260,19 @@ class FindAndClick(ActionInterface):
                                 match_object=translated_match_obj
                             )
                             found_matches.append(translated_match)
-                            matches.add_match(translated_match)  # type: ignore[attr-defined]
+                            matches.add_match(translated_match)
                         else:
                             found_matches.append(match)
-                            matches.add_match(match)  # type: ignore[attr-defined]
+                            # Class duality (see find.py:129) — pre-existing.
+                            matches.add_match(match)  # type: ignore[arg-type]
 
         if not found_matches:
-            object.__setattr__(matches, "success", False)
+            matches.with_success(False)
             logger.debug("FindAndClick: No matches found")
             return
 
         # Step 2: Click on found element(s)
-        click_result = ActionResultBuilder(action_config=click_options).build()
+        click_result = ActionResultBuilder(action_config=click_options)
         # Pass the matches as an ObjectCollection for clicking
         click_collection = ObjectCollection()
         for match in found_matches:
@@ -280,7 +281,7 @@ class FindAndClick(ActionInterface):
         await self.click.perform(click_result, click_collection)
 
         # Update success status
-        object.__setattr__(matches, "success", click_result.success)
+        matches.with_success(click_result.success)
 
         logger.debug(
             f"FindAndClick: Found {len(found_matches)} matches, "

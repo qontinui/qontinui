@@ -190,10 +190,10 @@ class TestRunProcess:
         """Test that missing config raises error."""
         action = RunProcess()
         options = RunProcessOptionsBuilder().set_process_id("test").build()
-        action_result = ActionResultBuilder(options).build()
+        builder = ActionResultBuilder(options)
 
         with pytest.raises(RuntimeError, match="requires QontinuiConfig"):
-            asyncio.run(action.perform(action_result))
+            asyncio.run(action.perform(builder))
 
     def test_no_process_id(self):
         """Test handling of missing process ID."""
@@ -201,9 +201,10 @@ class TestRunProcess:
         action = RunProcess(config)
 
         options = RunProcessOptionsBuilder().build()  # Empty process_id
-        action_result = ActionResultBuilder(options).build()
+        builder = ActionResultBuilder(options)
 
-        asyncio.run(action.perform(action_result))
+        asyncio.run(action.perform(builder))
+        action_result = builder.build()
 
         assert action_result.is_success is False
         assert "No workflow/process ID" in action_result.output_text
@@ -214,9 +215,10 @@ class TestRunProcess:
         action = RunProcess(config)
 
         options = RunProcessOptionsBuilder().set_process_id("nonexistent").build()
-        action_result = ActionResultBuilder(options).build()
+        builder = ActionResultBuilder(options)
 
-        asyncio.run(action.perform(action_result))
+        asyncio.run(action.perform(builder))
+        action_result = builder.build()
 
         assert action_result.is_success is False
         assert "not found" in action_result.output_text
@@ -237,9 +239,10 @@ class TestRunProcess:
         action = RunProcess(config)
 
         options = RunProcessOptionsBuilder().set_process_id("test_process").build()
-        action_result = ActionResultBuilder(options).build()
+        builder = ActionResultBuilder(options)
 
-        asyncio.run(action.perform(action_result))
+        asyncio.run(action.perform(builder))
+        action_result = builder.build()
 
         # Should execute (success depends on mock implementation)
         assert "Test Process" in action_result.output_text
@@ -253,10 +256,10 @@ class TestRunProcess:
 
         # Pass wrong options type
         wrong_options = ClickOptionsBuilder().build()
-        action_result = ActionResultBuilder(wrong_options).build()
+        builder = ActionResultBuilder(wrong_options)
 
         with pytest.raises(ValueError, match="requires RunProcessOptions"):
-            asyncio.run(action.perform(action_result))
+            asyncio.run(action.perform(builder))
 
 
 if __name__ == "__main__":

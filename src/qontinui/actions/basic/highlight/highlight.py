@@ -10,7 +10,7 @@ from ....actions.find import FindAction, FindOptions
 from ....coordinates import CoordinateService
 from ....model.element.region import Region
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResultBuilder
 from ...object_collection import ObjectCollection
 from .highlight_options import HighlightOptions
 
@@ -35,7 +35,7 @@ class Highlight(ActionInterface):
         self.find_action = find_action or FindAction()
 
     async def perform(
-        self, action_result: ActionResult, *object_collections: ObjectCollection
+        self, action_result: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the highlight operation.
 
@@ -46,7 +46,7 @@ class Highlight(ActionInterface):
             object_collections: Collections defining what to highlight
         """
         if not isinstance(action_result.action_config, HighlightOptions):
-            object.__setattr__(action_result, "success", False)
+            action_result.with_success(False)
             return
 
         highlight_options = action_result.action_config
@@ -56,10 +56,8 @@ class Highlight(ActionInterface):
             action_result, object_collections
         )
         if not regions:
-            object.__setattr__(action_result, "success", False)
-            object.__setattr__(
-                action_result, "output_text", "No regions found to highlight"
-            )
+            action_result.with_success(False)
+            action_result.with_output_text("No regions found to highlight")
             return
 
         # Perform highlighting
@@ -72,14 +70,12 @@ class Highlight(ActionInterface):
             highlight_options.get_flash_times(),
         )
 
-        object.__setattr__(action_result, "success", success)
+        action_result.with_success(success)
         if success:
-            object.__setattr__(
-                action_result, "output_text", f"Highlighted {len(regions)} region(s)"
-            )
+            action_result.with_output_text(f"Highlighted {len(regions)} region(s)")
 
     async def _find_regions_to_highlight(
-        self, action_result: ActionResult, object_collections: tuple[Any, ...]
+        self, action_result: ActionResultBuilder, object_collections: tuple[Any, ...]
     ) -> list[Region]:
         """Find regions to highlight.
 

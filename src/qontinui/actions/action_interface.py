@@ -6,7 +6,7 @@ Core interface for all actions.
 from abc import abstractmethod
 from typing import Protocol
 
-from .action_result import ActionResult
+from .action_result import ActionResultBuilder
 from .action_type import ActionType
 from .object_collection import ObjectCollection
 
@@ -24,16 +24,16 @@ class ActionInterface(Protocol):
     Key design principles:
     - Uniform Execution: All actions, from simple clicks to complex workflows,
       implement the same perform() method signature
-    - Result Accumulation: Actions modify the provided ActionResult object to record
-      their results and maintain execution context
+    - Result Accumulation: Actions populate the provided ActionResultBuilder; the
+      orchestrator calls .build() once at the end to produce the immutable ActionResult
     - Flexible Input: Accepts variable ObjectCollections to support actions
       requiring different numbers of targets
     - Composability: Enables actions to be combined into composite operations
 
     The perform method contract:
-    - Receives an ActionResult object containing ActionOptions and accumulating results
+    - Receives an ActionResultBuilder pre-seeded with the ActionConfig
     - Processes one or more ObjectCollections containing the action targets
-    - Updates the ActionResult object with results of the action
+    - Mutates the builder via add_match / with_success / with_output_text / with_timing etc.
     - May throw runtime exceptions for error conditions
 
     Implementation categories:
@@ -59,31 +59,31 @@ class ActionInterface(Protocol):
 
     @abstractmethod
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the action with the provided configuration and target objects.
 
         This method is the core execution point for all GUI automation actions in Qontinui.
         Implementations should follow these guidelines:
-        - Read action configuration from the ActionOptions within matches
+        - Read action configuration via matches.action_config
         - Process target objects from the ObjectCollections
         - Execute the GUI operation (click, type, find, etc.)
-        - Update the matches object with results (found elements, success status)
-        - Handle errors gracefully, updating matches with failure information
+        - Populate the builder via add_match / with_success / with_output_text / with_timing
+        - Handle errors gracefully, calling matches.with_success(False) / with_output_text(reason)
 
         Side effects:
         - Modifies the GUI state through mouse/keyboard operations
-        - Updates the matches parameter with execution results
+        - Mutates the matches builder with execution results
         - May capture screenshots or log execution details
 
-        Implementation note: The matches parameter serves dual purposes -
-        it provides input configuration via ActionOptions and accumulates output results.
-        This design enables action chaining and comprehensive result tracking.
+        Implementation note: The matches parameter carries ActionConfig (read via
+        .action_config) and accumulates output state via builder methods. The
+        orchestrator calls .build() once at the end.
 
         Args:
-            matches: Contains ActionOptions for configuration and accumulates execution results.
-                    This object is modified during execution to record matches found,
-                    success/failure status, and timing information.
+            matches: Builder carrying the ActionConfig and accumulating results.
+                    Call .with_success(...), .add_match(...), .with_output_text(...),
+                    etc. to populate.
             object_collections: Variable number of collections containing target objects
                               (StateImages, Regions, Locations, Strings) that the action
                               will operate on. Actions may use zero, one, or multiple collections.

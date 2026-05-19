@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResultBuilder
 from ...action_type import ActionType
 from ...object_collection import ObjectCollection
 
@@ -158,7 +158,7 @@ class Wait(ActionInterface):
         return ActionType.VANISH
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the wait action using the Qontinui framework pattern.
 
@@ -177,7 +177,7 @@ class Wait(ActionInterface):
         success = self.execute(target=target)
 
         # Update matches with results
-        object.__setattr__(matches, "success", success)
+        matches.with_success(success)
 
     def execute(
         self, target: Any | None = None, condition: Callable[[], bool] | None = None

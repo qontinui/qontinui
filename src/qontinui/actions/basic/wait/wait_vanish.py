@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 
 from .....actions.find import FindAction, FindOptions
 from ....action_interface import ActionInterface
-from ....action_result import ActionResult
+from ....action_result import ActionResultBuilder
 from ....object_collection import ObjectCollection
 from ..vanish.vanish_options import VanishOptions
 
@@ -37,12 +37,12 @@ class WaitVanish(ActionInterface):
         return "VANISH"
 
     async def perform(
-        self, matches: ActionResult, *object_collections: ObjectCollection
+        self, matches: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Perform vanish wait.
 
         Args:
-            matches: Action result to populate
+            matches: Action result builder to populate
             object_collections: Objects to wait for vanishing
         """
         import asyncio
@@ -68,7 +68,7 @@ class WaitVanish(ActionInterface):
                 patterns.append(pattern)
 
         if not patterns:
-            matches.success = True
+            matches.with_success(True)
             return
 
         # Keep checking until objects vanish or timeout
@@ -87,7 +87,7 @@ class WaitVanish(ActionInterface):
 
             # If nothing found, objects have vanished - success!
             if not found_any:
-                matches.success = True
+                matches.with_success(True)
                 logger.debug("Objects vanished successfully")
                 break
 
@@ -102,7 +102,7 @@ class WaitVanish(ActionInterface):
         if not matches.success:
             logger.debug(f"Vanish timeout after {timeout} seconds")
 
-    def _is_ok_to_continue(self, matches: ActionResult, num_images: int) -> bool:
+    def _is_ok_to_continue(self, matches: ActionResultBuilder, num_images: int) -> bool:
         """Check if action should continue.
 
         This is a simplified version of Brobot's ActionLifecycleManagement.

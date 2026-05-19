@@ -6,7 +6,7 @@ Implements drag-and-drop functionality using action chaining.
 from ...action_chain_options import ActionChainOptions, ActionChainOptionsBuilder, ChainingStrategy
 from ...action_config import ActionConfig
 from ...action_interface import ActionInterface
-from ...action_result import ActionResult
+from ...action_result import ActionResult, ActionResultBuilder
 from ...action_type import ActionType
 from ...basic.find.pattern_find_options import PatternFindOptions, PatternFindOptionsBuilder
 from ...basic.mouse.mouse_down_options import MouseDownOptions, MouseDownOptionsBuilder
@@ -62,7 +62,7 @@ class Drag(ActionInterface):
         return ActionType.DRAG
 
     async def perform(
-        self, action_result: ActionResult, *object_collections: ObjectCollection
+        self, action_result: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the drag operation using action chaining.
 
@@ -80,18 +80,16 @@ class Drag(ActionInterface):
                                First collection defines source, second defines target.
         """
         if not isinstance(action_result.action_config, DragOptions):
-            object.__setattr__(action_result, "success", False)
+            action_result.with_success(False)
             return
 
         drag_options = action_result.action_config
 
         # Ensure we have at least 2 object collections (source and target)
         if len(object_collections) < 2:
-            object.__setattr__(action_result, "success", False)
-            object.__setattr__(
-                action_result,
-                "output_text",
-                "Drag requires at least 2 object collections (source and target)",
+            action_result.with_success(False)
+            action_result.with_output_text(
+                "Drag requires at least 2 object collections (source and target)"
             )
             return
 
@@ -244,23 +242,29 @@ class Drag(ActionInterface):
         # Create default mouse up options
         return MouseUpOptionsBuilder().build()
 
-    def _copy_results(self, source: ActionResult, target: ActionResult) -> None:
+    def _copy_results(
+        self, source: ActionResult, target: ActionResultBuilder
+    ) -> None:
         """Copy results from chain execution to the target result.
 
         Args:
-            source: Source result from chain execution
-            target: Target result to populate
+            source: Source result from chain execution (immutable)
+            target: Target builder to populate
         """
-        object.__setattr__(target, "success", source.is_success)
-        object.__setattr__(target, "matches", source.matches)
-        object.__setattr__(target, "duration", source.duration)
-        object.__setattr__(target, "text", source.text)
-        object.__setattr__(target, "active_states", source.active_states)
+        target.with_success(source.is_success)
+        for match in source.matches:
+            target.add_match(match)
+        if source.duration is not None:
+            target.with_timing(duration=source.duration)
+        if source.text:
+            target.add_text(source.text)
+        if source.active_states:
+            target.with_active_states(set(source.active_states))
 
         # Copy movements
         for movement in source.movements:
-            target.add_movement(movement)  # type: ignore[attr-defined]
+            target.add_movement(movement)  # type: ignore[arg-type]
 
         # Copy execution history
         for record in source.execution_history:
-            target.add_execution_record(record)  # type: ignore[attr-defined]
+            target.add_execution_record(record)  # type: ignore[arg-type]

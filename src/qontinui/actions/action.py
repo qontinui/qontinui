@@ -118,8 +118,12 @@ class Action:
         if subsequent_actions:
             # Execute the chain
             if self.action_chain_executor:
+                # action_chain_executor is typed against the local placeholder at line 293;
+                # the real ActionChainExecutor accepts ActionResultBuilder.
                 return await self.action_chain_executor.execute_chain(
-                    action_config, ActionResultBuilder().build(), object_collections
+                    action_config,
+                    ActionResultBuilder(),  # type: ignore[arg-type]
+                    object_collections,
                 )
             else:
                 logger.warning(

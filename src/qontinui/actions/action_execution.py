@@ -68,38 +68,32 @@ class ActionExecution:
         Returns:
             ActionResult containing execution results and timing
         """
-        # Initialize result
-        result = ActionResultBuilder(action_config).build()
-        object.__setattr__(result, "action_description", action_description)
+        builder = ActionResultBuilder(action_config)
+        builder.with_description(action_description)
         start_time = time.time()
 
         try:
-            # Log action start
             action_name = action.__class__.__name__
             if action_description:
                 logger.info(f"Executing {action_name}: {action_description}")
             else:
                 logger.debug(f"Executing {action_name}")
 
-            # Pre-action pause
             pause_before = action_config.get_pause_before_begin()
             if pause_before > 0:
                 logger.debug(f"Pausing {pause_before}s before action")
                 time.sleep(pause_before)
 
-            # Execute the action
             self._execution_count += 1
-            await action.perform(result, *object_collections)
+            await action.perform(builder, *object_collections)
 
-            # Check success
-            if result.success:
+            if builder.success:
                 self._success_count += 1
                 logger.debug(f"{action_name} completed successfully")
             else:
                 self._failure_count += 1
                 logger.warning(f"{action_name} failed")
 
-            # Post-action pause
             pause_after = action_config.get_pause_after_end()
             if pause_after > 0:
                 logger.debug(f"Pausing {pause_after}s after action")
@@ -108,25 +102,25 @@ class ActionExecution:
         except Exception as e:
             self._failure_count += 1
             logger.error(f"Action execution failed: {e}", exc_info=True)
-            object.__setattr__(result, "success", False)
-            object.__setattr__(result, "output_text", f"Error: {str(e)}")
+            builder.with_success(False).with_output_text(f"Error: {str(e)}")
 
         finally:
-            # Record timing
             end_time = time.time()
             duration = end_time - start_time
-            object.__setattr__(result, "duration", timedelta(seconds=duration))
+            builder.with_timing(duration=timedelta(seconds=duration))
 
-            # Apply custom success criteria if provided
             success_criteria = action_config.get_success_criteria()
             if success_criteria:
                 try:
-                    custom_success = success_criteria(result)  # type: ignore[arg-type]
-                    object.__setattr__(result, "success", custom_success)
+                    # success_criteria expects ActionResult; build a snapshot for it.
+                    # Typed against action_config.py's placeholder ActionResult — pre-existing.
+                    snapshot = builder.build()
+                    custom_success = success_criteria(snapshot)  # type: ignore[arg-type]
+                    builder.with_success(custom_success)
                 except Exception as e:
                     logger.error(f"Success criteria evaluation failed: {e}")
 
-        return result
+        return builder.build()
 
     def get_metrics(self) -> dict[str, Any]:
         """Get execution metrics.

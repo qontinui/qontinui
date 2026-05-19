@@ -9,7 +9,7 @@ import time
 from typing import TYPE_CHECKING, cast
 
 from ....actions.action_interface import ActionInterface
-from ....actions.action_result import ActionResult
+from ....actions.action_result import ActionResultBuilder
 from ....actions.action_type import ActionType
 from .run_process_options import RunProcessOptions
 
@@ -61,7 +61,7 @@ class RunProcess(ActionInterface):
         return ActionType.RUN_PROCESS
 
     async def perform(
-        self, action_result: ActionResult, *object_collections: ObjectCollection
+        self, action_result: ActionResultBuilder, *object_collections: ObjectCollection
     ) -> None:
         """Execute the workflow with optional repetition.
 
@@ -84,22 +84,18 @@ class RunProcess(ActionInterface):
         # process_id can refer to either workflow or process (backward compatibility)
         workflow_id = run_process_options.get_process_id()
         if not workflow_id:
-            object.__setattr__(action_result, "success", False)
-            object.__setattr__(
-                action_result,
-                "output_text",
-                "RUN_PROCESS: No workflow/process ID specified",
+            action_result.with_success(False)
+            action_result.with_output_text(
+                "RUN_PROCESS: No workflow/process ID specified"
             )
             return
 
         # Get the workflow (backward compatible with process)
         workflow = self._get_workflow(workflow_id)
         if not workflow:
-            object.__setattr__(action_result, "success", False)
-            object.__setattr__(
-                action_result,
-                "output_text",
-                f"RUN_PROCESS: Workflow/process '{workflow_id}' not found",
+            action_result.with_success(False)
+            action_result.with_output_text(
+                f"RUN_PROCESS: Workflow/process '{workflow_id}' not found"
             )
             return
 
@@ -108,7 +104,7 @@ class RunProcess(ActionInterface):
         if not repetition.get_enabled():
             # No repetition - execute once
             success = self._execute_workflow_once(workflow, action_result)
-            object.__setattr__(action_result, "success", success)
+            action_result.with_success(success)
             return
 
         # Execute with repetition
@@ -145,7 +141,7 @@ class RunProcess(ActionInterface):
         return None
 
     def _execute_workflow_once(
-        self, workflow: Workflow | Process, action_result: ActionResult
+        self, workflow: Workflow | Process, action_result: ActionResultBuilder
     ) -> bool:
         """Execute a workflow once.
 
@@ -173,14 +169,14 @@ class RunProcess(ActionInterface):
             # Then call: self.action_executor.execute_action(action)
             # For now, we assume success
 
-        object.__setattr__(action_result, "output_text", output_text)
+        action_result.with_output_text(output_text)
         return success
 
     def _execute_until_success(
         self,
         workflow: Workflow | Process,
         repetition,
-        action_result: ActionResult,
+        action_result: ActionResultBuilder,
         object_collections,
     ) -> None:
         """Execute workflow repeatedly until success or max repeats reached.
@@ -210,8 +206,8 @@ class RunProcess(ActionInterface):
                 output_text += f"\n✓ Workflow succeeded on attempt {run_num + 1}\n"
                 output_text += f"Total attempts: {run_num + 1}\n"
 
-                object.__setattr__(action_result, "success", True)
-                object.__setattr__(action_result, "output_text", output_text)
+                action_result.with_success(True)
+                action_result.with_output_text(output_text)
                 return
 
             # Delay before next attempt (but not after last)
@@ -221,14 +217,14 @@ class RunProcess(ActionInterface):
 
         # Reached max repeats without success
         output_text += f"\n✗ Workflow failed after {total_runs} attempts\n"
-        object.__setattr__(action_result, "success", False)
-        object.__setattr__(action_result, "output_text", output_text)
+        action_result.with_success(False)
+        action_result.with_output_text(output_text)
 
     def _execute_fixed_count(
         self,
         workflow: Workflow | Process,
         repetition,
-        action_result: ActionResult,
+        action_result: ActionResultBuilder,
         object_collections,
     ) -> None:
         """Execute workflow a fixed number of times.
@@ -273,5 +269,5 @@ class RunProcess(ActionInterface):
         else:
             output_text += "✗ Overall: FAILURE (all runs failed)\n"
 
-        object.__setattr__(action_result, "success", at_least_one_success)
-        object.__setattr__(action_result, "output_text", output_text)
+        action_result.with_success(at_least_one_success)
+        action_result.with_output_text(output_text)
