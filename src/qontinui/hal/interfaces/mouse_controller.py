@@ -1,24 +1,18 @@
-"""Mouse controller interface definition."""
+"""Mouse controller interface definition.
+
+``MouseButton`` and ``MousePosition`` are re-exported from
+:mod:`qontinui.hal.interfaces.input_controller`, which is the single source
+of truth for these value types. Defining them twice produced two distinct
+classes, so ``isinstance`` checks failed depending on which module a caller
+imported from.
+"""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from enum import Enum
 
+# Single source of truth — do not redefine these here.
+from .input_controller import MouseButton, MousePosition
 
-class MouseButton(Enum):
-    """Mouse button enumeration."""
-
-    LEFT = "left"
-    RIGHT = "right"
-    MIDDLE = "middle"
-
-
-@dataclass
-class MousePosition:
-    """Current mouse position."""
-
-    x: int
-    y: int
+__all__ = ["IMouseController", "MouseButton", "MousePosition"]
 
 
 class IMouseController(ABC):
