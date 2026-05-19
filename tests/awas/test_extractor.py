@@ -13,6 +13,7 @@ from qontinui.awas.types import AwasManifest
 from qontinui.extraction.runtime.awas.extractor import AwasRuntimeExtractor
 from qontinui.extraction.runtime.base import InteractionAction
 from qontinui.extraction.runtime.types import ExtractionTarget, RuntimeType
+from qontinui.extraction.web.models import ElementType
 
 # Sample manifest for testing
 SAMPLE_MANIFEST = {
@@ -234,18 +235,17 @@ class TestAwasRuntimeExtractorElementExtraction:
         # Find the list_items element
         list_elem = next(e for e in elements if e.id == "awas_elem_list_items")
 
-        assert list_elem.text == "List Items"
-        assert list_elem.confidence == 1.0  # AWAS provides definitive info
+        assert list_elem.text_content == "List Items"
+        assert list_elem.attributes["confidence"] == 1.0  # AWAS provides definitive info
         assert list_elem.is_interactive is True
         assert list_elem.is_visible is True
-        assert list_elem.extraction_method == "awas_manifest"
+        assert list_elem.attributes["extraction_method"] == "awas_manifest"
         assert list_elem.selector == '[data-awas-action="list_items"]'
 
-        # Check metadata
-        assert list_elem.metadata["awas_action_id"] == "list_items"
-        assert list_elem.metadata["awas_intent"] == "Retrieve all items"
-        assert list_elem.metadata["awas_method"] == "GET"
-        assert list_elem.metadata["awas_side_effect"] is False
+        assert list_elem.attributes["awas_action_id"] == "list_items"
+        assert list_elem.attributes["awas_intent"] == "Retrieve all items"
+        assert list_elem.attributes["awas_method"] == "GET"
+        assert list_elem.attributes["awas_side_effect"] is False
 
     @pytest.mark.asyncio
     @respx.mock
@@ -266,17 +266,17 @@ class TestAwasRuntimeExtractorElementExtraction:
 
         # GET without side effect -> link
         list_elem = next(e for e in elements if e.id == "awas_elem_list_items")
-        assert list_elem.element_type == "link"
+        assert list_elem.element_type == ElementType.LINK
         assert list_elem.tag_name == "a"
 
         # POST with side effect -> button
         create_elem = next(e for e in elements if e.id == "awas_elem_create_item")
-        assert create_elem.element_type == "button"
+        assert create_elem.element_type == ElementType.BUTTON
         assert create_elem.tag_name == "button"
 
         # DELETE -> button
         delete_elem = next(e for e in elements if e.id == "awas_elem_delete_item")
-        assert delete_elem.element_type == "button"
+        assert delete_elem.element_type == ElementType.BUTTON
 
 
 class TestAwasRuntimeExtractorStateCapture:
