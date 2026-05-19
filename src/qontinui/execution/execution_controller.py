@@ -69,37 +69,6 @@ class ExecutionController:
         self._errors: list[dict[str, Any]] = []
 
     # ============================================================================
-    # Internal State Access (for ExecutionTracker)
-    # ============================================================================
-
-    def _get_internal_state(self) -> dict[str, Any]:
-        """
-        Get internal state for ExecutionTracker.
-
-        This method provides access to internal state for read-only operations.
-        It should only be used by ExecutionTracker.
-
-        Returns:
-            Dictionary containing all internal state
-        """
-        return {
-            "workflow_id": self.workflow_id,
-            "status": self.status,
-            "start_time": self.start_time,
-            "end_time": self.end_time,
-            "visited": self._visited,
-            "pending": self._pending,
-            "current_action": self._current_action,
-            "iteration_count": self._iteration_count,
-            "history": self._history,
-            "action_records": self._action_records,
-            "context": self._context,
-            "errors": self._errors,
-            "paused": self._paused,
-            "max_iterations": self.max_iterations,
-        }
-
-    # ============================================================================
     # Lifecycle Control
     # ============================================================================
 
@@ -201,6 +170,18 @@ class ExecutionController:
                 depth=depth,
             )
         )
+
+    def add_pending_front(self, pending: PendingAction) -> None:
+        """
+        Re-insert a pending action at the front of the queue.
+
+        Used when pausing at a breakpoint: the action that triggered the
+        breakpoint is put back so it executes first on resume.
+
+        Args:
+            pending: The pending action to re-queue at the front
+        """
+        self._pending.insert(0, pending)
 
     def get_next_pending(self) -> PendingAction | None:
         """

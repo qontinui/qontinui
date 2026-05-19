@@ -222,7 +222,7 @@ class TestErrorHandling:
         """Test handling of invalid variable reference."""
         # Create a test workflow with invalid variable reference
         invalid_workflow = {
-            "version": "2.0",
+            "version": "2.0.0",
             "metadata": {"name": "Invalid Variable Test"},
             "states": [
                 {
@@ -235,11 +235,13 @@ class TestErrorHandling:
                 }
             ],
             "transitions": [],
-            "processes": [
+            "workflows": [
                 {
                     "id": "process-invalid",
                     "name": "Invalid Process",
+                    "version": "1.0.0",
                     "type": "sequence",
+                    "connections": {},
                     "actions": [
                         {
                             "id": "action-get-nonexistent",

@@ -940,6 +940,18 @@ def test_complex_workflow_integration():
         elif action.type == "IF":
             condition_met = context.get("counter", 0) >= 2
             return {"success": True, "condition_met": condition_met}
+        elif action.type == "SET_VARIABLE":
+            # This executor owns SET_VARIABLE semantics (like it owns LOOP/IF).
+            name = action.config["variableName"]
+            value_source = action.config.get("valueSource")
+            if value_source and value_source.get("type") == "expression":
+                # Minimal expression eval over the current context
+                value = eval(  # noqa: S307 - test-only, trusted expression
+                    value_source["expression"], {}, dict(context)
+                )
+            else:
+                value = action.config.get("value")
+            return {"success": True, name: value}
         else:
             return {"success": True}
 

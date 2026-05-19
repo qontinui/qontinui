@@ -29,7 +29,13 @@ class TestExtractElementsFromRender:
         assert "reg:sidebar" in elements
 
     def test_extracts_from_dom_snapshot_format(self) -> None:
-        """Should extract elements from DomSnapshotRenderLogEntry format."""
+        """Should extract elements from DomSnapshotRenderLogEntry format.
+
+        The bridge registry is the source of truth for element identity: the
+        node-level ``id`` field carries the registry ID (``ui:`` prefix). The
+        legacy ``data-ui-id`` DOM attribute was removed in the AutoRegister
+        refactor and is no longer extracted.
+        """
         render = {
             "id": "render_1",
             "type": "dom_snapshot",
@@ -41,7 +47,8 @@ class TestExtractElementsFromRender:
                     "children": [
                         {
                             "tag": "nav",
-                            "attributes": {"data-ui-id": "main-nav"},
+                            "id": "main-nav",
+                            "attributes": {},
                             "children": [],
                         },
                         {
@@ -62,15 +69,19 @@ class TestExtractElementsFromRender:
         assert "testid:sidebar" in elements
 
     def test_extracts_html_ids_when_enabled(self) -> None:
-        """Should extract HTML id attributes when include_html_ids=True."""
+        """Should extract HTML id attributes when include_html_ids=True.
+
+        HTML ids live in ``attributes["id"]`` (the node-level ``id`` field is
+        reserved for the bridge registry ID). They are only surfaced when
+        ``include_html_ids=True``.
+        """
         render = {
             "id": "render_1",
             "type": "dom_snapshot",
             "snapshot": {
                 "root": {
                     "tag": "div",
-                    "id": "app-root",
-                    "attributes": {"data-testid": "container"},
+                    "attributes": {"data-testid": "container", "id": "app-root"},
                     "children": [],
                 },
             },
@@ -359,7 +370,8 @@ class TestDiscoverStatesFromRenders:
                         "children": [
                             {
                                 "tag": "nav",
-                                "attributes": {"data-ui-id": "nav"},
+                                "id": "nav",
+                                "attributes": {},
                                 "children": [],
                             },
                             {
@@ -382,7 +394,8 @@ class TestDiscoverStatesFromRenders:
                         "children": [
                             {
                                 "tag": "nav",
-                                "attributes": {"data-ui-id": "nav"},
+                                "id": "nav",
+                                "attributes": {},
                                 "children": [],
                             },
                             {
@@ -410,7 +423,8 @@ class TestDiscoverStatesFromRenders:
                         "children": [
                             {
                                 "tag": "nav",
-                                "attributes": {"data-ui-id": "nav"},
+                                "id": "nav",
+                                "attributes": {},
                                 "children": [],
                             },
                             {

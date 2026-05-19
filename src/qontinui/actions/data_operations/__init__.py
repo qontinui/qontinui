@@ -20,6 +20,7 @@ Example:
 """
 
 import logging
+from typing import Any
 
 from qontinui.config import Action
 
@@ -397,11 +398,20 @@ class DataOperationsExecutor:
             else:
                 input_str = str(config.input)
 
+            # StringExecutor's contract is a plain dict; config.parameters is
+            # a typed Pydantic model, so normalize before delegating.
+            raw_parameters = config.parameters
+            parameters: dict[str, Any] | None = (
+                raw_parameters.model_dump(exclude_none=True)
+                if raw_parameters is not None
+                else None
+            )
+
             # Perform operation using StringExecutor
             result_str = self._string_executor.execute(
                 config.operation,
                 input_str,
-                config.parameters,  # type: ignore[arg-type]
+                parameters,
             )
 
             # Store result

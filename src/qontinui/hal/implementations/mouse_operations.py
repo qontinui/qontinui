@@ -365,14 +365,19 @@ class MouseOperations(IMouseController):
             )
             return True
 
-        except (OSError, RuntimeError, ValueError, TypeError) as e:
+        except (OSError, RuntimeError, ValueError, TypeError, InputControlError) as e:
             logger.error(f"Mouse drag failed: {e}")
-            # Try to release button if pressed
+            # Always attempt to release the button so a failed drag never
+            # leaves it held down. The inner mouse_move/press calls re-raise
+            # as InputControlError, so that must be caught here too — otherwise
+            # this cleanup is dead code whenever a sub-operation fails.
             try:
                 self._mouse.release(self._get_pynput_button(button))
             except (OSError, RuntimeError):
                 # OK to ignore release errors in error handler
                 pass
+            if isinstance(e, InputControlError):
+                raise
             raise InputControlError("mouse_drag", str(e)) from e
 
     def mouse_scroll(

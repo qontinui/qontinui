@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.0.0",
   "metadata": {
     "name": "Test Workflow - Nested Loops with Conditionals",
     "description": "Test workflow for nested loops with conditional logic"
@@ -15,7 +15,13 @@
     }
   ],
   "transitions": [],
-  "processes": [
+  "images": [],
+  "schedules": [],
+  "execution_settings": {
+    "failure_strategy": "stop",
+    "max_retries": 3
+  },
+  "workflows": [
     {
       "id": "process-nested-test",
       "name": "Nested Loop Test Process",
@@ -124,13 +130,9 @@
             "scope": "local"
           }
         }
-      ]
+      ],
+      "version": "1.0.0",
+      "connections": {}
     }
-  ],
-  "images": [],
-  "schedules": [],
-  "execution_settings": {
-    "failure_strategy": "stop",
-    "max_retries": 3
-  }
+  ]
 }
