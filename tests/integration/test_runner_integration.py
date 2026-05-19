@@ -129,7 +129,7 @@ def sample_state() -> State:
     state.add_state_image(state_img2)
 
     # Add StateRegions
-    region1 = Region(x=200, y=300, w=400, h=200)
+    region1 = Region(x=200, y=300, width=400, height=200)
     state_reg1 = StateRegion(region=region1, name="main_panel")
     state_reg1.metadata["type"] = "panel"
     state.add_state_region(state_reg1)
