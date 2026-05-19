@@ -613,7 +613,11 @@ class TestTextSanitizationComprehensive:
             ("Hello@World", "hello_world"),
             ("Test#123", "test_123"),
             ("Price$99", "price_99"),
-            ("50%Off", "50_off"),
+            # Leading digit gets the "n_" identifier-safety prefix, consistent
+            # with test_sanitize_text_numeric_start ("123 Main" -> "n_123_main").
+            # Generated names must satisfy str.isidentifier() (asserted ~17x
+            # across this suite); "50_off" would be an invalid identifier.
+            ("50%Off", "n_50_off"),
             ("C++Code", "c_code"),
             ("Email: test@example.com", "email_test_example_com"),
         ]
