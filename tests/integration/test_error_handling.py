@@ -14,10 +14,10 @@ from qontinui.actions.action_result import ActionResultBuilder
 from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import StateRegistry
 from qontinui.exceptions import InputControlError
-from qontinui.state_exceptions import StateNotFoundException
 from qontinui.hal.implementations.keyboard_operations import KeyboardOperations
 from qontinui.hal.implementations.mouse_operations import MouseOperations
 from qontinui.hal.interfaces.input_controller import Key
+from qontinui.state_exceptions import StateNotFoundException
 
 
 class TestActionResultErrorHandling:
