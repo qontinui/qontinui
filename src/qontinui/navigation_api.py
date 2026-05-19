@@ -24,7 +24,9 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from qontinui.model.state.state_service import StateService
-    from qontinui.multistate_integration.pathfinding_navigator import PathfindingNavigator
+    from qontinui.multistate_integration.pathfinding_navigator import (
+        PathfindingNavigator,
+    )
     from qontinui.state_management.state_memory import StateMemory
 
 logger = logging.getLogger(__name__)
@@ -96,7 +98,9 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         from qontinui.config.state_loader import load_states_from_config
         from qontinui.config.transition_loader import load_transitions_from_config
         from qontinui.model.state.state_service import StateService
-        from qontinui.multistate_integration.pathfinding_navigator import PathfindingNavigator
+        from qontinui.multistate_integration.pathfinding_navigator import (
+            PathfindingNavigator,
+        )
         from qontinui.state_management.state_memory import StateMemory
 
         # Step 1: Create StateService
@@ -240,7 +244,10 @@ def _find_active_states_visually(states: list[Any]) -> set[int]:
     import asyncio
 
     from qontinui.actions.find import FindAction
-    from qontinui.actions.find.find_options_builder import CascadeContext, build_find_options
+    from qontinui.actions.find.find_options_builder import (
+        CascadeContext,
+        build_find_options,
+    )
     from qontinui.model.element import Pattern
 
     active_state_ids: set[int] = set()
@@ -504,6 +511,21 @@ def set_workflow_executor(workflow_executor: Any) -> None:
     if _navigator and _navigator.transition_executor:
         _navigator.transition_executor.workflow_executor = workflow_executor
         logger.info("Updated existing navigator with workflow executor")
+
+
+def reset_for_tests() -> None:
+    """Reset all navigation_api module singletons to their initial state.
+
+    Intended for use in test autouse fixtures to guarantee isolation between
+    tests that mutate module-level state (via load_configuration or
+    set_workflow_executor). Not for use in production code paths.
+    """
+    global _navigator, _state_memory, _state_service, _workflow_executor, _initialized
+    _navigator = None
+    _state_memory = None
+    _state_service = None
+    _workflow_executor = None
+    _initialized = False
 
 
 def get_active_states() -> list[str]:
