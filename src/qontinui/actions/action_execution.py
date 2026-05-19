@@ -112,10 +112,8 @@ class ActionExecution:
             success_criteria = action_config.get_success_criteria()
             if success_criteria:
                 try:
-                    # success_criteria expects ActionResult; build a snapshot for it.
-                    # Typed against action_config.py's placeholder ActionResult — pre-existing.
                     snapshot = builder.build()
-                    custom_success = success_criteria(snapshot)  # type: ignore[arg-type]
+                    custom_success = success_criteria(snapshot)
                     builder.with_success(custom_success)
                 except Exception as e:
                     logger.error(f"Success criteria evaluation failed: {e}")
