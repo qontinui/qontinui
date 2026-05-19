@@ -9,8 +9,7 @@ import time
 
 import pytest
 
-from qontinui.actions.action_result import ActionResult
-from qontinui.actions.result_builder import ActionResultBuilder
+from qontinui.actions.action_result import ActionResult, ActionResultBuilder
 from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import StateRegistry
 from qontinui.model.element.location import Location
@@ -102,7 +101,7 @@ class TestConcurrentActionWorkflows:
         assert len(results) == 10, f"Expected 10 results, got {len(results)}"
         assert all(r.success for r in results), "Not all workflows succeeded"
         assert all(
-            len(r.match_list) == 5 for r in results
+            len(r.matches) == 5 for r in results
         ), "Not all workflows have 5 matches"
 
     def test_concurrent_workflows_with_state_transitions(self):
@@ -174,32 +173,29 @@ class TestConcurrentActionWorkflows:
             assert stats["total_profiles"] == 1
 
     def test_concurrent_workflows_with_action_results(self):
-        """Test workflows that build and merge action results concurrently."""
-        final_result = ActionResult()
+        """Test workflows that build and merge action results concurrently.
+
+        ActionResult is immutable, so merging happens by feeding all
+        threads into a single shared builder which is thread-safe.
+        """
+        final_builder = ActionResultBuilder()
         errors: list[Exception] = []
         lock = threading.Lock()
 
         def execute_result_workflow(thread_id: int):
             """Execute workflow that creates and merges results."""
             try:
-                # Create partial result
-                builder = ActionResultBuilder()
-
+                # Each thread contributes matches + a region directly to the
+                # shared builder (builder add_match/add_defined_region are
+                # thread-safe via internal RLock).
                 for i in range(3):
                     match = MockMatch(
                         thread_id * 50 + i * 10, i * 5, f"result_{thread_id}_{i}"
                     )
-                    builder.add_match(match)
+                    final_builder.add_match(match)
 
-                partial = builder.with_success(True).build()
-
-                # Add a region
                 region = Region(thread_id * 100, thread_id * 50, 50, 50)
-                partial.add_defined_region(region)
-
-                # Merge into final result
-                with lock:
-                    final_result.add_all_results(partial)
+                final_builder.add_defined_region(region)
 
             except Exception as e:
                 with lock:
@@ -215,9 +211,12 @@ class TestConcurrentActionWorkflows:
         for t in threads:
             t.join()
 
+        # Build final immutable result from concurrent contributions
+        final_result = final_builder.with_success(True).build()
+
         # Verify merged result
         assert len(errors) == 0, f"Errors: {errors}"
-        assert len(final_result.match_list) == 30  # 10 threads * 3 matches
+        assert len(final_result.matches) == 30  # 10 threads * 3 matches
         assert len(final_result.defined_regions) == 10  # 10 threads * 1 region
 
     def test_concurrent_workflows_mixed_operations(self):
@@ -230,8 +229,8 @@ class TestConcurrentActionWorkflows:
         def execute_complex_workflow(thread_id: int):
             """Execute complex workflow with multiple operations."""
             try:
-                # 1. Create action result
-                result = ActionResult()
+                # 1. Begin building an action result via builder (immutable target)
+                builder = ActionResultBuilder()
 
                 # 2. Create and register states
                 @state(name=f"complex_state_{thread_id}_start", initial=True)
@@ -251,19 +250,19 @@ class TestConcurrentActionWorkflows:
                 registry.register_state(MiddleState)
                 registry.register_state(EndState)
 
-                # 3. Add matches to result
+                # 3. Add matches to builder
                 for i in range(3):
                     match = MockMatch(i * 10, i * 20, f"complex_{thread_id}_{i}")
-                    result.add(match)
+                    builder.add_match(match)
 
                 # 4. Update action counts
-                result.set_times_acted_on(thread_id + 1)
+                builder.set_times_acted_on(thread_id + 1)
 
                 # 5. Add regions
-                result.add_defined_region(Region(0, 0, 100, 100))
+                builder.add_defined_region(Region(0, 0, 100, 100))
 
-                # 6. Set success
-                result.success = True
+                # 6. Set success and finalize as immutable ActionResult
+                result = builder.with_success(True).build()
 
                 # Store results
                 with lock:
@@ -289,9 +288,12 @@ class TestConcurrentActionWorkflows:
         assert len(results) == 15
         assert len(registries) == 15
 
-        for i, result in enumerate(results):
+        # results may have been appended in non-deterministic order — sort by
+        # times_acted_on (assigned as thread_id + 1) to map back to expected
+        results_by_count = sorted(results, key=lambda r: r.times_acted_on)
+        for i, result in enumerate(results_by_count):
             assert result.success
-            assert len(result.match_list) == 3
+            assert len(result.matches) == 3
             assert result.times_acted_on == i + 1
             assert len(result.defined_regions) == 1
 
@@ -300,21 +302,25 @@ class TestConcurrentActionWorkflows:
             assert registry.next_state_id == 4  # 3 states registered
 
     def test_concurrent_workflows_with_result_properties(self):
-        """Test concurrent access to result properties during modifications."""
-        result = ActionResult()
+        """Test concurrent builder writes interleaved with reads on immutable snapshots.
+
+        The shared builder is thread-safe; readers periodically build an
+        immutable ActionResult snapshot and read its properties.
+        """
+        shared_builder = ActionResultBuilder()
         stop_flag = threading.Event()
         read_counts: list[int] = []
         errors: list[Exception] = []
         lock = threading.Lock()
 
         def writer():
-            """Continuously add matches."""
+            """Continuously add matches to the shared builder."""
             counter = 0
             while not stop_flag.is_set():
                 try:
                     match = MockMatch(counter % 100, counter % 50, f"writer_{counter}")
-                    result.add(match)
-                    result.set_times_acted_on(counter)
+                    shared_builder.add_match(match)
+                    shared_builder.set_times_acted_on(counter)
                     counter += 1
                     time.sleep(0.001)
                 except Exception as e:
@@ -323,15 +329,16 @@ class TestConcurrentActionWorkflows:
                     break
 
         def reader():
-            """Continuously read properties."""
+            """Continuously snapshot the builder and read result properties."""
             count = 0
             while not stop_flag.is_set():
                 try:
-                    # Access properties - should never crash
-                    _ = result.matches
-                    _ = result.is_success
-                    _ = len(result.match_list)
-                    _ = result.times_acted_on
+                    snapshot = shared_builder.build()
+                    # Access properties on immutable snapshot - should never crash
+                    _ = snapshot.matches
+                    _ = snapshot.is_success
+                    _ = len(snapshot.matches)
+                    _ = snapshot.times_acted_on
                     count += 1
                     time.sleep(0.001)
                 except Exception as e:
@@ -361,7 +368,8 @@ class TestConcurrentActionWorkflows:
         assert len(errors) == 0, f"Errors: {errors}"
         assert len(read_counts) == 3
         assert all(count > 0 for count in read_counts)
-        assert len(result.match_list) > 0
+        final = shared_builder.build()
+        assert len(final.matches) > 0
 
 
 class TestConcurrentStateManagement:
@@ -485,7 +493,7 @@ class TestConcurrentResultOperations:
                 result = (
                     builder.with_success(True)
                     .with_description(f"Builder {builder_id}")
-                    .with_times_acted_on(builder_id)
+                    .set_times_acted_on(builder_id)
                     .build()
                 )
 
@@ -509,29 +517,26 @@ class TestConcurrentResultOperations:
 
         for _i, result in enumerate(results):
             assert result.success
-            assert len(result.match_list) == 10
+            assert len(result.matches) == 10
 
     def test_concurrent_result_merging(self):
-        """Test merging results from multiple threads."""
-        master_result = ActionResult()
+        """Test merging results from multiple threads.
+
+        ActionResult is immutable, so "merging" means contributing into a
+        single shared, thread-safe builder.
+        """
+        master_builder = ActionResultBuilder()
         errors: list[Exception] = []
         lock = threading.Lock()
 
         def create_and_merge(thread_id: int):
-            """Create result and merge into master."""
+            """Contribute matches into the master builder."""
             try:
-                # Create partial result
-                partial = ActionResult()
-
+                # Each thread adds its 5 matches directly into shared builder.
+                # ActionResultBuilder is thread-safe (internal RLock).
                 for i in range(5):
                     match = MockMatch(thread_id * 20 + i, i, f"merge_{thread_id}_{i}")
-                    partial.add(match)
-
-                partial.success = True
-
-                # Merge into master
-                with lock:
-                    master_result.add_all_results(partial)
+                    master_builder.add_match(match)
 
             except Exception as e:
                 with lock:
@@ -546,9 +551,11 @@ class TestConcurrentResultOperations:
         for t in threads:
             t.join()
 
+        master_result = master_builder.with_success(True).build()
+
         # Verify
         assert len(errors) == 0, f"Errors: {errors}"
-        assert len(master_result.match_list) == 100  # 20 threads * 5 matches
+        assert len(master_result.matches) == 100  # 20 threads * 5 matches
 
 
 if __name__ == "__main__":

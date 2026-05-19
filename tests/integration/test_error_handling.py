@@ -10,7 +10,7 @@ from unittest.mock import Mock
 import pytest
 from pynput import keyboard, mouse
 
-from qontinui.actions.action_result import ActionResult
+from qontinui.actions.action_result import ActionResultBuilder
 from qontinui.annotations.enhanced_state import state
 from qontinui.annotations.state_registry import StateRegistry
 from qontinui.exceptions import InputControlError
@@ -23,8 +23,13 @@ class TestActionResultErrorHandling:
     """Test error handling in ActionResult."""
 
     def test_thread_safe_error_recovery(self):
-        """Test that errors in one thread don't corrupt ActionResult."""
-        result = ActionResult()
+        """Test that errors in one thread don't corrupt builder state.
+
+        ActionResult is immutable; concurrent construction is the
+        builder's job. This test verifies the builder stays consistent
+        when one worker contributes invalid data.
+        """
+        builder = ActionResultBuilder()
         errors: list[Exception] = []
         lock = threading.Lock()
 
@@ -37,7 +42,7 @@ class TestActionResultErrorHandling:
             try:
                 for i in range(100):
                     match = MockMatch(i)
-                    result.add(match)
+                    builder.add_match(match)
             except Exception as e:
                 with lock:
                     errors.append(e)
@@ -50,13 +55,13 @@ class TestActionResultErrorHandling:
                     if i == 50:
                         # Try to add invalid data
                         try:
-                            result.add(None)  # type: ignore
+                            builder.add_match(None)  # type: ignore
                         except (TypeError, AttributeError):
                             # Expected error - recover and continue
                             pass
                     else:
                         match = MockMatch(i)
-                        result.add(match)
+                        builder.add_match(match)
             except Exception as e:
                 with lock:
                     errors.append(e)
@@ -73,22 +78,29 @@ class TestActionResultErrorHandling:
         for t in threads:
             t.join()
 
+        result = builder.build()
+
         # Verify: should have matches from safe operations
-        assert len(result.match_list) > 0
+        assert len(result.matches) > 0
         # No unhandled errors
         assert len(errors) == 0
 
     def test_invalid_merge_operations(self):
-        """Test error handling for invalid merge operations."""
-        result = ActionResult()
+        """ActionResult is immutable — direct mutation must fail.
 
-        # Try to merge None
-        with pytest.raises((TypeError, AttributeError)):
-            result.add_all_results(None)  # type: ignore
+        Replaces the old add_all_results(...)-with-bad-args test, since
+        ActionResult no longer exposes a merge method. The equivalent
+        invariant on the immutable model is that the frozen dataclass
+        rejects field assignment.
+        """
+        result = ActionResultBuilder().build()
 
-        # Try to merge non-ActionResult
-        with pytest.raises((TypeError, AttributeError)):
-            result.add_all_results("invalid")  # type: ignore
+        # Frozen dataclass: assignment must raise FrozenInstanceError (TypeError)
+        with pytest.raises((TypeError, AttributeError, Exception)):
+            result.success = True  # type: ignore[misc]
+
+        with pytest.raises((TypeError, AttributeError, Exception)):
+            result.times_acted_on = 5  # type: ignore[misc]
 
 
 class TestStateRegistryErrorHandling:
@@ -301,26 +313,27 @@ class TestErrorRecovery:
     """Test recovery mechanisms after errors."""
 
     def test_action_result_recovery_after_error(self):
-        """Test ActionResult can continue after errors."""
-        result = ActionResult()
+        """Builder can continue after a simulated error during construction."""
+        builder = ActionResultBuilder()
 
         class MockMatch:
             def __init__(self, x: int):
                 self.x = x
 
         # Add valid match
-        result.add(MockMatch(1))
+        builder.add_match(MockMatch(1))
 
-        # Try invalid operation
+        # Simulate an error path the caller had to recover from
         try:
-            result.add(None)  # type: ignore
+            raise TypeError("simulated upstream error")
         except (TypeError, AttributeError):
             pass
 
         # Should be able to continue
-        result.add(MockMatch(2))
+        builder.add_match(MockMatch(2))
 
-        assert len(result.match_list) == 2
+        result = builder.build()
+        assert len(result.matches) == 2
 
     def test_state_registry_recovery_after_error(self):
         """Test StateRegistry can continue after errors."""
@@ -353,8 +366,8 @@ class TestErrorRecovery:
         assert len(registry.states) == 2
 
     def test_concurrent_recovery(self):
-        """Test recovery in concurrent scenarios."""
-        result = ActionResult()
+        """Test recovery in concurrent scenarios with shared builder."""
+        builder = ActionResultBuilder()
         errors: list[Exception] = []
         successes: list[int] = []
         lock = threading.Lock()
@@ -369,13 +382,12 @@ class TestErrorRecovery:
                 success_count = 0
                 for i in range(100):
                     try:
-                        # Simulate occasional errors
+                        # Simulate occasional errors in upstream caller code
                         if i % 25 == 0:
-                            result.add(None)  # type: ignore
-                        else:
-                            match = MockMatch(worker_id * 100 + i)
-                            result.add(match)
-                            success_count += 1
+                            raise TypeError("simulated upstream error")
+                        match = MockMatch(worker_id * 100 + i)
+                        builder.add_match(match)
+                        success_count += 1
                     except (TypeError, AttributeError):
                         # Recover from error
                         pass
@@ -396,10 +408,12 @@ class TestErrorRecovery:
         for t in threads:
             t.join()
 
+        result = builder.build()
+
         # Verify recovery
         assert len(errors) == 0  # No unhandled errors
         assert len(successes) == 5
-        assert sum(successes) == len(result.match_list)  # All successful adds recorded
+        assert sum(successes) == len(result.matches)  # All successful adds recorded
 
 
 class TestExceptionTypes:

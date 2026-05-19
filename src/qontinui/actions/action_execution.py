@@ -11,7 +11,7 @@ from typing import Any
 
 from .action_config import ActionConfig
 from .action_interface import ActionInterface
-from .action_result import ActionResult
+from .action_result import ActionResult, ActionResultBuilder
 from .object_collection import ObjectCollection
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ class ActionExecution:
             ActionResult containing execution results and timing
         """
         # Initialize result
-        result = ActionResult(action_config)  # type: ignore[arg-type,call-arg]
+        result = ActionResultBuilder(action_config).build()
         object.__setattr__(result, "action_description", action_description)
         start_time = time.time()
 

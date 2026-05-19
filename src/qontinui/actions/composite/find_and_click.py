@@ -12,7 +12,7 @@ from ...coordinates import CoordinateService
 from ...model.element.location import Location
 from ..action_config import ActionConfig, ActionConfigBuilder
 from ..action_interface import ActionInterface
-from ..action_result import ActionResult
+from ..action_result import ActionResult, ActionResultBuilder
 from ..action_type import ActionType
 from ..basic.click.click import Click
 from ..basic.click.click_options import ClickOptions, ClickOptionsBuilder
@@ -271,7 +271,7 @@ class FindAndClick(ActionInterface):
             return
 
         # Step 2: Click on found element(s)
-        click_result = ActionResult(action_config=click_options)  # type: ignore[call-arg]
+        click_result = ActionResultBuilder(action_config=click_options).build()
         # Pass the matches as an ObjectCollection for clicking
         click_collection = ObjectCollection()
         for match in found_matches:

@@ -1,11 +1,12 @@
 """Tests for RunProcess action with repetition support."""
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any
 
 import pytest
 
-from qontinui.actions.action_result import ActionResult
+from qontinui.actions.action_result import ActionResultBuilder
 from qontinui.actions.action_type import ActionType
 from qontinui.actions.composite.process import (
     ProcessRepetitionOptionsBuilder,
@@ -189,10 +190,10 @@ class TestRunProcess:
         """Test that missing config raises error."""
         action = RunProcess()
         options = RunProcessOptionsBuilder().set_process_id("test").build()
-        action_result = ActionResult(options)
+        action_result = ActionResultBuilder(options).build()
 
         with pytest.raises(RuntimeError, match="requires QontinuiConfig"):
-            action.perform(action_result)
+            asyncio.run(action.perform(action_result))
 
     def test_no_process_id(self):
         """Test handling of missing process ID."""
@@ -200,12 +201,12 @@ class TestRunProcess:
         action = RunProcess(config)
 
         options = RunProcessOptionsBuilder().build()  # Empty process_id
-        action_result = ActionResult(options)
+        action_result = ActionResultBuilder(options).build()
 
-        action.perform(action_result)
+        asyncio.run(action.perform(action_result))
 
         assert action_result.is_success is False
-        assert "No process ID" in action_result.get_output_text()
+        assert "No workflow/process ID" in action_result.output_text
 
     def test_process_not_found(self):
         """Test handling of non-existent process."""
@@ -213,12 +214,12 @@ class TestRunProcess:
         action = RunProcess(config)
 
         options = RunProcessOptionsBuilder().set_process_id("nonexistent").build()
-        action_result = ActionResult(options)
+        action_result = ActionResultBuilder(options).build()
 
-        action.perform(action_result)
+        asyncio.run(action.perform(action_result))
 
         assert action_result.is_success is False
-        assert "not found" in action_result.get_output_text()
+        assert "not found" in action_result.output_text
 
     def test_single_execution_no_repetition(self):
         """Test executing process once without repetition."""
@@ -236,26 +237,26 @@ class TestRunProcess:
         action = RunProcess(config)
 
         options = RunProcessOptionsBuilder().set_process_id("test_process").build()
-        action_result = ActionResult(options)
+        action_result = ActionResultBuilder(options).build()
 
-        action.perform(action_result)
+        asyncio.run(action.perform(action_result))
 
         # Should execute (success depends on mock implementation)
-        assert "Test Process" in action_result.get_output_text()
+        assert "Test Process" in action_result.output_text
 
     def test_invalid_options_type(self):
         """Test that invalid options type raises error."""
-        from qontinui.actions.basic.click.click_options import ClickOptions
+        from qontinui.actions.basic.click.click_options import ClickOptionsBuilder
 
         config = MockQontinuiConfig(processes=[])
         action = RunProcess(config)
 
         # Pass wrong options type
-        wrong_options = ClickOptions.builder().build()
-        action_result = ActionResult(wrong_options)
+        wrong_options = ClickOptionsBuilder().build()
+        action_result = ActionResultBuilder(wrong_options).build()
 
         with pytest.raises(ValueError, match="requires RunProcessOptions"):
-            action.perform(action_result)
+            asyncio.run(action.perform(action_result))
 
 
 if __name__ == "__main__":
