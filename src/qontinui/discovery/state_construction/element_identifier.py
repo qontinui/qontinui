@@ -211,40 +211,36 @@ class ElementIdentifier:
         )
 
     def identify_regions(
-        self, screenshot: np.ndarray, state_images: list[StateImage] | None = None
+        self,
+        screenshots: list[np.ndarray],
+        state_images: list[StateImage] | None = None,
     ) -> list[IdentifiedRegion]:
-        """Identify functional regions in a screenshot.
+        """Identify functional regions across one or more screenshots.
 
-        Detects various types of regions including grids, panels, title bars,
-        and navigation areas using edge detection, contour analysis, and
-        pattern recognition.
+        Runs grid/panel/title-bar detection on every screenshot, merges results,
+        then dedupes overlapping regions (keeping the highest-confidence one).
 
         Args:
-            screenshot: Screenshot image as numpy array (BGR format)
-            state_images: Optional list of StateImages to aid region detection
+            screenshots: One or more screenshots (BGR numpy arrays) of the same
+                state. Detection runs per screenshot and results are merged.
+            state_images: Optional list of StateImages to aid region detection.
 
         Returns:
-            List of identified regions with bounding boxes and types
+            List of identified regions with bounding boxes and types.
         """
-        regions = []
+        if not screenshots:
+            return []
 
-        # Detect different types of regions
-        grid_regions = self.detect_grid_regions(screenshot)
-        panel_regions = self.detect_panel_regions(screenshot)
-        title_bar_regions = self.detect_title_bars(screenshot)
+        regions: list[IdentifiedRegion] = []
+        for screenshot in screenshots:
+            regions.extend(self.detect_grid_regions(screenshot))
+            regions.extend(self.detect_panel_regions(screenshot))
+            regions.extend(self.detect_title_bars(screenshot))
 
-        regions.extend(grid_regions)
-        regions.extend(panel_regions)
-        regions.extend(title_bar_regions)
-
-        # If state_images provided, use them to refine region detection
         if state_images:
             regions = self._refine_regions_with_elements(regions, state_images)
 
-        # Remove overlapping regions (keep higher confidence)
-        regions = self._remove_overlapping_regions(regions)
-
-        return regions
+        return self._remove_overlapping_regions(regions)
 
     def classify_image_type(
         self, state_image: StateImage, screenshot: np.ndarray | None = None

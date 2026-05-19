@@ -12,7 +12,7 @@ This integration test suite covers:
 6. State object completeness verification
 """
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import cv2
 import numpy as np
@@ -452,9 +452,7 @@ class TestCompleteStatePipeline:
 class TestOCRNamingIntegration:
     """Test OCR-based naming integration in the pipeline."""
 
-    @patch(
-        "qontinui.discovery.state_construction.state_builder.StateBuilder.name_generator"
-    )
+    @patch("qontinui.discovery.state_construction.state_builder.StateBuilder.name_generator")
     def test_state_name_generation_with_ocr(self, mock_name_gen, synthetic_screenshots):
         """Test that OCR name generator is used for state naming."""
         # Setup mock name generator
@@ -471,12 +469,8 @@ class TestOCRNamingIntegration:
         assert isinstance(state.name, str)
         assert len(state.name) > 0
 
-    @patch(
-        "qontinui.discovery.state_construction.state_builder.StateBuilder.name_generator"
-    )
-    def test_element_name_generation_with_ocr(
-        self, mock_name_gen, synthetic_screenshots
-    ):
+    @patch("qontinui.discovery.state_construction.state_builder.StateBuilder.name_generator")
+    def test_element_name_generation_with_ocr(self, mock_name_gen, synthetic_screenshots):
         """Test that element names are generated using OCR."""
         mock_name_gen.generate_name_from_image.return_value = "start_button"
 
@@ -491,8 +485,14 @@ class TestOCRNamingIntegration:
 
     def test_fallback_naming_when_ocr_unavailable(self, synthetic_screenshots):
         """Test that fallback naming works when OCR is not available."""
+        from qontinui.discovery.state_construction.state_builder import (
+            FallbackNameGenerator,
+        )
+
         builder = StateBuilder()
-        # Fallback name generator is used by default
+        # Force the fallback path — bypass lazy-load by injecting the fallback
+        # directly. Otherwise OCR (always available in this venv) wins.
+        builder._name_generator = FallbackNameGenerator()
 
         state = builder.build_state_from_screenshots(synthetic_screenshots)
 
@@ -506,18 +506,36 @@ class TestOCRNamingIntegration:
 class TestElementIdentificationIntegration:
     """Test element identification integration in the pipeline."""
 
-    @patch(
-        "qontinui.discovery.state_construction.state_builder.StateBuilder.element_identifier"
-    )
-    def test_region_identification(self, mock_identifier, synthetic_screenshots):
+    def test_region_identification(self, synthetic_screenshots):
         """Test that element identifier detects regions."""
-        # Mock region detection
+        from qontinui.discovery.state_construction.element_identifier import (
+            IdentifiedRegion,
+            RegionType,
+        )
+
+        # Mock region detection — return IdentifiedRegion dataclasses, matching
+        # the unified ElementIdentifier API.
+        mock_identifier = Mock()
         mock_identifier.identify_regions.return_value = [
-            {"bbox": (50, 100, 200, 400), "type": "panel", "confidence": 0.8},
-            {"bbox": (300, 200, 200, 50), "type": "button", "confidence": 0.9},
+            IdentifiedRegion(
+                region_type=RegionType.PANEL,
+                bounds=(50, 100, 200, 400),
+                confidence=0.8,
+                properties={},
+                sub_elements=[],
+            ),
+            IdentifiedRegion(
+                region_type=RegionType.NAVIGATION,
+                bounds=(300, 200, 200, 50),
+                confidence=0.9,
+                properties={},
+                sub_elements=[],
+            ),
         ]
 
         builder = StateBuilder()
+        # Inject directly via the private slot so the lazy-loading property
+        # returns our mock instead of constructing a real ElementIdentifier.
         builder._element_identifier = mock_identifier
 
         state = builder.build_state_from_screenshots(synthetic_screenshots)
@@ -578,9 +596,7 @@ class TestTransitionInfoProcessing:
         assert trans.target_state_name is None
         assert trans.timestamp is None
 
-    def test_click_point_clustering(
-        self, transition_info_with_clicks, synthetic_screenshots
-    ):
+    def test_click_point_clustering(self, transition_info_with_clicks, synthetic_screenshots):
         """Test that click points are clustered into StateLocations."""
         builder = StateBuilder()
         _, transitions_from = transition_info_with_clicks
@@ -667,15 +683,18 @@ class TestStateObjectProperties:
         builder = StateBuilder()
         state = builder.build_state_from_screenshots(synthetic_screenshots)
 
-        # Add StateImage
-        pattern = Pattern(name="test_pattern")
+        # Add StateImage — Pattern.from_image is the standard factory; it
+        # builds id/mask/pixel_data internally from a small fixture array.
+        pattern = Pattern.from_image(
+            np.ones((10, 10, 3), dtype=np.uint8) * 128, name="test_pattern"
+        )
         state_img = StateImage(image=pattern, name="test_image")
         initial_count = len(state.state_images)
         state.add_state_image(state_img)
         assert len(state.state_images) == initial_count + 1
 
         # Add StateRegion
-        region = Region(x=0, y=0, w=100, h=100)
+        region = Region(x=0, y=0, width=100, height=100)
         state_reg = StateRegion(region=region, name="test_region")
         initial_count = len(state.state_regions)
         state.add_state_region(state_reg)
@@ -691,9 +710,7 @@ class TestStateObjectProperties:
     def test_state_string_representation(self, synthetic_screenshots):
         """Test State string representation."""
         builder = StateBuilder()
-        state = builder.build_state_from_screenshots(
-            synthetic_screenshots, state_name="test_repr"
-        )
+        state = builder.build_state_from_screenshots(synthetic_screenshots, state_name="test_repr")
 
         state_str = str(state)
         assert "test_repr" in state_str
@@ -767,9 +784,7 @@ def test_integration_suite_summary():
     print("\nKey Features:")
     print("  - Synthetic screenshot generation for reproducible testing")
     print("  - Synthetic transition pair generation")
-    print(
-        "  - Complete pipeline testing (DifferentialConsistency -> StateBuilder -> State)"
-    )
+    print("  - Complete pipeline testing (DifferentialConsistency -> StateBuilder -> State)")
     print("  - OCR naming integration testing (with mocks)")
     print("  - Element identification integration testing")
     print("  - State object completeness verification")
