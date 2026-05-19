@@ -17,7 +17,7 @@ Test coverage:
 """
 
 import logging
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -31,19 +31,19 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(autouse=True)
-def cleanup_registry():
-    """Clean up registry before and after each test."""
+def cleanup_state():
+    """Clean up registry and navigation_api singletons before and after each test."""
     registry.clear_all()
+    navigation_api.reset_for_tests()
     yield
     registry.clear_all()
+    navigation_api.reset_for_tests()
 
 
 @pytest.fixture
 def mock_image():
     """Create a mock image for testing."""
-    mock_img = Mock(spec=Image)
-    mock_img.exists = Mock(return_value=True)
-    return mock_img
+    return Mock(spec=Image)
 
 
 @pytest.fixture
@@ -487,13 +487,18 @@ class TestWorkflowExecutionE2E:
         )
         assert await evaluator.evaluate_condition(condition) is True
 
-    @patch("qontinui.model.state.state_image.StateImage.exists")
-    def test_full_pipeline_integration(
-        self, mock_exists, sample_bdo_config, mock_image
+    @pytest.mark.asyncio
+    @patch(
+        "qontinui.actions.control_flow.condition_evaluator."
+        "ConditionEvaluator._evaluate_image_exists_condition",
+        new_callable=AsyncMock,
+    )
+    async def test_full_pipeline_integration(
+        self, mock_image_exists, sample_bdo_config, mock_image
     ):
         """Test 5: Ensure all components integrate correctly in a full pipeline."""
-        # Configure mock for state image existence checks
-        mock_exists.return_value = True
+        # Configure mock for image_exists condition evaluation
+        mock_image_exists.return_value = True
 
         # Register all images
         for img_config in sample_bdo_config["images"]:
@@ -501,13 +506,18 @@ class TestWorkflowExecutionE2E:
 
         # Register workflows from config (processes are workflows in BDO format)
         from qontinui.config import Workflow
+        from qontinui.config.models.workflow import Connections
 
         for process in sample_bdo_config["processes"]:
-            # Convert process to Workflow object
+            # Convert process to Workflow object. version + connections are
+            # required by the Pydantic schema; an empty Connections root is
+            # fine for this test since we never traverse the graph here.
             workflow = Workflow(
                 id=process["id"],
                 name=process["name"],
+                version="1.0.0",
                 actions=[Action(**action) for action in process["actions"]],
+                connections=Connections(root={}),
             )
             registry.register_workflow(process["id"], workflow)
 
@@ -565,12 +575,14 @@ class TestWorkflowExecutionE2E:
             navigation_api._navigator.transition_executor.workflow_executor is not None
         )
 
-        # Test that actions can be parsed and validated
+        # Test that actions can be parsed and validated. ImageTarget is plural
+        # `imageIds` (list[str]) since the multi-image breaking change in
+        # `config/models/targets.py:24`.
         test_action = Action(
             id="integration-test-action",
             type="FIND",
             config={
-                "target": {"type": "image", "imageId": "img-login-button"},
+                "target": {"type": "image", "imageIds": ["img-login-button"]},
                 "search": {"strategy": "single", "confidence": 0.8},
             },
         )
@@ -578,7 +590,7 @@ class TestWorkflowExecutionE2E:
         # Validate action parses correctly
         typed_config = get_typed_config(test_action)
         assert typed_config is not None
-        assert typed_config.target.image_id == "img-login-button"
+        assert typed_config.target.image_ids == ["img-login-button"]
 
         # Test condition evaluation works with registered images
         from qontinui.actions.control_flow.condition_evaluator import ConditionEvaluator
@@ -592,25 +604,25 @@ class TestWorkflowExecutionE2E:
             type="image_exists", image_id="img-login-button"
         )
 
-        with patch(
-            "qontinui.model.state.state_image.StateImage.exists", return_value=True
-        ):
-            result = evaluator.evaluate_condition(img_condition)
-            assert result is True
+        result = await evaluator.evaluate_condition(img_condition)
+        assert result is True
 
         # Test variable condition
         var_condition = ConditionConfig(
             type="variable", variable_name="test_var", operator="==", expected_value=42
         )
-        result = evaluator.evaluate_condition(var_condition)
+        result = await evaluator.evaluate_condition(var_condition)
         assert result is True
 
     def test_transition_executor_workflow_execution(
         self, sample_bdo_config, mock_image
     ):
         """Test that EnhancedTransitionExecutor can execute workflows through workflow_executor."""
+        from qontinui.model.state.state import State
         from qontinui.model.state.state_service import StateService
-        from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
+        from qontinui.model.transition.enhanced_state_transition import (
+            TaskSequenceStateTransition,
+        )
         from qontinui.multistate_integration.enhanced_transition_executor import (
             EnhancedTransitionExecutor,
         )
@@ -620,8 +632,12 @@ class TestWorkflowExecutionE2E:
         for img_config in sample_bdo_config["images"]:
             registry.register_image(img_config["id"], mock_image)
 
-        # Create state service and memory
+        # Create state service and memory; register the source + target states
+        # so EnhancedTransitionExecutor._execute_validate finds them when
+        # iterating transition.activate (state_service.get_state must not return None).
         state_service = StateService()
+        state_service.add_state(State(name="Source", id=1))
+        state_service.add_state(State(name="Target", id=2))
         state_memory = StateMemory(state_service=state_service)
 
         # Create mock workflow executor
@@ -676,10 +692,13 @@ class TestWorkflowExecutionE2E:
         # Set workflow executor
         navigation_api.set_workflow_executor(mock_workflow_executor)
 
-        # Mock the state image exists checks to return True
+        # Mock the image_exists condition evaluation to return True
         with patch(
-            "qontinui.model.state.state_image.StateImage.exists", return_value=True
-        ):
+            "qontinui.actions.control_flow.condition_evaluator."
+            "ConditionEvaluator._evaluate_image_exists_condition",
+            new_callable=AsyncMock,
+        ) as mock_image_exists:
+            mock_image_exists.return_value = True
             # Attempt navigation (this should trigger workflow execution)
             # Note: This may fail due to other reasons, but we want to verify
             # that the workflow executor is integrated correctly
