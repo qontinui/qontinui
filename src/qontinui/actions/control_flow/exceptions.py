@@ -15,6 +15,10 @@ class BreakLoop(Exception):
 
     Attributes:
         message: A descriptive message explaining why the loop was broken
+        iterations_completed: Iterations completed before the break. Loop
+            executors set this while unwinding so that ``execute_loop`` can
+            recover the count — the inner loop's partial result dict is
+            never returned/merged on the exception-propagation path.
 
     Example:
         >>> if error_condition:
@@ -29,6 +33,7 @@ class BreakLoop(Exception):
                     Defaults to "Loop break triggered".
         """
         self.message = message
+        self.iterations_completed: int = 0
         super().__init__(self.message)
 
 

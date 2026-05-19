@@ -293,6 +293,10 @@ class ControlFlowExecutor:
 
                 return result
 
+            except (BreakLoop, ContinueLoop):
+                # Control-flow exceptions are NOT errors — they signal loop
+                # termination and must propagate to the loop executor's try/except.
+                raise
             except Exception as e:
                 logger.error(f"Action execution failed: {e}")
                 return {"success": False, "error": str(e)}
