@@ -14,18 +14,18 @@ from qontinui.orchestration.execution_context import ExecutionContext
 class TestConditionEvaluatorSafety:
     """Test that condition evaluator handles expressions safely."""
 
-    def test_simple_expression_evaluation(self):
+    async def test_simple_expression_evaluation(self):
         """Test that simple expressions evaluate correctly."""
         context = ExecutionContext({"x": 10, "y": 5})
         evaluator = ConditionEvaluator(context)
 
         config = ConditionConfig(type="expression", expression="x > y")
-        assert evaluator.evaluate_condition(config) is True
+        assert await evaluator.evaluate_condition(config) is True
 
         config = ConditionConfig(type="expression", expression="x < y")
-        assert evaluator.evaluate_condition(config) is False
+        assert await evaluator.evaluate_condition(config) is False
 
-    def test_variable_condition(self):
+    async def test_variable_condition(self):
         """Test variable-based conditions."""
         context = ExecutionContext({"counter": 10})
         evaluator = ConditionEvaluator(context)
@@ -33,25 +33,25 @@ class TestConditionEvaluatorSafety:
         config = ConditionConfig(
             type="variable", variable_name="counter", operator=">", expected_value=5
         )
-        assert evaluator.evaluate_condition(config) is True
+        assert await evaluator.evaluate_condition(config) is True
 
-    def test_complex_expression(self):
+    async def test_complex_expression(self):
         """Test complex boolean expressions."""
         context = ExecutionContext({"a": 5, "b": 10, "c": 15})
         evaluator = ConditionEvaluator(context)
 
         config = ConditionConfig(type="expression", expression="a < b and b < c")
-        assert evaluator.evaluate_condition(config) is True
+        assert await evaluator.evaluate_condition(config) is True
 
-    def test_arithmetic_in_expression(self):
+    async def test_arithmetic_in_expression(self):
         """Test arithmetic operations in expressions."""
         context = ExecutionContext({"x": 10, "y": 5})
         evaluator = ConditionEvaluator(context)
 
         config = ConditionConfig(type="expression", expression="x + y == 15")
-        assert evaluator.evaluate_condition(config) is True
+        assert await evaluator.evaluate_condition(config) is True
 
-    def test_empty_builtins_prevents_dangerous_ops(self):
+    async def test_empty_builtins_prevents_dangerous_ops(self):
         """Test that empty __builtins__ prevents dangerous operations."""
         context = ExecutionContext({})
         evaluator = ConditionEvaluator(context)
@@ -62,13 +62,13 @@ class TestConditionEvaluatorSafety:
         )
 
         with pytest.raises(ValueError, match="Invalid expression"):
-            evaluator.evaluate_condition(config)
+            await evaluator.evaluate_condition(config)
 
 
 class TestConditionEvaluatorErrorHandling:
     """Test error handling in condition evaluation."""
 
-    def test_undefined_variable_in_expression(self):
+    async def test_undefined_variable_in_expression(self):
         """Test that undefined variables raise appropriate errors."""
         context = ExecutionContext({})
         evaluator = ConditionEvaluator(context)
@@ -76,9 +76,9 @@ class TestConditionEvaluatorErrorHandling:
         config = ConditionConfig(type="expression", expression="undefined_var > 5")
 
         with pytest.raises(ValueError, match="Invalid expression"):
-            evaluator.evaluate_condition(config)
+            await evaluator.evaluate_condition(config)
 
-    def test_syntax_error_in_expression(self):
+    async def test_syntax_error_in_expression(self):
         """Test that syntax errors are caught."""
         context = ExecutionContext({})
         evaluator = ConditionEvaluator(context)
@@ -86,9 +86,9 @@ class TestConditionEvaluatorErrorHandling:
         config = ConditionConfig(type="expression", expression="x +")  # Invalid syntax
 
         with pytest.raises(ValueError, match="Invalid expression"):
-            evaluator.evaluate_condition(config)
+            await evaluator.evaluate_condition(config)
 
-    def test_type_error_in_expression(self):
+    async def test_type_error_in_expression(self):
         """Test that type errors are caught."""
         context = ExecutionContext({"x": "string", "y": 5})
         evaluator = ConditionEvaluator(context)
@@ -98,9 +98,9 @@ class TestConditionEvaluatorErrorHandling:
         )  # Can't add string and int
 
         with pytest.raises(ValueError, match="Invalid expression"):
-            evaluator.evaluate_condition(config)
+            await evaluator.evaluate_condition(config)
 
-    def test_division_by_zero(self):
+    async def test_division_by_zero(self):
         """Test that division by zero is caught."""
         context = ExecutionContext({"x": 10})
         evaluator = ConditionEvaluator(context)
@@ -108,13 +108,13 @@ class TestConditionEvaluatorErrorHandling:
         config = ConditionConfig(type="expression", expression="x / 0")
 
         with pytest.raises(ValueError, match="Invalid expression"):
-            evaluator.evaluate_condition(config)
+            await evaluator.evaluate_condition(config)
 
 
 class TestConditionTypes:
     """Test different condition types."""
 
-    def test_variable_condition_operators(self):
+    async def test_variable_condition_operators(self):
         """Test all supported operators for variable conditions."""
         context = ExecutionContext({"x": 10})
         evaluator = ConditionEvaluator(context)
@@ -141,12 +141,12 @@ class TestConditionTypes:
                 operator=operator,
                 expected_value=expected_value,
             )
-            result = evaluator.evaluate_condition(config)
+            result = await evaluator.evaluate_condition(config)
             assert (
                 result == expected_result
             ), f"Failed for operator {operator} with expected {expected_value}"
 
-    def test_contains_operator(self):
+    async def test_contains_operator(self):
         """Test the contains operator."""
         context = ExecutionContext({"text": "hello world", "items": [1, 2, 3]})
         evaluator = ConditionEvaluator(context)
@@ -158,7 +158,7 @@ class TestConditionTypes:
             operator="contains",
             expected_value="world",
         )
-        assert evaluator.evaluate_condition(config) is True
+        assert await evaluator.evaluate_condition(config) is True
 
         # List contains
         config = ConditionConfig(
@@ -167,9 +167,9 @@ class TestConditionTypes:
             operator="contains",
             expected_value=2,
         )
-        assert evaluator.evaluate_condition(config) is True
+        assert await evaluator.evaluate_condition(config) is True
 
-    def test_matches_operator(self):
+    async def test_matches_operator(self):
         """Test the matches (regex) operator."""
         context = ExecutionContext({"text": "hello123"})
         evaluator = ConditionEvaluator(context)
@@ -180,13 +180,13 @@ class TestConditionTypes:
             operator="matches",
             expected_value=r"hello\d+",
         )
-        assert evaluator.evaluate_condition(config) is True
+        assert await evaluator.evaluate_condition(config) is True
 
 
 class TestVariableAccess:
     """Test variable access patterns."""
 
-    def test_missing_variable_treated_as_none(self):
+    async def test_missing_variable_treated_as_none(self):
         """Test that missing variables are treated as None."""
         context = ExecutionContext({})
         evaluator = ConditionEvaluator(context)
@@ -198,25 +198,25 @@ class TestVariableAccess:
             expected_value=None,
         )
         # Should not raise, should treat as None
-        result = evaluator.evaluate_condition(config)
+        result = await evaluator.evaluate_condition(config)
         assert result is True
 
-    def test_variables_accessible_in_expression(self):
+    async def test_variables_accessible_in_expression(self):
         """Test that context variables are accessible in expressions."""
         context = ExecutionContext({"a": 1, "b": 2, "c": 3})
         evaluator = ConditionEvaluator(context)
 
         config = ConditionConfig(type="expression", expression="a + b == c")
-        assert evaluator.evaluate_condition(config) is True
+        assert await evaluator.evaluate_condition(config) is True
 
-    def test_namespaced_variable_access(self):
+    async def test_namespaced_variable_access(self):
         """Test that variables can be accessed via variables namespace."""
         context = ExecutionContext({"x": 10})
         evaluator = ConditionEvaluator(context)
 
         # Should work both as 'x' and 'variables.x' (though latter not in current impl)
         config = ConditionConfig(type="expression", expression="x == 10")
-        assert evaluator.evaluate_condition(config) is True
+        assert await evaluator.evaluate_condition(config) is True
 
 
 class TestSecurityDocumentation:
