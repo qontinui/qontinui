@@ -13,7 +13,7 @@ Key test areas:
 - Integration with detectors
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -42,9 +42,7 @@ class TestStateBuilderBasic:
         Returns:
             Initialized StateBuilder with default parameters
         """
-        return StateBuilder(
-            consistency_threshold=0.9, min_image_area=100, min_region_area=500
-        )
+        return StateBuilder(consistency_threshold=0.9, min_image_area=100, min_region_area=500)
 
     def test_builder_initialization(self, builder):
         """Test that builder initializes properly.
@@ -66,15 +64,19 @@ class TestStateBuilderBasic:
 
         Verifies:
             - Properties trigger lazy loading
-            - Fallback implementations are used when imports fail
+            - Loaded instances satisfy the duck-typed protocol used by the
+              builder (real or fallback are both acceptable).
         """
-        # Name generator should fall back
+        # name_generator must expose generate_name_from_image.
         name_gen = builder.name_generator
-        assert isinstance(name_gen, FallbackNameGenerator)
+        assert name_gen is not None
+        assert callable(getattr(name_gen, "generate_name_from_image", None))
 
-        # Element identifier should fall back
+        # element_identifier must expose identify_regions accepting a list of
+        # screenshots and returning IdentifiedRegion-shaped objects.
         elem_id = builder.element_identifier
-        assert isinstance(elem_id, FallbackElementIdentifier)
+        assert elem_id is not None
+        assert callable(getattr(elem_id, "identify_regions", None))
 
     def test_build_state_basic(self, builder):
         """Test basic state building.
@@ -114,9 +116,7 @@ class TestStateBuilderBasic:
         screenshot, _ = create_login_form_screenshot()
         screenshots = [screenshot] * 2
 
-        state = builder.build_state_from_screenshots(
-            screenshots, state_name="explicit_login_state"
-        )
+        state = builder.build_state_from_screenshots(screenshots, state_name="explicit_login_state")
 
         assert state.name == "explicit_login_state"
 
@@ -302,9 +302,7 @@ class TestStateImagesIdentification:
             img = generator.generate(width=500, height=400, elements=elements)
             screenshots.append(img)
 
-        regions = builder._detect_consistent_regions(
-            screenshots, threshold=0.7, min_area=1000
-        )
+        regions = builder._detect_consistent_regions(screenshots, threshold=0.7, min_area=1000)
 
         assert isinstance(regions, list)
 
@@ -317,9 +315,7 @@ class TestStateImagesIdentification:
         """
         # Create identical screenshots
         elements = [
-            ElementSpec(
-                "rectangle", x=50, y=50, width=100, height=100, color=(150, 150, 150)
-            )
+            ElementSpec("rectangle", x=50, y=50, width=100, height=100, color=(150, 150, 150))
         ]
 
         screenshots = []
@@ -406,10 +402,21 @@ class TestStateRegionsIdentification:
             - Generates valid names for regions
             - Falls back to position-based naming
         """
-        screenshot = np.zeros((400, 600, 3), dtype=np.uint8)
-        region_info = {"bbox": (100, 150, 200, 180), "type": "panel", "confidence": 0.8}
+        from qontinui.discovery.state_construction.element_identifier import (
+            IdentifiedRegion,
+            RegionType,
+        )
 
-        name = builder._generate_region_name(region_info, screenshot)
+        screenshot = np.zeros((400, 600, 3), dtype=np.uint8)
+        identified_region = IdentifiedRegion(
+            region_type=RegionType.PANEL,
+            bounds=(100, 150, 200, 180),
+            confidence=0.8,
+            properties={},
+            sub_elements=[],
+        )
+
+        name = builder._generate_region_name(identified_region, screenshot)
 
         assert isinstance(name, str)
         assert len(name) > 0
@@ -553,17 +560,13 @@ class TestStateBoundaryDetection:
 
         assert boundary is None  # No detector available
 
-    @patch(
-        "qontinui.discovery.state_construction.state_builder.StateBuilder.diff_detector"
-    )
-    def test_determine_state_boundary_with_detector(self, mock_diff_detector, builder):
+    def test_determine_state_boundary_with_detector(self, builder):
         """Test boundary detection with mocked detector.
 
         Verifies:
             - Calls detector correctly
             - Returns largest region as boundary
         """
-        # Mock the detector
         from qontinui.discovery.state_detection.differential_consistency_detector import (
             StateRegion,
         )
@@ -583,6 +586,9 @@ class TestStateBoundaryDetection:
 
         mock_detector = Mock()
         mock_detector.detect_state_regions.return_value = [mock_region1, mock_region2]
+        # Inject the detector via the private attribute that the lazy-loading
+        # property reads. The property only loads the real detector when this
+        # is None, so setting it here bypasses the lazy import entirely.
         builder._diff_detector = mock_detector
 
         screenshot = np.zeros((400, 600, 3), dtype=np.uint8)
@@ -638,9 +644,7 @@ class TestWithTransitions:
             TransitionInfo(before_screenshot=blank, after_screenshot=screenshot)
         ] * 12  # Need 10+ for boundary detection
 
-        state = builder.build_state_from_screenshots(
-            screenshots, transitions_to_state=transitions
-        )
+        state = builder.build_state_from_screenshots(screenshots, transitions_to_state=transitions)
 
         assert state is not None
         # May or may not have usable_area depending on detector availability
@@ -683,9 +687,7 @@ class TestWithTransitions:
         screenshots = [screenshot] * 2
 
         blank = np.zeros((600, 800, 3), dtype=np.uint8)
-        transitions_to = [
-            TransitionInfo(before_screenshot=blank, after_screenshot=screenshot)
-        ] * 12
+        transitions_to = [TransitionInfo(before_screenshot=blank, after_screenshot=screenshot)] * 12
 
         transitions_from = [
             TransitionInfo(
@@ -744,8 +746,13 @@ class TestFallbackImplementations:
 
         Verifies:
             - Identifies basic geometric regions
-            - Returns list of region dicts
+            - Returns list of IdentifiedRegion dataclasses
         """
+        from qontinui.discovery.state_construction.element_identifier import (
+            IdentifiedRegion,
+            RegionType,
+        )
+
         identifier = FallbackElementIdentifier()
 
         screenshot, _ = create_dialog_screenshot()
@@ -755,9 +762,10 @@ class TestFallbackImplementations:
 
         assert isinstance(regions, list)
         for region in regions:
-            assert "bbox" in region
-            assert "type" in region
-            assert "confidence" in region
+            assert isinstance(region, IdentifiedRegion)
+            assert isinstance(region.region_type, RegionType)
+            assert len(region.bounds) == 4
+            assert 0.0 <= region.confidence <= 1.0
 
 
 class TestTransitionInfo:
@@ -858,9 +866,7 @@ class TestIntegration:
         Verifies:
             - Building with same screenshots produces similar states
         """
-        screenshot = np.random.RandomState(42).randint(
-            0, 255, (400, 600, 3), dtype=np.uint8
-        )
+        screenshot = np.random.RandomState(42).randint(0, 255, (400, 600, 3), dtype=np.uint8)
         screenshots = [screenshot] * 2
 
         state1 = builder.build_state_from_screenshots(screenshots.copy())

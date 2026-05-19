@@ -228,11 +228,18 @@ class StateBuilder:
         if not screenshot_sequence:
             raise ValueError("screenshot_sequence cannot be empty")
 
+        # Normalize all screenshots to 3-channel BGR. The downstream pipeline
+        # (panel/grid/title-bar detectors, OCR, consistency analysis) is built
+        # around BGR; cv2 4.13 stopped silently accepting 1-channel input where
+        # 3-channel was expected, so we widen at the boundary instead of
+        # scattering channel-count checks across every detector.
+        screenshot_sequence = [
+            cv2.cvtColor(s, cv2.COLOR_GRAY2BGR) if s.ndim == 2 else s for s in screenshot_sequence
+        ]
+
         # 1. Generate state name
         if state_name is None:
-            state_name = self._generate_state_name(
-                screenshot_sequence, transitions_to_state
-            )
+            state_name = self._generate_state_name(screenshot_sequence, transitions_to_state)
 
         # 2. Identify StateImages (persistent visual elements)
         state_images = self._identify_state_images(screenshot_sequence)
@@ -353,9 +360,7 @@ class StateBuilder:
             # Create Pattern from image data
             import numpy as np
 
-            mask = (
-                np.ones(img_data.shape[:2], dtype=np.uint8) * 255
-            )  # Default full mask
+            mask = np.ones(img_data.shape[:2], dtype=np.uint8) * 255  # Default full mask
             pattern = Pattern(id=name, name=name, pixel_data=img_data, mask=mask)  # type: ignore[call-arg]
             pattern._image_data = img_data  # type: ignore[attr-defined]  # Store raw data
 
@@ -408,9 +413,7 @@ class StateBuilder:
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
         # Find contours
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
@@ -420,9 +423,7 @@ class StateBuilder:
                 continue
 
             # Check if this region is consistent across all screenshots
-            consistency_score = self._check_region_consistency(
-                screenshots, (x, y, w, h)
-            )
+            consistency_score = self._check_region_consistency(screenshots, (x, y, w, h))
 
             if consistency_score >= threshold:
                 regions.append(
@@ -513,9 +514,7 @@ class StateBuilder:
 
         return "element"
 
-    def _identify_state_regions(
-        self, screenshots: list[np.ndarray]
-    ) -> list[StateRegion]:
+    def _identify_state_regions(self, screenshots: list[np.ndarray]) -> list[StateRegion]:
         """Identify StateRegions - functional areas like panels, grids, or lists.
 
         StateRegions represent interactive or significant areas within a state.
@@ -541,55 +540,53 @@ class StateBuilder:
         # Use element identifier to find structured regions
         detected = self.element_identifier.identify_regions(screenshots)
 
-        for region_info in detected:
-            bbox = region_info["bbox"]
-            region_type = region_info.get("type", "panel")
+        for identified_region in detected:
+            bounds = identified_region.bounds
+            region_type_name = identified_region.region_type.value
 
             # Generate semantic name
-            name = self._generate_region_name(region_info, screenshots[0])
+            name = self._generate_region_name(identified_region, screenshots[0])
 
             # Create Region object
-            x, y, w, h = bbox
+            x, y, w, h = bounds
             region_obj = Region(x, y, w, h)
 
             # Create StateRegion
             state_region = StateRegion(region=region_obj, name=name)
             state_region._interaction_region = True
-            state_region.metadata["type"] = region_type
-            state_region.metadata["bbox"] = bbox
+            state_region.metadata["type"] = region_type_name
+            state_region.metadata["bbox"] = bounds
+            state_region.metadata["confidence"] = identified_region.confidence
 
             regions.append(state_region)
 
         return regions
 
-    def _generate_region_name(
-        self, region_info: dict[str, Any], screenshot: np.ndarray
-    ) -> str:
+    def _generate_region_name(self, identified_region: Any, screenshot: np.ndarray) -> str:
         """Generate name for a region.
 
         Tries OCR first, falls back to type + position.
 
         Args:
-            region_info: Region information dict
+            identified_region: IdentifiedRegion dataclass with bounds + region_type
             screenshot: Screenshot containing the region
 
         Returns:
             Region name
         """
-        region_type = region_info.get("type", "region")
-        bbox = region_info["bbox"]
-        x, y, w, h = bbox
+        region_type_name = identified_region.region_type.value
+        x, y, w, h = identified_region.bounds
 
         # Try OCR
         region_img = screenshot[y : y + h, x : x + w]
-        ocr_name = self.name_generator.generate_name_from_image(region_img, region_type)
+        ocr_name = self.name_generator.generate_name_from_image(region_img, region_type_name)
 
         # If OCR gives meaningful name, use it
-        if len(ocr_name) > len(region_type) + 5:
+        if len(ocr_name) > len(region_type_name) + 5:
             return ocr_name  # type: ignore[no-any-return]
 
         # Otherwise use type + position
-        return f"{region_type}_{x}_{y}"
+        return f"{region_type_name}_{x}_{y}"
 
     def _identify_state_locations(
         self, transitions: list[TransitionInfo] | None
@@ -623,9 +620,7 @@ class StateBuilder:
 
         for target_state, trans_list in by_target.items():
             # Extract click points
-            click_points = [
-                t.click_point for t in trans_list if t.click_point is not None
-            ]
+            click_points = [t.click_point for t in trans_list if t.click_point is not None]
 
             if not click_points:
                 continue
@@ -633,15 +628,17 @@ class StateBuilder:
             # Compute centroid (mean position)
             centroid = np.mean(click_points, axis=0).astype(int)
 
-            # Compute consistency (inverse of standard deviation)
+            # Compute consistency using exponential decay on pixel stddev.
+            # Clicks within ~10 px of each other score above 0.5 (tight cluster);
+            # spread of 30 px+ decays toward zero. This treats sub-pixel
+            # precision and 10-px slop as both being "consistent" while still
+            # discriminating against scattered clicks.
             std = np.std(click_points, axis=0)
-            consistency = 1.0 / (1.0 + np.mean(std))  # 0-1 score
+            consistency = float(np.exp(-np.mean(std) / 10.0))  # 0-1 score
 
             # Create Location and StateLocation
             loc = Location(x=int(centroid[0]), y=int(centroid[1]))
-            state_location = StateLocation(
-                location=loc, name=f"click_to_{target_state}"
-            )
+            state_location = StateLocation(location=loc, name=f"click_to_{target_state}")
             state_location.metadata["target_state"] = target_state
             state_location.metadata["confidence"] = float(consistency)
             state_location.metadata["sample_size"] = len(click_points)
@@ -715,35 +712,40 @@ class FallbackElementIdentifier:
     Uses basic geometric heuristics.
     """
 
-    def identify_regions(self, screenshots: list[np.ndarray]) -> list[dict[str, Any]]:
-        """Identify regions using basic heuristics."""
-        regions: list[dict[str, Any]] = []
-
-        if not screenshots:
-            return regions
-
-        # Simple implementation: detect large rectangular areas
-        screenshot = screenshots[0]
-        gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
-
-        # Find contours
-        edges = cv2.Canny(gray, 50, 150)
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    def identify_regions(
+        self,
+        screenshots: list[np.ndarray],
+        state_images: list[Any] | None = None,
+    ) -> list[Any]:
+        """Identify regions using basic heuristics across one or more screenshots."""
+        from qontinui.discovery.state_construction.element_identifier import (
+            IdentifiedRegion,
+            RegionType,
         )
 
-        for contour in contours:
-            x, y, w, h = cv2.boundingRect(contour)
-            area = w * h
+        if not screenshots:
+            return []
 
-            # Look for medium to large regions
-            if 5000 < area < 100000:
-                regions.append(
-                    {
-                        "bbox": (x, y, w, h),
-                        "type": "panel",
-                        "confidence": 0.6,
-                    }
-                )
+        regions: list[Any] = []
+        for screenshot in screenshots:
+            gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+            edges = cv2.Canny(gray, 50, 150)
+            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            for contour in contours:
+                x, y, w, h = cv2.boundingRect(contour)
+                area = w * h
+
+                # Look for medium to large regions
+                if 5000 < area < 100000:
+                    regions.append(
+                        IdentifiedRegion(
+                            region_type=RegionType.PANEL,
+                            bounds=(x, y, w, h),
+                            confidence=0.6,
+                            properties={},
+                            sub_elements=[],
+                        )
+                    )
 
         return regions
