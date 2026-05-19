@@ -7,11 +7,14 @@ Separation (CQS) pattern.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from qontinui_schemas.common import utc_now
 
 from .execution_types import ActionExecutionRecord, ActionStatus, ExecutionStatus
+
+if TYPE_CHECKING:
+    from .execution_controller import ExecutionController
 
 
 class ExecutionTracker:
@@ -22,59 +25,82 @@ class ExecutionTracker:
     methods to query execution state, history, statistics, and progress without
     allowing any state modifications.
 
-    The ExecutionTracker operates on internal state managed by ExecutionController.
+    The ExecutionTracker reads *live* state from the ExecutionController. It holds
+    a reference to the controller and resolves every query against the controller's
+    current internal state, so status/lifecycle transitions made via the controller
+    are always reflected here. Mutating containers (visited set, pending queue,
+    history) are shared by reference; scalars (status, timestamps, pause flag) are
+    resolved live on each access rather than snapshotted at construction.
     """
 
-    def __init__(
-        self,
-        workflow_id: str,
-        status: ExecutionStatus,
-        start_time: datetime | None,
-        end_time: datetime | None,
-        visited: set[str],
-        pending: list,
-        current_action: str | None,
-        iteration_count: int,
-        history: list[ActionExecutionRecord],
-        action_records: dict[str, ActionExecutionRecord],
-        context: dict[str, Any],
-        errors: list[dict[str, Any]],
-        paused: bool,
-        max_iterations: int,
-    ) -> None:
+    def __init__(self, controller: "ExecutionController") -> None:
         """
-        Initialize execution tracker with references to internal state.
+        Initialize execution tracker with a reference to the controller.
 
         Args:
-            workflow_id: The workflow being executed
-            status: Current execution status
-            start_time: Execution start time
-            end_time: Execution end time
-            visited: Set of visited action IDs
-            pending: List of pending actions
-            current_action: Current action ID
-            iteration_count: Current iteration count
-            history: Execution history
-            action_records: Action execution records
-            context: Execution context
-            errors: List of errors
-            paused: Whether execution is paused
-            max_iterations: Maximum iterations allowed
+            controller: The ExecutionController whose state this tracker queries
         """
-        self._workflow_id = workflow_id
-        self._status = status
-        self._start_time = start_time
-        self._end_time = end_time
-        self._visited = visited
-        self._pending = pending
-        self._current_action = current_action
-        self._iteration_count = iteration_count
-        self._history = history
-        self._action_records = action_records
-        self._context = context
-        self._errors = errors
-        self._paused = paused
-        self._max_iterations = max_iterations
+        self._controller = controller
+
+    # ------------------------------------------------------------------
+    # Live state accessors (read-through to the controller)
+    # ------------------------------------------------------------------
+
+    @property
+    def _workflow_id(self) -> str:
+        return self._controller.workflow_id
+
+    @property
+    def _status(self) -> ExecutionStatus:
+        return self._controller.status
+
+    @property
+    def _start_time(self) -> datetime | None:
+        return self._controller.start_time
+
+    @property
+    def _end_time(self) -> datetime | None:
+        return self._controller.end_time
+
+    @property
+    def _visited(self) -> set[str]:
+        return self._controller._visited
+
+    @property
+    def _pending(self) -> list:
+        return self._controller._pending
+
+    @property
+    def _current_action(self) -> str | None:
+        return self._controller._current_action
+
+    @property
+    def _iteration_count(self) -> int:
+        return self._controller._iteration_count
+
+    @property
+    def _history(self) -> list[ActionExecutionRecord]:
+        return self._controller._history
+
+    @property
+    def _action_records(self) -> dict[str, ActionExecutionRecord]:
+        return self._controller._action_records
+
+    @property
+    def _context(self) -> dict[str, Any]:
+        return self._controller._context
+
+    @property
+    def _errors(self) -> list[dict[str, Any]]:
+        return self._controller._errors
+
+    @property
+    def _paused(self) -> bool:
+        return self._controller._paused
+
+    @property
+    def _max_iterations(self) -> int:
+        return self._controller.max_iterations
 
     # ============================================================================
     # Status Queries
