@@ -61,7 +61,7 @@ class FlowControlExecutor:
         self.condition_evaluator = ConditionEvaluator(context)
         logger.debug("FlowControlExecutor initialized with context")
 
-    def execute_break(self, action: Action) -> None:
+    async def execute_break(self, action: Action) -> None:
         """Execute a BREAK action to exit a loop.
 
         Evaluates an optional condition and raises BreakLoop exception when the
@@ -104,7 +104,9 @@ class FlowControlExecutor:
         # Check condition if present
         if config.condition:
             logger.debug("Evaluating BREAK condition for action %s", action.id)
-            should_break = self.condition_evaluator.evaluate_condition(config.condition)
+            should_break = await self.condition_evaluator.evaluate_condition(
+                config.condition
+            )
 
             if not should_break:
                 logger.debug(
@@ -123,7 +125,7 @@ class FlowControlExecutor:
         # Raise exception to signal loop break
         raise BreakLoop(message)
 
-    def execute_continue(self, action: Action) -> None:
+    async def execute_continue(self, action: Action) -> None:
         """Execute a CONTINUE action to skip to the next loop iteration.
 
         Evaluates an optional condition and raises ContinueLoop exception when
@@ -169,7 +171,7 @@ class FlowControlExecutor:
         # Check condition if present
         if config.condition:
             logger.debug("Evaluating CONTINUE condition for action %s", action.id)
-            should_continue = self.condition_evaluator.evaluate_condition(
+            should_continue = await self.condition_evaluator.evaluate_condition(
                 config.condition
             )
 

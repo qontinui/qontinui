@@ -91,7 +91,9 @@ class DelegatingActionExecutor:
         self.data_operations_executor = DataOperationsExecutor(self.variable_context)
 
         # Create action executor callback for control flow
-        def action_executor_callback(action_id: str, variables: dict) -> dict:
+        async def action_executor_callback(
+            action_id: str, variables: dict
+        ) -> dict:
             """Execute an action by ID with given variable context."""
             # Find the action in config
             for workflow in self.config.workflows:
@@ -102,7 +104,7 @@ class DelegatingActionExecutor:
                             self.variable_context.set(key, value, "local")
 
                         # Execute the action
-                        success = self.execute_action(action)
+                        success = await self.execute_action(action)
                         return {"success": success}
 
             logger.warning(f"Action ID '{action_id}' not found in config")

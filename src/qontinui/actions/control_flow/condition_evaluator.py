@@ -15,6 +15,61 @@ from qontinui.orchestration.execution_context import ExecutionContext
 logger = logging.getLogger(__name__)
 
 
+def compare_values(actual: Any, operator: str, expected: Any) -> bool:
+    """Compare two values using the specified operator.
+
+    Supports standard comparison operators (==, !=, >, <, >=, <=) as well as
+    special operators:
+    - contains: Check if expected is in actual (for strings/lists)
+    - matches: Check if actual matches expected regex pattern
+
+    Args:
+        actual: Actual value to compare
+        operator: Comparison operator string
+        expected: Expected value to compare against
+
+    Returns:
+        Result of comparison as boolean
+
+    Raises:
+        ValueError: If operator is unknown or comparison is invalid for the types
+    """
+    try:
+        if operator == "==":
+            return actual == expected  # type: ignore[no-any-return]
+        elif operator == "!=":
+            return actual != expected  # type: ignore[no-any-return]
+        elif operator == ">":
+            return actual > expected  # type: ignore[no-any-return]
+        elif operator == "<":
+            return actual < expected  # type: ignore[no-any-return]
+        elif operator == ">=":
+            return actual >= expected  # type: ignore[no-any-return]
+        elif operator == "<=":
+            return actual <= expected  # type: ignore[no-any-return]
+        elif operator == "contains":
+            return expected in actual
+        elif operator == "matches":
+            pattern = str(expected)
+            text = str(actual)
+            return bool(re.match(pattern, text))
+        else:
+            raise ValueError(f"Unknown operator: {operator}")
+
+    except TypeError as e:
+        logger.error(
+            "Type error comparing values: %s %s %s - %s",
+            actual,
+            operator,
+            expected,
+            str(e),
+        )
+        raise ValueError(
+            f"Cannot compare {type(actual).__name__} and {type(expected).__name__} "
+            f"with operator '{operator}'"
+        ) from e
+
+
 class ConditionEvaluator:
     """Evaluates conditions for control flow operations.
 
@@ -37,7 +92,7 @@ class ConditionEvaluator:
         ...     operator=">",
         ...     expected_value=3
         ... )
-        >>> result = evaluator.evaluate_condition(condition)
+        >>> result = await evaluator.evaluate_condition(condition)
         >>> print(result)  # True
     """
 
@@ -129,7 +184,7 @@ class ConditionEvaluator:
             var_value,
         )
 
-        return self._compare_values(var_value, operator, expected)
+        return compare_values(var_value, operator, expected)
 
     def _evaluate_expression_condition(self, condition: ConditionConfig) -> bool:
         """Evaluate a Python expression condition.
@@ -166,7 +221,18 @@ class ConditionEvaluator:
         variables = self.context.variables
         eval_context = {"variables": variables, **variables}
 
-        result = SafeEvaluator.safe_eval(expression, eval_context)
+        # SafeEvaluator surfaces a mix of error types (ValueError for unsafe ops /
+        # empty input / unknown names / arithmetic failures, SyntaxError for
+        # malformed Python). Normalise them into a single ValueError with a
+        # consistent "Invalid expression" prefix so callers get a uniform error
+        # surface regardless of which underlying failure was hit.
+        try:
+            result = SafeEvaluator.safe_eval(expression, eval_context)
+        except (ValueError, SyntaxError) as e:
+            raise ValueError(f"Invalid expression: {e}") from e
+        except Exception as e:  # NameError, ZeroDivisionError, TypeError, etc.
+            raise ValueError(f"Invalid expression: {e}") from e
+
         logger.debug("Expression result: %s", result)
         return bool(result)
 
@@ -391,57 +457,3 @@ class ConditionEvaluator:
         logger.warning("Text finding not implemented, returning False")
         return False
 
-    def _compare_values(self, actual: Any, operator: str, expected: Any) -> bool:
-        """Compare two values using the specified operator.
-
-        Supports standard comparison operators (==, !=, >, <, >=, <=) as well
-        as special operators:
-        - contains: Check if expected is in actual (for strings/lists)
-        - matches: Check if actual matches expected regex pattern
-
-        Args:
-            actual: Actual value to compare
-            operator: Comparison operator string
-            expected: Expected value to compare against
-
-        Returns:
-            Result of comparison as boolean
-
-        Raises:
-            ValueError: If operator is unknown
-            TypeError: If comparison is invalid for the given types
-        """
-        try:
-            if operator == "==":
-                return actual == expected  # type: ignore[no-any-return]
-            elif operator == "!=":
-                return actual != expected  # type: ignore[no-any-return]
-            elif operator == ">":
-                return actual > expected  # type: ignore[no-any-return]
-            elif operator == "<":
-                return actual < expected  # type: ignore[no-any-return]
-            elif operator == ">=":
-                return actual >= expected  # type: ignore[no-any-return]
-            elif operator == "<=":
-                return actual <= expected  # type: ignore[no-any-return]
-            elif operator == "contains":
-                return expected in actual
-            elif operator == "matches":
-                pattern = str(expected)
-                text = str(actual)
-                return bool(re.match(pattern, text))
-            else:
-                raise ValueError(f"Unknown operator: {operator}")
-
-        except TypeError as e:
-            logger.error(
-                "Type error comparing values: %s %s %s - %s",
-                actual,
-                operator,
-                expected,
-                str(e),
-            )
-            raise ValueError(
-                f"Cannot compare {type(actual).__name__} and {type(expected).__name__} "
-                f"with operator '{operator}'"
-            ) from e
