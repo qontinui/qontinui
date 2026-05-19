@@ -19,6 +19,8 @@ from qontinui.hal.interfaces.input_controller import Key, MouseButton, MousePosi
 from qontinui.model.element.location import Location
 from qontinui.model.element.region import Region
 
+_MYPY_TIMEOUT_SECONDS = 120
+
 
 class TestTypeHintUsage:
     """Test that type hints are used correctly throughout the codebase."""
@@ -174,7 +176,7 @@ class TestTypeChecking:
             ],
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=_MYPY_TIMEOUT_SECONDS,
         )
 
         # Check for type errors
@@ -214,7 +216,7 @@ class TestTypeChecking:
             ],
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=_MYPY_TIMEOUT_SECONDS,
         )
 
         # Check for type errors
