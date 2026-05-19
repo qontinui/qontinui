@@ -307,12 +307,18 @@ def mock_executor():
             # Check condition in context
             return {"success": True, "condition_met": context.get("counter", 0) > 3}
         elif action.type == "LOOP":
-            # Mock loop behavior
+            # Mock loop behavior. Loop iteration state must be returned in the
+            # result dict so the traverser persists it via update_context;
+            # mutating the passed context in place does not persist because
+            # executors receive a copy of the live context.
             iterations = context.get("loop_iteration", 0)
             max_iterations = action.config.get("iterations", 3)
             should_continue = iterations < max_iterations
-            context["loop_iteration"] = iterations + 1
-            return {"success": True, "should_continue": should_continue}
+            return {
+                "success": True,
+                "should_continue": should_continue,
+                "loop_iteration": iterations + 1,
+            }
         else:
             return {"success": True, "action_id": action.id}
 
@@ -931,12 +937,19 @@ def test_complex_workflow_integration():
     def tracking_executor(action: Action, context: dict[str, Any]) -> dict[str, Any]:
         executed_actions.append(action.id)
 
+        # State that must survive across executor calls is returned in the
+        # result dict so the traverser persists it via update_context;
+        # mutating the passed context in place does not persist because
+        # executors receive a copy of the live context.
         if action.type == "LOOP":
             iterations = context.get("loop_iteration", 0)
             max_iterations = action.config.get("iterations", 3)
             should_continue = iterations < max_iterations
-            context["loop_iteration"] = iterations + 1
-            return {"success": True, "should_continue": should_continue}
+            return {
+                "success": True,
+                "should_continue": should_continue,
+                "loop_iteration": iterations + 1,
+            }
         elif action.type == "IF":
             condition_met = context.get("counter", 0) >= 2
             return {"success": True, "condition_met": condition_met}
