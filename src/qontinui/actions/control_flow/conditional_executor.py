@@ -58,7 +58,9 @@ class ConditionalExecutor:
         self.condition_evaluator = ConditionEvaluator(context)
         logger.debug("ConditionalExecutor initialized with context")
 
-    def execute_if(self, action: Action, config: IfActionConfig) -> dict[str, Any]:
+    async def execute_if(
+        self, action: Action, config: IfActionConfig
+    ) -> dict[str, Any]:
         """Execute an IF action (conditional branching).
 
         Evaluates the condition and executes either the 'then' or 'else'
@@ -95,7 +97,7 @@ class ConditionalExecutor:
 
         try:
             # Evaluate condition using ConditionEvaluator
-            condition_result = self.condition_evaluator.evaluate_condition(
+            condition_result = await self.condition_evaluator.evaluate_condition(
                 config.condition
             )
             result["condition_result"] = condition_result
@@ -117,7 +119,7 @@ class ConditionalExecutor:
                 )
 
             # Execute the selected action sequence
-            exec_result = self._execute_action_sequence(actions_to_execute)
+            exec_result = await self._execute_action_sequence(actions_to_execute)
             result["actions_executed"] = exec_result["actions_executed"]
             if isinstance(result["errors"], list):
                 result["errors"].extend(exec_result["errors"])
@@ -153,7 +155,7 @@ class ConditionalExecutor:
 
         return result
 
-    def _execute_action_sequence(self, action_ids: list[str]) -> dict[str, Any]:
+    async def _execute_action_sequence(self, action_ids: list[str]) -> dict[str, Any]:
         """Execute a sequence of actions.
 
         Executes each action in the sequence using the ExecutionContext's
@@ -199,11 +201,11 @@ class ConditionalExecutor:
                 # Execute action via context callback
                 # The ExecutionContext.execute_action method handles all the
                 # orchestration including error handling, event emission, etc.
-                # Note: execute_action is a method that may be added to ExecutionContext
-                # If it doesn't exist, we'll catch the AttributeError below
-                success = getattr(self.context, "execute_action", lambda x: False)(
-                    action
-                )
+                execute_action = getattr(self.context, "execute_action", None)
+                if execute_action is None:
+                    success = False
+                else:
+                    success = await execute_action(action)
 
                 # Track execution
                 if not success:

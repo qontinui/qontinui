@@ -27,7 +27,7 @@ Exports:
 """
 
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from qontinui.config import Action, get_typed_config
@@ -88,7 +88,9 @@ class ControlFlowExecutor:
 
     def __init__(
         self,
-        action_executor: Callable[[str, dict[str, Any]], dict[str, Any]] | None = None,
+        action_executor: (
+            Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]] | None
+        ) = None,
         variables: dict[str, Any] | None = None,
     ) -> None:
         """Initialize the control flow executor.
@@ -116,7 +118,7 @@ class ControlFlowExecutor:
             "ControlFlowExecutor initialized with %d variables", len(self.variables)
         )
 
-    def execute_loop(self, action: Action) -> dict[str, Any]:
+    async def execute_loop(self, action: Action) -> dict[str, Any]:
         """Execute a LOOP action (FOR, WHILE, or FOREACH).
 
         Args:
@@ -134,9 +136,9 @@ class ControlFlowExecutor:
             ValueError: If loop configuration is invalid
         """
         config = get_typed_config(action)
-        return self._loop_executor.execute_loop(config, action.id)  # type: ignore[arg-type]
+        return await self._loop_executor.execute_loop(config, action.id)  # type: ignore[arg-type]
 
-    def execute_if(self, action: Action) -> dict[str, Any]:
+    async def execute_if(self, action: Action) -> dict[str, Any]:
         """Execute an IF action (conditional branching).
 
         Args:
@@ -151,9 +153,9 @@ class ControlFlowExecutor:
                 - errors: List of errors encountered (if any)
         """
         config = get_typed_config(action)
-        return self._conditional_executor.execute_if(action, config)  # type: ignore[arg-type]
+        return await self._conditional_executor.execute_if(action, config)  # type: ignore[arg-type]
 
-    def execute_break(self, action: Action) -> None:
+    async def execute_break(self, action: Action) -> None:
         """Execute a BREAK action (exit loop).
 
         Args:
@@ -162,9 +164,9 @@ class ControlFlowExecutor:
         Raises:
             BreakLoop: Always raises to signal loop break
         """
-        self._flow_control_executor.execute_break(action)
+        await self._flow_control_executor.execute_break(action)
 
-    def execute_continue(self, action: Action) -> None:
+    async def execute_continue(self, action: Action) -> None:
         """Execute a CONTINUE action (skip to next iteration).
 
         Args:
@@ -173,9 +175,9 @@ class ControlFlowExecutor:
         Raises:
             ContinueLoop: Always raises to signal iteration skip
         """
-        self._flow_control_executor.execute_continue(action)
+        await self._flow_control_executor.execute_continue(action)
 
-    def execute_switch(self, action: Action) -> dict[str, Any]:
+    async def execute_switch(self, action: Action) -> dict[str, Any]:
         """Execute a SWITCH action (case-based branching).
 
         Args:
@@ -191,9 +193,9 @@ class ControlFlowExecutor:
                 - errors: List of errors encountered (if any)
         """
         config = get_typed_config(action)
-        return self._switch_executor.execute_switch(action, config)  # type: ignore[arg-type]
+        return await self._switch_executor.execute_switch(action, config)  # type: ignore[arg-type]
 
-    def execute_try_catch(self, action: Action) -> dict[str, Any]:
+    async def execute_try_catch(self, action: Action) -> dict[str, Any]:
         """Execute a TRY_CATCH action (error handling).
 
         Args:
@@ -210,7 +212,7 @@ class ControlFlowExecutor:
                 - errors: List of errors encountered (if any)
         """
         config = get_typed_config(action)
-        return self._try_catch_executor.execute_try_catch(action, config)  # type: ignore[arg-type]
+        return await self._try_catch_executor.execute_try_catch(action, config)  # type: ignore[arg-type]
 
     # ========================================================================
     # Variable Management (maintain API compatibility)
@@ -270,30 +272,30 @@ class ControlFlowExecutor:
         context = ExecutionContext(initial_variables=self.variables)
 
         # Add execute_action callback
-        def execute_action_callback(action_id: str) -> bool:
+        async def execute_action_callback(action_id: str) -> dict[str, Any]:
             """Execute action using the provided action_executor callback."""
             if not self.action_executor:
                 logger.warning(
                     f"No action executor configured, skipping action {action_id}"
                 )
-                return True
+                return {"success": True}
 
             try:
                 # Sync variables from context before execution
                 self.variables.update(context.variables)
 
                 # Execute via callback
-                result = self.action_executor(action_id, self.variables)
+                result = await self.action_executor(action_id, self.variables)
 
                 # Sync variables back to context after execution
                 for key, value in self.variables.items():
                     context.set_variable(key, value)
 
-                return result.get("success", True)  # type: ignore[no-any-return]
+                return result
 
             except Exception as e:
                 logger.error(f"Action execution failed: {e}")
-                return False
+                return {"success": False, "error": str(e)}
 
         # Attach execute_action method to context
         context.execute_action = execute_action_callback

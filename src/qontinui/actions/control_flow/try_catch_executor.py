@@ -51,7 +51,7 @@ class TryCatchExecutor:
         self.context = context
         logger.debug("TryCatchExecutor initialized with context")
 
-    def execute_try_catch(
+    async def execute_try_catch(
         self, action: Action, config: TryCatchActionConfig
     ) -> dict[str, Any]:
         """Execute a TRY_CATCH action (error handling).
@@ -97,7 +97,7 @@ class TryCatchExecutor:
         # Execute try block
         try:
             logger.debug("Executing TRY block with %d actions", len(config.try_actions))
-            try_result = self._execute_action_sequence(config.try_actions)
+            try_result = await self._execute_action_sequence(config.try_actions)
             result["try_actions_executed"] = try_result["actions_executed"]
 
             # Check if try block had errors
@@ -136,7 +136,7 @@ class TryCatchExecutor:
                 logger.debug(
                     "Executing CATCH block with %d actions", len(config.catch_actions)
                 )
-                catch_result = self._execute_action_sequence(config.catch_actions)
+                catch_result = await self._execute_action_sequence(config.catch_actions)
                 result["catch_actions_executed"] = catch_result["actions_executed"]
                 result["error_caught"] = error_caught
 
@@ -173,7 +173,9 @@ class TryCatchExecutor:
                     "Executing FINALLY block with %d actions",
                     len(config.finally_actions),
                 )
-                finally_result = self._execute_action_sequence(config.finally_actions)
+                finally_result = await self._execute_action_sequence(
+                    config.finally_actions
+                )
                 result["finally_actions_executed"] = finally_result["actions_executed"]
 
                 # Finally errors are added but don't override success if try succeeded
@@ -201,7 +203,7 @@ class TryCatchExecutor:
 
         return result
 
-    def _execute_action_sequence(self, action_ids: list[str]) -> dict[str, Any]:
+    async def _execute_action_sequence(self, action_ids: list[str]) -> dict[str, Any]:
         """Execute a sequence of actions.
 
         Executes each action in the sequence using the ExecutionContext's
@@ -247,9 +249,11 @@ class TryCatchExecutor:
                 # Execute action via context callback
                 # The ExecutionContext.execute_action method handles all the
                 # orchestration including error handling, event emission, etc.
-                success = getattr(self.context, "execute_action", lambda x: False)(
-                    action
-                )
+                execute_action = getattr(self.context, "execute_action", None)
+                if execute_action is None:
+                    success = False
+                else:
+                    success = await execute_action(action)
 
                 # Track execution
                 if not success:

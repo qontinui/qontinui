@@ -52,7 +52,9 @@ class LoopExecutor:
         self.condition_evaluator = ConditionEvaluator(context)
         logger.debug("LoopExecutor initialized with context")
 
-    def execute_loop(self, config: LoopActionConfig, action_id: str) -> dict[str, Any]:
+    async def execute_loop(
+        self, config: LoopActionConfig, action_id: str
+    ) -> dict[str, Any]:
         """Execute a LOOP action (FOR, WHILE, or FOREACH).
 
         Args:
@@ -93,11 +95,11 @@ class LoopExecutor:
 
         try:
             if config.loop_type == "FOR":
-                result.update(self._execute_for_loop(config))
+                result.update(await self._execute_for_loop(config))
             elif config.loop_type == "WHILE":
-                result.update(self._execute_while_loop(config))
+                result.update(await self._execute_while_loop(config))
             elif config.loop_type == "FOREACH":
-                result.update(self._execute_foreach_loop(config))
+                result.update(await self._execute_foreach_loop(config))
             else:
                 raise ValueError(f"Unknown loop type: {config.loop_type}")
 
@@ -131,7 +133,7 @@ class LoopExecutor:
 
         return result
 
-    def _execute_for_loop(self, config: LoopActionConfig) -> dict[str, Any]:
+    async def _execute_for_loop(self, config: LoopActionConfig) -> dict[str, Any]:
         """Execute a FOR loop (fixed iteration count).
 
         Args:
@@ -170,7 +172,7 @@ class LoopExecutor:
 
             try:
                 # Execute actions in this iteration
-                exec_result = self._execute_action_sequence(config.actions)
+                exec_result = await self._execute_action_sequence(config.actions)
                 errors_list.extend(exec_result["errors"])
 
                 # Check if we should break on error
@@ -192,7 +194,7 @@ class LoopExecutor:
 
         return result
 
-    def _execute_while_loop(self, config: LoopActionConfig) -> dict[str, Any]:
+    async def _execute_while_loop(self, config: LoopActionConfig) -> dict[str, Any]:
         """Execute a WHILE loop (condition-based).
 
         Args:
@@ -215,7 +217,7 @@ class LoopExecutor:
         while iteration < max_iterations:
             # Evaluate condition
             try:
-                condition_result = self.condition_evaluator.evaluate_condition(
+                condition_result = await self.condition_evaluator.evaluate_condition(
                     config.condition
                 )
             except ValueError as e:
@@ -243,7 +245,7 @@ class LoopExecutor:
 
             try:
                 # Execute actions in this iteration
-                exec_result = self._execute_action_sequence(config.actions)
+                exec_result = await self._execute_action_sequence(config.actions)
                 errors_list.extend(exec_result["errors"])
 
                 # Check if we should break on error
@@ -278,7 +280,7 @@ class LoopExecutor:
 
         return result
 
-    def _execute_foreach_loop(self, config: LoopActionConfig) -> dict[str, Any]:
+    async def _execute_foreach_loop(self, config: LoopActionConfig) -> dict[str, Any]:
         """Execute a FOREACH loop (iterate over collection).
 
         Args:
@@ -337,7 +339,7 @@ class LoopExecutor:
 
             try:
                 # Execute actions in this iteration
-                exec_result = self._execute_action_sequence(config.actions)
+                exec_result = await self._execute_action_sequence(config.actions)
                 errors_list.extend(exec_result["errors"])
 
                 # Check if we should break on error
@@ -420,7 +422,7 @@ class LoopExecutor:
         else:
             raise ValueError(f"Unknown collection type: {collection_config.type}")
 
-    def _execute_action_sequence(self, action_ids: list[str]) -> dict[str, Any]:
+    async def _execute_action_sequence(self, action_ids: list[str]) -> dict[str, Any]:
         """Execute a sequence of actions in the current loop iteration.
 
         Uses the ExecutionContext's execute_action callback to execute each action.
@@ -453,7 +455,7 @@ class LoopExecutor:
 
             try:
                 # Execute action using context callback
-                action_result = self.context.execute_action(action_id)
+                action_result = await self.context.execute_action(action_id)
 
                 # Check for success
                 if not action_result.get("success", True):

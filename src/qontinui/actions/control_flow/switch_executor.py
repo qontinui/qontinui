@@ -58,7 +58,7 @@ class SwitchExecutor:
         self.condition_evaluator = ConditionEvaluator(context)
         logger.debug("SwitchExecutor initialized with context")
 
-    def execute_switch(
+    async def execute_switch(
         self, action: Action, config: SwitchActionConfig
     ) -> dict[str, Any]:
         """Execute a SWITCH action (case-based branching).
@@ -133,7 +133,7 @@ class SwitchExecutor:
                 )
 
             # Execute the selected action sequence
-            exec_result = self._execute_action_sequence(actions_to_execute)
+            exec_result = await self._execute_action_sequence(actions_to_execute)
             result["actions_executed"] = exec_result["actions_executed"]
             if isinstance(result["errors"], list):
                 result["errors"].extend(exec_result["errors"])
@@ -221,7 +221,7 @@ class SwitchExecutor:
             # Single value comparison
             return bool(expression_value == case_value)
 
-    def _execute_action_sequence(self, action_ids: list[str]) -> dict[str, Any]:
+    async def _execute_action_sequence(self, action_ids: list[str]) -> dict[str, Any]:
         """Execute a sequence of actions.
 
         Executes each action in the sequence using the ExecutionContext's
@@ -267,11 +267,11 @@ class SwitchExecutor:
                 # Execute action via context callback
                 # The ExecutionContext.execute_action method handles all the
                 # orchestration including error handling, event emission, etc.
-                # Note: execute_action is a method that may be added to ExecutionContext
-                # If it doesn't exist, we'll catch the AttributeError below
-                success = getattr(self.context, "execute_action", lambda x: False)(
-                    action
-                )
+                execute_action = getattr(self.context, "execute_action", None)
+                if execute_action is None:
+                    success = False
+                else:
+                    success = await execute_action(action)
 
                 # Track execution
                 if not success:

@@ -134,17 +134,17 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
 
             # Route to appropriate handler
             if action_type == "LOOP":
-                return self._execute_loop(action, typed_config)
+                return await self._execute_loop(action, typed_config)
             elif action_type == "IF":
-                return self._execute_if(action, typed_config)
+                return await self._execute_if(action, typed_config)
             elif action_type == "SWITCH":
-                return self._execute_switch(action, typed_config)
+                return await self._execute_switch(action, typed_config)
             elif action_type == "TRY_CATCH":
-                return self._execute_try_catch(action, typed_config)
+                return await self._execute_try_catch(action, typed_config)
             elif action_type == "BREAK":
-                return self._execute_break(action, typed_config)
+                return await self._execute_break(action, typed_config)
             elif action_type == "CONTINUE":
-                return self._execute_continue(action, typed_config)
+                return await self._execute_continue(action, typed_config)
             else:
                 raise ActionExecutionError(
                     action_type=action_type,
@@ -177,7 +177,9 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
     # Action Type Handlers
     # ========================================================================
 
-    def _execute_loop(self, action: Action, typed_config: LoopActionConfig) -> bool:
+    async def _execute_loop(
+        self, action: Action, typed_config: LoopActionConfig
+    ) -> bool:
         """Execute LOOP action via wrapped executor.
 
         Args:
@@ -193,7 +195,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
         )
 
         try:
-            result = self._wrapped_executor.execute_loop(action)
+            result = await self._wrapped_executor.execute_loop(action)
 
             # Check success
             if result.get("success"):
@@ -228,7 +230,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             self._emit_action_failure(action, str(e))
             return False
 
-    def _execute_if(self, action: Action, typed_config: IfActionConfig) -> bool:
+    async def _execute_if(self, action: Action, typed_config: IfActionConfig) -> bool:
         """Execute IF action via wrapped executor.
 
         Args:
@@ -241,7 +243,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
         logger.info("Executing IF action")
 
         try:
-            result = self._wrapped_executor.execute_if(action)
+            result = await self._wrapped_executor.execute_if(action)
 
             # Check success
             if result.get("success"):
@@ -270,7 +272,9 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             self._emit_action_failure(action, str(e))
             return False
 
-    def _execute_switch(self, action: Action, typed_config: SwitchActionConfig) -> bool:
+    async def _execute_switch(
+        self, action: Action, typed_config: SwitchActionConfig
+    ) -> bool:
         """Execute SWITCH action via wrapped executor.
 
         Args:
@@ -283,7 +287,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
         logger.info("Executing SWITCH action")
 
         try:
-            result = self._wrapped_executor.execute_switch(action)
+            result = await self._wrapped_executor.execute_switch(action)
 
             # Check success
             if result.get("success"):
@@ -313,7 +317,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             self._emit_action_failure(action, str(e))
             return False
 
-    def _execute_try_catch(
+    async def _execute_try_catch(
         self, action: Action, typed_config: TryCatchActionConfig
     ) -> bool:
         """Execute TRY_CATCH action via wrapped executor.
@@ -328,7 +332,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
         logger.info("Executing TRY_CATCH action")
 
         try:
-            result = self._wrapped_executor.execute_try_catch(action)
+            result = await self._wrapped_executor.execute_try_catch(action)
 
             # Check success
             if result.get("success"):
@@ -364,7 +368,9 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             self._emit_action_failure(action, str(e))
             return False
 
-    def _execute_break(self, action: Action, typed_config: BreakActionConfig) -> bool:
+    async def _execute_break(
+        self, action: Action, typed_config: BreakActionConfig
+    ) -> bool:
         """Execute BREAK action via wrapped executor.
 
         Args:
@@ -381,7 +387,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
 
         try:
             # This will raise BreakLoop if condition is met (or no condition)
-            self._wrapped_executor.execute_break(action)
+            await self._wrapped_executor.execute_break(action)
             # If we get here, the break condition was not met
             logger.debug("BREAK condition not met, continuing")
             return True
@@ -398,7 +404,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             )
             raise
 
-    def _execute_continue(
+    async def _execute_continue(
         self, action: Action, typed_config: ContinueActionConfig
     ) -> bool:
         """Execute CONTINUE action via wrapped executor.
@@ -417,7 +423,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
 
         try:
             # This will raise ContinueLoop if condition is met (or no condition)
-            self._wrapped_executor.execute_continue(action)
+            await self._wrapped_executor.execute_continue(action)
             # If we get here, the continue condition was not met
             logger.debug("CONTINUE condition not met, continuing")
             return True
@@ -451,7 +457,9 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
             Callback function compatible with ControlFlowExecutor
         """
 
-        def callback(action_id: str, variables: dict[str, Any]) -> dict[str, Any]:
+        async def callback(
+            action_id: str, variables: dict[str, Any]
+        ) -> dict[str, Any]:
             """Execute action by ID with variables.
 
             Args:
@@ -476,7 +484,7 @@ class ControlFlowExecutorAdapter(ActionExecutorBase):
                     return {"success": False, "error": f"Action not found: {action_id}"}
 
                 # Execute via context callback
-                success = self.context.execute_action(action)
+                success = await self.context.execute_action(action)
 
                 return {"success": success}
 
