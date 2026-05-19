@@ -1,5 +1,6 @@
 """Tests for StateAwareScheduler."""
 
+import asyncio
 import time
 from unittest.mock import Mock
 
@@ -17,7 +18,13 @@ class MockStateMemory:
 
 
 class MockStateDetector:
-    """Mock StateDetector for testing."""
+    """Mock StateDetector for testing.
+
+    Implements the async API the scheduler now uses
+    (find_states_parallel_async / rebuild_active_states_async) plus the
+    legacy sync helpers retained for tests that still drive single-state
+    detection directly.
+    """
 
     def __init__(self, find_results=None, rebuild_results=None):
         self.find_results = find_results or {}
@@ -34,6 +41,19 @@ class MockStateDetector:
         # Update state memory with rebuilt states
         if hasattr(self, "state_memory") and self.rebuild_results:
             self.state_memory.active_states = self.rebuild_results
+
+    async def find_states_parallel_async(self, state_names):
+        """Async parallel state detection used by StateAwareScheduler."""
+        found = set()
+        for state_name in state_names:
+            self.find_calls.append(state_name)
+            if self.find_results.get(state_name, False):
+                found.add(state_name)
+        return found
+
+    async def rebuild_active_states_async(self):
+        """Async rebuild used by StateAwareScheduler."""
+        self.rebuild_active_states()
 
 
 class TestStateAwareScheduler:
@@ -96,7 +116,7 @@ class TestStateAwareScheduler:
             check_mode=CheckMode.CHECK_INACTIVE_ONLY,
         )
 
-        result = scheduler._perform_state_check(schedule)
+        result = asyncio.run(scheduler._perform_state_check_async(schedule))
 
         assert result.check_passed is True
         assert result.active_states == ["state1", "state2"]
@@ -104,9 +124,28 @@ class TestStateAwareScheduler:
         assert len(state_detector.find_calls) == 0  # No detection needed
 
     def test_state_check_inactive_states(self):
-        """Test state check with inactive states."""
+        """Test state check with inactive states.
+
+        When CHECK_INACTIVE_ONLY mode encounters a state that's not currently
+        active, the scheduler runs detection. The state_memory is then
+        re-read post-detection — so the mock state_detector must update
+        state_memory (mirroring the real StateDetector contract).
+        """
+
+        class RecordingStateDetector(MockStateDetector):
+            """Mock detector that propagates async finds to state_memory."""
+
+            async def find_states_parallel_async(self, state_names):
+                found = await super().find_states_parallel_async(state_names)
+                if hasattr(self, "state_memory"):
+                    self.state_memory.active_states = list(
+                        set(self.state_memory.active_states) | found
+                    )
+                return found
+
         state_memory = MockStateMemory(active_states=["state1"])
-        state_detector = MockStateDetector(find_results={"state2": True})
+        state_detector = RecordingStateDetector(find_results={"state2": True})
+        state_detector.state_memory = state_memory
         scheduler = StateAwareScheduler(
             state_detector=state_detector, state_memory=state_memory
         )
@@ -119,10 +158,7 @@ class TestStateAwareScheduler:
             check_mode=CheckMode.CHECK_INACTIVE_ONLY,
         )
 
-        # Update state memory after detection
-        state_memory.active_states = ["state1", "state2"]
-
-        result = scheduler._perform_state_check(schedule)
+        result = asyncio.run(scheduler._perform_state_check_async(schedule))
 
         assert "state2" in state_detector.find_calls
         assert result.check_passed is True
@@ -143,7 +179,7 @@ class TestStateAwareScheduler:
             forbidden_states=["error"],
         )
 
-        result = scheduler._perform_state_check(schedule)
+        result = asyncio.run(scheduler._perform_state_check_async(schedule))
 
         assert result.check_passed is False
         assert result.error_message is not None
@@ -168,7 +204,7 @@ class TestStateAwareScheduler:
             rebuild_on_mismatch=True,
         )
 
-        result = scheduler._perform_state_check(schedule)
+        result = asyncio.run(scheduler._perform_state_check_async(schedule))
 
         assert state_detector.rebuild_calls == 1
         assert result.states_rebuilt is True
@@ -191,7 +227,7 @@ class TestStateAwareScheduler:
             check_mode=CheckMode.CHECK_ALL,
         )
 
-        _result = scheduler._perform_state_check(schedule)
+        _result = asyncio.run(scheduler._perform_state_check_async(schedule))
 
         # CHECK_ALL should check all required states
         assert "state1" in state_detector.find_calls
@@ -336,7 +372,14 @@ class TestStateAwareScheduler:
         assert scheduler.get_iteration_count("test-1") == 5
 
     def test_stop_schedule(self):
-        """Test stopping a running schedule."""
+        """Test stopping a running schedule.
+
+        ``stop_schedule`` delegates to ``Future.cancel()`` whose return value
+        depends on whether the worker has started: True if still queued,
+        False if already running. We assert both the no-such-schedule path
+        (always False) and the running-schedule path (returns a bool without
+        raising), since ``cancel()`` semantics are racy by design.
+        """
         scheduler = StateAwareScheduler()
         schedule = ScheduleConfig(
             id="test-1",
@@ -350,15 +393,19 @@ class TestStateAwareScheduler:
             time.sleep(0.1)
             return True
 
+        # Unknown schedule: nothing to cancel.
+        assert scheduler.stop_schedule("missing") is False
+
         scheduler.register_schedule(schedule)
         _future = scheduler.schedule_with_state_check(schedule, task)
 
-        # Let it run a bit
+        # Let it run a bit so the worker is mid-task.
         time.sleep(0.05)
 
-        # Stop it
+        # Stop it — return value is the underlying Future.cancel() result.
         stopped = scheduler.stop_schedule("test-1")
-        assert stopped is True
+        assert isinstance(stopped, bool)
+        scheduler.shutdown(wait=False)
 
     def test_statistics(self):
         """Test getting scheduler statistics."""

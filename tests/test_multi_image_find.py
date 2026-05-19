@@ -91,7 +91,7 @@ class TestSearchStrategyIntegration:
             imageIds=["btn-ok", "btn-accept", "btn-continue"],
             searchOptions={"similarity": 0.8, "searchStrategy": "FIRST"},
         )
-        assert target.search_options.search_strategy == "FIRST"
+        assert target.search_options.strategy == "FIRST"
         assert len(target.image_ids) == 3
 
     def test_best_strategy_config(self):
@@ -100,7 +100,7 @@ class TestSearchStrategyIntegration:
             imageIds=["logo-v1", "logo-v2", "logo-v3"],
             searchOptions={"similarity": 0.9, "searchStrategy": "BEST"},
         )
-        assert target.search_options.search_strategy == "BEST"
+        assert target.search_options.strategy == "BEST"
 
     def test_all_strategy_config(self):
         """Test ALL strategy configuration."""
@@ -108,7 +108,7 @@ class TestSearchStrategyIntegration:
             imageIds=["btn-1", "btn-2", "btn-3"],
             searchOptions={"searchStrategy": "ALL"},
         )
-        assert target.search_options.search_strategy == "ALL"
+        assert target.search_options.strategy == "ALL"
 
     def test_each_strategy_config(self):
         """Test EACH strategy configuration."""
@@ -116,7 +116,7 @@ class TestSearchStrategyIntegration:
             imageIds=["indicator-1", "indicator-2"],
             searchOptions={"searchStrategy": "EACH"},
         )
-        assert target.search_options.search_strategy == "EACH"
+        assert target.search_options.strategy == "EACH"
 
 
 if __name__ == "__main__":

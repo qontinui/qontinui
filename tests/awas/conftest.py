@@ -96,32 +96,103 @@ def _setup_extraction_stubs():
     @dataclass
     class ExtractedElement:
         id: str
-        tag_name: str = ""
-        element_type: str = "button"
-        text: str = ""
         bbox: BoundingBox = field(default_factory=BoundingBox)
-        is_visible: bool = True
-        is_interactive: bool = True
+        element_type: str = "button"
         selector: str = ""
-        computed_role: str = ""
-        confidence: float = 1.0
-        extraction_method: str = ""
-        metadata: dict[str, Any] = field(default_factory=dict)
+        text_content: str | None = None
+        placeholder: str | None = None
+        value: str | None = None
+        alt_text: str | None = None
+        semantic_role: str | None = None
+        aria_label: str | None = None
+        name: str | None = None
+        is_interactive: bool = True
+        is_enabled: bool = True
+        is_visible: bool = True
+        is_focused: bool = False
+        element_state: str | None = None
+        parent_id: str | None = None
+        children_ids: list[str] = field(default_factory=list)
+        attributes: dict[str, Any] = field(default_factory=dict)
+        tag_name: str = ""
+        class_names: list[str] = field(default_factory=list)
+        extraction_category: str = ""
+
+        @property
+        def text(self) -> str | None:
+            return self.text_content
+
+        @property
+        def metadata(self) -> dict[str, Any]:
+            return self.attributes
+
+        @property
+        def confidence(self) -> float:
+            value = self.attributes.get("confidence", 1.0)
+            return float(value) if value is not None else 1.0
+
+        @property
+        def extraction_method(self) -> str:
+            return str(self.attributes.get("extraction_method", ""))
+
+        def to_dict(self) -> dict[str, Any]:
+            element_type_value = (
+                self.element_type.value
+                if hasattr(self.element_type, "value")
+                else self.element_type
+            )
+            return {
+                "id": self.id,
+                "bbox": self.bbox.to_dict(),
+                "element_type": element_type_value,
+                "selector": self.selector,
+                "text_content": self.text_content,
+                "placeholder": self.placeholder,
+                "value": self.value,
+                "alt_text": self.alt_text,
+                "semantic_role": self.semantic_role,
+                "aria_label": self.aria_label,
+                "name": self.name,
+                "is_interactive": self.is_interactive,
+                "is_enabled": self.is_enabled,
+                "is_visible": self.is_visible,
+                "is_focused": self.is_focused,
+                "element_state": self.element_state,
+                "parent_id": self.parent_id,
+                "children_ids": self.children_ids,
+                "attributes": self.attributes,
+                "tag_name": self.tag_name,
+                "class_names": self.class_names,
+                "extraction_category": self.extraction_category,
+            }
+
+    @dataclass
+    class InteractiveElement:
+        id: str
+        bbox: BoundingBox
+        tag_name: str
+        element_type: str
+        screenshot_id: str
+        selector: str
+        text: str | None = None
+        href: str | None = None
+        aria_label: str | None = None
+        aria_role: str | None = None
+        shadow_path: str | None = None
 
         def to_dict(self) -> dict[str, Any]:
             return {
                 "id": self.id,
+                "bbox": self.bbox.to_dict(),
                 "tag_name": self.tag_name,
                 "element_type": self.element_type,
-                "text": self.text,
-                "bbox": self.bbox.to_dict(),
-                "is_visible": self.is_visible,
-                "is_interactive": self.is_interactive,
+                "screenshot_id": self.screenshot_id,
                 "selector": self.selector,
-                "computed_role": self.computed_role,
-                "confidence": self.confidence,
-                "extraction_method": self.extraction_method,
-                "metadata": self.metadata,
+                "text": self.text,
+                "href": self.href,
+                "aria_label": self.aria_label,
+                "aria_role": self.aria_role,
+                "shadow_path": self.shadow_path,
             }
 
     @dataclass
@@ -176,6 +247,7 @@ def _setup_extraction_stubs():
     extraction_web_models.ExtractedElement = ExtractedElement
     extraction_web_models.ExtractedState = ExtractedState
     extraction_web_models.ExtractedTransition = ExtractedTransition
+    extraction_web_models.InteractiveElement = InteractiveElement
     extraction_web_models.StateType = StateType
     extraction_web_models.ElementType = ElementType
     extraction_web_models.TransitionType = TransitionType

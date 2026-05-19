@@ -358,11 +358,11 @@ class TestTypeAnnotationCoverage:
         """Test that public functions have type hints."""
         import inspect
 
-        from qontinui.actions import result_builders
+        from qontinui.actions import result_builder
 
         # Check builder functions
         for name, func in inspect.getmembers(
-            result_builders, predicate=inspect.isfunction
+            result_builder, predicate=inspect.isfunction
         ):
             if not name.startswith("_"):
                 sig = inspect.signature(func)

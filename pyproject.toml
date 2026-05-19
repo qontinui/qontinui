@@ -61,6 +61,7 @@ psutil = ">=5.9,<8.0"
 sqlalchemy = "^2.0"
 pydantic = "^2.11.9"
 qontinui-schemas = { path = "../qontinui-schemas", develop = true }
+multistate = { path = "../multistate", develop = true }
 croniter = "^6.0"
 playwright = "^1.56.0"
 selenium = "^4.38.0"

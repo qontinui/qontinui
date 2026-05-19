@@ -377,7 +377,7 @@ class TestAtspiRefPersistence:
         assert capture._ref_manager.count > 0
 
         # Disconnect should persist
-        asyncio.get_event_loop().run_until_complete(capture.disconnect())
+        asyncio.run(capture.disconnect())
 
         # A file should have been written
         json_files = list(tmp_path.glob("*.json"))
@@ -421,7 +421,7 @@ class TestAtspiRefPersistence:
         )
         capture._target_element = frame
 
-        snapshot = asyncio.get_event_loop().run_until_complete(capture.capture_tree())
+        snapshot = asyncio.run(capture.capture_tree())
 
         # The restored ref should be findable
         restored_node = capture._ref_manager.get_node_by_ref("@e1")
@@ -447,9 +447,7 @@ class TestPlatformGuard:
         ):
             capture = ATSPIAccessibilityCapture()
             # _atspi is None, _ensure_atspi_available will check _is_linux
-            result = asyncio.get_event_loop().run_until_complete(
-                capture.connect(target="anything")
-            )
+            result = asyncio.run(capture.connect(target="anything"))
             assert result is False
 
     def test_atspi_ensure_available_returns_true_when_already_loaded(self):
