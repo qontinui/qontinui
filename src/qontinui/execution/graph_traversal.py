@@ -72,6 +72,12 @@ class GraphTraverser:
         # Execution state
         self.state: ExecutionState | None = None
 
+        # Breakpoint persists across runs; applied to fresh state on traverse()
+        self._breakpoint_action_id: str | None = None
+
+        # Action the run is currently paused at (stepped over on resume)
+        self._paused_at_action_id: str | None = None
+
         # Validation
         self._validate_workflow()
 
@@ -79,26 +85,35 @@ class GraphTraverser:
         """
         Validate the workflow structure.
 
-        Raises:
-            ValueError: If workflow is invalid
-            OrphanedActionsError: If orphaned actions exist
-        """
-        # Check for entry points
-        entry_points = self.get_entry_actions()
-        if not entry_points:
-            raise ValueError(
-                "Workflow has no entry points (actions with no incoming connections)"
-            )
+        Validation order matters: a self-cycle action has an incoming connection
+        (from itself) and therefore would also fail the entry-point check, so the
+        simple-cycle check must run first to produce the precise error.
 
-        # Check for orphaned actions
+        Raises:
+            CycleDetectedError: If a simple (self-referential) cycle exists
+            OrphanedActionsError: If orphaned (isolated) actions exist
+            ValueError: If the workflow has no entry points
+        """
+        # Check for simple cycles (action connecting to itself) first — these
+        # actions also look like non-entry-points, so detect them precisely here.
+        self._check_simple_cycles()
+
+        # Check for orphaned actions (islands with no connections at all)
         orphaned = self._find_orphaned_actions()
         if orphaned:
             raise OrphanedActionsError(
                 f"Workflow has orphaned actions (no path from entry points): {orphaned}"
             )
 
-        # Check for simple cycles (action connecting to itself)
-        self._check_simple_cycles()
+        # Check for entry points. A workflow whose only "entry" is part of a
+        # cycle is still valid if that cycle is anchored by a LOOP action
+        # (the LOOP head is the implicit cyclic entry). A cycle of plain
+        # actions with no zero-incoming entry is malformed.
+        entry_points = self.get_entry_actions()
+        if not entry_points and not self._get_loop_entry_actions():
+            raise ValueError(
+                "Workflow has no entry points (actions with no incoming connections)"
+            )
 
     def _check_simple_cycles(self) -> None:
         """
@@ -120,37 +135,30 @@ class GraphTraverser:
 
     def _find_orphaned_actions(self) -> list[str]:
         """
-        Find actions that cannot be reached from any entry point.
+        Find orphaned actions.
+
+        An action is orphaned when it is an *island*: it has neither incoming
+        nor outgoing connections, so it can never participate in execution
+        flow. A single-action workflow is a valid degenerate case and is not
+        considered orphaned.
 
         Returns:
             List of orphaned action IDs
         """
-        reachable = set()
-        entry_points = self.get_entry_actions()
+        if len(self.workflow.actions) <= 1:
+            return []
 
-        # BFS to find all reachable actions
-        queue = [action.id for action in entry_points]
-        while queue:
-            action_id = queue.pop(0)
-            if action_id in reachable:
-                continue
+        orphaned: list[str] = []
+        for action in self.workflow.actions:
+            has_incoming = self.resolver.has_incoming_connections(action.id)
+            has_outgoing = any(
+                self.resolver.resolve_output_connection(action.id, output_type)
+                for output_type, _ in self.resolver.get_all_outputs(action.id)
+            )
+            if not has_incoming and not has_outgoing:
+                orphaned.append(action.id)
 
-            reachable.add(action_id)
-
-            # Add connected actions
-            for output_type, _ in self.resolver.get_all_outputs(action_id):
-                connections = self.resolver.resolve_output_connection(
-                    action_id, output_type
-                )
-                for conn in connections:
-                    if conn.action not in reachable:
-                        queue.append(conn.action)
-
-        # Find actions not reachable
-        all_actions = {action.id for action in self.workflow.actions}
-        orphaned = all_actions - reachable
-
-        return list(orphaned)
+        return orphaned
 
     def get_entry_actions(self) -> list[Action]:
         """
@@ -164,6 +172,19 @@ class GraphTraverser:
             if not self.resolver.has_incoming_connections(action.id):
                 entry_actions.append(action)
         return entry_actions
+
+    def _get_loop_entry_actions(self) -> list[Action]:
+        """
+        Get LOOP actions that can serve as implicit cyclic entry points.
+
+        Used when a workflow has no zero-incoming entry actions but its flow
+        is anchored by one or more LOOP actions (e.g. a pure ``loop -> body
+        -> loop`` cycle).
+
+        Returns:
+            List of LOOP actions, ordered by their position in the workflow
+        """
+        return [a for a in self.workflow.actions if a.type == "LOOP"]
 
     def get_next_actions(
         self, action_id: str, output_type: str = "main", output_index: int = 0
@@ -209,6 +230,10 @@ class GraphTraverser:
         )
         self.state.start()
 
+        # Re-apply any breakpoint configured before this run
+        if self._breakpoint_action_id is not None:
+            self.state.set_pause_at_action(self._breakpoint_action_id)
+
         # Initialize context
         if context is None:
             context = {}
@@ -233,6 +258,10 @@ class GraphTraverser:
                 starting_actions = [start_action]
             else:
                 starting_actions = self.get_entry_actions()
+                # Pure-loop workflows have no zero-incoming entry; start from
+                # the LOOP head(s) that anchor the cycle.
+                if not starting_actions:
+                    starting_actions = self._get_loop_entry_actions()
 
             # Add starting actions to pending queue
             for action in starting_actions:
@@ -252,8 +281,11 @@ class GraphTraverser:
                 if not pending:
                     break
 
-                # Check for pause
+                # Check for pause. The action that hit the breakpoint is put
+                # back at the front so it executes first when resumed.
                 if self.state.should_pause_at(pending.action_id):
+                    self.state.add_pending_front(pending)
+                    self._paused_at_action_id = pending.action_id
                     self.state.pause()
                     logger.info(f"Execution paused at action: {pending.action_id}")
                     break
@@ -309,13 +341,19 @@ class GraphTraverser:
         )
 
         try:
-            # Execute the action
+            # Execute the action. The executor receives a working copy of the
+            # context which it may both mutate in place (e.g. loop counters)
+            # and contribute to via its return value.
             context = self.state.get_all_context() if self.state is not None else {}
             result = self.action_executor(action, context)
 
-            # Update context with result
-            if result and self.state is not None:
-                self.state.update_context(result)
+            # Merge back any in-place context mutations the executor made,
+            # then overlay the explicit result payload (result wins on conflict).
+            if self.state is not None:
+                if context:
+                    self.state.update_context(context)
+                if result:
+                    self.state.update_context(result)
 
             # Determine output type based on action type and result
             output_type = self._determine_output_type(action, result)
@@ -325,23 +363,16 @@ class GraphTraverser:
             if record is not None:
                 record.complete(result, output_type, output_index)
 
-            # Queue next actions
+            # Queue next actions. Back-edges (loops) are intentionally allowed:
+            # runaway loops are bounded by the iteration limit in traverse(),
+            # not by suppressing legitimate revisits here.
             next_actions = self.get_next_actions(action_id, output_type, output_index)
 
             for next_action in next_actions:
-                # Check if already visited (cycle detection)
-                if self.state is not None and self.state.is_visited(next_action.id):
-                    # Allow revisiting for LOOP actions
-                    if action.type != "LOOP":
-                        logger.warning(
-                            f"Cycle detected: action '{next_action.id}' already visited"
-                        )
-                        continue
-
                 if self.state is not None:
                     self.state.add_pending(next_action.id, depth=depth + 1)
 
-            # Mark as visited (after queuing to allow loops)
+            # Mark as visited (for statistics / reporting only)
             if self.state is not None:
                 self.state.mark_visited(action_id)
 
@@ -462,6 +493,11 @@ class GraphTraverser:
 
         self.state.resume()
 
+        # The action we paused at must be stepped over once so resume() does
+        # not immediately re-trigger the same breakpoint.
+        step_over = self._paused_at_action_id
+        self._paused_at_action_id = None
+
         # Continue execution from where we left off
         while self.state.has_pending():
             if not self.state.increment_iteration():
@@ -473,7 +509,11 @@ class GraphTraverser:
             if not pending:
                 break
 
-            if self.state.should_pause_at(pending.action_id):
+            if pending.action_id == step_over:
+                step_over = None
+            elif self.state.should_pause_at(pending.action_id):
+                self.state.add_pending_front(pending)
+                self._paused_at_action_id = pending.action_id
                 self.state.pause()
                 break
 
@@ -493,14 +533,19 @@ class GraphTraverser:
         """
         Set a breakpoint at an action.
 
+        The breakpoint is stored on the traverser so it survives across runs
+        and is honored even when set before traverse() creates the state.
+
         Args:
             action_id: The action ID to pause at
         """
+        self._breakpoint_action_id = action_id
         if self.state:
             self.state.set_pause_at_action(action_id)
 
     def clear_breakpoint(self) -> None:
         """Clear the current breakpoint."""
+        self._breakpoint_action_id = None
         if self.state:
             self.state.set_pause_at_action(None)
 
