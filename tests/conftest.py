@@ -2,12 +2,24 @@
 
 import os
 import sys
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
 # Set up headless display for GUI tests
 os.environ.setdefault("DISPLAY", ":99")
+
+# pynput's X backend opens ~/.Xauthority at import; on a fresh CI runner
+# the file doesn't exist and import fails with XauthError, cascading every
+# test ERROR at collection. xvfb-run -a creates one per invocation, but
+# pynput resolves the path via $XAUTHORITY (set by our autouse fixture
+# below to /tmp/.Xauthority). Make sure the file exists so pynput can
+# read it even before the fixture runs (it doesn't apply at import time).
+try:
+    Path("/tmp/.Xauthority").touch(exist_ok=True)
+except OSError:
+    pass
 
 # Mock modules that may not be available or have DLL issues
 # This allows accessibility tests to run without full qontinui dependencies

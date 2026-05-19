@@ -23,6 +23,7 @@ from qontinui.config import Action
 from qontinui.config.schema import TypeActionConfig
 from qontinui.reporting import Event, EventType, get_event_registry, register_callback
 from qontinui.wrappers import Mouse
+from tests._env_probe import HAS_FUNCTIONAL_DISPLAY
 
 
 class TestWebSocketEventIntegration:
@@ -39,6 +40,10 @@ class TestWebSocketEventIntegration:
         registry = get_event_registry()
         registry.clear()
 
+    @pytest.mark.skipif(
+        not HAS_FUNCTIONAL_DISPLAY,
+        reason="real Find().execute() captures via mss; needs a functional display",
+    )
     @pytest.mark.asyncio
     async def test_match_attempted_event_has_timestamps(self):
         """Verify MATCH_ATTEMPTED events include both screenshot_timestamp and timestamp."""
@@ -98,6 +103,10 @@ class TestWebSocketEventIntegration:
 
         print(f"✓ MATCH_ATTEMPTED event has timestamp: {timestamp}")
 
+    @pytest.mark.skipif(
+        not HAS_FUNCTIONAL_DISPLAY,
+        reason="real Find().execute() captures via mss; needs a functional display",
+    )
     @pytest.mark.asyncio
     async def test_match_attempted_event_has_debug_visual_base64(self):
         """Verify MATCH_ATTEMPTED events include debug_visual_base64 field."""
@@ -215,6 +224,10 @@ class TestWebSocketEventIntegration:
 
         print(f"✓ TEXT_TYPED event has complete metadata: {list(event_data.keys())}")
 
+    @pytest.mark.skipif(
+        not HAS_FUNCTIONAL_DISPLAY,
+        reason="Mouse.click_at() drives pynput directly; needs a functional display",
+    )
     def test_mouse_clicked_event_has_complete_metadata(self):
         """Verify MOUSE_CLICKED events include all required metadata fields."""
         # Collect events
@@ -354,6 +367,10 @@ class TestWebSocketEventIntegration:
 
         print(f"✓ ACTION_COMPLETED event has timestamp in data payload: {timestamp}")
 
+    @pytest.mark.skipif(
+        not HAS_FUNCTIONAL_DISPLAY,
+        reason="exercises real Find().execute() + Mouse.click_at(); needs a functional display",
+    )
     @pytest.mark.asyncio
     async def test_all_events_have_millisecond_precision_timestamps(self):
         """Verify all timestamps have millisecond precision (not just second precision)."""
