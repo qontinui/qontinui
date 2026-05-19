@@ -327,8 +327,8 @@ class TestWorkflowExecutionE2E:
             id="test-find",
             type="FIND",
             config={
-                "target": {"type": "image", "imageId": "img-test"},
-                "search": {"strategy": "single", "confidence": 0.8},
+                "target": {"type": "image", "imageIds": ["img-test"]},
+                "searchOptions": {"searchStrategy": "FIRST", "similarity": 0.8},
             },
         )
 
@@ -340,11 +340,11 @@ class TestWorkflowExecutionE2E:
         ), "Parsed config should have target attribute"
         assert typed_config.target.type == "image", "Target type should be 'image'"
 
-        # Test TYPE action with text source
+        # Test TYPE action with text
         type_action = Action(
             id="test-type",
             type="TYPE",
-            config={"text": {"type": "static", "value": "test text"}},
+            config={"text": "test text"},
         )
 
         typed_config = get_typed_config(type_action)
@@ -380,7 +380,7 @@ class TestWorkflowExecutionE2E:
         click_action = Action(
             id="test-click",
             type="CLICK",
-            config={"target": {"type": "image", "imageId": "img-button"}},
+            config={"target": {"type": "image", "imageIds": ["img-button"]}},
         )
 
         typed_config = get_typed_config(click_action)
@@ -398,25 +398,25 @@ class TestWorkflowExecutionE2E:
         ), "Parsed config should have state_ids attribute"
         assert typed_config.state_ids == ["state-1"], "State IDs should match"
 
-    def test_image_finding_condition_evaluation(self, mock_image):
+    @pytest.mark.asyncio
+    async def test_image_finding_condition_evaluation(self, mock_image):
         """Test 4: Test image finding condition evaluation."""
         from qontinui.actions.control_flow.condition_evaluator import ConditionEvaluator
         from qontinui.config import ConditionConfig
 
-        # Register test image
-        registry.register_image("test-img-exists", mock_image)
+        # Register test image with metadata (evaluator requires file_path)
+        registry.register_image(
+            "test-img-exists",
+            mock_image,
+            file_path="/mock/test-img-exists.png",
+            name="test-img-exists",
+        )
 
         # Create execution context
-        context = ExecutionContext(variables={})
+        context = ExecutionContext(initial_variables={})
 
         # Create condition evaluator
         evaluator = ConditionEvaluator(context)
-
-        # Test image_exists condition (should be True)
-        condition = ConditionConfig(type="image_exists", image_id="test-img-exists")
-
-        result = evaluator.evaluate_condition(condition)
-        assert result is True, "Image should exist (mock returns True)"
 
         # Test with non-existent image (should raise ValueError)
         condition_missing = ConditionConfig(
@@ -424,15 +424,16 @@ class TestWorkflowExecutionE2E:
         )
 
         with pytest.raises(ValueError, match="not found in registry"):
-            evaluator.evaluate_condition(condition_missing)
+            await evaluator.evaluate_condition(condition_missing)
 
-    def test_variable_condition_evaluation(self):
+    @pytest.mark.asyncio
+    async def test_variable_condition_evaluation(self):
         """Test variable-based condition evaluation."""
         from qontinui.actions.control_flow.condition_evaluator import ConditionEvaluator
         from qontinui.config import ConditionConfig
 
         # Create execution context with variables
-        context = ExecutionContext(variables={"counter": 10, "name": "test"})
+        context = ExecutionContext(initial_variables={"counter": 10, "name": "test"})
 
         # Create condition evaluator
         evaluator = ConditionEvaluator(context)
@@ -441,19 +442,19 @@ class TestWorkflowExecutionE2E:
         condition = ConditionConfig(
             type="variable", variable_name="counter", operator=">", expected_value=5
         )
-        assert evaluator.evaluate_condition(condition) is True
+        assert await evaluator.evaluate_condition(condition) is True
 
         # Test numeric comparison (<=)
         condition = ConditionConfig(
             type="variable", variable_name="counter", operator="<=", expected_value=5
         )
-        assert evaluator.evaluate_condition(condition) is False
+        assert await evaluator.evaluate_condition(condition) is False
 
         # Test equality
         condition = ConditionConfig(
             type="variable", variable_name="name", operator="==", expected_value="test"
         )
-        assert evaluator.evaluate_condition(condition) is True
+        assert await evaluator.evaluate_condition(condition) is True
 
         # Test contains
         condition = ConditionConfig(
@@ -462,28 +463,29 @@ class TestWorkflowExecutionE2E:
             operator="contains",
             expected_value="es",
         )
-        assert evaluator.evaluate_condition(condition) is True
+        assert await evaluator.evaluate_condition(condition) is True
 
-    def test_expression_condition_evaluation(self):
+    @pytest.mark.asyncio
+    async def test_expression_condition_evaluation(self):
         """Test expression-based condition evaluation."""
         from qontinui.actions.control_flow.condition_evaluator import ConditionEvaluator
         from qontinui.config import ConditionConfig
 
         # Create execution context with variables
-        context = ExecutionContext(variables={"x": 10, "y": 20})
+        context = ExecutionContext(initial_variables={"x": 10, "y": 20})
 
         # Create condition evaluator
         evaluator = ConditionEvaluator(context)
 
         # Test simple expression
         condition = ConditionConfig(type="expression", expression="x + y > 25")
-        assert evaluator.evaluate_condition(condition) is True
+        assert await evaluator.evaluate_condition(condition) is True
 
         # Test expression with variable access
         condition = ConditionConfig(
             type="expression", expression="variables['x'] * 2 == 20"
         )
-        assert evaluator.evaluate_condition(condition) is True
+        assert await evaluator.evaluate_condition(condition) is True
 
     @patch("qontinui.model.state.state_image.StateImage.exists")
     def test_full_pipeline_integration(
@@ -582,7 +584,7 @@ class TestWorkflowExecutionE2E:
         from qontinui.actions.control_flow.condition_evaluator import ConditionEvaluator
         from qontinui.config import ConditionConfig
 
-        context = ExecutionContext(variables={"test_var": 42})
+        context = ExecutionContext(initial_variables={"test_var": 42})
         evaluator = ConditionEvaluator(context)
 
         # Test image_exists condition
@@ -728,7 +730,8 @@ class TestConfigurationValidation:
         with pytest.raises(ValidationError):
             get_typed_config(invalid_find)
 
-    def test_condition_without_required_fields(self):
+    @pytest.mark.asyncio
+    async def test_condition_without_required_fields(self):
         """Test that conditions without required fields can be created but fail at evaluation."""
         from qontinui.actions.control_flow.condition_evaluator import ConditionEvaluator
         from qontinui.config import ConditionConfig
@@ -746,11 +749,11 @@ class TestConfigurationValidation:
         assert condition is not None
 
         # But evaluation should fail
-        context = ExecutionContext(variables={})
+        context = ExecutionContext(initial_variables={})
         evaluator = ConditionEvaluator(context)
 
         with pytest.raises(ValueError, match="variable_name"):
-            evaluator.evaluate_condition(condition)
+            await evaluator.evaluate_condition(condition)
 
         # Image condition without image_id - will fail at evaluation
         img_condition = ConditionConfig(
@@ -761,25 +764,26 @@ class TestConfigurationValidation:
         assert img_condition is not None
 
         with pytest.raises(ValueError, match="image_id"):
-            evaluator.evaluate_condition(img_condition)
+            await evaluator.evaluate_condition(img_condition)
 
 
 class TestErrorHandling:
     """Tests for error handling throughout the pipeline."""
 
-    def test_image_not_found_in_registry(self):
+    @pytest.mark.asyncio
+    async def test_image_not_found_in_registry(self):
         """Test handling of missing images in registry."""
         from qontinui.actions.control_flow.condition_evaluator import ConditionEvaluator
         from qontinui.config import ConditionConfig
 
-        context = ExecutionContext(variables={})
+        context = ExecutionContext(initial_variables={})
         evaluator = ConditionEvaluator(context)
 
         # Try to evaluate condition with non-existent image
         condition = ConditionConfig(type="image_exists", image_id="non-existent-image")
 
         with pytest.raises(ValueError, match="not found in registry"):
-            evaluator.evaluate_condition(condition)
+            await evaluator.evaluate_condition(condition)
 
     def test_workflow_executor_not_set(self, sample_bdo_config, mock_image):
         """Test behavior when workflow_executor is not set."""

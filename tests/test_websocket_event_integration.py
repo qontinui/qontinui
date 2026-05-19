@@ -15,6 +15,7 @@ import time
 from unittest.mock import MagicMock
 
 import numpy as np
+import pytest
 
 from qontinui import Find, Image
 from qontinui.action_executors.delegating_executor import DelegatingActionExecutor
@@ -140,7 +141,8 @@ class TestWebSocketEventIntegration:
         else:
             print("⚠ Debug visual not present in event (may be expected)")
 
-    def test_text_typed_event_has_complete_metadata(self):
+    @pytest.mark.asyncio
+    async def test_text_typed_event_has_complete_metadata(self):
         """Verify TEXT_TYPED events include all required metadata fields."""
 
         from qontinui.action_executors.base import ExecutionContext
@@ -150,6 +152,11 @@ class TestWebSocketEventIntegration:
         context = MagicMock(spec=ExecutionContext)
         context.keyboard = MagicMock()
         context.keyboard.type_text = MagicMock(return_value=True)
+        context.variable_context = None  # Skip variable substitution
+        context.hal_container = None  # Skip UIA path
+        context.last_action_result = None
+        context.config = MagicMock()
+        context.emit_action_event = MagicMock()
 
         # Collect events
         events_received = []
@@ -159,17 +166,18 @@ class TestWebSocketEventIntegration:
         executor = KeyboardActionExecutor(context)
 
         # Create TYPE action
+        typed_config = TypeActionConfig(text="test@example.com")
         action = Action(
             id="test_type_action",
             type="TYPE",
-            config=TypeActionConfig(text="test@example.com"),
+            config=typed_config.model_dump(),
         )
 
         # Record time before execution
         time_before = time.time()
 
-        # Execute action
-        executor.execute(action, action.config)
+        # Execute action (async)
+        await executor.execute(action, typed_config)
 
         # Record time after execution
         time_after = time.time()

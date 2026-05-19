@@ -12,6 +12,7 @@ the Python side of the integration thoroughly.
 """
 
 import json
+import uuid
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock, patch
@@ -27,6 +28,22 @@ from qontinui.model.state.state import State
 from qontinui.model.state.state_image import StateImage
 from qontinui.model.state.state_location import StateLocation
 from qontinui.model.state.state_region import StateRegion
+
+
+def _make_test_pattern(name: str) -> Pattern:
+    """Construct a minimal valid Pattern for fixture use.
+
+    Pattern is a @dataclass requiring id, name, pixel_data, mask. Mask
+    shape must match pixel_data.shape[:2] (validated in __post_init__).
+    """
+    pixel_data = np.zeros((4, 4, 3), dtype=np.uint8)
+    mask = np.ones((4, 4), dtype=np.float32)
+    return Pattern(
+        id=str(uuid.uuid4()),
+        name=name,
+        pixel_data=pixel_data,
+        mask=mask,
+    )
 
 
 @pytest.fixture
@@ -99,13 +116,13 @@ def sample_state() -> State:
     state = State(name="test_state", description="Test state for serialization")
 
     # Add StateImages
-    pattern1 = Pattern(name="button_pattern")
+    pattern1 = _make_test_pattern("button_pattern")
     state_img1 = StateImage(image=pattern1, name="login_button")
     state_img1.metadata["bbox"] = (100, 200, 50, 30)
     state_img1.metadata["context"] = "button"
     state.add_state_image(state_img1)
 
-    pattern2 = Pattern(name="logo_pattern")
+    pattern2 = _make_test_pattern("logo_pattern")
     state_img2 = StateImage(image=pattern2, name="company_logo")
     state_img2.metadata["bbox"] = (50, 50, 100, 60)
     state_img2.metadata["context"] = "logo"

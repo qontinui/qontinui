@@ -1,6 +1,6 @@
 """Unit tests for HIGHLIGHT action executor."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
@@ -49,12 +49,14 @@ class TestHighlightAction:
         supported = mouse_executor.get_supported_action_types()
         assert "HIGHLIGHT" in supported
 
-    def test_highlight_with_coordinates(self, mouse_executor):
+    @pytest.mark.asyncio
+    async def test_highlight_with_coordinates(self, mouse_executor):
         """Test HIGHLIGHT action with coordinate target."""
         # Arrange
         action = Action(
             id="test-highlight-1",
             type="HIGHLIGHT",
+            config={},
         )
 
         config = HighlightActionConfig(
@@ -70,13 +72,13 @@ class TestHighlightAction:
 
         # Mock the overlay
         with patch(
-            "src.qontinui.action_executors.mouse.HighlightOverlay"
+            "src.qontinui.action_executors.highlight_overlay.HighlightOverlay"
         ) as mock_overlay_class:
             mock_overlay = MagicMock()
             mock_overlay_class.return_value = mock_overlay
 
             # Act
-            result = mouse_executor.execute(action, config)
+            result = await mouse_executor.execute(action, config)
 
             # Assert
             assert result is True
@@ -90,12 +92,14 @@ class TestHighlightAction:
             )
             mock_overlay.show.assert_called_once()
 
-    def test_highlight_with_default_values(self, mouse_executor):
+    @pytest.mark.asyncio
+    async def test_highlight_with_default_values(self, mouse_executor):
         """Test HIGHLIGHT action uses default values when not specified."""
         # Arrange
         action = Action(
             id="test-highlight-2",
             type="HIGHLIGHT",
+            config={},
         )
 
         config = HighlightActionConfig(
@@ -108,13 +112,13 @@ class TestHighlightAction:
 
         # Mock the overlay
         with patch(
-            "src.qontinui.action_executors.mouse.HighlightOverlay"
+            "src.qontinui.action_executors.highlight_overlay.HighlightOverlay"
         ) as mock_overlay_class:
             mock_overlay = MagicMock()
             mock_overlay_class.return_value = mock_overlay
 
             # Act
-            result = mouse_executor.execute(action, config)
+            result = await mouse_executor.execute(action, config)
 
             # Assert
             assert result is True
@@ -125,12 +129,14 @@ class TestHighlightAction:
             assert call_args.kwargs["thickness"] == 3  # Default
             assert call_args.kwargs["style"] == "box"  # Default
 
-    def test_highlight_with_circle_style(self, mouse_executor):
+    @pytest.mark.asyncio
+    async def test_highlight_with_circle_style(self, mouse_executor):
         """Test HIGHLIGHT action with circle style."""
         # Arrange
         action = Action(
             id="test-highlight-3",
             type="HIGHLIGHT",
+            config={},
         )
 
         config = HighlightActionConfig(
@@ -146,13 +152,13 @@ class TestHighlightAction:
 
         # Mock the overlay
         with patch(
-            "src.qontinui.action_executors.mouse.HighlightOverlay"
+            "src.qontinui.action_executors.highlight_overlay.HighlightOverlay"
         ) as mock_overlay_class:
             mock_overlay = MagicMock()
             mock_overlay_class.return_value = mock_overlay
 
             # Act
-            result = mouse_executor.execute(action, config)
+            result = await mouse_executor.execute(action, config)
 
             # Assert
             assert result is True
@@ -160,12 +166,14 @@ class TestHighlightAction:
             assert call_args.kwargs["style"] == "circle"
             assert call_args.kwargs["color"] == "#00FF00"
 
-    def test_highlight_with_arrow_style(self, mouse_executor):
+    @pytest.mark.asyncio
+    async def test_highlight_with_arrow_style(self, mouse_executor):
         """Test HIGHLIGHT action with arrow style."""
         # Arrange
         action = Action(
             id="test-highlight-4",
             type="HIGHLIGHT",
+            config={},
         )
 
         config = HighlightActionConfig(
@@ -181,13 +189,13 @@ class TestHighlightAction:
 
         # Mock the overlay
         with patch(
-            "src.qontinui.action_executors.mouse.HighlightOverlay"
+            "src.qontinui.action_executors.highlight_overlay.HighlightOverlay"
         ) as mock_overlay_class:
             mock_overlay = MagicMock()
             mock_overlay_class.return_value = mock_overlay
 
             # Act
-            result = mouse_executor.execute(action, config)
+            result = await mouse_executor.execute(action, config)
 
             # Assert
             assert result is True
@@ -195,12 +203,14 @@ class TestHighlightAction:
             assert call_args.kwargs["style"] == "arrow"
             assert call_args.kwargs["color"] == "#0000FF"
 
-    def test_highlight_without_target_location(self, mouse_executor):
+    @pytest.mark.asyncio
+    async def test_highlight_without_target_location(self, mouse_executor):
         """Test HIGHLIGHT action fails gracefully when target not found."""
         # Arrange
         action = Action(
             id="test-highlight-5",
             type="HIGHLIGHT",
+            config={},
         )
 
         # Create a config with no valid target (will return None from _get_target_location)
@@ -211,20 +221,24 @@ class TestHighlightAction:
             ),
         )
 
-        # Mock _get_target_location to return None
-        with patch.object(mouse_executor, "_get_target_location", return_value=None):
+        # Mock _get_target_location to return None (async method, use AsyncMock)
+        with patch.object(
+            mouse_executor, "_get_target_location", new=AsyncMock(return_value=None)
+        ):
             # Act
-            result = mouse_executor.execute(action, config)
+            result = await mouse_executor.execute(action, config)
 
             # Assert
             assert result is False
 
-    def test_highlight_overlay_exception_handling(self, mouse_executor):
+    @pytest.mark.asyncio
+    async def test_highlight_overlay_exception_handling(self, mouse_executor):
         """Test HIGHLIGHT action handles overlay exceptions gracefully."""
         # Arrange
         action = Action(
             id="test-highlight-6",
             type="HIGHLIGHT",
+            config={},
         )
 
         config = HighlightActionConfig(
@@ -236,12 +250,12 @@ class TestHighlightAction:
 
         # Mock the overlay to raise an exception
         with patch(
-            "src.qontinui.action_executors.mouse.HighlightOverlay"
+            "src.qontinui.action_executors.highlight_overlay.HighlightOverlay"
         ) as mock_overlay_class:
             mock_overlay_class.side_effect = RuntimeError("Overlay creation failed")
 
             # Act
-            result = mouse_executor.execute(action, config)
+            result = await mouse_executor.execute(action, config)
 
             # Assert
             assert result is False
