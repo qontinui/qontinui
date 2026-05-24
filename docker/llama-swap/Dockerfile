@@ -45,18 +45,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-dev python3-venv gcc g++ curl && \
     rm -rf /var/lib/apt/lists/*
 
-# PyTorch nightly with sm_120 support for RTX 5090 (Blackwell).
-# Pin to a specific nightly date to avoid pip walking backwards through
-# every nightly release when vLLM adds conflicting constraints.
-# Using 2026-03-25 which is the latest cu128 nightly at time of writing.
+# PyTorch from the STABLE cu128 index — 2.10.0 already supports sm_120 (RTX 5090
+# Blackwell), which is what the deployed image runs. Stable wheels are pinned and
+# never garbage-collected (unlike nightly dated builds, which expire and break
+# from-scratch rebuilds). Exact-pin both so the build is reproducible.
 RUN pip install --no-cache-dir \
-    torch==2.12.0.dev20260325+cu128 \
-    torchvision==0.26.0.dev20260325+cu128 \
-    --index-url https://download.pytorch.org/whl/nightly/cu128
+    torch==2.10.0+cu128 \
+    torchvision==0.25.0+cu128 \
+    --index-url https://download.pytorch.org/whl/cu128
 
 # vLLM for UI-TARS backend (system Python, uses its own transformers version).
 # Install AFTER torch so vLLM picks up the pre-installed CUDA-enabled torch.
-RUN pip install --no-cache-dir vllm
+# Pinned to the proven version — unpinned would resolve a newer vLLM that may
+# pull an incompatible torch and break the VLM stack on rebuild.
+RUN pip install --no-cache-dir vllm==0.19.0
 
 # --- AriaUI virtualenv with pinned transformers ---
 # AriaUI's custom model code (modeling_aria.py) imports LLAMA_ATTENTION_CLASSES
@@ -81,9 +83,14 @@ RUN python3 -m venv /opt/venvs/aria-ui --system-site-packages && \
 # vLLM. CPU-only paddlepaddle wheel — the container already has CUDA from
 # the base image, so a GPU variant is a `paddlepaddle-gpu==2.6.1.post120`
 # swap when a host needs it.
+# PaddleOCR pulls full opencv-python, which dlopens libGL/libglib at import;
+# the CUDA base image lacks them → `ImportError: libGL.so.1` at runtime.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglib2.0-0 libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv /opt/venvs/paddleocr --system-site-packages && \
     /opt/venvs/paddleocr/bin/pip install --no-cache-dir \
-    paddlepaddle==2.6.1 \
+    paddlepaddle==2.6.2 \
     paddleocr==2.7.0.3 \
     fastapi==0.115.5 \
     "uvicorn[standard]==0.32.1" \
