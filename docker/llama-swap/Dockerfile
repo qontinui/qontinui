@@ -45,18 +45,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-dev python3-venv gcc g++ curl && \
     rm -rf /var/lib/apt/lists/*
 
-# PyTorch nightly with sm_120 support for RTX 5090 (Blackwell).
-# Pin to a specific nightly date to avoid pip walking backwards through
-# every nightly release when vLLM adds conflicting constraints.
-# Using 2026-03-25 which is the latest cu128 nightly at time of writing.
+# PyTorch from the STABLE cu128 index — 2.10.0 already supports sm_120 (RTX 5090
+# Blackwell), which is what the deployed image runs. Stable wheels are pinned and
+# never garbage-collected (unlike nightly dated builds, which expire and break
+# from-scratch rebuilds). Exact-pin both so the build is reproducible.
 RUN pip install --no-cache-dir \
-    torch==2.12.0.dev20260325+cu128 \
-    torchvision==0.26.0.dev20260325+cu128 \
-    --index-url https://download.pytorch.org/whl/nightly/cu128
+    torch==2.10.0+cu128 \
+    torchvision==0.25.0+cu128 \
+    --index-url https://download.pytorch.org/whl/cu128
 
 # vLLM for UI-TARS backend (system Python, uses its own transformers version).
 # Install AFTER torch so vLLM picks up the pre-installed CUDA-enabled torch.
-RUN pip install --no-cache-dir vllm
+# Pinned to the proven version — unpinned would resolve a newer vLLM that may
+# pull an incompatible torch and break the VLM stack on rebuild.
+RUN pip install --no-cache-dir vllm==0.19.0
 
 # --- AriaUI virtualenv with pinned transformers ---
 # AriaUI's custom model code (modeling_aria.py) imports LLAMA_ATTENTION_CLASSES
@@ -81,9 +83,14 @@ RUN python3 -m venv /opt/venvs/aria-ui --system-site-packages && \
 # vLLM. CPU-only paddlepaddle wheel — the container already has CUDA from
 # the base image, so a GPU variant is a `paddlepaddle-gpu==2.6.1.post120`
 # swap when a host needs it.
+# PaddleOCR pulls full opencv-python, which dlopens libGL/libglib at import;
+# the CUDA base image lacks them → `ImportError: libGL.so.1` at runtime.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglib2.0-0 libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv /opt/venvs/paddleocr --system-site-packages && \
     /opt/venvs/paddleocr/bin/pip install --no-cache-dir \
-    paddlepaddle==2.6.1 \
+    paddlepaddle==2.6.2 \
     paddleocr==2.7.0.3 \
     fastapi==0.115.5 \
     "uvicorn[standard]==0.32.1" \
@@ -94,14 +101,10 @@ RUN python3 -m venv /opt/venvs/paddleocr --system-site-packages && \
 COPY --from=llama-swap-download /install/bin/llama-swap /usr/local/bin/llama-swap
 COPY --from=llama-swap-download /install/llama-swap-version /etc/llama-swap-version
 
-# Copy backend serving scripts
-# Build context is docker/ (parent dir), set in docker-compose.yml
-COPY aria-ui/serve.py /opt/backends/aria-ui/serve.py
-COPY paddleocr/serve.py /opt/backends/paddleocr/serve.py
-
-# Copy llama-swap config
-COPY llama-swap/config.yaml /etc/llama-swap/config.yaml
-
+# --- Stable, expensive layers FIRST: pre-download model weights (~29GB) ---
+# Layer-order discipline: these large RUN layers must precede the volatile
+# build-context COPYs below. Otherwise editing any serve.py or config.yaml
+# invalidates the downstream weight layers and re-pulls all ~29GB on rebuild.
 # Pre-download AriaUI model weights (~25GB)
 RUN /opt/venvs/aria-ui/bin/python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Aria-UI/Aria-UI-base')"
 
@@ -112,6 +115,14 @@ RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download
 # RUN /opt/venvs/aria-ui/bin/python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Aria-UI/Aria-UI-context-aware')"
 # RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('ByteDance-Seed/UI-TARS-7B-SFT')"
 # RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('ByteDance-Seed/UI-TARS-1.5-7B')"
+
+# --- Volatile layers LAST: backend scripts + config change on every repo edit ---
+# Build context is docker/ (parent dir), set in docker-compose.yml. Kept after
+# the weight downloads so a code/config edit rebuilds only these cheap layers,
+# never the 29GB of model weights above.
+COPY aria-ui/serve.py /opt/backends/aria-ui/serve.py
+COPY paddleocr/serve.py /opt/backends/paddleocr/serve.py
+COPY llama-swap/config.yaml /etc/llama-swap/config.yaml
 
 EXPOSE 8100
 
