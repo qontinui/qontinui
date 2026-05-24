@@ -35,13 +35,18 @@ services:
       # host/runner side so UI-TARS requests go through the proxy.
     volumes:
       - llama-swap-hf-cache:/root/.cache/huggingface
-      # Mount config for hot-reload without rebuild
-      - ./config.yaml:/etc/llama-swap/config.yaml:ro
+      # Mount config for hot-reload without rebuild.
+      # The relative defaults below are resolved against the COMPOSE FILE's
+      # directory — so deploying from a worktree or a non-canonical clone
+      # silently mounts the wrong config / an empty /models. Override with an
+      # ABSOLUTE path (LLAMA_SWAP_CONFIG / LLAMA_SWAP_MODELS) to decouple the
+      # deploy from CWD/branch on a fixed host.
+      - ${LLAMA_SWAP_CONFIG:-./config.yaml}:/etc/llama-swap/config.yaml:ro
       # Local fine-tuned checkpoints (e.g. qontinui-grounding-v1 produced by
       # qontinui-finetune). Directory layout mirrors the paths referenced in
       # config.yaml: /models/<name>/ must contain a full HuggingFace-style
       # model directory (config.json, *.safetensors, tokenizer.json, etc.).
-      - ../../../models:/models:ro
+      - ${LLAMA_SWAP_MODELS:-../../../models}:/models:ro
     healthcheck:
       # /running is llama-swap's native status endpoint (works even with no model loaded)
       test: ["CMD", "curl", "-f", "http://localhost:8100/running"]
