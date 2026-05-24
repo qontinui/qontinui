@@ -94,14 +94,10 @@ RUN python3 -m venv /opt/venvs/paddleocr --system-site-packages && \
 COPY --from=llama-swap-download /install/bin/llama-swap /usr/local/bin/llama-swap
 COPY --from=llama-swap-download /install/llama-swap-version /etc/llama-swap-version
 
-# Copy backend serving scripts
-# Build context is docker/ (parent dir), set in docker-compose.yml
-COPY aria-ui/serve.py /opt/backends/aria-ui/serve.py
-COPY paddleocr/serve.py /opt/backends/paddleocr/serve.py
-
-# Copy llama-swap config
-COPY llama-swap/config.yaml /etc/llama-swap/config.yaml
-
+# --- Stable, expensive layers FIRST: pre-download model weights (~29GB) ---
+# Layer-order discipline: these large RUN layers must precede the volatile
+# build-context COPYs below. Otherwise editing any serve.py or config.yaml
+# invalidates the downstream weight layers and re-pulls all ~29GB on rebuild.
 # Pre-download AriaUI model weights (~25GB)
 RUN /opt/venvs/aria-ui/bin/python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Aria-UI/Aria-UI-base')"
 
@@ -112,6 +108,14 @@ RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download
 # RUN /opt/venvs/aria-ui/bin/python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Aria-UI/Aria-UI-context-aware')"
 # RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('ByteDance-Seed/UI-TARS-7B-SFT')"
 # RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('ByteDance-Seed/UI-TARS-1.5-7B')"
+
+# --- Volatile layers LAST: backend scripts + config change on every repo edit ---
+# Build context is docker/ (parent dir), set in docker-compose.yml. Kept after
+# the weight downloads so a code/config edit rebuilds only these cheap layers,
+# never the 29GB of model weights above.
+COPY aria-ui/serve.py /opt/backends/aria-ui/serve.py
+COPY paddleocr/serve.py /opt/backends/paddleocr/serve.py
+COPY llama-swap/config.yaml /etc/llama-swap/config.yaml
 
 EXPOSE 8100
 
