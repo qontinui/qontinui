@@ -24,9 +24,3 @@ repos:
         language: system
         pass_filenames: false
         files: \.py$
-
-      - id: block-claude-attribution
-        name: Block Claude Attribution
-        entry: .pre-commit-hooks/block-claude-attribution.sh
-        language: script
-        stages: [commit-msg]
