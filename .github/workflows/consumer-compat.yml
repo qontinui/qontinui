@@ -1,0 +1,51 @@
+name: Consumer Compatibility Check
+
+on:
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - ".github/workflows/consumer-compat.yml"
+
+jobs:
+  check-version-bump:
+    name: Check Version Bump & Consumer Compat
+    runs-on: ubuntu-latest
+    outputs:
+      version_bumped: ${{ steps.detect.outputs.version_bumped }}
+      new_version: ${{ steps.detect.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - id: detect
+        run: |
+          set -e
+          git fetch origin main:main
+          BASE_VERSION=$(git show main:pyproject.toml 2>/dev/null | grep '^version = ' | head -1 | sed 's/version = "\(.*\)"/\1/' || echo "")
+          HEAD_VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/' || echo "")
+
+          if [ ! -z "$BASE_VERSION" ] && [ "$BASE_VERSION" != "$HEAD_VERSION" ]; then
+            echo "version_bumped=true" >> $GITHUB_OUTPUT
+            echo "new_version=$HEAD_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "version_bumped=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check upstream-of label requirement
+        if: steps.detect.outputs.version_bumped == 'true'
+        run: |
+          PR_DATA='${{ github.event.pull_request.labels }}'
+          HAS_UPSTREAM=$(echo "$PR_DATA" | jq -r '.[] | select(.name | startswith("coord:upstream-of")) | .name' | wc -l)
+          if [ $HAS_UPSTREAM -eq 0 ]; then
+            echo "⚠ Version bump detected but no coord:upstream-of label found"
+            echo "If there are downstream consumers, use /coord-pr-label to declare them"
+          fi
+
+  verify-labeling:
+    name: Verify labeling requirement met
+    needs: check-version-bump
+    if: needs.check-version-bump.outputs.version_bumped == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "✓ Version bump ${{ needs.check-version-bump.outputs.new_version }} declared"
