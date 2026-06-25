@@ -1,0 +1,110 @@
+name: CI Integrity
+
+on:
+  pull_request_target:
+    branches: [main]
+    paths:
+      - '.github/workflows/*.yml'
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  check-self-gating:
+    name: Prevent Self-Gating Workflow Edits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base ref (main - trusted)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          repository: ${{ github.head_repo.full_name }}
+          path: head
+
+      - name: Install yq for YAML parsing
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Check for self-gating edits
+        id: check
+        run: |
+          set +e
+          GATING_WORKFLOWS="secret-scan"
+
+          # Get list of modified workflow files
+          MODIFIED_WORKFLOWS=$(find base/.github/workflows -name "*.yml" -type f | while read base_file; do
+            head_file="${base_file/base\//head\/}"
+            if [ ! -f "$head_file" ]; then
+              continue
+            fi
+            if ! diff -q "$base_file" "$head_file" >/dev/null 2>&1; then
+              basename "$base_file"
+            fi
+          done)
+
+          if [ -z "$MODIFIED_WORKFLOWS" ]; then
+            echo "No workflow files modified"
+            exit 0
+          fi
+
+          echo "Modified workflows:"
+          echo "$MODIFIED_WORKFLOWS"
+          echo ""
+
+          SELF_GATING_DETECTED=0
+
+          # Check each modified workflow
+          while IFS= read -r workflow; do
+            if [ -z "$workflow" ]; then
+              continue
+            fi
+
+            # Check if this workflow is a gating workflow
+            for gating_wf in $GATING_WORKFLOWS; do
+              if [ "$workflow" = "${gating_wf}.yml" ]; then
+                echo "FAILURE: Modified workflow '$workflow' is a gating workflow"
+                SELF_GATING_DETECTED=1
+              fi
+            done
+
+            # Check if the workflow runs on pull_request
+            workflow_path="base/.github/workflows/$workflow"
+            if yq eval '.on.pull_request' "$workflow_path" >/dev/null 2>&1; then
+              pr_trigger=$(yq eval '.on.pull_request' "$workflow_path")
+              if [ "$pr_trigger" != "null" ] && [ -n "$pr_trigger" ]; then
+                # This workflow runs on pull_request
+                # Check if it's in the list of gating workflows
+                for gating_wf in $GATING_WORKFLOWS; do
+                  if [ "$workflow" = "${gating_wf}.yml" ]; then
+                    echo "FAILURE: Self-gating detected: '$workflow' is a gating workflow and was modified by this PR"
+                    SELF_GATING_DETECTED=1
+                  fi
+                done
+              fi
+            fi
+          done <<< "$MODIFIED_WORKFLOWS"
+
+          if [ $SELF_GATING_DETECTED -eq 1 ]; then
+            echo "self_gating_detected=true" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "self_gating_detected=false" >> $GITHUB_OUTPUT
+          exit 0
+
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ steps.check.outputs.self_gating_detected }}" = "true" ]; then
+            echo "::error::A PR cannot modify its own gating workflows. This PR edits one or more workflows that are required for CI gating."
+            exit 1
+          fi
+          echo "✓ CI integrity check passed: No self-gating edits detected"
