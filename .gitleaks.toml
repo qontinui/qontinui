@@ -1,0 +1,16 @@
+# Self-contained gitleaks config. `[extend] useDefault = true` is load-bearing:
+# without it gitleaks has NO rules and detects nothing.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "qontinui allowlist — paths/regexes exempt from scanning"
+paths = [
+  '''docs/examples/.*''',
+  '''.*/__snapshots__/.*''',
+  '''.*\.lock$''',
+]
+regexes = [
+  '''(?i)(dummy|example|sample|test|placeholder|changeme|your[-_]?)[-_]?(secret|token|key|password)''',
+  '''AKIAIOSFODNN7EXAMPLE''',
+]
