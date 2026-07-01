@@ -266,4 +266,3 @@ Licensed under the GNU Affero General Public License v3.0 or later (AGPL-3.0-or-
 - **[multistate](https://github.com/qontinui/multistate)** - State management library | [Docs](https://qontinui.github.io/multistate/)
 - **[Brobot](https://github.com/jspinak/brobot)** - Original Java implementation (2018-2024)
 
-<!-- branch-protection landability check (coord FF-land through ruleset 18357587); safe to remove -->
