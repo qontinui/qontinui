@@ -1,6 +1,8 @@
 """Tests for AWAS action executor."""
 
+import httpx
 import pytest
+import respx
 
 from qontinui.awas.executor import AwasExecutor
 from qontinui.awas.types import (
@@ -230,7 +232,7 @@ class TestAwasExecutorAsync:
         """Create sample manifest."""
         return AwasManifest(
             app_name="Test",
-            base_url="https://httpbin.org",
+            base_url="https://api.example.com",
             actions=[
                 AwasAction(
                     id="test_get",
@@ -251,24 +253,25 @@ class TestAwasExecutorAsync:
         assert "not found" in result.error.lower()
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_execute_timeout(self, executor):
         """Test request timeout handling."""
-        # Create manifest with slow endpoint
         manifest = AwasManifest(
             app_name="Test",
-            base_url="https://httpbin.org",
+            base_url="https://api.example.com",
             actions=[
                 AwasAction(
                     id="slow",
                     name="Slow",
                     method=HttpMethod.GET,
-                    endpoint="/delay/10",  # 10 second delay
+                    endpoint="/slow",
                     intent="Test timeout",
                 ),
             ],
         )
 
-        # Use very short timeout
+        respx.get("https://api.example.com/slow").mock(side_effect=httpx.ReadTimeout)
+
         result = await executor.execute(manifest, "slow", timeout_seconds=0.1)
 
         assert result.success is False
