@@ -7,7 +7,7 @@ This example demonstrates how to:
 3. Use embeddings for semantic search
 
 Requirements:
-    poetry install -E rag
+    pip install qontinui[ml]
 """
 
 from datetime import datetime
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     except ImportError as e:
         print(f"\nError: {e}")
         print("\nPlease install RAG dependencies:")
-        print("  poetry install -E rag")
+        print("  pip install qontinui[ml]")
 
     except Exception as e:
         print(f"\nError: {e}")

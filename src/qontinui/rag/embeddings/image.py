@@ -29,7 +29,13 @@ class CLIPEmbedder:
             cache_dir: Optional cache directory for model weights
         """
         torch = require_torch("CLIPEmbedder")
-        from transformers import CLIPModel, CLIPProcessor
+        try:
+            from transformers import CLIPModel, CLIPProcessor
+        except ImportError as e:
+            raise ImportError(
+                "CLIPEmbedder requires transformers, which is not installed. "
+                "Install the full ML stack with: pip install qontinui[ml]"
+            ) from e
 
         self._model_name = model_name
         self._cache_dir = str(cache_dir) if cache_dir else None
@@ -179,7 +185,13 @@ class DINOv2Embedder:
             )
 
         torch = require_torch("DINOv2Embedder")
-        import torchvision.transforms as transforms
+        try:
+            import torchvision.transforms as transforms
+        except ImportError as e:
+            raise ImportError(
+                "DINOv2Embedder requires torchvision, which is not installed. "
+                "Install the full ML stack with: pip install qontinui[ml]"
+            ) from e
 
         self._model_name = model_name
         self._cache_dir = cache_dir
@@ -309,6 +321,10 @@ class HybridImageEmbedder:
         try:
             self._clip = CLIPEmbedder(cache_dir=cache_dir)
             self._dinov2 = DINOv2Embedder(cache_dir=cache_dir)
+        except ImportError:
+            # Preserve the actionable missing-[ml] ImportError from the
+            # underlying embedders so callers can catch it by type.
+            raise
         except Exception as e:
             raise RuntimeError(f"Failed to initialize hybrid embedder: {e}") from e
 

@@ -731,7 +731,7 @@ files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
-markers = {main = "extra == \"omniparser\" and sys_platform == \"win32\" or platform_system == \"Windows\""}
+markers = {main = "sys_platform == \"win32\" and extra == \"omniparser\" or platform_system == \"Windows\""}
 
 [[package]]
 name = "colorlog"
@@ -1083,7 +1083,7 @@ description = "Python bindings for CUDA"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "(extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "cuda_bindings-12.9.6-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:bb2f1eedc8f65902b34e807c21a3b7c922dc8de1f51d0829ecbb5c6a5e9c5ff1"},
     {file = "cuda_bindings-12.9.6-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:d9f9031e7a265e74f1517668139987253552d1677d995da4b0d990aa19b9b9b0"},
@@ -1122,7 +1122,7 @@ description = "Pathfinder for CUDA components"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "(extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "cuda_pathfinder-1.5.4-py3-none-any.whl", hash = "sha256:9563d3175ce1828531acf4b94e1c1c7d67208c347ca002493e2654878b26f4b7"},
 ]
@@ -1134,7 +1134,7 @@ description = "CUDA Toolkit meta-package"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "(extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "cuda_toolkit-12.8.1-py2.py3-none-any.whl", hash = "sha256:adc7906af4ecbf9a352f9dca5734eceb21daec281ccfcf5675e1d2f724fc2cba"},
 ]
@@ -1267,7 +1267,7 @@ description = "End-to-End Multi-Lingual Optical Character Recognition (OCR) Solu
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "extra == \"ml\""
+markers = "extra == \"ml\" or extra == \"omniparser\""
 files = [
     {file = "easyocr-1.7.2-py3-none-any.whl", hash = "sha256:5be12f9b0e595d443c9c3d10b0542074b50f0ec2d98b141a109cd961fd1c177c"},
 ]
@@ -1293,7 +1293,7 @@ description = "Bindings to the Linux input handling subsystem"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "sys_platform != \"win32\" and sys_platform != \"emscripten\" and \"linux\" in sys_platform"
+markers = "\"linux\" in sys_platform"
 files = [
     {file = "evdev-1.9.3.tar.gz", hash = "sha256:2c140e01ac8437758fa23fe5c871397412461f42d421aa20241dc8fe8cfccbc9"},
 ]
@@ -2052,7 +2052,7 @@ files = [
     {file = "jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"},
     {file = "jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d"},
 ]
-markers = {main = "extra == \"ml\" or extra == \"uitars\""}
+markers = {main = "extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\""}
 
 [package.dependencies]
 MarkupSafe = ">=2.0"
@@ -2460,7 +2460,7 @@ files = [
     {file = "markupsafe-3.0.3-cp39-cp39-win_arm64.whl", hash = "sha256:38664109c14ffc9e7437e86b4dceb442b0096dfe3541d7864d9cbe1da4cf36c8"},
     {file = "markupsafe-3.0.3.tar.gz", hash = "sha256:722695808f4b6457b320fdc131280796bdceb04ab50fe1795cd540799ebe1698"},
 ]
-markers = {main = "extra == \"ml\" or extra == \"uitars\""}
+markers = {main = "extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\""}
 
 [[package]]
 name = "marshmallow"
@@ -2668,7 +2668,7 @@ description = "Python library for arbitrary-precision floating-point arithmetic"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "extra == \"ml\" or extra == \"uitars\""
+markers = "extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\""
 files = [
     {file = "mpmath-1.3.0-py3-none-any.whl", hash = "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"},
     {file = "mpmath-1.3.0.tar.gz", hash = "sha256:7a28eb2a9774d00c7bc92411c19a89209d5da7c4c9a9e227be8330a23a25b91f"},
@@ -3031,7 +3031,7 @@ description = "Ninja is a small build system with a focus on speed"
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "extra == \"ml\""
+markers = "extra == \"ml\" or extra == \"omniparser\""
 files = [
     {file = "ninja-1.13.0-py3-none-macosx_10_9_universal2.whl", hash = "sha256:fa2a8bfc62e31b08f83127d1613d10821775a0eb334197154c4d6067b7068ff1"},
     {file = "ninja-1.13.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:3d00c692fb717fd511abeb44b8c5d00340c36938c12d6538ba989fe764e79630"},
@@ -3157,7 +3157,7 @@ description = "CUBLAS native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "(extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cublas_cu12-12.8.4.1-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:b86f6dd8935884615a0683b663891d43781b819ac4f2ba2b0c9604676af346d0"},
     {file = "nvidia_cublas_cu12-12.8.4.1-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:8ac4e771d5a348c551b2a426eda6193c19aa630236b418086020df5ba9667142"},
@@ -3171,7 +3171,7 @@ description = "CUDA profiling tools runtime libs."
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\" and (sys_platform == \"win32\" or sys_platform == \"linux\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"linux\") and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cuda_cupti_cu12-12.8.90-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:4412396548808ddfed3f17a467b104ba7751e6b58678a4b840675c56d21cf7ed"},
     {file = "nvidia_cuda_cupti_cu12-12.8.90-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:ea0cb07ebda26bb9b29ba82cda34849e73c166c18162d3913575b0c9db9a6182"},
@@ -3185,7 +3185,7 @@ description = "NVRTC native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\" and (sys_platform == \"win32\" or sys_platform == \"linux\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"linux\") and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cuda_nvrtc_cu12-12.8.93-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:a7756528852ef889772a84c6cd89d41dfa74667e24cca16bb31f8f061e3e9994"},
     {file = "nvidia_cuda_nvrtc_cu12-12.8.93-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:fc1fec1e1637854b4c0a65fb9a8346b51dd9ee69e61ebaccc82058441f15bce8"},
@@ -3199,7 +3199,7 @@ description = "CUDA Runtime native Libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\" and (sys_platform == \"win32\" or sys_platform == \"linux\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"linux\") and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cuda_runtime_cu12-12.8.90-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:52bf7bbee900262ffefe5e9d5a2a69a30d97e2bc5bb6cc866688caa976966e3d"},
     {file = "nvidia_cuda_runtime_cu12-12.8.90-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:adade8dcbd0edf427b7204d480d6066d33902cab2a4707dcfc48a2d0fd44ab90"},
@@ -3213,7 +3213,7 @@ description = "cuDNN runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "(extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cudnn_cu12-9.19.0.56-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:08caaf27fe556aca82a3ee3b5aa49a77e7de0cfcb7ff4e5c29da426387a8267e"},
     {file = "nvidia_cudnn_cu12-9.19.0.56-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:ac6ad90a075bb33a94f2b4cf4622eac13dd4dc65cf6dd9c7572a318516a36625"},
@@ -3230,7 +3230,7 @@ description = "CUFFT native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\" and (sys_platform == \"win32\" or sys_platform == \"linux\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"linux\") and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cufft_cu12-11.3.3.83-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:848ef7224d6305cdb2a4df928759dca7b1201874787083b6e7550dd6765ce69a"},
     {file = "nvidia_cufft_cu12-11.3.3.83-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:4d2dd21ec0b88cf61b62e6b43564355e5222e4a3fb394cac0db101f2dd0d4f74"},
@@ -3247,7 +3247,7 @@ description = "cuFile GPUDirect libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "sys_platform == \"linux\" and (extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "sys_platform == \"linux\" and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cufile_cu12-1.13.1.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:1d069003be650e131b21c932ec3d8969c1715379251f8d23a1860554b1cb24fc"},
     {file = "nvidia_cufile_cu12-1.13.1.3-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:4beb6d4cce47c1a0f1013d72e02b0994730359e17801d395bdcbf20cfb3bb00a"},
@@ -3260,7 +3260,7 @@ description = "CURAND native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\" and (sys_platform == \"win32\" or sys_platform == \"linux\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"linux\") and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_curand_cu12-10.3.9.90-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:dfab99248034673b779bc6decafdc3404a8a6f502462201f2f31f11354204acd"},
     {file = "nvidia_curand_cu12-10.3.9.90-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:b32331d4f4df5d6eefa0554c565b626c7216f87a06a4f56fab27c3b68a830ec9"},
@@ -3274,7 +3274,7 @@ description = "CUDA solver native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\" and (sys_platform == \"win32\" or sys_platform == \"linux\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"linux\") and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cusolver_cu12-11.7.3.90-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:db9ed69dbef9715071232caa9b69c52ac7de3a95773c2db65bdba85916e4e5c0"},
     {file = "nvidia_cusolver_cu12-11.7.3.90-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:4376c11ad263152bd50ea295c05370360776f8c3427b30991df774f9fb26c450"},
@@ -3293,7 +3293,7 @@ description = "CUSPARSE native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\" and (sys_platform == \"win32\" or sys_platform == \"linux\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"linux\") and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cusparse_cu12-12.5.8.93-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:9b6c161cb130be1a07a27ea6923df8141f3c295852f4b260c65f18f3e0a091dc"},
     {file = "nvidia_cusparse_cu12-12.5.8.93-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:1ec05d76bbbd8b61b06a80e1eaf8cf4959c3d4ce8e711b65ebd0443bb0ebb13b"},
@@ -3310,7 +3310,7 @@ description = "NVIDIA cuSPARSELt"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "(extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cusparselt_cu12-0.7.1-py3-none-manylinux2014_aarch64.whl", hash = "sha256:8878dce784d0fac90131b6817b607e803c36e629ba34dc5b433471382196b6a5"},
     {file = "nvidia_cusparselt_cu12-0.7.1-py3-none-manylinux2014_x86_64.whl", hash = "sha256:f1bb701d6b930d5a7cea44c19ceb973311500847f81b634d802b7b539dc55623"},
@@ -3324,7 +3324,7 @@ description = "NVIDIA Collective Communication Library (NCCL) Runtime"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "(extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_nccl_cu12-2.28.9-py3-none-manylinux_2_18_aarch64.whl", hash = "sha256:50a36e01c4a090b9f9c47d92cec54964de6b9fcb3362d0e19b8ffc6323c21b60"},
     {file = "nvidia_nccl_cu12-2.28.9-py3-none-manylinux_2_18_x86_64.whl", hash = "sha256:485776daa8447da5da39681af455aa3b2c2586ddcf4af8772495e7c532c7e5ab"},
@@ -3337,7 +3337,7 @@ description = "Nvidia JIT LTO Library"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\" and (sys_platform == \"win32\" or sys_platform == \"linux\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"linux\") and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_nvjitlink_cu12-12.8.93-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:81ff63371a7ebd6e6451970684f916be2eab07321b73c9d244dc2b4da7f73b88"},
     {file = "nvidia_nvjitlink_cu12-12.8.93-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:adccd7161ace7261e01bb91e44e88da350895c270d23f744f0820c818b7229e7"},
@@ -3351,7 +3351,7 @@ description = "NVSHMEM creates a global address space that provides efficient an
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "(extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_nvshmem_cu12-3.4.5-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:0b48363fc6964dede448029434c6abed6c5e37f823cb43c3bcde7ecfc0457e15"},
     {file = "nvidia_nvshmem_cu12-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:042f2500f24c021db8a06c5eec2539027d57460e1c1a762055a6554f72c369bd"},
@@ -3364,7 +3364,7 @@ description = "NVIDIA Tools Extension"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\" and (sys_platform == \"win32\" or sys_platform == \"linux\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"linux\") and (extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_nvtx_cu12-12.8.90-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:d7ad891da111ebafbf7e015d34879f7112832fc239ff0d7d776b6cb685274615"},
     {file = "nvidia_nvtx_cu12-12.8.90-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:5b17e2001cc0d751a5bc2c6ec6d26ad95913324a4adb86788c944f8ce9ba441f"},
@@ -3876,7 +3876,7 @@ description = "Blazingly fast DataFrame library"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"ml\""
+markers = "extra == \"ml\" or extra == \"omniparser\""
 files = [
     {file = "polars-1.40.1-py3-none-any.whl", hash = "sha256:c0f861219d1319cdea45c4ce4d30355a47176b8f98dcedf95ea8269f131b8abd"},
     {file = "polars-1.40.1.tar.gz", hash = "sha256:ab2694134b137596b5a59bfd7b4c54ebbc9b59f9403127f18e32d363777552e8"},
@@ -3921,7 +3921,7 @@ description = "Blazingly fast DataFrame library"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"ml\""
+markers = "extra == \"ml\" or extra == \"omniparser\""
 files = [
     {file = "polars_runtime_32-1.40.1-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:b748ef652270cc49e9e69f99a035e0eb4d5f856d42bcd6ac4d9d80a40142aa1e"},
     {file = "polars_runtime_32-1.40.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:d249b3743e05986060cec0a7aaa542d020df6c6b876e556023a310efd581f9be"},
@@ -4667,7 +4667,7 @@ description = "Python<->ObjC Interoperability Module"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "platform_system == \"Darwin\" or sys_platform == \"darwin\""
+markers = "sys_platform == \"darwin\" or platform_system == \"Darwin\""
 files = [
     {file = "pyobjc_core-12.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:93418e79c1655f66b4352168f8c85c942707cb1d3ea13a1da3e6f6a143bacda7"},
     {file = "pyobjc_core-12.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:c918ebca280925e7fcb14c5c43ce12dcb9574a33cccb889be7c8c17f3bcce8b6"},
@@ -4711,7 +4711,7 @@ description = "Wrappers for the Cocoa frameworks on macOS"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "platform_system == \"Darwin\" or sys_platform == \"darwin\""
+markers = "sys_platform == \"darwin\" or platform_system == \"Darwin\""
 files = [
     {file = "pyobjc_framework_cocoa-12.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:9b880d3bdcd102809d704b6d8e14e31611443aa892d9f60e8491e457182fdd48"},
     {file = "pyobjc_framework_cocoa-12.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:f52228bcf38da64b77328787967d464e28b981492b33a7675585141e1b0a01e6"},
@@ -4757,7 +4757,7 @@ description = "Wrappers for the Quartz frameworks on macOS"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "platform_system == \"Darwin\" or sys_platform == \"darwin\""
+markers = "sys_platform == \"darwin\" or platform_system == \"Darwin\""
 files = [
     {file = "pyobjc_framework_quartz-12.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:c6f312ae79ef8b3019dcf4b3374c52035c7c7bc4a09a1748b61b041bb685a0ed"},
     {file = "pyobjc_framework_quartz-12.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:19f99ac49a0b15dd892e155644fe80242d741411a9ed9c119b18b7466048625a"},
@@ -5159,7 +5159,7 @@ description = "Python X Library"
 optional = false
 python-versions = "*"
 groups = ["main"]
-markers = "sys_platform != \"win32\" and sys_platform != \"emscripten\" and \"linux\" in sys_platform"
+markers = "\"linux\" in sys_platform"
 files = [
     {file = "python-xlib-0.33.tar.gz", hash = "sha256:55af7906a2c75ce6cb280a584776080602444f75815a7aff4d287bb2d7018b32"},
     {file = "python_xlib-0.33-py2.py3-none-any.whl", hash = "sha256:c3534038d42e0df2f1392a1b30a15a4ff5fdc2b86cfa94f072bf11b10a164398"},
@@ -5339,7 +5339,7 @@ description = "Alternative regular expression module, to replace re."
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"ml\""
+markers = "extra == \"ml\" or extra == \"uitars\" or extra == \"omniparser\""
 files = [
     {file = "regex-2026.5.9-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:a9e1328e17c84c1a5d22ec9f785ecef4a967fab9a42b6a8dc3bcbebd0a0c9e44"},
     {file = "regex-2026.5.9-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:bfe1ce50cbfb569d74e1e4337da6468961f31dbea55fd85aa5de59c0947a805a"},
@@ -5592,7 +5592,7 @@ description = ""
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"ml\" or extra == \"omniparser\""
+markers = "extra == \"ml\" or extra == \"uitars\" or extra == \"omniparser\""
 files = [
     {file = "safetensors-0.7.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:c82f4d474cf725255d9e6acf17252991c3c8aac038d6ef363a4bf8be2f6db517"},
     {file = "safetensors-0.7.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:94fd4858284736bb67a897a41608b5b0c2496c9bdb3bf2af1fa3409127f20d57"},
@@ -6404,7 +6404,7 @@ description = "Computer algebra system (CAS) in Python"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"ml\" or extra == \"uitars\""
+markers = "extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\""
 files = [
     {file = "sympy-1.14.0-py3-none-any.whl", hash = "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5"},
     {file = "sympy-1.14.0.tar.gz", hash = "sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517"},
@@ -6544,7 +6544,7 @@ description = "Tensors and Dynamic neural networks in Python with strong GPU acc
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"ml\" or extra == \"uitars\""
+markers = "extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\""
 files = [
     {file = "torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:5ac6e34681d5a0e527edb741b38254899cd03087a7dd7e841791a4ee0a5e7011"},
     {file = "torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:72d53f3176a69cc20710c4ecb95f7dc4c6ba10c4e4eda45b8396ee79ee40f75a"},
@@ -6602,7 +6602,7 @@ description = "image and video datasets and models for torch deep learning"
 optional = true
 python-versions = ">=3.10,!=3.14.1"
 groups = ["main"]
-markers = "extra == \"ml\""
+markers = "extra == \"ml\" or extra == \"omniparser\""
 files = [
     {file = "torchvision-0.26.0+cu128-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:2a04bf491eb22e6487defe6cead6ffaabbce13fb5981b8eb3540050f96cb0599"},
     {file = "torchvision-0.26.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:f44bfc61b9be80bcf52a762d34da363cea3125d10c01f37e271583803c7bb97b"},
@@ -6698,7 +6698,7 @@ description = "Transformers: the model-definition framework for state-of-the-art
 optional = true
 python-versions = ">=3.10.0"
 groups = ["main"]
-markers = "extra == \"ml\""
+markers = "extra == \"ml\" or extra == \"uitars\" or extra == \"omniparser\""
 files = [
     {file = "transformers-5.8.1-py3-none-any.whl", hash = "sha256:5340fb95962162cdfdae5cc91d7f8fedd92ed75216c1154c5e1f590fcf56dd0e"},
     {file = "transformers-5.8.1.tar.gz", hash = "sha256:4dd5b6de4105725104d84fd6abd74b305f4debfc251b38c648ee5dd087cf543b"},
@@ -6810,7 +6810,7 @@ description = "A language and compiler for custom Deep Learning operations"
 optional = true
 python-versions = "<3.15,>=3.10"
 groups = ["main"]
-markers = "(extra == \"ml\" or extra == \"uitars\") and platform_system == \"Linux\""
+markers = "(extra == \"ml\" or extra == \"omniparser\" or extra == \"uitars\") and platform_system == \"Linux\""
 files = [
     {file = "triton-3.6.0-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:6c723cfb12f6842a0ae94ac307dba7e7a44741d720a40cf0e270ed4a4e3be781"},
     {file = "triton-3.6.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a6550fae429e0667e397e5de64b332d1e5695b73650ee75a6146e2e902770bea"},
@@ -6994,7 +6994,7 @@ description = "Provider of IANA time zone data"
 optional = true
 python-versions = ">=2"
 groups = ["main"]
-markers = "extra == \"omniparser\" and (sys_platform == \"win32\" or sys_platform == \"emscripten\")"
+markers = "(sys_platform == \"win32\" or sys_platform == \"emscripten\") and extra == \"omniparser\""
 files = [
     {file = "tzdata-2026.2-py2.py3-none-any.whl", hash = "sha256:bbe9af844f658da81a5f95019480da3a89415801f6cc966806612cc7169bffe7"},
     {file = "tzdata-2026.2.tar.gz", hash = "sha256:9173fde7d80d9018e02a662e168e5a2d04f87c41ea174b139fbef642eda62d10"},
@@ -7094,7 +7094,7 @@ description = "Ultralytics YOLO 🚀 for SOTA object detection, multi-object tra
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "extra == \"ml\""
+markers = "extra == \"ml\" or extra == \"omniparser\""
 files = [
     {file = "ultralytics-8.4.51-py3-none-any.whl", hash = "sha256:092184a2d1ee10429d8dea0e7d86c1b16356c6aeeefc392b243282583336c28e"},
     {file = "ultralytics-8.4.51.tar.gz", hash = "sha256:687954fe3128f321ece0492f9de1f9a00865dafb62092547eb901277cfa29768"},
@@ -7132,7 +7132,7 @@ description = "Ultralytics THOP package for fast computation of PyTorch model FL
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "extra == \"ml\""
+markers = "extra == \"ml\" or extra == \"omniparser\""
 files = [
     {file = "ultralytics_thop-2.0.19-py3-none-any.whl", hash = "sha256:a180baeb3b83f0f2ad3f3572338cef406b221a57c6d10ca09cfd90f9c892a739"},
     {file = "ultralytics_thop-2.0.19.tar.gz", hash = "sha256:df547d93ebdec4c9d2a9375f2e21d483547a462c08814e8810dc73498dd29ba9"},
@@ -7388,10 +7388,10 @@ propcache = ">=0.2.1"
 
 [extras]
 ml = ["accelerate", "easyocr", "sentence-transformers", "timm", "torch", "torchvision", "transformers", "ultralytics"]
-omniparser = ["paddleocr", "paddlepaddle"]
-uitars = ["bitsandbytes"]
+omniparser = ["easyocr", "paddleocr", "paddlepaddle", "torch", "torchvision", "transformers", "ultralytics"]
+uitars = ["bitsandbytes", "torch", "transformers"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14.1 || >3.14.1,<3.15"
-content-hash = "c5c170c8093da1f410120aa44fa5e08a01eebb58b99419895e04d56f795b4035"
+content-hash = "1298c9976d4502d302679a89b7443cbb2985a627324c7a01111743ce875d6306"

@@ -234,6 +234,10 @@ jobs:
 
       - name: Install dependencies (with ml extra)
         run: |
+          # Pulls torch/torchvision from the cu128 index (multi-GB CUDA wheels
+          # on a CPU-only runner) because poetry locks a single source per dep;
+          # a CPU-wheel CI lane would need a second lock. Cost is unchanged
+          # from the pre-split CI, and the poetry cache absorbs repeat runs.
           poetry install --no-interaction --no-ansi --extras ml
 
       - name: Install Playwright browsers

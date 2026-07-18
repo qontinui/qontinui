@@ -18,6 +18,10 @@ import cv2
 import numpy as np
 import pytest
 
+from qontinui.discovery.state_construction.ocr_name_generator import (
+    HAS_EASYOCR,
+    HAS_TESSERACT,
+)
 from qontinui.discovery.state_construction.state_builder import StateBuilder, TransitionInfo
 from qontinui.discovery.state_detection.differential_consistency_detector import (
     DifferentialConsistencyDetector,
@@ -26,6 +30,13 @@ from qontinui.discovery.state_detection.differential_consistency_detector import
     StateRegion as DetectedStateRegion,
 )
 from qontinui.model.state.state import State
+
+# The pipeline's StateBuilder naming needs a real OCR engine; the torch-free
+# default install ships neither (easyocr is in the [ml] extra).
+pytestmark = pytest.mark.skipif(
+    not (HAS_EASYOCR or HAS_TESSERACT),
+    reason="needs an OCR engine (easyocr via `pip install qontinui[ml]`, or pytesseract)",
+)
 
 
 @pytest.fixture

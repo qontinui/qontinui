@@ -97,8 +97,23 @@ ml = [
     "easyocr",
     "sentence-transformers",
 ]  # Enable: poetry install -E ml / pip install qontinui[ml]
-uitars = ["bitsandbytes"]  # Enable: poetry install -E uitars
-omniparser = ["paddleocr", "paddlepaddle"]  # Enable: poetry install -E omniparser
+# uitars: UI-TARS local inference imports torch + transformers
+# (extraction/runtime/uitars/provider.py), which are optional now — the extra
+# must carry them itself. Enable: poetry install -E uitars
+uitars = ["bitsandbytes", "torch", "transformers"]
+# omniparser: OmniParserDetector needs torch/torchvision/transformers/
+# ultralytics/easyocr at runtime (discovery/element_detection/
+# omniparser_detector.py) — formerly core deps, now optional, so the extra
+# must carry them. Enable: poetry install -E omniparser
+omniparser = [
+    "paddleocr",
+    "paddlepaddle",
+    "torch",
+    "torchvision",
+    "transformers",
+    "ultralytics",
+    "easyocr",
+]
 
 [tool.poetry.scripts]
 qontinui = "qontinui.cli.main:main"

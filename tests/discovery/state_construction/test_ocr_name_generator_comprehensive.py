@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 
 from qontinui.discovery.state_construction.ocr_name_generator import (
+    HAS_EASYOCR,
     NameValidator,
     OCRNameGenerator,
     generate_element_name,
@@ -28,6 +29,14 @@ from tests.fixtures.screenshot_fixtures import (
     ElementSpec,
     SyntheticScreenshotGenerator,
     create_button_screenshot,
+)
+
+# This suite's mocks patch through the real `ocr_name_generator.easyocr`
+# module attribute (e.g. `easyocr.Reader`), which only exists when easyocr is
+# importable; the torch-free default install doesn't ship it ([ml] extra).
+pytestmark = pytest.mark.skipif(
+    not HAS_EASYOCR,
+    reason="needs easyocr installed (`pip install qontinui[ml]`)",
 )
 
 

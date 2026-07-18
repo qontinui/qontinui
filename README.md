@@ -35,6 +35,19 @@ Qontinui is a Python port of [Brobot](https://github.com/jspinak/brobot), a Java
 pip install qontinui
 ```
 
+The default install is **torch-free**. The heavy ML stack (torch, torchvision,
+transformers, ultralytics, easyocr, sentence-transformers, …) powering CLIP/RAG
+embeddings, OmniParser detection, and OCR naming is an opt-in extra:
+
+```bash
+pip install "qontinui[ml]"          # full ML stack (multi-GB, pulls CUDA torch)
+pip install "qontinui[omniparser]"  # OmniParser detection (includes the ML stack + PaddleOCR)
+pip install "qontinui[uitars]"      # UI-TARS local inference (torch + transformers + bitsandbytes)
+```
+
+Without `[ml]`, everything imports fine; ML-backed classes raise an
+`ImportError` naming the extra when instantiated.
+
 ### From Source (Development)
 
 ```bash

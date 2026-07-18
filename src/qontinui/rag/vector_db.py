@@ -201,12 +201,13 @@ class QdrantLocalDB:
         if filter:
             qdrant_filter = self._build_filter(filter)
 
-        results = self.client.search(
+        results = self.client.query_points(
             collection_name=collection,
-            query_vector=vector if vector_name is None else (vector_name, vector),
+            query=vector,
+            using=vector_name,
             query_filter=qdrant_filter,
             limit=limit,
-        )
+        ).points
 
         logger.debug(
             f"Search in '{collection}' returned {len(results)} results (limit={limit})"
@@ -248,7 +249,7 @@ class QdrantLocalDB:
 
         self.client.delete(
             collection_name=collection,
-            points_selector=ids,
+            points_selector=cast(list[Any], ids),
         )
         logger.info(f"Deleted {len(ids)} points from collection '{collection}'")
 
@@ -265,7 +266,7 @@ class QdrantLocalDB:
         result = self.client.count(collection_name=collection)
         return cast(int, result.count)
 
-    def _build_filter(self, filter_dict: dict[str, Any]) -> Filter:
+    def _build_filter(self, filter_dict: dict[str, Any]) -> Filter | None:
         """
         Build Qdrant filter from dictionary.
 

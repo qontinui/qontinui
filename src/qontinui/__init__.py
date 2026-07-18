@@ -49,7 +49,9 @@ else:
 from . import discovery, navigation_api, registry
 
 # NOTE: `embeddings` is not imported eagerly — it pulls sentence-transformers
-# (the [ml] extra) when present. Import on demand: `from qontinui.embeddings import …`
+# (the [ml] extra) when present. `qontinui.embeddings` attribute access still
+# works via the module __getattr__ at the bottom of this file (PEP 562),
+# importing on first touch.
 from .actions import (
     Action,
     ActionChain,
@@ -326,3 +328,17 @@ __all__ = [
     "TemplateMatcher",
     "CachedTemplateMatcher",
 ]
+
+
+def __getattr__(name: str):
+    """Lazy submodule access (PEP 562).
+
+    `embeddings` is not imported eagerly because it pulls sentence-transformers
+    (the [ml] extra) when present; `qontinui.embeddings` still works via this
+    hook, importing on first attribute access.
+    """
+    if name == "embeddings":
+        import importlib
+
+        return importlib.import_module(".embeddings", __name__)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

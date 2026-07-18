@@ -29,7 +29,7 @@ RAG Module
 The RAG module requires optional dependencies:
 
 ```bash
-poetry install -E rag
+pip install qontinui[ml]
 ```
 
 Or install manually:
