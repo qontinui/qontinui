@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
-import torch
 from PIL import Image
 
+from .._ml_deps import require_torch
 from ..config import get_settings
 from ..exceptions import InferenceException, ModelLoadException
 from ..logging import get_logger
@@ -61,6 +61,8 @@ class EmbeddingGenerator:
             use_cache: Enable embedding cache
             cache_size: Maximum cache entries
         """
+        torch = require_torch("EmbeddingGenerator")
+
         self.settings = get_settings()
         self.model_name = model_name
         self.use_cache = use_cache
@@ -174,6 +176,8 @@ class EmbeddingGenerator:
             if self.processor is None or self.model is None:
                 raise RuntimeError("Model not initialized")
 
+            import torch
+
             try:
                 # Prepare inputs
                 inputs = self.processor(
@@ -262,6 +266,8 @@ class EmbeddingGenerator:
         if uncached_texts:
             if self.processor is None or self.model is None:
                 raise RuntimeError("Model not initialized")
+
+            import torch
 
             try:
                 # Prepare inputs

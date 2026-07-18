@@ -1,12 +1,17 @@
-"""Image embedding models for RAG."""
+"""Image embedding models for RAG.
+
+torch / torchvision / transformers are part of the optional [ml] extra and
+are imported lazily inside the embedders, so ``from qontinui.rag import
+CLIPEmbedder`` works on a torch-free install and only instantiation requires
+the extra.
+"""
 
 from pathlib import Path
 from typing import cast
 
-import torch
-import torchvision.transforms as transforms
 from PIL import Image
-from transformers import CLIPModel, CLIPProcessor
+
+from ..._ml_deps import require_torch
 
 
 class CLIPEmbedder:
@@ -23,6 +28,9 @@ class CLIPEmbedder:
             model_name: HuggingFace model identifier
             cache_dir: Optional cache directory for model weights
         """
+        torch = require_torch("CLIPEmbedder")
+        from transformers import CLIPModel, CLIPProcessor
+
         self._model_name = model_name
         self._cache_dir = str(cache_dir) if cache_dir else None
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -52,6 +60,8 @@ class CLIPEmbedder:
         Returns:
             Embedding vector as list of floats
         """
+        import torch
+
         try:
             inputs = self._processor(images=image, return_tensors="pt").to(self._device)
 
@@ -76,6 +86,8 @@ class CLIPEmbedder:
         Returns:
             Embedding vector as list of floats
         """
+        import torch
+
         try:
             inputs = self._processor(text=[text], return_tensors="pt", padding=True).to(
                 self._device
@@ -103,6 +115,8 @@ class CLIPEmbedder:
         Returns:
             List of embedding vectors
         """
+        import torch
+
         embeddings: list[list[float]] = []
 
         for i in range(0, len(images), batch_size):
@@ -164,6 +178,9 @@ class DINOv2Embedder:
                 f"Choose from: {list(self._MODEL_CONFIGS.keys())}"
             )
 
+        torch = require_torch("DINOv2Embedder")
+        import torchvision.transforms as transforms
+
         self._model_name = model_name
         self._cache_dir = cache_dir
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -207,6 +224,8 @@ class DINOv2Embedder:
         Returns:
             Embedding vector as list of floats
         """
+        import torch
+
         try:
             # Convert to RGB if needed
             if image.mode != "RGB":
@@ -236,6 +255,8 @@ class DINOv2Embedder:
         Returns:
             List of embedding vectors
         """
+        import torch
+
         embeddings: list[list[float]] = []
 
         for i in range(0, len(images), batch_size):

@@ -155,6 +155,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # No extras: the [ml] deps (torch et al.) are optional, so this is
+          # the torch-free core lane. Torch-dependent tests self-skip via
+          # pytest.importorskip / skip fixtures.
           poetry install --no-interaction --no-ansi
 
       - name: Install Playwright browsers
@@ -180,6 +183,67 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+
+  tests-ml:
+    # Full suite with the [ml] extra installed — the pre-split CI shape.
+    # The core `tests` job proves the torch-free default install; this job
+    # proves `-E ml` resolves and runs the torch-dependent tests.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Same sibling-repo path-dep as the tests job (see tests job comment).
+      - name: Checkout sibling repo (qontinui-schemas)
+        run: |
+          cd "$GITHUB_WORKSPACE/.."
+          git clone --depth 1 https://github.com/qontinui/qontinui-schemas.git
+
+      - name: Checkout sibling repo (multistate)
+        run: |
+          cd "$GITHUB_WORKSPACE/.."
+          git clone --depth 1 https://github.com/qontinui/multistate.git
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk python3-dev
+          sudo apt-get install -y xvfb x11-utils
+          sudo apt-get install -y libgl1
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-ml-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-ml-
+
+      - name: Install dependencies (with ml extra)
+        run: |
+          poetry install --no-interaction --no-ansi --extras ml
+
+      - name: Install Playwright browsers
+        run: |
+          poetry run playwright install --with-deps chromium
+
+      - name: Run tests
+        run: |
+          # xvfb-run rationale: see the tests job.
+          xvfb-run -a poetry run pytest
 
   build:
     runs-on: ubuntu-latest
