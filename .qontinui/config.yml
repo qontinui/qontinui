@@ -1,0 +1,15 @@
+# .qontinui/config.yml — qontinui PR-merge policy (edit to override dashboard settings)
+version: 1
+framework: python
+merge:
+  confidence_threshold: 0.75
+  escalate_paths:
+  - pyproject.toml
+  - requirements.txt
+  - setup.py
+  - '**/alembic/**'
+  - '**/migrations/**'
+  auto_merge_categories:
+  - docs
+  - test
+  - chore
