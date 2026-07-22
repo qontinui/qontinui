@@ -1,0 +1,31 @@
+# Baseline-heal stub — TEMPORARY, delete after one green run on main.
+#
+# The real "Deploy Documentation" workflow was deleted in #75 (the Sphinx
+# docs tree left this repo in Nov 2025, bd9fde6). Its final run on main
+# (ea43cee, 2026-07-22) was a FAILURE, and coord's ci_baselines can only
+# supersede a red push-established baseline with a later *push* run of the
+# same workflow name — which a deleted workflow can never produce. That
+# permanently wedged the repo main-red (block_reason_code=main-red,
+# failing_workflows=["Deploy Documentation"]).
+#
+# This stub carries the same workflow name, triggers only on pushes that
+# touch THIS file (i.e. exactly its own land-push), and trivially
+# succeeds — writing a green baseline row that un-reds main. A follow-up
+# PR deletes it; the green row persists harmlessly.
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/docs.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  baseline-heal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Green baseline marker
+        run: 'echo "baseline-heal — superseding the red Deploy Documentation baseline row with a green push run"'
