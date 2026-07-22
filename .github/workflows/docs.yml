@@ -1,7 +1,13 @@
 name: Deploy Documentation
 
 on:
-  workflow_dispatch:  # disabled push trigger; failing for unclear reason — investigate then re-enable
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'src/qontinui/**/*.py'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,6 +23,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      # qontinui's pyproject.toml has a path-dep on ../qontinui-schemas
+      # (see pyproject.toml: `qontinui-schemas = { path = "../qontinui-schemas", develop = true }`).
+      # actions/checkout@v5 refuses `path:` outside the workspace, so clone
+      # it via git directly. Pattern mirrors ci.yml.
+      - name: Checkout sibling repo (qontinui-schemas)
+        run: |
+          cd "$GITHUB_WORKSPACE/.."
+          git clone --depth 1 https://github.com/qontinui/qontinui-schemas.git
+
+      - name: Checkout sibling repo (multistate)
+        run: |
+          cd "$GITHUB_WORKSPACE/.."
+          git clone --depth 1 https://github.com/qontinui/multistate.git
 
       - name: Set up Python
         uses: actions/setup-python@v5
