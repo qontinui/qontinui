@@ -1,0 +1,185 @@
+# CI manifest for the runner-as-CI-node lane
+# (plan qontinui-dev-notes/plans/2026-08-07-runner-local-ci-parity-and-web-
+#  configuration.md, Phase 5 — manifest coverage for the repos that had none.
+#  A repo without this file cannot run on the product's local-CI lane at all.)
+#
+# PARITY IS A REVIEW-TIME INVARIANT: the steps below mirror the gate commands of
+# .github/workflows/ci.yml's `lint` and `typecheck` jobs, plus the `build` job's
+# package build. When those jobs' steps change, update this file in the SAME PR.
+# Actions steps are referenced by NAME below, never by line number — line
+# numbers in that file move constantly and a stale citation makes the invariant
+# unauditable.
+#
+# Commands are argv arrays (never shell strings); env is limited to the runner's
+# allowlist (qontinui-runner/src-tauri/src/ci_node/manifest.rs::ENV_ALLOWLIST);
+# `[limits]` values are ceilings the executor caps against host-derived sizing.
+#
+# THIS FILE IS TRACKED DESPITE .gitignore, AND MUST STAY THAT WAY. .gitignore
+# ignores `.qontinui/` wholesale under the heading "Qontinui local state /
+# extraction output (machine-specific)" — written before `.qontinui/` also
+# became the home of CHECKED-IN repo configuration. `.qontinui/config.yml` is
+# already tracked through the same exception, and this file was added with
+# `git add -f` for the same reason. It has to be: the CI-node executor reads
+# `.qontinui/ci.toml` out of the checked-out tree AT THE DISPATCHED SHA, so an
+# untracked manifest is an absent one and the dispatch fails with "no manifest"
+# rather than running anything. If a future change ever deletes and re-adds this
+# file, re-add it with -f.
+#
+# ===========================================================================
+# WHAT THIS MANIFEST CANNOT EXPRESS
+#
+# Recorded rather than silently omitted — the precedent is qontinui-coord's
+# manifest header: a manifest that parses but cannot run is worse than one that
+# announces why. A reviewer comparing this file against ci.yml must be able to
+# tell a deliberate gap from an oversight.
+#
+# 1. ci.yml's `tests` job — THE HEADLESS-X SUITE. Three independent blockers:
+#      a. "Install system dependencies" is `sudo apt-get install` of python3-tk,
+#         python3-dev, xvfb, x11-utils and libgl1. This lane provisions sibling
+#         repos and registry tools; it provisions no system packages, and it
+#         runs on users' own machines where a sudo apt-get is not something a
+#         manifest may do.
+#      b. "Run tests with coverage" is `xvfb-run -a poetry run pytest …`.
+#         xvfb-run is a Linux-only wrapper, and the job's own comment records
+#         WHY it cannot be dropped: without a per-run ~/.Xauthority every test
+#         ERRORs at collection through qontinui.__init__ → healing → hal →
+#         keyboard_operations → `from pynput import keyboard`. Dropping the
+#         wrapper to make the command argv-expressible would not be a mirror of
+#         this gate, it would be a different and less reliable one.
+#      c. "Install Playwright browsers" is `poetry run playwright install
+#         --with-deps chromium`; `--with-deps` shells out to the distro package
+#         manager under sudo, so it inherits blocker (a).
+#    "Upload coverage to Codecov" is additionally a marketplace Action.
+#
+# 2. ci.yml's `tests-ml` job — everything in gap 1, plus "Install dependencies
+#    (with ml extra)", whose own comment states it "pulls torch/torchvision from
+#    the cu128 index (multi-GB CUDA wheels on a CPU-only runner)". Downloading
+#    multiple gigabytes of CUDA wheels onto a contributor's machine is not a
+#    cost this lane may impose silently, and the runner's disk guard
+#    (`min_free_disk_gb`) exists precisely because it cannot absorb it.
+#
+# 3. ci.yml's `build` job "Check package" step — `pip install twine` is a GLOBAL
+#    install into the host interpreter (see the [[steps]] note on why this lane
+#    stays inside poetry's venv), and `twine check dist/*` relies on the SHELL to
+#    expand `dist/*`. There is no shell here, deliberately. The build itself IS
+#    mirrored below; only its twine follow-up is not.
+#
+# 4. ci.yml's `security` job — "Run Trivy vulnerability scanner" is
+#    `aquasecurity/trivy-action`, a GitHub Action rather than a command, and the
+#    ci_node tool registry is CLOSED (a manifest names a tool from the registry,
+#    it never supplies a URL). "Upload Trivy results to GitHub Security" needs
+#    the GitHub code-scanning API and a token.
+#
+# 5. secret-scan.yml — its gitleaks step is a `curl … | grep -oP … ` pipeline
+#    into `curl … | tar -xz` (pipes are banned in argv) and then scopes the scan
+#    with `--log-opts=<base.sha>..<head.sha>` taken from the pull_request event
+#    context, which this lane does not have.
+#
+# 6. eval-desktop.yml — docker buildx build, `docker run`, and container
+#    teardown. The runner provisions no docker daemon and a user's box may not
+#    have one. It is also NOT a merge gate: its own header says "Not required
+#    for merge yet", its eval step carries `continue-on-error: true`, and it is
+#    path-filtered to the eval-desktop / hal-mcp trees.
+#
+# 7. NO [[tools]] ARE DECLARED, AND THAT IS NOT THE SAME AS "NEEDS NOTHING".
+#    The runner's tool registry (ci_node/tools.rs) provisions exactly one tool,
+#    cargo-nextest, which nothing here wants. Every step below assumes `poetry`
+#    (Python 3.12, per ci.yml's matrix) is already on PATH — the Actions lane
+#    installs it with `curl -sSL https://install.python-poetry.org | python3 -`,
+#    a pipe this lane cannot run and a network install it should not perform on
+#    a user's machine anyway. Until poetry enters the registry this repo is not
+#    a zero-install target; declaring a tool the registry does not know is a
+#    validation ERROR, so the honest move is to say so rather than declare a lie.
+#
+# 8. NO actions/cache EQUIVALENT. The Actions lane restores ~/.cache/pypoetry
+#    between runs; a cold CI node resolves and downloads the full dependency set,
+#    which is why the install step below carries the maximum per-step timeout.
+# ===========================================================================
+
+version = 1
+
+# ---------------------------------------------------------------------------
+# SIBLING REPOS — the ci_node analogue of ci.yml's "Checkout sibling repo
+# (qontinui-schemas)" and "Checkout sibling repo (multistate)" steps, which this
+# section mirrors one-for-one. Both appear in EVERY job of ci.yml. When that
+# list changes, change this list in the same PR.
+#
+# Declared rather than cloned by a step: an in-manifest `git clone` would pass
+# argv validation (no banned metacharacter, and the executor does not sandbox
+# the filesystem) but it would be UNPINNED — no SHA coordination with the
+# dispatched commit — and UNCLEANED, because cleanup removes only the
+# dispatch-scoped directory. The executor materialises each declared sibling as
+# a PEER of the worktree inside that directory, which is exactly where
+# pyproject.toml's `../` specs resolve.
+# ---------------------------------------------------------------------------
+
+[[siblings]]
+# pyproject.toml: `qontinui-schemas = { path = "../qontinui-schemas", develop =
+# true }`. `poetry install` fails outright without it.
+#
+# `default-branch` is PARITY, not laziness: ci.yml does a raw
+# `git clone --depth 1 https://github.com/qontinui/qontinui-schemas.git`, NOT the
+# `.github/actions/checkout-sibling` action, so the Actions lane installs this
+# repo against schemas' default branch, full stop. This lane must do the same or
+# the two verdicts stop being comparable. Flip to `declared-adaptation` in the
+# SAME PR that migrates ci.yml onto the checkout-sibling action — not before.
+repo = "qontinui/qontinui-schemas"
+pin = "default-branch"
+
+[[siblings]]
+# pyproject.toml: `multistate = { path = "../multistate", develop = true }`.
+# Same clone step shape in ci.yml, same reasoning for the pin.
+repo = "qontinui/multistate"
+pin = "default-branch"
+
+# NO [limits] TABLE, deliberately.
+#
+# CiLimits carries `cargo_build_jobs` and `test_threads`; every step below is
+# Python, so neither knob binds anything here. Omitting a limit means "size me
+# from the host", which is the right answer when the manifest author has no
+# measurement to contribute. A table of no-ops would be a lie about what has
+# been measured.
+
+[[steps]]
+name = "install"
+# ci.yml "Install dependencies" (identical in the `lint` and `typecheck` jobs).
+# Reproduced verbatim, including --no-ansi.
+#
+# NOTE the deliberate absence of `--extras ml`: this mirrors the `lint`/
+# `typecheck` jobs, which install the torch-free core exactly as the `tests` job
+# does (see its "No extras" comment) — not `tests-ml`.
+#
+# Everything below runs THROUGH poetry rather than a bare interpreter, and that
+# is not stylistic. `pip install -e .` into the host interpreter would leave an
+# editable finder pointing at `<root>/.ci-worktrees/<dispatch_id>/qontinui/src`,
+# a path the executor DELETES at cleanup — permanently breaking `import
+# qontinui` in the user's own environment. A poetry venv is scoped to the
+# dispatch and takes nothing with it.
+command = ["poetry", "install", "--no-interaction", "--no-ansi"]
+timeout_secs = 7200
+
+[[steps]]
+name = "lint"
+# ci.yml `lint` job, "Run linting".
+command = ["poetry", "run", "ruff", "check", "."]
+
+[[steps]]
+name = "typecheck"
+# ci.yml `typecheck` job, "Run type checking". The `--ignore-missing-imports`
+# flag is carried through exactly: without it mypy fails on the optional [ml]
+# stubs that this torch-free install deliberately does not provide.
+command = ["poetry", "run", "mypy", "src/qontinui", "--ignore-missing-imports"]
+timeout_secs = 7200
+
+[[steps]]
+name = "build-package"
+# ci.yml `build` job, "Build package". Worth holding even though its twine
+# follow-up is not expressible (gap 3): this is the step that catches a
+# pyproject/packaging break — a bad `packages` include, a file listed under
+# `[tool.poetry] include` that no longer exists — which no lint or type check
+# sees.
+#
+# In Actions this job carries `needs: tests`, so it only runs after a suite this
+# lane cannot host (gap 1). Running it unconditionally here is a STRICT
+# ADDITION, never a weakening: a packaging break fails the dispatch either way.
+command = ["poetry", "build"]
