@@ -59,6 +59,9 @@ Why each flag matters:
   that collides on port 8100.
 - **`--no-build`** — reuse the image already built from the Dockerfile rather
   than rebuilding on every redeploy. Build it once with `... up -d --build`.
+  If the host runs the loopback override or the GGUF LLM entries, use the
+  "Local LLM candidates" bring-up below instead: it pins the llama-swap
+  version on rebuild and keeps the override on every command.
 - **`LLAMA_SWAP_CONFIG` / `LLAMA_SWAP_MODELS`** — absolute paths. The compose
   defaults (`./config.yaml`, `../../../models`) resolve against the **compose
   file's directory**, so deploying from a *worktree* mounts an empty `/models`
@@ -103,9 +106,19 @@ it, for the evaluation in qontinui-dev-notes plan
 They swap exclusively with the vision models like every other entry: at most one
 model is resident, so a vision request unloads a resident LLM and vice versa.
 
-Bring them up in this order on the GPU box. Run every command from the
-`qontinui` checkout root, with the Fixed-Host variables above set
-(`LLAMA_SWAP_CONFIG`, `LLAMA_SWAP_MODELS` — absolute paths).
+Bring them up in this order on the GPU box, in ONE shell, from the `qontinui`
+checkout root (`git pull --ff-only` on `main` first, as in Fixed-Host above).
+The exports below are what every later step reads — the Fixed-Host recipe sets
+the two path variables only as one-command prefixes, which does not carry over:
+
+```bash
+export LLAMA_SWAP_CONFIG="$PWD/docker/llama-swap/config.yaml"
+export LLAMA_SWAP_MODELS="$(cd "$PWD/../models" && pwd)"
+# Both compose files on every command, including bare `ps` / `exec` calls
+# (step 3 creates the override; a command without it republishes 0.0.0.0:8100).
+export COMPOSE_FILE="docker/llama-swap/docker-compose.yml:docker/llama-swap/docker-compose.override.yml"
+export COMPOSE_PROJECT_NAME=llama-swap
+```
 
 **1. Stop `qontinui-gemma-server`.** It is always-on and holds ~26 GB of VRAM;
 with it up, a vLLM vision entry (which reserves ~90% of the card by default) or
@@ -113,66 +126,68 @@ an LLM entry will OOM. `docker stop qontinui-gemma-server`, and note that it was
 running so you can start it again afterwards.
 
 **2. Put the weights under `$LLAMA_SWAP_MODELS/gguf/`.** Reuse gemma-server's
-copy of the Gemma GGUF with a hardlink (same filesystem) — a symlink does not
-resolve inside the container, because it points outside the bind mount. The
-loop downloads only what is still missing.
+copy of the Gemma GGUF with a HARDLINK (same filesystem) — a symlink does not
+resolve inside the container, because it points outside the bind mount, so the
+loop replaces any symlink it finds. Files are checked against the size Hugging
+Face reports (2026-10-08) and downloads resume.
 
-| Entry | File (`<models>/gguf/…`) | Source | Licence on the model card (2026-10-08) |
-|-------|--------------------------|--------|------------------|
-| `gemma-4-26b-a4b` | `gemma-4-26B-A4B-it-UD-Q6_K.gguf` (~23 GB) | `unsloth/gemma-4-26B-A4B-it-GGUF` | apache-2.0 |
-| `qwen3-coder-30b-a3b` | `Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf` (~18 GB) | `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` | apache-2.0 |
-| `gpt-oss-20b` | `gpt-oss-20b-MXFP4.gguf` (~12 GB) | `ggml-org/gpt-oss-20b-GGUF` | apache-2.0 |
+| Entry | File (`<models>/gguf/…`) | Bytes | Source | Licence on the model card (2026-10-08) |
+|-------|--------------------------|-------|--------|------------------|
+| `gemma-4-26b-a4b` | `gemma-4-26B-A4B-it-UD-Q6_K.gguf` | 23172478688 | `unsloth/gemma-4-26B-A4B-it-GGUF` | apache-2.0 |
+| `qwen3-coder-30b-a3b` | `Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf` | 18556689568 | `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` | apache-2.0 |
+| `gpt-oss-20b` | `gpt-oss-20b-MXFP4.gguf` | 12109566624 | `ggml-org/gpt-oss-20b-GGUF` | apache-2.0 |
 
 ```bash
-M="$LLAMA_SWAP_MODELS/gguf"; mkdir -p "$M"
+M="${LLAMA_SWAP_MODELS:?export LLAMA_SWAP_MODELS first}/gguf"; mkdir -p "$M"
+size() { stat -c %s "$1" 2>/dev/null || echo 0; }
 G=docker/gemma-server/models/gemma-4-26B-A4B-it-UD-Q6_K.gguf
-[ -s "$G" ] && [ ! -e "$M/${G##*/}" ] && ln "$G" "$M/"
-for f in unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q6_K.gguf \
-         unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf \
-         ggml-org/gpt-oss-20b-GGUF/gpt-oss-20b-MXFP4.gguf; do
-  repo="${f%/*}"; file="${f##*/}"
-  [ -s "$M/$file" ] && continue
-  curl -fL -o "$M/$file.part" "https://huggingface.co/$repo/resolve/main/$file" && mv "$M/$file.part" "$M/$file"
-done
+[ -L "$M/${G##*/}" ] && rm -- "$M/${G##*/}"
+[ "$(size "$G")" = 23172478688 ] && [ ! -e "$M/${G##*/}" ] && ln "$G" "$M/"
+while read -r repo file bytes; do
+  [ -L "$M/$file" ] && rm -- "$M/$file"
+  [ "$(size "$M/$file")" = "$bytes" ] && continue
+  curl -fL -C - -o "$M/$file.part" "https://huggingface.co/$repo/resolve/main/$file" \
+    && [ "$(size "$M/$file.part")" = "$bytes" ] && mv "$M/$file.part" "$M/$file" \
+    || echo "FAILED: $file (re-run to resume)" >&2
+done <<'LIST'
+unsloth/gemma-4-26B-A4B-it-GGUF gemma-4-26B-A4B-it-UD-Q6_K.gguf 23172478688
+unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf 18556689568
+ggml-org/gpt-oss-20b-GGUF gpt-oss-20b-MXFP4.gguf 12109566624
+LIST
 ```
 
 **3. Bind loopback only (host-local override).** The tracked compose file
 publishes `8100:8100` on every host interface. `ports` lists are *merged*
 across compose files, so the override replaces the list with the `!override`
-merge tag. Confirm your Compose honours it with the `config` command below —
-it must print a single published port with `host_ip: 127.0.0.1`.
+merge tag. Confirm your Compose honours it: the `config` check below must print a
+list with exactly ONE entry, and that entry must carry `"host_ip": "127.0.0.1"`.
 
-```yaml
-# docker/llama-swap/docker-compose.override.yml  (host-local; gitignored)
+```bash
+cat > docker/llama-swap/docker-compose.override.yml <<'YAML'
+# host-local; gitignored — do not commit
 services:
   llama-swap:
     ports: !override
       - "127.0.0.1:8100:8100"
-```
-
-Compose loads an override file automatically only when no `-f` is given, and
-every command here passes `-f` — so name both files on EVERY command, this
-step's and step 4's alike (a redeploy without the second `-f` recreates the
-container on `0.0.0.0:8100`):
-
-```bash
-F="-f docker/llama-swap/docker-compose.yml -f docker/llama-swap/docker-compose.override.yml"
-docker compose -p llama-swap $F config | grep -B3 -A1 'published:'   # one entry, host_ip: 127.0.0.1
+YAML
+docker compose config --format json | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["services"]["llama-swap"]["ports"]))'
 ```
 
 **4. Rebuild once, then redeploy — a `--no-build` redeploy alone will NOT pick
 these entries up.** `config.yaml` is bind-mounted, so without a rebuild the three
 entries load into an image that has no `/usr/local/bin/llama-server` and every
 request to them fails at exec time (the vision entries are unaffected). Pin the
-llama-swap version to the one already serving: stage 1 resolves `latest` when it
-is not cached, and its binary is copied in BEFORE the weight layers, so a newer
-`latest` would also invalidate the ~29 GB weight layers.
+llama-swap version to the one in the image already built here: stage 1 resolves
+`latest` when it is not cached, and its binary is copied in BEFORE the weight
+layers, so a newer `latest` would also invalidate the ~29 GB weight layers. On a
+first build there is no prior image, nothing to protect, and `V` stays empty, so
+the default (`latest`) applies.
 
 ```bash
-V="$(docker exec "$(docker compose -p llama-swap ps -q llama-swap)" cat /etc/llama-swap-version)"
-docker compose -p llama-swap $F build --build-arg LLAMA_SWAP_VERSION="$V"
-docker compose -p llama-swap $F up -d --no-build
-docker port "$(docker compose -p llama-swap ps -q llama-swap)" 8100   # must print 127.0.0.1:8100 only
+V="$(docker run --rm --entrypoint cat llama-swap-llama-swap /etc/llama-swap-version 2>/dev/null || true)"
+docker compose build ${V:+--build-arg LLAMA_SWAP_VERSION="$V"}
+docker compose up -d --no-build
+docker port "$(docker compose ps -q llama-swap)" 8100   # must print 127.0.0.1:8100 only
 ```
 
 The llama-server layers sit after the weight downloads, so with stage 1 pinned

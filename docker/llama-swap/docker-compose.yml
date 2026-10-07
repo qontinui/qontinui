@@ -1,6 +1,8 @@
 # llama-swap model orchestration proxy.
 #
-# Time-shares a single GPU across AriaUI and UI-TARS.
+# Time-shares a single GPU across the vision stack (AriaUI, UI-TARS, the
+# grounding checkpoints, PaddleOCR, the World-State verifier) and the GGUF LLMs
+# served by llama.cpp's llama-server — see README.md "Local LLM candidates".
 # Replaces running separate aria-ui and ui-tars containers simultaneously.
 #
 # Usage:
