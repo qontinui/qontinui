@@ -26,6 +26,10 @@ cd qontinui/docker
 docker compose -f llama-swap/docker-compose.yml up --build
 ```
 
+(On a host that uses the loopback override or the GGUF LLM entries, use the
+"Local LLM candidates" bring-up below instead — this single `-f` drops the
+override and publishes `0.0.0.0:8100`.)
+
 AriaUI clients (`aria_ui_client.py`) continue to POST to `http://localhost:8100/v1/chat/completions` with no changes needed (default endpoint is already 8100).
 
 For UI-TARS VLLMProvider, set the server URL to point at llama-swap instead of a standalone vLLM instance:
@@ -146,13 +150,14 @@ Face reports (2026-10-08) and downloads resume.
 | `gpt-oss-20b` | `gpt-oss-20b-MXFP4.gguf` | 12109566624 | `ggml-org/gpt-oss-20b-GGUF` | apache-2.0 |
 
 ```bash
-( set -eu   # a subshell: any failure stops the whole step, and nothing leaks
+( set -eu   # a subshell: a SETUP failure stops the step; each download failure is reported and skipped
   [ -d "$LLAMA_SWAP_MODELS" ] || { echo "LLAMA_SWAP_MODELS is not a directory - run the exports above" >&2; exit 1; }
   M="$LLAMA_SWAP_MODELS/gguf"; mkdir -p "$M"
   size() { stat -c %s "$1" 2>/dev/null || echo 0; }   # GNU stat (Linux / WSL / Git Bash)
   G=docker/gemma-server/models/gemma-4-26B-A4B-it-UD-Q6_K.gguf
   if [ "$(size "$G")" = 23172478688 ] && [ "$(size "$M/${G##*/}")" != 23172478688 ]; then
-    rm -f -- "$M/${G##*/}"; ln "$G" "$M/"
+    rm -f -- "$M/${G##*/}"
+    ln "$G" "$M/" || echo "hardlink failed (different filesystem?) - downloading it instead" >&2
   fi
   while read -r repo file bytes; do
     [ -L "$M/$file" ] && rm -- "$M/$file"

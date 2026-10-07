@@ -7,6 +7,8 @@
 #
 # Usage:
 #   docker compose -f docker/llama-swap/docker-compose.yml up
+#   (a host using a loopback override or the GGUF LLM entries: follow README.md
+#   "Local LLM candidates" instead -- this single -f drops the override)
 #
 # To use standalone containers instead (original behavior):
 #   docker compose -f docker/aria-ui/docker-compose.yml --profile standalone up
