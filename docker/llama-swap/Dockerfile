@@ -1,8 +1,11 @@
 # llama-swap model orchestration proxy for qontinui.
 #
-# Time-shares a single GPU across AriaUI and UI-TARS models.
-# llama-swap manages backend processes (Python serving scripts) as children,
-# starting/stopping them on demand based on the "model" field in API requests.
+# Time-shares a single GPU across the vision stack (AriaUI, UI-TARS, the
+# grounding checkpoints, PaddleOCR, the World-State verifier) and GGUF LLMs
+# served by llama.cpp's llama-server (Gemma 4 26B-A4B, Qwen3-Coder-30B-A3B,
+# gpt-oss-20b). llama-swap manages backend processes (vLLM, Python serving
+# scripts, llama-server) as children, starting/stopping them on demand based on
+# the "model" field in API requests.
 #
 # Ports:
 #   8100 - llama-swap proxy (OpenAI-compatible API)
@@ -37,7 +40,46 @@ RUN set -e && \
     chmod +x /install/bin/llama-swap && \
     echo "${VERSION}" > /install/llama-swap-version
 
-# --- Stage 2: Runtime with CUDA + Python backends ---
+# --- Stage 2: Build llama.cpp's llama-server for the GGUF LLM entries ---
+# Built from source on the SAME CUDA/Ubuntu base as the runtime stage below, so
+# the binary's glibc/CUDA ABI matches it exactly (copying the prebuilt
+# ghcr.io/ggml-org/llama.cpp:server-cuda binary would not guarantee that).
+# Static ggml/llama libs (BUILD_SHARED_LIBS=OFF) -> one self-contained binary,
+# dynamically linking only libcuda/libcudart/libcublas from the base image and
+# the host driver. sm_120 = RTX 5090 (Blackwell); 89/86 keep Ada/Ampere cards
+# working. Pinned to a release tag AND its commit so a rebuild is reproducible;
+# bump both together (plan 2026-10-07-measure-which-ai-work-a-local-model-on-
+# spaceships-5090-can-take-over, Phase 1).
+FROM nvidia/cuda:12.8.1-devel-ubuntu22.04 AS llama-cpp-build
+
+ARG LLAMA_CPP_TAG=b11149
+ARG LLAMA_CPP_COMMIT=d2e54583c7452353eb35d40431281f6ee984332f
+ARG LLAMA_CPP_CUDA_ARCHS="86;89;120"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git cmake build-essential ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 --branch "${LLAMA_CPP_TAG}" https://github.com/ggml-org/llama.cpp /src/llama.cpp && \
+    test "$(git -C /src/llama.cpp rev-parse HEAD)" = "${LLAMA_CPP_COMMIT}"
+
+# The CUDA driver library is not present at build time; link against the stub
+# the devel image ships (the real libcuda.so.1 comes from the host at runtime).
+RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1 && \
+    cmake -S /src/llama.cpp -B /src/build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DGGML_CUDA=ON \
+        -DCMAKE_CUDA_ARCHITECTURES="${LLAMA_CPP_CUDA_ARCHS}" \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DGGML_NATIVE=OFF \
+        -DLLAMA_BUILD_TESTS=OFF \
+        -DLLAMA_BUILD_EXAMPLES=OFF \
+        -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath-link,/usr/local/cuda/lib64/stubs -L/usr/local/cuda/lib64/stubs" && \
+    cmake --build /src/build --target llama-server -j"$(nproc)" && \
+    install -D -m 0755 /src/build/bin/llama-server /install/bin/llama-server && \
+    echo "${LLAMA_CPP_TAG} ${LLAMA_CPP_COMMIT}" > /install/llama-cpp-version
+
+# --- Stage 3: Runtime with CUDA + Python backends ---
 FROM nvidia/cuda:12.8.1-devel-ubuntu22.04
 
 # Python + system deps
@@ -115,6 +157,13 @@ RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download
 # RUN /opt/venvs/aria-ui/bin/python3 -c "from huggingface_hub import snapshot_download; snapshot_download('Aria-UI/Aria-UI-context-aware')"
 # RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('ByteDance-Seed/UI-TARS-7B-SFT')"
 # RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('ByteDance-Seed/UI-TARS-1.5-7B')"
+
+# llama-server (GGUF LLM backend) — placed AFTER the weight downloads so adding
+# or bumping it never invalidates the ~29GB weight layers above. Its only
+# non-system runtime libraries are libcudart/libcublas/libnccl (this base image) and
+# libcuda.so.1 (the host driver); the GGUFs are bind-mounted under /models/gguf/.
+COPY --from=llama-cpp-build /install/bin/llama-server /usr/local/bin/llama-server
+COPY --from=llama-cpp-build /install/llama-cpp-version /etc/llama-cpp-version
 
 # --- Volatile layers LAST: backend scripts + config change on every repo edit ---
 # Build context is docker/ (parent dir), set in docker-compose.yml. Kept after

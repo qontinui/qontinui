@@ -1,6 +1,6 @@
 # llama-swap Model Orchestration
 
-Time-shares a single GPU across qontinui's vision / grounding / OCR models using [llama-swap](https://github.com/mostlygeek/llama-swap). Only the active model occupies VRAM; idle models unload after their TTL.
+Time-shares a single GPU across qontinui's vision / grounding / OCR models (and, since the llama.cpp stage, GGUF LLM candidates) using [llama-swap](https://github.com/mostlygeek/llama-swap). Only the active model occupies VRAM; idle models unload after their TTL.
 
 ## Models Served
 
@@ -13,6 +13,7 @@ Routed by the `model` field in the request body (see `config.yaml`):
 | `Zery/CUA_World_State_Model` | runner `WorldStateVerifier` | 7B action-verification judge (2 images/call) |
 | `paddleocr` | runner `OcrClient` (Vision Pipeline Phase 4) | classical PP-OCR behind an OpenAI-compatible shim |
 | `Aria-UI/Aria-UI-base` / `-context-aware` | healing (opt-in) | 25B MoE — **does not fit a 32GB GPU**, see VRAM note |
+| `gemma-4-26b-a4b` / `qwen3-coder-30b-a3b` / `gpt-oss-20b` | local-LLM evaluation (see below) | GGUF via llama.cpp `llama-server`; weights bind-mounted under `/models/gguf/` |
 
 ## Why
 
@@ -92,6 +93,69 @@ not load on a 32GB GPU — see VRAM Reality.
 
 For additional models, uncomment lines in the Dockerfile and rebuild.
 
+## Local LLM candidates (llama.cpp)
+
+The image builds llama.cpp's `llama-server` from a pinned release tag
+(`LLAMA_CPP_TAG` / `LLAMA_CPP_COMMIT` build args in the Dockerfile; the running
+version is in `/etc/llama-cpp-version`). Three GGUF entries in `config.yaml` use
+it, for the evaluation in qontinui-dev-notes plan
+`2026-10-07-measure-which-ai-work-a-local-model-on-spaceships-5090-can-take-over`.
+They swap exclusively with the vision models like every other entry: at most one
+model is resident, so a vision request unloads a resident LLM and vice versa.
+
+Download the weights once into the host directory you mount at `/models`
+(`LLAMA_SWAP_MODELS`), under `gguf/`:
+
+| Entry | File (`<models>/gguf/…`) | Source | Licence on the model card (2026-10-08) |
+|-------|--------------------------|--------|------------------|
+| `gemma-4-26b-a4b` | `gemma-4-26B-A4B-it-UD-Q6_K.gguf` (~23 GB) | `unsloth/gemma-4-26B-A4B-it-GGUF` | apache-2.0 |
+| `qwen3-coder-30b-a3b` | `Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf` (~18 GB) | `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` | apache-2.0 |
+| `gpt-oss-20b` | `gpt-oss-20b-MXFP4.gguf` (~12 GB) | `ggml-org/gpt-oss-20b-GGUF` | apache-2.0 |
+
+```bash
+M=/absolute/path/to/models/gguf; mkdir -p "$M"
+for f in unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q6_K.gguf \
+         unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf \
+         ggml-org/gpt-oss-20b-GGUF/gpt-oss-20b-MXFP4.gguf; do
+  repo="${f%/*}"; file="${f##*/}"
+  curl -fL -C - -o "$M/$file" "https://huggingface.co/$repo/resolve/main/$file"
+done
+```
+
+Each entry answers OpenAI `/v1/chat/completions` on `:8100` with
+`"model": "<entry>"`. llama.cpp's native routes are reachable through
+llama-swap's upstream passthrough, e.g. the raw completion endpoint the runner's
+`gemma_local_warm` emitter uses:
+
+```bash
+curl -s http://127.0.0.1:8100/upstream/gemma-4-26b-a4b/completion \
+  -d '{"prompt":"<user|>hi<turn|>\n<model|>\n","n_predict":16,"stop":["<turn|>","<user|>"]}'
+```
+
+Pointing `scripted_output.gemma_local_endpoint` at
+`http://127.0.0.1:8100/upstream/gemma-4-26b-a4b` is what would let
+`docker/gemma-server` be retired — but only once that passthrough is verified on
+the box and the emitter's 5 s timeout survives a cold swap (the plan's Decision 2
+conditions). Until then `docker/gemma-server` stays.
+
+**Stop `qontinui-gemma-server` before loading anything here.** It is always-on
+and holds ~26 GB of VRAM; with it up, a vLLM vision entry (which reserves ~90% of
+the card by default) or an LLM entry will OOM.
+
+**Loopback-only binding during the evaluation.** The tracked compose file
+publishes `8100:8100` on every host interface. To bind loopback only on one host
+without changing the tracked file, use an untracked override — `ports` lists are
+*merged* across compose files, so the override must replace the list explicitly
+(`!override`, Docker Compose ≥ 2.24):
+
+```yaml
+# docker/llama-swap/docker-compose.override.yml  (host-local, do not commit)
+services:
+  llama-swap:
+    ports: !override
+      - "127.0.0.1:8100:8100"
+```
+
 ## Services NOT Managed by llama-swap
 
 These use non-OpenAI APIs and must run as separate containers:
@@ -125,5 +189,5 @@ GPU with materially more than 32GB.
 | 8GB | `UI-TARS-2B` only |
 | 12GB | one 7B model at a time (`grounding`, `UI-TARS-7B`, or `WSM`), time-shared |
 | 16–24GB | any single 7B model with headroom; co-load two small ones via `groups` |
-| 32GB | full 7B stack time-shared (grounding + UI-TARS + WSM + paddleocr); **Aria-UI still does not fit** |
+| 32GB | full 7B stack time-shared (grounding + UI-TARS + WSM + paddleocr), plus one GGUF LLM at a time (≤ 30B-class at 4–6-bit); **Aria-UI still does not fit** |
 | >40GB | required to load `Aria-UI/Aria-UI-base` (25B MoE) |

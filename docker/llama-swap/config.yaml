@@ -1,6 +1,8 @@
 # llama-swap configuration for qontinui model orchestration.
 #
-# Time-shares a single GPU across AriaUI and UI-TARS models.
+# Time-shares a single GPU across the vision models (AriaUI, UI-TARS, the
+# grounding checkpoints, PaddleOCR, the World-State verifier) and the GGUF LLMs
+# served by llama.cpp's llama-server (see "Local LLM candidates" below).
 # Only the active model occupies VRAM; idle models unload after TTL.
 #
 # Models not managed here (they use non-OpenAI APIs):
@@ -192,6 +194,77 @@ models:
     aliases:
       - cua-wsm
       - world-state-verifier
+
+  # --- Local LLM candidates (GGUF, llama.cpp llama-server) ---
+  # Evaluation entries for plan 2026-10-07-measure-which-ai-work-a-local-model-
+  # on-spaceships-5090-can-take-over (qontinui-dev-notes). Each exposes the
+  # OpenAI-compatible /v1/chat/completions (and llama.cpp's native routes,
+  # reachable through llama-swap's /upstream/<model>/... passthrough — the
+  # scripted-output emitter's raw /completion uses that). Exclusive swap like
+  # every other entry: a vision request unloads a resident LLM and vice versa.
+  #
+  # Weights are NOT baked into the image. Download each GGUF once into the
+  # host directory mounted at /models (LLAMA_SWAP_MODELS), under gguf/ — see
+  # README.md "Local LLM candidates" for the exact files and URLs.
+  #
+  # --jinja makes llama-server render the chat template embedded in the GGUF.
+  # Gemma 4's template is the one the 2026-04-22 spike saw return empty
+  # message.content on /v1/chat/completions; whether --jinja on this llama.cpp
+  # build fixes it is verified on the box (plan Phase 1), not assumed here.
+  gemma-4-26b-a4b:
+    cmd: >
+      /usr/local/bin/llama-server
+      -m /models/gguf/gemma-4-26B-A4B-it-UD-Q6_K.gguf
+      --host 127.0.0.1
+      --port ${PORT}
+      --n-gpu-layers 999
+      --ctx-size 16384
+      --cache-type-k q8_0
+      --cache-type-v q8_0
+      --jinja
+      --alias gemma-4-26b-a4b
+      --no-warmup
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - gemma-4
+
+  qwen3-coder-30b-a3b:
+    cmd: >
+      /usr/local/bin/llama-server
+      -m /models/gguf/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf
+      --host 127.0.0.1
+      --port ${PORT}
+      --n-gpu-layers 999
+      --ctx-size 32768
+      --cache-type-k q8_0
+      --cache-type-v q8_0
+      --jinja
+      --alias qwen3-coder-30b-a3b
+      --no-warmup
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - qwen3-coder
+
+  gpt-oss-20b:
+    cmd: >
+      /usr/local/bin/llama-server
+      -m /models/gguf/gpt-oss-20b-MXFP4.gguf
+      --host 127.0.0.1
+      --port ${PORT}
+      --n-gpu-layers 999
+      --ctx-size 32768
+      --jinja
+      --alias gpt-oss-20b
+      --no-warmup
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    aliases:
+      - gpt-oss
 
 # AriaUI variants are mutually exclusive (same architecture, different weights).
 # UI-TARS sizes are mutually exclusive (only one loaded at a time).

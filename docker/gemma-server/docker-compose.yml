@@ -1,17 +1,21 @@
 # Standalone llama.cpp server for the scripted-output emitter's
 # `gemma_local_warm` provider lane.
 #
-# Deliberately NOT routed through `docker/llama-swap/` because:
-#   - llama-swap is currently vLLM-only; adding a llama.cpp backend would
-#     require rebuilding its image (risks breaking AriaUI / UI-TARS).
-#   - llama-swap proxies OpenAI routes; the emitter uses llama.cpp's raw
-#     `/completion` endpoint to bypass chat-template stripping of Gemma 4's
-#     `<channel|>` reasoning trace.
+# Not (yet) routed through `docker/llama-swap/`:
+#   - llama-swap's image now carries llama.cpp's llama-server and serves the
+#     same GGUF as its `gemma-4-26b-a4b` entry; its raw `/completion` route is
+#     reachable via llama-swap's `/upstream/gemma-4-26b-a4b/completion`
+#     passthrough. Retiring this container waits on that passthrough being
+#     verified on the GPU box and on the emitter's 5 s timeout surviving a
+#     cold swap there (plan 2026-10-07-measure-which-ai-work-a-local-model-on-
+#     spaceships-5090-can-take-over, Decision 2).
+#   - The emitter uses llama.cpp's raw `/completion` endpoint to bypass
+#     chat-template stripping of Gemma 4's `<channel|>` reasoning trace.
 #   - Gemma is always-on here. With ~26 GB VRAM used at steady state, it
 #     co-exists fine on the 5090 alongside runner Tauri webviews but will
 #     contend with AriaUI / UI-TARS if those load concurrently. Operators
-#     who want strict time-sharing should instead run Gemma via llama-swap
-#     once a llama.cpp backend is added there (tracked as a follow-up).
+#     who want strict time-sharing should run llama-swap's `gemma-4-26b-a4b`
+#     entry instead and stop this container.
 #
 # Model: google/gemma-4-26B-A4B-it (MoE, 4B active params)
 # Quant: Unsloth UD-Q6_K (~23 GB on disk, ~26 GB VRAM with q8_0 KV cache)
