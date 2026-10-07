@@ -159,9 +159,13 @@ RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download
 # RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('ByteDance-Seed/UI-TARS-1.5-7B')"
 
 # llama-server (GGUF LLM backend) — placed AFTER the weight downloads so adding
-# or bumping it never invalidates the ~29GB weight layers above. Its only
-# non-system runtime libraries are libcudart/libcublas/libnccl (this base image) and
-# libcuda.so.1 (the host driver); the GGUFs are bind-mounted under /models/gguf/.
+# or bumping it never invalidates the ~29GB weight layers above. Its runtime
+# libraries: libcudart/libcublas/libnccl (this base image), libcuda.so.1 (the
+# host driver) and libgomp.so.1 — installed explicitly here rather than relied
+# on via the PaddleOCR layer, so removing that layer cannot break llama-server.
+# The GGUFs are bind-mounted under /models/gguf/.
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
 COPY --from=llama-cpp-build /install/bin/llama-server /usr/local/bin/llama-server
 COPY --from=llama-cpp-build /install/llama-cpp-version /etc/llama-cpp-version
 

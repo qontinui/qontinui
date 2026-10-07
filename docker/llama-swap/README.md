@@ -142,18 +142,56 @@ conditions). Until then `docker/gemma-server` stays.
 and holds ~26 GB of VRAM; with it up, a vLLM vision entry (which reserves ~90% of
 the card by default) or an LLM entry will OOM.
 
+**Rebuild the image once — a `--no-build` redeploy will NOT pick these up.**
+`config.yaml` is bind-mounted, so a `--no-build` redeploy (the Fixed-Host recipe
+above) loads the three entries into an image that has no
+`/usr/local/bin/llama-server`, and every request to them fails at exec time
+(the vision entries are unaffected). Build first, then redeploy:
+
+```bash
+docker compose -p llama-swap -f docker/llama-swap/docker-compose.yml build
+docker compose -p llama-swap -f docker/llama-swap/docker-compose.yml up -d --no-build
+```
+
+The llama-server layers sit after the weight downloads, so this re-uses the
+~29 GB weight layers — **only if this box's build cache still holds them**. If
+the cache was pruned or the image was pulled rather than built here, the build
+re-downloads them whatever the layer order; check the build log shows `CACHED`
+on the `snapshot_download` steps (or `docker buildx du`) before relying on it.
+Stage 1 still resolves llama-swap `latest` when it is not cached; pin
+`--build-arg LLAMA_SWAP_VERSION=$(docker run --rm --entrypoint cat <running
+image> /etc/llama-swap-version)` to rebuild against the version already serving.
+
+**Stop `qontinui-gemma-server` before loading anything here.** It is always-on
+and holds ~26 GB of VRAM; with it up, a vLLM vision entry (which reserves ~90% of
+the card by default) or an LLM entry will OOM. Its GGUF lives in
+`docker/gemma-server/models/`; a symlink to it does not resolve inside the
+llama-swap container (it points outside the bind mount), so hardlink it into
+`<models>/gguf/` on the same filesystem rather than downloading a second 23 GB
+copy.
+
 **Loopback-only binding during the evaluation.** The tracked compose file
 publishes `8100:8100` on every host interface. To bind loopback only on one host
-without changing the tracked file, use an untracked override — `ports` lists are
+without changing the tracked file, use an untracked override. `ports` lists are
 *merged* across compose files, so the override must replace the list explicitly
-(`!override`, Docker Compose ≥ 2.24):
+(`!override`, Docker Compose ≥ 2.24.4):
 
 ```yaml
-# docker/llama-swap/docker-compose.override.yml  (host-local, do not commit)
+# docker/llama-swap/docker-compose.override.yml  (host-local; gitignored)
 services:
   llama-swap:
     ports: !override
       - "127.0.0.1:8100:8100"
+```
+
+Compose reads an override file automatically only when no `-f` is given, and
+every command in this README passes `-f` — so name it explicitly, on every
+command (or export `COMPOSE_FILE`):
+
+```bash
+docker compose -p llama-swap -f docker/llama-swap/docker-compose.yml \
+  -f docker/llama-swap/docker-compose.override.yml up -d --no-build
+docker port "$(docker compose -p llama-swap ps -q llama-swap)" 8100   # must print 127.0.0.1:8100 only
 ```
 
 ## Services NOT Managed by llama-swap

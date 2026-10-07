@@ -388,3 +388,6 @@ docs/
 # .mcp.json at launch. It is a live credential and must never be committed.
 # (Was previously only in .git/info/exclude — local-only, lost on fresh clone/CI.)
 .mcp.json
+
+# Host-local compose overrides (e.g. the llama-swap loopback bind); never commit
+docker/**/docker-compose.override.yml
