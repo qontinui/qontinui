@@ -103,8 +103,19 @@ it, for the evaluation in qontinui-dev-notes plan
 They swap exclusively with the vision models like every other entry: at most one
 model is resident, so a vision request unloads a resident LLM and vice versa.
 
-Download the weights once into the host directory you mount at `/models`
-(`LLAMA_SWAP_MODELS`), under `gguf/`:
+Bring them up in this order on the GPU box. Run every command from the
+`qontinui` checkout root, with the Fixed-Host variables above set
+(`LLAMA_SWAP_CONFIG`, `LLAMA_SWAP_MODELS` — absolute paths).
+
+**1. Stop `qontinui-gemma-server`.** It is always-on and holds ~26 GB of VRAM;
+with it up, a vLLM vision entry (which reserves ~90% of the card by default) or
+an LLM entry will OOM. `docker stop qontinui-gemma-server`, and note that it was
+running so you can start it again afterwards.
+
+**2. Put the weights under `$LLAMA_SWAP_MODELS/gguf/`.** Reuse gemma-server's
+copy of the Gemma GGUF with a hardlink (same filesystem) — a symlink does not
+resolve inside the container, because it points outside the bind mount. The
+loop downloads only what is still missing.
 
 | Entry | File (`<models>/gguf/…`) | Source | Licence on the model card (2026-10-08) |
 |-------|--------------------------|--------|------------------|
@@ -113,17 +124,65 @@ Download the weights once into the host directory you mount at `/models`
 | `gpt-oss-20b` | `gpt-oss-20b-MXFP4.gguf` (~12 GB) | `ggml-org/gpt-oss-20b-GGUF` | apache-2.0 |
 
 ```bash
-M=/absolute/path/to/models/gguf; mkdir -p "$M"
+M="$LLAMA_SWAP_MODELS/gguf"; mkdir -p "$M"
+G=docker/gemma-server/models/gemma-4-26B-A4B-it-UD-Q6_K.gguf
+[ -s "$G" ] && [ ! -e "$M/${G##*/}" ] && ln "$G" "$M/"
 for f in unsloth/gemma-4-26B-A4B-it-GGUF/gemma-4-26B-A4B-it-UD-Q6_K.gguf \
          unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf \
          ggml-org/gpt-oss-20b-GGUF/gpt-oss-20b-MXFP4.gguf; do
   repo="${f%/*}"; file="${f##*/}"
-  curl -fL -C - -o "$M/$file" "https://huggingface.co/$repo/resolve/main/$file"
+  [ -s "$M/$file" ] && continue
+  curl -fL -o "$M/$file.part" "https://huggingface.co/$repo/resolve/main/$file" && mv "$M/$file.part" "$M/$file"
 done
 ```
 
-Each entry answers OpenAI `/v1/chat/completions` on `:8100` with
-`"model": "<entry>"`. llama.cpp's native routes are reachable through
+**3. Bind loopback only (host-local override).** The tracked compose file
+publishes `8100:8100` on every host interface. `ports` lists are *merged*
+across compose files, so the override replaces the list with the `!override`
+merge tag. Confirm your Compose honours it with the `config` command below —
+it must print a single published port with `host_ip: 127.0.0.1`.
+
+```yaml
+# docker/llama-swap/docker-compose.override.yml  (host-local; gitignored)
+services:
+  llama-swap:
+    ports: !override
+      - "127.0.0.1:8100:8100"
+```
+
+Compose loads an override file automatically only when no `-f` is given, and
+every command here passes `-f` — so name both files on EVERY command, this
+step's and step 4's alike (a redeploy without the second `-f` recreates the
+container on `0.0.0.0:8100`):
+
+```bash
+F="-f docker/llama-swap/docker-compose.yml -f docker/llama-swap/docker-compose.override.yml"
+docker compose -p llama-swap $F config | grep -B3 -A1 'published:'   # one entry, host_ip: 127.0.0.1
+```
+
+**4. Rebuild once, then redeploy — a `--no-build` redeploy alone will NOT pick
+these entries up.** `config.yaml` is bind-mounted, so without a rebuild the three
+entries load into an image that has no `/usr/local/bin/llama-server` and every
+request to them fails at exec time (the vision entries are unaffected). Pin the
+llama-swap version to the one already serving: stage 1 resolves `latest` when it
+is not cached, and its binary is copied in BEFORE the weight layers, so a newer
+`latest` would also invalidate the ~29 GB weight layers.
+
+```bash
+V="$(docker exec "$(docker compose -p llama-swap ps -q llama-swap)" cat /etc/llama-swap-version)"
+docker compose -p llama-swap $F build --build-arg LLAMA_SWAP_VERSION="$V"
+docker compose -p llama-swap $F up -d --no-build
+docker port "$(docker compose -p llama-swap ps -q llama-swap)" 8100   # must print 127.0.0.1:8100 only
+```
+
+The llama-server layers sit after the weight downloads, so with stage 1 pinned
+this re-uses the ~29 GB weight layers — **only if this box's build cache still
+holds them**. If the cache was pruned, or the image was pulled rather than built
+here, the build re-downloads them whatever the layer order: check that the build
+log shows `CACHED` on the `snapshot_download` steps (or `docker buildx du`).
+
+**5. Use them.** Each entry answers OpenAI `/v1/chat/completions` on `:8100`
+with `"model": "<entry>"`. llama.cpp's native routes are reachable through
 llama-swap's upstream passthrough, e.g. the raw completion endpoint the runner's
 `gemma_local_warm` emitter uses:
 
@@ -136,63 +195,8 @@ Pointing `scripted_output.gemma_local_endpoint` at
 `http://127.0.0.1:8100/upstream/gemma-4-26b-a4b` is what would let
 `docker/gemma-server` be retired — but only once that passthrough is verified on
 the box and the emitter's 5 s timeout survives a cold swap (the plan's Decision 2
-conditions). Until then `docker/gemma-server` stays.
-
-**Stop `qontinui-gemma-server` before loading anything here.** It is always-on
-and holds ~26 GB of VRAM; with it up, a vLLM vision entry (which reserves ~90% of
-the card by default) or an LLM entry will OOM.
-
-**Rebuild the image once — a `--no-build` redeploy will NOT pick these up.**
-`config.yaml` is bind-mounted, so a `--no-build` redeploy (the Fixed-Host recipe
-above) loads the three entries into an image that has no
-`/usr/local/bin/llama-server`, and every request to them fails at exec time
-(the vision entries are unaffected). Build first, then redeploy:
-
-```bash
-docker compose -p llama-swap -f docker/llama-swap/docker-compose.yml build
-docker compose -p llama-swap -f docker/llama-swap/docker-compose.yml up -d --no-build
-```
-
-The llama-server layers sit after the weight downloads, so this re-uses the
-~29 GB weight layers — **only if this box's build cache still holds them**. If
-the cache was pruned or the image was pulled rather than built here, the build
-re-downloads them whatever the layer order; check the build log shows `CACHED`
-on the `snapshot_download` steps (or `docker buildx du`) before relying on it.
-Stage 1 still resolves llama-swap `latest` when it is not cached; pin
-`--build-arg LLAMA_SWAP_VERSION=$(docker run --rm --entrypoint cat <running
-image> /etc/llama-swap-version)` to rebuild against the version already serving.
-
-**Stop `qontinui-gemma-server` before loading anything here.** It is always-on
-and holds ~26 GB of VRAM; with it up, a vLLM vision entry (which reserves ~90% of
-the card by default) or an LLM entry will OOM. Its GGUF lives in
-`docker/gemma-server/models/`; a symlink to it does not resolve inside the
-llama-swap container (it points outside the bind mount), so hardlink it into
-`<models>/gguf/` on the same filesystem rather than downloading a second 23 GB
-copy.
-
-**Loopback-only binding during the evaluation.** The tracked compose file
-publishes `8100:8100` on every host interface. To bind loopback only on one host
-without changing the tracked file, use an untracked override. `ports` lists are
-*merged* across compose files, so the override must replace the list explicitly
-(`!override`, Docker Compose ≥ 2.24.4):
-
-```yaml
-# docker/llama-swap/docker-compose.override.yml  (host-local; gitignored)
-services:
-  llama-swap:
-    ports: !override
-      - "127.0.0.1:8100:8100"
-```
-
-Compose reads an override file automatically only when no `-f` is given, and
-every command in this README passes `-f` — so name it explicitly, on every
-command (or export `COMPOSE_FILE`):
-
-```bash
-docker compose -p llama-swap -f docker/llama-swap/docker-compose.yml \
-  -f docker/llama-swap/docker-compose.override.yml up -d --no-build
-docker port "$(docker compose -p llama-swap ps -q llama-swap)" 8100   # must print 127.0.0.1:8100 only
-```
+conditions). Until then `docker/gemma-server` stays; start it again when the
+evaluation is done.
 
 ## Services NOT Managed by llama-swap
 
