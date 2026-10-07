@@ -39,7 +39,12 @@ llama-swap routes by the `model` field in the request body and auto-loads the co
 
 On a dedicated host (e.g. the canonical GPU box serving `:8100`), redeploy the
 **already-built** image without rebuilding, and pin config + weights to
-**absolute** paths so the deploy can't silently grab the wrong files:
+**absolute** paths so the deploy can't silently grab the wrong files.
+
+> **If this host uses the loopback override or the GGUF LLM entries, do not use
+> this recipe** — its single `-f` drops the override (an explicit `-f` also
+> overrides an exported `COMPOSE_FILE`) and republishes `0.0.0.0:8100`, and it
+> never rebuilds. Use the "Local LLM candidates" bring-up below instead.
 
 ```bash
 cd qontinui
@@ -59,9 +64,8 @@ Why each flag matters:
   that collides on port 8100.
 - **`--no-build`** — reuse the image already built from the Dockerfile rather
   than rebuilding on every redeploy. Build it once with `... up -d --build`.
-  If the host runs the loopback override or the GGUF LLM entries, use the
-  "Local LLM candidates" bring-up below instead: it pins the llama-swap
-  version on rebuild and keeps the override on every command.
+  (See the note above the command for hosts using the loopback override or the
+  GGUF LLM entries.)
 - **`LLAMA_SWAP_CONFIG` / `LLAMA_SWAP_MODELS`** — absolute paths. The compose
   defaults (`./config.yaml`, `../../../models`) resolve against the **compose
   file's directory**, so deploying from a *worktree* mounts an empty `/models`
@@ -112,12 +116,16 @@ The exports below are what every later step reads — the Fixed-Host recipe sets
 the two path variables only as one-command prefixes, which does not carry over:
 
 ```bash
+mkdir -p ../models   # the grounding checkpoints and the GGUFs live here
 export LLAMA_SWAP_CONFIG="$PWD/docker/llama-swap/config.yaml"
-export LLAMA_SWAP_MODELS="$(cd "$PWD/../models" && pwd)"
+export LLAMA_SWAP_MODELS="$(cd ../models && pwd)"
 # Both compose files on every command, including bare `ps` / `exec` calls
 # (step 3 creates the override; a command without it republishes 0.0.0.0:8100).
+export COMPOSE_PATH_SEPARATOR=:   # Compose defaults to ';' on Windows
 export COMPOSE_FILE="docker/llama-swap/docker-compose.yml:docker/llama-swap/docker-compose.override.yml"
 export COMPOSE_PROJECT_NAME=llama-swap
+# When the evaluation is done, `unset COMPOSE_FILE COMPOSE_PROJECT_NAME` before
+# running any other compose project from this shell.
 ```
 
 **1. Stop `qontinui-gemma-server`.** It is always-on and holds ~26 GB of VRAM;
@@ -138,22 +146,29 @@ Face reports (2026-10-08) and downloads resume.
 | `gpt-oss-20b` | `gpt-oss-20b-MXFP4.gguf` | 12109566624 | `ggml-org/gpt-oss-20b-GGUF` | apache-2.0 |
 
 ```bash
-M="${LLAMA_SWAP_MODELS:?export LLAMA_SWAP_MODELS first}/gguf"; mkdir -p "$M"
-size() { stat -c %s "$1" 2>/dev/null || echo 0; }
-G=docker/gemma-server/models/gemma-4-26B-A4B-it-UD-Q6_K.gguf
-[ -L "$M/${G##*/}" ] && rm -- "$M/${G##*/}"
-[ "$(size "$G")" = 23172478688 ] && [ ! -e "$M/${G##*/}" ] && ln "$G" "$M/"
-while read -r repo file bytes; do
-  [ -L "$M/$file" ] && rm -- "$M/$file"
-  [ "$(size "$M/$file")" = "$bytes" ] && continue
-  curl -fL -C - -o "$M/$file.part" "https://huggingface.co/$repo/resolve/main/$file" \
-    && [ "$(size "$M/$file.part")" = "$bytes" ] && mv "$M/$file.part" "$M/$file" \
-    || echo "FAILED: $file (re-run to resume)" >&2
-done <<'LIST'
+( set -eu   # a subshell: any failure stops the whole step, and nothing leaks
+  [ -d "$LLAMA_SWAP_MODELS" ] || { echo "LLAMA_SWAP_MODELS is not a directory - run the exports above" >&2; exit 1; }
+  M="$LLAMA_SWAP_MODELS/gguf"; mkdir -p "$M"
+  size() { stat -c %s "$1" 2>/dev/null || echo 0; }   # GNU stat (Linux / WSL / Git Bash)
+  G=docker/gemma-server/models/gemma-4-26B-A4B-it-UD-Q6_K.gguf
+  if [ "$(size "$G")" = 23172478688 ] && [ "$(size "$M/${G##*/}")" != 23172478688 ]; then
+    rm -f -- "$M/${G##*/}"; ln "$G" "$M/"
+  fi
+  while read -r repo file bytes; do
+    [ -L "$M/$file" ] && rm -- "$M/$file"
+    if [ "$(size "$M/$file")" = "$bytes" ]; then rm -f -- "$M/$file.part"; continue; fi
+    if curl -fL -C - -o "$M/$file.part" "https://huggingface.co/$repo/resolve/main/$file" \
+       && [ "$(size "$M/$file.part")" = "$bytes" ]; then
+      mv "$M/$file.part" "$M/$file"
+    else
+      echo "FAILED: $file (re-run to resume)" >&2
+    fi
+  done <<'LIST'
 unsloth/gemma-4-26B-A4B-it-GGUF gemma-4-26B-A4B-it-UD-Q6_K.gguf 23172478688
 unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf 18556689568
 ggml-org/gpt-oss-20b-GGUF gpt-oss-20b-MXFP4.gguf 12109566624
 LIST
+)
 ```
 
 **3. Bind loopback only (host-local override).** The tracked compose file
@@ -184,7 +199,8 @@ first build there is no prior image, nothing to protect, and `V` stays empty, so
 the default (`latest`) applies.
 
 ```bash
-V="$(docker run --rm --entrypoint cat llama-swap-llama-swap /etc/llama-swap-version 2>/dev/null || true)"
+V=""; docker image inspect llama-swap-llama-swap >/dev/null 2>&1 \
+  && V="$(docker run --rm --entrypoint cat llama-swap-llama-swap /etc/llama-swap-version)"
 docker compose build ${V:+--build-arg LLAMA_SWAP_VERSION="$V"}
 docker compose up -d --no-build
 docker port "$(docker compose ps -q llama-swap)" 8100   # must print 127.0.0.1:8100 only
@@ -210,8 +226,9 @@ Pointing `scripted_output.gemma_local_endpoint` at
 `http://127.0.0.1:8100/upstream/gemma-4-26b-a4b` is what would let
 `docker/gemma-server` be retired — but only once that passthrough is verified on
 the box and the emitter's 5 s timeout survives a cold swap (the plan's Decision 2
-conditions). Until then `docker/gemma-server` stays; start it again when the
-evaluation is done.
+conditions). Until then `docker/gemma-server` stays; when the evaluation is
+done, `docker start qontinui-gemma-server` (not `docker compose up` from this
+shell while `COMPOSE_PROJECT_NAME` is still exported).
 
 ## Services NOT Managed by llama-swap
 
