@@ -207,5 +207,7 @@ command = ["poetry", "build"]
 name = "imagegen-tests"
 # ci.yml `tests` job, "Run tests with coverage" -- the docker/imagegen/tests subset only
 # (gap 1 says why the rest is not mirrored). Fails on a non-admitted licence, an
-# unpinned weight file or drifted vendored code under docker/imagegen/.
-command = ["poetry", "run", "pytest", "docker/imagegen/tests", "-q"]
+# unpinned weight file or drifted vendored code under docker/imagegen/. `--no-cov`
+# turns off pyproject.toml's addopts coverage of src/qontinui, which these tests never
+# import: it would report 0% and write htmlcov/ and coverage.xml into the checkout.
+command = ["poetry", "run", "pytest", "docker/imagegen/tests", "-q", "--no-cov"]
