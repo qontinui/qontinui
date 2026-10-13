@@ -1,3 +1,15 @@
+# Derived from BEN2.py in the Hugging Face repository PramaLLC/BEN2 at revision
+# e48a20765fb421d19dcdb0bf3cc61e802ca5ec8f. Copyright (c) 2025 Prama LLC, MIT License
+# (LICENSE in this directory).
+#
+# Modified by the Qontinui authors: removed FB_blur_fusion_foreground_estimator and
+# FB_blur_fusion_foreground_estimator_2, which the upstream file credits to
+# github.com/Photoroom/fast-foreground-estimation, a repository that carries no licence
+# (decision record a5ec7670 v2: code of unknown licence inside an admitted component is
+# removed), and refine_foreground_process, the wrapper that calls them.
+# BEN_Base.inference now raises ValueError for refine_foreground=True instead of calling
+# it, and its two refine branches are gone. Nothing else is changed.
+# docker/imagegen/manifest.yaml pins the upstream file's sha256 and this file's.
 
 import math
 import torch
@@ -1005,6 +1017,12 @@ class BEN_Base(nn.Module):
         del model_path
 
     def inference(self,image,refine_foreground=False):
+        if refine_foreground:
+            raise ValueError(
+                "refine_foreground is not available in this copy of BEN2: its foreground-estimation "
+                "helpers came from github.com/Photoroom/fast-foreground-estimation, which carries no "
+                "licence, and were removed (docker/imagegen/manifest.yaml, component ben2-code)"
+            )
         
         set_random_seed(9)
         # image = ImageOps.exif_transpose(image)
@@ -1021,22 +1039,13 @@ class BEN_Base(nn.Module):
                 res = self.forward(img_tensor)
 
             # Show Results
-            if refine_foreground == True:
+            alpha = postprocess_image(res, im_size=[w,h])
+            pred_pil = transforms.ToPILImage()(alpha)
+            mask = pred_pil.resize(original_image.size)
+            original_image.putalpha(mask)
+            # mask = Image.fromarray(alpha)
 
-                pred_pil = transforms.ToPILImage()(res.squeeze())
-                image_masked = refine_foreground_process(original_image, pred_pil)
-                
-                image_masked.putalpha(pred_pil.resize(original_image.size))
-                return image_masked
-
-            else:
-                alpha = postprocess_image(res, im_size=[w,h])
-                pred_pil = transforms.ToPILImage()(alpha)
-                mask = pred_pil.resize(original_image.size)
-                original_image.putalpha(mask)
-                # mask = Image.fromarray(alpha)
-
-                return original_image
+            return original_image
 
 
         else:
@@ -1052,21 +1061,12 @@ class BEN_Base(nn.Module):
                 with torch.no_grad():
                     res = self.forward(img_tensor)
 
-                if refine_foreground == True:
-
-                    pred_pil = transforms.ToPILImage()(res.squeeze())
-                    image_masked = refine_foreground_process(original_image, pred_pil)
-                    
-                    image_masked.putalpha(pred_pil.resize(original_image.size))
-
-                    foregrounds.append(image_masked)
-                else:
-                    alpha = postprocess_image(res, im_size=[w,h])
-                    pred_pil = transforms.ToPILImage()(alpha)
-                    mask = pred_pil.resize(original_image.size)
-                    original_image.putalpha(mask)
-                    # mask = Image.fromarray(alpha)
-                    foregrounds.append(original_image)
+                alpha = postprocess_image(res, im_size=[w,h])
+                pred_pil = transforms.ToPILImage()(alpha)
+                mask = pred_pil.resize(original_image.size)
+                original_image.putalpha(mask)
+                # mask = Image.fromarray(alpha)
+                foregrounds.append(original_image)
 
             return foregrounds
 
@@ -1333,38 +1333,6 @@ def add_audio_to_video(video_without_audio_path, original_video_path, output_pat
 
 
 
-### Thanks to the source: https://huggingface.co/ZhengPeng7/BiRefNet/blob/main/handler.py
-def refine_foreground_process(image, mask, r=90):
-    if mask.size != image.size:
-        mask = mask.resize(image.size)
-    image = np.array(image) / 255.0
-    mask = np.array(mask) / 255.0
-    estimated_foreground = FB_blur_fusion_foreground_estimator_2(image, mask, r=r)
-    image_masked = Image.fromarray((estimated_foreground * 255.0).astype(np.uint8))
-    return image_masked
-
-
-def FB_blur_fusion_foreground_estimator_2(image, alpha, r=90):
-    # Thanks to the source: https://github.com/Photoroom/fast-foreground-estimation
-    alpha = alpha[:, :, None]
-    F, blur_B = FB_blur_fusion_foreground_estimator(image, image, image, alpha, r)
-    return FB_blur_fusion_foreground_estimator(image, F, blur_B, alpha, r=6)[0]
-
-
-def FB_blur_fusion_foreground_estimator(image, F, B, alpha, r=90):
-    if isinstance(image, Image.Image):
-        image = np.array(image) / 255.0
-    blurred_alpha = cv2.blur(alpha, (r, r))[:, :, None]
-
-    blurred_FA = cv2.blur(F * alpha, (r, r))
-    blurred_F = blurred_FA / (blurred_alpha + 1e-5)
-
-    blurred_B1A = cv2.blur(B * (1 - alpha), (r, r))
-    blurred_B = blurred_B1A / ((1 - blurred_alpha) + 1e-5)
-    F = blurred_F + alpha * \
-        (image - alpha * blurred_F - (1 - alpha) * blurred_B)
-    F = np.clip(F, 0, 1)
-    return F, blurred_B
 
     
 

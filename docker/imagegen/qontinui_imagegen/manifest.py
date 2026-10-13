@@ -1,29 +1,54 @@
 """Licence manifest, pinned hashes and recipes for the local image provider.
 
 ``docker/imagegen/manifest.yaml`` is decision record D2
-(``decision_record/image-generation-weights-are-permissively-licensed``, a5ec7670) in
-data: every component the image provider loads -- weights, inference libraries,
-vendored model code -- carries its SPDX licence beside its pinned sha256s, so admission
-is checked by a test instead of remembered. ``docker/imagegen/recipes/*.yaml`` are the
-versioned generation recipes, and :func:`recipe_hash` is the provenance hash every
-generated asset records.
+(``decision_record/image-generation-weights-are-permissively-licensed``, a5ec7670 **v2**)
+in data: every component the image provider loads -- weights, inference libraries,
+vendored model code -- carries its SPDX licence beside its pinned sha256s, so admission is
+checked by a test instead of remembered. This module mirrors the v2 record: its admitted
+licence ids, its single admitted ``WITH`` exception, its platform class and its rules for
+reading a licence (dist-info licence files AND bundled native libraries; statically linked
+dependencies from the upstream lockfile; unknown-licence code removed through a derived
+file). ``docker/imagegen/recipes/*.yaml`` are the versioned generation recipes, and
+:func:`recipe_hash` is the provenance hash every generated asset records.
 
 The checker is strict on purpose (plan ``2026-10-13-image-generation-and-visual-judgment``,
 Phase 2):
 
-* every ``spdx`` expression must evaluate inside D2's admitted families -- the list is
-  :data:`ADMITTED_SPDX`, in reviewed code, never in the manifest it judges;
-* the components D2 excludes by name are refused even when their licence is mislabelled;
-* every file is pinned by sha256 and size, every revision and commit by a full commit id;
+* every ``spdx`` expression -- a component's, a bundled native library's, and every
+  statically linked dependency's -- must evaluate inside the admitted ids
+  (:data:`ADMITTED_SPDX`, :data:`ADMITTED_EXCEPTIONS`), which live in this reviewed code,
+  never in the manifest they judge; a NEW id turns the test red until someone reads it and
+  amends the record;
+* the components D2 excludes by name are refused even when their licence is mislabelled,
+  and so is any vendored or derived file whose upstream is one of them;
+* every file is pinned by sha256 and size (one sha256, one size), every revision and
+  commit by a full commit id, and every licence's evidence by the pin it was read at;
+* a wheel records the licence files and native libraries it ships (``bundled``), and
+  every licence file it ships must be one whose bytes were read; a platform runtime a
+  wheel bundles is pinned under ``platform``, outside the admitted families;
 * vendored model code on disk must match its pinned bytes, and nothing unlisted may sit
   beside it;
 * no recipe may enable a network fetch: the runtime contract is ``HF_HUB_OFFLINE=1`` with
-  ``local_files_only=True``, no ``trust_remote_code``, and ``torch.load`` restricted to
-  ``weights_only=True``.
+  ``local_files_only=True``, no ``trust_remote_code``, no ``custom_pipeline``, and
+  ``torch.load`` restricted to ``weights_only=True``.
+
+THE RECIPE HASH. :func:`recipe_hash` is the sha256 of the UTF-8 bytes of
+``json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+allow_nan=False)`` (:func:`canonical_json`), where ``document`` is
+``{"recipe": <the recipe>, "manifest": {"runners": ..., "components": ...}}`` holding the
+runners and components the recipe references. It identifies what generates the pixels,
+so it leaves out the recipe's ``description`` and every licence-only component field
+(:data:`HASH_EXCLUDED_COMPONENT_FIELDS`: ``spdx``, ``licence_url``, ``licence_evidence``,
+``licence_read_at``, ``notes``, ``static_dependencies``, ``bundled``) -- a licence re-read or
+relabel changes no pixels, and licence provenance travels separately in the asset's
+sidecar (Phase 11). This is NOT RFC 8785 (JCS): keys sort by Python ``str`` order (code
+points; JCS sorts UTF-16 code units, which differs only outside the BMP), numbers use
+Python's ``repr`` (``4.0`` stays ``4.0``; JCS writes ``4``), and string escaping follows
+Python's ``json`` module. A verifier in another language reproduces these rules, not JCS.
 
 Run ``python -m qontinui_imagegen.manifest`` from ``docker/imagegen``: it prints every
 violation and exits non-zero when there is one. ``--hashes`` prints each recipe's hash and
-``--footprint`` the install size deduplicated by sha256.
+``--footprint`` the install size counting each sha256 once (see :func:`install_footprint`).
 
 The module is plain Python 3.10 (the llama-swap image's interpreter) plus PyYAML.
 """
@@ -35,11 +60,12 @@ import hashlib
 import json
 import re
 import sys
+import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, TypeGuard
 
 import yaml
 
@@ -49,39 +75,62 @@ RECIPES_DIR = IMAGEGEN_ROOT / "recipes"
 
 DECISION_RECORD_NAME = "image-generation-weights-are-permissively-licensed"
 DECISION_RECORD_ID = "a5ec7670-843b-4556-ab52-7f5f7662ee09"
+#: The version of the decision record this module mirrors.
+DECISION_RECORD_VERSION = 2
 
-#: D2's admitted licence families, as SPDX identifiers (plan Phase 2 step 4). Widening this
-#: set is a change to decision record a5ec7670, never to the manifest.
+#: The licence ids decision record a5ec7670 v2 admits: v1's Apache-2.0, MIT and
+#: BSD-family ids (plan Phase 2 step 4) and v2's amendment for licences bundled inside
+#: admitted packages (BSL-1.0, Zlib, libpng-2.0 -- not the older ``Libpng`` -- and IJG).
+#: Widening this set is an amendment to the record, never an edit to the manifest.
 ADMITTED_SPDX: frozenset[str] = frozenset(
-    {"Apache-2.0", "MIT", "MIT-0", "MIT-CMU", "BSD-2-Clause", "BSD-3-Clause", "0BSD"}
+    {
+        "Apache-2.0",
+        "MIT",
+        "MIT-0",
+        "MIT-CMU",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "0BSD",
+        "BSL-1.0",
+        "Zlib",
+        "libpng-2.0",
+        "IJG",
+    }
 )
 
+#: The only ``WITH`` exceptions a5ec7670 v2 admits, keyed by the licence they may follow.
+#: Any other exception id (``Commons-Clause``, a ``LicenseRef-*`` rider) is a blocker until
+#: it is read and admitted there: an exception can withdraw rights the base licence grants.
+ADMITTED_EXCEPTIONS: dict[str, frozenset[str]] = {"Apache-2.0": frozenset({"LLVM-exception"})}
+
 #: Components D2 excludes by name, refused even when an entry claims an admitted licence.
-#: Each pattern is matched against a component's id, source repo and package name. The
-#: Stability Community Licence has no name pattern on purpose: Stability also publishes
-#: MIT-licensed artifacts, so the licence-family check is the only honest test there.
+#: Each pattern is matched against a NORMALISED name (lowercase, every run of other
+#: characters turned into one space -- see :func:`normalise_name`), so ``FLUX.1-dev``,
+#: ``flux_1_dev`` and ``flux-dev`` all read ``flux 1 dev`` or ``flux dev``. The Stability
+#: Community Licence has no name pattern on purpose: Stability also publishes MIT-licensed
+#: artifacts, so the licence check is the only honest test there.
 EXCLUDED_COMPONENTS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
-        re.compile(r"flux\.?[12]\b.*\b(dev|kontext|redux)\b", re.IGNORECASE),
+        re.compile(r"\bflux(?: [12])?(?: [a-z0-9]+)*? (?:dev|kontext|redux)\b"),
         "the FLUX [dev] family (FLUX.1 [dev], FLUX.2 [dev], Kontext, Redux) is under the "
         "FLUX [dev] non-commercial licence",
     ),
     (
-        re.compile(r"qwen[-_ ]?image[-_ ]?2\.1", re.IGNORECASE),
+        re.compile(r"\bqwen image 2 1\b"),
         "Qwen-Image-2.1 is under the Qwen Research License (non-commercial)",
     ),
-    (re.compile(r"rmbg[-_ ]?2", re.IGNORECASE), "RMBG-2.0 is under CC BY-NC 4.0"),
+    (re.compile(r"\brmbg 2\b"), "RMBG-2.0 is under CC BY-NC 4.0"),
     (
-        re.compile(r"omnisvg", re.IGNORECASE),
+        re.compile(r"\bomni ?svg\b"),
         "OmniSVG is fine-tuned from a non-commercial base (Qwen2.5-VL-3B)",
     ),
     (
-        re.compile(r"hunyuan", re.IGNORECASE),
+        re.compile(r"hunyuan"),
         "the Tencent Hunyuan community licence excludes the EU, the UK and South Korea",
     ),
-    (re.compile(r"\bkrea[-_ ]?2\b", re.IGNORECASE), "Krea 2's community licence is seat-capped"),
+    (re.compile(r"\bkrea 2\b"), "Krea 2's community licence is seat-capped"),
     (
-        re.compile(r"^(comfyui|(comfy-org|comfyanonymous)/comfyui)$", re.IGNORECASE),
+        re.compile(r"^(?:comfy ?ui|comfy org comfy ?ui|comfyanonymous comfy ?ui)$"),
         "ComfyUI is GPL-3.0 (plan section 'Applying D2 to D1.1')",
     ),
 )
@@ -93,11 +142,18 @@ REQUIRED_RUNTIME: dict[str, dict[str, Any]] = {
     "torch_load": {"weights_only": True},
 }
 
-#: Fields of a component left out of :func:`recipe_hash`: they record when and where a
-#: licence was read, not what is loaded, so re-reading an unchanged licence must not make
-#: every asset built from the component stale.
+#: Component fields left out of :func:`recipe_hash`: licence provenance, not what is
+#: loaded. A licence re-read or relabel changes no pixels; the asset sidecar carries it.
 HASH_EXCLUDED_COMPONENT_FIELDS: frozenset[str] = frozenset(
-    {"licence_read_at", "licence_evidence", "licence_url", "notes"}
+    {
+        "spdx",
+        "licence_url",
+        "licence_evidence",
+        "licence_read_at",
+        "notes",
+        "static_dependencies",
+        "bundled",
+    }
 )
 #: Recipe fields left out of :func:`recipe_hash` (prose only).
 HASH_EXCLUDED_RECIPE_FIELDS: frozenset[str] = frozenset({"description"})
@@ -106,8 +162,9 @@ POST_OPS: frozenset[str] = frozenset({"upscale", "matte", "vectorize"})
 SEED_BASES: frozenset[str] = frozenset({"request_or_random"})
 SEED_PER_CANDIDATE: frozenset[str] = frozenset({"add_index"})
 
-#: Keys a recipe may never carry: each one is a Hugging Face Hub loader argument, and a
-#: recipe names manifest ids only.
+#: Keys a recipe may never carry: each is a Hugging Face Hub loader argument that fetches,
+#: or (diffusers' ``custom_pipeline`` / ``custom_revision``) fetches and EXECUTES, code or
+#: weights; a recipe names manifest ids only.
 HUB_LOADER_KEYS: frozenset[str] = frozenset(
     {
         "repo_id",
@@ -121,6 +178,8 @@ HUB_LOADER_KEYS: frozenset[str] = frozenset(
         "proxies",
         "mirror",
         "endpoint",
+        "custom_pipeline",
+        "custom_revision",
     }
 )
 
@@ -144,7 +203,7 @@ _KIND_KEYS: dict[str, frozenset[str]] = {
     "model": frozenset(
         {"source", "role", "runner", "scheduler_class", "size_multiple", "architecture"}
     ),
-    "library": frozenset({"source"}),
+    "library": frozenset({"source", "bundled", "static_dependencies"}),
     "vendored_code": frozenset(),
 }
 _SOURCE_TYPES: dict[str, frozenset[str]] = {
@@ -163,6 +222,7 @@ _UPSTREAM_KEYS: dict[str, frozenset[str]] = {
     "github": frozenset({"type", "repo", "commit", "path", "sha256"}),
     "manifest": frozenset({"type", "component", "sha256"}),
 }
+_PLATFORM_KEYS = frozenset({"name", "version", "source", "member", "sha256", "bytes", "licence"})
 _RECIPE_REQUIRED = frozenset(
     {"id", "version", "pipeline", "models", "parameters", "post", "seed_policy"}
 )
@@ -195,11 +255,11 @@ class Violation:
 
 @dataclass(frozen=True)
 class Footprint:
-    """Install size of a set of components, deduplicated by sha256.
+    """Install size of a set of components, each distinct sha256 counted once.
 
     ``shared`` maps each sha256 listed by more than one selected component to those
-    components' ids, so a byte-identical file (such as the Qwen2.5-VL text encoder that
-    Qwen-Image-2512 and Qwen-Image-Edit-2511 share) is visibly counted once.
+    components' ids (the Qwen2.5-VL text encoder Qwen-Image-2512 and Qwen-Image-Edit-2511
+    share is one such file).
     """
 
     unique_bytes: int
@@ -225,7 +285,9 @@ class _StrictLoader(yaml.SafeLoader):
     """
 
 
-def _construct_mapping(loader: _StrictLoader, node: yaml.MappingNode, deep: bool = False) -> dict:
+def _construct_mapping(
+    loader: _StrictLoader, node: yaml.MappingNode, deep: bool = False
+) -> dict[Any, Any]:
     loader.flatten_mapping(node)
     mapping: dict[Any, Any] = {}
     for key_node, value_node in node.value:
@@ -263,6 +325,8 @@ def load_recipes(recipes_dir: Path) -> dict[str, Any]:
 
 _SPDX_TOKEN = re.compile(r"\(|\)|[A-Za-z0-9][A-Za-z0-9.:-]*\+?")
 _SPDX_OPERATORS = frozenset({"AND", "OR", "WITH"})
+#: A parsed expression: ("ID", id) | ("WITH", ("ID", id), exception) | ("AND" | "OR", [nodes]).
+_Node = tuple[Any, ...]
 
 
 def _tokenize_spdx(expression: str) -> list[str]:
@@ -289,7 +353,7 @@ class _SpdxParser:
         self._tokens = tokens
         self._index = 0
 
-    def parse(self) -> tuple:
+    def parse(self) -> _Node:
         node = self._or()
         if self._peek() is not None:
             raise SpdxError(f"unexpected {self._peek()!r} after a complete expression")
@@ -303,51 +367,58 @@ class _SpdxParser:
         self._index += 1
         return token
 
-    def _or(self) -> tuple:
+    def _or(self) -> _Node:
         branches = [self._and()]
         while self._peek() == "OR":
             self._take()
             branches.append(self._and())
         return branches[0] if len(branches) == 1 else ("OR", branches)
 
-    def _and(self) -> tuple:
+    def _and(self) -> _Node:
         terms = [self._term()]
         while self._peek() == "AND":
             self._take()
             terms.append(self._term())
         return terms[0] if len(terms) == 1 else ("AND", terms)
 
-    def _term(self) -> tuple:
+    def _term(self) -> _Node:
         token = self._take()
         if token is None:
             raise SpdxError("the expression ends where a licence was expected")
         if token == "(":
-            node = self._or()
+            inner = self._or()
             if self._take() != ")":
                 raise SpdxError("unbalanced parenthesis")
-            return node
+            return inner
         if token == ")" or token in _SPDX_OPERATORS:
             raise SpdxError(f"unexpected {token!r} where a licence was expected")
-        node: tuple = ("ID", token)
+        leaf: _Node = ("ID", token)
         if self._peek() == "WITH":
             self._take()
             exception = self._take()
             if exception is None or exception in ("(", ")") or exception in _SPDX_OPERATORS:
                 raise SpdxError("WITH must be followed by an exception identifier")
-            node = ("WITH", node, exception)
-        return node
+            leaf = ("WITH", leaf, exception)
+        return leaf
 
 
-def _blockers(node: tuple) -> list[str]:
+def _base_id(identifier: str) -> str:
+    return identifier[:-1] if identifier.endswith("+") else identifier
+
+
+def _blockers(node: _Node) -> list[str]:
     kind = node[0]
     if kind == "ID":
-        identifier = node[1]
-        base = identifier[:-1] if identifier.endswith("+") else identifier
-        return [] if base in ADMITTED_SPDX else [identifier]
+        return [] if _base_id(node[1]) in ADMITTED_SPDX else [node[1]]
     if kind == "WITH":
-        # An SPDX exception only ever grants additional permissions, so `X WITH e` is
-        # admitted exactly when X is.
-        return _blockers(node[1])
+        base = _base_id(node[1][1])
+        if base not in ADMITTED_SPDX:
+            return [node[1][1]]
+        # An exception can withdraw rights the base licence grants, so only the
+        # exceptions a5ec7670 v2 names, after the licence it names them for, pass.
+        if node[2] not in ADMITTED_EXCEPTIONS.get(base, frozenset()):
+            return [f"{node[1][1]} WITH {node[2]}"]
+        return []
     branches = [_blockers(child) for child in node[1]]
     if kind == "OR" and any(not blocked for blocked in branches):
         return []
@@ -355,24 +426,60 @@ def _blockers(node: tuple) -> list[str]:
 
 
 def spdx_blockers(expression: str) -> list[str]:
-    """The licence identifiers that keep ``expression`` out of D2's admitted families.
+    """What keeps ``expression`` out of the admitted ids; ``[]`` means admitted.
 
-    ``[]`` means admitted. ``AND`` needs every operand admitted, ``OR`` needs one, and
-    ``X WITH exception`` is admitted exactly when ``X`` is. Raises :class:`SpdxError` for an
+    ``AND`` needs every operand admitted and ``OR`` needs one. ``X WITH e`` is admitted
+    only when ``X`` is admitted AND ``e`` is in :data:`ADMITTED_EXCEPTIONS` for ``X``; a
+    blocked exception is reported as ``"X WITH e"``. Raises :class:`SpdxError` for an
     expression that does not parse.
     """
     return _blockers(_SpdxParser(_tokenize_spdx(expression)).parse())
 
 
 def spdx_admitted(expression: str) -> bool:
-    """Whether ``expression`` lies inside D2's admitted families."""
+    """Whether ``expression`` lies inside the admitted licence ids."""
     return not spdx_blockers(expression)
+
+
+def crate_licence_expression(licence: str) -> str:
+    """The SPDX expression a crates.io ``license`` field denotes.
+
+    crates.io parses that field as an SPDX expression with ``/`` as a synonym for ``OR``
+    (``allow_slash_as_or_operator: true`` in ``src/licenses.rs`` of rust-lang/crates.io at
+    a7ade6b9a23bce78f86174d958409206158f6b15, read 2026-10-13; Cargo documents ``/`` as the
+    deprecated separator). So ``MIT/Apache-2.0`` -- recorded verbatim, as crates.io serves
+    it -- is checked as ``MIT OR Apache-2.0``.
+    """
+    return re.sub(r"\s*/\s*", " OR ", licence.strip())
+
+
+def _licence_ids(expression: str) -> set[str]:
+    """Every licence id (not exception id) an expression names."""
+    ids: set[str] = set()
+
+    def walk(node: _Node) -> None:
+        if node[0] == "ID":
+            ids.add(_base_id(node[1]))
+        elif node[0] == "WITH":
+            walk(node[1])
+        else:
+            for child in node[1]:
+                walk(child)
+
+    walk(_SpdxParser(_tokenize_spdx(expression)).parse())
+    return ids
+
+
+def normalise_name(name: str) -> str:
+    """Lowercase, with every run of characters other than ``a-z0-9`` turned into one space."""
+    return re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
 
 
 def excluded_reason(name: str) -> str | None:
     """Why D2 excludes the component named ``name``, or ``None`` when it does not."""
+    normalised = normalise_name(name)
     for pattern, reason in EXCLUDED_COMPONENTS:
-        if pattern.search(name):
+        if pattern.search(normalised):
             return reason
     return None
 
@@ -388,12 +495,16 @@ class _Report:
         self.violations.append(Violation(code, where, detail))
 
 
-def _is_str(value: Any) -> bool:
+def _is_str(value: Any) -> TypeGuard[str]:
     return isinstance(value, str) and value.strip() != ""
 
 
 def _is_count(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _is_sha256(value: Any) -> TypeGuard[str]:
+    return isinstance(value, str) and _HEX64.fullmatch(value) is not None
 
 
 def _check_keys(
@@ -411,14 +522,19 @@ def _check_keys(
             report.add("schema", where, f"missing required key {key!r}")
 
 
-def _check_relative_path(path: Any, where: str, report: _Report) -> bool:
+def _relative_path_ok(path: Any) -> TypeGuard[str]:
     if not _is_str(path):
-        report.add("schema", where, "path must be a non-empty string")
         return False
     pure = PurePosixPath(path)
-    if pure.is_absolute() or ".." in pure.parts or "\\" in path:
+    return not (pure.is_absolute() or ".." in pure.parts or "\\" in path or not pure.parts)
+
+
+def _check_relative_path(path: Any, where: str, report: _Report) -> TypeGuard[str]:
+    if not _relative_path_ok(path):
         report.add(
-            "schema", where, f"path {path!r} must be relative, POSIX, and stay inside its root"
+            "schema",
+            where,
+            f"path {path!r} must be a non-empty relative POSIX path that stays inside its root",
         )
         return False
     return True
@@ -442,18 +558,77 @@ def _check_runtime(runtime: Any, report: _Report) -> None:
                 )
 
 
+def _check_platform(platform: Any, report: _Report) -> None:
+    if not isinstance(platform, Mapping) or platform.get("outside_d2_scope") is not True:
+        report.add(
+            "schema",
+            "platform",
+            "must declare outside_d2_scope: true, so the scope boundary is stated",
+        )
+        return
+    items = platform.get("components")
+    if not isinstance(items, list) or not items:
+        report.add("schema", "platform.components", "must list each platform component")
+        return
+    for index, item in enumerate(items):
+        where = f"platform.components[{index}]"
+        if not isinstance(item, Mapping) or not _is_str(item.get("name")):
+            report.add("schema", where, "a platform component is a mapping with a name")
+            continue
+        # A platform library a wheel bundles (``member``) is pinned like any file: the
+        # archive it sits in, its sha256 and size, and the class of licence it ships under.
+        required = (
+            ("name", "source", "sha256", "bytes", "licence") if "member" in item else ("name",)
+        )
+        _check_keys(item, _PLATFORM_KEYS, required, where, report)
+        if "member" in item and not _relative_path_ok(item["member"]):
+            report.add("schema", f"{where}.member", "a member is a relative path in its archive")
+        if "sha256" in item and not _is_sha256(item["sha256"]):
+            report.add("unpinned_file", f"{where}.sha256", "a platform file is pinned by sha256")
+        if "bytes" in item and not _is_count(item["bytes"]):
+            report.add("unpinned_file", f"{where}.bytes", "a platform file has a positive size")
+
+
+def _check_platform_members(
+    manifest: Mapping[str, Any], components: Mapping[str, Mapping[str, Any]], report: _Report
+) -> None:
+    """A platform library bundled in a wheel sits in a wheel a library component pins."""
+    platform = manifest.get("platform")
+    items = platform.get("components") if isinstance(platform, Mapping) else None
+    pinned = {
+        entry.get("path")
+        for component in components.values()
+        if component.get("kind") == "library"
+        for entry in component.get("files") or []
+        if isinstance(entry, Mapping)
+    }
+    for index, item in enumerate(items if isinstance(items, list) else []):
+        if not (isinstance(item, Mapping) and "member" in item and _is_str(item.get("source"))):
+            continue
+        archive = urllib.parse.unquote(item["source"].rsplit("/", 1)[-1])
+        if archive not in pinned:
+            report.add(
+                "unpinned_file",
+                f"platform.components[{index}].source",
+                f"{archive!r} is not a file any library component pins",
+            )
+
+
 def _check_header(manifest: Mapping[str, Any], report: _Report) -> None:
     _check_keys(manifest, _MANIFEST_KEYS, _MANIFEST_KEYS, "manifest", report)
     if manifest.get("schema_version") != 1:
         report.add("schema", "schema_version", "must be 1")
     record = manifest.get("decision_record")
     if not isinstance(record, Mapping) or (
-        record.get("name") != DECISION_RECORD_NAME or record.get("id") != DECISION_RECORD_ID
+        record.get("name") != DECISION_RECORD_NAME
+        or record.get("id") != DECISION_RECORD_ID
+        or record.get("version") != DECISION_RECORD_VERSION
     ):
         report.add(
             "schema",
             "decision_record",
-            f"must name decision_record/{DECISION_RECORD_NAME} ({DECISION_RECORD_ID})",
+            f"must name decision_record/{DECISION_RECORD_NAME} ({DECISION_RECORD_ID}) "
+            f"version {DECISION_RECORD_VERSION}, the version this checker mirrors",
         )
     target = manifest.get("target")
     if not isinstance(target, Mapping) or not all(
@@ -462,56 +637,141 @@ def _check_header(manifest: Mapping[str, Any], report: _Report) -> None:
         report.add("schema", "target", "must state os, arch, python and cuda as strings")
     if not _is_str(manifest.get("scope")):
         report.add("schema", "scope", "the manifest must state its component scope")
-    platform = manifest.get("platform")
-    if not isinstance(platform, Mapping) or platform.get("outside_d2_scope") is not True:
-        report.add(
-            "schema",
-            "platform",
-            "must declare outside_d2_scope: true, so the scope boundary is stated",
-        )
-    elif not isinstance(platform.get("components"), list) or not all(
-        isinstance(item, Mapping) and _is_str(item.get("name")) for item in platform["components"]
-    ):
-        report.add("schema", "platform.components", "must list each platform component by name")
+    _check_platform(manifest.get("platform"), report)
     _check_runtime(manifest.get("runtime"), report)
-    vendor_dir = manifest.get("vendor_dir")
-    _check_relative_path(vendor_dir, "vendor_dir", report)
+    _check_relative_path(manifest.get("vendor_dir"), "vendor_dir", report)
 
 
-def _check_licence(component: Mapping[str, Any], where: str, report: _Report) -> None:
-    expression = component.get("spdx")
+def _check_expression(expression: Any, where: str, report: _Report, *, what: str) -> None:
     if not _is_str(expression):
-        report.add("schema", f"{where}.spdx", "every component records an SPDX licence expression")
-    else:
-        try:
-            blockers = spdx_blockers(expression)
-        except SpdxError as error:
-            report.add("licence_unparseable", f"{where}.spdx", f"{expression!r}: {error}")
-        else:
-            if blockers:
-                report.add(
-                    "licence_not_admitted",
-                    f"{where}.spdx",
-                    f"{expression!r}: {', '.join(blockers)} outside the admitted families "
-                    f"{sorted(ADMITTED_SPDX)} (decision record {DECISION_RECORD_ID[:8]})",
-                )
+        report.add("schema", where, f"{what} records an SPDX licence expression")
+        return
+    try:
+        blockers = spdx_blockers(expression)
+    except SpdxError as error:
+        report.add("licence_unparseable", where, f"{expression!r}: {error}")
+        return
+    if blockers:
+        report.add(
+            "licence_not_admitted",
+            where,
+            f"{expression!r}: {', '.join(blockers)} not admitted by decision record "
+            f"{DECISION_RECORD_ID[:8]} v{DECISION_RECORD_VERSION} (ids {sorted(ADMITTED_SPDX)}; "
+            f"exceptions {sorted((base, sorted(e)) for base, e in ADMITTED_EXCEPTIONS.items())})",
+        )
+
+
+def _evidence_items(evidence: Any) -> list[Any]:
+    return evidence if isinstance(evidence, list) else [evidence]
+
+
+def _check_evidence_shape(evidence: Any, where: str, report: _Report) -> None:
+    items = _evidence_items(evidence)
+    if not items:
+        report.add("schema", where, "at least one evidence item")
+    for index, item in enumerate(items):
+        item_where = where if not isinstance(evidence, list) else f"{where}[{index}]"
+        ok = (
+            isinstance(item, Mapping)
+            and set(item) in ({"url", "sha256"}, {"url", "member", "sha256"})
+            and _is_str(item.get("url"))
+            and item["url"].startswith("https://")
+            and _is_sha256(item.get("sha256"))
+            and ("member" not in item or _relative_path_ok(item.get("member")))
+        )
+        if not ok:
+            report.add(
+                "schema",
+                item_where,
+                "evidence is {url, sha256} -- or {url, member, sha256} for a file inside an "
+                "archive -- the exact text a licence was read from",
+            )
+
+
+def _pins(component: Mapping[str, Any], components: Mapping[str, Mapping[str, Any]]) -> set[str]:
+    """The pins a licence read must name: full 40-hex revisions and commits of this
+    component (of its source model when it is derived; of its files' upstreams when it is
+    vendored code), plus a release's exact tag."""
+    pins: set[str] = set()
+    source = component.get("source")
+    if isinstance(source, Mapping):
+        kind = source.get("type")
+        if kind == "huggingface":
+            pins.add(str(source.get("revision")))
+        elif kind == "github_release":
+            pins.add(str(source.get("commit")))
+            if _is_str(source.get("tag")):
+                pins.add(source["tag"])
+        elif kind == "git":
+            pins.add(str(source.get("commit")))
+        elif kind == "pypi" and isinstance(source.get("git"), Mapping):
+            pins.add(str(source["git"].get("commit")))
+        elif kind == "derived":
+            origin = components.get(str(source.get("from")))
+            if origin is not None:
+                origin_source = origin.get("source")
+                if isinstance(origin_source, Mapping) and origin_source.get("type") != "derived":
+                    pins |= _pins(origin, components)
+    if component.get("kind") == "vendored_code":
+        for entry in component.get("files") or []:
+            if not isinstance(entry, Mapping):
+                continue
+            derived = entry.get("derived_from")
+            locators = [entry.get("upstream")] + (
+                list(derived.get("upstream") or []) if isinstance(derived, Mapping) else []
+            )
+            for locator in locators:
+                if isinstance(locator, Mapping):
+                    for key in ("revision", "commit"):
+                        if _is_str(locator.get(key)):
+                            pins.add(locator[key])
+    tag = source.get("tag") if isinstance(source, Mapping) else None
+    return {pin for pin in pins if _HEX40.fullmatch(pin) or pin == tag}
+
+
+def _names_pin(url: str, pins: set[str]) -> bool:
+    """Whether one of ``url``'s path segments IS a pin (a whole segment, not a substring)."""
+    return bool(pins & set(urllib.parse.unquote(url).split("/")))
+
+
+def _check_licence(
+    component: Mapping[str, Any],
+    where: str,
+    components: Mapping[str, Mapping[str, Any]],
+    report: _Report,
+) -> None:
+    _check_expression(component.get("spdx"), f"{where}.spdx", report, what="every component")
     url = component.get("licence_url")
     if not (_is_str(url) and url.startswith("https://")):
         report.add("schema", f"{where}.licence_url", "must be an https URL")
+        url = None
     evidence = component.get("licence_evidence")
-    if not (
-        isinstance(evidence, Mapping)
-        and set(evidence) == {"url", "sha256"}
-        and _is_str(evidence.get("url"))
-        and str(evidence["url"]).startswith("https://")
-        and isinstance(evidence.get("sha256"), str)
-        and _HEX64.fullmatch(evidence["sha256"])
-    ):
+    _check_evidence_shape(evidence, f"{where}.licence_evidence", report)
+    pins = _pins(component, components)
+    files = {
+        entry.get("path") for entry in component.get("files") or [] if isinstance(entry, Mapping)
+    }
+    if url is not None and not _names_pin(url, pins):
         report.add(
-            "schema",
-            f"{where}.licence_evidence",
-            "must be {url, sha256}: the exact text the licence was read from",
+            "licence_unpinned",
+            f"{where}.licence_url",
+            f"{url!r} names none of the component's pins {sorted(pins)}: the licence must be "
+            "read at the version that is pinned",
         )
+    for index, item in enumerate(_evidence_items(evidence)):
+        if not (isinstance(item, Mapping) and _is_str(item.get("url"))):
+            continue
+        item_url = item["url"]
+        in_pinned_archive = (
+            "member" in item and urllib.parse.unquote(item_url.rsplit("/", 1)[-1]) in files
+        )
+        if not (in_pinned_archive or _names_pin(item_url, pins)):
+            report.add(
+                "licence_unpinned",
+                f"{where}.licence_evidence[{index}]",
+                f"{item_url!r} is not read at a pin of this component ({sorted(pins)}) nor "
+                "from a member of a pinned file",
+            )
     read_at = component.get("licence_read_at")
     if not (isinstance(read_at, str) and _TIMESTAMP.fullmatch(read_at)):
         report.add(
@@ -524,20 +784,34 @@ def _check_licence(component: Mapping[str, Any], where: str, report: _Report) ->
             report.add("schema", f"{where}.licence_read_at", f"{read_at!r} is not a real time")
 
 
-def _check_exclusions(component: Mapping[str, Any], where: str, report: _Report) -> None:
-    names = [component.get("id")]
+def _names(component: Mapping[str, Any]) -> list[str]:
+    """Every name that identifies a component or the upstream its bytes came from."""
+    names: list[Any] = [component.get("id")]
     source = component.get("source")
     if isinstance(source, Mapping):
-        names += [source.get("repo"), source.get("package")]
+        names += [source.get("repo"), source.get("package"), source.get("from")]
         git = source.get("git")
         if isinstance(git, Mapping):
             names.append(git.get("repo"))
-    for name in names:
-        if isinstance(name, str):
-            reason = excluded_reason(name)
-            if reason:
-                report.add("excluded_component", where, f"{name!r}: {reason}")
-                return
+    for entry in component.get("files") or []:
+        if not isinstance(entry, Mapping):
+            continue
+        derived = entry.get("derived_from")
+        locators = [entry.get("upstream")] + (
+            list(derived.get("upstream") or []) if isinstance(derived, Mapping) else []
+        )
+        for locator in locators:
+            if isinstance(locator, Mapping):
+                names += [locator.get("repo"), locator.get("component")]
+    return [name for name in names if isinstance(name, str)]
+
+
+def _check_exclusions(component: Mapping[str, Any], where: str, report: _Report) -> None:
+    for name in _names(component):
+        reason = excluded_reason(name)
+        if reason:
+            report.add("excluded_component", where, f"{name!r}: {reason}")
+            return
 
 
 def _check_source(component: Mapping[str, Any], where: str, report: _Report) -> None:
@@ -579,7 +853,8 @@ def _check_source(component: Mapping[str, Any], where: str, report: _Report) -> 
     if source_type == "pypi":
         if not _is_str(source.get("package")) or not _is_str(source.get("version")):
             report.add("schema", f"{where}.source", "pypi needs package and version strings")
-        if not (_is_str(source.get("index")) and str(source["index"]).startswith("https://")):
+        index = source.get("index")
+        if not (_is_str(index) and index.startswith("https://")):
             report.add("schema", f"{where}.source.index", "must be an https package index")
         git = source.get("git")
         if git is not None:
@@ -600,7 +875,7 @@ def _check_locator(locator: Any, where: str, report: _Report) -> None:
     _check_keys(
         locator, _UPSTREAM_KEYS[locator["type"]], _UPSTREAM_KEYS[locator["type"]], where, report
     )
-    if not (isinstance(locator.get("sha256"), str) and _HEX64.fullmatch(locator["sha256"])):
+    if not _is_sha256(locator.get("sha256")):
         report.add("unpinned_file", f"{where}.sha256", "upstream bytes must be pinned by sha256")
     if locator["type"] == "manifest":
         return
@@ -645,12 +920,12 @@ def _check_files(
             if path in seen:
                 report.add("schema", f"{file_where}.path", f"{path!r} is listed twice")
             seen.add(path)
-            if kind == "vendored_code" and not str(path).startswith(f"{vendor_dir}/"):
+            if kind == "vendored_code" and not path.startswith(f"{vendor_dir}/"):
                 report.add(
                     "schema", f"{file_where}.path", f"vendored files live under {vendor_dir}/"
                 )
         sha = entry.get("sha256")
-        if not (isinstance(sha, str) and _HEX64.fullmatch(sha)):
+        if not _is_sha256(sha):
             report.add("unpinned_file", f"{file_where}.sha256", f"{path!r} is not pinned by sha256")
         if not _is_count(entry.get("bytes")):
             report.add(
@@ -700,6 +975,229 @@ def _check_files(
                 continue
             for up_index, locator in enumerate(derived["upstream"]):
                 _check_locator(locator, f"{file_where}.derived_from.upstream[{up_index}]", report)
+
+
+def _check_bundled(component: Mapping[str, Any], where: str, report: _Report) -> None:
+    """What a wheel ships: its licence files, the native libraries it bundles, and texts
+    read but not terms (decision record a5ec7670 v2, "How a licence is read").
+
+    A library installed from a wheel (``source.type: pypi``) must record this; every
+    licence file it lists must be one whose bytes were read (its sha256 is among the
+    component's ``licence_evidence``), so a wheel that ships an unread licence is refused.
+    """
+    bundled = component.get("bundled")
+    source = component.get("source")
+    if bundled is None:
+        if (
+            component.get("kind") == "library"
+            and isinstance(source, Mapping)
+            and source.get("type") == "pypi"
+        ):
+            report.add(
+                "schema",
+                f"{where}.bundled",
+                "a wheel's licence files and bundled native libraries are recorded (bundled)",
+            )
+        return
+    where = f"{where}.bundled"
+    if not isinstance(bundled, Mapping):
+        report.add("schema", where, "bundled is a mapping")
+        return
+    _check_keys(
+        bundled,
+        frozenset({"licence_files", "native_libraries", "not_terms"}),
+        ("licence_files",),
+        where,
+        report,
+    )
+    licence_files = bundled.get("licence_files")
+    if not isinstance(licence_files, list) or not licence_files:
+        report.add("schema", f"{where}.licence_files", "list every licence file the wheel ships")
+        licence_files = []
+    read = {
+        item.get("sha256")
+        for item in _evidence_items(component.get("licence_evidence"))
+        if isinstance(item, Mapping)
+    }
+    for index, item in enumerate(licence_files):
+        item_where = f"{where}.licence_files[{index}]"
+        if not (isinstance(item, Mapping) and set(item) == {"member", "sha256", "bytes"}):
+            report.add("schema", item_where, "a licence file is {member, sha256, bytes}")
+            continue
+        if not (_is_sha256(item["sha256"]) and _is_count(item["bytes"])):
+            report.add("unpinned_file", item_where, "a licence file is pinned by sha256 and size")
+        elif item["sha256"] not in read:
+            report.add(
+                "licence_unread",
+                item_where,
+                f"the wheel ships {item['member']!r}, but no licence_evidence item has its "
+                "sha256: read it and record it as evidence",
+            )
+    expression = component.get("spdx")
+    try:
+        component_ids = _licence_ids(expression) if _is_str(expression) else set()
+    except SpdxError:
+        component_ids = set()
+    for index, item in enumerate(bundled.get("native_libraries") or []):
+        item_where = f"{where}.native_libraries[{index}]"
+        keys = frozenset({"member", "sha256", "bytes", "identity", "spdx", "licence_evidence"})
+        if not isinstance(item, Mapping):
+            report.add("schema", item_where, "a native library is a mapping")
+            continue
+        _check_keys(item, keys, keys, item_where, report)
+        if not (_is_sha256(item.get("sha256")) and _is_count(item.get("bytes"))):
+            report.add("unpinned_file", item_where, "a native library is pinned by sha256 and size")
+        if not _is_str(item.get("identity")):
+            report.add("schema", f"{item_where}.identity", "names the library and its version")
+        _check_expression(item.get("spdx"), f"{item_where}.spdx", report, what="a native library")
+        _check_evidence_shape(
+            item.get("licence_evidence"), f"{item_where}.licence_evidence", report
+        )
+        for ev_index, evidence in enumerate(_evidence_items(item.get("licence_evidence"))):
+            url = evidence.get("url") if isinstance(evidence, Mapping) else None
+            if _is_str(url) and not any(
+                _HEX40.fullmatch(segment) for segment in urllib.parse.unquote(url).split("/")
+            ):
+                report.add(
+                    "licence_unpinned",
+                    f"{item_where}.licence_evidence[{ev_index}]",
+                    f"{url!r} names no commit: a library's licence is read at a pinned commit",
+                )
+        if _is_str(item.get("spdx")):
+            try:
+                missing = _licence_ids(item["spdx"]) - component_ids
+            except SpdxError:
+                continue
+            if missing:
+                report.add(
+                    "licence_incomplete",
+                    f"{where.rsplit('.bundled', 1)[0]}.spdx",
+                    f"the wheel bundles {item.get('member')!r} under {sorted(missing)}, which the "
+                    "component's expression does not name",
+                )
+    for index, item in enumerate(bundled.get("not_terms") or []):
+        item_where = f"{where}.not_terms[{index}]"
+        keys = frozenset({"text", "licence", "reason"})
+        if not (
+            isinstance(item, Mapping) and set(item) == keys and all(_is_str(item[k]) for k in keys)
+        ):
+            report.add(
+                "schema",
+                item_where,
+                "a text read but not a term is {text, licence, reason}: say why it is not one",
+            )
+
+
+def _check_static_dependencies(component: Mapping[str, Any], where: str, report: _Report) -> None:
+    """Statically linked dependencies, enumerated from the upstream lockfile (a5ec7670 v2).
+
+    Every LINKED crate's licence must be admitted (a crates.io ``license`` field is read
+    through :func:`crate_licence_expression`), and an unreadable one (``UNKNOWN``) is never
+    assumed admitted. A crate the lockfile lists but the shipped binary does not link (a
+    build-time proc-macro, another target's dependency) is recorded as read. The lockfile
+    must come from the pinned version: for a PyPI package, that version's sdist.
+    """
+    deps = component.get("static_dependencies")
+    if deps is None:
+        return
+    where = f"{where}.static_dependencies"
+    keys = frozenset({"lockfile", "resolution", "read_at", "crates"})
+    if not isinstance(deps, Mapping):
+        report.add("schema", where, "static_dependencies is a mapping")
+        return
+    _check_keys(deps, keys, keys, where, report)
+    lockfile = deps.get("lockfile")
+    lock_keys = {"url", "sha256", "member", "member_sha256"}
+    if not (
+        isinstance(lockfile, Mapping)
+        and set(lockfile) == lock_keys
+        and _is_str(lockfile.get("url"))
+        and lockfile["url"].startswith("https://")
+        and _is_sha256(lockfile.get("sha256"))
+        and _is_sha256(lockfile.get("member_sha256"))
+        and _relative_path_ok(lockfile.get("member"))
+    ):
+        report.add(
+            "schema",
+            f"{where}.lockfile",
+            "must be {url, sha256, member, member_sha256}: the archive the lockfile was read "
+            "from and the lockfile inside it, each pinned by sha256",
+        )
+    else:
+        _check_lockfile_version(component, lockfile, f"{where}.lockfile", report)
+    if not _is_str(deps.get("resolution")):
+        report.add("schema", f"{where}.resolution", "say how the linked set was determined")
+    read_at = deps.get("read_at")
+    if not (isinstance(read_at, str) and _TIMESTAMP.fullmatch(read_at)):
+        report.add("schema", f"{where}.read_at", "must be a UTC timestamp YYYY-MM-DDTHH:MM:SSZ")
+    crates = deps.get("crates")
+    if not isinstance(crates, list) or not crates:
+        report.add("schema", f"{where}.crates", "the lockfile's crates, each with its licence")
+        return
+    seen: set[tuple[str, str]] = set()
+    crate_keys = frozenset({"name", "version", "checksum", "licence", "linked"})
+    for index, crate in enumerate(crates):
+        crate_where = f"{where}.crates[{index}]"
+        if not isinstance(crate, Mapping):
+            report.add("schema", crate_where, "a crate is a mapping")
+            continue
+        _check_keys(crate, crate_keys, crate_keys, crate_where, report)
+        name, version = crate.get("name"), crate.get("version")
+        if not (_is_str(name) and _is_str(version)):
+            report.add("schema", crate_where, "a crate names its name and version")
+            continue
+        crate_where = f"{where}.crates[{name}@{version}]"
+        if (name, version) in seen:
+            report.add("schema", crate_where, "listed twice")
+        seen.add((name, version))
+        if not _is_sha256(crate.get("checksum")):
+            report.add("unpinned_file", crate_where, "a crate is pinned by its lockfile checksum")
+        linked = crate.get("linked")
+        if not isinstance(linked, bool):
+            report.add("schema", f"{crate_where}.linked", "linked is true or false")
+            continue
+        licence = crate.get("licence")
+        if not _is_str(licence):
+            report.add("schema", f"{crate_where}.licence", "the licence as read, or UNKNOWN")
+        elif linked and licence == "UNKNOWN":
+            report.add(
+                "licence_unknown",
+                crate_where,
+                "a statically linked crate whose licence could not be read is never assumed "
+                "admitted",
+            )
+        elif linked:
+            _check_expression(
+                crate_licence_expression(licence), crate_where, report, what="a linked crate"
+            )
+
+
+def _check_lockfile_version(
+    component: Mapping[str, Any], lockfile: Mapping[str, Any], where: str, report: _Report
+) -> None:
+    """The lockfile is read from the pinned version: a PyPI package's sdist for exactly its
+    version (``<name>-<version>.tar.gz``, holding ``<name>-<version>/...``), otherwise an
+    archive URL that names the pinned commit."""
+    source = component.get("source")
+    if not isinstance(source, Mapping):
+        return
+    url, member = lockfile["url"], lockfile["member"]
+    if source.get("type") == "pypi":
+        package, version = source.get("package"), source.get("version")
+        if not (_is_str(package) and _is_str(version)):
+            return
+        normalised = re.sub(r"[-_.]+", "_", package).lower()
+        stems = {f"{package}-{version}", f"{normalised}-{version}"}
+        archive = urllib.parse.unquote(url.rsplit("/", 1)[-1])
+        if not any(archive == f"{stem}.tar.gz" and member.startswith(f"{stem}/") for stem in stems):
+            report.add(
+                "licence_unpinned",
+                where,
+                f"{archive!r} / {member!r} is not the sdist of {package} {version}: the "
+                "lockfile must be read at the pinned version",
+            )
+    elif not _names_pin(url, {pin for pin in _pins(component, {}) if _HEX40.fullmatch(pin)}):
+        report.add("licence_unpinned", where, f"{url!r} names no pinned commit of this component")
 
 
 def _check_derivations(components: Mapping[str, Mapping[str, Any]], report: _Report) -> None:
@@ -764,6 +1262,49 @@ def _check_derivations(components: Mapping[str, Mapping[str, Any]], report: _Rep
                     )
 
 
+def _check_hash_sizes(
+    manifest: Mapping[str, Any], components: Mapping[str, Mapping[str, Any]], report: _Report
+) -> None:
+    """One sha256 names one byte string, so it has one size wherever it is listed."""
+    sizes: dict[str, tuple[int, str]] = {}
+
+    def note(sha: Any, size: Any, where: str) -> None:
+        if not (_is_sha256(sha) and _is_count(size)):
+            return
+        if sha in sizes and sizes[sha][0] != size:
+            report.add(
+                "hash_size_conflict",
+                where,
+                f"sha256 {sha} is listed as {size} bytes here and {sizes[sha][0]} bytes at "
+                f"{sizes[sha][1]}",
+            )
+        sizes.setdefault(sha, (size, where))
+
+    for component_id, component in components.items():
+        for index, entry in enumerate(component.get("files") or []):
+            if isinstance(entry, Mapping):
+                note(
+                    entry.get("sha256"),
+                    entry.get("bytes"),
+                    f"components[{component_id}].files[{index}]",
+                )
+        bundled = component.get("bundled")
+        if isinstance(bundled, Mapping):
+            for group in ("licence_files", "native_libraries"):
+                for index, item in enumerate(bundled.get(group) or []):
+                    if isinstance(item, Mapping):
+                        note(
+                            item.get("sha256"),
+                            item.get("bytes"),
+                            f"components[{component_id}].bundled.{group}[{index}]",
+                        )
+    platform = manifest.get("platform")
+    if isinstance(platform, Mapping):
+        for index, item in enumerate(platform.get("components") or []):
+            if isinstance(item, Mapping):
+                note(item.get("sha256"), item.get("bytes"), f"platform.components[{index}]")
+
+
 def _check_runners(
     runners: Any,
     components: Mapping[str, Mapping[str, Any]],
@@ -787,7 +1328,7 @@ def _check_runners(
         where = f"runners[{runner_id}]"
         if runner_id in declared:
             report.add("duplicate_id", where, "runner ids are unique")
-        declared[str(runner_id)] = runner
+        declared[runner_id] = runner
         if runner.get("kind") not in ("diffusers", "named"):
             report.add("schema", f"{where}.kind", "must be 'diffusers' or 'named'")
         code = runner.get("code")
@@ -846,12 +1387,17 @@ def _check_vendored_tree(
     base_dir: Path,
     report: _Report,
 ) -> None:
+    """Vendored bytes on disk match their pins, and nothing unlisted sits beside them.
+
+    ``vendor_dir`` has already passed :func:`_relative_path_ok`, so the sweep stays under
+    ``base_dir``.
+    """
     listed: dict[str, tuple[Any, Any, str]] = {}
     for component_id, component in components.items():
         if component.get("kind") != "vendored_code":
             continue
         for index, entry in enumerate(component.get("files") or []):
-            if isinstance(entry, Mapping) and isinstance(entry.get("path"), str):
+            if isinstance(entry, Mapping) and _relative_path_ok(entry.get("path")):
                 listed[entry["path"]] = (
                     entry.get("sha256"),
                     entry.get("bytes"),
@@ -912,14 +1458,16 @@ def check_manifest(manifest: Any, *, base_dir: Path | None = None) -> list[Viola
     """Every reason ``manifest`` is refused; ``[]`` admits it.
 
     ``base_dir`` is the directory holding the manifest. When given, vendored files are
-    verified on disk and the vendor directory is swept for unlisted files.
+    verified on disk and the vendor directory is swept for unlisted files -- unless
+    ``vendor_dir`` is not a relative path inside ``base_dir``, which is itself reported.
     """
     report = _Report()
     if not isinstance(manifest, Mapping):
         report.add("schema", "manifest", "the manifest is a mapping")
         return report.violations
     _check_header(manifest, report)
-    vendor_dir = str(manifest.get("vendor_dir") or "vendor")
+    raw_vendor_dir = manifest.get("vendor_dir")
+    vendor_dir = raw_vendor_dir if _relative_path_ok(raw_vendor_dir) else None
     components = _component_index(manifest, report)
     for component_id, component in components.items():
         where = f"components[{component_id}]"
@@ -934,10 +1482,12 @@ def check_manifest(manifest: Any, *, base_dir: Path | None = None) -> list[Viola
             where,
             report,
         )
-        _check_licence(component, where, report)
+        _check_licence(component, where, components, report)
         _check_exclusions(component, where, report)
         _check_source(component, where, report)
-        _check_files(component, where, vendor_dir, report)
+        _check_files(component, where, vendor_dir or "vendor", report)
+        _check_bundled(component, where, report)
+        _check_static_dependencies(component, where, report)
         if kind == "model":
             size_multiple = component.get("size_multiple")
             if size_multiple is not None and not _is_count(size_multiple):
@@ -948,8 +1498,10 @@ def check_manifest(manifest: Any, *, base_dir: Path | None = None) -> list[Viola
             if "architecture" in component and not isinstance(component["architecture"], Mapping):
                 report.add("schema", f"{where}.architecture", "must be a mapping")
     _check_derivations(components, report)
+    _check_hash_sizes(manifest, components, report)
+    _check_platform_members(manifest, components, report)
     _check_runners(manifest.get("runners"), components, report)
-    if base_dir is not None:
+    if base_dir is not None and vendor_dir is not None:
         _check_vendored_tree(components, vendor_dir, base_dir, report)
     return report.violations
 
@@ -1014,7 +1566,11 @@ def _resolve_models(
 
 
 def _check_parameters(
-    parameters: Any, models: list[Mapping[str, Any]], where: str, report: _Report
+    parameters: Any,
+    models: list[Mapping[str, Any]],
+    model_ids: list[Any],
+    where: str,
+    report: _Report,
 ) -> None:
     if not isinstance(parameters, Mapping):
         report.add("recipe_schema", where, "parameters is a mapping")
@@ -1031,6 +1587,18 @@ def _check_parameters(
                         "pipeline_mismatch",
                         f"{where}.scheduler.class",
                         f"{scheduler['class']!r} differs from {model.get('id')!r}'s scheduler {expected!r}",
+                    )
+    scale_models = parameters.get("scale_models")
+    if scale_models is not None:
+        if not isinstance(scale_models, Mapping) or not scale_models:
+            report.add("recipe_schema", f"{where}.scale_models", "maps a scale to a model id")
+        else:
+            for scale, model_id in scale_models.items():
+                if model_id not in model_ids:
+                    report.add(
+                        "model_unresolved",
+                        f"{where}.scale_models.{scale}",
+                        f"{model_id!r} is not one of this recipe's models {model_ids}",
                     )
     presets = parameters.get("size_presets")
     if presets is None:
@@ -1126,10 +1694,17 @@ def check_recipe(name: str, recipe: Any, manifest: Mapping[str, Any]) -> list[Vi
         report.add(
             "runner_unresolved", f"{where}.pipeline", f"{pipeline!r} is not a declared runner"
         )
+    model_ids = recipe.get("models")
     models = _resolve_models(
-        recipe.get("models"), pipeline, f"{where}.models", components, report, allow_empty=False
+        model_ids, pipeline, f"{where}.models", components, report, allow_empty=False
     )
-    _check_parameters(recipe.get("parameters"), models, f"{where}.parameters", report)
+    _check_parameters(
+        recipe.get("parameters"),
+        models,
+        model_ids if isinstance(model_ids, list) else [],
+        f"{where}.parameters",
+        report,
+    )
     post = recipe.get("post")
     if not isinstance(post, list):
         report.add("recipe_schema", f"{where}.post", "post is a (possibly empty) list of steps")
@@ -1161,7 +1736,13 @@ def check_recipe(name: str, recipe: Any, manifest: Mapping[str, Any]) -> list[Vi
             step_models, step_runner, f"{step_where}.models", components, report, allow_empty=True
         )
         if "parameters" in step:
-            _check_parameters(step["parameters"], resolved, f"{step_where}.parameters", report)
+            _check_parameters(
+                step["parameters"],
+                resolved,
+                step_models if isinstance(step_models, list) else [],
+                f"{step_where}.parameters",
+                report,
+            )
     _check_seed_policy(recipe.get("seed_policy"), runner, f"{where}.seed_policy", report)
     return report.violations
 
@@ -1177,14 +1758,27 @@ def check_recipes(recipes: Mapping[str, Any], manifest: Mapping[str, Any]) -> li
 
 
 def check(manifest_path: Path = MANIFEST_PATH, recipes_dir: Path = RECIPES_DIR) -> list[Violation]:
-    """Check the manifest (including vendored bytes on disk) and every recipe."""
+    """Check the manifest (including vendored bytes on disk) and every recipe.
+
+    ``recipes_dir`` holds ``*.yaml`` recipe files and nothing else: any other entry (a
+    ``.yml`` recipe, a directory) would never be checked, so it is itself a violation.
+    """
     try:
         manifest = load_yaml(manifest_path)
     except (OSError, yaml.YAMLError) as error:
         return [Violation("yaml", str(manifest_path), str(error))]
     violations = check_manifest(manifest, base_dir=manifest_path.parent)
     recipes: dict[str, Any] = {}
-    for path in sorted(recipes_dir.glob("*.yaml")):
+    for path in sorted(recipes_dir.iterdir()):
+        if not (path.is_file() and path.suffix == ".yaml"):
+            violations.append(
+                Violation(
+                    "recipe_schema",
+                    f"recipes/{path.name}",
+                    "recipes/ holds *.yaml recipe files only; this entry would never be checked",
+                )
+            )
+            continue
         try:
             recipes[path.stem] = load_yaml(path)
         except (OSError, yaml.YAMLError) as error:
@@ -1198,7 +1792,11 @@ def check(manifest_path: Path = MANIFEST_PATH, recipes_dir: Path = RECIPES_DIR) 
 
 
 def canonical_json(document: Any) -> str:
-    """Sorted keys, no whitespace, UTF-8 text, no NaN: the form :func:`recipe_hash` hashes."""
+    """The exact text :func:`recipe_hash` hashes (UTF-8 encoded); see the module docstring.
+
+    ``json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    allow_nan=False)`` -- not RFC 8785.
+    """
     return json.dumps(
         document, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
     )
@@ -1210,11 +1808,10 @@ def recipe_hash(recipe: Mapping[str, Any], manifest: Mapping[str, Any]) -> str:
     The referenced entries are the recipe's runners (its ``pipeline`` and every post-step
     runner), its models (its own and every post step's), and the code components those
     runners execute -- so a new weight file, a library upgrade or a parameter change each
-    yield a new hash. Fields that only record when and where a licence was read
-    (:data:`HASH_EXCLUDED_COMPONENT_FIELDS`) and the recipe's prose description are left
-    out, so re-reading an unchanged licence does not make an asset stale. Raises
-    ``KeyError`` for a reference the manifest does not contain; run :func:`check_recipe`
-    first.
+    yield a new hash. Licence-only fields (:data:`HASH_EXCLUDED_COMPONENT_FIELDS`) and the
+    recipe's description are left out: the hash identifies what generates the pixels, and
+    licence provenance travels in the asset's sidecar. Raises ``KeyError`` for a reference
+    the manifest does not contain; run :func:`check_recipe` first.
     """
     components = {
         component["id"]: component
@@ -1249,11 +1846,16 @@ def recipe_hash(recipe: Mapping[str, Any], manifest: Mapping[str, Any]) -> str:
 def install_footprint(
     manifest: Mapping[str, Any], component_ids: Iterable[str] | None = None
 ) -> Footprint:
-    """Bytes the selected components need on disk, each distinct sha256 counted once.
+    """Bytes the selected components need on a content-addressed store.
 
-    ``component_ids`` defaults to every ``model`` component (the weights volume). Phase 0
-    item 3 and Phase 10's verify-on-download size the volume from this number, not from
-    the sum of the listed files.
+    ``component_ids`` defaults to EVERY ``model`` component -- the generators, the matting,
+    upscaling and restoration weights AND the judge-VLM pair -- not the generators alone;
+    name ids to size a subset. Each distinct sha256 counts once, which is what a store that
+    keeps files by sha256 needs. A stock Hugging Face cache keeps one blob store per repo
+    (``models--<org>--<name>/blobs``), so there a file two repos share (Qwen-Image-2512's
+    and Qwen-Image-Edit-2511's text encoder) is stored twice: size that layout from
+    ``listed_bytes`` instead. A sha256 listed with two sizes is refused by
+    :func:`check_manifest`; here it raises ``ValueError`` rather than answer by list order.
     """
     components = [
         component for component in manifest["components"] if isinstance(component, Mapping)
@@ -1272,12 +1874,14 @@ def install_footprint(
     listed_bytes = listed_files = 0
     for component in selected:
         for entry in component["files"]:
-            listed_bytes += entry["bytes"]
+            sha, size = entry["sha256"], entry["bytes"]
+            if sizes.setdefault(sha, size) != size:
+                raise ValueError(f"sha256 {sha} is listed as {sizes[sha]} and {size} bytes")
+            listed_bytes += size
             listed_files += 1
-            sizes[entry["sha256"]] = entry["bytes"]
-            owners.setdefault(entry["sha256"], [])
-            if component["id"] not in owners[entry["sha256"]]:
-                owners[entry["sha256"]].append(component["id"])
+            owners.setdefault(sha, [])
+            if component["id"] not in owners[sha]:
+                owners[sha].append(component["id"])
     return Footprint(
         unique_bytes=sum(sizes.values()),
         unique_files=len(sizes),
@@ -1293,7 +1897,10 @@ def install_footprint(
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m qontinui_imagegen.manifest",
-        description="Check the image provider's licence manifest and recipes (decision record a5ec7670).",
+        description=(
+            "Check the image provider's licence manifest and recipes "
+            f"(decision record a5ec7670 v{DECISION_RECORD_VERSION})."
+        ),
     )
     parser.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
     parser.add_argument("--recipes", type=Path, default=RECIPES_DIR)
@@ -1302,7 +1909,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--footprint",
         nargs="*",
         metavar="COMPONENT",
-        help="print the install size deduplicated by sha256 (default: every model)",
+        help=(
+            "print the bytes the named components need, each sha256 counted once (a "
+            "content-addressed store). With no ids: EVERY model component, the judge-VLM "
+            "pair included -- name the generators to size them alone. A stock Hugging Face "
+            "cache stores a file two repos share twice: size it from the listed bytes."
+        ),
     )
     args = parser.parse_args(argv)
     violations = check(args.manifest, args.recipes)

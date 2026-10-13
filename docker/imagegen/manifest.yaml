@@ -1,30 +1,35 @@
 # Licence manifest for the local image provider -- decision record D2,
-# decision_record/image-generation-weights-are-permissively-licensed (a5ec7670), in data.
+# decision_record/image-generation-weights-are-permissively-licensed (a5ec7670) v2, in data.
 #
 # Every component the provider loads carries its SPDX licence beside its pinned sha256s;
-# docker/imagegen/tests/test_manifest.py refuses a non-admitted licence, a component D2
-# excludes by name, an unpinned file or revision, vendored code whose bytes drift, and any
-# recipe that could fetch from the network. The admitted families live in
-# qontinui_imagegen/manifest.py (ADMITTED_SPDX), never here.
+# docker/imagegen/tests/test_manifest.py refuses a non-admitted licence (a component's, a
+# bundled native library's, a statically linked crate's), a component D2 excludes by name,
+# an unpinned file or revision, licence evidence not read at the pinned version, vendored
+# code whose bytes drift, and any recipe that could fetch from the network. The admitted ids
+# live in qontinui_imagegen/manifest.py (ADMITTED_SPDX, ADMITTED_EXCEPTIONS), never here.
 #
 # Every fact below was read on 2026-10-13 from the source it names: Hugging Face's tree API
-# at the pinned revision (lfs.oid / lfs.size for LFS files; small files downloaded,
-# checked against their git blob id, then hashed), GitHub at the pinned commit, PyPI's JSON
-# API and the PyTorch cu128 index. licence_read_at is the time the licence text in
-# licence_evidence was read; re-read it at every upgrade (D2: a licence is a property of a
-# version). To add or upgrade a component: read its licence text and pin its files the same
-# way, then run `python -m qontinui_imagegen.manifest` from docker/imagegen.
+# at the pinned revision (lfs.oid / lfs.size for LFS files; small files downloaded, checked
+# against their git blob id, then hashed), GitHub at the pinned commit, PyPI's JSON API, the
+# PyTorch cu128 index, wheel members read by HTTP range, and crates.io for the exact crate
+# versions of a lockfile. licence_read_at is the time the licence text in licence_evidence
+# was read (the last of them, where there are several); re-read it at every upgrade (D2: a
+# licence is a property of a version). To add or upgrade a component: read its licence text
+# the same way, then run `python -m qontinui_imagegen.manifest` from docker/imagegen.
 #
-# Sizing (Phase 0 item 3, Phase 10 deploy step 1): use `python -m qontinui_imagegen.manifest
-# --footprint [ids]`, which counts each sha256 once. Qwen-Image-2512 and Qwen-Image-Edit-2511
-# list the same text encoder, VAE and tokenizer files under the same sha256s; those bytes
-# are stored once.
+# Sizing (Phase 0 item 3, Phase 10 deploy step 1): `python -m qontinui_imagegen.manifest
+# --footprint <ids>` counts each sha256 once -- the bytes a CONTENT-ADDRESSED store needs.
+# With no ids it counts EVERY model component, 233.3 GB including the 86.5 GB judge-VLM pair;
+# the three generators alone are 131.4 GB. Qwen-Image-2512 and Qwen-Image-Edit-2511 list the
+# same text encoder, VAE and tokenizer files under the same sha256s, but a stock Hugging Face
+# cache keeps one blob store per repo and stores those files twice: size it from the listed
+# bytes instead (148.3 GB for the three generators).
 
 schema_version: 1
 decision_record:
   name: image-generation-weights-are-permissively-licensed
   id: a5ec7670-843b-4556-ab52-7f5f7662ee09
-  version: 1
+  version: 2
 
 # The packaging the pinned wheels target: Phase 10's Docker arm (the llama-swap image,
 # Ubuntu 22.04 python3). If Phase 0 item 9 picks native Windows (rule R-mem), that arm adds
@@ -50,18 +55,23 @@ scope: >-
   loads (kind model), the model code it executes from this repository (kind
   vendored_code), and the libraries that define or run model computation (kind library):
   diffusers, transformers, accelerate, safetensors and torch; torchvision, timm, kornia
-  and einops, which the vendored model code imports for its layers; and vtracer. Not
-  enumerated here: general-purpose runtime dependencies those libraries and the vendored
-  code pull in (numpy, Pillow, OpenCV, huggingface-hub, tokenizers, triton and the rest
-  of the facade's lockfile, which Phase 10 creates) -- this manifest does not vouch for
-  their licences. The NVIDIA driver and CUDA runtime are platform, below.
+  and einops, which the vendored model code imports for its layers; and vtracer. Per
+  decision record a5ec7670 v2 a compiled library's licence is read from its dist-info
+  licence files, the native libraries it bundles (bundled) and the crates its upstream
+  lockfile statically links (static_dependencies); code of unknown licence inside an
+  admitted component is removed through a derived file. Not enumerated here:
+  general-purpose runtime dependencies (numpy, Pillow, OpenCV, huggingface-hub,
+  tokenizers, triton and the rest of the facade's lockfile, which Phase 10 creates) --
+  this manifest does not vouch for their licences. Driver and toolchain runtimes are
+  platform, below.
 
 platform:
   outside_d2_scope: true
   reason: >-
-    The GPU driver and the CUDA runtime are the platform the components run on, under
-    NVIDIA's own licence terms. They are named here so the boundary of D2's component
-    scope is stated rather than silent.
+    Driver and toolchain runtimes, including those a wheel bundles: their licences exist
+    so compiled software ships them under its own terms (decision record a5ec7670 v2,
+    "Platform class"). They are named here so the boundary of D2's component scope is
+    stated rather than silent, and the bundled ones are pinned by sha256.
   components:
     - name: NVIDIA GPU driver
       version: measured by Phase 0 item 2 (nvidia-smi on Windows, in WSL and in a container)
@@ -71,6 +81,30 @@ platform:
         cuda-bindings>=12.9.4,<13; nvidia-cudnn-cu12==9.19.0.56; nvidia-cusparselt-cu12==0.7.1;
         nvidia-nccl-cu12==2.28.9; nvidia-nvshmem-cu12==3.4.5
       source: Requires-Dist of torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl, read 2026-10-13
+    - name: "NVIDIA nvJPEG runtime that the torchvision 0.26.0+cu128 wheel bundles"
+      source: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl
+      member: torchvision.libs/libnvjpeg.8dd2b5e6.so.12
+      sha256: b9aa5c285125216ebfb23e2844d30acffe5714c78b0b726b9bfedcb36c0eb40b
+      bytes: 7837264
+      licence: >-
+        NVIDIA CUDA EULA, as decision record a5ec7670 v2 classes NVIDIA runtime libraries
+        bundled in wheels (the EULA text was not read here)
+    - name: "NVIDIA CUDA runtime (libcudart) that the torchvision 0.26.0+cu128 wheel bundles"
+      source: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl
+      member: torchvision.libs/libcudart.e8e8b82a.so.12
+      sha256: c3a75b33af334a3486d197dbd1584a2985183ba4688d237a2be5f2f679329920
+      bytes: 728800
+      licence: >-
+        NVIDIA CUDA EULA, as decision record a5ec7670 v2 classes NVIDIA runtime libraries
+        bundled in wheels (the EULA text was not read here)
+    - name: "GCC OpenMP runtime (libgomp: GOMP_1.0 to GOMP_5.0 symbol versions, built by gcc 8.5.0 per its annobin notes) that the torch 2.11.0+cu128 wheel bundles"
+      source: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl
+      member: torch/lib/libgomp.so.1
+      sha256: 59badd7c550c340a23d217c37232a4bac6e66a99f47aa273a0a0393bc7c68ddb
+      bytes: 254337
+      licence: >-
+        GPL-3.0-or-later WITH GCC-exception-3.1, the GCC runtime library class decision
+        record a5ec7670 v2 names; not admitted as a family
 
 vendor_dir: vendor
 
@@ -136,8 +170,8 @@ components:
     size_multiple: 16  # vae_scale_factor 8 (vae/config.json) x 2, the divisibility diffusers 0.41.0 enforces
     notes: >-
       Official diffusers checkpoint; model_index.json names QwenImageEditPlusPipeline. Its
-      text encoder, VAE and tokenizer files are byte-identical to qwen-image-2512's and are
-      stored once. FP8 storage as for qwen-image-2512.
+      text encoder, VAE and tokenizer files are byte-identical to qwen-image-2512's (same
+      sha256s; one copy on a content-addressed store). FP8 storage as for qwen-image-2512.
     files:
       - {path: "model_index.json", sha256: 5ba11ceee68457ad6a48b899b8c9493e347f4685e11e5eeca952a13f16549e35, bytes: 516}
       - {path: "processor/added_tokens.json", sha256: 58b54bbe36fc752f79a24a271ef66a0a0830054b4dfad94bde757d851968060b, bytes: 605}
@@ -245,7 +279,8 @@ components:
       model.safetensors is a flat state dict for BEN_Base (keys backbone.*, ...);
       BEN2_Base.pth (a pickle of the same model), the ONNX export and the demo images are
       not installed. Admitted as the alternative matte runner; no recipe uses it at version
-      1.
+      1. Its vendored code is derived: refine_foreground is not available (component
+      ben2-code).
     files:
       - {path: "config.json", sha256: 01ac876925577b52fa7c6af3f5b1d1420bc9b40016b6c25e2de89b38d8fff865, bytes: 124}
       - {path: "model.safetensors", sha256: ea8b7907176a09667c86343dc7d00de6a6d871076cb90bb5f753618fd6fb3ebb, bytes: 380577976}
@@ -323,11 +358,13 @@ components:
     licence_read_at: "2026-10-13T07:52:33Z"
     notes: >-
       D8's judge candidate, verified on Hugging Face: a native vision-language model (images
-      and video), dense 27.8B parameters, Apache-2.0. These bf16 files are 55.59 GB, so they
-      do not fit the 5090's 32 GB as served weights; they are pinned as the first-party
-      source for a locally derived quantization (recorded with derived_from) if Phase 17
-      measures that the first-party FP8 below does not fit. Served by llama-swap (Phase 17),
-      not by the image facade, so it has no runner here.
+      and video), dense 27.8B parameters, Apache-2.0 (its LICENSE: the Apache-2.0 text,
+      Copyright 2026 Alibaba Cloud). These bf16 files are 55.59 GB, so they do not fit the
+      5090's 32 GB as served weights; they are pinned as the first-party source for a
+      locally derived quantization (recorded with derived_from) if Phase 17 measures that
+      the first-party FP8 below does not fit. Served by llama-swap (Phase 17), not by the
+      image facade, so it has no runner here. crc32.txt (a checksum list no engine loads) is
+      not installed.
     files:
       - {path: "LICENSE", sha256: bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a, bytes: 11544}
       - {path: "chat_template.jinja", sha256: c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041, bytes: 8952}
@@ -369,9 +406,10 @@ components:
     licence_read_at: "2026-10-13T07:52:34Z"
     notes: >-
       First-party FP8 of qwen3.8-27b, published by Qwen (card: fine-grained fp8 quantization
-      with block size of 128), Apache-2.0. 30.89 GB of files against the card's 32 GB:
-      whether it fits beside the desktop with a usable context is UNKNOWN until Phase 17
-      measures the load. First-party, so the no-third-party-FP8 rule is met.
+      with block size of 128), Apache-2.0 (the same LICENSE bytes). 30.89 GB of files
+      against the card's 32 GB: whether it fits beside the desktop with a usable context is
+      UNKNOWN until Phase 17 measures the load. First-party, so the no-third-party-FP8 rule
+      is met. crc32.txt and the empty safetensors-md5sum.txt are not installed.
     files:
       - {path: "LICENSE", sha256: bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a, bytes: 11544}
       - {path: "chat_template.jinja", sha256: c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041, bytes: 8952}
@@ -454,16 +492,27 @@ components:
   # --- vendored model code (vendor/) -------------------------------------------------------
   - id: birefnet-code
     kind: vendored_code
-    spdx: MIT
+    spdx: MIT AND Apache-2.0
     licence_url: https://github.com/ZhengPeng7/BiRefNet/blob/c4d649666cc171486329413dc2b61f0137158b6a/LICENSE
-    licence_evidence: {url: https://raw.githubusercontent.com/ZhengPeng7/BiRefNet/c4d649666cc171486329413dc2b61f0137158b6a/LICENSE, sha256: 92a7089e0915fc32bc40067560b398f1e6a7a5958abd7d04eda393629a5acefb}
-    licence_read_at: "2026-10-13T07:40:21Z"
+    licence_evidence:
+      - {url: https://raw.githubusercontent.com/ZhengPeng7/BiRefNet/c4d649666cc171486329413dc2b61f0137158b6a/LICENSE, sha256: 92a7089e0915fc32bc40067560b398f1e6a7a5958abd7d04eda393629a5acefb}
+      - {url: https://raw.githubusercontent.com/whai362/PVT/871564edab986bb082cce603232d656fb7800933/LICENSE, sha256: b208c52b00a2df2c8f4c3298c34407bf2bfe409968213372251c91fcc737a1a5}
+    licence_read_at: "2026-10-13T11:05:00Z"
     notes: >-
       BiRefNet's model code at the weights' revision, vendored byte-identical so it loads
       without trust_remote_code. The Hugging Face card at that revision declares license:
-      mit; the MIT LICENSE text (Copyright (c) 2024 ZhengPeng) is the GitHub repository's
-      and ships beside the code. birefnet.py imports torch, torchvision, timm, kornia,
-      einops, numpy and transformers.
+      mit; the MIT LICENSE text (Copyright (c) 2024 ZhengPeng) is the GitHub repository's.
+      Lines 161-594 of birefnet.py (`### models/backbones/pvt_v2.py`:
+      PyramidVisionTransformerImpr, its blocks and the pvt_v2_b0 to b5 variants) are the
+      PVTv2 authors' backbone, published under Apache-2.0 in whai362/PVT: its
+      OverlapPatchEmbed, Block, DWConv, Mlp and Attention classes match the first version of
+      detection/pvt_v2.py there (commit 871564edab986bb082cce603232d656fb7800933,
+      2021-06-22) at 1.00, 0.99, 0.98, 0.94 and 0.81 difflib text similarity (read
+      2026-10-13), and the repository's only LICENSE commit (2021-02-24) predates that
+      version. So the code carries MIT AND Apache-2.0 and both texts ship beside it
+      (LICENSE, LICENSE-PVT); the Swin part (### models/backbones/swin_v1.py) carries
+      Microsoft's MIT notice. birefnet.py imports torch, torchvision, timm, kornia, einops,
+      numpy and transformers.
     files:
       - path: vendor/birefnet/birefnet.py
         sha256: 208771ae626f653d64128fbf2d6ac9f8e645c5cc5e286258a73ec3322bbfe5ef
@@ -477,6 +526,10 @@ components:
         sha256: 92a7089e0915fc32bc40067560b398f1e6a7a5958abd7d04eda393629a5acefb
         bytes: 1066
         upstream: {type: github, repo: ZhengPeng7/BiRefNet, commit: c4d649666cc171486329413dc2b61f0137158b6a, path: LICENSE, sha256: 92a7089e0915fc32bc40067560b398f1e6a7a5958abd7d04eda393629a5acefb}
+      - path: vendor/birefnet/LICENSE-PVT
+        sha256: b208c52b00a2df2c8f4c3298c34407bf2bfe409968213372251c91fcc737a1a5
+        bytes: 11354
+        upstream: {type: github, repo: whai362/PVT, commit: 871564edab986bb082cce603232d656fb7800933, path: LICENSE, sha256: b208c52b00a2df2c8f4c3298c34407bf2bfe409968213372251c91fcc737a1a5}
 
   - id: ben2-code
     kind: vendored_code
@@ -485,16 +538,37 @@ components:
     licence_evidence: {url: https://raw.githubusercontent.com/PramaLLC/BEN2/2c99a5da477b5523585bfa5c893888a6e818a8f6/LICENSE, sha256: a4843132cbd56c50f20ae008739d85b7563d38905fd692a337af52ad588c581a}
     licence_read_at: "2026-10-13T07:40:21Z"
     notes: >-
-      BEN2.py at the weights' revision, vendored byte-identical. The Hugging Face card
-      declares license: mit; the MIT LICENSE text (Copyright (c) 2025 Prama LLC) is the
-      GitHub repository's and ships beside the code. BEN2.py imports torch, torchvision,
-      timm, einops, numpy, Pillow and OpenCV at module level; its video helpers shell out to
+      BEN2.py at the weights' revision, DERIVED rather than byte-identical (decision record
+      a5ec7670 v2). Its FB_blur_fusion_foreground_estimator and
+      FB_blur_fusion_foreground_estimator_2 helpers come from
+      github.com/Photoroom/fast-foreground-estimation: the upstream file credits it, and
+      they match its blurfusion_foreground_estimation.py (commit
+      a98fe5dfe4b61521de1a92dcaeb6d138f95bc97d) at 0.92 and 0.85 difflib text similarity.
+      That repository carries no licence: GitHub's licence API answers 404, its tree holds
+      no licence file and its README states no terms (read 2026-10-13T11:03Z). So both
+      helpers are removed, with refine_foreground_process, the wrapper that calls them, and
+      BEN_Base.inference refuses refine_foreground=True. What ships is BEN2's own MIT code.
+      The Hugging Face card declares license: mit; the MIT LICENSE text (Copyright (c) 2025
+      Prama LLC) is the GitHub repository's. BEN2.py imports torch, torchvision, timm,
+      einops, numpy, Pillow and OpenCV at module level; its video helpers shell out to
       ffmpeg, which the image path never calls.
     files:
       - path: vendor/ben2/BEN2.py
-        sha256: 16e6132faefc112ea97072b93df40c847a33aad7c04a2e578b417e9ebb6094a7
-        bytes: 53513
-        upstream: {type: huggingface, repo: PramaLLC/BEN2, revision: e48a20765fb421d19dcdb0bf3cc61e802ca5ec8f, path: BEN2.py, sha256: 16e6132faefc112ea97072b93df40c847a33aad7c04a2e578b417e9ebb6094a7}
+        sha256: 4de692ef1bd94b2301141cb70078766d091727c7fafa6ce97a8533aff11b7a7c
+        bytes: 52597
+        derived_from:
+          upstream:
+            - {type: huggingface, repo: PramaLLC/BEN2, revision: e48a20765fb421d19dcdb0bf3cc61e802ca5ec8f, path: BEN2.py, sha256: 16e6132faefc112ea97072b93df40c847a33aad7c04a2e578b417e9ebb6094a7}
+          conversion: >-
+            Removed FB_blur_fusion_foreground_estimator and
+            FB_blur_fusion_foreground_estimator_2, which the upstream file credits to the
+            unlicensed github.com/Photoroom/fast-foreground-estimation, and
+            refine_foreground_process, the wrapper that calls them (one block, from the
+            attribution comment above the wrapper to the end of the last helper); in
+            BEN_Base.inference added a guard that raises ValueError for
+            refine_foreground=True and replaced both `if refine_foreground == True:`
+            branches by their else bodies; prepended the change notice. No other line
+            differs.
       - path: vendor/ben2/LICENSE
         sha256: a4843132cbd56c50f20ae008739d85b7563d38905fd692a337af52ad588c581a
         bytes: 1066
@@ -571,7 +645,12 @@ components:
     notes: >-
       Release 0.41.0 (2026-10-06), tag v0.41.0. The wheel contains QwenImagePipeline,
       QwenImageEditPlusPipeline and ZImagePipeline, so no source install is needed. Requires
-      huggingface-hub>=1.32.0,<2.0 and safetensors>=0.8.0.
+      huggingface-hub>=1.32.0,<2.0 and safetensors>=0.8.0. Its wheel ships one licence file,
+      its dist-info LICENSE, byte-identical to the LICENSE read here (wheel members read
+      2026-10-13T09:14Z), and bundles no native library.
+    bundled:
+      licence_files:
+        - {member: "diffusers-0.41.0.dist-info/licenses/LICENSE", sha256: f9e2070c247517b1ddf65f7b11b393484a18da91a958fd18a97bd0f241c3125c, bytes: 11357}
     files:
       - {path: "diffusers-0.41.0-py3-none-any.whl", sha256: ea8918b7dfd92ce793b6db689a551b8cd25d52c6c0fcd3ade0706a5fd2a25990, bytes: 6063887}
 
@@ -583,7 +662,12 @@ components:
     licence_evidence: {url: https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/LICENSE, sha256: 77fd4710def9ec3c0f6225800e0235f15a425abd4a8b03559127fcd782612049}
     licence_read_at: "2026-10-13T07:40:26Z"
     notes: >-
-      Tag v5.19.0. Loads the generators' text encoders and BiRefNet's PreTrainedModel.
+      Tag v5.19.0. Loads the generators' text encoders and BiRefNet's PreTrainedModel. Its
+      wheel ships one licence file, its dist-info LICENSE, byte-identical to the LICENSE
+      read here (wheel members read 2026-10-13T09:14Z), and bundles no native library.
+    bundled:
+      licence_files:
+        - {member: "transformers-5.19.0.dist-info/licenses/LICENSE", sha256: 77fd4710def9ec3c0f6225800e0235f15a425abd4a8b03559127fcd782612049, bytes: 11418}
     files:
       - {path: "transformers-5.19.0-py3-none-any.whl", sha256: afcd2dd5f603ed28c1e1fcb00a338ccbb4ef5f878ed289635df8b58187afb518, bytes: 12599123}
 
@@ -595,7 +679,12 @@ components:
     licence_evidence: {url: https://raw.githubusercontent.com/huggingface/accelerate/6afc1e5ee217051fde702b23de2813344dc0fd33/LICENSE, sha256: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4}
     licence_read_at: "2026-10-13T07:40:26Z"
     notes: >-
-      Tag v1.15.0.
+      Tag v1.15.0. Its wheel ships one licence file, its dist-info LICENSE, byte-identical
+      to the LICENSE read here (wheel members read 2026-10-13T09:14Z), and bundles no native
+      library.
+    bundled:
+      licence_files:
+        - {member: "accelerate-1.15.0.dist-info/licenses/LICENSE", sha256: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4, bytes: 11357}
     files:
       - {path: "accelerate-1.15.0-py3-none-any.whl", sha256: 97eacca0b73e45cb867dbf8c5d5d4dc32219544300e0c8992c7334dc2ef33cec, bytes: 394295}
 
@@ -608,36 +697,202 @@ components:
     licence_read_at: "2026-10-13T07:40:27Z"
     notes: >-
       Tag v0.8.0 (the repository moved from huggingface/safetensors). cp310 abi3 Linux
-      wheel.
+      wheel. Its wheel ships one licence file, its dist-info LICENSE, byte-identical to the
+      LICENSE read here, and bundles no native library, but its extension module
+      (safetensors/_safetensors_rust.abi3.so) statically links Rust crates. The repository
+      commits no Cargo.lock at the v0.8.0 commit (its git tree, read 2026-10-13T09:18:49Z,
+      holds none), so the crates are enumerated from the lockfile in the published 0.8.0
+      sdist (static_dependencies). The path packages safetensors 0.8.0 and
+      safetensors-python 0.8.0 there are this component's own code.
+    bundled:
+      licence_files:
+        - {member: "safetensors-0.8.0.dist-info/licenses/LICENSE", sha256: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4, bytes: 11357}
+    static_dependencies:
+      lockfile: {url: https://files.pythonhosted.org/packages/45/06/f955dbbb1859e3bd23c8ac6141af5106e7ad5fedec4a3a6e3d60f94b7001/safetensors-0.8.0.tar.gz, sha256: fabaf3e0f18a6618d9b36560682562157f77c2b71fcffc7b432be2baed9d753d, member: safetensors-0.8.0/bindings/python/Cargo.lock, member_sha256: f7d484a57bc394042b3424d57dab0a17d6a343f5e57e30870b9dd72dfb90f6b7}
+      resolution: >-
+        cargo 1.95.0: cargo tree --manifest-path bindings/python/Cargo.toml --locked
+        --target x86_64-unknown-linux-gnu --features pyo3/extension-module -e
+        normal,no-proc-macro (the wheel's maturin build per its pyproject.toml);
+        cross-checked against the 7 crate@version source paths compiled into the shipped
+        safetensors/_safetensors_rust.abi3.so (sha256
+        e6f17a9e9846bc2bc4ad94cc5431746b59785de3d2681ef2666e8890ae192dfb), every one of them
+        in the lockfile and marked linked here
+      read_at: "2026-10-13T08:57:33Z"
+      crates:
+        - {name: allocator-api2, version: "0.2.21", checksum: 683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: bitflags, version: "2.13.0", checksum: b4388bee8683e3d04af747c73422af53102d2bd24d9eadb6cbc100baef4b43f8, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: cfg-if, version: "1.0.4", checksum: 9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: equivalent, version: "1.0.2", checksum: 877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f, licence: "Apache-2.0 OR MIT", linked: true}
+        - {name: fastrand, version: "2.4.1", checksum: 9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6, licence: "Apache-2.0 OR MIT", linked: true}
+        - {name: foldhash, version: "0.2.0", checksum: 77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb, licence: "Zlib", linked: true}
+        - {name: getrandom, version: "0.4.2", checksum: 0de51e6874e94e7bf76d726fc5d13ba782deca734ff60d5bb2fb2607c7406555, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: hashbrown, version: "0.16.1", checksum: 841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: itoa, version: "1.0.18", checksum: 8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: libc, version: "0.2.186", checksum: 68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: linux-raw-sys, version: "0.12.1", checksum: 32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: true}
+        - {name: memchr, version: "2.8.1", checksum: 6b947ae49db0d222b1dbc6b113ce7248a3fc3a6ca21b696717bfc000ba4484d8, licence: "Unlicense OR MIT", linked: true}
+        - {name: memmap2, version: "0.9.10", checksum: 714098028fe011992e1c3962653c96b2d578c4b4bce9036e15ff220319b1e0e3, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: once_cell, version: "1.21.4", checksum: 9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: pyo3, version: "0.28.3", checksum: 91fd8e38a3b50ed1167fb981cd6fd60147e091784c427b8f7183a7ee32c31c12, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: pyo3-ffi, version: "0.28.3", checksum: 7f29e10af80b1f7ccaf7f69eace800a03ecd13e883acfacc1e5d0988605f651e, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: rustix, version: "1.1.4", checksum: b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: true}
+        - {name: serde, version: "1.0.228", checksum: 9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: serde_core, version: "1.0.228", checksum: 41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: serde_json, version: "1.0.150", checksum: e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: tempfile, version: "3.27.0", checksum: 32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: zmij, version: "1.0.21", checksum: b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa, licence: "MIT", linked: true}
+        - {name: anyhow, version: "1.0.102", checksum: 7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: block2, version: "0.6.2", checksum: cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5, licence: "MIT", linked: false}
+        - {name: dispatch2, version: "0.3.1", checksum: 1e0e367e4e7da84520dedcac1901e4da967309406d1e51017ae1abfb97adbd38, licence: "Zlib OR Apache-2.0 OR MIT", linked: false}
+        - {name: errno, version: "0.3.14", checksum: 39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: foldhash, version: "0.1.5", checksum: d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2, licence: "Zlib", linked: false}
+        - {name: hashbrown, version: "0.15.5", checksum: 9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: hashbrown, version: "0.17.1", checksum: ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: heck, version: "0.5.0", checksum: 2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: id-arena, version: "2.3.0", checksum: 3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954, licence: "MIT/Apache-2.0", linked: false}
+        - {name: indexmap, version: "2.14.0", checksum: d466e9454f08e4a911e14806c24e16fba1b4c121d1ea474396f396069cf949d9, licence: "Apache-2.0 OR MIT", linked: false}
+        - {name: leb128fmt, version: "0.1.0", checksum: 09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: log, version: "0.4.32", checksum: 953f07c43838f8e6f9758cab68bf5bed85465e7587ebe0b823f1bcd81978ad3a, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: objc2, version: "0.6.4", checksum: 3a12a8ed07aefc768292f076dc3ac8c48f3781c8f2d5851dd3d98950e8c5a89f, licence: "MIT", linked: false}
+        - {name: objc2-core-foundation, version: "0.3.2", checksum: 2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536, licence: "Zlib OR Apache-2.0 OR MIT", linked: false}
+        - {name: objc2-encode, version: "4.1.0", checksum: ef25abbcd74fb2609453eb695bd2f860d389e457f67dc17cafc8b8cbc89d0c33, licence: "MIT", linked: false}
+        - {name: objc2-foundation, version: "0.3.2", checksum: e3e0adef53c21f888deb4fa59fc59f7eb17404926ee8a6f59f5df0fd7f9f3272, licence: "MIT", linked: false}
+        - {name: objc2-metal, version: "0.3.2", checksum: a0125f776a10d00af4152d74616409f0d4a2053a6f57fa5b7d6aa2854ac04794, licence: "Zlib OR Apache-2.0 OR MIT", linked: false}
+        - {name: portable-atomic, version: "1.13.1", checksum: c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49, licence: "Apache-2.0 OR MIT", linked: false}
+        - {name: prettyplease, version: "0.2.37", checksum: 479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: proc-macro2, version: "1.0.106", checksum: 8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: pyo3-build-config, version: "0.28.3", checksum: e368e7ddfdeb98c9bca7f8383be1648fd84ab466bf2bc015e94008db6d35611e, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: pyo3-macros, version: "0.28.3", checksum: df6e520eff47c45997d2fc7dd8214b25dd1310918bbb2642156ef66a67f29813, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: pyo3-macros-backend, version: "0.28.3", checksum: c4cdc218d835738f81c2338f822078af45b4afdf8b2e33cbb5916f108b813acb, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: quote, version: "1.0.45", checksum: 41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: r-efi, version: "6.0.0", checksum: f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf, licence: "MIT OR Apache-2.0 OR LGPL-2.1-or-later", linked: false}
+        - {name: semver, version: "1.0.28", checksum: 8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: serde_derive, version: "1.0.228", checksum: d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: syn, version: "2.0.117", checksum: e665b8803e7b1d2a727f4023456bbbbe74da67099c585258af0ad9c5013b9b99, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: target-lexicon, version: "0.13.5", checksum: adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca, licence: "Apache-2.0 WITH LLVM-exception", linked: false}
+        - {name: unicode-ident, version: "1.0.24", checksum: e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75, licence: "(MIT OR Apache-2.0) AND Unicode-3.0", linked: false}
+        - {name: unicode-xid, version: "0.2.6", checksum: ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: wasip2, version: "1.0.3+wasi-0.2.9", checksum: 20064672db26d7cdc89c7798c48a0fdfac8213434a1186e5ef29fd560ae223d6, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wasip3, version: "0.4.0+wasi-0.3.0-rc-2026-01-06", checksum: 5428f8bf88ea5ddc08faddef2ac4a67e390b88186c703ce6dbd955e1c145aca5, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wasm-encoder, version: "0.244.0", checksum: 990065f2fe63003fe337b932cfb5e3b80e0b4d0f5ff650e6985b1048f62c8319, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wasm-metadata, version: "0.244.0", checksum: bb0e353e6a2fbdc176932bbaab493762eb1255a7900fe0fea1a2f96c296cc909, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wasmparser, version: "0.244.0", checksum: 47b807c72e1bac69382b3a6fb3dbe8ea4c0ed87ff5629b8685ae6b9a611028fe, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: windows-link, version: "0.2.1", checksum: f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: windows-sys, version: "0.61.2", checksum: ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: wit-bindgen, version: "0.51.0", checksum: d7249219f66ced02969388cf2bb044a09756a083d0fab1e566056b04d9fbcaa5, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wit-bindgen, version: "0.57.1", checksum: 1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wit-bindgen-core, version: "0.51.0", checksum: ea61de684c3ea68cb082b7a88508a8b27fcc8b797d738bfc99a82facf1d752dc, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wit-bindgen-rust, version: "0.51.0", checksum: b7c566e0f4b284dd6561c786d9cb0142da491f46a9fbed79ea69cdad5db17f21, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wit-bindgen-rust-macro, version: "0.51.0", checksum: 0c0f9bfd77e6a48eccf51359e3ae77140a7f50b1e2ebfe62422d8afdaffab17a, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wit-component, version: "0.244.0", checksum: 9d66ea20e9553b30172b5e831994e35fbde2d165325bec84fc43dbf6f4eb9cb2, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wit-parser, version: "0.244.0", checksum: ecc8ac4bc1dc3381b7f59c34f00b67e18f910c2c0f50015669dde7def656a736, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
     files:
       - {path: "safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", sha256: fd6f3f93c9a0a7cc2788ee63fb763353d4bd2e89b0751bc78fcf7dda00bea774, bytes: 516040}
 
   - id: torch
     kind: library
     source: {type: pypi, package: torch, version: "2.11.0+cu128", index: https://download.pytorch.org/whl/cu128, git: {repo: pytorch/pytorch, commit: 70d99e998b4955e0049d13a98d77ae1b14db1f45}}
-    spdx: BSD-3-Clause
+    spdx: BSD-3-Clause AND Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSL-1.0 AND MIT
     licence_url: https://github.com/pytorch/pytorch/blob/70d99e998b4955e0049d13a98d77ae1b14db1f45/LICENSE
-    licence_evidence: {url: https://raw.githubusercontent.com/pytorch/pytorch/70d99e998b4955e0049d13a98d77ae1b14db1f45/LICENSE, sha256: bd018feef8825e88181c84eb7e3aa4eafb8f08a20d9fd6ef948569610c4a3e43}
-    licence_read_at: "2026-10-13T07:40:27Z"
+    licence_evidence:
+      - {url: https://raw.githubusercontent.com/pytorch/pytorch/70d99e998b4955e0049d13a98d77ae1b14db1f45/LICENSE, sha256: bd018feef8825e88181c84eb7e3aa4eafb8f08a20d9fd6ef948569610c4a3e43}
+      - {url: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl, member: "torch-2.11.0+cu128.dist-info/licenses/LICENSE", sha256: a0d7abc10248a062a2f309bf12981524973f2a61aadccf4c5099d96d8c388cf4}
+      - {url: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl, member: "torch-2.11.0+cu128.dist-info/licenses/NOTICE", sha256: c2cc7bf0caec7652c2b460a8a470bea1677f241e4ab8e431df34cf17f5a9fec0}
+    licence_read_at: "2026-10-13T08:46:51Z"
     notes: >-
       Tag v2.11.0: the newest torch on the cu128 index (Blackwell sm_120) and the version
-      qontinui's [ml] extra already locks. The wheel's METADATA declares License:
-      BSD-3-Clause. Its Linux CUDA runtime wheels are platform (above). Upgrading re-reads
-      the licence: torch 2.14.x's PyPI metadata declares an expression that includes
-      BSL-1.0, which the admitted families do not cover.
+      qontinui's [ml] extra already locks. METADATA declares only License: BSD-3-Clause, but
+      the wheel's dist-info/licenses/LICENSE lists the components it bundles in 66
+      Name/License rows: Apache-2.0 (11), Apache-2.0 with the LLVM exception (NVTX and its
+      docs/ and python/, 3), BSD-2-Clause (5), BSD-3-Clause (23), BSL-1.0 (sleef, 1), MIT
+      (21) and fmt's MIT with an optional exception that only adds a permission (recorded as
+      MIT, as decision record a5ec7670 v2 directs); the 66th row is in bundled.not_terms.
+      Those rows are the spdx above, so BSL-1.0 is a term of 2.11.0 itself. The wheel also
+      ships torch/lib/libgomp.so.1 (the GCC runtime: platform, above) and needs NVIDIA's
+      cu12 runtime wheels on Linux (platform).
+    bundled:
+      licence_files:
+        - {member: "torch-2.11.0+cu128.dist-info/licenses/LICENSE", sha256: a0d7abc10248a062a2f309bf12981524973f2a61aadccf4c5099d96d8c388cf4, bytes: 351341}
+        - {member: "torch-2.11.0+cu128.dist-info/licenses/NOTICE", sha256: c2cc7bf0caec7652c2b460a8a470bea1677f241e4ab8e431df34cf17f5a9fec0, bytes: 23632}
+      not_terms:
+        - text: >-
+            The text dist-info/licenses/LICENSE concatenates for
+            /pytorch/third_party/kineto/libkineto/third_party/dynolog/third_party/cpr/test/LICENSE
+            (its index row, 'Name: test', says MIT with exception): the GNU GPL version 3
+            text, headed 'This license applies to everything inside this directory and all
+            subdirectories'
+          licence: "GPL-3.0 text (version 3, 29 June 2007; -only or -or-later is not stated)"
+          reason: >-
+            It covers cpr's test directory, and cpr is not built into the wheel at all:
+            cpr is a third-party submodule of dynolog, and the torch v2.11.0 build takes
+            from dynolog only dynolog/src/ipcfabric, an INTERFACE library of three headers
+            (libkineto/CMakeLists.txt lines 164-187 at kineto
+            7a731b6ae01cfc2b1fc75d83a91f84e682e43fd7, the submodule commit v2.11.0 pins;
+            dynolog/src/ipcfabric/CMakeLists.txt at
+            d2ffe0a4e3acace628db49974246b66fc3e85fb1; read 2026-10-13T09:18Z). Recorded as
+            read, not as a term (decision record a5ec7670 v2, How a licence is read).
     files:
       - {path: "torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", sha256: 72d53f3176a69cc20710c4ecb95f7dc4c6ba10c4e4eda45b8396ee79ee40f75a, bytes: 820206653}
 
   - id: torchvision
     kind: library
     source: {type: pypi, package: torchvision, version: "0.26.0+cu128", index: https://download.pytorch.org/whl/cu128, git: {repo: pytorch/vision, commit: 336d36e8db990a905498c73933e35231876e28bc}}
-    spdx: BSD-3-Clause
+    spdx: BSD-3-Clause AND libpng-2.0 AND IJG AND Zlib
     licence_url: https://github.com/pytorch/vision/blob/336d36e8db990a905498c73933e35231876e28bc/LICENSE
-    licence_evidence: {url: https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/LICENSE, sha256: 6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d}
-    licence_read_at: "2026-10-13T07:40:28Z"
+    licence_evidence:
+      - {url: https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/LICENSE, sha256: 6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d}
+      - {url: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl, member: "torchvision-0.26.0+cu128.dist-info/LICENSE", sha256: 6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d}
+    licence_read_at: "2026-10-13T08:50:11Z"
     notes: >-
       Tag v0.26.0, the release paired with torch 2.11.0 (its METADATA requires torch==2.11.0
-      and declares License: BSD; the LICENSE text read is the BSD 3-Clause License).
+      and declares License: BSD; the LICENSE text read is the BSD 3-Clause License). Its
+      dist-info carries only that LICENSE, but auditwheel bundled seven native libraries
+      into torchvision.libs/ and none ships a licence file: the five under
+      bundled.native_libraries are named from the strings compiled into each, with the
+      licence each one ships under, and NVIDIA's libnvjpeg and libcudart are platform
+      (above). The spdx is the conjunction.
+    bundled:
+      licence_files:
+        - {member: "torchvision-0.26.0+cu128.dist-info/LICENSE", sha256: 6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d, bytes: 1517}
+      native_libraries:
+        - member: torchvision.libs/libpng16.60f56faa.so.16
+          sha256: e10cc4a427ecba126931032470aaf2df98b694fcb1bab196a8719bb83eb6cace
+          bytes: 292081
+          identity: "libpng 1.6.55 (embedded 'libpng version 1.6.55')"
+          spdx: libpng-2.0
+          licence_evidence:
+            - {url: https://raw.githubusercontent.com/pnggroup/libpng/c3e304954a9cfd154bc0dfbfea2b01cd61d6546d/LICENSE, sha256: bdb0a645ea18c60507d0368379b1ac5474b92255fcc2d115e07486a7672ba526}
+        - member: torchvision.libs/libjpeg.b1a87dc0.so.8
+          sha256: e20d3ffa71d6f4eee6c6ff5b5cbcc5a4e484faa87a47ea77baf964e3a5df269f
+          bytes: 664504
+          identity: "libjpeg-turbo 2.0.x (embedded 'Copyright (C) 1991-2018 The libjpeg-turbo Project and many others' and the libjpeg API version '8d  15-Jan-2012'; the patch release is UNKNOWN)"
+          spdx: IJG AND BSD-3-Clause AND Zlib
+          licence_evidence:
+            - {url: https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/574f3a772c96dc9db2c98ef24706feb3f6dbda9a/LICENSE.md, sha256: 8412238c5ad95965cf3c3197791e9dea8b5fae505d133449e33ee2fa754fe61e}
+            - {url: https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/574f3a772c96dc9db2c98ef24706feb3f6dbda9a/README.ijg, sha256: 82fece2bff2669c476495f0fe70096b154e8bc5b40916a64e99836d9a01c3110}
+        - member: torchvision.libs/libwebp.e20c0bc7.so.7
+          sha256: 53e606fe726388d7b0aca4287f59f31ebd67ccf3d869f50e4276b4b27c26abbc
+          bytes: 790273
+          identity: "libwebp 1.3.0 or later (its DT_NEEDED names the split-out libsharpyuv, which libwebp 1.3.0 introduced; the release is UNKNOWN)"
+          spdx: BSD-3-Clause
+          licence_evidence:
+            - {url: https://raw.githubusercontent.com/webmproject/libwebp/b557776962a3dcc985d83bd4ed94e1e2e50d0fa2/COPYING, sha256: 5aec868f669e384a22372a4e8a1a6cd7d44c64cd451f960ca69cc170d1e13acf}
+            - {url: https://raw.githubusercontent.com/webmproject/libwebp/b557776962a3dcc985d83bd4ed94e1e2e50d0fa2/PATENTS, sha256: cc3273e0694ea5896145e0677699b53471b03ea43021ddc50e7923fbb9f5023c}
+        - member: torchvision.libs/libsharpyuv.691ead6e.so.0
+          sha256: ec3ccc1dcdac71f5c66515dc63d833c7ac411bdc45cd53b19b817c1d500b8cf5
+          bytes: 46336
+          identity: "libsharpyuv from libwebp 1.3.0 or later (the release is UNKNOWN)"
+          spdx: BSD-3-Clause
+          licence_evidence:
+            - {url: https://raw.githubusercontent.com/webmproject/libwebp/b557776962a3dcc985d83bd4ed94e1e2e50d0fa2/COPYING, sha256: 5aec868f669e384a22372a4e8a1a6cd7d44c64cd451f960ca69cc170d1e13acf}
+            - {url: https://raw.githubusercontent.com/webmproject/libwebp/b557776962a3dcc985d83bd4ed94e1e2e50d0fa2/PATENTS, sha256: cc3273e0694ea5896145e0677699b53471b03ea43021ddc50e7923fbb9f5023c}
+        - member: torchvision.libs/libz.7dbeb23c.so.1
+          sha256: 96b55bbfb48f50af95da290c4cce33d0724e6565715bfc2e859de7d9efde3cbc
+          bytes: 108688
+          identity: "zlib 1.3.1 (embedded 'inflate 1.3.1 Copyright 1995-2024 Mark Adler')"
+          spdx: Zlib
+          licence_evidence:
+            - {url: https://raw.githubusercontent.com/madler/zlib/51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf/LICENSE, sha256: 845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243}
     files:
       - {path: "torchvision-0.26.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", sha256: f44bfc61b9be80bcf52a762d34da363cea3125d10c01f37e271583803c7bb97b, bytes: 8053474}
 
@@ -650,7 +905,12 @@ components:
     licence_read_at: "2026-10-13T07:40:28Z"
     notes: >-
       Tag v1.0.30. Imported by the vendored BiRefNet and BEN2 code (DropPath, to_2tuple,
-      trunc_normal_).
+      trunc_normal_). Its wheel ships one licence file, its dist-info LICENSE,
+      byte-identical to the LICENSE read here (wheel members read 2026-10-13T09:14Z), and
+      bundles no native library.
+    bundled:
+      licence_files:
+        - {member: "timm-1.0.30.dist-info/licenses/LICENSE", sha256: 71b111620fa32c17a80ccd6db2da759d31a591e497d8b5f382174f59d1b59d49, bytes: 11343}
     files:
       - {path: "timm-1.0.30-py3-none-any.whl", sha256: c8e27adf6801a2fdfb570dbbdd171f2f084756eefc673df8cfaab06bd14864f3, bytes: 2668917}
 
@@ -663,7 +923,12 @@ components:
     licence_read_at: "2026-10-13T07:40:29Z"
     notes: >-
       Tag v0.8.2, the newest release that supports Python 3.10 (0.8.3 requires >=3.11).
-      Imported by the vendored BiRefNet code (kornia.filters.laplacian).
+      Imported by the vendored BiRefNet code (kornia.filters.laplacian). Its wheel ships one
+      licence file, its dist-info LICENSE, byte-identical to the LICENSE read here (wheel
+      members read 2026-10-13T09:14Z), and bundles no native library.
+    bundled:
+      licence_files:
+        - {member: "kornia-0.8.2.dist-info/licenses/LICENSE", sha256: a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9, bytes: 10173}
     files:
       - {path: "kornia-0.8.2-py2.py3-none-any.whl", sha256: 32dfe77c9c74a87a2de49395aa3c2c376a1b63c27611a298b394d02d13905819, bytes: 1095012}
 
@@ -675,7 +940,12 @@ components:
     licence_evidence: {url: https://raw.githubusercontent.com/arogozhnikov/einops/8e911db71f2e693a0c434b041180388c685ed06f/LICENSE, sha256: 30d984364296f51ffaecad4b01ee127e95250c5068918d4b66fc96206723e434}
     licence_read_at: "2026-10-13T07:40:29Z"
     notes: >-
-      Tag v0.8.2. Imported by the vendored BiRefNet and BEN2 code.
+      Tag v0.8.2. Imported by the vendored BiRefNet and BEN2 code. Its wheel ships one
+      licence file, its dist-info LICENSE, byte-identical to the LICENSE read here (wheel
+      members read 2026-10-13T09:14Z), and bundles no native library.
+    bundled:
+      licence_files:
+        - {member: "einops-0.8.2.dist-info/licenses/LICENSE", sha256: 30d984364296f51ffaecad4b01ee127e95250c5068918d4b66fc96206723e434, bytes: 1073}
     files:
       - {path: "einops-0.8.2-py3-none-any.whl", sha256: 54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193, bytes: 65638}
 
@@ -690,7 +960,121 @@ components:
       Tag 0.6.15 (the 1.0.0 line is still alpha). Raster-to-SVG tracing; no weights.
       Transparent pixels are keyed out when enough of the image is transparent
       (cmdapp/src/converter.rs should_key_image), so a matted image traces without its
-      background.
+      background. Its wheel ships its LICENSE twice (at the wheel root and in its
+      dist-info), both byte-identical to the LICENSE read here, and bundles no native
+      library, but its extension module (vtracer/vtracer.cpython-310-x86_64-linux-gnu.so)
+      statically links Rust crates. The repository commits no Cargo.lock at the 0.6.15
+      commit (its git tree, read 2026-10-13T09:18:49Z, holds none), so the crates are
+      enumerated from the lockfile in the published 0.6.15 sdist (static_dependencies),
+      which was not regenerated for the release: it records the workspace crate at 0.6.12.
+    bundled:
+      licence_files:
+        - {member: "LICENSE", sha256: 81ee739f355765c110fc89feff14ffffce829901f96ba811fd0b65a41a8636c7, bytes: 1058}
+        - {member: "vtracer-0.6.15.dist-info/licenses/LICENSE", sha256: 81ee739f355765c110fc89feff14ffffce829901f96ba811fd0b65a41a8636c7, bytes: 1058}
+    static_dependencies:
+      lockfile: {url: https://files.pythonhosted.org/packages/e4/62/c3c23511ebe3d76dc679db0bb045dfd20ed3452bec12dcbbe8d655498a7d/vtracer-0.6.15.tar.gz, sha256: f7f39943d1fc8e9dc82f5360a40e941aaf4c9166d8df30c3f6a2da8cc21dfc52, member: vtracer-0.6.15/Cargo.lock, member_sha256: 3ec2b67bb82fead70a94b9d9665f5452fa12f16e261de8995fa556a6ac0de9bc}
+      resolution: >-
+        cargo 1.95.0: cargo tree --manifest-path cmdapp/Cargo.toml --target
+        x86_64-unknown-linux-gnu --features pyo3/extension-module,python-binding -e
+        normal,no-proc-macro (the wheel's maturin build per its pyproject.toml), run without
+        --locked on a copy because the published lockfile still records the workspace crate
+        at 0.6.12 and the vtracer-webapp member; every linked crate version equals the
+        published lockfile's, and the 23 crate@version source paths compiled into the
+        shipped vtracer/vtracer.cpython-310-x86_64-linux-gnu.so (sha256
+        accd8dbf1ea0ffd9b3def839d3ae6b4a9e8b92413db143c6fd48645b6f0b8fa3) are all in it
+      read_at: "2026-10-13T08:59:41Z"
+      crates:
+        - {name: adler, version: "1.0.2", checksum: f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe, licence: "0BSD OR MIT OR Apache-2.0", linked: true}
+        - {name: adler32, version: "1.2.0", checksum: aae1277d39aeec15cb388266ecc24b11c80469deae6067e17a1a7aa9e5c1f234, licence: "Zlib", linked: true}
+        - {name: ansi_term, version: "0.12.1", checksum: d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2, licence: "MIT", linked: true}
+        - {name: atty, version: "0.2.14", checksum: d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8, licence: "MIT", linked: true}
+        - {name: bit-vec, version: "0.6.3", checksum: 349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb, licence: "MIT/Apache-2.0", linked: true}
+        - {name: bitflags, version: "1.3.2", checksum: bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a, licence: "MIT/Apache-2.0", linked: true}
+        - {name: bytemuck, version: "1.25.0", checksum: c8efb64bd706a16a1bdde310ae86b351e4d21550d98d056f22f8a7f7a2183fec, licence: "Zlib OR Apache-2.0 OR MIT", linked: true}
+        - {name: byteorder, version: "1.5.0", checksum: 1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b, licence: "Unlicense OR MIT", linked: true}
+        - {name: cfg-if, version: "1.0.4", checksum: 9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: clap, version: "2.34.0", checksum: a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c, licence: "MIT", linked: true}
+        - {name: color_quant, version: "1.1.0", checksum: 3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b, licence: "MIT", linked: true}
+        - {name: crc32fast, version: "1.5.0", checksum: 9481c1c90cbf2ac953f07c8d4a58aa3945c425b7185c9154d67a65e4230da511, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: crossbeam-deque, version: "0.8.6", checksum: 9dd111b7b7f7d55b72c0a6ae361660ee5853c9af73f70c3c2ef6858b950e2e51, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: crossbeam-epoch, version: "0.9.18", checksum: 5b82ac4a3c2ca9c3460964f020e1402edd5753411d7737aa39c3714ad1b5420e, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: crossbeam-utils, version: "0.8.21", checksum: d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: deflate, version: "0.8.6", checksum: 73770f8e1fe7d64df17ca66ad28994a0a623ea497fa69486e14984e715c5d174, licence: "MIT/Apache-2.0", linked: true}
+        - {name: either, version: "1.15.0", checksum: 48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: fastrand, version: "2.3.0", checksum: 37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be, licence: "Apache-2.0 OR MIT", linked: true}
+        - {name: flo_curves, version: "0.3.1", checksum: 1c227ffb4f98baa9073c033e23243089d0ed3dd1f5cd620894452074db48a29b, licence: "Apache-2.0", linked: true}
+        - {name: gif, version: "0.11.4", checksum: 3edd93c6756b4dfaf2709eafcc345ba2636565295c198a9cfbf75fa5e3e00b06, licence: "MIT/Apache-2.0", linked: true}
+        - {name: image, version: "0.23.14", checksum: 24ffcb7e7244a9bf19d35bf2883b9c080c4ced3c07a9895572178cdb8f13f6a1, licence: "MIT", linked: true}
+        - {name: itertools, version: "0.8.2", checksum: f56a2d0bc861f9165be4eb3442afd3c236d8a98afd426f65d92324ae1091a484, licence: "MIT/Apache-2.0", linked: true}
+        - {name: jpeg-decoder, version: "0.1.22", checksum: 229d53d58899083193af11e15917b5640cd40b29ff475a1fe4ef725deb02d0f2, licence: "MIT / Apache-2.0", linked: true}
+        - {name: libc, version: "0.2.183", checksum: b5b646652bf6661599e1da8901b3b9522896f01e736bad5f723fe7a3a27f899d, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: lock_api, version: "0.4.14", checksum: 224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: memoffset, version: "0.9.1", checksum: 488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a, licence: "MIT", linked: true}
+        - {name: miniz_oxide, version: "0.3.7", checksum: 791daaae1ed6889560f8c4359194f56648355540573244a5448a83ba1ecc7435, licence: "MIT", linked: true}
+        - {name: miniz_oxide, version: "0.4.4", checksum: a92518e98c078586bc6c934028adcca4c92a53d6a958196de835170a01d84e4b, licence: "MIT OR Zlib OR Apache-2.0", linked: true}
+        - {name: num-integer, version: "0.1.46", checksum: 7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: num-iter, version: "0.1.45", checksum: 1429034a0490724d0075ebb2bc9e875d6503c3cf69e235a8941aa757d83ef5bf, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: num-rational, version: "0.3.2", checksum: 12ac428b1cb17fce6f731001d307d351ec70a6d202fc2e60f7d4c5e42d8f4f07, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: num-traits, version: "0.2.19", checksum: 071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: parking_lot, version: "0.12.5", checksum: 93857453250e3077bd71ff98b6a65ea6621a19bb0f559a85248955ac12c45a1a, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: parking_lot_core, version: "0.9.12", checksum: 2621685985a2ebf1c516881c026032ac7deafcda1a2c9b7850dc81e3dfcb64c1, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: png, version: "0.16.8", checksum: 3c3287920cb847dee3de33d301c463fba14dda99db24214ddf93f83d3021f4c6, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: pyo3, version: "0.19.2", checksum: e681a6cfdc4adcc93b4d3cf993749a4552018ee0a9b65fc0ccfad74352c72a38, licence: "Apache-2.0", linked: true}
+        - {name: pyo3-ffi, version: "0.19.2", checksum: e53cee42e77ebe256066ba8aa77eff722b3bb91f3419177cf4cd0f304d3284d9, licence: "Apache-2.0", linked: true}
+        - {name: rayon, version: "1.11.0", checksum: 368f01d005bf8fd9b1206fb6fa653e6c4a81ceb1466406b81792d87c5677a58f, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: rayon-core, version: "1.13.0", checksum: 22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: roots, version: "0.0.6", checksum: 84348444bd7ad45729d0c49a4240d7cdc11c9d512c06c5ad1835c1ad4acda6db, licence: "BSD-2-Clause", linked: true}
+        - {name: scoped_threadpool, version: "0.1.9", checksum: 1d51f5df5af43ab3f1360b429fa5e0152ac5ce8c0bd6485cae490332e96846a8, licence: "MIT", linked: true}
+        - {name: scopeguard, version: "1.2.0", checksum: 94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: smallvec, version: "1.15.1", checksum: 67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: strsim, version: "0.8.0", checksum: 8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a, licence: "MIT", linked: true}
+        - {name: textwrap, version: "0.11.0", checksum: d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060, licence: "MIT", linked: true}
+        - {name: tiff, version: "0.6.1", checksum: 9a53f4706d65497df0c4349241deddf35f84cee19c87ed86ea8ca590f4464437, licence: "MIT", linked: true}
+        - {name: unicode-width, version: "0.1.14", checksum: 7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: unindent, version: "0.1.11", checksum: e1766d682d402817b5ac4490b3c3002d91dfa0d22812f341609f97b08757359c, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: vec_map, version: "0.8.2", checksum: f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191, licence: "MIT/Apache-2.0", linked: true}
+        - {name: visioncortex, version: "0.8.10", checksum: 7c9a7e6cc136c7c79b4adbd311c46c323a19db7baf446822b5f90f84375934e3, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: weezl, version: "0.1.12", checksum: a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: autocfg, version: "1.5.0", checksum: c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8, licence: "Apache-2.0 OR MIT", linked: false}
+        - {name: bitflags, version: "2.11.0", checksum: 843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: bumpalo, version: "3.20.2", checksum: 5d20789868f4b01b2f2caec9f5c4e0213b41e3e5702a50157d699ae31ced2fcb, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: cfg-if, version: "0.1.10", checksum: 4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822, licence: "MIT/Apache-2.0", linked: false}
+        - {name: console_error_panic_hook, version: "0.1.7", checksum: a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc, licence: "Apache-2.0/MIT", linked: false}
+        - {name: console_log, version: "0.2.2", checksum: e89f72f65e8501878b8a004d5a1afb780987e2ce2b4532c562e367a72c57499f, licence: "MIT/Apache-2.0", linked: false}
+        - {name: getrandom, version: "0.2.17", checksum: ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: hermit-abi, version: "0.1.19", checksum: 62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33, licence: "MIT/Apache-2.0", linked: false}
+        - {name: indoc, version: "1.0.9", checksum: bfa799dd5ed20a7e349f3b4639aa80d74549c81716d9ec4f994c9b5815598306, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: itoa, version: "1.0.18", checksum: 8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: js-sys, version: "0.3.91", checksum: b49715b7073f385ba4bc528e5747d02e66cb39c6146efb66b781f131f0fb399c, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: log, version: "0.4.29", checksum: 5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: memchr, version: "2.8.0", checksum: f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79, licence: "Unlicense OR MIT", linked: false}
+        - {name: once_cell, version: "1.21.4", checksum: 9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: proc-macro2, version: "1.0.106", checksum: 8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: pyo3-build-config, version: "0.19.2", checksum: 076c73d0bc438f7a4ef6fdd0c3bb4732149136abd952b110ac93e4edb13a6ba5, licence: "Apache-2.0", linked: false}
+        - {name: pyo3-macros, version: "0.19.2", checksum: dfeb4c99597e136528c6dd7d5e3de5434d1ceaf487436a3f03b2d56b6fc9efd1, licence: "Apache-2.0", linked: false}
+        - {name: pyo3-macros-backend, version: "0.19.2", checksum: 947dc12175c254889edc0c02e399476c2f652b4b9ebd123aa655c224de259536, licence: "Apache-2.0", linked: false}
+        - {name: quote, version: "1.0.45", checksum: 41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: redox_syscall, version: "0.5.18", checksum: ed2bf2547551a7053d6fdfafda3f938979645c44812fbfcda098faae3f1a362d, licence: "MIT", linked: false}
+        - {name: rustversion, version: "1.0.22", checksum: b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: serde, version: "1.0.228", checksum: 9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: serde_core, version: "1.0.228", checksum: 41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: serde_derive, version: "1.0.228", checksum: d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: serde_json, version: "1.0.149", checksum: 83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: syn, version: "1.0.109", checksum: 72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: syn, version: "2.0.117", checksum: e665b8803e7b1d2a727f4023456bbbbe74da67099c585258af0ad9c5013b9b99, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: target-lexicon, version: "0.12.16", checksum: 61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1, licence: "Apache-2.0 WITH LLVM-exception", linked: false}
+        - {name: unicode-ident, version: "1.0.24", checksum: e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75, licence: "(MIT OR Apache-2.0) AND Unicode-3.0", linked: false}
+        - {name: wasi, version: "0.11.1+wasi-snapshot-preview1", checksum: ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: false}
+        - {name: wasm-bindgen, version: "0.2.114", checksum: 6532f9a5c1ece3798cb1c2cfdba640b9b3ba884f5db45973a6f442510a87d38e, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: wasm-bindgen-macro, version: "0.2.114", checksum: 18a2d50fcf105fb33bb15f00e7a77b772945a2ee45dcf454961fd843e74c18e6, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: wasm-bindgen-macro-support, version: "0.2.114", checksum: 03ce4caeaac547cdf713d280eda22a730824dd11e6b8c3ca9e42247b25c631e3, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: wasm-bindgen-shared, version: "0.2.114", checksum: 75a326b8c223ee17883a4251907455a2431acc2791c98c26279376490c378c16, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: web-sys, version: "0.3.91", checksum: 854ba17bb104abfb26ba36da9729addc7ce7f06f5c0f90f3c391f8461cca21f9, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: winapi, version: "0.3.9", checksum: 5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419, licence: "MIT/Apache-2.0", linked: false}
+        - {name: winapi-i686-pc-windows-gnu, version: "0.4.0", checksum: ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6, licence: "MIT/Apache-2.0", linked: false}
+        - {name: winapi-x86_64-pc-windows-gnu, version: "0.4.0", checksum: 712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f, licence: "MIT/Apache-2.0", linked: false}
+        - {name: windows-link, version: "0.2.1", checksum: f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5, licence: "MIT OR Apache-2.0", linked: false}
+        - {name: zmij, version: "1.0.21", checksum: b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa, licence: "MIT", linked: false}
     files:
       - {path: "vtracer-0.6.15-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", sha256: 95db13fa005bc9cacd8f6fd7fcfa2fce47529cf78af35f709993413e140f1f6e, bytes: 1088365}
 

@@ -1,11 +1,14 @@
 # Mutation fixture: baseline-manifest.yaml plus one defect -- RMBG-2.0 under CC BY-NC 4.0.
-# Its pins are real, read 2026-10-13 from Hugging Face's API at the named revision (the gated
-# repo hides its LFS hashes from anonymous reads, so the pinned file is its public README).
+# Its pins are real, read 2026-10-13 from Hugging Face's API at the named revision. The repo
+# is gated: the tree API masks its LFS sha256s, and anonymous reads of its weights and of
+# /raw/README.md answer 401, but /resolve/README.md is served anonymously (HTTP 200,
+# re-checked 2026-10-13T09:15:23Z), so the pinned file is that README, checked against its
+# git blob id.
 schema_version: 1
 decision_record:
   name: image-generation-weights-are-permissively-licensed
   id: a5ec7670-843b-4556-ab52-7f5f7662ee09
-  version: 1
+  version: 2
 target:
   os: linux
   arch: x86_64
@@ -66,6 +69,9 @@ components:
     licence_url: https://github.com/huggingface/diffusers/blob/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/LICENSE
     licence_evidence: {url: https://raw.githubusercontent.com/huggingface/diffusers/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/LICENSE, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072}
     licence_read_at: "2026-10-13T00:00:00Z"
+    bundled:
+      licence_files:
+        - {member: diffusers-0.41.0.dist-info/licenses/LICENSE, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072, bytes: 11357}
     files:
       - {path: diffusers-0.41.0-py3-none-any.whl, sha256: a2660bc32c80bacf5aa57b2faa1ea97813a458abadb9eca97113140b65630ca1, bytes: 1024}
 
