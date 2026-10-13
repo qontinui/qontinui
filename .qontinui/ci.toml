@@ -5,7 +5,8 @@
 #
 # PARITY IS A REVIEW-TIME INVARIANT: the steps below mirror the gate commands of
 # .github/workflows/ci.yml's `lint` and `typecheck` jobs, plus the `build` job's
-# package build. When those jobs' steps change, update this file in the SAME PR.
+# package build and the docker/imagegen subset of the `tests` job (see gap 1). When
+# those jobs' steps change, update this file in the SAME PR.
 # Actions steps are referenced by NAME below, never by line number — line
 # numbers in that file move constantly and a stale citation makes the invariant
 # unauditable.
@@ -50,6 +51,10 @@
 #         --with-deps chromium`; `--with-deps` shells out to the distro package
 #         manager under sudo, so it inherits blocker (a).
 #    "Upload coverage to Codecov" is additionally a marketplace Action.
+#    ONE SUBSET IS MIRRORED: docker/imagegen/tests (the image provider's licence
+#    manifest and recipe tests, collected by the job through pyproject.toml's
+#    testpaths) import nothing from qontinui and need no X server, so none of the
+#    three blockers applies to them; the `imagegen-tests` step below runs them.
 #
 # 2. ci.yml's `tests-ml` job — everything in gap 1, plus "Install dependencies
 #    (with ml extra)", whose own comment states it "pulls torch/torchvision from
@@ -197,3 +202,10 @@ name = "build-package"
 # lane cannot host (gap 1). Running it unconditionally here is a STRICT
 # ADDITION, never a weakening: a packaging break fails the dispatch either way.
 command = ["poetry", "build"]
+
+[[steps]]
+name = "imagegen-tests"
+# ci.yml `tests` job, "Run tests with coverage" -- the docker/imagegen/tests subset only
+# (gap 1 says why the rest is not mirrored). Fails on a non-admitted licence, an
+# unpinned weight file or drifted vendored code under docker/imagegen/.
+command = ["poetry", "run", "pytest", "docker/imagegen/tests", "-q"]
