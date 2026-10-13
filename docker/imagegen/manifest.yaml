@@ -1,0 +1,721 @@
+# Licence manifest for the local image provider -- decision record D2,
+# decision_record/image-generation-weights-are-permissively-licensed (a5ec7670), in data.
+#
+# Every component the provider loads carries its SPDX licence beside its pinned sha256s;
+# docker/imagegen/tests/test_manifest.py refuses a non-admitted licence, a component D2
+# excludes by name, an unpinned file or revision, vendored code whose bytes drift, and any
+# recipe that could fetch from the network. The admitted families live in
+# qontinui_imagegen/manifest.py (ADMITTED_SPDX), never here.
+#
+# Every fact below was read on 2026-10-13 from the source it names: Hugging Face's tree API
+# at the pinned revision (lfs.oid / lfs.size for LFS files; small files downloaded,
+# checked against their git blob id, then hashed), GitHub at the pinned commit, PyPI's JSON
+# API and the PyTorch cu128 index. licence_read_at is the time the licence text in
+# licence_evidence was read; re-read it at every upgrade (D2: a licence is a property of a
+# version). To add or upgrade a component: read its licence text and pin its files the same
+# way, then run `python -m qontinui_imagegen.manifest` from docker/imagegen.
+#
+# Sizing (Phase 0 item 3, Phase 10 deploy step 1): use `python -m qontinui_imagegen.manifest
+# --footprint [ids]`, which counts each sha256 once. Qwen-Image-2512 and Qwen-Image-Edit-2511
+# list the same text encoder, VAE and tokenizer files under the same sha256s; those bytes
+# are stored once.
+
+schema_version: 1
+decision_record:
+  name: image-generation-weights-are-permissively-licensed
+  id: a5ec7670-843b-4556-ab52-7f5f7662ee09
+  version: 1
+
+# The packaging the pinned wheels target: Phase 10's Docker arm (the llama-swap image,
+# Ubuntu 22.04 python3). If Phase 0 item 9 picks native Windows (rule R-mem), that arm adds
+# its win_amd64 wheels at the interpreter it measures; an unpinned platform fails closed.
+target:
+  os: linux
+  arch: x86_64
+  python: "3.10"
+  cuda: "12.8"
+
+# The runtime contract the facade applies to every load (plan Phase 2 step 4, Phase 10).
+runtime:
+  env:
+    HF_HUB_OFFLINE: "1"
+  from_pretrained:
+    local_files_only: true
+    trust_remote_code: false
+  torch_load:
+    weights_only: true
+
+scope: >-
+  D2's component scope, enumerated below and checked by test: the weights the provider
+  loads (kind model), the model code it executes from this repository (kind
+  vendored_code), and the libraries that define or run model computation (kind library):
+  diffusers, transformers, accelerate, safetensors and torch; torchvision, timm, kornia
+  and einops, which the vendored model code imports for its layers; and vtracer. Not
+  enumerated here: general-purpose runtime dependencies those libraries and the vendored
+  code pull in (numpy, Pillow, OpenCV, huggingface-hub, tokenizers, triton and the rest
+  of the facade's lockfile, which Phase 10 creates) -- this manifest does not vouch for
+  their licences. The NVIDIA driver and CUDA runtime are platform, below.
+
+platform:
+  outside_d2_scope: true
+  reason: >-
+    The GPU driver and the CUDA runtime are the platform the components run on, under
+    NVIDIA's own licence terms. They are named here so the boundary of D2's component
+    scope is stated rather than silent.
+  components:
+    - name: NVIDIA GPU driver
+      version: measured by Phase 0 item 2 (nvidia-smi on Windows, in WSL and in a container)
+    - name: NVIDIA CUDA runtime wheels that torch 2.11.0+cu128 requires on Linux
+      version: >-
+        cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1;
+        cuda-bindings>=12.9.4,<13; nvidia-cudnn-cu12==9.19.0.56; nvidia-cusparselt-cu12==0.7.1;
+        nvidia-nccl-cu12==2.28.9; nvidia-nvshmem-cu12==3.4.5
+      source: Requires-Dist of torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl, read 2026-10-13
+
+vendor_dir: vendor
+
+components:
+  # --- generators (D8) ---------------------------------------------------------------------
+  - id: qwen-image-2512
+    kind: model
+    role: text-to-image
+    source: {type: huggingface, repo: Qwen/Qwen-Image-2512, revision: 25468b98e3276ca6700de15c6628e51b7de54a26}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/Qwen/Qwen-Image-2512/blob/25468b98e3276ca6700de15c6628e51b7de54a26/README.md
+    licence_evidence: {url: https://huggingface.co/Qwen/Qwen-Image-2512/resolve/25468b98e3276ca6700de15c6628e51b7de54a26/README.md, sha256: db371596007403d9588e0d78d9798ecafa59bf7772fbdc12952e581b1562920b}
+    licence_read_at: "2026-10-13T07:39:58Z"
+    runner: QwenImagePipeline
+    scheduler_class: FlowMatchEulerDiscreteScheduler
+    size_multiple: 16  # vae_scale_factor 8 (vae/config.json) x 2, the divisibility diffusers 0.41.0 enforces
+    notes: >-
+      Official diffusers checkpoint; model_index.json names QwenImagePipeline. bf16 weights:
+      no first-party FP8 diffusers checkpoint exists, so FP8 storage is quantize-on-load or
+      a locally derived file recorded with derived_from (Phase 0 item 5 measures which).
+      text_encoder/*, vae/* and tokenizer/* are byte-identical to qwen-image-edit-2511's
+      (same sha256s).
+    files:
+      - {path: "model_index.json", sha256: caf5f49ee3d897fff6a8e8d6353b084c8d1da3e40ba2f32e9bc554eb0ee4b4e9, bytes: 443}
+      - {path: "scheduler/scheduler_config.json", sha256: 7ee767e37bae4af31d4eb935e125bb20a2237eeecafd22af6610093865c6f587, bytes: 485}
+      - {path: "text_encoder/config.json", sha256: 4a49f14a1594fd988ab301e491ac522cd9b0e8fd1c9232b806c54568f348c1fb, bytes: 3146}
+      - {path: "text_encoder/generation_config.json", sha256: 50867494bddf9ddc8e289e6214be5a2263e68f16c127a3652c6eb9f17990e5d9, bytes: 244}
+      - {path: "text_encoder/model-00001-of-00004.safetensors", sha256: d725335e4ea2399be706469e4b8807716a8fa64bd03468252e9f7acf2415fee4, bytes: 4968243304}
+      - {path: "text_encoder/model-00002-of-00004.safetensors", sha256: b1830db6908dcc76df3a71492acbcf2b8cac130114cf1f3c2d9edae8de8c6de3, bytes: 4991495816}
+      - {path: "text_encoder/model-00003-of-00004.safetensors", sha256: 09c1807c6d00d7cab94f7db39d4c02ebb8537225ccde383861ac48db97945aa6, bytes: 4932751040}
+      - {path: "text_encoder/model-00004-of-00004.safetensors", sha256: 5dd068336d14d45ffb43cef374d286cc6ba9d8741b028f90a7d040d847961f4a, bytes: 1691924384}
+      - {path: "text_encoder/model.safetensors.index.json", sha256: 4be35310ddc165e46e88de4c3fec8c1210014b0b8717f4544d82cc740814ae0c, bytes: 57655}
+      - {path: "tokenizer/added_tokens.json", sha256: 58b54bbe36fc752f79a24a271ef66a0a0830054b4dfad94bde757d851968060b, bytes: 605}
+      - {path: "tokenizer/chat_template.jinja", sha256: 44d5f08f3f72b837eaad09f13a54c1f9f4eb58d75240334548b7fd52a5437fa5, bytes: 2427}
+      - {path: "tokenizer/merges.txt", sha256: 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5, bytes: 1671853}
+      - {path: "tokenizer/special_tokens_map.json", sha256: 76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd, bytes: 613}
+      - {path: "tokenizer/tokenizer_config.json", sha256: 0a04a9d7d4a62b28482bdfe726c122756de85714fb64166ace92ae75b8f57614, bytes: 4686}
+      - {path: "tokenizer/vocab.json", sha256: 87a257b04b17642a0688c98cd1df89c398bda4fee532d6f88b38a659ecb4ac8d, bytes: 3383407}
+      - {path: "transformer/config.json", sha256: 247c94f9b923a7d6b6035ca76d27b556bd0efd1a8c7672f31f037644fcce340e, bytes: 339}
+      - {path: "transformer/diffusion_pytorch_model-00001-of-00009.safetensors", sha256: 1abb592dfb6701994f11dbbe1228d99fef1246e2cdd119a73e030da7c2b4d795, bytes: 4989364312}
+      - {path: "transformer/diffusion_pytorch_model-00002-of-00009.safetensors", sha256: f725018bd0b6b54a1529b38f20d38840b69aceefe843b443949e0e035799e88b, bytes: 4984214160}
+      - {path: "transformer/diffusion_pytorch_model-00003-of-00009.safetensors", sha256: 3de6b71c7d756b4ead46c475f02bc27ff9efe64c43ce2b6790afb9fea81d821b, bytes: 4946470000}
+      - {path: "transformer/diffusion_pytorch_model-00004-of-00009.safetensors", sha256: c6877663a33e453e3e7fb73d1c6d006612a3e7b29d6a9f84d697383015e2f4b8, bytes: 4984213736}
+      - {path: "transformer/diffusion_pytorch_model-00005-of-00009.safetensors", sha256: 31ce58f75ddfaa3851a95397ae5b22e8e435ded5f021dd7d903e138e12586d2e, bytes: 4946471896}
+      - {path: "transformer/diffusion_pytorch_model-00006-of-00009.safetensors", sha256: e8c1521290054c832e50086e65e50222e8e9b85cefb595667bc82ee091854772, bytes: 4946451560}
+      - {path: "transformer/diffusion_pytorch_model-00007-of-00009.safetensors", sha256: 33847ad316bdc789f4b0c522cd0c388a025c6254e6e5b3f9626a6afe175655d3, bytes: 4908690520}
+      - {path: "transformer/diffusion_pytorch_model-00008-of-00009.safetensors", sha256: 770716dc6e0c7007c2e8fba297f075cae23b45985a4cda3ec4dae5f7b559c03c, bytes: 4984232856}
+      - {path: "transformer/diffusion_pytorch_model-00009-of-00009.safetensors", sha256: 3f8213dfaaf5aacba65f42c33bc77bb5926506755b1503fa6fa323750088fc0c, bytes: 1170918840}
+      - {path: "transformer/diffusion_pytorch_model.safetensors.index.json", sha256: adeb4aa7230a3940cdfb4f6d7be4131a13cd5275d612fb9f8be90ede8d965b29, bytes: 198887}
+      - {path: "vae/config.json", sha256: c448160dba5ce79c965cb075ee02e18d1c42eb6424f787e5869790d577b56a65, bytes: 730}
+      - {path: "vae/diffusion_pytorch_model.safetensors", sha256: 0c8bc8b758c649abef9ea407b95408389a3b2f610d0d10fcb054fe171d0a8344, bytes: 253806966}
+
+  - id: qwen-image-edit-2511
+    kind: model
+    role: image-edit
+    source: {type: huggingface, repo: Qwen/Qwen-Image-Edit-2511, revision: 6f3ccc0b56e431dc6a0c2b2039706d7d26f22cb9}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/Qwen/Qwen-Image-Edit-2511/blob/6f3ccc0b56e431dc6a0c2b2039706d7d26f22cb9/README.md
+    licence_evidence: {url: https://huggingface.co/Qwen/Qwen-Image-Edit-2511/resolve/6f3ccc0b56e431dc6a0c2b2039706d7d26f22cb9/README.md, sha256: 9724c194bef2a6d821090f0cd65774962e8f77e3acbfb2a7cbbdd58c92049902}
+    licence_read_at: "2026-10-13T07:40:01Z"
+    runner: QwenImageEditPlusPipeline
+    scheduler_class: FlowMatchEulerDiscreteScheduler
+    size_multiple: 16  # vae_scale_factor 8 (vae/config.json) x 2, the divisibility diffusers 0.41.0 enforces
+    notes: >-
+      Official diffusers checkpoint; model_index.json names QwenImageEditPlusPipeline. Its
+      text encoder, VAE and tokenizer files are byte-identical to qwen-image-2512's and are
+      stored once. FP8 storage as for qwen-image-2512.
+    files:
+      - {path: "model_index.json", sha256: 5ba11ceee68457ad6a48b899b8c9493e347f4685e11e5eeca952a13f16549e35, bytes: 516}
+      - {path: "processor/added_tokens.json", sha256: 58b54bbe36fc752f79a24a271ef66a0a0830054b4dfad94bde757d851968060b, bytes: 605}
+      - {path: "processor/chat_template.jinja", sha256: a0bc6f6fc7a29a80017a433e8f03a1cc1236e838a944a2d034295a60c4f2fddb, bytes: 1017}
+      - {path: "processor/merges.txt", sha256: 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5, bytes: 1671853}
+      - {path: "processor/preprocessor_config.json", sha256: e98b81513c5d03209ac71194b3cd5303b90956097ffdb9e2aa64d6d1a13ae74e, bytes: 826}
+      - {path: "processor/special_tokens_map.json", sha256: 76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd, bytes: 613}
+      - {path: "processor/tokenizer.json", sha256: 9c5ae00e602b8860cbd784ba82a8aa14e8feecec692e7076590d014d7b7fdafa, bytes: 11421896}
+      - {path: "processor/tokenizer_config.json", sha256: 1b20115c83f30580a8c0fc330f47fad9222dccd4f739fe2d48e62ee93d28ac19, bytes: 4727}
+      - {path: "processor/video_preprocessor_config.json", sha256: 6763a66890170c801051d721ac1679339c2f1a4f4e31076bc58661756670c32f, bytes: 910}
+      - {path: "processor/vocab.json", sha256: ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910, bytes: 2776833}
+      - {path: "scheduler/scheduler_config.json", sha256: 7ee767e37bae4af31d4eb935e125bb20a2237eeecafd22af6610093865c6f587, bytes: 485}
+      - {path: "text_encoder/config.json", sha256: 4a49f14a1594fd988ab301e491ac522cd9b0e8fd1c9232b806c54568f348c1fb, bytes: 3146}
+      - {path: "text_encoder/generation_config.json", sha256: 50867494bddf9ddc8e289e6214be5a2263e68f16c127a3652c6eb9f17990e5d9, bytes: 244}
+      - {path: "text_encoder/model-00001-of-00004.safetensors", sha256: d725335e4ea2399be706469e4b8807716a8fa64bd03468252e9f7acf2415fee4, bytes: 4968243304}
+      - {path: "text_encoder/model-00002-of-00004.safetensors", sha256: b1830db6908dcc76df3a71492acbcf2b8cac130114cf1f3c2d9edae8de8c6de3, bytes: 4991495816}
+      - {path: "text_encoder/model-00003-of-00004.safetensors", sha256: 09c1807c6d00d7cab94f7db39d4c02ebb8537225ccde383861ac48db97945aa6, bytes: 4932751040}
+      - {path: "text_encoder/model-00004-of-00004.safetensors", sha256: 5dd068336d14d45ffb43cef374d286cc6ba9d8741b028f90a7d040d847961f4a, bytes: 1691924384}
+      - {path: "text_encoder/model.safetensors.index.json", sha256: 4be35310ddc165e46e88de4c3fec8c1210014b0b8717f4544d82cc740814ae0c, bytes: 57655}
+      - {path: "tokenizer/added_tokens.json", sha256: 58b54bbe36fc752f79a24a271ef66a0a0830054b4dfad94bde757d851968060b, bytes: 605}
+      - {path: "tokenizer/chat_template.jinja", sha256: 44d5f08f3f72b837eaad09f13a54c1f9f4eb58d75240334548b7fd52a5437fa5, bytes: 2427}
+      - {path: "tokenizer/merges.txt", sha256: 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5, bytes: 1671853}
+      - {path: "tokenizer/special_tokens_map.json", sha256: 76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd, bytes: 613}
+      - {path: "tokenizer/tokenizer_config.json", sha256: 0a04a9d7d4a62b28482bdfe726c122756de85714fb64166ace92ae75b8f57614, bytes: 4686}
+      - {path: "tokenizer/vocab.json", sha256: 87a257b04b17642a0688c98cd1df89c398bda4fee532d6f88b38a659ecb4ac8d, bytes: 3383407}
+      - {path: "transformer/config.json", sha256: 43c02875ed3e0d4c1b3a1007b34505d0bd2c1607fc90b2107c5e39c53d187113, bytes: 362}
+      - {path: "transformer/diffusion_pytorch_model-00001-of-00005.safetensors", sha256: 2a0c30c9ba44a5f11c21ca139e37951430bbde814ff4e0b5b1a68b80530e7a1a, bytes: 9973578592}
+      - {path: "transformer/diffusion_pytorch_model-00002-of-00005.safetensors", sha256: 54ec249b07b4376e19cf16b764054f03ca03ae2cfbd9939453e2085f4e9bd259, bytes: 9987326072}
+      - {path: "transformer/diffusion_pytorch_model-00003-of-00005.safetensors", sha256: c55157843525653161e8f6af5acc670ba3aceff04284f7cf657199d24d065e16, bytes: 9987307440}
+      - {path: "transformer/diffusion_pytorch_model-00004-of-00005.safetensors", sha256: ffcfb5a4895702635890a67bad183591e0ae515d794bdcb26e217b27a7f6d12d, bytes: 9930685712}
+      - {path: "transformer/diffusion_pytorch_model-00005-of-00005.safetensors", sha256: 2b2556b736629e10a5a0dfa14606f2057f4f81c2ba53f94103682c7ac42d4940, bytes: 982130472}
+      - {path: "transformer/diffusion_pytorch_model.safetensors.index.json", sha256: 034f003b74493730e1c595b2e23232e99d9e28bcef3b4c10c56d1b53eee4b435, bytes: 198887}
+      - {path: "vae/config.json", sha256: c448160dba5ce79c965cb075ee02e18d1c42eb6424f787e5869790d577b56a65, bytes: 730}
+      - {path: "vae/diffusion_pytorch_model.safetensors", sha256: 0c8bc8b758c649abef9ea407b95408389a3b2f610d0d10fcb054fe171d0a8344, bytes: 253806966}
+
+  - id: z-image-turbo
+    kind: model
+    role: text-to-image
+    source: {type: huggingface, repo: Tongyi-MAI/Z-Image-Turbo, revision: f332072aa78be7aecdf3ee76d5c247082da564a6}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/Tongyi-MAI/Z-Image-Turbo/blob/f332072aa78be7aecdf3ee76d5c247082da564a6/README.md
+    licence_evidence: {url: https://huggingface.co/Tongyi-MAI/Z-Image-Turbo/resolve/f332072aa78be7aecdf3ee76d5c247082da564a6/README.md, sha256: 87af5e1d7933dbfe091c4048a20805541130690ee813b8039b7f396b47e64338}
+    licence_read_at: "2026-10-13T07:40:06Z"
+    runner: ZImagePipeline
+    scheduler_class: FlowMatchEulerDiscreteScheduler
+    size_multiple: 16  # vae_scale_factor 8 (vae/config.json) x 2, the divisibility diffusers 0.41.0 enforces
+    notes: >-
+      Official diffusers checkpoint; model_index.json names ZImagePipeline, which ships in
+      the diffusers 0.41.0 release (the card's install-from-source note predates it; its own
+      text says both Z-Image pull requests are merged into the official release). assets/*
+      (card images) are not installed.
+    files:
+      - {path: "model_index.json", sha256: 18a90e1bc117a29a8b7961bb200c86ff0b9704609e87c7171511dc724fcdc9d3, bytes: 467}
+      - {path: "scheduler/scheduler_config.json", sha256: 3b979ab0956e4f5e8d02ec409ac6a4ece1555191d15bd10788fdc85fea5d13fc, bytes: 173}
+      - {path: "text_encoder/config.json", sha256: 8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a, bytes: 726}
+      - {path: "text_encoder/generation_config.json", sha256: 2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2, bytes: 239}
+      - {path: "text_encoder/model-00001-of-00003.safetensors", sha256: 328a91d3122359d5547f9d79521205bc0a46e1f79a792dfe650e99fc2d651223, bytes: 3957900840}
+      - {path: "text_encoder/model-00002-of-00003.safetensors", sha256: 6cd087b316306a68c562436b5492edbcf6e16c6dba3a1308279caa5a58e21ca5, bytes: 3987450520}
+      - {path: "text_encoder/model-00003-of-00003.safetensors", sha256: 7ca841ee75b9c61267c0c6148fd8d096d3d21b6d3e161256a9b878154f91fc52, bytes: 99630640}
+      - {path: "text_encoder/model.safetensors.index.json", sha256: 6dc0981b8829fead746441f68f38f24c5ca4a3a66351f652c26c6df0efc43ab2, bytes: 32819}
+      - {path: "tokenizer/merges.txt", sha256: 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5, bytes: 1671853}
+      - {path: "tokenizer/tokenizer.json", sha256: aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4, bytes: 11422654}
+      - {path: "tokenizer/tokenizer_config.json", sha256: d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101, bytes: 9732}
+      - {path: "tokenizer/vocab.json", sha256: ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910, bytes: 2776833}
+      - {path: "transformer/config.json", sha256: 06d49d1ae533f825c4704cc616fc8bc7826e9d449dde292cc7a95163c69af24a, bytes: 473}
+      - {path: "transformer/diffusion_pytorch_model-00001-of-00003.safetensors", sha256: 95facd593e2549e8252acb571c653d57f7ddb7f1060d4e81712f152555a88804, bytes: 9973693184}
+      - {path: "transformer/diffusion_pytorch_model-00002-of-00003.safetensors", sha256: a4bbe43ee184a1fb5af4b412d27555f532893bdc3165b1149e304ed82b5d7015, bytes: 9973714824}
+      - {path: "transformer/diffusion_pytorch_model-00003-of-00003.safetensors", sha256: aba4e37a590e63210878160a718d916d80398f4e1f78ab6c9b2b2a00d92769fa, bytes: 4672282880}
+      - {path: "transformer/diffusion_pytorch_model.safetensors.index.json", sha256: 182a119d8018bfc61c9a62685a384af3b7d4a2f8aabbe766e07c9e1eda5b97ab, bytes: 48969}
+      - {path: "vae/config.json", sha256: e80af1e64a71883a9d10c3159d2e493e5934508da57852f6a180ae6ae63b14bd, bytes: 805}
+      - {path: "vae/diffusion_pytorch_model.safetensors", sha256: f5b59a26851551b67ae1fe58d32e76486e1e812def4696a4bea97f16604d40a3, bytes: 167666902}
+
+  # --- matting --------------------------------------------------------------------------
+  - id: birefnet
+    kind: model
+    role: matte
+    source: {type: huggingface, repo: ZhengPeng7/BiRefNet, revision: e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4}
+    spdx: MIT
+    licence_url: https://huggingface.co/ZhengPeng7/BiRefNet/blob/e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4/README.md
+    licence_evidence: {url: https://huggingface.co/ZhengPeng7/BiRefNet/resolve/e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4/README.md, sha256: ceac4a1bb69b807eac5510bff80ff5599f606ef7458bee3b54b68d866e868532}
+    licence_read_at: "2026-10-13T07:40:09Z"
+    runner: birefnet
+    architecture: {module: vendor/birefnet/birefnet.py, class: BiRefNet}
+    notes: >-
+      The repo exposes its model only through config.json's auto_map (birefnet.py), which
+      would need trust_remote_code; the code is vendored instead (component birefnet-code)
+      and loads config.json plus model.safetensors from local files. config.json sets
+      bb_pretrained false, so no backbone weights are fetched.
+    files:
+      - {path: "config.json", sha256: c97ea21569daf66b205491a4635147dd3bc42c7c168b89d7d75b53f67ef548ae, bytes: 405}
+      - {path: "model.safetensors", sha256: 9ab37426bf4de0567af6b5d21b16151357149139362e6e8992021b8ce356a154, bytes: 444473596}
+
+  - id: ben2-base
+    kind: model
+    role: matte
+    source: {type: huggingface, repo: PramaLLC/BEN2, revision: e48a20765fb421d19dcdb0bf3cc61e802ca5ec8f}
+    spdx: MIT
+    licence_url: https://huggingface.co/PramaLLC/BEN2/blob/e48a20765fb421d19dcdb0bf3cc61e802ca5ec8f/README.md
+    licence_evidence: {url: https://huggingface.co/PramaLLC/BEN2/resolve/e48a20765fb421d19dcdb0bf3cc61e802ca5ec8f/README.md, sha256: e4dcb23dcc566e37c4e9140514a84fbe1ae6607db48ac9d1b4113bb89f124d7d}
+    licence_read_at: "2026-10-13T07:40:10Z"
+    runner: ben2
+    architecture: {module: vendor/ben2/BEN2.py, class: BEN_Base}
+    notes: >-
+      BEN2 base, the open model (the full BEN2 is a separate commercial product).
+      model.safetensors is a flat state dict for BEN_Base (keys backbone.*, ...);
+      BEN2_Base.pth (a pickle of the same model), the ONNX export and the demo images are
+      not installed. Admitted as the alternative matte runner; no recipe uses it at version
+      1.
+    files:
+      - {path: "config.json", sha256: 01ac876925577b52fa7c6af3f5b1d1420bc9b40016b6c25e2de89b38d8fff865, bytes: 124}
+      - {path: "model.safetensors", sha256: ea8b7907176a09667c86343dc7d00de6a6d871076cb90bb5f753618fd6fb3ebb, bytes: 380577976}
+
+  # --- upscaling (Real-ESRGAN) -------------------------------------------------------------
+  - id: real-esrgan-x2plus
+    kind: model
+    role: upscale
+    source: {type: github_release, repo: xinntao/Real-ESRGAN, tag: v0.2.1, commit: 64ad194ddaf9c4d8c4b0d1b98cac6d89d3ea0d11}
+    spdx: BSD-3-Clause
+    licence_url: https://github.com/xinntao/Real-ESRGAN/blob/64ad194ddaf9c4d8c4b0d1b98cac6d89d3ea0d11/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/xinntao/Real-ESRGAN/64ad194ddaf9c4d8c4b0d1b98cac6d89d3ea0d11/LICENSE, sha256: 4a699ec4863d96a91fc265948a0c90033f7e8735d515524dcf3444736406e0c2}
+    licence_read_at: "2026-10-13T07:40:19Z"
+    runner: realesrgan
+    architecture: {module: vendor/basicsr_rrdbnet/rrdbnet_arch.py, class: RRDBNet, kwargs: {num_in_ch: 3, num_out_ch: 3, num_feat: 64, num_block: 23, num_grow_ch: 32, scale: 2}, netscale: 2, state_dict_keys: [params_ema, params]}
+    notes: >-
+      Release asset of tag v0.2.1, whose commit carries the BSD-3-Clause LICENSE read here.
+      Constructor arguments and checkpoint keys are those of inference_realesrgan.py and
+      realesrgan/utils.py at a4abfb2979a7bbff3f69f58f58ae324608821e27. The asset is a torch
+      pickle; it loads only with torch_load.weights_only. RealESRGAN_x4plus (tag v0.1.0) is
+      not admitted: the repository carried no licence at v0.1.0 (it gained BSD-3-Clause at
+      v0.2.0), so that version's terms are unknown.
+    files:
+      - {path: "RealESRGAN_x2plus.pth", sha256: 49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb, bytes: 67061725}
+
+  - id: real-esrgan-general-x4v3
+    kind: model
+    role: upscale
+    source: {type: github_release, repo: xinntao/Real-ESRGAN, tag: v0.2.5.0, commit: 685d429c81888252bdb10f56c7754baededc3823}
+    spdx: BSD-3-Clause
+    licence_url: https://github.com/xinntao/Real-ESRGAN/blob/685d429c81888252bdb10f56c7754baededc3823/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/xinntao/Real-ESRGAN/685d429c81888252bdb10f56c7754baededc3823/LICENSE, sha256: 4a699ec4863d96a91fc265948a0c90033f7e8735d515524dcf3444736406e0c2}
+    licence_read_at: "2026-10-13T07:40:19Z"
+    runner: realesrgan
+    architecture: {module: vendor/realesrgan_srvgg/srvgg_arch.py, class: SRVGGNetCompact, kwargs: {num_in_ch: 3, num_out_ch: 3, num_feat: 64, num_conv: 32, upscale: 4, act_type: prelu}, netscale: 4, state_dict_keys: [params_ema, params]}
+    notes: >-
+      Release asset of tag v0.2.5.0, whose commit carries the BSD-3-Clause LICENSE read
+      here. Constructor arguments and checkpoint keys are those of inference_realesrgan.py
+      and realesrgan/utils.py at a4abfb2979a7bbff3f69f58f58ae324608821e27. The asset is a
+      torch pickle; it loads only with torch_load.weights_only. RealESRGAN_x4plus (tag
+      v0.1.0) is not admitted: the repository carried no licence at v0.1.0 (it gained
+      BSD-3-Clause at v0.2.0), so that version's terms are unknown.
+    files:
+      - {path: "realesr-general-x4v3.pth", sha256: 8dc7edb9ac80ccdc30c3a5dca6616509367f05fbc184ad95b731f05bece96292, bytes: 4885111}
+
+  # --- restoration (admitted, not wired) ---------------------------------------------------
+  - id: seedvr2-3b
+    kind: model
+    role: restoration
+    source: {type: huggingface, repo: ByteDance-Seed/SeedVR2-3B, revision: 37255ff8cccfb01071b87f635a5948ca8d53117c}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/ByteDance-Seed/SeedVR2-3B/blob/37255ff8cccfb01071b87f635a5948ca8d53117c/README.md
+    licence_evidence: {url: https://huggingface.co/ByteDance-Seed/SeedVR2-3B/resolve/37255ff8cccfb01071b87f635a5948ca8d53117c/README.md, sha256: 8f97c2751d9f73491fadbcc5a89862441e09de82730f1234e6db576bed2ae16b}
+    licence_read_at: "2026-10-13T07:40:11Z"
+    notes: >-
+      Admitted under D2 (the card: SeedVR and SeedVR2 are licensed under the Apache 2.0) and
+      pinned for measurement; no recipe uses it at version 1, and its runner code
+      (github.com/ByteDance-Seed/SeedVR, Apache-2.0) is not vendored yet, so it has no
+      runner. All four files are torch pickles and load only with torch_load.weights_only.
+      The repo's apex wheels (third-party binaries) and card assets are not installed.
+    files:
+      - {path: "ema_vae.pth", sha256: c7df8a67e68b7f9aca3d5d2153d2ce8ab4373687741a0f9ce87cb356ace51cac, bytes: 1002691902}
+      - {path: "neg_emb.pt", sha256: 6a43e5800ef2354f1c156d27535834da055cbec8248298b8923492bba2076581, bytes: 656540}
+      - {path: "pos_emb.pt", sha256: fa07a14844314772266b66c3b95deb0027696d8fe7065721263db5176f45d799, bytes: 595100}
+      - {path: "seedvr2_ema_3b.pth", sha256: 6bcc5ac59447e97b100477480aebb01be2ec724c8340bb83faae21f64848604b, bytes: 13566090228}
+
+  # --- judge VLM candidate (D8; served by llama-swap, Phase 17) -----------------------------
+  - id: qwen3.8-27b
+    kind: model
+    role: judge-vlm
+    source: {type: huggingface, repo: Qwen/Qwen3.8-27B, revision: 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/Qwen/Qwen3.8-27B/blob/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0/LICENSE
+    licence_evidence: {url: https://huggingface.co/Qwen/Qwen3.8-27B/resolve/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0/LICENSE, sha256: bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a}
+    licence_read_at: "2026-10-13T07:52:33Z"
+    notes: >-
+      D8's judge candidate, verified on Hugging Face: a native vision-language model (images
+      and video), dense 27.8B parameters, Apache-2.0. These bf16 files are 55.59 GB, so they
+      do not fit the 5090's 32 GB as served weights; they are pinned as the first-party
+      source for a locally derived quantization (recorded with derived_from) if Phase 17
+      measures that the first-party FP8 below does not fit. Served by llama-swap (Phase 17),
+      not by the image facade, so it has no runner here.
+    files:
+      - {path: "LICENSE", sha256: bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a, bytes: 11544}
+      - {path: "chat_template.jinja", sha256: c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041, bytes: 8952}
+      - {path: "config.json", sha256: 191e0af232104ed8b65258cf3fb2b842e288008baca7633c11b82a1ac7203aab, bytes: 4312}
+      - {path: "generation_config.json", sha256: e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e, bytes: 202}
+      - {path: "merges.txt", sha256: a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d, bytes: 3353259}
+      - {path: "model-00001-of-00018.safetensors", sha256: ba0ce20aae489ad196733da5064bcdf159a1fe84f53336648196e1ebb7751b1c, bytes: 3966730552}
+      - {path: "model-00002-of-00018.safetensors", sha256: 06a148c01bfbe3faa14a5f184a7ff29a706f7ae1c8b2705d2058e26d17a001fb, bytes: 3043080328}
+      - {path: "model-00003-of-00018.safetensors", sha256: 2e1bf62cbcd406eaa64b60d10353e1f0ef4039d0976e56f05cabe953454f9968, bytes: 2542796952}
+      - {path: "model-00004-of-00018.safetensors", sha256: 511e34063187882659753c4d93f3859f93c019fd438d8813071921c81d9a3f1a, bytes: 3988973152}
+      - {path: "model-00005-of-00018.safetensors", sha256: 635cb53446dc74f219740fc59e18b774f877b803b9722e289ca62575a6efa701, bytes: 2099339864}
+      - {path: "model-00006-of-00018.safetensors", sha256: 0bc5214fac607f0e6cc92eec3789d4b8559410ef9fce66621ba8158e8410dae0, bytes: 3979553696}
+      - {path: "model-00007-of-00018.safetensors", sha256: 80b0c49033e9a0d5762562aa12f4acdb7f54da586f3d0110f28c48d91cf07892, bytes: 2108759344}
+      - {path: "model-00008-of-00018.safetensors", sha256: 7192c5b66185d3592927daabee1cc19e6f6e0ce75988ee20e824b624765fda79, bytes: 3979553696}
+      - {path: "model-00009-of-00018.safetensors", sha256: af3c48cc37af44f3db6ae0579baf019180d48d9c527caa0a1f03ff85813a56d8, bytes: 2108759344}
+      - {path: "model-00010-of-00018.safetensors", sha256: 163490a76f3bea3a40855b7efc04ce6d27afaf1a34f0bbde495b9491f76457c9, bytes: 3979553696}
+      - {path: "model-00011-of-00018.safetensors", sha256: 5f3ae1b948aeee39da77aec558e8236cd65fe4d7cb7686a76bb007acc563c6d8, bytes: 2108759344}
+      - {path: "model-00012-of-00018.safetensors", sha256: a3de1c7114677a8f5ac5c4892c90e8238ea5c1e2038c80e757dfc87c3902ca55, bytes: 3979553696}
+      - {path: "model-00013-of-00018.safetensors", sha256: 06ab79a41f74c9c5cb734816feb0c7fc364104b227165ee7391231e1155aa02a, bytes: 2108759344}
+      - {path: "model-00014-of-00018.safetensors", sha256: 4138ed94603065ba884bbcadedb04d7718bb40117e85e6f5c6fc5b9c05b7a85b, bytes: 3979553696}
+      - {path: "model-00015-of-00018.safetensors", sha256: 69224e27b9de4e7dbf6fc936c6eaae08447bda3b80a6c31a871ab451173afd22, bytes: 2108759344}
+      - {path: "model-00016-of-00018.safetensors", sha256: 73cb9a1089fb6155cb648609478d6633be8a5c7d9ca5a05bc8925ce8a553cefe, bytes: 3979564040}
+      - {path: "model-00017-of-00018.safetensors", sha256: beb51f01056142ac4984bd800507b0dd0fd18de57f8e9ef6ea41d1a3598983a8, bytes: 2108759344}
+      - {path: "model-00018-of-00018.safetensors", sha256: 1d3479509e21494658f9b64d317f5ea8e55c4025d28c702d6c4d0b356ce8ea06, bytes: 3392197344}
+      - {path: "model.safetensors.index.json", sha256: 77042094076611b69791a610065f28b7013b8c621795fa86ddccc8bac7d1b9df, bytes: 112216}
+      - {path: "preprocessor_config.json", sha256: 27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516, bytes: 390}
+      - {path: "tokenizer.json", sha256: 0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3, bytes: 12809320}
+      - {path: "tokenizer_config.json", sha256: b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27, bytes: 17928}
+      - {path: "video_preprocessor_config.json", sha256: 7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13, bytes: 385}
+      - {path: "vocab.json", sha256: ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003, bytes: 6722759}
+
+  - id: qwen3.8-27b-fp8
+    kind: model
+    role: judge-vlm
+    source: {type: huggingface, repo: Qwen/Qwen3.8-27B-FP8, revision: 017b9c7af6b5689d5dd426a76e0bc077eb5ca20a}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/Qwen/Qwen3.8-27B-FP8/blob/017b9c7af6b5689d5dd426a76e0bc077eb5ca20a/LICENSE
+    licence_evidence: {url: https://huggingface.co/Qwen/Qwen3.8-27B-FP8/resolve/017b9c7af6b5689d5dd426a76e0bc077eb5ca20a/LICENSE, sha256: bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a}
+    licence_read_at: "2026-10-13T07:52:34Z"
+    notes: >-
+      First-party FP8 of qwen3.8-27b, published by Qwen (card: fine-grained fp8 quantization
+      with block size of 128), Apache-2.0. 30.89 GB of files against the card's 32 GB:
+      whether it fits beside the desktop with a usable context is UNKNOWN until Phase 17
+      measures the load. First-party, so the no-third-party-FP8 rule is met.
+    files:
+      - {path: "LICENSE", sha256: bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a, bytes: 11544}
+      - {path: "chat_template.jinja", sha256: c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041, bytes: 8952}
+      - {path: "config.json", sha256: 74227dd615bf1ea975aa676bdf355a0379858c12f394b5365cd9dfa5fc2c70bc, bytes: 51350}
+      - {path: "generation_config.json", sha256: e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e, bytes: 202}
+      - {path: "layers-0.safetensors", sha256: 07f700e293baeaf3cd4240c3df1a948c4403f16961ea7979e86c8d6a9f8fd466, bytes: 383865448}
+      - {path: "layers-1.safetensors", sha256: 35840b5d452c6e438d000e5c1d8d1bc793d257394404689b8f9424749eee8edc, bytes: 383865448}
+      - {path: "layers-10.safetensors", sha256: ab5fbc076ccd6514aba3ab67a0ac1d6701ad395d40cccc0086cf0284ef5d68c9, bytes: 383865472}
+      - {path: "layers-11.safetensors", sha256: 076b4ba44e9311c8fb8fdc0045f8ce9fd0c75584ade4e95510056b7db4b7ec61, bytes: 372313760}
+      - {path: "layers-12.safetensors", sha256: 86d8ec0b8fc8e3ffbdfd667b97050533ddf5a4d273b4fe1190a4335542c52829, bytes: 383865472}
+      - {path: "layers-13.safetensors", sha256: 71dd986134f4338a7b8290ed24993ad34a0f77b76a4cc060fe6403e36dcdda5b, bytes: 383865472}
+      - {path: "layers-14.safetensors", sha256: 95b285915cba994917b527030874227382ea3421dc7f47d804c0ca5851f039fb, bytes: 383865472}
+      - {path: "layers-15.safetensors", sha256: 1e87d61e77d2b802f796ab8a049b1119648c9b70d2ba1067f456e5a04449cfc3, bytes: 372313760}
+      - {path: "layers-16.safetensors", sha256: 8bcdbf4e2c7a8dda3043c4453a476b30a582d58aabfaa49b2829a8b66a664acb, bytes: 383865472}
+      - {path: "layers-17.safetensors", sha256: 571cea44717878cc8cbbfbd544acfe2d155f5b963fbf5dc67b3fa96afe840a1b, bytes: 383865472}
+      - {path: "layers-18.safetensors", sha256: d8700627ca2267fb7beb5d398d6a659a9bfeeb2af76f10e6827b1e4359d59286, bytes: 383865472}
+      - {path: "layers-19.safetensors", sha256: 2b24cfb752bbed959c614d7fd85412ee27ab2ac1f47deef5d09d0592781400e4, bytes: 372313760}
+      - {path: "layers-2.safetensors", sha256: 32e63c6455ebfa10b4c36af2878eefcb6f8ccf8e947a62575444dc412c38ac1a, bytes: 383865448}
+      - {path: "layers-20.safetensors", sha256: 52fd00c68d4f1df96ba701290c04237257ebb832879bb0b6a629525809d84a64, bytes: 383865472}
+      - {path: "layers-21.safetensors", sha256: e3c29dd949808c13116d853ce4b0f96cb1238fc0cb6999ab76735deef6bda77a, bytes: 383865472}
+      - {path: "layers-22.safetensors", sha256: 63446546e3e09c2394fc51855f4e390cb47f896bb8b744f3a210c3159a3ccaf2, bytes: 383865472}
+      - {path: "layers-23.safetensors", sha256: 4166ed11d0329985f9813ba6a70474ea9f5aeff3d97db3d7b2e81185bd41a996, bytes: 372313760}
+      - {path: "layers-24.safetensors", sha256: 720bdcfe12b6627bed29feda9c96256e15c20602704669d05097668a9f03dd45, bytes: 383865472}
+      - {path: "layers-25.safetensors", sha256: 1b188e7e4e8ae6f5d753c597f61d86c1593495de4307c273d8dda9946ec48bb4, bytes: 383865472}
+      - {path: "layers-26.safetensors", sha256: ad8c3e3d4b79dfedad674318ee4b150b2cd78b56747c7c8d88a65818109a545d, bytes: 383865472}
+      - {path: "layers-27.safetensors", sha256: 8d63f461430045960f27a22abf685bfc7445fffbb24764e4a7fa993ba7edac08, bytes: 372313760}
+      - {path: "layers-28.safetensors", sha256: f78557cda66107ce25f8c5ecde2f83da874b3bf7c50381e062e14e7294a5b64d, bytes: 383865472}
+      - {path: "layers-29.safetensors", sha256: 09f264d6fdddab0fb5ecce18034a9a01944d15118147c97058fba101a60f8af1, bytes: 383865472}
+      - {path: "layers-3.safetensors", sha256: 302f9af90bb683a8be9e96d124b470a2eddee6612c95c39a8e93f26eb654563d, bytes: 372313744}
+      - {path: "layers-30.safetensors", sha256: 54afe4fc7262ee597d4d9b80d2d6fe8ae501846ff124334b575bed4c6850ed97, bytes: 383865472}
+      - {path: "layers-31.safetensors", sha256: 2779338203d0715ca323ac0b7fdbb0d450ce2bd1694be395a211a02ade3f34d9, bytes: 372313760}
+      - {path: "layers-32.safetensors", sha256: f4af8893594458b6cdb074ef20f9accb708361fe904012465990d09e74994509, bytes: 383865472}
+      - {path: "layers-33.safetensors", sha256: 8f038505b9fc7d0b31ca976c728b56028ec28390a15ca0410f00df18d3abc1a4, bytes: 383865472}
+      - {path: "layers-34.safetensors", sha256: 0b28f43cc4d3ae50e37eb3c2ce12a6e181b1c7586a27d5a05c6a3367f08286c9, bytes: 383865472}
+      - {path: "layers-35.safetensors", sha256: 535b61b9eabbcda5de20e21d2d46fb52528cc9c1f8fac38920382ea2f1030837, bytes: 372313760}
+      - {path: "layers-36.safetensors", sha256: 2babd209cafbe12a6e375ff6e7a1029f36ee8226f2a9babf6646630f31dd3fb8, bytes: 383865472}
+      - {path: "layers-37.safetensors", sha256: 651cae579808983fefec954db6e2ac8c3f98bfb038ff1d50aef0505ba7394e65, bytes: 383865472}
+      - {path: "layers-38.safetensors", sha256: 1c60932dec650cc7679121eaa4d90b8d10a600bf58e23b0784588a339469dd0a, bytes: 383865472}
+      - {path: "layers-39.safetensors", sha256: b0c7df4d51b99637ff4ea35eebf7eb134db592eb943e3ccde921729f33949058, bytes: 372313760}
+      - {path: "layers-4.safetensors", sha256: b7f367125cdb4b3c3920d1d3ed1ba0d73e464c3e3a92dbd1c195658cb9200afd, bytes: 383865448}
+      - {path: "layers-40.safetensors", sha256: 6908f1ab1a3d7828a566099ecf393582bec988d0f82f6141848942d1494b0321, bytes: 383865472}
+      - {path: "layers-41.safetensors", sha256: 21ee5d9842074888bd9fdffa875d1f29f8c77f1f5ccbb8f53becb188e1749caa, bytes: 383865472}
+      - {path: "layers-42.safetensors", sha256: 565379d4291c06cdf9a4f66d5d21385848a1e5ab17b55fea6c1c8e544f8498f0, bytes: 383865472}
+      - {path: "layers-43.safetensors", sha256: 4bb8c0a4fadda1f1d66ef6f0dde5a5a94001d04af1842e42009833aff70bf416, bytes: 372313760}
+      - {path: "layers-44.safetensors", sha256: 14339304cd520a8673f179cb8352c36fbebe184f15309aee2a79afd2d4476fef, bytes: 383865472}
+      - {path: "layers-45.safetensors", sha256: 7a076aca542f937cc87dec92ab49fd782eae234642b40bc706a6108b3dff2c2a, bytes: 383865472}
+      - {path: "layers-46.safetensors", sha256: d82d472cfc4792012934467b90c5e0242df4867a430dd651d13cdee72b7c6645, bytes: 383865472}
+      - {path: "layers-47.safetensors", sha256: a83fc757fb11bc50ed3a0c9998b2b2f55c3b6a07598ed458bdbece4285ffaf1f, bytes: 372313760}
+      - {path: "layers-48.safetensors", sha256: f6aa126d006c7d976c20b1330c118b42cf3bbe8a7d216bb14f2240d5c49bc72f, bytes: 383865472}
+      - {path: "layers-49.safetensors", sha256: 7ed54c375407c2baec8cfabe8336f8d3782246848298bb232ac2582113676c69, bytes: 383865472}
+      - {path: "layers-5.safetensors", sha256: ebbc2c4bd2b98877caafa7073b6ed732a0284eb82269cf6d21710e245af5837a, bytes: 383865448}
+      - {path: "layers-50.safetensors", sha256: 73825e1f056c3de53276d3c65743e62b67bf3ca082cf7077ecba1ffef18e9bf1, bytes: 383865472}
+      - {path: "layers-51.safetensors", sha256: b6abd8b62b5c4b7beca8cdccd306065be2192ef42491c587ca019d971ed86a1f, bytes: 372313760}
+      - {path: "layers-52.safetensors", sha256: 6251d51e6fbec6f463ca875fcbe852e07c5025145affe9af053a04fbdc37288f, bytes: 383865472}
+      - {path: "layers-53.safetensors", sha256: a9f2f43b4978bba2f755c6d2eb39f8561965bc3c1b2fd1073bb363aff11a9b8c, bytes: 383865472}
+      - {path: "layers-54.safetensors", sha256: f0246c9974a4b1207f8f5d05a09c54c50ea61fbfd2dc6480d2b76d3647ece292, bytes: 383865472}
+      - {path: "layers-55.safetensors", sha256: 649c400495616cf888b7c52e538113610a36265c531d84bff484f8149c157405, bytes: 372313760}
+      - {path: "layers-56.safetensors", sha256: eb0a8139a36138639a37219c158b9415412b68d316235061a72e57da5509c188, bytes: 383865472}
+      - {path: "layers-57.safetensors", sha256: d7616ad33f9256342573ff85b3f2a0e368dd120257c0c7158564587036119d95, bytes: 383865472}
+      - {path: "layers-58.safetensors", sha256: a8dff0e37d0e3903cc29711b935c2865ccd38bd930e7487ae2f4bedbd18ff185, bytes: 383865472}
+      - {path: "layers-59.safetensors", sha256: 573ed65fd455ec9bd811e95946ea422e08ac36860fdff6968a6d108263a54175, bytes: 372313760}
+      - {path: "layers-6.safetensors", sha256: 2fea2aaa61d566ba8af27ee89d29d9ee9f1c7f6fbe692772d9ba61fc45109ef6, bytes: 383865448}
+      - {path: "layers-60.safetensors", sha256: 9a19c30b190bf552eb424af16103f610bcd944fb276b3275eb7c73849799b7de, bytes: 383865472}
+      - {path: "layers-61.safetensors", sha256: ff744debd4dd0eef450ed24473df57680db404914302e7147a3b72154131f4a0, bytes: 383865472}
+      - {path: "layers-62.safetensors", sha256: d9b3b9e472f78bcadf62c446084833bb549faff9e730b21219f1f80d583eff23, bytes: 383865472}
+      - {path: "layers-63.safetensors", sha256: 59ba4a3af5e6bc2008c2d6b5d9be8eeaf255cddc0aaf8a0d9583b496bb2e3ae0, bytes: 372313760}
+      - {path: "layers-7.safetensors", sha256: f2e0137e878016a7afdb2314972e0cbbe2461a67b00eb1d691b4de8ea2665da8, bytes: 372313744}
+      - {path: "layers-8.safetensors", sha256: 1721b7bcd730891c224b70a7b6147e44a574a2d6c4d924760acf97728249c92c, bytes: 383865448}
+      - {path: "layers-9.safetensors", sha256: 0a21e07065b5bb04adc339300dea1872cc48ab8eab3b02df092f7cbc67c8d6f6, bytes: 383865448}
+      - {path: "merges.txt", sha256: a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d, bytes: 3353259}
+      - {path: "model.safetensors.index.json", sha256: f0838c766951bdfe76d6afbdb2771a8f67aaa2231dedb3d33cebd817729843a2, bytes: 137335}
+      - {path: "mtp.safetensors", sha256: e5e4464a3793cc261de536592830bca40e7f3af159ed038c358f5660917cf43b, bytes: 477202224}
+      - {path: "outside.safetensors", sha256: ddff1d6665a2b39f2612fce0ef955e2436724c565bfbcbc127c7ffd078b698ff, bytes: 6007102112}
+      - {path: "preprocessor_config.json", sha256: 27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516, bytes: 390}
+      - {path: "tokenizer.json", sha256: 0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3, bytes: 12809320}
+      - {path: "tokenizer_config.json", sha256: b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27, bytes: 17928}
+      - {path: "video_preprocessor_config.json", sha256: 7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13, bytes: 385}
+      - {path: "vocab.json", sha256: ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003, bytes: 6722759}
+
+  # --- vendored model code (vendor/) -------------------------------------------------------
+  - id: birefnet-code
+    kind: vendored_code
+    spdx: MIT
+    licence_url: https://github.com/ZhengPeng7/BiRefNet/blob/c4d649666cc171486329413dc2b61f0137158b6a/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/ZhengPeng7/BiRefNet/c4d649666cc171486329413dc2b61f0137158b6a/LICENSE, sha256: 92a7089e0915fc32bc40067560b398f1e6a7a5958abd7d04eda393629a5acefb}
+    licence_read_at: "2026-10-13T07:40:21Z"
+    notes: >-
+      BiRefNet's model code at the weights' revision, vendored byte-identical so it loads
+      without trust_remote_code. The Hugging Face card at that revision declares license:
+      mit; the MIT LICENSE text (Copyright (c) 2024 ZhengPeng) is the GitHub repository's
+      and ships beside the code. birefnet.py imports torch, torchvision, timm, kornia,
+      einops, numpy and transformers.
+    files:
+      - path: vendor/birefnet/birefnet.py
+        sha256: 208771ae626f653d64128fbf2d6ac9f8e645c5cc5e286258a73ec3322bbfe5ef
+        bytes: 91896
+        upstream: {type: huggingface, repo: ZhengPeng7/BiRefNet, revision: e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4, path: birefnet.py, sha256: 208771ae626f653d64128fbf2d6ac9f8e645c5cc5e286258a73ec3322bbfe5ef}
+      - path: vendor/birefnet/BiRefNet_config.py
+        sha256: e7b8c2a74f6cea6a59553d517f71d47f2c1d90e670a13416af17c25fe2f3dc52
+        bytes: 298
+        upstream: {type: huggingface, repo: ZhengPeng7/BiRefNet, revision: e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4, path: BiRefNet_config.py, sha256: e7b8c2a74f6cea6a59553d517f71d47f2c1d90e670a13416af17c25fe2f3dc52}
+      - path: vendor/birefnet/LICENSE
+        sha256: 92a7089e0915fc32bc40067560b398f1e6a7a5958abd7d04eda393629a5acefb
+        bytes: 1066
+        upstream: {type: github, repo: ZhengPeng7/BiRefNet, commit: c4d649666cc171486329413dc2b61f0137158b6a, path: LICENSE, sha256: 92a7089e0915fc32bc40067560b398f1e6a7a5958abd7d04eda393629a5acefb}
+
+  - id: ben2-code
+    kind: vendored_code
+    spdx: MIT
+    licence_url: https://github.com/PramaLLC/BEN2/blob/2c99a5da477b5523585bfa5c893888a6e818a8f6/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/PramaLLC/BEN2/2c99a5da477b5523585bfa5c893888a6e818a8f6/LICENSE, sha256: a4843132cbd56c50f20ae008739d85b7563d38905fd692a337af52ad588c581a}
+    licence_read_at: "2026-10-13T07:40:21Z"
+    notes: >-
+      BEN2.py at the weights' revision, vendored byte-identical. The Hugging Face card
+      declares license: mit; the MIT LICENSE text (Copyright (c) 2025 Prama LLC) is the
+      GitHub repository's and ships beside the code. BEN2.py imports torch, torchvision,
+      timm, einops, numpy, Pillow and OpenCV at module level; its video helpers shell out to
+      ffmpeg, which the image path never calls.
+    files:
+      - path: vendor/ben2/BEN2.py
+        sha256: 16e6132faefc112ea97072b93df40c847a33aad7c04a2e578b417e9ebb6094a7
+        bytes: 53513
+        upstream: {type: huggingface, repo: PramaLLC/BEN2, revision: e48a20765fb421d19dcdb0bf3cc61e802ca5ec8f, path: BEN2.py, sha256: 16e6132faefc112ea97072b93df40c847a33aad7c04a2e578b417e9ebb6094a7}
+      - path: vendor/ben2/LICENSE
+        sha256: a4843132cbd56c50f20ae008739d85b7563d38905fd692a337af52ad588c581a
+        bytes: 1066
+        upstream: {type: github, repo: PramaLLC/BEN2, commit: 2c99a5da477b5523585bfa5c893888a6e818a8f6, path: LICENSE, sha256: a4843132cbd56c50f20ae008739d85b7563d38905fd692a337af52ad588c581a}
+
+  - id: basicsr-rrdbnet-code
+    kind: vendored_code
+    spdx: Apache-2.0
+    licence_url: https://github.com/XPixelGroup/BasicSR/blob/8d56e3a045f9fb3e1d8872f92ee4a4f07f886b0a/LICENSE.txt
+    licence_evidence: {url: https://raw.githubusercontent.com/XPixelGroup/BasicSR/8d56e3a045f9fb3e1d8872f92ee4a4f07f886b0a/LICENSE.txt, sha256: 5447872f21ddc29dc0dc060d5c885513c01c904e9da9931bba69898a6fb4d415}
+    licence_read_at: "2026-10-13T07:40:22Z"
+    notes: >-
+      The RRDBNet architecture RealESRGAN_x2plus runs, derived from BasicSR. Not vendored
+      byte-identical: upstream rrdbnet_arch.py imports basicsr's registry and arch_util,
+      whose module top imports BasicSR's compiled deformable-convolution ops. The derived
+      file carries the Apache-2.0 section 4(b) change notice in its header. Not taken from
+      spandrel either: spandrel 0.4.2 declares MIT, but its wheel also bundles the AuraSR
+      architecture under CC BY-SA 4.0
+      (libs/spandrel/spandrel/architectures/AuraSR/__arch/LICENSE.md at
+      724cca389f28c38e1050689d4862a452fd644484), which D2 does not admit.
+    files:
+      - path: vendor/basicsr_rrdbnet/rrdbnet_arch.py
+        sha256: 31b0662a429811e47e64841fc6e1b8e3d4e8936f04adcfd8df9f434dc871556c
+        bytes: 7518
+        derived_from:
+          upstream:
+            - {type: github, repo: XPixelGroup/BasicSR, commit: 8d56e3a045f9fb3e1d8872f92ee4a4f07f886b0a, path: basicsr/archs/rrdbnet_arch.py, sha256: 6aa8eb3f77e918b90eeff4ebfaf8745abe0c40eb8fcc03abbc1928693d70ab58}
+            - {type: github, repo: XPixelGroup/BasicSR, commit: 8d56e3a045f9fb3e1d8872f92ee4a4f07f886b0a, path: basicsr/archs/arch_util.py, sha256: be2cec6482fba5455cc1f03ff40da84a89e27feadf886018a4fa7b97b8a1bb55}
+          conversion: >-
+            Removed `from basicsr.utils.registry import ARCH_REGISTRY` and the
+            `@ARCH_REGISTRY.register()` decorator; replaced `from .arch_util import
+            default_init_weights, make_layer, pixel_unshuffle` with verbatim copies of those
+            three functions, adding the two imports they use (torch.nn.init, _BatchNorm)
+            beside the file's other torch imports; prepended the change notice. No other
+            line differs.
+      - path: vendor/basicsr_rrdbnet/LICENSE.txt
+        sha256: 5447872f21ddc29dc0dc060d5c885513c01c904e9da9931bba69898a6fb4d415
+        bytes: 11350
+        upstream: {type: github, repo: XPixelGroup/BasicSR, commit: 8d56e3a045f9fb3e1d8872f92ee4a4f07f886b0a, path: LICENSE.txt, sha256: 5447872f21ddc29dc0dc060d5c885513c01c904e9da9931bba69898a6fb4d415}
+
+  - id: realesrgan-srvgg-code
+    kind: vendored_code
+    spdx: BSD-3-Clause
+    licence_url: https://github.com/xinntao/Real-ESRGAN/blob/685d429c81888252bdb10f56c7754baededc3823/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/xinntao/Real-ESRGAN/685d429c81888252bdb10f56c7754baededc3823/LICENSE, sha256: 4a699ec4863d96a91fc265948a0c90033f7e8735d515524dcf3444736406e0c2}
+    licence_read_at: "2026-10-13T07:40:23Z"
+    notes: >-
+      The SRVGGNetCompact architecture realesr-general-x4v3 runs, derived from Real-ESRGAN
+      at tag v0.2.5.0 (the tag that released those weights).
+    files:
+      - path: vendor/realesrgan_srvgg/srvgg_arch.py
+        sha256: 6a7f64e46890b24a22436fe7296d1c7c675e51bbd30b23492b058263e804dd7a
+        bytes: 3189
+        derived_from:
+          upstream:
+            - {type: github, repo: xinntao/Real-ESRGAN, commit: 685d429c81888252bdb10f56c7754baededc3823, path: realesrgan/archs/srvgg_arch.py, sha256: 7419a75e789ca09295266563d74a6d7c08d6c24502af6b0a919b1811d0a0be59}
+          conversion: >-
+            Removed `from basicsr.utils.registry import ARCH_REGISTRY` and the
+            `@ARCH_REGISTRY.register()` decorator; prepended the change notice. No other
+            line differs.
+      - path: vendor/realesrgan_srvgg/LICENSE
+        sha256: 4a699ec4863d96a91fc265948a0c90033f7e8735d515524dcf3444736406e0c2
+        bytes: 1519
+        upstream: {type: github, repo: xinntao/Real-ESRGAN, commit: 685d429c81888252bdb10f56c7754baededc3823, path: LICENSE, sha256: 4a699ec4863d96a91fc265948a0c90033f7e8735d515524dcf3444736406e0c2}
+
+  # --- libraries --------------------------------------------------------------------------
+  - id: diffusers
+    kind: library
+    source: {type: pypi, package: diffusers, version: "0.41.0", index: https://pypi.org/simple, git: {repo: huggingface/diffusers, commit: 086bf9578c0f4acbc66e48cd1e7cc26befd9e10f}}
+    spdx: Apache-2.0
+    licence_url: https://github.com/huggingface/diffusers/blob/086bf9578c0f4acbc66e48cd1e7cc26befd9e10f/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/huggingface/diffusers/086bf9578c0f4acbc66e48cd1e7cc26befd9e10f/LICENSE, sha256: f9e2070c247517b1ddf65f7b11b393484a18da91a958fd18a97bd0f241c3125c}
+    licence_read_at: "2026-10-13T07:40:26Z"
+    notes: >-
+      Release 0.41.0 (2026-10-06), tag v0.41.0. The wheel contains QwenImagePipeline,
+      QwenImageEditPlusPipeline and ZImagePipeline, so no source install is needed. Requires
+      huggingface-hub>=1.32.0,<2.0 and safetensors>=0.8.0.
+    files:
+      - {path: "diffusers-0.41.0-py3-none-any.whl", sha256: ea8918b7dfd92ce793b6db689a551b8cd25d52c6c0fcd3ade0706a5fd2a25990, bytes: 6063887}
+
+  - id: transformers
+    kind: library
+    source: {type: pypi, package: transformers, version: "5.19.0", index: https://pypi.org/simple, git: {repo: huggingface/transformers, commit: c4c4605f961877852b89b97478536bb3a26b6fd1}}
+    spdx: Apache-2.0
+    licence_url: https://github.com/huggingface/transformers/blob/c4c4605f961877852b89b97478536bb3a26b6fd1/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/huggingface/transformers/c4c4605f961877852b89b97478536bb3a26b6fd1/LICENSE, sha256: 77fd4710def9ec3c0f6225800e0235f15a425abd4a8b03559127fcd782612049}
+    licence_read_at: "2026-10-13T07:40:26Z"
+    notes: >-
+      Tag v5.19.0. Loads the generators' text encoders and BiRefNet's PreTrainedModel.
+    files:
+      - {path: "transformers-5.19.0-py3-none-any.whl", sha256: afcd2dd5f603ed28c1e1fcb00a338ccbb4ef5f878ed289635df8b58187afb518, bytes: 12599123}
+
+  - id: accelerate
+    kind: library
+    source: {type: pypi, package: accelerate, version: "1.15.0", index: https://pypi.org/simple, git: {repo: huggingface/accelerate, commit: 6afc1e5ee217051fde702b23de2813344dc0fd33}}
+    spdx: Apache-2.0
+    licence_url: https://github.com/huggingface/accelerate/blob/6afc1e5ee217051fde702b23de2813344dc0fd33/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/huggingface/accelerate/6afc1e5ee217051fde702b23de2813344dc0fd33/LICENSE, sha256: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4}
+    licence_read_at: "2026-10-13T07:40:26Z"
+    notes: >-
+      Tag v1.15.0.
+    files:
+      - {path: "accelerate-1.15.0-py3-none-any.whl", sha256: 97eacca0b73e45cb867dbf8c5d5d4dc32219544300e0c8992c7334dc2ef33cec, bytes: 394295}
+
+  - id: safetensors
+    kind: library
+    source: {type: pypi, package: safetensors, version: "0.8.0", index: https://pypi.org/simple, git: {repo: safetensors/safetensors, commit: a406ca3e7a90598be0cd05a50069cb9bf5ef6ba6}}
+    spdx: Apache-2.0
+    licence_url: https://github.com/safetensors/safetensors/blob/a406ca3e7a90598be0cd05a50069cb9bf5ef6ba6/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/safetensors/safetensors/a406ca3e7a90598be0cd05a50069cb9bf5ef6ba6/LICENSE, sha256: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4}
+    licence_read_at: "2026-10-13T07:40:27Z"
+    notes: >-
+      Tag v0.8.0 (the repository moved from huggingface/safetensors). cp310 abi3 Linux
+      wheel.
+    files:
+      - {path: "safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", sha256: fd6f3f93c9a0a7cc2788ee63fb763353d4bd2e89b0751bc78fcf7dda00bea774, bytes: 516040}
+
+  - id: torch
+    kind: library
+    source: {type: pypi, package: torch, version: "2.11.0+cu128", index: https://download.pytorch.org/whl/cu128, git: {repo: pytorch/pytorch, commit: 70d99e998b4955e0049d13a98d77ae1b14db1f45}}
+    spdx: BSD-3-Clause
+    licence_url: https://github.com/pytorch/pytorch/blob/70d99e998b4955e0049d13a98d77ae1b14db1f45/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/pytorch/pytorch/70d99e998b4955e0049d13a98d77ae1b14db1f45/LICENSE, sha256: bd018feef8825e88181c84eb7e3aa4eafb8f08a20d9fd6ef948569610c4a3e43}
+    licence_read_at: "2026-10-13T07:40:27Z"
+    notes: >-
+      Tag v2.11.0: the newest torch on the cu128 index (Blackwell sm_120) and the version
+      qontinui's [ml] extra already locks. The wheel's METADATA declares License:
+      BSD-3-Clause. Its Linux CUDA runtime wheels are platform (above). Upgrading re-reads
+      the licence: torch 2.14.x's PyPI metadata declares an expression that includes
+      BSL-1.0, which the admitted families do not cover.
+    files:
+      - {path: "torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", sha256: 72d53f3176a69cc20710c4ecb95f7dc4c6ba10c4e4eda45b8396ee79ee40f75a, bytes: 820206653}
+
+  - id: torchvision
+    kind: library
+    source: {type: pypi, package: torchvision, version: "0.26.0+cu128", index: https://download.pytorch.org/whl/cu128, git: {repo: pytorch/vision, commit: 336d36e8db990a905498c73933e35231876e28bc}}
+    spdx: BSD-3-Clause
+    licence_url: https://github.com/pytorch/vision/blob/336d36e8db990a905498c73933e35231876e28bc/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/LICENSE, sha256: 6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d}
+    licence_read_at: "2026-10-13T07:40:28Z"
+    notes: >-
+      Tag v0.26.0, the release paired with torch 2.11.0 (its METADATA requires torch==2.11.0
+      and declares License: BSD; the LICENSE text read is the BSD 3-Clause License).
+    files:
+      - {path: "torchvision-0.26.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", sha256: f44bfc61b9be80bcf52a762d34da363cea3125d10c01f37e271583803c7bb97b, bytes: 8053474}
+
+  - id: timm
+    kind: library
+    source: {type: pypi, package: timm, version: "1.0.30", index: https://pypi.org/simple, git: {repo: huggingface/pytorch-image-models, commit: 0df212b369a5385b16dfe513d5143a7311ea1ddc}}
+    spdx: Apache-2.0
+    licence_url: https://github.com/huggingface/pytorch-image-models/blob/0df212b369a5385b16dfe513d5143a7311ea1ddc/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/huggingface/pytorch-image-models/0df212b369a5385b16dfe513d5143a7311ea1ddc/LICENSE, sha256: 71b111620fa32c17a80ccd6db2da759d31a591e497d8b5f382174f59d1b59d49}
+    licence_read_at: "2026-10-13T07:40:28Z"
+    notes: >-
+      Tag v1.0.30. Imported by the vendored BiRefNet and BEN2 code (DropPath, to_2tuple,
+      trunc_normal_).
+    files:
+      - {path: "timm-1.0.30-py3-none-any.whl", sha256: c8e27adf6801a2fdfb570dbbdd171f2f084756eefc673df8cfaab06bd14864f3, bytes: 2668917}
+
+  - id: kornia
+    kind: library
+    source: {type: pypi, package: kornia, version: "0.8.2", index: https://pypi.org/simple, git: {repo: kornia/kornia, commit: 856fd1ae6becd4300646db2b44ea3507e4ab0066}}
+    spdx: Apache-2.0
+    licence_url: https://github.com/kornia/kornia/blob/856fd1ae6becd4300646db2b44ea3507e4ab0066/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/kornia/kornia/856fd1ae6becd4300646db2b44ea3507e4ab0066/LICENSE, sha256: a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9}
+    licence_read_at: "2026-10-13T07:40:29Z"
+    notes: >-
+      Tag v0.8.2, the newest release that supports Python 3.10 (0.8.3 requires >=3.11).
+      Imported by the vendored BiRefNet code (kornia.filters.laplacian).
+    files:
+      - {path: "kornia-0.8.2-py2.py3-none-any.whl", sha256: 32dfe77c9c74a87a2de49395aa3c2c376a1b63c27611a298b394d02d13905819, bytes: 1095012}
+
+  - id: einops
+    kind: library
+    source: {type: pypi, package: einops, version: "0.8.2", index: https://pypi.org/simple, git: {repo: arogozhnikov/einops, commit: 8e911db71f2e693a0c434b041180388c685ed06f}}
+    spdx: MIT
+    licence_url: https://github.com/arogozhnikov/einops/blob/8e911db71f2e693a0c434b041180388c685ed06f/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/arogozhnikov/einops/8e911db71f2e693a0c434b041180388c685ed06f/LICENSE, sha256: 30d984364296f51ffaecad4b01ee127e95250c5068918d4b66fc96206723e434}
+    licence_read_at: "2026-10-13T07:40:29Z"
+    notes: >-
+      Tag v0.8.2. Imported by the vendored BiRefNet and BEN2 code.
+    files:
+      - {path: "einops-0.8.2-py3-none-any.whl", sha256: 54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193, bytes: 65638}
+
+  - id: vtracer
+    kind: library
+    source: {type: pypi, package: vtracer, version: "0.6.15", index: https://pypi.org/simple, git: {repo: visioncortex/vtracer, commit: fd9cdb08e622f237eb05be553a020ddc9e4c47a1}}
+    spdx: MIT
+    licence_url: https://github.com/visioncortex/vtracer/blob/fd9cdb08e622f237eb05be553a020ddc9e4c47a1/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/visioncortex/vtracer/fd9cdb08e622f237eb05be553a020ddc9e4c47a1/LICENSE, sha256: 81ee739f355765c110fc89feff14ffffce829901f96ba811fd0b65a41a8636c7}
+    licence_read_at: "2026-10-13T07:40:29Z"
+    notes: >-
+      Tag 0.6.15 (the 1.0.0 line is still alpha). Raster-to-SVG tracing; no weights.
+      Transparent pixels are keyed out when enough of the image is transparent
+      (cmdapp/src/converter.rs should_key_image), so a matted image traces without its
+      background.
+    files:
+      - {path: "vtracer-0.6.15-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", sha256: 95db13fa005bc9cacd8f6fd7fcfa2fce47529cf78af35f709993413e140f1f6e, bytes: 1088365}
+
+runners:
+  # A recipe's `pipeline` and every post step's `runner` must name one of these. `code` is the
+  # pinned code the runner executes; a diffusers runner's id is the pipeline class the model's
+  # model_index.json names.
+  - id: QwenImagePipeline
+    kind: diffusers
+    code: [diffusers, transformers, accelerate, safetensors, torch]
+  - id: QwenImageEditPlusPipeline
+    kind: diffusers
+    code: [diffusers, transformers, accelerate, safetensors, torch]
+  - id: ZImagePipeline
+    kind: diffusers
+    code: [diffusers, transformers, accelerate, safetensors, torch]
+  - id: realesrgan
+    kind: named
+    code: [basicsr-rrdbnet-code, realesrgan-srvgg-code, torch]
+  - id: birefnet
+    kind: named
+    code: [birefnet-code, transformers, safetensors, timm, kornia, einops, torchvision, torch]
+  - id: ben2
+    kind: named
+    code: [ben2-code, safetensors, timm, einops, torchvision, torch]
+  - id: vtracer
+    kind: named
+    code: [vtracer]

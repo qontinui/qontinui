@@ -1,0 +1,73 @@
+# Mutation fixture: baseline-manifest.yaml plus one defect -- a file listed without its sha256.
+schema_version: 1
+decision_record:
+  name: image-generation-weights-are-permissively-licensed
+  id: a5ec7670-843b-4556-ab52-7f5f7662ee09
+  version: 1
+target:
+  os: linux
+  arch: x86_64
+  python: "3.10"
+  cuda: "12.8"
+runtime:
+  env:
+    HF_HUB_OFFLINE: "1"
+  from_pretrained:
+    local_files_only: true
+    trust_remote_code: false
+  torch_load:
+    weights_only: true
+scope: Fixture manifest; its components are synthetic.
+platform:
+  outside_d2_scope: true
+  components:
+    - name: NVIDIA GPU driver
+vendor_dir: vendor
+components:
+  - id: example-generator
+    kind: model
+    role: text-to-image
+    source: {type: huggingface, repo: example/generator, revision: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/example/generator/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md
+    licence_evidence: {url: https://huggingface.co/example/generator/resolve/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072}
+    licence_read_at: "2026-10-13T00:00:00Z"
+    runner: ExamplePipeline
+    scheduler_class: FlowMatchEulerDiscreteScheduler
+    size_multiple: 16
+    files:
+      - {path: model_index.json, bytes: 443}
+      - {path: transformer/diffusion_pytorch_model.safetensors, sha256: 385a68108833e25cd2663928478af2c4b57ce6d2ad66a0b8967da17ab8ae50c6, bytes: 4096}
+
+  - id: example-generator-fp8
+    kind: model
+    role: text-to-image
+    source: {type: derived, from: example-generator}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/example/generator/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md
+    licence_evidence: {url: https://huggingface.co/example/generator/resolve/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072}
+    licence_read_at: "2026-10-13T00:00:00Z"
+    runner: ExamplePipeline
+    files:
+      - path: transformer/diffusion_pytorch_model.fp8.safetensors
+        sha256: 83a23427ed2f2fd0bb1fccef10da1eca63f388f7906847699892ebbc3f0fa78a
+        bytes: 2048
+        derived_from:
+          upstream:
+            - {type: manifest, component: example-generator, sha256: 385a68108833e25cd2663928478af2c4b57ce6d2ad66a0b8967da17ab8ae50c6}
+          conversion: Cast every floating-point tensor to float8_e4m3fn storage.
+
+  - id: diffusers
+    kind: library
+    source: {type: pypi, package: diffusers, version: "0.41.0", index: https://pypi.org/simple, git: {repo: huggingface/diffusers, commit: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb}}
+    spdx: Apache-2.0
+    licence_url: https://github.com/huggingface/diffusers/blob/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/huggingface/diffusers/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/LICENSE, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072}
+    licence_read_at: "2026-10-13T00:00:00Z"
+    files:
+      - {path: diffusers-0.41.0-py3-none-any.whl, sha256: a2660bc32c80bacf5aa57b2faa1ea97813a458abadb9eca97113140b65630ca1, bytes: 1024}
+
+runners:
+  - id: ExamplePipeline
+    kind: diffusers
+    code: [diffusers]

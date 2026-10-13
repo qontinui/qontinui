@@ -1,0 +1,41 @@
+# Recipe: a wide page hero. Model ids resolve in ../manifest.yaml; the provenance hash is
+# qontinui_imagegen.manifest.recipe_hash (this recipe plus the manifest entries it names).
+# Load precision -- FP8 storage by quantize-on-load or a derived file -- is chosen by Phase 0
+# item 5's measurement and lands here as a new recipe version.
+id: hero
+version: 1
+description: >-
+  Wide page hero. Qwen-Image-2512 at a landscape preset, then a 2x Real-ESRGAN upscale so
+  the master covers a full-width hero at device pixel ratio 2.
+pipeline: QwenImagePipeline
+models: [qwen-image-2512]
+parameters:
+  # Model card at revision 25468b98 ("Quick Start"): 50 steps, true_cfg_scale 4.0, this
+  # negative prompt, and these aspect-ratio sizes.
+  num_inference_steps: 50
+  true_cfg_scale: 4.0
+  negative_prompt: "低分辨率，低画质，肢体畸形，手指畸形，画面过饱和，蜡像感，人脸无细节，过度光滑，画面具有AI感。构图混乱。文字模糊，扭曲。"
+  max_sequence_length: 512  # QwenImagePipeline's default (diffusers 0.41.0)
+  scheduler: {class: FlowMatchEulerDiscreteScheduler, config: model_default}
+  size_presets:
+    "16:9": [1664, 928]
+    "3:2": [1584, 1056]
+    "4:3": [1472, 1104]
+  default_size: "16:9"
+post:
+  - op: upscale
+    runner: realesrgan
+    models: [real-esrgan-x2plus]
+    parameters:
+      scale: 2
+      # tile bounds the upscaler's VRAM on the shared desktop card (D1.3); upstream's
+      # inference_realesrgan.py defaults to 0 (untiled). tile_pad, pre_pad and half are
+      # that script's defaults.
+      tile: 512
+      tile_pad: 10
+      pre_pad: 0
+      half: true
+seed_policy:
+  mode: seeded
+  base: request_or_random  # the request's seed when it carries one, else a recorded random one
+  per_candidate: add_index  # candidate i of a best-of-N job samples from base + i

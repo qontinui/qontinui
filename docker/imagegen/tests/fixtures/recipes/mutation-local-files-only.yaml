@@ -1,0 +1,18 @@
+# Mutation fixture: baseline-recipe.yaml plus one defect -- local_files_only switched off.
+id: example
+version: 1
+description: Fixture recipe.
+pipeline: ExamplePipeline
+models: [example-generator]
+parameters:
+  num_inference_steps: 8
+  local_files_only: false
+  scheduler: {class: FlowMatchEulerDiscreteScheduler, config: model_default}
+  size_presets:
+    "1:1": [1024, 1024]
+  default_size: "1:1"
+post: []
+seed_policy:
+  mode: seeded
+  base: request_or_random
+  per_candidate: add_index

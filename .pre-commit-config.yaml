@@ -1,3 +1,7 @@
+# Vendored model code is pinned byte-for-byte by sha256 (docker/imagegen/manifest.yaml);
+# no hook may rewrite it.
+exclude: ^docker/imagegen/vendor/
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0

@@ -1,0 +1,47 @@
+# Recipe: an empty-state spot illustration delivered as SVG. Model ids resolve in
+# ../manifest.yaml. Load precision is chosen by Phase 0 item 5 and lands here as a new
+# recipe version.
+id: empty-state
+version: 1
+description: >-
+  Flat spot illustration for an empty state. Z-Image-Turbo draws it on a plain background,
+  BiRefNet mattes it to transparency, and vtracer traces it to SVG, which stays crisp at any
+  size and carries no background into either theme.
+pipeline: ZImagePipeline
+models: [z-image-turbo]
+parameters:
+  # Model card at revision f332072a ("Quick Start"): 9 steps (8 DiT forwards), guidance 0
+  # for the Turbo model, 1024x1024.
+  num_inference_steps: 9
+  guidance_scale: 0.0
+  max_sequence_length: 512  # ZImagePipeline's default (diffusers 0.41.0)
+  scheduler: {class: FlowMatchEulerDiscreteScheduler, config: model_default}
+  prompt_template: "{prompt}. Flat vector illustration with a few solid colours, no gradients, no texture, no text, centred on a plain white background."
+  size_presets:
+    "1:1": [1024, 1024]
+  default_size: "1:1"
+post:
+  - op: matte
+    runner: birefnet
+    models: [birefnet]
+  - op: vectorize
+    runner: vtracer
+    models: []
+    parameters:
+      # vtracer 0.6.15's documented defaults (cmdapp/vtracer/vtracer.pyi), written out so a
+      # changed default in a later vtracer cannot change this recipe's output unseen.
+      colormode: color
+      hierarchical: stacked
+      mode: spline
+      filter_speckle: 4
+      color_precision: 6
+      layer_difference: 16
+      corner_threshold: 60
+      length_threshold: 4.0
+      max_iterations: 10
+      splice_threshold: 45
+      path_precision: 8
+seed_policy:
+  mode: seeded
+  base: request_or_random
+  per_candidate: add_index

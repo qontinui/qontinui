@@ -1,0 +1,17 @@
+# Mutation fixture: baseline-recipe.yaml plus one defect -- a size the pipeline's multiple of 16 does not divide.
+id: example
+version: 1
+description: Fixture recipe.
+pipeline: ExamplePipeline
+models: [example-generator]
+parameters:
+  num_inference_steps: 8
+  scheduler: {class: FlowMatchEulerDiscreteScheduler, config: model_default}
+  size_presets:
+    "1:1": [1000, 1000]
+  default_size: "1:1"
+post: []
+seed_policy:
+  mode: seeded
+  base: request_or_random
+  per_candidate: add_index

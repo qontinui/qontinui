@@ -1,0 +1,28 @@
+# Recipe: a section or card illustration, kept raster. Model ids resolve in ../manifest.yaml.
+# Load precision is chosen by Phase 0 item 5 and lands here as a new recipe version.
+id: illustration
+version: 1
+description: >-
+  Illustration for a section or card at a square or near-square preset, rendered by
+  Qwen-Image-2512 and kept as a raster master.
+pipeline: QwenImagePipeline
+models: [qwen-image-2512]
+parameters:
+  # Model card at revision 25468b98 ("Quick Start").
+  num_inference_steps: 50
+  true_cfg_scale: 4.0
+  negative_prompt: "低分辨率，低画质，肢体畸形，手指畸形，画面过饱和，蜡像感，人脸无细节，过度光滑，画面具有AI感。构图混乱。文字模糊，扭曲。"
+  max_sequence_length: 512
+  scheduler: {class: FlowMatchEulerDiscreteScheduler, config: model_default}
+  size_presets:
+    "1:1": [1328, 1328]
+    "4:3": [1472, 1104]
+    "3:4": [1104, 1472]
+    "3:2": [1584, 1056]
+    "2:3": [1056, 1584]
+  default_size: "1:1"
+post: []
+seed_policy:
+  mode: seeded
+  base: request_or_random
+  per_candidate: add_index

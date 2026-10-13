@@ -1,0 +1,28 @@
+# Recipe: one subject on transparency. Model ids resolve in ../manifest.yaml. Load
+# precision is chosen by Phase 0 item 5 and lands here as a new recipe version.
+id: cut-out
+version: 1
+description: >-
+  A single subject on transparency. Z-Image-Turbo renders it centred on a flat plain
+  background (so the matte has one clean edge to find), then BiRefNet mattes it to an RGBA
+  PNG.
+pipeline: ZImagePipeline
+models: [z-image-turbo]
+parameters:
+  # Model card at revision f332072a ("Quick Start").
+  num_inference_steps: 9
+  guidance_scale: 0.0
+  max_sequence_length: 512
+  scheduler: {class: FlowMatchEulerDiscreteScheduler, config: model_default}
+  prompt_template: "{prompt}. A single subject, centred and fully in frame, on a plain flat light grey background, no shadow, nothing else in the scene."
+  size_presets:
+    "1:1": [1024, 1024]
+  default_size: "1:1"
+post:
+  - op: matte
+    runner: birefnet
+    models: [birefnet]
+seed_policy:
+  mode: seeded
+  base: request_or_random
+  per_candidate: add_index

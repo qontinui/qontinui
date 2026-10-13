@@ -2,6 +2,10 @@
 # This extends the existing .pre-commit-config.yaml with quality checks
 # To use: ln -sf .pre-commit-config-quality.yaml .git/hooks/pre-commit
 
+# Vendored model code is pinned byte-for-byte by sha256 (docker/imagegen/manifest.yaml);
+# no hook -- trailing-whitespace and end-of-file-fixer included -- may rewrite it.
+exclude: ^docker/imagegen/vendor/
+
 repos:
   # Quality gates using qontinui-devtools
   - repo: local

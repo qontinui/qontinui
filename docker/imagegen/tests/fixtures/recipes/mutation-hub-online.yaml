@@ -1,0 +1,18 @@
+# Mutation fixture: baseline-recipe.yaml plus one defect -- HF_HUB_OFFLINE switched off for this recipe.
+id: example
+version: 1
+description: Fixture recipe.
+pipeline: ExamplePipeline
+models: [example-generator]
+parameters:
+  num_inference_steps: 8
+  env: {HF_HUB_OFFLINE: "0"}
+  scheduler: {class: FlowMatchEulerDiscreteScheduler, config: model_default}
+  size_presets:
+    "1:1": [1024, 1024]
+  default_size: "1:1"
+post: []
+seed_policy:
+  mode: seeded
+  base: request_or_random
+  per_candidate: add_index

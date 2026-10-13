@@ -156,6 +156,11 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Third-party model code vendored byte-for-byte and pinned by sha256 in
+# docker/imagegen/manifest.yaml: a lint autofix would break the pin, so ruff never
+# touches it -- force-exclude keeps that true when pre-commit passes the files by name.
+extend-exclude = ["docker/imagegen/vendor"]
+force-exclude = true
 
 [tool.ruff.lint]
 select = [
@@ -227,7 +232,9 @@ max-line-length = 100
 disable = ["C0114", "C0115", "C0116"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# docker/imagegen/tests: the image provider's licence manifest and recipes (they import
+# nothing from qontinui and need no X server).
+testpaths = ["tests", "docker/imagegen/tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

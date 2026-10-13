@@ -1,0 +1,27 @@
+# Recipe: upscale an existing image. Model ids resolve in ../manifest.yaml. Real-ESRGAN is
+# deterministic, so there is no seed.
+id: upscale
+version: 1
+description: >-
+  Upscale an existing image 2x with RealESRGAN_x2plus (RRDBNet) or 4x with
+  realesr-general-x4v3 (SRVGGNetCompact). SeedVR2 is admitted in the manifest but has no
+  runner yet; a later version of this recipe can move to it once Phase 0 measures it.
+pipeline: realesrgan
+models: [real-esrgan-x2plus, real-esrgan-general-x4v3]
+parameters:
+  scale_models:
+    "2": real-esrgan-x2plus
+    "4": real-esrgan-general-x4v3
+  default_scale: 2
+  # tile bounds VRAM on the shared desktop card (D1.3); upstream's inference_realesrgan.py
+  # defaults to 0 (untiled). tile_pad, pre_pad and half are that script's defaults.
+  tile: 512
+  tile_pad: 10
+  pre_pad: 0
+  half: true
+  # 1.0 runs realesr-general-x4v3 alone. The script's default 0.5 interpolates it with
+  # realesr-general-wdn-x4v3, which the manifest does not pin.
+  denoise_strength: 1.0
+post: []
+seed_policy:
+  mode: deterministic
