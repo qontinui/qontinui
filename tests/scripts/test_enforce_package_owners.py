@@ -3,6 +3,7 @@
 import base64
 import hashlib
 import importlib.util
+import re
 import subprocess
 import sys
 import tomllib
@@ -144,18 +145,61 @@ def test_requirement_pins_the_version_with_every_locked_hash(tmp_path):
 
 def test_lock_matching_names_a_missing_entry_apart_from_duplicate_ones(tmp_path):
     lock = _write_lock(tmp_path / "poetry.lock", "fake-owner", "2.0", [("f.whl", "sha256:dd")])
+    at_lock = re.escape(f"{lock}: ")
     with pytest.raises(
-        LookupError, match="no matching lock entry: .* locks fake-owner 2.0, not the installed 1.0"
+        epo.LockError,
+        match=at_lock + r"no matching lock entry for fake-owner 1\.0 \(it locks 2\.0\)",
     ):
         epo.locked_entry(lock, "fake-owner", "1.0")
-    with pytest.raises(LookupError, match=r"no matching lock entry: .* locks other \(none\)"):
+    with pytest.raises(
+        epo.LockError, match=at_lock + r"no matching lock entry for other 1\.0 \(it locks none\)"
+    ):
         epo.locked_entry(lock, "other", "1.0")
     twice = tmp_path / "twice.lock"
     twice.write_text(lock.read_text() * 2)
     with pytest.raises(
-        LookupError, match="several matching lock entries: .* fake-owner 2.0 2 times"
+        epo.LockError,
+        match=re.escape(f"{twice}: ") + r"several matching lock entries for fake-owner 2\.0 \(2\)",
     ):
         epo.locked_entry(twice, "fake-owner", "2.0")
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (None, "cannot be read"),
+        ("[[package]\n", "is not valid TOML"),
+        ('[metadata]\nlock-version = "2.1"\n', "has no [[package]] table, so it locks nothing"),
+        (
+            '[[package]]\nname = "fake-owner"\nversion = "1.0"\nfiles = "not-a-list"\n',
+            "a [[package]] entry is malformed",
+        ),
+        ("package = 3\n", "a [[package]] entry is malformed"),
+        (
+            '[[package]]\nname = "fake-owner"\nversion = "1.0"\n'
+            'files = [{file = "f.whl", hash = "nohash"}]\n',
+            "locks f.whl with an unusable hash 'nohash'",
+        ),
+    ],
+    ids=[
+        "unreadable",
+        "bad-toml",
+        "no-package-table",
+        "files-not-a-list",
+        "package-not-an-array",
+        "bad-hash",
+    ],
+)
+def test_every_lock_problem_is_a_lock_error_that_names_the_lock(tmp_path, content, message):
+    lock = tmp_path / "poetry.lock"
+    if content is not None:
+        lock.write_text(content)
+
+    with pytest.raises(epo.LockError) as raised:
+        epo.locked_entry(lock, "fake-owner", "1.0")
+
+    assert str(raised.value).startswith(f"{lock}: ")
+    assert message in str(raised.value)
 
 
 def test_a_lock_for_another_version_is_refused_instead_of_changing_the_env(
@@ -167,7 +211,10 @@ def test_a_lock_for_another_version_is_refused_instead_of_changing_the_env(
 
     assert epo.enforce(CONTEST, lock, check_only=False) is False
     assert calls == []
-    assert "locks fake-owner 2.0, not the installed 1.0" in capsys.readouterr().out
+    assert (
+        f"{lock}: no matching lock entry for fake-owner 1.0 (it locks 2.0)"
+        in capsys.readouterr().out
+    )
 
 
 def test_a_malformed_lock_is_reported_not_raised(damaged_owner, monkeypatch, capsys):
@@ -178,7 +225,7 @@ def test_a_malformed_lock_is_reported_not_raised(damaged_owner, monkeypatch, cap
 
     assert epo.enforce(CONTEST, lock, check_only=False) is False
     assert calls == []
-    assert "reinstalling fake-owner failed" in capsys.readouterr().out
+    assert f"{lock}: a [[package]] entry is malformed" in capsys.readouterr().out
 
 
 def test_enforce_repairs_then_reverifies_and_check_mode_changes_nothing(
@@ -241,6 +288,55 @@ def test_repair_falls_back_to_the_index_when_no_cached_wheel_matches_the_lock(
     assert epo.enforce(CONTEST, lock, check_only=False) is True
     assert calls[0][1] == []
     assert "reinstalled fake-owner 1.0 from the package index" in capsys.readouterr().out
+
+
+def _cache_holding_the_locked_wheel(root: Path) -> tuple[Path, Path]:
+    wheel = _fake_wheel(root / "poetry-cache" / "artifacts" / "ab" / "cd")
+    digest = hashlib.sha256(wheel.read_bytes()).hexdigest()
+    lock = _write_lock(
+        root / "poetry.lock", "fake-owner", "1.0", [(wheel.name, f"sha256:{digest}")]
+    )
+    return wheel, lock
+
+
+def test_a_cached_wheel_pip_cannot_install_is_retried_once_from_the_index(
+    damaged_owner, monkeypatch, capsys
+):
+    wheel, lock = _cache_holding_the_locked_wheel(damaged_owner)
+    calls = []
+
+    def reinstall(requirement, find_links):
+        calls.append((requirement, list(find_links)))
+        if find_links:  # another platform's wheel: pip --no-index finds nothing to install
+            raise subprocess.CalledProcessError(1, ["pip"])
+        (damaged_owner / "Pkg/__init__.py").write_bytes(OWNER_COPY)
+
+    monkeypatch.setattr(epo, "reinstall", reinstall)
+
+    assert epo.enforce(CONTEST, lock, check_only=False) is True
+    requirement = epo.requirement_line(epo.locked_entry(lock, "fake-owner", "1.0"))
+    assert calls == [(requirement, [wheel.parent]), (requirement, [])]
+    out = capsys.readouterr().out
+    assert "retrying once from the package index, still hash-pinned" in out
+    assert "repaired - reinstalled fake-owner 1.0 from the package index" in out
+
+
+def test_the_index_is_tried_once_after_the_cache_and_its_failure_is_reported(
+    damaged_owner, monkeypatch, capsys
+):
+    _, lock = _cache_holding_the_locked_wheel(damaged_owner)
+    calls = []
+
+    def reinstall(requirement, find_links):
+        calls.append(list(find_links))
+        raise subprocess.CalledProcessError(1, ["pip"])
+
+    monkeypatch.setattr(epo, "reinstall", reinstall)
+
+    assert epo.enforce(CONTEST, lock, check_only=False) is False
+    assert len(calls) == 2
+    assert calls[1] == []
+    assert "reinstalling fake-owner failed" in capsys.readouterr().out
 
 
 def test_a_cached_sdist_is_not_offered_to_pip(tmp_path):

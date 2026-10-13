@@ -51,10 +51,12 @@ happens after the install. For each package below, this script hashes every file
 the owner's RECORD lists. If any byte differs, it reinstalls exactly the locked
 owner (``pip install --force-reinstall --no-deps --require-hashes`` with
 poetry.lock's hashes) and verifies again. It installs the wheel Poetry already
-downloaded into its artifact cache when one matches the lock, and asks the
-package index only when none does. On a healthy environment it changes nothing.
-Files that only a rival ships (opencv-python's Qt plugin under ``cv2/qt/``) stay
-in place; nothing imports them.
+downloaded into its artifact cache when one matches the lock. It asks the package
+index when none does. It also asks the index, once and still hash-pinned, when
+pip cannot install the cached wheel, as with another platform's wheel in a
+shared cache. On a healthy environment it changes nothing. Files that only a
+rival ships (opencv-python's Qt plugin under ``cv2/qt/``) stay in place. Nothing
+loads them; cv2 only imports ``cv2.qt`` as an empty namespace package.
 
 Run it after every ``poetry install`` (CI does, in every job that installs):
 
@@ -178,28 +180,54 @@ def other_writers(package: str, owner: str) -> list[str]:
     return sorted(writers)
 
 
+class LockError(Exception):
+    """poetry.lock cannot give the owner's pin. The message starts with the lock's path."""
+
+
 def locked_entry(lock_file: Path, owner: str, installed_version: str) -> dict[str, Any]:
-    """The poetry.lock entry for ``owner`` at the installed version.
+    """The poetry.lock entry for ``owner`` at the installed version, its artifacts checked.
 
     Refuses a lock that pins another version than the installed one: reinstalling
-    from it would change the environment rather than repair it.
+    from it would change the environment rather than repair it. Every refusal, and
+    every lock that cannot be read or parsed, is a LockError naming the lock.
     """
-    packages = tomllib.loads(lock_file.read_text(encoding="utf-8"))["package"]
-    entries = [entry for entry in packages if canonical(entry["name"]) == canonical(owner)]
-    matching = [entry for entry in entries if entry["version"] == installed_version]
-    if len(matching) > 1:
-        raise LookupError(
-            f"several matching lock entries: {lock_file} locks {owner} {installed_version} "
-            f"{len(matching)} times"
-        )
-    if not matching:
-        locked = ", ".join(sorted(str(entry["version"]) for entry in entries))
-        raise LookupError(
-            f"no matching lock entry: {lock_file} locks {owner} {locked or '(none)'}, "
-            f"not the installed {installed_version}; pass the poetry.lock this "
-            "environment was installed from (--lock)"
-        )
-    return matching[0]
+    try:
+        lock = tomllib.loads(lock_file.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise LockError(f"{lock_file}: cannot be read ({error.strerror or error})") from error
+    except tomllib.TOMLDecodeError as error:
+        raise LockError(f"{lock_file}: is not valid TOML ({error})") from error
+    if "package" not in lock:
+        raise LockError(f"{lock_file}: has no [[package]] table, so it locks nothing")
+    try:
+        packages = lock["package"]
+        entries = [entry for entry in packages if canonical(entry["name"]) == canonical(owner)]
+        matching = [entry for entry in entries if entry["version"] == installed_version]
+        if len(matching) > 1:
+            raise LockError(
+                f"{lock_file}: several matching lock entries for {owner} {installed_version} "
+                f"({len(matching)})"
+            )
+        if not matching:
+            locked = ", ".join(sorted(str(entry["version"]) for entry in entries))
+            raise LockError(
+                f"{lock_file}: no matching lock entry for {owner} {installed_version} "
+                f"(it locks {locked or 'none'}); pass the poetry.lock this environment "
+                "was installed from (--lock)"
+            )
+        entry = matching[0]
+        for artifact in entry["files"]:
+            algorithm, _, digest = str(artifact["hash"]).partition(":")
+            if algorithm not in hashlib.algorithms_available or not digest:
+                raise LockError(
+                    f"{lock_file}: {owner} {installed_version} locks {artifact['file']} "
+                    f"with an unusable hash {artifact['hash']!r}"
+                )
+    except (KeyError, TypeError, AttributeError) as error:
+        raise LockError(
+            f"{lock_file}: a [[package]] entry is malformed ({type(error).__name__}: {error})"
+        ) from error
+    return entry
 
 
 def requirement_line(entry: dict[str, Any]) -> str:
@@ -316,25 +344,35 @@ def enforce(contest: Contest, lock_file: Path, check_only: bool) -> bool:
         return False
     try:
         entry = locked_entry(lock_file, contest.owner, version)
-        cache = poetry_artifact_cache()
+    except LockError as error:
+        print(f"{label}: {error}")
+        return False
+    requirement = requirement_line(entry)
+    cache = poetry_artifact_cache()
+    try:
         wheels = cached_wheels(entry, cache)
+        from_cache = False
         if wheels:
-            source = "Poetry's artifact cache"
-            print(f"{label}: reinstalling from {source}: {', '.join(map(str, wheels))}")
+            print(
+                f"{label}: reinstalling from Poetry's artifact cache: {', '.join(map(str, wheels))}"
+            )
+            try:
+                reinstall(requirement, sorted({wheel.parent for wheel in wheels}))
+                from_cache = True
+            except subprocess.CalledProcessError:
+                print(
+                    f"{label}: pip could not install the cached wheel (a cache shared across "
+                    "platforms can hold another platform's); retrying once from the package "
+                    "index, still hash-pinned"
+                )
         else:
-            source = "the package index"
-            print(f"{label}: reinstalling from {source} (no locked wheel of it under {cache})")
-        reinstall(requirement_line(entry), sorted({wheel.parent for wheel in wheels}))
-    except (
-        LookupError,
-        OSError,
-        TypeError,
-        ValueError,
-        RuntimeError,
-        subprocess.CalledProcessError,
-    ) as error:
+            print(f"{label}: reinstalling from the package index (no locked wheel under {cache})")
+        if not from_cache:
+            reinstall(requirement, [])
+    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
         print(f"{label}: reinstalling {contest.owner} failed: {error}")
         return False
+    source = "Poetry's artifact cache" if from_cache else "the package index"
     importlib.invalidate_caches()
     dist = metadata.distribution(contest.owner)
     checked, damaged = damaged_files(dist, contest.package)
