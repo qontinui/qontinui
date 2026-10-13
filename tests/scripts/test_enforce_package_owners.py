@@ -240,7 +240,15 @@ _XLIB_ENTRY = b'[[package]]\nname = "python-xlib"\nversion = "0.33"\n'
         (b"\xff\xfe" + _XLIB_ENTRY, "is not UTF-8 text"),
         (
             _XLIB_ENTRY + b'files = [{hash = "sha256:' + b"a" * 64 + b'"}]\n',
-            "the python-xlib 0.33 entry lists an artifact without a file and a hash",
+            "the python-xlib 0.33 entry lists an artifact that lacks a file or a hash",
+        ),
+        (
+            _XLIB_ENTRY + b'files = [{file = "x.whl"}]\n',
+            "the python-xlib 0.33 entry lists an artifact that lacks a file or a hash",
+        ),
+        (
+            _XLIB_ENTRY + b'files = [{file = "x.whl", hash = "sha256:"}]\n',
+            "the python-xlib 0.33 entry locks x.whl with an empty sha256 digest",
         ),
         (
             _XLIB_ENTRY + b'files = [{file = "x.whl", hash = "shake_128:abcd"}]\n',
@@ -250,8 +258,21 @@ _XLIB_ENTRY = b'[[package]]\nname = "python-xlib"\nversion = "0.33"\n'
             _XLIB_ENTRY + b'files = [{file = "x.whl", hash = "md5:abcd"}]\n',
             "with hash 'md5:abcd'; pip accepts only sha256, sha384, sha512",
         ),
+        # tomllib raises RecursionError on these (the dotted key only on some releases;
+        # where it parses, the lock has no [[package]] table). Either way: refused, named.
+        (b"x = " + b"[" * 1000 + b"]" * 1000 + b"\n", ""),
+        (b"a" + b".a" * 1000 + b" = 1\n", ""),
     ],
-    ids=["invalid-utf8", "artifact-without-file", "shake_128-hash", "md5-hash"],
+    ids=[
+        "invalid-utf8",
+        "artifact-without-file",
+        "artifact-without-hash",
+        "empty-sha256-digest",
+        "shake_128-hash",
+        "md5-hash",
+        "arrays-nested-1000-deep",
+        "key-with-1001-dotted-parts",
+    ],
 )
 def test_a_hand_made_lock_fails_the_cli_with_exit_1_and_no_traceback(tmp_path, content, message):
     """Runs the script itself, as CI does, over an environment whose python-xlib is

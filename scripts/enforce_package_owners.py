@@ -202,7 +202,9 @@ def locked_entry(lock_file: Path, owner: str, installed_version: str) -> dict[st
         raise LockError(f"{lock_file}: cannot be read ({error.strerror or error})") from error
     except UnicodeDecodeError as error:
         raise LockError(f"{lock_file}: is not UTF-8 text ({error.reason})") from error
-    except tomllib.TOMLDecodeError as error:
+    except (tomllib.TOMLDecodeError, RecursionError) as error:
+        # tomllib recurses once per nesting level, and some releases (3.12.14 and 3.12.15,
+        # not 3.13.5) refuse a key of more than 1000 dotted parts with RecursionError.
         raise LockError(f"{lock_file}: is not valid TOML ({error})") from error
     if "package" not in lock:
         raise LockError(f"{lock_file}: has no [[package]] table, so it locks nothing")
@@ -229,13 +231,17 @@ def locked_entry(lock_file: Path, owner: str, installed_version: str) -> dict[st
         for artifact in entry["files"]:
             if not (isinstance(artifact, dict) and "file" in artifact and "hash" in artifact):
                 raise LockError(
-                    f"{where} lists an artifact without a file and a hash: {artifact!r}"
+                    f"{where} lists an artifact that lacks a file or a hash: {artifact!r}"
                 )
             algorithm, _, digest = str(artifact["hash"]).partition(":")
-            if algorithm not in PIP_HASH_ALGORITHMS or not digest:
+            if algorithm not in PIP_HASH_ALGORITHMS:
                 raise LockError(
                     f"{where} locks {artifact['file']} with hash {artifact['hash']!r}; "
                     f"pip accepts only {', '.join(PIP_HASH_ALGORITHMS)}"
+                )
+            if not digest:
+                raise LockError(
+                    f"{where} locks {artifact['file']} with an empty {algorithm} digest"
                 )
     except (KeyError, TypeError, AttributeError) as error:
         raise LockError(
