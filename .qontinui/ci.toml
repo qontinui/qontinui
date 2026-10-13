@@ -162,10 +162,13 @@ timeout_secs = 7200
 name = "enforce-package-owners"
 # ci.yml "Enforce owners of contested packages (Xlib, cv2)", which follows the
 # install in every job that runs one. It must come right after "install".
-# Poetry's parallel installer can interleave the two locked distributions that
-# write Xlib/ (and the two that write cv2/) into files neither of them shipped.
+# Poetry's parallel installer can interleave the locked distributions that write
+# Xlib/ (and those that write cv2/), leaving files mixed between them or torn.
 # This step reinstalls the declared owner when its RECORD hashes do not match,
-# hash-pinned to poetry.lock, which needs the same index access "install" does.
+# hash-pinned to poetry.lock. It takes the wheel from Poetry's artifact cache
+# when the install left one there, and from the index only when it did not.
+# In ci.yml's lint and typecheck jobs it runs only on a cache miss. This lane
+# has no cache (gap 8), so every dispatch is that case and the step always runs.
 # Why: scripts/enforce_package_owners.py.
 command = ["poetry", "run", "python", "scripts/enforce_package_owners.py"]
 

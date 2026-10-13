@@ -82,8 +82,8 @@ cd qontinui
 
 # Install dependencies (including multistate)
 poetry install
-# Two dependencies each install Xlib/ (and two cv2/); poetry's parallel install
-# can corrupt those files. This repairs them; why: the script's docstring.
+# Several dependencies install the same Xlib/ and cv2/ packages; poetry's parallel
+# install can mix or tear those files. This repairs them; why: the script's docstring.
 poetry run python scripts/enforce_package_owners.py
 
 # Run tests

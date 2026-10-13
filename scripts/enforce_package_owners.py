@@ -1,56 +1,67 @@
-"""Make the declared owner win each top-level package that two locked distributions install.
+"""Make the declared owner win each top-level package that several locked distributions install.
 
-Two pairs of distributions in poetry.lock install the SAME top-level package:
+Some distributions in poetry.lock install the SAME top-level package:
 
 * ``Xlib/`` - ``python-xlib`` (the maintained library; ``pynput`` requires
   ``python-xlib>=0.17``) and ``python3-xlib`` 0.15, an abandoned 2014 fork that
   ``pyautogui`` and ``mouseinfo`` still require on Linux.
 * ``cv2/`` - ``opencv-python-headless`` (what qontinui declares) and
   ``opencv-python``, the GUI build ``supervision`` (and the ``ml`` extra's
-  ``ultralytics``) require: the same OpenCV version, different binaries.
+  ``ultralytics``) require: the same OpenCV version, different binaries. The
+  ``omniparser`` extra adds a third, ``opencv-contrib-python`` 4.10.0.84, which
+  paddlex (through paddleocr) pins exactly. Making the headless build win
+  overrides that pin; paddlex 3.5.2 references no contrib-only ``cv2`` module.
 
-Poetry installs each dependency-depth group on a thread pool, and its wheel
-writer only warns ("Installing ... over existing file") before opening the path
-for writing. When both distributions of a pair land in one group, two threads
-write the same files at once, and a file both have open ends up holding the
-later writer's bytes followed by the tail of the earlier, longer copy. For
-``Xlib/protocol/__init__.py`` that is ``IndentationError: unexpected indent``
-at line 26; pynput reports it as ``ImportError: this platform is not
-supported``, raised through ``qontinui.__init__`` -> healing -> hal ->
+Poetry installs a lock-version 2.1 lock (this repo's) as one group on a thread
+pool, and its wheel writer only warns ("Installing ... over existing file")
+before it opens a path for writing. So the distributions that share a package
+write the same files at the same time, and the result varies from run to run:
+
+* One distribution wins every file. That imports fine.
+* A whole-file mix: every file is intact, but some come from each distribution.
+  It is the more common failure. For Xlib it is ``AttributeError: module
+  'Xlib.X' has no attribute 'FamilyServerInterpreted'``, python-xlib's code
+  next to the fork's ``X.py``.
+* A torn file: both writers had it open, so it holds the later writer's bytes
+  followed by the tail of the earlier, longer copy. For
+  ``Xlib/protocol/__init__.py`` that is ``IndentationError: unexpected indent``
+  at line 26. For ``cv2/cv2.abi3.so`` it is a corrupt shared object, and
+  ``import cv2`` segfaults or aborts.
+
+pynput reports either Xlib failure as ``ImportError: this platform is not
+supported: (...)``, raised through ``qontinui.__init__`` -> healing -> hal ->
 keyboard_operations, so every test module that imports qontinui errors at
-collection. For ``cv2/cv2.abi3.so`` it is a corrupt shared object, and
-``import cv2`` segfaults or aborts.
+collection.
 
-Whether the writes overlap is timing, which is why it looked like a flake:
-
-* On a cold cache poetry first builds python3-xlib from its sdist (it publishes
-  no wheel). That delays its writes past python-xlib's, the fork cleanly
-  replaces every shared file, and everything imports. qontinui's CI passed this
-  way on 2026-10-07 (run 37704199471).
-* With poetry's artifact cache warm, the built wheel is reused, both installs
-  start within ~50 ms of each other, and the writes interleave. The tests job
-  then failed on both attempts of run 38394722804 (2026-10-13).
-* A cached virtualenv is reused as it is, damage included.
-
-A minimal local reproduction (just the two distributions of a pair, 20 fresh
-``poetry install`` runs with Poetry 2.5.1) left ``import Xlib`` broken 6 times
-and ``import cv2`` failing 11 times.
+The odds depend on timing. On a cold cache Poetry first builds python3-xlib from
+its sdist (it publishes no wheel). That delays its writes past python-xlib's,
+the fork cleanly replaces every shared file, and everything imports: qontinui's
+CI passed that way on 2026-10-07 (run 37704199471). With the artifact cache
+warm, the built wheel is reused and both installs start within ~50 ms of each
+other. The tests job of run 38394722804 (2026-10-13) then failed on both
+attempts, once with each Xlib failure. A cached virtualenv is reused as it is,
+damage included. A minimal local reproduction (just the two distributions of a
+pair, 20 fresh ``poetry install`` runs with Poetry 2.5.1) left ``import Xlib``
+broken 6 times and ``import cv2`` failing 11 times.
 
 No install-time setting prevents this. Poetry cannot exclude or override a
-transitive dependency. ``installer.parallel = false`` would make the order
-deterministic, but operations in a group sort by name, so the abandoned fork
-would then win every time. So the repair happens after the install. For each
-package below, this script hashes every file the owner's RECORD lists. If any
-byte differs, it reinstalls exactly the locked owner (``pip install
---force-reinstall --no-deps`` with poetry.lock's hashes) and verifies again. On
-a healthy environment it changes nothing.
+transitive dependency, and ``installer.parallel = false`` installs the group in
+name order, so the abandoned fork would then win every time. So the repair
+happens after the install. For each package below, this script hashes every file
+the owner's RECORD lists. If any byte differs, it reinstalls exactly the locked
+owner (``pip install --force-reinstall --no-deps --require-hashes`` with
+poetry.lock's hashes) and verifies again. It installs the wheel Poetry already
+downloaded into its artifact cache when one matches the lock, and asks the
+package index only when none does. On a healthy environment it changes nothing.
+Files that only a rival ships (opencv-python's Qt plugin under ``cv2/qt/``) stay
+in place; nothing imports them.
 
 Run it after every ``poetry install`` (CI does, in every job that installs):
 
     poetry run python scripts/enforce_package_owners.py          # verify, repair
     poetry run python scripts/enforce_package_owners.py --check  # verify only
 
-A project that installs qontinui as a dependency inherits both collisions. It can
+A project that installs qontinui as a dependency inherits these collisions. It can
 run this script from its own root, with ``--lock poetry.lock`` naming its own lock.
 """
 
@@ -63,14 +74,17 @@ import hashlib
 import importlib
 import importlib.util
 import io
+import os
 import re
 import subprocess
 import sys
 import tempfile
 import tomllib
+from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path, PurePosixPath
+from typing import Any
 
 DEFAULT_LOCK = Path(__file__).resolve().parent.parent / "poetry.lock"
 
@@ -89,7 +103,13 @@ CONTESTS: tuple[Contest, ...] = (
     # python-xlib provides unchanged; it also ships nine extensions the fork lacks.
     Contest(package="Xlib", owner="python-xlib", rivals=("python3-xlib",)),
     # qontinui declares the headless build and calls no highgui (window) function.
-    Contest(package="cv2", owner="opencv-python-headless", rivals=("opencv-python",)),
+    # opencv-contrib-python comes only with the omniparser extra (paddleocr ->
+    # paddlex[ocr-core] pins 4.10.0.84); the headless build wins over that pin too.
+    Contest(
+        package="cv2",
+        owner="opencv-python-headless",
+        rivals=("opencv-python", "opencv-contrib-python"),
+    ),
 )
 
 
@@ -98,13 +118,13 @@ def canonical(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def _digest(path: Path, algorithm: str) -> str:
-    """A file's hash in RECORD form: urlsafe base64, padding stripped."""
+def _file_digest(path: Path, algorithm: str) -> bytes:
+    """The raw ``algorithm`` digest of a file, read in chunks."""
     digest = hashlib.new(algorithm)
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1 << 20), b""):
             digest.update(chunk)
-    return base64.urlsafe_b64encode(digest.digest()).rstrip(b"=").decode("ascii")
+    return digest.digest()
 
 
 def record_rows(dist: metadata.Distribution) -> list[tuple[PurePosixPath, str]]:
@@ -133,7 +153,8 @@ def damaged_files(dist: metadata.Distribution, package: str) -> tuple[int, list[
             continue
         checked += 1
         try:
-            actual: str | None = _digest(Path(str(dist.locate_file(path))), algorithm)
+            digest = _file_digest(Path(str(dist.locate_file(path))), algorithm)
+            actual: str | None = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
         except FileNotFoundError:
             actual = None
         if actual != expected:
@@ -142,19 +163,23 @@ def damaged_files(dist: metadata.Distribution, package: str) -> tuple[int, list[
 
 
 def other_writers(package: str, owner: str) -> list[str]:
-    """Installed distributions besides ``owner`` whose RECORD lists files under ``package/``."""
+    """Installed distributions besides ``owner`` whose RECORD lists files under ``package/``.
+
+    A dist-info without a ``Name`` (half-written, or edited by hand) is skipped: it
+    cannot be named, and it must not fail the check of an intact owner.
+    """
     writers = set()
     for dist in metadata.distributions():
-        name = dist.metadata["Name"]
-        if canonical(name) == canonical(owner):
+        name = dist.metadata.get("Name")
+        if not name or canonical(name) == canonical(owner):
             continue
         if any(path.parts[:1] == (package,) for path, _ in record_rows(dist)):
-            writers.add(f"{name} {dist.version}")
+            writers.add(f"{name} {dist.metadata.get('Version')}")
     return sorted(writers)
 
 
-def locked_requirement(lock_file: Path, owner: str, installed_version: str) -> str:
-    """The owner's pin from poetry.lock, carrying every locked artifact hash.
+def locked_entry(lock_file: Path, owner: str, installed_version: str) -> dict[str, Any]:
+    """The poetry.lock entry for ``owner`` at the installed version.
 
     Refuses a lock that pins another version than the installed one: reinstalling
     from it would change the environment rather than repair it.
@@ -162,18 +187,91 @@ def locked_requirement(lock_file: Path, owner: str, installed_version: str) -> s
     packages = tomllib.loads(lock_file.read_text(encoding="utf-8"))["package"]
     entries = [entry for entry in packages if canonical(entry["name"]) == canonical(owner)]
     matching = [entry for entry in entries if entry["version"] == installed_version]
-    if len(matching) != 1:
-        locked = ", ".join(sorted({entry["version"] for entry in entries})) or "no version"
+    if len(matching) > 1:
         raise LookupError(
-            f"{lock_file} locks {owner} {locked}, not the installed {installed_version}; "
-            "pass the poetry.lock this environment was installed from (--lock)"
+            f"several matching lock entries: {lock_file} locks {owner} {installed_version} "
+            f"{len(matching)} times"
         )
-    entry = matching[0]
+    if not matching:
+        locked = ", ".join(sorted(str(entry["version"]) for entry in entries))
+        raise LookupError(
+            f"no matching lock entry: {lock_file} locks {owner} {locked or '(none)'}, "
+            f"not the installed {installed_version}; pass the poetry.lock this "
+            "environment was installed from (--lock)"
+        )
+    return matching[0]
+
+
+def requirement_line(entry: dict[str, Any]) -> str:
+    """A pip requirement pinning the entry's version and every locked artifact hash."""
     hashes = " ".join(f"--hash={artifact['hash']}" for artifact in entry["files"])
     return f"{entry['name']}=={entry['version']} {hashes}"
 
 
-def reinstall(requirement: str) -> None:
+def poetry_artifact_cache() -> Path:
+    """Poetry's artifact cache: ``$POETRY_CACHE_DIR/artifacts``, else its default.
+
+    The default is platformdirs' user cache path for "pypoetry", as Poetry uses.
+    A cache-dir set with ``poetry config`` is not read; the repair then falls back
+    to the package index, and says so.
+    """
+    override = os.environ.get("POETRY_CACHE_DIR")
+    if override:
+        root = Path(override).expanduser()
+    elif sys.platform == "win32":
+        local = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+        root = Path(local) / "pypoetry" / "Cache"
+    elif sys.platform == "darwin":
+        root = Path.home() / "Library" / "Caches" / "pypoetry"
+    else:
+        root = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "pypoetry"
+    return root / "artifacts"
+
+
+def cached_wheels(entry: dict[str, Any], cache: Path) -> list[Path]:
+    """Wheels under ``cache`` that are one of the entry's locked artifacts, by name AND hash."""
+    wanted = {
+        str(artifact["file"]): str(artifact["hash"])
+        for artifact in entry["files"]
+        if str(artifact["file"]).endswith(".whl")
+    }
+    found: list[Path] = []
+    if not wanted or not cache.is_dir():
+        return found
+    for directory, _, names in os.walk(cache):
+        for name in names:
+            if name in wanted:
+                algorithm, _, expected = wanted[name].partition(":")
+                path = Path(directory, name)
+                if _file_digest(path, algorithm).hex() == expected:
+                    found.append(path)
+    return sorted(found)
+
+
+def pip_install_command(requirements: Path, find_links: Sequence[Path]) -> list[str]:
+    """pip force-reinstalling the hash-pinned requirement in ``requirements``, no deps.
+
+    With ``find_links`` pip installs from those directories only (``--no-index``).
+    """
+    command = [
+        sys.executable,
+        "-m",
+        "pip",
+        "install",
+        "--disable-pip-version-check",
+        "--no-input",
+        "--force-reinstall",
+        "--no-deps",
+        "--require-hashes",
+    ]
+    if find_links:
+        command.append("--no-index")
+        for directory in find_links:
+            command += ["--find-links", str(directory)]
+    return command + ["-r", str(requirements)]
+
+
+def reinstall(requirement: str, find_links: Sequence[Path]) -> None:
     """Force-reinstall one hash-pinned distribution, leaving its dependencies alone."""
     if importlib.util.find_spec("pip") is None:
         raise RuntimeError(f"pip is not installed in {sys.prefix}; it is needed to reinstall")
@@ -181,33 +279,26 @@ def reinstall(requirement: str) -> None:
         requirements = Path(scratch) / "owner.txt"
         requirements.write_text(requirement + "\n", encoding="utf-8")
         subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "--disable-pip-version-check",
-                "--no-input",
-                "--force-reinstall",
-                "--no-deps",
-                "--require-hashes",
-                "-r",
-                str(requirements),
-            ],
+            pip_install_command(requirements, find_links),
             check=True,
         )
 
 
 def enforce(contest: Contest, lock_file: Path, check_only: bool) -> bool:
-    """Leave ``contest.package`` holding exactly its owner's files; True when it does."""
+    """Make every file the owner's RECORD lists under the package hold the owner's bytes.
+
+    True when they do, or when the owner is not installed here. Files that only a
+    rival ships are left in place.
+    """
     try:
         dist = metadata.distribution(contest.owner)
     except metadata.PackageNotFoundError:
         print(f"{contest.package}/: {contest.owner} is not installed here - nothing to enforce")
         return True
+    version = dist.version
     writers = other_writers(contest.package, contest.owner)
     label = (
-        f"{contest.package}/ (owner {contest.owner} {dist.version}; "
+        f"{contest.package}/ (owner {contest.owner} {version}; "
         f"also written by: {', '.join(writers) or 'nothing else installed'})"
     )
     checked, damaged = damaged_files(dist, contest.package)
@@ -224,8 +315,24 @@ def enforce(contest: Contest, lock_file: Path, check_only: bool) -> bool:
     if check_only:
         return False
     try:
-        reinstall(locked_requirement(lock_file, contest.owner, dist.version))
-    except (LookupError, OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
+        entry = locked_entry(lock_file, contest.owner, version)
+        cache = poetry_artifact_cache()
+        wheels = cached_wheels(entry, cache)
+        if wheels:
+            source = "Poetry's artifact cache"
+            print(f"{label}: reinstalling from {source}: {', '.join(map(str, wheels))}")
+        else:
+            source = "the package index"
+            print(f"{label}: reinstalling from {source} (no locked wheel of it under {cache})")
+        reinstall(requirement_line(entry), sorted({wheel.parent for wheel in wheels}))
+    except (
+        LookupError,
+        OSError,
+        TypeError,
+        ValueError,
+        RuntimeError,
+        subprocess.CalledProcessError,
+    ) as error:
         print(f"{label}: reinstalling {contest.owner} failed: {error}")
         return False
     importlib.invalidate_caches()
@@ -235,7 +342,7 @@ def enforce(contest: Contest, lock_file: Path, check_only: bool) -> bool:
         print(f"{label}: still damaged after reinstalling: {', '.join(damaged[:5])}")
         return False
     print(
-        f"{label}: repaired - reinstalled {contest.owner} {dist.version} from poetry.lock; "
+        f"{label}: repaired - reinstalled {contest.owner} {dist.version} from {source}; "
         f"all {checked} files match its RECORD"
     )
     return True
@@ -243,8 +350,8 @@ def enforce(contest: Contest, lock_file: Path, check_only: bool) -> bool:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Verify (and repair) the owners of top-level packages that two "
-        "locked distributions both install. See the module docstring for why."
+        description="Verify (and repair) the owners of top-level packages that several "
+        "locked distributions install. See the module docstring for why."
     )
     parser.add_argument(
         "--check",

@@ -41,6 +41,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Cache Poetry dependencies
+        id: poetry-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
@@ -52,9 +53,11 @@ jobs:
         run: |
           poetry install --no-interaction --no-ansi
 
-      # Rationale: see the tests job. Here it keeps the venv this job may save
-      # to the shared poetry cache free of the damage.
+      # Rationale: see the tests job. Here the step only keeps the venv this job
+      # saves to the shared cache healthy, and the cache is saved only on a miss.
+      # ruff never reads site-packages, so a damaged Xlib/ or cv2/ cannot affect it.
       - name: Enforce owners of contested packages (Xlib, cv2)
+        if: steps.poetry-cache.outputs.cache-hit != 'true'
         run: poetry run python scripts/enforce_package_owners.py
 
       - name: Run linting
@@ -95,6 +98,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Cache Poetry dependencies
+        id: poetry-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
@@ -106,9 +110,14 @@ jobs:
         run: |
           poetry install --no-interaction --no-ansi
 
-      # Rationale: see the tests job. Here it keeps the venv this job may save
-      # to the shared poetry cache free of the damage.
+      # Rationale: see the tests job. Here the step only keeps the venv this job
+      # saves to the shared cache healthy, and the cache is saved only on a miss.
+      # mypy imports nothing, and Xlib ships no py.typed, so mypy never reads it.
+      # It does read cv2's stubs, but this extras-free install's two OpenCV builds
+      # ship identical .pyi files. Of the .py files that differ, one is the same
+      # size and the other differs by one token, so a race still leaves valid code.
       - name: Enforce owners of contested packages (Xlib, cv2)
+        if: steps.poetry-cache.outputs.cache-hit != 'true'
         run: poetry run python scripts/enforce_package_owners.py
 
       - name: Run type checking
@@ -170,13 +179,17 @@ jobs:
           # pytest.importorskip / skip fixtures.
           poetry install --no-interaction --no-ansi
 
-      # Two locked distributions each write Xlib/ (python-xlib, python3-xlib) and
-      # cv2/ (opencv-python-headless, opencv-python). Poetry's parallel installer
-      # can interleave their writes into files neither shipped, so every test
-      # errors at collection with an IndentationError in Xlib/. A restored venv
-      # keeps any such damage. This verifies the declared owner's files by RECORD
-      # hash and reinstalls the locked owner on a mismatch, so it must follow the
-      # install. Why and how: scripts/enforce_package_owners.py.
+      # Several locked distributions write Xlib/ (python-xlib, python3-xlib) and
+      # cv2/ (opencv-python-headless, opencv-python, and opencv-contrib-python
+      # under the omniparser extra). Poetry's parallel installer interleaves
+      # their writes. A run can then mix whole files from both, giving
+      # "module 'Xlib.X' has no attribute 'FamilyServerInterpreted'". Or it can
+      # tear one file, giving an IndentationError in Xlib/protocol/__init__.py.
+      # Either way every test errors at collection, and a restored venv keeps the
+      # damage. Runs on every cache state, here and in tests-ml: these jobs import
+      # both packages. This verifies the declared owner's files by RECORD hash and
+      # reinstalls the locked owner on a mismatch, so it must follow the install.
+      # Why and how: scripts/enforce_package_owners.py.
       - name: Enforce owners of contested packages (Xlib, cv2)
         run: poetry run python scripts/enforce_package_owners.py
 
