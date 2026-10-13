@@ -57,10 +57,19 @@ cd qontinui
 
 # Install with Poetry
 poetry install
+poetry run python scripts/enforce_package_owners.py
 
 # Or with pip
 pip install -e .
+python scripts/enforce_package_owners.py
 ```
+
+Run `scripts/enforce_package_owners.py` after every install. Two dependencies
+each install `Xlib/` and two each install `cv2/`, and an install can leave those
+files mixed or corrupted. The script detects that and reinstalls the right owner
+(`python-xlib`, `opencv-python-headless`); its docstring explains why. Without
+it, `import qontinui` can fail with `ImportError: this platform is not supported:
+... unexpected indent (__init__.py, line 26)`, or `import cv2` can crash.
 
 ### Dependencies
 

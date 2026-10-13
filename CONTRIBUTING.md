@@ -47,6 +47,7 @@ Be respectful, constructive, and collaborative. We're all here to build somethin
 2. **Install development dependencies:**
    ```bash
    poetry install
+   poetry run python scripts/enforce_package_owners.py  # repairs Xlib/ and cv2/; see the script
    ```
 
 3. **Make your changes:**
@@ -81,6 +82,9 @@ cd qontinui
 
 # Install dependencies (including multistate)
 poetry install
+# Two dependencies each install Xlib/ (and two cv2/); poetry's parallel install
+# can corrupt those files. This repairs them; why: the script's docstring.
+poetry run python scripts/enforce_package_owners.py
 
 # Run tests
 poetry run pytest

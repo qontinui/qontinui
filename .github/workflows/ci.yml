@@ -52,6 +52,11 @@ jobs:
         run: |
           poetry install --no-interaction --no-ansi
 
+      # Rationale: see the tests job. Here it keeps the venv this job may save
+      # to the shared poetry cache free of the damage.
+      - name: Enforce owners of contested packages (Xlib, cv2)
+        run: poetry run python scripts/enforce_package_owners.py
+
       - name: Run linting
         run: |
           poetry run ruff check .
@@ -100,6 +105,11 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --no-interaction --no-ansi
+
+      # Rationale: see the tests job. Here it keeps the venv this job may save
+      # to the shared poetry cache free of the damage.
+      - name: Enforce owners of contested packages (Xlib, cv2)
+        run: poetry run python scripts/enforce_package_owners.py
 
       - name: Run type checking
         run: |
@@ -159,6 +169,16 @@ jobs:
           # the torch-free core lane. Torch-dependent tests self-skip via
           # pytest.importorskip / skip fixtures.
           poetry install --no-interaction --no-ansi
+
+      # Two locked distributions each write Xlib/ (python-xlib, python3-xlib) and
+      # cv2/ (opencv-python-headless, opencv-python). Poetry's parallel installer
+      # can interleave their writes into files neither shipped, so every test
+      # errors at collection with an IndentationError in Xlib/. A restored venv
+      # keeps any such damage. This verifies the declared owner's files by RECORD
+      # hash and reinstalls the locked owner on a mismatch, so it must follow the
+      # install. Why and how: scripts/enforce_package_owners.py.
+      - name: Enforce owners of contested packages (Xlib, cv2)
+        run: poetry run python scripts/enforce_package_owners.py
 
       - name: Install Playwright browsers
         run: |
@@ -239,6 +259,10 @@ jobs:
           # a CPU-wheel CI lane would need a second lock. Cost is unchanged
           # from the pre-split CI, and the poetry cache absorbs repeat runs.
           poetry install --no-interaction --no-ansi --extras ml
+
+      # Rationale: see the tests job.
+      - name: Enforce owners of contested packages (Xlib, cv2)
+        run: poetry run python scripts/enforce_package_owners.py
 
       - name: Install Playwright browsers
         run: |
