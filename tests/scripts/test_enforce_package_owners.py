@@ -90,6 +90,22 @@ def test_locked_requirement_pins_the_version_with_every_artifact_hash(tmp_path):
     assert requirement == "python-xlib==0.33 --hash=sha256:aa --hash=sha256:bb"
 
 
+def test_a_lock_for_another_version_is_refused_instead_of_changing_the_env(
+    tmp_path, monkeypatch, capsys
+):
+    _install_fake_owner(tmp_path, {"Pkg/__init__.py": b"value = 'owner'\n"})
+    monkeypatch.syspath_prepend(str(tmp_path))
+    lock = _write_lock(tmp_path / "poetry.lock", "fake-owner", "2.0", ["sha256:dd"])
+    contest = epo.Contest(package="Pkg", owner="fake-owner", rivals=())
+    (tmp_path / "Pkg/__init__.py").write_bytes(b"value = 'rival'\n")
+    requested = []
+    monkeypatch.setattr(epo, "reinstall", requested.append)
+
+    assert epo.enforce(contest, lock, check_only=False) is False
+    assert requested == []
+    assert "locks fake-owner 2.0, not the installed 1.0" in capsys.readouterr().out
+
+
 def test_enforce_repairs_then_reverifies_and_check_mode_changes_nothing(
     tmp_path, monkeypatch, capsys
 ):

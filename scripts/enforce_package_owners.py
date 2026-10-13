@@ -49,6 +49,9 @@ Run it after every ``poetry install`` (CI does, in every job that installs):
 
     poetry run python scripts/enforce_package_owners.py          # verify, repair
     poetry run python scripts/enforce_package_owners.py --check  # verify only
+
+A project that installs qontinui as a dependency inherits both collisions. It can
+run this script from its own root, with ``--lock poetry.lock`` naming its own lock.
 """
 
 from __future__ import annotations
@@ -151,14 +154,21 @@ def other_writers(package: str, owner: str) -> list[str]:
 
 
 def locked_requirement(lock_file: Path, owner: str, installed_version: str) -> str:
-    """The owner's pin from poetry.lock, carrying every locked artifact hash."""
+    """The owner's pin from poetry.lock, carrying every locked artifact hash.
+
+    Refuses a lock that pins another version than the installed one: reinstalling
+    from it would change the environment rather than repair it.
+    """
     packages = tomllib.loads(lock_file.read_text(encoding="utf-8"))["package"]
     entries = [entry for entry in packages if canonical(entry["name"]) == canonical(owner)]
-    if len(entries) > 1:
-        entries = [entry for entry in entries if entry["version"] == installed_version]
-    if len(entries) != 1:
-        raise LookupError(f"cannot pick one locked {owner} from {lock_file}")
-    entry = entries[0]
+    matching = [entry for entry in entries if entry["version"] == installed_version]
+    if len(matching) != 1:
+        locked = ", ".join(sorted({entry["version"] for entry in entries})) or "no version"
+        raise LookupError(
+            f"{lock_file} locks {owner} {locked}, not the installed {installed_version}; "
+            "pass the poetry.lock this environment was installed from (--lock)"
+        )
+    entry = matching[0]
     hashes = " ".join(f"--hash={artifact['hash']}" for artifact in entry["files"])
     return f"{entry['name']}=={entry['version']} {hashes}"
 
@@ -215,7 +225,7 @@ def enforce(contest: Contest, lock_file: Path, check_only: bool) -> bool:
         return False
     try:
         reinstall(locked_requirement(lock_file, contest.owner, dist.version))
-    except (LookupError, RuntimeError, subprocess.CalledProcessError) as error:
+    except (LookupError, OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
         print(f"{label}: reinstalling {contest.owner} failed: {error}")
         return False
     importlib.invalidate_caches()
@@ -245,7 +255,8 @@ def main(argv: list[str] | None = None) -> int:
         "--lock",
         type=Path,
         default=DEFAULT_LOCK,
-        help="poetry.lock to take the owner's pin and hashes from (default: %(default)s)",
+        help="poetry.lock this environment was installed from; the owner is reinstalled from "
+        "its pin and hashes (default: %(default)s)",
     )
     args = parser.parse_args(argv)
     # Keep this script's lines in order with pip's output in a piped CI log.
