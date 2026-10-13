@@ -1040,11 +1040,16 @@ components:
         manifest-path cmdapp/Cargo.toml, features pyo3/extension-module and python-binding.
         Run without --locked, on a copy: the published lockfile still lists vtracer-webapp
         0.4.0, which the sdist's workspace (members = [cmdapp]) no longer holds, and the 12
-        crates only it used, all recorded linked: false. Cargo drops those 13 entries and
-        changes no other (--locked refuses with exit 101: cannot update the lock file); the
-        own-version line, 0.6.12, matches the sdist's cmdapp/Cargo.toml and cargo leaves it.
-        51 crates are linked, each at the lockfile's version; the resolution's own path
-        packages (vtracer 0.6.12) are this component's code, not dependencies.
+        crates only it used, all recorded linked: false. Cargo 1.95.0 drops those 13
+        entries, adds none and changes no version; it only rewrites the dependency
+        references of five remaining entries: crc32fast 1.5.0, getrandom 0.2.17,
+        parking_lot_core 0.9.12 and pyo3 0.19.2 name `cfg-if 1.0.4` as plain `cfg-if` once
+        cfg-if 0.1.10 is gone, and wasm-bindgen 0.2.114 also loses its edges to the removed
+        serde and serde_json (lockfile diffed before and after, 2026-10-13T12:00:25Z).
+        --locked refuses with exit 101 (cannot update the lock file). The own-version line,
+        0.6.12, matches the sdist's cmdapp/Cargo.toml, and cargo leaves it. 51 crates are
+        linked, each at the lockfile's version; the resolution's own path packages (vtracer
+        0.6.12) are this component's code, not dependencies.
       read_at: "2026-10-13T08:59:41Z"
       cross_check:
         binary: {member: vtracer/vtracer.cpython-310-x86_64-linux-gnu.so, sha256: accd8dbf1ea0ffd9b3def839d3ae6b4a9e8b92413db143c6fd48645b6f0b8fa3, bytes: 2638592}
