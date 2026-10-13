@@ -82,6 +82,35 @@ MANIFEST_MUTATIONS: dict[str, set[str]] = {
     "mutation-runtime-remote-code.yaml": {"runtime_not_offline"},
 }
 
+#: Every fixture with a crate list, the admitted base it is one defect away from, and the
+#: static_dependencies keys that defect touches (nothing outside static_dependencies may differ).
+SDIST_KEYS = {
+    "source",
+    "tag_lockfile",
+    "lockfile",
+    "resolution",
+    "read_at",
+    "cross_check",
+    "crates",
+}
+CRATE_MUTATIONS: dict[str, tuple[str, set[str]]] = {
+    "mutation-static-dependency-lgpl.yaml": ("crates-base.yaml", {"crates"}),
+    "mutation-static-dependency-unknown.yaml": ("crates-base.yaml", {"crates"}),
+    "mutation-static-dependency-other-version.yaml": ("crates-base.yaml", {"lockfile"}),
+    "mutation-crates-no-cross-check.yaml": ("crates-base.yaml", {"cross_check"}),
+    "mutation-crates-embedded-mismatch.yaml": ("crates-base.yaml", {"crates", "cross_check"}),
+    "mutation-crates-unresolved.yaml": ("crates-base.yaml", {"crates"}),
+    "mutation-crates-unlisted.yaml": ("crates-base.yaml", {"cross_check"}),
+    "mutation-crates-counts-disagree.yaml": ("crates-base.yaml", {"cross_check"}),
+    "mutation-crates-linked-unmarked.yaml": ("crates-base.yaml", {"crates", "cross_check"}),
+    "mutation-crates-unlinked-shipped.yaml": ("crates-base.yaml", {"crates"}),
+    "mutation-crates-tag-lockfile-found.yaml": ("crates-base.yaml", {"tag_lockfile"}),
+    "mutation-crates-tag-check-other-commit.yaml": ("crates-base.yaml", {"tag_lockfile"}),
+    "mutation-crates-tag-lockfile-unpinned.yaml": ("crates-base-tag.yaml", {"lockfile"}),
+    # source 3 replaces the whole block: {source: unknown, reason}
+    "mutation-crates-source-unknown.yaml": ("crates-base.yaml", SDIST_KEYS | {"reason"}),
+}
+
 RECIPE_MUTATIONS: dict[str, set[str]] = {
     "mutation-trust-remote-code.yaml": {"network_fetch"},
     "mutation-hub-url.yaml": {"network_fetch"},
@@ -203,14 +232,16 @@ def test_every_wheel_records_its_licence_files_and_bundled_libraries(real_manife
 def test_torch_and_torchvision_carry_what_their_wheels_bundle(real_manifest: dict) -> None:
     components = by_id(real_manifest)
     torch = components["torch"]
-    assert {"BSL-1.0", "MIT", "BSD-2-Clause"} <= m._licence_ids(torch["spdx"])
+    assert {"BSL-1.0", "MIT", "BSD-2-Clause", "MIT-CMU"} <= m._licence_ids(torch["spdx"])
     assert "Apache-2.0 WITH LLVM-exception" in torch["spdx"]
     assert [item["member"] for item in torch["bundled"]["licence_files"]] == [
         "torch-2.11.0+cu128.dist-info/licenses/LICENSE",
         "torch-2.11.0+cu128.dist-info/licenses/NOTICE",
     ]
-    (cpr_test,) = torch["bundled"]["not_terms"]
+    cpr_test, hstu = torch["bundled"]["not_terms"]
     assert "cpr/test/LICENSE" in cpr_test["text"]
+    assert "fbgemm_gpu/experimental/hstu/LICENSE" in hstu["text"]
+    assert "LicenseRef-NvidiaProprietary" in hstu["licence"]
 
     torchvision = components["torchvision"]
     bundled = {
@@ -269,20 +300,38 @@ def test_compiled_rust_libraries_record_their_linked_crates(real_manifest: dict)
     assert verdicts == {"safetensors": (22, 7, 15), "vtracer": (51, 23, 28)}
 
 
-def test_a_crate_list_from_the_pinned_tag_needs_no_binary_cross_check() -> None:
-    manifest = m.load_yaml(FIXTURES / "mutation-crates-no-cross-check.yaml")
-    deps = by_id(manifest)["diffusers"]["static_dependencies"]
-    commit = by_id(manifest)["diffusers"]["source"]["git"]["commit"]
-    deps["source"] = "tag_lockfile"
-    del deps["tag_lockfile"]
-    deps["lockfile"] = {
-        "url": f"https://raw.githubusercontent.com/huggingface/diffusers/{commit}/Cargo.lock",
-        "sha256": "0" * 64,
-    }
-    for crate in deps["crates"]:
-        crate.pop("shipped", None)
-    violations = m.check_manifest(manifest)
+@pytest.mark.parametrize("base", ["crates-base.yaml", "crates-base-tag.yaml"])
+def test_the_crate_fixture_bases_are_admitted(base: str) -> None:
+    # crates-base-tag.yaml reads its list from the lockfile at the pinned tag (source 1),
+    # so it needs no binary cross-check; crates-base.yaml is source 2 with its cross-check.
+    violations = m.check_manifest(m.load_yaml(FIXTURES / base))
     assert violations == [], explain(violations)
+
+
+def test_every_crate_list_fixture_is_pinned_to_a_base() -> None:
+    carrying = {
+        path.name
+        for path in FIXTURES.glob("mutation-*.yaml")
+        if "static_dependencies" in by_id(m.load_yaml(path)).get("diffusers", {})
+    }
+    assert carrying == set(CRATE_MUTATIONS)
+
+
+@pytest.mark.parametrize(("fixture", "pinned"), sorted(CRATE_MUTATIONS.items()))
+def test_each_crate_mutation_is_one_defect_from_its_base(
+    fixture: str, pinned: tuple[str, set[str]]
+) -> None:
+    base, touched = pinned
+    mutated, admitted = m.load_yaml(FIXTURES / fixture), m.load_yaml(FIXTURES / base)
+    mutated_deps = by_id(mutated)["diffusers"].pop("static_dependencies")
+    admitted_deps = by_id(admitted)["diffusers"].pop("static_dependencies")
+    assert mutated == admitted  # nothing outside static_dependencies differs
+    differing = {
+        key
+        for key in set(mutated_deps) | set(admitted_deps)
+        if mutated_deps.get(key) != admitted_deps.get(key)
+    }
+    assert differing == touched
 
 
 def test_the_six_recipes_are_present(real_recipes: dict) -> None:

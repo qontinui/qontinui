@@ -73,8 +73,8 @@ components:
       resolution: synthetic -- a fixture, not a cargo tree run
       read_at: "2026-10-13T00:00:00Z"
       crates:
-        - {name: example-dual, version: "1.0.0", checksum: e6a4620d30ddaa947973d9c0072fca737bb414eb7f14d969e2dc71fe342368f2, licence: "MIT/Apache-2.0", linked: true, shipped: embedded}
-        - {name: example-mit, version: "1.2.0", checksum: e2abc174b4883485a6b6acc3325d24a50c7e8c5295f4a2b3144e52007de5254d, licence: "MIT", linked: true, shipped: resolved}
+        - {name: example-dual, version: "1.0.0", checksum: e6a4620d30ddaa947973d9c0072fca737bb414eb7f14d969e2dc71fe342368f2, licence: "MIT/Apache-2.0", linked: true}
+        - {name: example-mit, version: "1.2.0", checksum: e2abc174b4883485a6b6acc3325d24a50c7e8c5295f4a2b3144e52007de5254d, licence: "MIT", linked: true}
         - {name: example-macro, version: "1.0.0", checksum: f9b92603bfd6cb9b29c2d275cd4b867fc59660ca86f9ab342e9771d0667b4b1e, licence: "LGPL-3.0-only", linked: false}
     files:
       - {path: diffusers-0.41.0-py3-none-any.whl, sha256: a2660bc32c80bacf5aa57b2faa1ea97813a458abadb9eca97113140b65630ca1, bytes: 1024}

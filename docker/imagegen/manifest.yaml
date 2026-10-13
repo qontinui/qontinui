@@ -812,7 +812,7 @@ components:
   - id: torch
     kind: library
     source: {type: pypi, package: torch, version: "2.11.0+cu128", index: https://download.pytorch.org/whl/cu128, git: {repo: pytorch/pytorch, commit: 70d99e998b4955e0049d13a98d77ae1b14db1f45}}
-    spdx: BSD-3-Clause AND Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSL-1.0 AND MIT
+    spdx: BSD-3-Clause AND Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSL-1.0 AND MIT AND MIT-CMU
     licence_url: https://github.com/pytorch/pytorch/blob/70d99e998b4955e0049d13a98d77ae1b14db1f45/LICENSE
     licence_evidence:
       - {url: https://raw.githubusercontent.com/pytorch/pytorch/70d99e998b4955e0049d13a98d77ae1b14db1f45/LICENSE, sha256: bd018feef8825e88181c84eb7e3aa4eafb8f08a20d9fd6ef948569610c4a3e43}
@@ -824,12 +824,24 @@ components:
       qontinui's [ml] extra already locks. METADATA declares only License: BSD-3-Clause, but
       the wheel's dist-info/licenses/LICENSE lists the components it bundles in 66
       Name/License rows: Apache-2.0 (11), Apache-2.0 with the LLVM exception (NVTX and its
-      docs/ and python/, 3), BSD-2-Clause (5), BSD-3-Clause (23), BSL-1.0 (sleef, 1), MIT
-      (21) and fmt's MIT with an optional exception that only adds a permission (recorded as
-      MIT, as decision record a5ec7670 v3 directs); the 66th row is in bundled.not_terms.
-      Those rows are the spdx above, so BSL-1.0 is a term of 2.11.0 itself. The wheel also
-      ships torch/lib/libgomp.so.1 (the GCC runtime: platform, above) and needs NVIDIA's
-      cu12 runtime wheels on Linux (platform).
+      docs/ and python/, 3), BSD-2-Clause (5), BSD-3-Clause (23, one of them
+      fbgemm_gpu/experimental/hstu, which is not built and whose text continues into an
+      NVIDIA proprietary notice: bundled.not_terms), BSL-1.0 (sleef, 1), MIT (21) and fmt's
+      MIT with an optional exception that only adds a permission (recorded as MIT, as
+      decision record a5ec7670 v3 directs); the 66th row, cpr's test directory, is in
+      bundled.not_terms too. The wheel's NOTICE adds a 'PILLOW-SIMD Software License'
+      section (NOTICE lines 420-456, the end of the file) for code derived from Pillow-SIMD,
+      and that code is compiled in: aten/src/ATen/native/cpu/UpSampleKernelAVXAntialias.h at
+      70d99e99 carries the notice and calls itself heavily inspired by PILLOW-SIMD's
+      Resample.c. NOTICE names the licence HPND, but its text has MIT-CMU's 'By obtaining,
+      using, and/or copying' preamble and lacks HPND's 'makes no representations' clause
+      (SPDX license-list-data texts at 31ba1a50e5397e00a304dbadc76531740e89ee48), and Pillow
+      12.3.0 declares the same text MIT-CMU (its PyPI License-Expression; its LICENSE at
+      bb1d8e8ab8d29048624d96e3ee53cecf7c13d13d differs only by an Oxford comma and the word
+      'associated'); so it is recorded as MIT-CMU (read 2026-10-13T11:50-11:52Z). The rows
+      for built code and that section are the spdx above, so BSL-1.0 is a term of 2.11.0
+      itself. The wheel also ships torch/lib/libgomp.so.1 (the GCC runtime: platform, above)
+      and needs NVIDIA's cu12 runtime wheels on Linux (platform).
     bundled:
       licence_files:
         - {member: "torch-2.11.0+cu128.dist-info/licenses/LICENSE", sha256: a0d7abc10248a062a2f309bf12981524973f2a61aadccf4c5099d96d8c388cf4, bytes: 351341}
@@ -851,6 +863,27 @@ components:
             dynolog/src/ipcfabric/CMakeLists.txt at
             d2ffe0a4e3acace628db49974246b66fc3e85fb1; read 2026-10-13T09:18Z). Recorded as
             read, not as a term (decision record a5ec7670 v3, How a licence is read).
+        - text: >-
+            The text dist-info/licenses/LICENSE concatenates for
+            /pytorch/third_party/fbgemm/fbgemm_gpu/experimental/hstu/LICENSE (its index
+            row, 'Name: hstu', says BSD-3-Clause): the BSD 3-Clause text, then an NVIDIA
+            notice, 'SPDX-License-Identifier: LicenseRef-NvidiaProprietary', under which
+            NVIDIA retains all rights and any use, reproduction or distribution without an
+            express licence agreement from NVIDIA is prohibited
+          licence: "LicenseRef-NvidiaProprietary (an NVIDIA proprietary notice; not a licence D2 admits)"
+          reason: >-
+            It covers FBGEMM's fbgemm_gpu/experimental/hstu sources, and fbgemm_gpu is not
+            built into the wheel: the torch v2.11.0 build reaches FBGEMM only through
+            add_subdirectory(third_party/fbgemm), with FBGEMM_BUILD_TESTS and
+            FBGEMM_BUILD_BENCHMARKS OFF (cmake/Dependencies.cmake lines 685-695 at
+            70d99e998b4955e0049d13a98d77ae1b14db1f45), and FBGEMM's root CMakeLists.txt at
+            c246916f9e3804eacc3c95058e51cce02ae00fff, the submodule commit v2.11.0 pins,
+            adds asmjit, cpuinfo and the optional test, bench and docs directories but no
+            fbgemm_gpu. PyTorch's licence audit manifest, added after v2.11.0
+            (tools/linter/license_audit_manifest.toml at main
+            754c741420ffdaa830290afe57b8b33ec4b586dd), lists the file among those 'not
+            shipped in wheels'. Read 2026-10-13T11:51Z. Recorded as read, not as a term
+            (decision record a5ec7670 v3, How a licence is read).
     files:
       - {path: "torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", sha256: 72d53f3176a69cc20710c4ecb95f7dc4c6ba10c4e4eda45b8396ee79ee40f75a, bytes: 820206653}
 
@@ -988,8 +1021,9 @@ components:
       a5ec7670 v3 the crates are read from the Cargo.lock in the published 0.6.15 sdist
       (source 2) and cross-checked against that extension module: of 51 linked crates, 23
       are embedded in it at the lockfile's version and 28 embed no path but are reproduced
-      by the resolution; none disagrees (static_dependencies). That lockfile still records
-      the package's own crate at 0.6.12, which v3 rules is not a licence fact.
+      by the resolution; none disagrees (static_dependencies). That lockfile and the sdist's
+      cmdapp/Cargo.toml give the package's own Rust crate as 0.6.12 (the Python package is
+      0.6.15), which v3 rules is not a licence fact.
     bundled:
       licence_files:
         - {member: "LICENSE", sha256: 81ee739f355765c110fc89feff14ffffce829901f96ba811fd0b65a41a8636c7, bytes: 1058}
@@ -1003,10 +1037,13 @@ components:
         --manifest-path <sdist>/cmdapp/Cargo.toml --target x86_64-unknown-linux-gnu
         --features pyo3/extension-module,python-binding -e normal,no-proc-macro --prefix
         none --format {p} -- the wheel's maturin build, per the sdist's pyproject.toml:
-        manifest-path cmdapp/Cargo.toml, features pyo3/extension-module and python-binding;
-        run without --locked, on a copy, because the lockfile's line for the package's own
-        version is stale (0.6.12, not a licence fact under a5ec7670 v3) and cargo rewrites
-        it. 51 crates are linked, each at the lockfile's version; the resolution's own path
+        manifest-path cmdapp/Cargo.toml, features pyo3/extension-module and python-binding.
+        Run without --locked, on a copy: the published lockfile still lists vtracer-webapp
+        0.4.0, which the sdist's workspace (members = [cmdapp]) no longer holds, and the 12
+        crates only it used, all recorded linked: false. Cargo drops those 13 entries and
+        changes no other (--locked refuses with exit 101: cannot update the lock file); the
+        own-version line, 0.6.12, matches the sdist's cmdapp/Cargo.toml and cargo leaves it.
+        51 crates are linked, each at the lockfile's version; the resolution's own path
         packages (vtracer 0.6.12) are this component's code, not dependencies.
       read_at: "2026-10-13T08:59:41Z"
       cross_check:
