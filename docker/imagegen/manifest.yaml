@@ -1,5 +1,5 @@
 # Licence manifest for the local image provider -- decision record D2,
-# decision_record/image-generation-weights-are-permissively-licensed (a5ec7670) v2, in data.
+# decision_record/image-generation-weights-are-permissively-licensed (a5ec7670) v3, in data.
 #
 # Every component the provider loads carries its SPDX licence beside its pinned sha256s;
 # docker/imagegen/tests/test_manifest.py refuses a non-admitted licence (a component's, a
@@ -29,7 +29,7 @@ schema_version: 1
 decision_record:
   name: image-generation-weights-are-permissively-licensed
   id: a5ec7670-843b-4556-ab52-7f5f7662ee09
-  version: 2
+  version: 3
 
 # The packaging the pinned wheels target: Phase 10's Docker arm (the llama-swap image,
 # Ubuntu 22.04 python3). If Phase 0 item 9 picks native Windows (rule R-mem), that arm adds
@@ -56,20 +56,21 @@ scope: >-
   vendored_code), and the libraries that define or run model computation (kind library):
   diffusers, transformers, accelerate, safetensors and torch; torchvision, timm, kornia
   and einops, which the vendored model code imports for its layers; and vtracer. Per
-  decision record a5ec7670 v2 a compiled library's licence is read from its dist-info
-  licence files, the native libraries it bundles (bundled) and the crates its upstream
-  lockfile statically links (static_dependencies); code of unknown licence inside an
-  admitted component is removed through a derived file. Not enumerated here:
-  general-purpose runtime dependencies (numpy, Pillow, OpenCV, huggingface-hub,
-  tokenizers, triton and the rest of the facade's lockfile, which Phase 10 creates) --
-  this manifest does not vouch for their licences. Driver and toolchain runtimes are
-  platform, below.
+  decision record a5ec7670 v3 a compiled library's licence is read from its dist-info
+  licence files, the native libraries it bundles (bundled) and the crates it statically
+  links (static_dependencies: from the lockfile at the pinned tag, else from that
+  version's sdist cross-checked against the shipped binary, else UNKNOWN); code of
+  unknown licence inside an admitted component is removed through a derived file. Not
+  enumerated here: general-purpose runtime dependencies (numpy, Pillow, OpenCV,
+  huggingface-hub, tokenizers, triton and the rest of the facade's lockfile, which Phase
+  10 creates) -- this manifest does not vouch for their licences. Driver and toolchain
+  runtimes are platform, below.
 
 platform:
   outside_d2_scope: true
   reason: >-
     Driver and toolchain runtimes, including those a wheel bundles: their licences exist
-    so compiled software ships them under its own terms (decision record a5ec7670 v2,
+    so compiled software ships them under its own terms (decision record a5ec7670 v3,
     "Platform class"). They are named here so the boundary of D2's component scope is
     stated rather than silent, and the bundled ones are pinned by sha256.
   components:
@@ -87,7 +88,7 @@ platform:
       sha256: b9aa5c285125216ebfb23e2844d30acffe5714c78b0b726b9bfedcb36c0eb40b
       bytes: 7837264
       licence: >-
-        NVIDIA CUDA EULA, as decision record a5ec7670 v2 classes NVIDIA runtime libraries
+        NVIDIA CUDA EULA, as decision record a5ec7670 v3 classes NVIDIA runtime libraries
         bundled in wheels (the EULA text was not read here)
     - name: "NVIDIA CUDA runtime (libcudart) that the torchvision 0.26.0+cu128 wheel bundles"
       source: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl
@@ -95,7 +96,7 @@ platform:
       sha256: c3a75b33af334a3486d197dbd1584a2985183ba4688d237a2be5f2f679329920
       bytes: 728800
       licence: >-
-        NVIDIA CUDA EULA, as decision record a5ec7670 v2 classes NVIDIA runtime libraries
+        NVIDIA CUDA EULA, as decision record a5ec7670 v3 classes NVIDIA runtime libraries
         bundled in wheels (the EULA text was not read here)
     - name: "GCC OpenMP runtime (libgomp: GOMP_1.0 to GOMP_5.0 symbol versions, built by gcc 8.5.0 per its annobin notes) that the torch 2.11.0+cu128 wheel bundles"
       source: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl
@@ -104,7 +105,7 @@ platform:
       bytes: 254337
       licence: >-
         GPL-3.0-or-later WITH GCC-exception-3.1, the GCC runtime library class decision
-        record a5ec7670 v2 names; not admitted as a family
+        record a5ec7670 v3 names; not admitted as a family
 
 vendor_dir: vendor
 
@@ -539,7 +540,7 @@ components:
     licence_read_at: "2026-10-13T07:40:21Z"
     notes: >-
       BEN2.py at the weights' revision, DERIVED rather than byte-identical (decision record
-      a5ec7670 v2). Its FB_blur_fusion_foreground_estimator and
+      a5ec7670 v3). Its FB_blur_fusion_foreground_estimator and
       FB_blur_fusion_foreground_estimator_2 helpers come from
       github.com/Photoroom/fast-foreground-estimation: the upstream file credits it, and
       they match its blurfusion_foreground_estimation.py (commit
@@ -554,7 +555,7 @@ components:
       ffmpeg, which the image path never calls.
     files:
       - path: vendor/ben2/BEN2.py
-        sha256: 4de692ef1bd94b2301141cb70078766d091727c7fafa6ce97a8533aff11b7a7c
+        sha256: 0ab12e128af3306f9eaf7d9eb263af057dbf41166236acd044a3abb503902f92
         bytes: 52597
         derived_from:
           upstream:
@@ -701,46 +702,65 @@ components:
       LICENSE read here, and bundles no native library, but its extension module
       (safetensors/_safetensors_rust.abi3.so) statically links Rust crates. The repository
       commits no Cargo.lock at the v0.8.0 commit (its git tree, read 2026-10-13T09:18:49Z,
-      holds none), so the crates are enumerated from the lockfile in the published 0.8.0
-      sdist (static_dependencies). The path packages safetensors 0.8.0 and
-      safetensors-python 0.8.0 there are this component's own code.
+      holds none), so under decision record a5ec7670 v3 the crates are read from the
+      Cargo.lock in the published 0.8.0 sdist (source 2) and cross-checked against that
+      extension module: of 22 linked crates, 7 are embedded in it at the lockfile's version
+      and 15 embed no path but are reproduced by the resolution; none disagrees
+      (static_dependencies).
     bundled:
       licence_files:
         - {member: "safetensors-0.8.0.dist-info/licenses/LICENSE", sha256: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4, bytes: 11357}
     static_dependencies:
+      source: sdist_lockfile
+      tag_lockfile: {commit: a406ca3e7a90598be0cd05a50069cb9bf5ef6ba6, found: false, read_at: "2026-10-13T09:18:49Z"}
       lockfile: {url: https://files.pythonhosted.org/packages/45/06/f955dbbb1859e3bd23c8ac6141af5106e7ad5fedec4a3a6e3d60f94b7001/safetensors-0.8.0.tar.gz, sha256: fabaf3e0f18a6618d9b36560682562157f77c2b71fcffc7b432be2baed9d753d, member: safetensors-0.8.0/bindings/python/Cargo.lock, member_sha256: f7d484a57bc394042b3424d57dab0a17d6a343f5e57e30870b9dd72dfb90f6b7}
       resolution: >-
-        cargo 1.95.0: cargo tree --manifest-path bindings/python/Cargo.toml --locked
-        --target x86_64-unknown-linux-gnu --features pyo3/extension-module -e
-        normal,no-proc-macro (the wheel's maturin build per its pyproject.toml);
-        cross-checked against the 7 crate@version source paths compiled into the shipped
-        safetensors/_safetensors_rust.abi3.so (sha256
-        e6f17a9e9846bc2bc4ad94cc5431746b59785de3d2681ef2666e8890ae192dfb), every one of them
-        in the lockfile and marked linked here
+        cargo 1.95.0 (f2d3ce0bd 2026-03-21), read 2026-10-13T11:25:59Z: cargo tree --offline
+        --locked --manifest-path <sdist>/bindings/python/Cargo.toml --target
+        x86_64-unknown-linux-gnu --features pyo3/extension-module -e normal,no-proc-macro
+        --prefix none --format {p} -- the wheel's maturin build, per the sdist's
+        pyproject.toml: manifest-path bindings/python/Cargo.toml, features
+        pyo3/extension-module. 22 crates are linked, each at the lockfile's version; the
+        resolution's own path packages (safetensors-python 0.8.0, safetensors 0.8.0) are
+        this component's code, not dependencies.
       read_at: "2026-10-13T08:57:33Z"
+      cross_check:
+        binary: {member: safetensors/_safetensors_rust.abi3.so, sha256: e6f17a9e9846bc2bc4ad94cc5431746b59785de3d2681ef2666e8890ae192dfb, bytes: 1223000}
+        method: >-
+          The extension module was extracted from the pinned wheel (its sha256 checked) and
+          byte-scanned for registry source paths, index.crates.io-<16
+          hex>/<crate>-<version>/. Every embedded crate-version was compared with the
+          lockfile's entries (matched, mismatched); every linked crate the binary embeds no
+          path for was compared with the resolution above (not_embedded, each reproduced:
+          shipped resolved). unlisted holds embedded crate-versions the lockfile lacks.
+        read_at: "2026-10-13T11:26:00Z"
+        matched: 7
+        mismatched: 0
+        not_embedded: 15
+        unlisted: []
       crates:
-        - {name: allocator-api2, version: "0.2.21", checksum: 683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: bitflags, version: "2.13.0", checksum: b4388bee8683e3d04af747c73422af53102d2bd24d9eadb6cbc100baef4b43f8, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: cfg-if, version: "1.0.4", checksum: 9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: equivalent, version: "1.0.2", checksum: 877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f, licence: "Apache-2.0 OR MIT", linked: true}
-        - {name: fastrand, version: "2.4.1", checksum: 9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6, licence: "Apache-2.0 OR MIT", linked: true}
-        - {name: foldhash, version: "0.2.0", checksum: 77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb, licence: "Zlib", linked: true}
-        - {name: getrandom, version: "0.4.2", checksum: 0de51e6874e94e7bf76d726fc5d13ba782deca734ff60d5bb2fb2607c7406555, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: hashbrown, version: "0.16.1", checksum: 841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: itoa, version: "1.0.18", checksum: 8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: libc, version: "0.2.186", checksum: 68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: linux-raw-sys, version: "0.12.1", checksum: 32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: true}
-        - {name: memchr, version: "2.8.1", checksum: 6b947ae49db0d222b1dbc6b113ce7248a3fc3a6ca21b696717bfc000ba4484d8, licence: "Unlicense OR MIT", linked: true}
-        - {name: memmap2, version: "0.9.10", checksum: 714098028fe011992e1c3962653c96b2d578c4b4bce9036e15ff220319b1e0e3, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: once_cell, version: "1.21.4", checksum: 9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: pyo3, version: "0.28.3", checksum: 91fd8e38a3b50ed1167fb981cd6fd60147e091784c427b8f7183a7ee32c31c12, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: pyo3-ffi, version: "0.28.3", checksum: 7f29e10af80b1f7ccaf7f69eace800a03ecd13e883acfacc1e5d0988605f651e, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: rustix, version: "1.1.4", checksum: b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: true}
-        - {name: serde, version: "1.0.228", checksum: 9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: serde_core, version: "1.0.228", checksum: 41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: serde_json, version: "1.0.150", checksum: e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: tempfile, version: "3.27.0", checksum: 32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: zmij, version: "1.0.21", checksum: b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa, licence: "MIT", linked: true}
+        - {name: allocator-api2, version: "0.2.21", checksum: 683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: bitflags, version: "2.13.0", checksum: b4388bee8683e3d04af747c73422af53102d2bd24d9eadb6cbc100baef4b43f8, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: cfg-if, version: "1.0.4", checksum: 9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: equivalent, version: "1.0.2", checksum: 877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f, licence: "Apache-2.0 OR MIT", linked: true, shipped: resolved}
+        - {name: fastrand, version: "2.4.1", checksum: 9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6, licence: "Apache-2.0 OR MIT", linked: true, shipped: resolved}
+        - {name: foldhash, version: "0.2.0", checksum: 77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb, licence: "Zlib", linked: true, shipped: resolved}
+        - {name: getrandom, version: "0.4.2", checksum: 0de51e6874e94e7bf76d726fc5d13ba782deca734ff60d5bb2fb2607c7406555, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: hashbrown, version: "0.16.1", checksum: 841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: itoa, version: "1.0.18", checksum: 8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: libc, version: "0.2.186", checksum: 68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: linux-raw-sys, version: "0.12.1", checksum: 32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: true, shipped: resolved}
+        - {name: memchr, version: "2.8.1", checksum: 6b947ae49db0d222b1dbc6b113ce7248a3fc3a6ca21b696717bfc000ba4484d8, licence: "Unlicense OR MIT", linked: true, shipped: resolved}
+        - {name: memmap2, version: "0.9.10", checksum: 714098028fe011992e1c3962653c96b2d578c4b4bce9036e15ff220319b1e0e3, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: once_cell, version: "1.21.4", checksum: 9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: pyo3, version: "0.28.3", checksum: 91fd8e38a3b50ed1167fb981cd6fd60147e091784c427b8f7183a7ee32c31c12, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: pyo3-ffi, version: "0.28.3", checksum: 7f29e10af80b1f7ccaf7f69eace800a03ecd13e883acfacc1e5d0988605f651e, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: rustix, version: "1.1.4", checksum: b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190, licence: "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", linked: true, shipped: resolved}
+        - {name: serde, version: "1.0.228", checksum: 9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: serde_core, version: "1.0.228", checksum: 41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: serde_json, version: "1.0.150", checksum: e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: tempfile, version: "3.27.0", checksum: 32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: zmij, version: "1.0.21", checksum: b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa, licence: "MIT", linked: true, shipped: resolved}
         - {name: anyhow, version: "1.0.102", checksum: 7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c, licence: "MIT OR Apache-2.0", linked: false}
         - {name: block2, version: "0.6.2", checksum: cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5, licence: "MIT", linked: false}
         - {name: dispatch2, version: "0.3.1", checksum: 1e0e367e4e7da84520dedcac1901e4da967309406d1e51017ae1abfb97adbd38, licence: "Zlib OR Apache-2.0 OR MIT", linked: false}
@@ -806,7 +826,7 @@ components:
       Name/License rows: Apache-2.0 (11), Apache-2.0 with the LLVM exception (NVTX and its
       docs/ and python/, 3), BSD-2-Clause (5), BSD-3-Clause (23), BSL-1.0 (sleef, 1), MIT
       (21) and fmt's MIT with an optional exception that only adds a permission (recorded as
-      MIT, as decision record a5ec7670 v2 directs); the 66th row is in bundled.not_terms.
+      MIT, as decision record a5ec7670 v3 directs); the 66th row is in bundled.not_terms.
       Those rows are the spdx above, so BSL-1.0 is a term of 2.11.0 itself. The wheel also
       ships torch/lib/libgomp.so.1 (the GCC runtime: platform, above) and needs NVIDIA's
       cu12 runtime wheels on Linux (platform).
@@ -830,7 +850,7 @@ components:
             7a731b6ae01cfc2b1fc75d83a91f84e682e43fd7, the submodule commit v2.11.0 pins;
             dynolog/src/ipcfabric/CMakeLists.txt at
             d2ffe0a4e3acace628db49974246b66fc3e85fb1; read 2026-10-13T09:18Z). Recorded as
-            read, not as a term (decision record a5ec7670 v2, How a licence is read).
+            read, not as a term (decision record a5ec7670 v3, How a licence is read).
     files:
       - {path: "torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", sha256: 72d53f3176a69cc20710c4ecb95f7dc4c6ba10c4e4eda45b8396ee79ee40f75a, bytes: 820206653}
 
@@ -964,77 +984,97 @@ components:
       dist-info), both byte-identical to the LICENSE read here, and bundles no native
       library, but its extension module (vtracer/vtracer.cpython-310-x86_64-linux-gnu.so)
       statically links Rust crates. The repository commits no Cargo.lock at the 0.6.15
-      commit (its git tree, read 2026-10-13T09:18:49Z, holds none), so the crates are
-      enumerated from the lockfile in the published 0.6.15 sdist (static_dependencies),
-      which was not regenerated for the release: it records the workspace crate at 0.6.12.
+      commit (its git tree, read 2026-10-13T09:18:49Z, holds none), so under decision record
+      a5ec7670 v3 the crates are read from the Cargo.lock in the published 0.6.15 sdist
+      (source 2) and cross-checked against that extension module: of 51 linked crates, 23
+      are embedded in it at the lockfile's version and 28 embed no path but are reproduced
+      by the resolution; none disagrees (static_dependencies). That lockfile still records
+      the package's own crate at 0.6.12, which v3 rules is not a licence fact.
     bundled:
       licence_files:
         - {member: "LICENSE", sha256: 81ee739f355765c110fc89feff14ffffce829901f96ba811fd0b65a41a8636c7, bytes: 1058}
         - {member: "vtracer-0.6.15.dist-info/licenses/LICENSE", sha256: 81ee739f355765c110fc89feff14ffffce829901f96ba811fd0b65a41a8636c7, bytes: 1058}
     static_dependencies:
+      source: sdist_lockfile
+      tag_lockfile: {commit: fd9cdb08e622f237eb05be553a020ddc9e4c47a1, found: false, read_at: "2026-10-13T09:18:49Z"}
       lockfile: {url: https://files.pythonhosted.org/packages/e4/62/c3c23511ebe3d76dc679db0bb045dfd20ed3452bec12dcbbe8d655498a7d/vtracer-0.6.15.tar.gz, sha256: f7f39943d1fc8e9dc82f5360a40e941aaf4c9166d8df30c3f6a2da8cc21dfc52, member: vtracer-0.6.15/Cargo.lock, member_sha256: 3ec2b67bb82fead70a94b9d9665f5452fa12f16e261de8995fa556a6ac0de9bc}
       resolution: >-
-        cargo 1.95.0: cargo tree --manifest-path cmdapp/Cargo.toml --target
-        x86_64-unknown-linux-gnu --features pyo3/extension-module,python-binding -e
-        normal,no-proc-macro (the wheel's maturin build per its pyproject.toml), run without
-        --locked on a copy because the published lockfile still records the workspace crate
-        at 0.6.12 and the vtracer-webapp member; every linked crate version equals the
-        published lockfile's, and the 23 crate@version source paths compiled into the
-        shipped vtracer/vtracer.cpython-310-x86_64-linux-gnu.so (sha256
-        accd8dbf1ea0ffd9b3def839d3ae6b4a9e8b92413db143c6fd48645b6f0b8fa3) are all in it
+        cargo 1.95.0 (f2d3ce0bd 2026-03-21), read 2026-10-13T11:26:00Z: cargo tree --offline
+        --manifest-path <sdist>/cmdapp/Cargo.toml --target x86_64-unknown-linux-gnu
+        --features pyo3/extension-module,python-binding -e normal,no-proc-macro --prefix
+        none --format {p} -- the wheel's maturin build, per the sdist's pyproject.toml:
+        manifest-path cmdapp/Cargo.toml, features pyo3/extension-module and python-binding;
+        run without --locked, on a copy, because the lockfile's line for the package's own
+        version is stale (0.6.12, not a licence fact under a5ec7670 v3) and cargo rewrites
+        it. 51 crates are linked, each at the lockfile's version; the resolution's own path
+        packages (vtracer 0.6.12) are this component's code, not dependencies.
       read_at: "2026-10-13T08:59:41Z"
+      cross_check:
+        binary: {member: vtracer/vtracer.cpython-310-x86_64-linux-gnu.so, sha256: accd8dbf1ea0ffd9b3def839d3ae6b4a9e8b92413db143c6fd48645b6f0b8fa3, bytes: 2638592}
+        method: >-
+          The extension module was extracted from the pinned wheel (its sha256 checked) and
+          byte-scanned for registry source paths, index.crates.io-<16
+          hex>/<crate>-<version>/. Every embedded crate-version was compared with the
+          lockfile's entries (matched, mismatched); every linked crate the binary embeds no
+          path for was compared with the resolution above (not_embedded, each reproduced:
+          shipped resolved). unlisted holds embedded crate-versions the lockfile lacks.
+        read_at: "2026-10-13T11:26:00Z"
+        matched: 23
+        mismatched: 0
+        not_embedded: 28
+        unlisted: []
       crates:
-        - {name: adler, version: "1.0.2", checksum: f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe, licence: "0BSD OR MIT OR Apache-2.0", linked: true}
-        - {name: adler32, version: "1.2.0", checksum: aae1277d39aeec15cb388266ecc24b11c80469deae6067e17a1a7aa9e5c1f234, licence: "Zlib", linked: true}
-        - {name: ansi_term, version: "0.12.1", checksum: d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2, licence: "MIT", linked: true}
-        - {name: atty, version: "0.2.14", checksum: d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8, licence: "MIT", linked: true}
-        - {name: bit-vec, version: "0.6.3", checksum: 349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb, licence: "MIT/Apache-2.0", linked: true}
-        - {name: bitflags, version: "1.3.2", checksum: bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a, licence: "MIT/Apache-2.0", linked: true}
-        - {name: bytemuck, version: "1.25.0", checksum: c8efb64bd706a16a1bdde310ae86b351e4d21550d98d056f22f8a7f7a2183fec, licence: "Zlib OR Apache-2.0 OR MIT", linked: true}
-        - {name: byteorder, version: "1.5.0", checksum: 1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b, licence: "Unlicense OR MIT", linked: true}
-        - {name: cfg-if, version: "1.0.4", checksum: 9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: clap, version: "2.34.0", checksum: a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c, licence: "MIT", linked: true}
-        - {name: color_quant, version: "1.1.0", checksum: 3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b, licence: "MIT", linked: true}
-        - {name: crc32fast, version: "1.5.0", checksum: 9481c1c90cbf2ac953f07c8d4a58aa3945c425b7185c9154d67a65e4230da511, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: crossbeam-deque, version: "0.8.6", checksum: 9dd111b7b7f7d55b72c0a6ae361660ee5853c9af73f70c3c2ef6858b950e2e51, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: crossbeam-epoch, version: "0.9.18", checksum: 5b82ac4a3c2ca9c3460964f020e1402edd5753411d7737aa39c3714ad1b5420e, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: crossbeam-utils, version: "0.8.21", checksum: d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: deflate, version: "0.8.6", checksum: 73770f8e1fe7d64df17ca66ad28994a0a623ea497fa69486e14984e715c5d174, licence: "MIT/Apache-2.0", linked: true}
-        - {name: either, version: "1.15.0", checksum: 48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: fastrand, version: "2.3.0", checksum: 37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be, licence: "Apache-2.0 OR MIT", linked: true}
-        - {name: flo_curves, version: "0.3.1", checksum: 1c227ffb4f98baa9073c033e23243089d0ed3dd1f5cd620894452074db48a29b, licence: "Apache-2.0", linked: true}
-        - {name: gif, version: "0.11.4", checksum: 3edd93c6756b4dfaf2709eafcc345ba2636565295c198a9cfbf75fa5e3e00b06, licence: "MIT/Apache-2.0", linked: true}
-        - {name: image, version: "0.23.14", checksum: 24ffcb7e7244a9bf19d35bf2883b9c080c4ced3c07a9895572178cdb8f13f6a1, licence: "MIT", linked: true}
-        - {name: itertools, version: "0.8.2", checksum: f56a2d0bc861f9165be4eb3442afd3c236d8a98afd426f65d92324ae1091a484, licence: "MIT/Apache-2.0", linked: true}
-        - {name: jpeg-decoder, version: "0.1.22", checksum: 229d53d58899083193af11e15917b5640cd40b29ff475a1fe4ef725deb02d0f2, licence: "MIT / Apache-2.0", linked: true}
-        - {name: libc, version: "0.2.183", checksum: b5b646652bf6661599e1da8901b3b9522896f01e736bad5f723fe7a3a27f899d, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: lock_api, version: "0.4.14", checksum: 224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: memoffset, version: "0.9.1", checksum: 488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a, licence: "MIT", linked: true}
-        - {name: miniz_oxide, version: "0.3.7", checksum: 791daaae1ed6889560f8c4359194f56648355540573244a5448a83ba1ecc7435, licence: "MIT", linked: true}
-        - {name: miniz_oxide, version: "0.4.4", checksum: a92518e98c078586bc6c934028adcca4c92a53d6a958196de835170a01d84e4b, licence: "MIT OR Zlib OR Apache-2.0", linked: true}
-        - {name: num-integer, version: "0.1.46", checksum: 7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: num-iter, version: "0.1.45", checksum: 1429034a0490724d0075ebb2bc9e875d6503c3cf69e235a8941aa757d83ef5bf, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: num-rational, version: "0.3.2", checksum: 12ac428b1cb17fce6f731001d307d351ec70a6d202fc2e60f7d4c5e42d8f4f07, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: num-traits, version: "0.2.19", checksum: 071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: parking_lot, version: "0.12.5", checksum: 93857453250e3077bd71ff98b6a65ea6621a19bb0f559a85248955ac12c45a1a, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: parking_lot_core, version: "0.9.12", checksum: 2621685985a2ebf1c516881c026032ac7deafcda1a2c9b7850dc81e3dfcb64c1, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: png, version: "0.16.8", checksum: 3c3287920cb847dee3de33d301c463fba14dda99db24214ddf93f83d3021f4c6, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: pyo3, version: "0.19.2", checksum: e681a6cfdc4adcc93b4d3cf993749a4552018ee0a9b65fc0ccfad74352c72a38, licence: "Apache-2.0", linked: true}
-        - {name: pyo3-ffi, version: "0.19.2", checksum: e53cee42e77ebe256066ba8aa77eff722b3bb91f3419177cf4cd0f304d3284d9, licence: "Apache-2.0", linked: true}
-        - {name: rayon, version: "1.11.0", checksum: 368f01d005bf8fd9b1206fb6fa653e6c4a81ceb1466406b81792d87c5677a58f, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: rayon-core, version: "1.13.0", checksum: 22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: roots, version: "0.0.6", checksum: 84348444bd7ad45729d0c49a4240d7cdc11c9d512c06c5ad1835c1ad4acda6db, licence: "BSD-2-Clause", linked: true}
-        - {name: scoped_threadpool, version: "0.1.9", checksum: 1d51f5df5af43ab3f1360b429fa5e0152ac5ce8c0bd6485cae490332e96846a8, licence: "MIT", linked: true}
-        - {name: scopeguard, version: "1.2.0", checksum: 94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: smallvec, version: "1.15.1", checksum: 67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: strsim, version: "0.8.0", checksum: 8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a, licence: "MIT", linked: true}
-        - {name: textwrap, version: "0.11.0", checksum: d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060, licence: "MIT", linked: true}
-        - {name: tiff, version: "0.6.1", checksum: 9a53f4706d65497df0c4349241deddf35f84cee19c87ed86ea8ca590f4464437, licence: "MIT", linked: true}
-        - {name: unicode-width, version: "0.1.14", checksum: 7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: unindent, version: "0.1.11", checksum: e1766d682d402817b5ac4490b3c3002d91dfa0d22812f341609f97b08757359c, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: vec_map, version: "0.8.2", checksum: f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191, licence: "MIT/Apache-2.0", linked: true}
-        - {name: visioncortex, version: "0.8.10", checksum: 7c9a7e6cc136c7c79b4adbd311c46c323a19db7baf446822b5f90f84375934e3, licence: "MIT OR Apache-2.0", linked: true}
-        - {name: weezl, version: "0.1.12", checksum: a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88, licence: "MIT OR Apache-2.0", linked: true}
+        - {name: adler, version: "1.0.2", checksum: f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe, licence: "0BSD OR MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: adler32, version: "1.2.0", checksum: aae1277d39aeec15cb388266ecc24b11c80469deae6067e17a1a7aa9e5c1f234, licence: "Zlib", linked: true, shipped: embedded}
+        - {name: ansi_term, version: "0.12.1", checksum: d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2, licence: "MIT", linked: true, shipped: resolved}
+        - {name: atty, version: "0.2.14", checksum: d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8, licence: "MIT", linked: true, shipped: resolved}
+        - {name: bit-vec, version: "0.6.3", checksum: 349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb, licence: "MIT/Apache-2.0", linked: true, shipped: embedded}
+        - {name: bitflags, version: "1.3.2", checksum: bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a, licence: "MIT/Apache-2.0", linked: true, shipped: resolved}
+        - {name: bytemuck, version: "1.25.0", checksum: c8efb64bd706a16a1bdde310ae86b351e4d21550d98d056f22f8a7f7a2183fec, licence: "Zlib OR Apache-2.0 OR MIT", linked: true, shipped: resolved}
+        - {name: byteorder, version: "1.5.0", checksum: 1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b, licence: "Unlicense OR MIT", linked: true, shipped: embedded}
+        - {name: cfg-if, version: "1.0.4", checksum: 9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: clap, version: "2.34.0", checksum: a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c, licence: "MIT", linked: true, shipped: resolved}
+        - {name: color_quant, version: "1.1.0", checksum: 3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b, licence: "MIT", linked: true, shipped: resolved}
+        - {name: crc32fast, version: "1.5.0", checksum: 9481c1c90cbf2ac953f07c8d4a58aa3945c425b7185c9154d67a65e4230da511, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: crossbeam-deque, version: "0.8.6", checksum: 9dd111b7b7f7d55b72c0a6ae361660ee5853c9af73f70c3c2ef6858b950e2e51, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: crossbeam-epoch, version: "0.9.18", checksum: 5b82ac4a3c2ca9c3460964f020e1402edd5753411d7737aa39c3714ad1b5420e, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: crossbeam-utils, version: "0.8.21", checksum: d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: deflate, version: "0.8.6", checksum: 73770f8e1fe7d64df17ca66ad28994a0a623ea497fa69486e14984e715c5d174, licence: "MIT/Apache-2.0", linked: true, shipped: resolved}
+        - {name: either, version: "1.15.0", checksum: 48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: fastrand, version: "2.3.0", checksum: 37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be, licence: "Apache-2.0 OR MIT", linked: true, shipped: resolved}
+        - {name: flo_curves, version: "0.3.1", checksum: 1c227ffb4f98baa9073c033e23243089d0ed3dd1f5cd620894452074db48a29b, licence: "Apache-2.0", linked: true, shipped: embedded}
+        - {name: gif, version: "0.11.4", checksum: 3edd93c6756b4dfaf2709eafcc345ba2636565295c198a9cfbf75fa5e3e00b06, licence: "MIT/Apache-2.0", linked: true, shipped: embedded}
+        - {name: image, version: "0.23.14", checksum: 24ffcb7e7244a9bf19d35bf2883b9c080c4ced3c07a9895572178cdb8f13f6a1, licence: "MIT", linked: true, shipped: embedded}
+        - {name: itertools, version: "0.8.2", checksum: f56a2d0bc861f9165be4eb3442afd3c236d8a98afd426f65d92324ae1091a484, licence: "MIT/Apache-2.0", linked: true, shipped: resolved}
+        - {name: jpeg-decoder, version: "0.1.22", checksum: 229d53d58899083193af11e15917b5640cd40b29ff475a1fe4ef725deb02d0f2, licence: "MIT / Apache-2.0", linked: true, shipped: embedded}
+        - {name: libc, version: "0.2.183", checksum: b5b646652bf6661599e1da8901b3b9522896f01e736bad5f723fe7a3a27f899d, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: lock_api, version: "0.4.14", checksum: 224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: memoffset, version: "0.9.1", checksum: 488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a, licence: "MIT", linked: true, shipped: resolved}
+        - {name: miniz_oxide, version: "0.3.7", checksum: 791daaae1ed6889560f8c4359194f56648355540573244a5448a83ba1ecc7435, licence: "MIT", linked: true, shipped: embedded}
+        - {name: miniz_oxide, version: "0.4.4", checksum: a92518e98c078586bc6c934028adcca4c92a53d6a958196de835170a01d84e4b, licence: "MIT OR Zlib OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: num-integer, version: "0.1.46", checksum: 7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: num-iter, version: "0.1.45", checksum: 1429034a0490724d0075ebb2bc9e875d6503c3cf69e235a8941aa757d83ef5bf, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: num-rational, version: "0.3.2", checksum: 12ac428b1cb17fce6f731001d307d351ec70a6d202fc2e60f7d4c5e42d8f4f07, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: num-traits, version: "0.2.19", checksum: 071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: parking_lot, version: "0.12.5", checksum: 93857453250e3077bd71ff98b6a65ea6621a19bb0f559a85248955ac12c45a1a, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: parking_lot_core, version: "0.9.12", checksum: 2621685985a2ebf1c516881c026032ac7deafcda1a2c9b7850dc81e3dfcb64c1, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: png, version: "0.16.8", checksum: 3c3287920cb847dee3de33d301c463fba14dda99db24214ddf93f83d3021f4c6, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: pyo3, version: "0.19.2", checksum: e681a6cfdc4adcc93b4d3cf993749a4552018ee0a9b65fc0ccfad74352c72a38, licence: "Apache-2.0", linked: true, shipped: embedded}
+        - {name: pyo3-ffi, version: "0.19.2", checksum: e53cee42e77ebe256066ba8aa77eff722b3bb91f3419177cf4cd0f304d3284d9, licence: "Apache-2.0", linked: true, shipped: resolved}
+        - {name: rayon, version: "1.11.0", checksum: 368f01d005bf8fd9b1206fb6fa653e6c4a81ceb1466406b81792d87c5677a58f, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: rayon-core, version: "1.13.0", checksum: 22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: roots, version: "0.0.6", checksum: 84348444bd7ad45729d0c49a4240d7cdc11c9d512c06c5ad1835c1ad4acda6db, licence: "BSD-2-Clause", linked: true, shipped: resolved}
+        - {name: scoped_threadpool, version: "0.1.9", checksum: 1d51f5df5af43ab3f1360b429fa5e0152ac5ce8c0bd6485cae490332e96846a8, licence: "MIT", linked: true, shipped: embedded}
+        - {name: scopeguard, version: "1.2.0", checksum: 94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: smallvec, version: "1.15.1", checksum: 67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: strsim, version: "0.8.0", checksum: 8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a, licence: "MIT", linked: true, shipped: resolved}
+        - {name: textwrap, version: "0.11.0", checksum: d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060, licence: "MIT", linked: true, shipped: resolved}
+        - {name: tiff, version: "0.6.1", checksum: 9a53f4706d65497df0c4349241deddf35f84cee19c87ed86ea8ca590f4464437, licence: "MIT", linked: true, shipped: embedded}
+        - {name: unicode-width, version: "0.1.14", checksum: 7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: unindent, version: "0.1.11", checksum: e1766d682d402817b5ac4490b3c3002d91dfa0d22812f341609f97b08757359c, licence: "MIT OR Apache-2.0", linked: true, shipped: resolved}
+        - {name: vec_map, version: "0.8.2", checksum: f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191, licence: "MIT/Apache-2.0", linked: true, shipped: resolved}
+        - {name: visioncortex, version: "0.8.10", checksum: 7c9a7e6cc136c7c79b4adbd311c46c323a19db7baf446822b5f90f84375934e3, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
+        - {name: weezl, version: "0.1.12", checksum: a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88, licence: "MIT OR Apache-2.0", linked: true, shipped: embedded}
         - {name: autocfg, version: "1.5.0", checksum: c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8, licence: "Apache-2.0 OR MIT", linked: false}
         - {name: bitflags, version: "2.11.0", checksum: 843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af, licence: "MIT OR Apache-2.0", linked: false}
         - {name: bumpalo, version: "3.20.2", checksum: 5d20789868f4b01b2f2caec9f5c4e0213b41e3e5702a50157d699ae31ced2fcb, licence: "MIT OR Apache-2.0", linked: false}

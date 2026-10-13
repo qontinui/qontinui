@@ -5,7 +5,7 @@ schema_version: 1
 decision_record:
   name: image-generation-weights-are-permissively-licensed
   id: a5ec7670-843b-4556-ab52-7f5f7662ee09
-  version: 2
+  version: 3
 target:
   os: linux
   arch: x86_64
@@ -70,12 +70,22 @@ components:
       licence_files:
         - {member: diffusers-0.41.0.dist-info/licenses/LICENSE, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072, bytes: 11357}
     static_dependencies:
+      source: sdist_lockfile
+      tag_lockfile: {commit: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, found: false, read_at: "2026-10-13T00:00:00Z"}
       lockfile: {url: https://files.pythonhosted.org/packages/00/00/diffusers-0.41.0.tar.gz, sha256: 091f36611c4980b596a296ad40f3594476e30b345dc74aeb600d03053172b396, member: diffusers-0.41.0/Cargo.lock, member_sha256: a5ae8c83f391270b520c07252f5ab3a27eaaa75e4a63513cedbbadd1f48a6672}
       resolution: synthetic -- a fixture, not a cargo tree run
       read_at: "2026-10-13T00:00:00Z"
+      cross_check:
+        binary: {member: diffusers/_example.abi3.so, sha256: fe142246d01eced9a05e824317f59e90088dd914c919057e03944106edd7dbc5, bytes: 1000}
+        method: synthetic -- a fixture, not a byte scan
+        read_at: "2026-10-13T00:00:00Z"
+        matched: 1
+        mismatched: 0
+        not_embedded: 1
+        unlisted: []
       crates:
-        - {name: example-dual, version: "1.0.0", checksum: e6a4620d30ddaa947973d9c0072fca737bb414eb7f14d969e2dc71fe342368f2, licence: "MIT/Apache-2.0", linked: true}
-        - {name: example-lgpl, version: "2.0.0", checksum: 9704e50111ea016c28a3d14f061421685e0d9e7c402d1e1165e1b84b4a684ad2, licence: "LGPL-2.1-or-later", linked: true}
+        - {name: example-dual, version: "1.0.0", checksum: e6a4620d30ddaa947973d9c0072fca737bb414eb7f14d969e2dc71fe342368f2, licence: "MIT/Apache-2.0", linked: true, shipped: embedded}
+        - {name: example-lgpl, version: "2.0.0", checksum: 9704e50111ea016c28a3d14f061421685e0d9e7c402d1e1165e1b84b4a684ad2, licence: "LGPL-2.1-or-later", linked: true, shipped: resolved}
         - {name: example-macro, version: "1.0.0", checksum: f9b92603bfd6cb9b29c2d275cd4b867fc59660ca86f9ab342e9771d0667b4b1e, licence: "LGPL-3.0-only", linked: false}
     files:
       - {path: diffusers-0.41.0-py3-none-any.whl, sha256: a2660bc32c80bacf5aa57b2faa1ea97813a458abadb9eca97113140b65630ca1, bytes: 1024}

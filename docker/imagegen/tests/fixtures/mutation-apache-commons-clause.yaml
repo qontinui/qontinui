@@ -1,10 +1,10 @@
 # Mutation fixture: baseline-manifest.yaml plus one defect -- Apache-2.0 WITH Commons-Clause: an admitted licence followed by an exception
-# a5ec7670 v2 does not admit (the Commons Clause withdraws the right to sell).
+# a5ec7670 v3 does not admit (the Commons Clause withdraws the right to sell).
 schema_version: 1
 decision_record:
   name: image-generation-weights-are-permissively-licensed
   id: a5ec7670-843b-4556-ab52-7f5f7662ee09
-  version: 2
+  version: 3
 target:
   os: linux
   arch: x86_64

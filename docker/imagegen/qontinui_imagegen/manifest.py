@@ -1,13 +1,14 @@
 """Licence manifest, pinned hashes and recipes for the local image provider.
 
 ``docker/imagegen/manifest.yaml`` is decision record D2
-(``decision_record/image-generation-weights-are-permissively-licensed``, a5ec7670 **v2**)
+(``decision_record/image-generation-weights-are-permissively-licensed``, a5ec7670 **v3**)
 in data: every component the image provider loads -- weights, inference libraries,
 vendored model code -- carries its SPDX licence beside its pinned sha256s, so admission is
-checked by a test instead of remembered. This module mirrors the v2 record: its admitted
+checked by a test instead of remembered. This module mirrors the v3 record: its admitted
 licence ids, its single admitted ``WITH`` exception, its platform class and its rules for
 reading a licence (dist-info licence files AND bundled native libraries; statically linked
-dependencies from the upstream lockfile; unknown-licence code removed through a derived
+crates from the lockfile at the pinned tag, else from that version's sdist cross-checked
+against the shipped binary, else UNKNOWN; unknown-licence code removed through a derived
 file). ``docker/imagegen/recipes/*.yaml`` are the versioned generation recipes, and
 :func:`recipe_hash` is the provenance hash every generated asset records.
 
@@ -26,6 +27,9 @@ Phase 2):
 * a wheel records the licence files and native libraries it ships (``bundled``), and
   every licence file it ships must be one whose bytes were read; a platform runtime a
   wheel bundles is pinned under ``platform``, outside the admitted families;
+* a compiled wheel's statically linked crates name where their list was read
+  (``tag_lockfile`` or ``sdist_lockfile``); an sdist list must record its cross-check
+  against the shipped binary, and a crate the binary disagrees about is UNKNOWN;
 * vendored model code on disk must match its pinned bytes, and nothing unlisted may sit
   beside it;
 * no recipe may enable a network fetch: the runtime contract is ``HF_HUB_OFFLINE=1`` with
@@ -76,11 +80,12 @@ RECIPES_DIR = IMAGEGEN_ROOT / "recipes"
 DECISION_RECORD_NAME = "image-generation-weights-are-permissively-licensed"
 DECISION_RECORD_ID = "a5ec7670-843b-4556-ab52-7f5f7662ee09"
 #: The version of the decision record this module mirrors.
-DECISION_RECORD_VERSION = 2
+DECISION_RECORD_VERSION = 3
 
-#: The licence ids decision record a5ec7670 v2 admits: v1's Apache-2.0, MIT and
-#: BSD-family ids (plan Phase 2 step 4) and v2's amendment for licences bundled inside
-#: admitted packages (BSL-1.0, Zlib, libpng-2.0 -- not the older ``Libpng`` -- and IJG).
+#: The licence ids decision record a5ec7670 v3 admits: v1's Apache-2.0, MIT and
+#: BSD-family ids (plan Phase 2 step 4) and the v2 amendment's ids for licences bundled
+#: inside admitted packages (BSL-1.0, Zlib, libpng-2.0 -- not the older ``Libpng`` -- and
+#: IJG). The v3 amendment admits no new licence.
 #: Widening this set is an amendment to the record, never an edit to the manifest.
 ADMITTED_SPDX: frozenset[str] = frozenset(
     {
@@ -98,7 +103,7 @@ ADMITTED_SPDX: frozenset[str] = frozenset(
     }
 )
 
-#: The only ``WITH`` exceptions a5ec7670 v2 admits, keyed by the licence they may follow.
+#: The only ``WITH`` exceptions a5ec7670 v3 admits, keyed by the licence they may follow.
 #: Any other exception id (``Commons-Clause``, a ``LicenseRef-*`` rider) is a blocker until
 #: it is read and admitted there: an exception can withdraw rights the base licence grants.
 ADMITTED_EXCEPTIONS: dict[str, frozenset[str]] = {"Apache-2.0": frozenset({"LLVM-exception"})}
@@ -182,6 +187,16 @@ HUB_LOADER_KEYS: frozenset[str] = frozenset(
         "custom_revision",
     }
 )
+
+#: Where a statically linked crate list is read from, in decision record a5ec7670 v3's
+#: order: the lockfile committed at the pinned tag, else the one in that version's sdist,
+#: else UNKNOWN.
+CRATE_LIST_SOURCES: tuple[str, ...] = ("tag_lockfile", "sdist_lockfile", "unknown")
+#: A linked crate's verdict from the cross-check against the shipped binary (a5ec7670 v3):
+#: the two that agree with the lockfile, and the two disagreements that make it UNKNOWN.
+SHIPPED_AGREES: frozenset[str] = frozenset({"embedded", "resolved"})
+SHIPPED_DISAGREES: frozenset[str] = frozenset({"embedded_mismatch", "unresolved"})
+SHIPPED_VERDICTS: frozenset[str] = SHIPPED_AGREES | SHIPPED_DISAGREES
 
 _MANIFEST_KEYS = frozenset(
     {
@@ -415,7 +430,7 @@ def _blockers(node: _Node) -> list[str]:
         if base not in ADMITTED_SPDX:
             return [node[1][1]]
         # An exception can withdraw rights the base licence grants, so only the
-        # exceptions a5ec7670 v2 names, after the licence it names them for, pass.
+        # exceptions a5ec7670 v3 names, after the licence it names them for, pass.
         if node[2] not in ADMITTED_EXCEPTIONS.get(base, frozenset()):
             return [f"{node[1][1]} WITH {node[2]}"]
         return []
@@ -979,7 +994,7 @@ def _check_files(
 
 def _check_bundled(component: Mapping[str, Any], where: str, report: _Report) -> None:
     """What a wheel ships: its licence files, the native libraries it bundles, and texts
-    read but not terms (decision record a5ec7670 v2, "How a licence is read").
+    read but not terms (decision record a5ec7670 v3, "How a licence is read").
 
     A library installed from a wheel (``source.type: pypi``) must record this; every
     licence file it lists must be one whose bytes were read (its sha256 is among the
@@ -1089,42 +1104,52 @@ def _check_bundled(component: Mapping[str, Any], where: str, report: _Report) ->
 
 
 def _check_static_dependencies(component: Mapping[str, Any], where: str, report: _Report) -> None:
-    """Statically linked dependencies, enumerated from the upstream lockfile (a5ec7670 v2).
+    """Statically linked dependencies (decision record a5ec7670 v3).
 
-    Every LINKED crate's licence must be admitted (a crates.io ``license`` field is read
-    through :func:`crate_licence_expression`), and an unreadable one (``UNKNOWN``) is never
-    assumed admitted. A crate the lockfile lists but the shipped binary does not link (a
-    build-time proc-macro, another target's dependency) is recorded as read. The lockfile
-    must come from the pinned version: for a PyPI package, that version's sdist.
+    The crate list is read from the first source that exists: the ``Cargo.lock`` committed
+    at the pinned tag (``source: tag_lockfile``); else the one inside the published sdist of
+    exactly that version (``sdist_lockfile``, which must also record that the tag holds
+    none); else nothing (``unknown``: no crate can be admitted, so the component is refused).
+
+    A source-2 list is cross-checked against the shipped binary (:func:`_check_cross_check`);
+    without a recorded cross-check it is refused (``crates_unverified``). Every LINKED
+    crate's licence must be admitted -- crates.io's ``license`` field is read through
+    :func:`crate_licence_expression` -- and ``UNKNOWN`` is never assumed admitted. A crate
+    the lockfile lists but the binary does not link (a proc-macro, another target's
+    dependency) is recorded as read.
     """
     deps = component.get("static_dependencies")
     if deps is None:
         return
     where = f"{where}.static_dependencies"
-    keys = frozenset({"lockfile", "resolution", "read_at", "crates"})
     if not isinstance(deps, Mapping):
         report.add("schema", where, "static_dependencies is a mapping")
         return
-    _check_keys(deps, keys, keys, where, report)
-    lockfile = deps.get("lockfile")
-    lock_keys = {"url", "sha256", "member", "member_sha256"}
-    if not (
-        isinstance(lockfile, Mapping)
-        and set(lockfile) == lock_keys
-        and _is_str(lockfile.get("url"))
-        and lockfile["url"].startswith("https://")
-        and _is_sha256(lockfile.get("sha256"))
-        and _is_sha256(lockfile.get("member_sha256"))
-        and _relative_path_ok(lockfile.get("member"))
-    ):
+    source = deps.get("source")
+    if source not in CRATE_LIST_SOURCES:
         report.add(
             "schema",
-            f"{where}.lockfile",
-            "must be {url, sha256, member, member_sha256}: the archive the lockfile was read "
-            "from and the lockfile inside it, each pinned by sha256",
+            f"{where}.source",
+            f"{source!r} is not one of {list(CRATE_LIST_SOURCES)} (a5ec7670 v3, in that order)",
         )
+        return
+    if source == "unknown":
+        _check_keys(deps, frozenset({"source", "reason"}), ("source", "reason"), where, report)
+        report.add(
+            "licence_unknown",
+            where,
+            "the statically linked crates could not be enumerated: none of them is admitted",
+        )
+        return
+    required = {"source", "lockfile", "resolution", "read_at", "crates"}
+    if source == "sdist_lockfile":
+        required.add("tag_lockfile")
+    _check_keys(deps, frozenset(required | {"cross_check"}), required, where, report)
+    lockfile = deps.get("lockfile")
+    if source == "tag_lockfile":
+        _check_tag_lockfile(component, lockfile, f"{where}.lockfile", report)
     else:
-        _check_lockfile_version(component, lockfile, f"{where}.lockfile", report)
+        _check_sdist_lockfile(component, deps, lockfile, where, report)
     if not _is_str(deps.get("resolution")):
         report.add("schema", f"{where}.resolution", "say how the linked set was determined")
     read_at = deps.get("read_at")
@@ -1135,13 +1160,14 @@ def _check_static_dependencies(component: Mapping[str, Any], where: str, report:
         report.add("schema", f"{where}.crates", "the lockfile's crates, each with its licence")
         return
     seen: set[tuple[str, str]] = set()
-    crate_keys = frozenset({"name", "version", "checksum", "licence", "linked"})
+    crate_keys = frozenset({"name", "version", "checksum", "licence", "linked", "shipped"})
+    linked_rows: list[tuple[str, Mapping[str, Any]]] = []
     for index, crate in enumerate(crates):
         crate_where = f"{where}.crates[{index}]"
         if not isinstance(crate, Mapping):
             report.add("schema", crate_where, "a crate is a mapping")
             continue
-        _check_keys(crate, crate_keys, crate_keys, crate_where, report)
+        _check_keys(crate, crate_keys, crate_keys - {"shipped"}, crate_where, report)
         name, version = crate.get("name"), crate.get("version")
         if not (_is_str(name) and _is_str(version)):
             report.add("schema", crate_where, "a crate names its name and version")
@@ -1156,9 +1182,24 @@ def _check_static_dependencies(component: Mapping[str, Any], where: str, report:
         if not isinstance(linked, bool):
             report.add("schema", f"{crate_where}.linked", "linked is true or false")
             continue
+        if linked:
+            linked_rows.append((crate_where, crate))
+        elif "shipped" in crate:
+            report.add(
+                "crates_unverified",
+                f"{crate_where}.shipped",
+                "a crate the binary does not link has no shipped verdict",
+            )
         licence = crate.get("licence")
         if not _is_str(licence):
             report.add("schema", f"{crate_where}.licence", "the licence as read, or UNKNOWN")
+        elif linked and crate.get("shipped") in SHIPPED_DISAGREES:
+            report.add(
+                "licence_unknown",
+                crate_where,
+                f"the shipped binary disagrees with the lockfile ({crate['shipped']}): the crate "
+                "is UNKNOWN and is never admitted on the lockfile's word",
+            )
         elif linked and licence == "UNKNOWN":
             report.add(
                 "licence_unknown",
@@ -1170,34 +1211,192 @@ def _check_static_dependencies(component: Mapping[str, Any], where: str, report:
             _check_expression(
                 crate_licence_expression(licence), crate_where, report, what="a linked crate"
             )
+    if "cross_check" in deps or source == "sdist_lockfile":
+        _check_cross_check(deps.get("cross_check"), linked_rows, f"{where}.cross_check", report)
 
 
-def _check_lockfile_version(
-    component: Mapping[str, Any], lockfile: Mapping[str, Any], where: str, report: _Report
+def _check_cross_check(
+    cross_check: Any,
+    linked_rows: list[tuple[str, Mapping[str, Any]]],
+    where: str,
+    report: _Report,
 ) -> None:
-    """The lockfile is read from the pinned version: a PyPI package's sdist for exactly its
-    version (``<name>-<version>.tar.gz``, holding ``<name>-<version>/...``), otherwise an
-    archive URL that names the pinned commit."""
-    source = component.get("source")
-    if not isinstance(source, Mapping):
+    """A crate list checked against the shipped binary (decision record a5ec7670 v3).
+
+    Every linked crate carries ``shipped``: ``embedded`` (the binary embeds a registry source
+    path ``.../index.crates.io-<hash>/<crate>-<version>/`` and it equals the lockfile's entry)
+    or ``resolved`` (the binary embeds no path for it, and resolving the release's manifest
+    against the lockfile reproduced its version); ``embedded_mismatch`` and ``unresolved``
+    are disagreements, refused as UNKNOWN by :func:`_check_static_dependencies`. Every
+    ``<crate>-<version>`` the binary embeds that the list does not hold is ``unlisted``, and
+    UNKNOWN too. The recorded counts must equal the per-crate verdicts.
+    """
+    if cross_check is None:
+        report.add(
+            "crates_unverified",
+            where,
+            "a crate list read from an sdist lockfile is cross-checked against the shipped "
+            "binary before any crate is admitted (a5ec7670 v3); record the cross-check",
+        )
         return
-    url, member = lockfile["url"], lockfile["member"]
-    if source.get("type") == "pypi":
-        package, version = source.get("package"), source.get("version")
-        if not (_is_str(package) and _is_str(version)):
-            return
-        normalised = re.sub(r"[-_.]+", "_", package).lower()
-        stems = {f"{package}-{version}", f"{normalised}-{version}"}
-        archive = urllib.parse.unquote(url.rsplit("/", 1)[-1])
-        if not any(archive == f"{stem}.tar.gz" and member.startswith(f"{stem}/") for stem in stems):
+    keys = frozenset(
+        {"binary", "method", "read_at", "matched", "mismatched", "not_embedded", "unlisted"}
+    )
+    if not isinstance(cross_check, Mapping):
+        report.add("crates_unverified", where, "the cross-check is a mapping")
+        return
+    _check_keys(cross_check, keys, keys, where, report)
+    binary = cross_check.get("binary")
+    if not (
+        isinstance(binary, Mapping)
+        and set(binary) == {"member", "sha256", "bytes"}
+        and _relative_path_ok(binary.get("member"))
+        and _is_sha256(binary.get("sha256"))
+        and _is_count(binary.get("bytes"))
+    ):
+        report.add(
+            "crates_unverified",
+            f"{where}.binary",
+            "name the shipped binary that was scanned: {member, sha256, bytes}",
+        )
+    if not _is_str(cross_check.get("method")):
+        report.add("crates_unverified", f"{where}.method", "say how the binary was read")
+    read_at = cross_check.get("read_at")
+    if not (isinstance(read_at, str) and _TIMESTAMP.fullmatch(read_at)):
+        report.add("schema", f"{where}.read_at", "must be a UTC timestamp YYYY-MM-DDTHH:MM:SSZ")
+    verdicts: dict[str, int] = dict.fromkeys(SHIPPED_VERDICTS, 0)
+    for crate_where, crate in linked_rows:
+        verdict = crate.get("shipped")
+        if verdict not in SHIPPED_VERDICTS:
             report.add(
-                "licence_unpinned",
-                where,
-                f"{archive!r} / {member!r} is not the sdist of {package} {version}: the "
-                "lockfile must be read at the pinned version",
+                "crates_unverified",
+                f"{crate_where}.shipped",
+                f"a linked crate of a cross-checked list is one of {sorted(SHIPPED_VERDICTS)}",
             )
-    elif not _names_pin(url, {pin for pin in _pins(component, {}) if _HEX40.fullmatch(pin)}):
-        report.add("licence_unpinned", where, f"{url!r} names no pinned commit of this component")
+            continue
+        verdicts[verdict] += 1
+    expected = {
+        "matched": verdicts["embedded"],
+        "mismatched": verdicts["embedded_mismatch"],
+        "not_embedded": verdicts["resolved"] + verdicts["unresolved"],
+    }
+    for key, count in expected.items():
+        recorded = cross_check.get(key)
+        if not (isinstance(recorded, int) and not isinstance(recorded, bool) and recorded >= 0):
+            report.add("crates_unverified", f"{where}.{key}", "a count is a non-negative integer")
+        elif recorded != count:
+            report.add(
+                "crates_unverified",
+                f"{where}.{key}",
+                f"records {recorded}, but the crates' shipped verdicts give {count}",
+            )
+    unlisted = cross_check.get("unlisted")
+    if not isinstance(unlisted, list) or not all(_is_str(item) for item in unlisted):
+        report.add("crates_unverified", f"{where}.unlisted", "a list of <crate>-<version>")
+        return
+    for item in unlisted:
+        report.add(
+            "licence_unknown",
+            f"{where}.unlisted",
+            f"the shipped binary embeds {item}, which the crate list does not hold: UNKNOWN",
+        )
+
+
+def _check_tag_lockfile(
+    component: Mapping[str, Any], lockfile: Any, where: str, report: _Report
+) -> None:
+    """Source 1: the ``Cargo.lock`` committed at the pinned tag, read at its commit."""
+    if not (
+        isinstance(lockfile, Mapping)
+        and set(lockfile) == {"url", "sha256"}
+        and _is_str(lockfile.get("url"))
+        and lockfile["url"].startswith("https://")
+        and _is_sha256(lockfile.get("sha256"))
+    ):
+        report.add("schema", where, "a tag lockfile is {url, sha256}, read at the pinned commit")
+        return
+    if not _names_pin(lockfile["url"], _commit_pins(component)):
+        report.add(
+            "licence_unpinned",
+            where,
+            f"{lockfile['url']!r} names no pinned commit of this component",
+        )
+
+
+def _check_sdist_lockfile(
+    component: Mapping[str, Any],
+    deps: Mapping[str, Any],
+    lockfile: Any,
+    where: str,
+    report: _Report,
+) -> None:
+    """Source 2: the ``Cargo.lock`` in the sdist of exactly the pinned version, read only
+    because the tag commits none (``tag_lockfile: {commit, found: false, read_at}``)."""
+    source = component.get("source")
+    if not (isinstance(source, Mapping) and source.get("type") == "pypi"):
+        report.add("schema", f"{where}.source", "an sdist lockfile belongs to a PyPI package")
+        return
+    absent = deps.get("tag_lockfile")
+    if not (
+        isinstance(absent, Mapping)
+        and set(absent) == {"commit", "found", "read_at"}
+        and isinstance(absent.get("found"), bool)
+        and isinstance(absent.get("read_at"), str)
+        and _TIMESTAMP.fullmatch(absent["read_at"])
+    ):
+        report.add(
+            "crates_unverified",
+            f"{where}.tag_lockfile",
+            "record what the pinned tag holds: {commit, found, read_at}",
+        )
+    elif absent["found"]:
+        report.add(
+            "crates_unverified",
+            f"{where}.tag_lockfile",
+            "the pinned tag commits a Cargo.lock: read the crate list from it (source 1)",
+        )
+    elif absent.get("commit") not in _commit_pins(component):
+        report.add(
+            "licence_unpinned",
+            f"{where}.tag_lockfile.commit",
+            f"{absent.get('commit')!r} is not this component's pinned commit",
+        )
+    lock_keys = {"url", "sha256", "member", "member_sha256"}
+    if not (
+        isinstance(lockfile, Mapping)
+        and set(lockfile) == lock_keys
+        and _is_str(lockfile.get("url"))
+        and lockfile["url"].startswith("https://")
+        and _is_sha256(lockfile.get("sha256"))
+        and _is_sha256(lockfile.get("member_sha256"))
+        and _relative_path_ok(lockfile.get("member"))
+    ):
+        report.add(
+            "schema",
+            f"{where}.lockfile",
+            "must be {url, sha256, member, member_sha256}: the sdist the lockfile was read "
+            "from and the lockfile inside it, each pinned by sha256",
+        )
+        return
+    package, version = source.get("package"), source.get("version")
+    if not (_is_str(package) and _is_str(version)):
+        return
+    normalised = re.sub(r"[-_.]+", "_", package).lower()
+    stems = {f"{package}-{version}", f"{normalised}-{version}"}
+    archive = urllib.parse.unquote(lockfile["url"].rsplit("/", 1)[-1])
+    member = lockfile["member"]
+    if not any(archive == f"{stem}.tar.gz" and member.startswith(f"{stem}/") for stem in stems):
+        report.add(
+            "licence_unpinned",
+            f"{where}.lockfile",
+            f"{archive!r} / {member!r} is not the sdist of {package} {version}: the "
+            "lockfile must be read at the pinned version",
+        )
+
+
+def _commit_pins(component: Mapping[str, Any]) -> set[str]:
+    """The full commit ids this component is pinned to (its tag's commit)."""
+    return {pin for pin in _pins(component, {}) if _HEX40.fullmatch(pin)}
 
 
 def _check_derivations(components: Mapping[str, Mapping[str, Any]], report: _Report) -> None:

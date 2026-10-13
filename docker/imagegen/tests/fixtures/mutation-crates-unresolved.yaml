@@ -1,0 +1,95 @@
+# Mutation fixture: baseline-manifest.yaml plus one defect -- a linked crate the binary embeds no path for, whose version the resolution
+# did not reproduce (its crates.io licence is admitted, but the crate is UNKNOWN).
+schema_version: 1
+decision_record:
+  name: image-generation-weights-are-permissively-licensed
+  id: a5ec7670-843b-4556-ab52-7f5f7662ee09
+  version: 3
+target:
+  os: linux
+  arch: x86_64
+  python: "3.10"
+  cuda: "12.8"
+runtime:
+  env:
+    HF_HUB_OFFLINE: "1"
+  from_pretrained:
+    local_files_only: true
+    trust_remote_code: false
+  torch_load:
+    weights_only: true
+scope: Fixture manifest; its components are synthetic.
+platform:
+  outside_d2_scope: true
+  components:
+    - name: NVIDIA GPU driver
+vendor_dir: vendor
+components:
+  - id: example-generator
+    kind: model
+    role: text-to-image
+    source: {type: huggingface, repo: example/generator, revision: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/example/generator/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md
+    licence_evidence: {url: https://huggingface.co/example/generator/resolve/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072}
+    licence_read_at: "2026-10-13T00:00:00Z"
+    runner: ExamplePipeline
+    scheduler_class: FlowMatchEulerDiscreteScheduler
+    size_multiple: 16
+    files:
+      - {path: model_index.json, sha256: 237dd2930d2cd23293a751e08f52d8cde17ae59cc6fceaa8521f2400924d2625, bytes: 443}
+      - {path: transformer/diffusion_pytorch_model.safetensors, sha256: 385a68108833e25cd2663928478af2c4b57ce6d2ad66a0b8967da17ab8ae50c6, bytes: 4096}
+
+  - id: example-generator-fp8
+    kind: model
+    role: text-to-image
+    source: {type: derived, from: example-generator}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/example/generator/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md
+    licence_evidence: {url: https://huggingface.co/example/generator/resolve/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072}
+    licence_read_at: "2026-10-13T00:00:00Z"
+    runner: ExamplePipeline
+    files:
+      - path: transformer/diffusion_pytorch_model.fp8.safetensors
+        sha256: 83a23427ed2f2fd0bb1fccef10da1eca63f388f7906847699892ebbc3f0fa78a
+        bytes: 2048
+        derived_from:
+          upstream:
+            - {type: manifest, component: example-generator, sha256: 385a68108833e25cd2663928478af2c4b57ce6d2ad66a0b8967da17ab8ae50c6}
+          conversion: Cast every floating-point tensor to float8_e4m3fn storage.
+
+  - id: diffusers
+    kind: library
+    source: {type: pypi, package: diffusers, version: "0.41.0", index: https://pypi.org/simple, git: {repo: huggingface/diffusers, commit: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb}}
+    spdx: Apache-2.0
+    licence_url: https://github.com/huggingface/diffusers/blob/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/huggingface/diffusers/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/LICENSE, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072}
+    licence_read_at: "2026-10-13T00:00:00Z"
+    bundled:
+      licence_files:
+        - {member: diffusers-0.41.0.dist-info/licenses/LICENSE, sha256: dbc53e8221661a9568cd718b14edc0948d22c09831f7d169e42aba68399cb072, bytes: 11357}
+    static_dependencies:
+      source: sdist_lockfile
+      tag_lockfile: {commit: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, found: false, read_at: "2026-10-13T00:00:00Z"}
+      lockfile: {url: https://files.pythonhosted.org/packages/00/00/diffusers-0.41.0.tar.gz, sha256: 091f36611c4980b596a296ad40f3594476e30b345dc74aeb600d03053172b396, member: diffusers-0.41.0/Cargo.lock, member_sha256: a5ae8c83f391270b520c07252f5ab3a27eaaa75e4a63513cedbbadd1f48a6672}
+      resolution: synthetic -- a fixture, not a cargo tree run
+      read_at: "2026-10-13T00:00:00Z"
+      cross_check:
+        binary: {member: diffusers/_example.abi3.so, sha256: fe142246d01eced9a05e824317f59e90088dd914c919057e03944106edd7dbc5, bytes: 1000}
+        method: synthetic -- a fixture, not a byte scan
+        read_at: "2026-10-13T00:00:00Z"
+        matched: 1
+        mismatched: 0
+        not_embedded: 1
+        unlisted: []
+      crates:
+        - {name: example-dual, version: "1.0.0", checksum: e6a4620d30ddaa947973d9c0072fca737bb414eb7f14d969e2dc71fe342368f2, licence: "MIT/Apache-2.0", linked: true, shipped: embedded}
+        - {name: example-drifted, version: "3.1.0", checksum: ca8618b81b075cd71f793c40d6d0f20a97ad0827c626d5df98f67bbfa3349b9c, licence: "Apache-2.0", linked: true, shipped: unresolved}
+        - {name: example-macro, version: "1.0.0", checksum: f9b92603bfd6cb9b29c2d275cd4b867fc59660ca86f9ab342e9771d0667b4b1e, licence: "LGPL-3.0-only", linked: false}
+    files:
+      - {path: diffusers-0.41.0-py3-none-any.whl, sha256: a2660bc32c80bacf5aa57b2faa1ea97813a458abadb9eca97113140b65630ca1, bytes: 1024}
+
+runners:
+  - id: ExamplePipeline
+    kind: diffusers
+    code: [diffusers]

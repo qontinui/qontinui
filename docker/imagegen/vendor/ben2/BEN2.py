@@ -5,7 +5,7 @@
 # Modified by the Qontinui authors: removed FB_blur_fusion_foreground_estimator and
 # FB_blur_fusion_foreground_estimator_2, which the upstream file credits to
 # github.com/Photoroom/fast-foreground-estimation, a repository that carries no licence
-# (decision record a5ec7670 v2: code of unknown licence inside an admitted component is
+# (decision record a5ec7670 v3: code of unknown licence inside an admitted component is
 # removed), and refine_foreground_process, the wrapper that calls them.
 # BEN_Base.inference now raises ValueError for refine_foreground=True instead of calling
 # it, and its two refine branches are gone. Nothing else is changed.

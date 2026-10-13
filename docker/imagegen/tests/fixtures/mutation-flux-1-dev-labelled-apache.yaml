@@ -9,7 +9,7 @@ schema_version: 1
 decision_record:
   name: image-generation-weights-are-permissively-licensed
   id: a5ec7670-843b-4556-ab52-7f5f7662ee09
-  version: 2
+  version: 3
 target:
   os: linux
   arch: x86_64

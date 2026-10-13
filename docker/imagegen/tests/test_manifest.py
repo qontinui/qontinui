@@ -2,10 +2,11 @@
 2026-10-13-image-generation-and-visual-judgment, Phase 2).
 
 Decision record D2 (decision_record/image-generation-weights-are-permissively-licensed,
-a5ec7670 v2) admits Apache-2.0, MIT and BSD-family licences, plus BSL-1.0, Zlib, libpng-2.0
+a5ec7670 v3) admits Apache-2.0, MIT and BSD-family licences, plus BSL-1.0, Zlib, libpng-2.0
 and IJG for code bundled inside admitted packages and ``Apache-2.0 WITH LLVM-exception`` as
-its only exception, and requires each licence to sit beside its pinned hash, checked by a
-test. These tests check the real manifest and recipes, and prove the checker can fail:
+its only exception, reads a compiled wheel's statically linked crates from the lockfile at
+the pinned tag or else from that version's sdist cross-checked against the shipped binary,
+and requires each licence to sit beside its pinned hash, checked by a test. These tests check the real manifest and recipes, and prove the checker can fail:
 every mutation fixture is refused with exactly the violations it was built to cause, and
 nothing else.
 """
@@ -52,7 +53,7 @@ MANIFEST_MUTATIONS: dict[str, set[str]] = {
     "mutation-evidence-at-main.yaml": {"licence_unpinned"},
     "mutation-evidence-stale-revision.yaml": {"licence_unpinned"},
     "mutation-platform-member-unpinned.yaml": {"unpinned_file"},
-    # what a wheel bundles (a5ec7670 v2, "How a licence is read")
+    # what a wheel bundles (a5ec7670 v3, "How a licence is read")
     "mutation-bundled-missing.yaml": {"schema"},
     "mutation-bundled-unread.yaml": {"licence_unread"},
     "mutation-bundled-lib-not-admitted.yaml": {"licence_not_admitted", "licence_incomplete"},
@@ -62,6 +63,18 @@ MANIFEST_MUTATIONS: dict[str, set[str]] = {
     "mutation-static-dependency-lgpl.yaml": {"licence_not_admitted"},
     "mutation-static-dependency-unknown.yaml": {"licence_unknown"},
     "mutation-static-dependency-other-version.yaml": {"licence_unpinned"},
+    # where a crate list is read from, and its cross-check against the binary (a5ec7670 v3)
+    "mutation-crates-no-cross-check.yaml": {"crates_unverified"},
+    "mutation-crates-embedded-mismatch.yaml": {"licence_unknown"},
+    "mutation-crates-unresolved.yaml": {"licence_unknown"},
+    "mutation-crates-unlisted.yaml": {"licence_unknown"},
+    "mutation-crates-counts-disagree.yaml": {"crates_unverified"},
+    "mutation-crates-linked-unmarked.yaml": {"crates_unverified"},
+    "mutation-crates-unlinked-shipped.yaml": {"crates_unverified"},
+    "mutation-crates-tag-lockfile-found.yaml": {"crates_unverified"},
+    "mutation-crates-tag-check-other-commit.yaml": {"licence_unpinned"},
+    "mutation-crates-tag-lockfile-unpinned.yaml": {"licence_unpinned"},
+    "mutation-crates-source-unknown.yaml": {"licence_unknown"},
     # derivations and the runtime contract
     "mutation-derived-licence.yaml": {"derived_invalid"},
     "mutation-derived-unknown-source.yaml": {"derived_invalid"},
@@ -84,7 +97,7 @@ RECIPE_MUTATIONS: dict[str, set[str]] = {
     "mutation-unseeded-diffusion.yaml": {"recipe_schema"},
 }
 
-#: The helpers a5ec7670 v2 has removed from BEN2.py (code of unknown licence).
+#: The helpers a5ec7670 v3 has removed from BEN2.py (code of unknown licence).
 BEN2_REMOVED = frozenset(
     {
         "refine_foreground_process",
@@ -139,9 +152,12 @@ def test_real_manifest_recipes_and_vendored_bytes_are_admitted() -> None:
     assert violations == [], explain(violations)
 
 
-def test_the_checker_mirrors_decision_record_v2(real_manifest: dict) -> None:
-    assert m.DECISION_RECORD_VERSION == 2
-    assert real_manifest["decision_record"]["version"] == 2
+def test_the_checker_mirrors_decision_record_v3(real_manifest: dict) -> None:
+    assert m.DECISION_RECORD_VERSION == 3
+    assert real_manifest["decision_record"]["version"] == 3
+    assert m.CRATE_LIST_SOURCES == ("tag_lockfile", "sdist_lockfile", "unknown")
+    assert m.SHIPPED_AGREES == {"embedded", "resolved"}
+    assert m.SHIPPED_DISAGREES == {"embedded_mismatch", "unresolved"}
     assert m.ADMITTED_SPDX == {
         "Apache-2.0",
         "MIT",
@@ -228,17 +244,45 @@ def test_platform_libraries_a_wheel_bundles_are_pinned_outside_d2(real_manifest:
 
 def test_compiled_rust_libraries_record_their_linked_crates(real_manifest: dict) -> None:
     components = by_id(real_manifest)
-    linked_counts = {}
+    verdicts = {}
     for component_id in ("safetensors", "vtracer"):
         deps = components[component_id]["static_dependencies"]
         source = components[component_id]["source"]
+        # Neither tag commits a Cargo.lock, so the list is source 2: the version's own sdist.
+        assert deps["source"] == "sdist_lockfile"
+        assert deps["tag_lockfile"]["found"] is False
+        assert deps["tag_lockfile"]["commit"] == source["git"]["commit"]
         assert deps["lockfile"]["member"].startswith(f"{source['package']}-{source['version']}/")
         linked = [crate for crate in deps["crates"] if crate["linked"]]
         for crate in linked:
             expression = m.crate_licence_expression(crate["licence"])
             assert m.spdx_admitted(expression), (component_id, crate["name"], crate["licence"])
-        linked_counts[component_id] = len(linked)
-    assert linked_counts == {"safetensors": 22, "vtracer": 51}
+            assert crate["shipped"] in m.SHIPPED_AGREES, (component_id, crate["name"])
+        cross_check = deps["cross_check"]
+        assert cross_check["mismatched"] == 0 and cross_check["unlisted"] == []
+        verdicts[component_id] = (
+            len(linked),
+            cross_check["matched"],
+            cross_check["not_embedded"],
+        )
+    # (linked, embedded in the binary at the lockfile's version, reproduced by the resolution)
+    assert verdicts == {"safetensors": (22, 7, 15), "vtracer": (51, 23, 28)}
+
+
+def test_a_crate_list_from_the_pinned_tag_needs_no_binary_cross_check() -> None:
+    manifest = m.load_yaml(FIXTURES / "mutation-crates-no-cross-check.yaml")
+    deps = by_id(manifest)["diffusers"]["static_dependencies"]
+    commit = by_id(manifest)["diffusers"]["source"]["git"]["commit"]
+    deps["source"] = "tag_lockfile"
+    del deps["tag_lockfile"]
+    deps["lockfile"] = {
+        "url": f"https://raw.githubusercontent.com/huggingface/diffusers/{commit}/Cargo.lock",
+        "sha256": "0" * 64,
+    }
+    for crate in deps["crates"]:
+        crate.pop("shipped", None)
+    violations = m.check_manifest(manifest)
+    assert violations == [], explain(violations)
 
 
 def test_the_six_recipes_are_present(real_recipes: dict) -> None:
