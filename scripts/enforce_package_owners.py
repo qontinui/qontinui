@@ -184,17 +184,24 @@ class LockError(Exception):
     """poetry.lock cannot give the owner's pin. The message starts with the lock's path."""
 
 
+# The only algorithms pip accepts in --hash; anything else in a lock cannot be used.
+PIP_HASH_ALGORITHMS = ("sha256", "sha384", "sha512")
+
+
 def locked_entry(lock_file: Path, owner: str, installed_version: str) -> dict[str, Any]:
     """The poetry.lock entry for ``owner`` at the installed version, its artifacts checked.
 
     Refuses a lock that pins another version than the installed one: reinstalling
-    from it would change the environment rather than repair it. Every refusal, and
-    every lock that cannot be read or parsed, is a LockError naming the lock.
+    from it would change the environment rather than repair it. A lock that cannot
+    be read or parsed, or whose entry lacks what the repair reads, is refused too.
+    Each refusal is a LockError naming the lock.
     """
     try:
         lock = tomllib.loads(lock_file.read_text(encoding="utf-8"))
     except OSError as error:
         raise LockError(f"{lock_file}: cannot be read ({error.strerror or error})") from error
+    except UnicodeDecodeError as error:
+        raise LockError(f"{lock_file}: is not UTF-8 text ({error.reason})") from error
     except tomllib.TOMLDecodeError as error:
         raise LockError(f"{lock_file}: is not valid TOML ({error})") from error
     if "package" not in lock:
@@ -216,12 +223,19 @@ def locked_entry(lock_file: Path, owner: str, installed_version: str) -> dict[st
                 "was installed from (--lock)"
             )
         entry = matching[0]
+        where = f"{lock_file}: the {owner} {installed_version} entry"
+        if not isinstance(entry["files"], list):
+            raise LockError(f"{where} has files that are not a list: {entry['files']!r}")
         for artifact in entry["files"]:
-            algorithm, _, digest = str(artifact["hash"]).partition(":")
-            if algorithm not in hashlib.algorithms_available or not digest:
+            if not (isinstance(artifact, dict) and "file" in artifact and "hash" in artifact):
                 raise LockError(
-                    f"{lock_file}: {owner} {installed_version} locks {artifact['file']} "
-                    f"with an unusable hash {artifact['hash']!r}"
+                    f"{where} lists an artifact without a file and a hash: {artifact!r}"
+                )
+            algorithm, _, digest = str(artifact["hash"]).partition(":")
+            if algorithm not in PIP_HASH_ALGORITHMS or not digest:
+                raise LockError(
+                    f"{where} locks {artifact['file']} with hash {artifact['hash']!r}; "
+                    f"pip accepts only {', '.join(PIP_HASH_ALGORITHMS)}"
                 )
     except (KeyError, TypeError, AttributeError) as error:
         raise LockError(

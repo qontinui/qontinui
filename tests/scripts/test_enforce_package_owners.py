@@ -3,6 +3,7 @@
 import base64
 import hashlib
 import importlib.util
+import os
 import re
 import subprocess
 import sys
@@ -172,13 +173,13 @@ def test_lock_matching_names_a_missing_entry_apart_from_duplicate_ones(tmp_path)
         ('[metadata]\nlock-version = "2.1"\n', "has no [[package]] table, so it locks nothing"),
         (
             '[[package]]\nname = "fake-owner"\nversion = "1.0"\nfiles = "not-a-list"\n',
-            "a [[package]] entry is malformed",
+            "the fake-owner 1.0 entry has files that are not a list",
         ),
         ("package = 3\n", "a [[package]] entry is malformed"),
         (
             '[[package]]\nname = "fake-owner"\nversion = "1.0"\n'
             'files = [{file = "f.whl", hash = "nohash"}]\n',
-            "locks f.whl with an unusable hash 'nohash'",
+            "locks f.whl with hash 'nohash'; pip accepts only sha256, sha384, sha512",
         ),
     ],
     ids=[
@@ -225,7 +226,65 @@ def test_a_malformed_lock_is_reported_not_raised(damaged_owner, monkeypatch, cap
 
     assert epo.enforce(CONTEST, lock, check_only=False) is False
     assert calls == []
-    assert f"{lock}: a [[package]] entry is malformed" in capsys.readouterr().out
+    assert (
+        f"{lock}: the fake-owner 1.0 entry has files that are not a list" in capsys.readouterr().out
+    )
+
+
+_XLIB_ENTRY = b'[[package]]\nname = "python-xlib"\nversion = "0.33"\n'
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (b"\xff\xfe" + _XLIB_ENTRY, "is not UTF-8 text"),
+        (
+            _XLIB_ENTRY + b'files = [{hash = "sha256:' + b"a" * 64 + b'"}]\n',
+            "the python-xlib 0.33 entry lists an artifact without a file and a hash",
+        ),
+        (
+            _XLIB_ENTRY + b'files = [{file = "x.whl", hash = "shake_128:abcd"}]\n',
+            "with hash 'shake_128:abcd'; pip accepts only sha256, sha384, sha512",
+        ),
+        (
+            _XLIB_ENTRY + b'files = [{file = "x.whl", hash = "md5:abcd"}]\n',
+            "with hash 'md5:abcd'; pip accepts only sha256, sha384, sha512",
+        ),
+    ],
+    ids=["invalid-utf8", "artifact-without-file", "shake_128-hash", "md5-hash"],
+)
+def test_a_hand_made_lock_fails_the_cli_with_exit_1_and_no_traceback(tmp_path, content, message):
+    """Runs the script itself, as CI does, over an environment whose python-xlib is
+    damaged (a dist-info placed ahead of any real one), so the repair reads the lock."""
+    site = tmp_path / "site"
+    dist_info = site / "python_xlib-0.33.dist-info"
+    dist_info.mkdir(parents=True)
+    (dist_info / "METADATA").write_text("Metadata-Version: 2.1\nName: python-xlib\nVersion: 0.33\n")
+    (dist_info / "RECORD").write_text(f"Xlib/__init__.py,{_record_hash(b'owner')},5\n")
+    (site / "Xlib").mkdir()
+    (site / "Xlib" / "__init__.py").write_bytes(b"rival")
+    lock = tmp_path / "poetry.lock"
+    lock.write_bytes(content)
+    env = {**os.environ, "PYTHONPATH": str(site), "POETRY_CACHE_DIR": str(tmp_path / "cache")}
+
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--lock", str(lock)],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=300,
+    )
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "Traceback" not in result.stdout + result.stderr
+    reports = [
+        line.split("): ", 1)[1]
+        for line in result.stdout.splitlines()
+        if line.startswith("Xlib/ (owner python-xlib 0.33") and "): " in line
+    ]
+    assert any(report.startswith(f"{lock}: ") and message in report for report in reports), (
+        result.stdout
+    )
 
 
 def test_enforce_repairs_then_reverifies_and_check_mode_changes_nothing(
