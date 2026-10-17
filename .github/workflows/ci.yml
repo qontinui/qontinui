@@ -217,6 +217,35 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
+  imagegen:
+    # The image provider (docker/imagegen): its licence manifest and recipe tests (plan
+    # 2026-10-13-image-generation-and-visual-judgment, Phase 2) and the image facade's tests
+    # against a fake pipeline executor (Phase 10) -- no GPU, no weights. Its own project and
+    # lock (docker/imagegen/pyproject.toml), on the llama-swap image's interpreter (Ubuntu
+    # 22.04 python3, 3.10), because the facade needs FastAPI, which the library's
+    # environment does not carry. Fails on a non-admitted licence, an unpinned weight file,
+    # drifted vendored code, a runtime lock that disagrees with the manifest, or a facade
+    # regression. pytest exits non-zero when it collects nothing.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install the imagegen test environment
+        run: poetry -C docker/imagegen install --no-interaction --no-ansi
+
+      - name: Run the imagegen tests
+        run: poetry -C docker/imagegen run pytest tests -q
+
   tests-ml:
     # Full suite with the [ml] extra installed — the pre-split CI shape.
     # The core `tests` job proves the torch-free default install; this job

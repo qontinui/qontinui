@@ -37,6 +37,15 @@ services:
       # UI-TARS VLLMProvider defaults to port 8000. When using llama-swap,
       # set QONTINUI_UITARS_VLLM_SERVER_URL=http://localhost:8100 on the
       # host/runner side so UI-TARS requests go through the proxy.
+      # The image facade's machine switch (plan 2026-10-13-image-generation-and-visual-
+      # judgment, Phase 12 step 4): QONTINUI_IMAGEGEN=0 on the host turns image generation
+      # off on this machine -- the facade answers every request with the typed `disabled`
+      # refusal. Unset or 1 is on; any other value is treated as off. llama-swap passes its
+      # environment to the facade process it starts.
+      - QONTINUI_IMAGEGEN=${QONTINUI_IMAGEGEN:-1}
+      # NOT set here: the image facade's listener attestation (rule R-bind). This file
+      # publishes 8100 on every interface, so it must not claim a loopback-only listener;
+      # the host-local loopback override (README "Local LLM candidates", step 3) sets it.
     volumes:
       - llama-swap-hf-cache:/root/.cache/huggingface
       # Mount config for hot-reload without rebuild.
@@ -51,6 +60,14 @@ services:
       # config.yaml: /models/<name>/ must contain a full HuggingFace-style
       # model directory (config.json, *.safetensors, tokenizer.json, etc.).
       - ${LLAMA_SWAP_MODELS:-../../../models}:/models:ro
+      # The image facade's weights (PD11: a mounted volume, never baked into the image).
+      # Holds a stock Hugging Face hub cache under hub/ plus stamps.json, which the
+      # verify-on-download install writes; read-write so the facade can refresh a stamp
+      # after re-hashing a changed file. Mounted at /weights/imagegen -- deliberately NOT
+      # under the read-only /models mount, where the mount point could not be created. Use
+      # an ABSOLUTE path, as for LLAMA_SWAP_MODELS (on spaceship: the
+      # volume Phase 0 named, D:/qontinui-root/imagegen-weights).
+      - ${QONTINUI_IMAGEGEN_WEIGHTS:-../../../imagegen-weights}:/weights/imagegen
     healthcheck:
       # /running is llama-swap's native status endpoint (works even with no model loaded)
       test: ["CMD", "curl", "-f", "http://localhost:8100/running"]

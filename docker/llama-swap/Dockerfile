@@ -19,26 +19,29 @@
 # vLLM uses the system Python with its own transformers version.
 
 # --- Stage 1: Download llama-swap binary ---
+# PINNED to v217, the version Phase 0 measured (plan 2026-10-13-image-generation-and-visual-
+# judgment, rule R-route: /v1/images/generations and multipart /v1/images/edits route by
+# `model`; rule R-swap: a swap waits for an in-flight request instead of killing it). The
+# tarball is checked against the release's own checksums file (llama-swap_217_checksums.txt,
+# read 2026-10-17). Bump both together, and only after re-measuring R-route and R-swap on a
+# scratch instance: the image facade's admission relies on v217's swap semantics.
 FROM ubuntu:22.04 AS llama-swap-download
 
-ARG LLAMA_SWAP_VERSION=latest
+ARG LLAMA_SWAP_VERSION=217
+ARG LLAMA_SWAP_SHA256=273b14da7f37e0d97fc2a2ec2ebfa50d32455710f85024eb04af429a11fe0975
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl jq ca-certificates && \
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -e && \
-    VERSION="${LLAMA_SWAP_VERSION}" && \
-    if [ "$VERSION" = "latest" ]; then \
-        VERSION=$(curl -sL https://api.github.com/repos/mostlygeek/llama-swap/releases/latest | jq -r '.tag_name' | sed 's/^v//'); \
-    else \
-        VERSION=$(echo "$VERSION" | sed 's/^v//'); \
-    fi && \
-    echo "Downloading llama-swap v${VERSION}" && \
+    echo "Downloading llama-swap v${LLAMA_SWAP_VERSION}" && \
+    curl -fsSL -o /tmp/llama-swap.tar.gz \
+        "https://github.com/mostlygeek/llama-swap/releases/download/v${LLAMA_SWAP_VERSION}/llama-swap_${LLAMA_SWAP_VERSION}_linux_amd64.tar.gz" && \
+    echo "${LLAMA_SWAP_SHA256}  /tmp/llama-swap.tar.gz" | sha256sum -c - && \
     mkdir -p /install/bin && \
-    curl -sL "https://github.com/mostlygeek/llama-swap/releases/download/v${VERSION}/llama-swap_${VERSION}_linux_amd64.tar.gz" \
-        | tar xz -C /install/bin && \
+    tar xzf /tmp/llama-swap.tar.gz -C /install/bin llama-swap && \
     chmod +x /install/bin/llama-swap && \
-    echo "${VERSION}" > /install/llama-swap-version
+    echo "${LLAMA_SWAP_VERSION}" > /install/llama-swap-version
 
 # --- Stage 2: Build llama.cpp's llama-server for the GGUF LLM entries ---
 # Built from source on the SAME CUDA/Ubuntu base as the runtime stage below, so
@@ -169,6 +172,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && \
 COPY --from=llama-cpp-build /install/bin/llama-server /usr/local/bin/llama-server
 COPY --from=llama-cpp-build /install/llama-cpp-version /etc/llama-cpp-version
 
+# --- Image facade virtualenv (plan 2026-10-13-image-generation-and-visual-judgment, Phase 10)
+# FastAPI over diffusers, in its own venv (no system site-packages: the system torch 2.10 and
+# vLLM above are not what the licence manifest pins). Installed from the hash-locked
+# requirements-runtime.txt, whose library versions and wheel sha256s
+# docker/imagegen/tests/test_facade_config.py checks against docker/imagegen/manifest.yaml.
+# After the weight layers, like llama-server, so a lock change never re-pulls them. The
+# image weights are NOT baked in (PD11): docker-compose.yml mounts them at /weights/imagegen.
+COPY imagegen/requirements-runtime.txt /tmp/imagegen-requirements.txt
+RUN python3 -m venv /opt/venvs/imagegen && \
+    /opt/venvs/imagegen/bin/pip install --no-cache-dir --require-hashes \
+        -r /tmp/imagegen-requirements.txt && \
+    rm /tmp/imagegen-requirements.txt
+
 # --- Volatile layers LAST: backend scripts + config change on every repo edit ---
 # Build context is docker/ (parent dir), set in docker-compose.yml. Kept after
 # the weight downloads so a code/config edit rebuilds only these cheap layers,
@@ -176,6 +192,13 @@ COPY --from=llama-cpp-build /install/llama-cpp-version /etc/llama-cpp-version
 COPY aria-ui/serve.py /opt/backends/aria-ui/serve.py
 COPY paddleocr/serve.py /opt/backends/paddleocr/serve.py
 COPY llama-swap/config.yaml /etc/llama-swap/config.yaml
+# The image facade: code, licence manifest, recipes, vendored model code and its config.
+# It refuses to start when the manifest or a recipe is not admitted, or the vendored bytes
+# drift from their pins (qontinui_imagegen.serve).
+COPY imagegen/qontinui_imagegen /opt/imagegen/qontinui_imagegen
+COPY imagegen/manifest.yaml imagegen/facade.yaml /opt/imagegen/
+COPY imagegen/recipes /opt/imagegen/recipes
+COPY imagegen/vendor /opt/imagegen/vendor
 
 EXPOSE 8100
 

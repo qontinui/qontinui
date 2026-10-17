@@ -232,9 +232,10 @@ max-line-length = 100
 disable = ["C0114", "C0115", "C0116"]
 
 [tool.pytest.ini_options]
-# docker/imagegen/tests: the image provider's licence manifest and recipes (they import
-# nothing from qontinui and need no X server).
-testpaths = ["tests", "docker/imagegen/tests"]
+# docker/imagegen/tests are NOT collected here: docker/imagegen is its own project
+# (docker/imagegen/pyproject.toml -- the facade needs FastAPI and runs on Python 3.10), and
+# ci.yml's `imagegen` job runs its tests in that environment.
+testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

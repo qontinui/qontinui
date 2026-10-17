@@ -14,6 +14,7 @@ Routed by the `model` field in the request body (see `config.yaml`):
 | `paddleocr` | runner `OcrClient` (Vision Pipeline Phase 4) | classical PP-OCR behind an OpenAI-compatible shim |
 | `Aria-UI/Aria-UI-base` / `-context-aware` | healing (opt-in) | 25B MoE — **does not fit a 32GB GPU**, see VRAM note |
 | `gemma-4-26b-a4b` / `qwen3-coder-30b-a3b` / `gpt-oss-20b` | local-LLM evaluation (see below) | GGUF via llama.cpp `llama-server`; weights bind-mounted under `/models/gguf/` |
+| `qwen-image-2512` / `qwen-image-edit-2511` / `z-image-turbo` / `flux-1-schnell` / `real-esrgan-x2plus` / `real-esrgan-general-x4v3` | image provider (`/v1/images/*`, see "Image generation" below) | ONE entry, `qontinui-imagegen`: the image facade (`docker/imagegen`), FastAPI over diffusers; weights on a mounted volume at `/weights/imagegen` |
 
 ## Why
 
@@ -189,6 +190,10 @@ services:
   llama-swap:
     ports: !override
       - "127.0.0.1:8100:8100"
+    environment:
+      # Attests the loopback bind above to the image facade (rule R-bind): without it the
+      # facade answers `disabled` (listener_not_attested). Set it ONLY here, beside the bind.
+      - QONTINUI_IMAGEGEN_LISTENER=loopback
 YAML
 docker compose config --format json | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["services"]["llama-swap"]["ports"]))'
 ```
@@ -196,17 +201,13 @@ docker compose config --format json | python3 -c 'import json,sys; print(json.du
 **4. Rebuild once, then redeploy — a `--no-build` redeploy alone will NOT pick
 these entries up.** `config.yaml` is bind-mounted, so without a rebuild the three
 entries load into an image that has no `/usr/local/bin/llama-server` and every
-request to them fails at exec time (the vision entries are unaffected). Pin the
-llama-swap version to the one in the image already built here: stage 1 resolves
-`latest` when it is not cached, and its binary is copied in BEFORE the weight
-layers, so a newer `latest` would also invalidate the ~29 GB weight layers. On a
-first build there is no prior image, nothing to protect, and `V` stays empty, so
-the default (`latest`) applies.
+request to them fails at exec time (the vision entries are unaffected). The
+llama-swap binary is pinned in the Dockerfile (`LLAMA_SWAP_VERSION=217`, checked
+against the release's sha256), so stage 1 no longer drifts with `latest` and no
+longer invalidates the ~29 GB weight layers on a rebuild.
 
 ```bash
-V=""; docker image inspect llama-swap-llama-swap >/dev/null 2>&1 \
-  && V="$(docker run --rm --entrypoint cat llama-swap-llama-swap /etc/llama-swap-version)"
-docker compose build ${V:+--build-arg LLAMA_SWAP_VERSION="$V"}
+docker compose build
 docker compose up -d --no-build
 docker port "$(docker compose ps -q llama-swap)" 8100   # must print 127.0.0.1:8100 only
 ```
@@ -234,6 +235,51 @@ the box and the emitter's 5 s timeout survives a cold swap (the plan's Decision 
 conditions). Until then `docker/gemma-server` stays; when the evaluation is
 done, `docker start qontinui-gemma-server` (not `docker compose up` from this
 shell while `COMPOSE_PROJECT_NAME` is still exported).
+
+## Image generation (the qontinui image facade)
+
+Plan `2026-10-13-image-generation-and-visual-judgment` Phase 10 (qontinui-dev-notes).
+One entry, `qontinui-imagegen`, serves every image alias (D1.1: one GPU owner). It runs
+`docker/imagegen` (`python -m qontinui_imagegen.serve`) from its own venv,
+`/opt/venvs/imagegen`, built from the hash-locked `docker/imagegen/requirements-runtime.txt`.
+
+- **Wire:** OpenAI `POST /v1/images/generations` (JSON) and `POST /v1/images/edits`
+  (multipart), `model` = an alias above, optional `recipe`, `seed`, `negative_prompt`,
+  `size_preset`, `priority` (`interactive` | `bulk`), `parent_asset` (OpenAI clients send
+  them through `extra_body`). Every result carries `b64_json` (a PNG, or an SVG for the
+  `empty-state` recipe) with the IPTC `trainedAlgorithmicMedia` XMP marker inside, plus
+  `qontinui_provenance`. `stream: true` answers SSE: `qontinui.queued`,
+  `qontinui.running {step,total}`, then `image_generation.completed` /
+  `image_edit.completed`, or `error`.
+- **Refusals** are OpenAI-shaped and typed: `busy` (503, a job is running and the one
+  waiting place is taken, or VRAM is held out of band), `deferred` (429, bulk work outside
+  the 00:00-06:00 bulk window), `disabled` (503, `QONTINUI_IMAGEGEN=0`), `failed` (500,
+  e.g. `weights_unverified`). Branch on `error.type`: llama-swap's own concurrency limit
+  also answers 429, as plain text.
+- **Weights** are never baked in: mount the volume with
+  `QONTINUI_IMAGEGEN_WEIGHTS=<absolute path>` (a stock Hugging Face hub cache under
+  `hub/` plus `stamps.json`), then install and verify them with the facade's own tool,
+  which refuses when the volume lacks room and stamps every file it verifies:
+
+  ```bash
+  docker compose run --rm --no-deps --entrypoint /opt/venvs/imagegen/bin/python3 \
+    -w /opt/imagegen llama-swap -m qontinui_imagegen.weights install z-image-turbo
+  ```
+
+  FLUX.1-schnell's repo is gated (auto-approved terms): its install needs
+  `-e HF_TOKEN=<token of an account that accepted them>`.
+- **Loopback first (rule R-bind):** the facade has no authentication of its own, so it
+  serves only when the deployment attests a loopback-only listener —
+  `QONTINUI_IMAGEGEN_LISTENER=loopback`, set by the host-local override in step 3 of
+  "Local LLM candidates" beside the `127.0.0.1:8100` bind. The tracked compose file
+  publishes `0.0.0.0:8100` and does not attest it, so a deploy without the override
+  answers `disabled` (`listener_not_attested`) rather than open an unauthenticated image
+  door to the network. Exposing it beyond the box needs the device-JWT front door
+  (security content trigger 2).
+- **Machine switch:** `QONTINUI_IMAGEGEN=0` in the environment `docker compose` runs with
+  turns image generation off on this machine (the facade answers `disabled`); unset or `1`
+  is on. The switch is never the authorization — the loopback bind is.
+- **Status:** `GET http://127.0.0.1:8100/upstream/qontinui-imagegen/qontinui/status`.
 
 ## Services NOT Managed by llama-swap
 

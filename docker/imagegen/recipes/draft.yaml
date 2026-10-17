@@ -1,0 +1,25 @@
+# Recipe: a plain, fast raster draft with Z-Image-Turbo. Model ids resolve in
+# ../manifest.yaml. The facade's default recipe for the z-image-turbo alias (facade.yaml),
+# so a request naming only that model gets a plain image rather than a matted or traced one.
+id: draft
+version: 1
+description: >-
+  A plain raster image from Z-Image-Turbo at its model card's settings, with no post step:
+  the quick interactive draft, and the z-image-turbo alias's default recipe.
+pipeline: ZImagePipeline
+models: [z-image-turbo]
+parameters:
+  # Model card at revision f332072a ("Quick Start"): 9 steps (8 DiT forwards), guidance 0
+  # for the Turbo model, 1024x1024.
+  num_inference_steps: 9
+  guidance_scale: 0.0
+  max_sequence_length: 512  # ZImagePipeline's default (diffusers 0.41.0)
+  scheduler: {class: FlowMatchEulerDiscreteScheduler, config: model_default}
+  size_presets:
+    "1:1": [1024, 1024]
+  default_size: "1:1"
+post: []
+seed_policy:
+  mode: seeded
+  base: request_or_random
+  per_candidate: add_index

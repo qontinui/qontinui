@@ -1,0 +1,26 @@
+# Recipe: a plain raster draft with FLUX.1 [schnell] (plan delta 2026-10-17: the fourth
+# facade alias). Model ids resolve in ../manifest.yaml. The facade's default recipe for the
+# flux-1-schnell alias (facade.yaml).
+id: draft-flux
+version: 1
+description: >-
+  A plain raster image from FLUX.1 [schnell] at its model card's diffusers settings, with no
+  post step.
+pipeline: FluxPipeline
+models: [flux-1-schnell]
+parameters:
+  # Model card at revision 741f7c3c ("Diffusers"): guidance_scale 0.0, 4 steps,
+  # max_sequence_length 256. FluxPipeline's default size is 1024x1024 (default_sample_size
+  # 128 x vae_scale_factor 8).
+  num_inference_steps: 4
+  guidance_scale: 0.0
+  max_sequence_length: 256
+  scheduler: {class: FlowMatchEulerDiscreteScheduler, config: model_default}
+  size_presets:
+    "1:1": [1024, 1024]
+  default_size: "1:1"
+post: []
+seed_policy:
+  mode: seeded
+  base: request_or_random
+  per_candidate: add_index

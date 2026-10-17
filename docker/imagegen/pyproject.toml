@@ -1,0 +1,34 @@
+# The image provider's own test environment (plan Phase 10, Gate).
+#
+# docker/imagegen runs on the llama-swap image's interpreter (Ubuntu 22.04 python3, 3.10),
+# not on qontinui's 3.12 library environment, and its facade needs FastAPI, which the
+# library's poetry env does not carry. So it has its own project, its own lock and its own CI
+# job (`imagegen` in .github/workflows/ci.yml, mirrored in .qontinui/ci.toml). The versions
+# of fastapi, starlette, uvicorn and python-multipart are the manifest's pins
+# (manifest.yaml, "facade runtime"); tests/test_facade_config.py checks the runtime lock
+# agrees with them. The facade's GPU runtime (torch, diffusers, ...) is NOT installed here:
+# the tests run against a fake pipeline executor. It is installed in the image from the
+# hash-locked requirements-runtime.txt.
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.14"
+fastapi = "0.142.2"
+starlette = "1.7.0"
+uvicorn = "0.54.0"
+python-multipart = "0.0.32"
+pillow = "^12.0"
+pyyaml = "^6.0"
+httpx = "^0.28"
+pytest = "^9.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = ["-ra", "--strict-markers"]
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"

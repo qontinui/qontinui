@@ -12,7 +12,9 @@
 # at the pinned revision (lfs.oid / lfs.size for LFS files; small files downloaded, checked
 # against their git blob id, then hashed), GitHub at the pinned commit, PyPI's JSON API, the
 # PyTorch cu128 index, wheel members read by HTTP range, and crates.io for the exact crate
-# versions of a lockfile. licence_read_at is the time the licence text in licence_evidence
+# versions of a lockfile. The entries added on 2026-10-17 -- flux-1-schnell (plan delta
+# 2026-10-17) and the facade runtime (plan Phase 10) -- were read the same way on that day;
+# each entry's licence_read_at and notes say how. licence_read_at is the time the licence text in licence_evidence
 # was read (the last of them, where there are several); re-read it at every upgrade (D2: a
 # licence is a property of a version). To add or upgrade a component: read its licence text
 # the same way, then run `python -m qontinui_imagegen.manifest` from docker/imagegen.
@@ -55,15 +57,16 @@ scope: >-
   loads (kind model), the model code it executes from this repository (kind
   vendored_code), and the libraries that define or run model computation (kind library):
   diffusers, transformers, accelerate, safetensors and torch; torchvision, timm, kornia
-  and einops, which the vendored model code imports for its layers; and vtracer. Per
+  and einops, which the vendored model code imports for its layers; vtracer; and the
+  facade's web stack, fastapi, starlette, uvicorn and python-multipart (plan Phase 10). Per
   decision record a5ec7670 v3 a compiled library's licence is read from its dist-info
   licence files, the native libraries it bundles (bundled) and the crates it statically
   links (static_dependencies: from the lockfile at the pinned tag, else from that
   version's sdist cross-checked against the shipped binary, else UNKNOWN); code of
   unknown licence inside an admitted component is removed through a derived file. Not
   enumerated here: general-purpose runtime dependencies (numpy, Pillow, OpenCV,
-  huggingface-hub, tokenizers, triton and the rest of the facade's lockfile, which Phase
-  10 creates) -- this manifest does not vouch for their licences. Driver and toolchain
+  huggingface-hub, tokenizers, triton and the rest of the facade's lockfile,
+  requirements-runtime.txt) -- this manifest does not vouch for their licences. Driver and toolchain
   runtimes are platform, below.
 
 platform:
@@ -243,6 +246,55 @@ components:
       - {path: "transformer/diffusion_pytorch_model-00003-of-00003.safetensors", sha256: aba4e37a590e63210878160a718d916d80398f4e1f78ab6c9b2b2a00d92769fa, bytes: 4672282880}
       - {path: "transformer/diffusion_pytorch_model.safetensors.index.json", sha256: 182a119d8018bfc61c9a62685a384af3b7d4a2f8aabbe766e07c9e1eda5b97ab, bytes: 48969}
       - {path: "vae/config.json", sha256: e80af1e64a71883a9d10c3159d2e493e5934508da57852f6a180ae6ae63b14bd, bytes: 805}
+      - {path: "vae/diffusion_pytorch_model.safetensors", sha256: f5b59a26851551b67ae1fe58d32e76486e1e812def4696a4bea97f16604d40a3, bytes: 167666902}
+
+  - id: flux-1-schnell
+    kind: model
+    role: text-to-image
+    source: {type: huggingface, repo: black-forest-labs/FLUX.1-schnell, revision: 741f7c3ce8b383c54771c7003378a50191e9efe9}
+    spdx: Apache-2.0
+    licence_url: https://huggingface.co/black-forest-labs/FLUX.1-schnell/blob/741f7c3ce8b383c54771c7003378a50191e9efe9/README.md
+    licence_evidence: {url: https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/741f7c3ce8b383c54771c7003378a50191e9efe9/README.md, sha256: 66f915ff73552215a78f83852312eda079af1f5a08a258b6b6733350101c58aa}
+    licence_read_at: "2026-10-17T11:45:35Z"
+    runner: FluxPipeline
+    scheduler_class: FlowMatchEulerDiscreteScheduler
+    size_multiple: 16  # vae_scale_factor 8 (vae/config.json, four block_out_channels) x 2, the divisibility FluxPipeline enforces
+    notes: >-
+      Plan delta 2026-10-17 (operator request): the fourth facade alias. Official diffusers
+      checkpoint; model_index.json names FluxPipeline (CLIP text encoder, T5 text encoder_2,
+      FluxTransformer2DModel, AutoencoderKL). The card at this revision states apache-2.0
+      ("can be used for personal, scientific, and commercial purposes"). The repo is GATED
+      (HF API gated: auto -- terms are accepted automatically, but every download needs an
+      authenticated token), so the deploy's verify-on-download install needs an HF token
+      whose account accepted the terms. LFS sha256s and sizes are the HF API's
+      (/api/models/black-forest-labs/FLUX.1-schnell/revision/<rev>?blobs=true, lfs.sha256);
+      the small files' bytes were read from ungated mirrors and admitted only where their
+      git blob id equals this revision's blobId (bytes identical). The single-file
+      flux1-schnell.safetensors and ae.safetensors (the same weights in the original layout)
+      and schnell_grid.jpeg are not installed.
+    files:
+      - {path: "model_index.json", sha256: 24946df21ff25e210486b5f6b14208983a90c9c73f8d48cfa724c0e4e03f7201, bytes: 536}
+      - {path: "scheduler/scheduler_config.json", sha256: b129cebacf8f851867ec5c7c4d3f4bf787e232525a53becf4df5a72278a788d5, bytes: 274}
+      - {path: "text_encoder/config.json", sha256: d79d5c8c6ce85112a923d621a5412886ddbbb0636210fc0f72f450582e675542, bytes: 613}
+      - {path: "text_encoder/model.safetensors", sha256: 893d67a23f4693ed42cdab4cbad7fe3e727cf59609c40da28a46b5470f9ed082, bytes: 246144352}
+      - {path: "text_encoder_2/config.json", sha256: 9001e5a8ae0571a362f806b87b6105dd1a15c33dca237b606d2561164109beeb, bytes: 782}
+      - {path: "text_encoder_2/model-00001-of-00002.safetensors", sha256: ec87bffd1923e8b2774a6d240c922a41f6143081d52cf83b8fe39e9d838c893e, bytes: 4994582224}
+      - {path: "text_encoder_2/model-00002-of-00002.safetensors", sha256: a5640855b301fcdbceddfa90ae8066cd9414aff020552a201a255ecf2059da00, bytes: 4530066360}
+      - {path: "text_encoder_2/model.safetensors.index.json", sha256: 3bacec0f0cf392399d4a385908f67dd73df99c9e9cfee669f148858ba9fbdb0a, bytes: 19885}
+      - {path: "tokenizer/merges.txt", sha256: 9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a, bytes: 524619}
+      - {path: "tokenizer/special_tokens_map.json", sha256: 2cdb3b8331a60c92fc1e55a13e9fd61fd2293c5a51275fdcccd62b780052530e, bytes: 588}
+      - {path: "tokenizer/tokenizer_config.json", sha256: 6bdcee9ccce2a16ca2b4c0c5ed00b42c50ea225f4472a8c4c1e963a2902c2881, bytes: 705}
+      - {path: "tokenizer/vocab.json", sha256: e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349, bytes: 1059962}
+      - {path: "tokenizer_2/special_tokens_map.json", sha256: 7a1985a994c41886db38c719d2a3d2f40606663cc19d7c5d6a85d349320e06d2, bytes: 2543}
+      - {path: "tokenizer_2/spiece.model", sha256: d60acb128cf7b7f2536e8f38a5b18a05535c9e14c7a355904270e15b0945ea86, bytes: 791656}
+      - {path: "tokenizer_2/tokenizer.json", sha256: f5dfec163765e18e270537fe896c49f5fad74db1525641d9b255a3008b999596, bytes: 2424235}
+      - {path: "tokenizer_2/tokenizer_config.json", sha256: 1a3d2db64215ed77854dd4208aac5f8361c1b5471cabd19c0ef1472d1a895eb0, bytes: 20817}
+      - {path: "transformer/config.json", sha256: 397cfb92299488013ec3af6142a2a877366f8d2e44efbb4f3e33479e7960d3d0, bytes: 321}
+      - {path: "transformer/diffusion_pytorch_model-00001-of-00003.safetensors", sha256: 9b633dbe87316385c5b1c262bd4b5a01e3d955170661d63dcec8a01e89c0d820, bytes: 9962580296}
+      - {path: "transformer/diffusion_pytorch_model-00002-of-00003.safetensors", sha256: 58b4434078f0c2567ddc54e3b5cbf39626ab55fbd9d5c22956e183668f535dec, bytes: 9949328904}
+      - {path: "transformer/diffusion_pytorch_model-00003-of-00003.safetensors", sha256: e2cbc25471ed5186e69a9b51098300cb2f612556453e38a372c851a220ed238d, bytes: 3870584832}
+      - {path: "transformer/diffusion_pytorch_model.safetensors.index.json", sha256: 783f857a5872f069e75daf4a5abe5efd6ff9ec2f37d71159767910cebfe048a6, bytes: 120822}
+      - {path: "vae/config.json", sha256: bc1e208f414a315365fbecf426838f43b87c9d5c051219e0968a56e2644b2998, bytes: 774}
       - {path: "vae/diffusion_pytorch_model.safetensors", sha256: f5b59a26851551b67ae1fe58d32e76486e1e812def4696a4bea97f16604d40a3, bytes: 167666902}
 
   # --- matting --------------------------------------------------------------------------
@@ -1160,6 +1212,75 @@ components:
     files:
       - {path: "vtracer-0.6.15-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", sha256: 95db13fa005bc9cacd8f6fd7fcfa2fce47529cf78af35f709993413e140f1f6e, bytes: 1088365}
 
+  # --- facade runtime (plan Phase 10) --------------------------------------------------
+  - id: fastapi
+    kind: library
+    source: {type: pypi, package: fastapi, version: "0.142.2", index: https://pypi.org/simple, git: {repo: fastapi/fastapi, commit: 78c4324f0c56bc5282a459978779a9e532d19709}}
+    spdx: MIT
+    licence_url: https://github.com/fastapi/fastapi/blob/78c4324f0c56bc5282a459978779a9e532d19709/LICENSE
+    licence_evidence: {url: https://raw.githubusercontent.com/fastapi/fastapi/78c4324f0c56bc5282a459978779a9e532d19709/LICENSE, sha256: 4ec89ffc81485b97fec584b2d4a961032eeffe834453894fd9c1274906cc744e}
+    licence_read_at: "2026-10-17T11:47:09Z"
+    notes: >-
+      Tag 0.142.2. Facade runtime (plan Phase 10): the facade web framework (plan Phase 10: "FastAPI (MIT)"); it parses every request the facade serves. Its wheel ships one licence
+      file, its dist-info LICENSE, byte-identical to the LICENSE read here (wheel members read
+      2026-10-17), and bundles no native library.
+    bundled:
+      licence_files:
+        - {member: "fastapi-0.142.2.dist-info/licenses/LICENSE", sha256: 4ec89ffc81485b97fec584b2d4a961032eeffe834453894fd9c1274906cc744e, bytes: 1086}
+    files:
+      - {path: "fastapi-0.142.2-py3-none-any.whl", sha256: bd5f4d81f1e93a88bcd77caf4dfe3c2dbffc3805407a0007e9a114c18b3a670b, bytes: 144409}
+
+  - id: starlette
+    kind: library
+    source: {type: pypi, package: starlette, version: "1.7.0", index: https://pypi.org/simple, git: {repo: Kludex/starlette, commit: 2269e9a08c1edd3dfdea865710f40f84c857b623}}
+    spdx: BSD-3-Clause
+    licence_url: https://github.com/Kludex/starlette/blob/2269e9a08c1edd3dfdea865710f40f84c857b623/LICENSE.md
+    licence_evidence: {url: https://raw.githubusercontent.com/Kludex/starlette/2269e9a08c1edd3dfdea865710f40f84c857b623/LICENSE.md, sha256: dcb95677a02240243187e964f941847d19b17821cf99e5afae684fab328c19bf}
+    licence_read_at: "2026-10-17T11:46:36Z"
+    notes: >-
+      Tag 1.7.0. Facade runtime (plan Phase 10): the ASGI toolkit FastAPI is built on; its request, response and streaming classes carry every request and SSE stream the facade serves. Its wheel ships one licence
+      file, its dist-info LICENSE.md, byte-identical to the LICENSE.md read here (wheel members read
+      2026-10-17), and bundles no native library.
+    bundled:
+      licence_files:
+        - {member: "starlette-1.7.0.dist-info/licenses/LICENSE.md", sha256: dcb95677a02240243187e964f941847d19b17821cf99e5afae684fab328c19bf, bytes: 1518}
+    files:
+      - {path: "starlette-1.7.0-py3-none-any.whl", sha256: 67f8e99895493dd2911a03f11314af6ceebeae4e704bb9f43dfc6a9db151c93e, bytes: 78980}
+
+  - id: uvicorn
+    kind: library
+    source: {type: pypi, package: uvicorn, version: "0.54.0", index: https://pypi.org/simple, git: {repo: Kludex/uvicorn, commit: 3eb9a9ab9af69005c687728097461c1fd2a95db9}}
+    spdx: BSD-3-Clause
+    licence_url: https://github.com/Kludex/uvicorn/blob/3eb9a9ab9af69005c687728097461c1fd2a95db9/LICENSE.md
+    licence_evidence: {url: https://raw.githubusercontent.com/Kludex/uvicorn/3eb9a9ab9af69005c687728097461c1fd2a95db9/LICENSE.md, sha256: efe1acf3e62fb99c288b0ec73e5a773b7268ef4320fe757ea994214e4b63c371}
+    licence_read_at: "2026-10-17T11:46:37Z"
+    notes: >-
+      Tag 0.54.0. Facade runtime (plan Phase 10): the ASGI server that runs the facade under llama-swap (plan Phase 10: "uvicorn (BSD)"). Its wheel ships one licence
+      file, its dist-info LICENSE.md, byte-identical to the LICENSE.md read here (wheel members read
+      2026-10-17), and bundles no native library.
+    bundled:
+      licence_files:
+        - {member: "uvicorn-0.54.0.dist-info/licenses/LICENSE.md", sha256: efe1acf3e62fb99c288b0ec73e5a773b7268ef4320fe757ea994214e4b63c371, bytes: 1526}
+    files:
+      - {path: "uvicorn-0.54.0-py3-none-any.whl", sha256: 505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf, bytes: 87427}
+
+  - id: python-multipart
+    kind: library
+    source: {type: pypi, package: python-multipart, version: "0.0.32", index: https://pypi.org/simple, git: {repo: Kludex/python-multipart, commit: 238ead62a0bb6f6cdfe122708faa13812f59f9a6}}
+    spdx: Apache-2.0
+    licence_url: https://github.com/Kludex/python-multipart/blob/238ead62a0bb6f6cdfe122708faa13812f59f9a6/LICENSE.txt
+    licence_evidence: {url: https://raw.githubusercontent.com/Kludex/python-multipart/238ead62a0bb6f6cdfe122708faa13812f59f9a6/LICENSE.txt, sha256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30}
+    licence_read_at: "2026-10-17T11:46:39Z"
+    notes: >-
+      Tag 0.0.32. Facade runtime (plan Phase 10): parses the OpenAI multipart/form-data body of POST /v1/images/edits (FastAPI Form/File). Its wheel ships one licence
+      file, its dist-info LICENSE.txt, byte-identical to the LICENSE.txt read here (wheel members read
+      2026-10-17), and bundles no native library.
+    bundled:
+      licence_files:
+        - {member: "python_multipart-0.0.32.dist-info/licenses/LICENSE.txt", sha256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30, bytes: 11358}
+    files:
+      - {path: "python_multipart-0.0.32-py3-none-any.whl", sha256: ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23, bytes: 30042}
+
 runners:
   # A recipe's `pipeline` and every post step's `runner` must name one of these. `code` is the
   # pinned code the runner executes; a diffusers runner's id is the pipeline class the model's
@@ -1171,6 +1292,9 @@ runners:
     kind: diffusers
     code: [diffusers, transformers, accelerate, safetensors, torch]
   - id: ZImagePipeline
+    kind: diffusers
+    code: [diffusers, transformers, accelerate, safetensors, torch]
+  - id: FluxPipeline
     kind: diffusers
     code: [diffusers, transformers, accelerate, safetensors, torch]
   - id: realesrgan

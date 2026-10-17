@@ -266,6 +266,58 @@ models:
     aliases:
       - gpt-oss
 
+  # --- Image generation: the qontinui image facade (docker/imagegen) ---
+  # Plan 2026-10-13-image-generation-and-visual-judgment, Phase 10 (qontinui-dev-notes). ONE
+  # entry for every image alias (D1.1: one GPU owner, never a second GPU service): the facade
+  # is FastAPI over diffusers and the named post runners, holds one pipeline at a time, and
+  # picks the recipe from the alias in the request -- llama-swap forwards it unchanged, in
+  # the JSON body of /v1/images/generations and in the multipart form of /v1/images/edits,
+  # because useModelName is unset. The alias list must equal docker/imagegen/facade.yaml's
+  # `aliases` (tests/test_facade_config.py checks it).
+  #
+  # Admission lives in the facade, not here: one job on the card, at most one interactive
+  # request waiting, bulk work refused `busy`/`deferred` with Retry-After (see
+  # qontinui_imagegen/admission.py for why a deeper queue would hold the whole card).
+  # concurrencyLimit is set above the facade's own bound (1 running + 1 waiting) so the
+  # facade's typed refusals answer first; llama-swap's own limit answers a plain-text 429
+  # "Too many requests" at v217 (proxy/process.go), which clients must not mistake for
+  # `deferred` -- they branch on error.type.
+  #
+  # No group configuration: Phase 0 measured at v217 that a swap does not kill a held
+  # request or an SSE stream (rule R-swap PASS) -- Process.Stop() waits for in-flight
+  # requests. Never mark this entry persistent: it would pin tens of GB against every alias.
+  #
+  # metadata: v217 has no per-model `capabilities`; /v1/models serves this map under
+  # meta.llamaswap, which is what Phase 25's svc:imagegen probe keys on.
+  #
+  # QONTINUI_IMAGEGEN (the machine switch, plan Phase 12 step 4) reaches the facade through
+  # llama-swap's own environment (children inherit it; docker-compose.yml passes it through).
+  # So does QONTINUI_IMAGEGEN_LISTENER: the facade serves only when the deployment attests a
+  # loopback-only listener (rule R-bind; README "Image generation"), and the tracked compose
+  # file, which publishes 0.0.0.0:8100, deliberately does not attest one.
+  qontinui-imagegen:
+    cmd: >
+      /opt/venvs/imagegen/bin/python3 -m qontinui_imagegen.serve
+      --host 127.0.0.1
+      --port ${PORT}
+    env:
+      - PYTHONPATH=/opt/imagegen
+      - HF_HUB_OFFLINE=1
+      - QONTINUI_IMAGEGEN_WEIGHTS_ROOT=/weights/imagegen
+    proxy: "http://127.0.0.1:${PORT}"
+    checkEndpoint: /health
+    ttl: 300
+    concurrencyLimit: 16
+    metadata:
+      qontinui_capability: image_generation
+    aliases:
+      - qwen-image-2512
+      - qwen-image-edit-2511
+      - z-image-turbo
+      - flux-1-schnell
+      - real-esrgan-x2plus
+      - real-esrgan-general-x4v3
+
 # AriaUI variants are mutually exclusive (same architecture, different weights).
 # UI-TARS sizes are mutually exclusive (only one loaded at a time).
 # Default swap behavior: loading one model unloads any other.

@@ -334,7 +334,9 @@ def test_each_crate_mutation_is_one_defect_from_its_base(
     assert differing == touched
 
 
-def test_the_six_recipes_are_present(real_recipes: dict) -> None:
+def test_the_recipes_are_present(real_recipes: dict) -> None:
+    # Phase 2's six, plus the plain drafts that are the z-image-turbo and flux-1-schnell
+    # aliases' default recipes in the facade (Phase 10; plan delta 2026-10-17).
     assert set(real_recipes) == {
         "hero",
         "illustration",
@@ -342,7 +344,46 @@ def test_the_six_recipes_are_present(real_recipes: dict) -> None:
         "edit",
         "cut-out",
         "upscale",
+        "draft",
+        "draft-flux",
     }
+
+
+def test_flux_schnell_is_admitted_apache_and_pinned_while_flux_dev_stays_banned(
+    real_manifest: dict,
+) -> None:
+    """Plan delta 2026-10-17: FLUX.1 [schnell] (Apache-2.0) joins as a fourth alias; the
+    FLUX [dev] family stays excluded by name, whatever licence an entry claims."""
+    flux = next(c for c in real_manifest["components"] if c["id"] == "flux-1-schnell")
+    assert flux["spdx"] == "Apache-2.0" and m.spdx_admitted(flux["spdx"])
+    assert flux["source"] == {
+        "type": "huggingface",
+        "repo": "black-forest-labs/FLUX.1-schnell",
+        "revision": "741f7c3ce8b383c54771c7003378a50191e9efe9",
+    }
+    assert flux["runner"] == "FluxPipeline"
+    assert all(HEX64.fullmatch(entry["sha256"]) for entry in flux["files"])
+    assert not [v for v in m.check_manifest(real_manifest) if "flux-1-schnell" in v.where]
+    assert m.excluded_reason("black-forest-labs/FLUX.1-schnell") is None
+    for banned in ("black-forest-labs/FLUX.1-dev", "FLUX.1-Kontext-dev", "flux-1-dev"):
+        assert m.excluded_reason(banned)
+    refused = m.check_manifest(m.load_yaml(FIXTURES / "mutation-flux-1-dev-labelled-apache.yaml"))
+    assert codes(refused) == {"excluded_component"}
+
+
+def test_the_facade_runtime_is_admitted_libraries(real_manifest: dict) -> None:
+    """Plan Phase 10: FastAPI and uvicorn join the manifest so the licence test covers them,
+    with starlette (the toolkit FastAPI runs on) and python-multipart (the edits form)."""
+    libraries = {c["id"]: c for c in real_manifest["components"] if c["kind"] == "library"}
+    expected = {
+        "fastapi": "MIT",
+        "starlette": "BSD-3-Clause",
+        "uvicorn": "BSD-3-Clause",
+        "python-multipart": "Apache-2.0",
+    }
+    for library_id, spdx in expected.items():
+        assert libraries[library_id]["spdx"] == spdx
+        assert m.spdx_admitted(spdx)
 
 
 def test_every_recipe_model_resolves_to_a_pinned_manifest_entry(

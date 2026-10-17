@@ -1,0 +1,121 @@
+# The image facade's configuration (plan 2026-10-13-image-generation-and-visual-judgment,
+# Phase 10). Read by qontinui_imagegen.config; every value is checked at startup and a bad
+# value refuses to start rather than run on a guess. QONTINUI_IMAGEGEN_CONFIG names another
+# file; QONTINUI_IMAGEGEN_WEIGHTS_ROOT overrides weights_root (the packaging differs per arm:
+# a volume mount in the Docker arm, a Windows path in the native arm -- rule R-mem).
+#
+# Where a number below came from is said beside it. "measured" means Phase 0's RESULT block
+# (qontinui-dev-notes plan, 2026-10-15) recorded it; "estimate" means Phase 0 item 5 has not
+# measured that model yet (R-mem is UNKNOWN), so the number is arithmetic from the manifest's
+# file sizes and is to be replaced by the measured peak when item 5 runs.
+
+schema_version: 1
+
+# Where the weights live (PD11: a mounted volume, never baked into the image). Hugging Face
+# components resolve in a stock HF hub cache under <weights_root>/hub -- the layout Phase 0
+# item 5 already wrote on spaceship's D: (imagegen-weights/hub) -- GitHub release assets
+# under <weights_root>/github/<owner>--<name>/<tag>/.
+weights_root: /weights/imagegen
+# The per-file stamps the verify-on-download install writes (deploy step 1), relative to
+# weights_root.
+stamps_file: stamps.json
+# Which stat fields must match a stamp for a file to count as unchanged. inode is dropped
+# here only on a filesystem whose inodes are not stable across container restarts (some
+# Docker Desktop bind mounts): the facade would otherwise re-hash every file on every start.
+stamp_fields: [size, mtime_ns, inode]
+
+device: cuda
+
+admission:
+  # Phase 0 threshold T5: <= 120 s per image for the interactive class. With at most one
+  # interactive request waiting behind one running job, wait + job stays under 240 s, well
+  # inside the runner's 300 s vision-client timeout (qontinui-runner vision_ai.rs).
+  interactive_gpu_seconds_cap: 120
+  # Every recipe's largest size preset is 1328x1328 (1,763,584 px); 1536x1536 leaves room
+  # for a preset added later without letting an interactive job grow past what T5 measured.
+  interactive_max_pixels: 2359296
+  # Candidates per interactive request: four Z-Image-Turbo images at Phase 0's 3.9 s each
+  # are far under the cap; a larger best-of-N is bulk work.
+  interactive_max_images: 4
+  # One interactive request may wait behind the running job; any further request is `busy`.
+  # Bulk work never waits here (it queues in studio's scheduler).
+  max_interactive_waiters: 1
+  # Phase 0's declared bulk window, on the box clock: 00:00-06:00. A presence opener
+  # (operator away) ships only once the facade can read a Windows idle signal (PD10; Phase 0
+  # item 10 found none readable from the container), so outside these hours bulk is
+  # `deferred`.
+  bulk_window: {start: "00:00", end: "06:00"}
+
+# VRAM the facade leaves free for the Windows desktop when it checks before a load:
+# Phase 0 threshold T3 caps peak total VRAM at 30,208 MiB of the card's 32,607, leaving
+# 2,399 MiB; 2,048 is held back for the desktop and the rest is the margin.
+vram_desktop_reserve_mib: 2048
+
+# Model alias (what a client sends as `model`, and what llama-swap's config.yaml lists as the
+# facade entry's aliases) -> the recipe used when the request names none. Every alias is the
+# primary model of at least one recipe; tests/test_facade_config.py checks this table, the
+# recipes and docker/llama-swap/config.yaml agree.
+aliases:
+  qwen-image-2512: illustration
+  qwen-image-edit-2511: edit
+  z-image-turbo: draft
+  flux-1-schnell: draft-flux
+  real-esrgan-x2plus: upscale
+  real-esrgan-general-x4v3: upscale
+
+# How each weighted model is loaded, and the VRAM a load needs (the pre-load check answers
+# `busy{vram_held_by: out_of_band}` when free VRAM, after the facade released its own
+# pipeline, is below this plus the desktop reserve). The memory arm is configuration because
+# R-mem is UNKNOWN:
+#   transformer_storage  fp8 = Phase 0's recorded load path: the transformer is built on the
+#                        meta device and each tensor is cast to float8_e4m3fn as it is read
+#                        from safetensors, never materialised in bf16 (diffusers layerwise
+#                        casting computes in bf16); bf16 = the checkpoint's own dtype.
+#   placement            resident = every component on the GPU for the process's life;
+#                        sequential_text_encoder = Phase 0's path: the text encoder is loaded
+#                        alone in bf16 per job, encodes, and is freed before the denoiser runs
+#                        (lowest VRAM and host memory, pays a text-encoder load per job);
+#                        model_cpu_offload = diffusers' offload hooks (components wait in host
+#                        RAM -- the arm for a native host with memory to spare, never the
+#                        24 GB WSL VM).
+models:
+  z-image-turbo:
+    transformer_storage: fp8
+    placement: resident
+    vram_need_mib: 8704
+    vram_basis: >-
+      measured: Phase 0 item 5 run 6 peaked at 9,863 MiB total including the 1.4 GiB desktop
+      on this load path; the one completed generation allocated 8,497 MiB at 1024x1024.
+  flux-1-schnell:
+    transformer_storage: fp8
+    placement: resident
+    vram_need_mib: 22528
+    vram_basis: >-
+      estimate: FP8 transformer 23,782,494,032 B / 2 = 11.1 GiB, T5 encoder 9,524,648,584 B
+      = 8.9 GiB, CLIP 0.2 GiB, VAE 0.2 GiB, plus 1.5 GiB of 1024x1024 activations.
+  qwen-image-2512:
+    transformer_storage: fp8
+    placement: sequential_text_encoder
+    vram_need_mib: 23552
+    vram_basis: >-
+      estimate: the larger stage is the FP8 transformer (40,861,027,880 B / 2 = 19.0 GiB)
+      plus the VAE and about 3 GiB of activations at 1328x1328; the bf16 text encoder stage
+      (15.4 GiB) is smaller.
+  qwen-image-edit-2511:
+    transformer_storage: fp8
+    placement: sequential_text_encoder
+    vram_need_mib: 24576
+    vram_basis: >-
+      estimate: as qwen-image-2512, plus the reference images' latents in the sequence.
+  real-esrgan-x2plus:
+    vram_need_mib: 1024
+    vram_basis: "estimate: a 67 MB RRDBNet in fp16 on 512 px tiles."
+  real-esrgan-general-x4v3:
+    vram_need_mib: 1024
+    vram_basis: "estimate: a 5 MB SRVGGNetCompact in fp16 on 512 px tiles."
+  birefnet:
+    vram_need_mib: 3072
+    vram_basis: "estimate: a 0.44 GB BiRefNet in fp16 on one 1024x1024 input."
+  ben2-base:
+    vram_need_mib: 3072
+    vram_basis: "estimate: a 0.38 GB BEN2 base in fp16 on one 1024x1024 input."

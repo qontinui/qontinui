@@ -4,9 +4,8 @@
 #  A repo without this file cannot run on the product's local-CI lane at all.)
 #
 # PARITY IS A REVIEW-TIME INVARIANT: the steps below mirror the gate commands of
-# .github/workflows/ci.yml's `lint` and `typecheck` jobs, plus the `build` job's
-# package build and the docker/imagegen subset of the `tests` job (see gap 1). When
-# those jobs' steps change, update this file in the SAME PR.
+# .github/workflows/ci.yml's `lint`, `typecheck` and `imagegen` jobs, plus the `build`
+# job's package build. When those jobs' steps change, update this file in the SAME PR.
 # Actions steps are referenced by NAME below, never by line number — line
 # numbers in that file move constantly and a stale citation makes the invariant
 # unauditable.
@@ -51,10 +50,9 @@
 #         --with-deps chromium`; `--with-deps` shells out to the distro package
 #         manager under sudo, so it inherits blocker (a).
 #    "Upload coverage to Codecov" is additionally a marketplace Action.
-#    ONE SUBSET IS MIRRORED: docker/imagegen/tests (the image provider's licence
-#    manifest and recipe tests, collected by the job through pyproject.toml's
-#    testpaths) import nothing from qontinui and need no X server, so none of the
-#    three blockers applies to them; the `imagegen-tests` step below runs them.
+#    docker/imagegen/tests are no longer part of this job: they moved to ci.yml's own
+#    `imagegen` job (their own project, docker/imagegen/pyproject.toml), which IS
+#    mirrored below by the `imagegen-install` and `imagegen-tests` steps.
 #
 # 2. ci.yml's `tests-ml` job — everything in gap 1, plus "Install dependencies
 #    (with ml extra)", whose own comment states it "pulls torch/torchvision from
@@ -204,10 +202,23 @@ name = "build-package"
 command = ["poetry", "build"]
 
 [[steps]]
+name = "imagegen-install"
+# ci.yml `imagegen` job, "Install the imagegen test environment". docker/imagegen is its
+# own poetry project (the image facade needs FastAPI, which the library env does not
+# carry), installed into its own poetry venv, scoped like the library's.
+# DECLARED ADAPTATION: the Actions job pins Python 3.10 (the llama-swap image's
+# interpreter) with setup-python; this lane uses the poetry on PATH and whatever Python it
+# resolves (3.12, per gap 7). docker/imagegen/pyproject.toml admits 3.10-3.13 and its code
+# is linted for 3.10 (docker/imagegen/ruff.toml), so a 3.11+ construct is still caught by
+# the `lint` step, not here.
+command = ["poetry", "-C", "docker/imagegen", "install", "--no-interaction", "--no-ansi"]
+timeout_secs = 3600
+
+[[steps]]
 name = "imagegen-tests"
-# ci.yml `tests` job, "Run tests with coverage" -- the docker/imagegen/tests subset only
-# (gap 1 says why the rest is not mirrored). Fails on a non-admitted licence, an
-# unpinned weight file or drifted vendored code under docker/imagegen/. `--no-cov`
-# turns off pyproject.toml's addopts coverage of src/qontinui, which these tests never
-# import: it would report 0% and write htmlcov/ and coverage.xml into the checkout.
-command = ["poetry", "run", "pytest", "docker/imagegen/tests", "-q", "--no-cov"]
+# ci.yml `imagegen` job, "Run the imagegen tests": the licence manifest and recipe tests
+# (fail on a non-admitted licence, an unpinned weight file, drifted vendored code or a
+# runtime lock that disagrees with the manifest) and the facade's tests against a fake
+# pipeline executor. `poetry -C` runs in docker/imagegen, so the path is `tests`, and that
+# project's own pytest settings apply (no coverage of src/qontinui).
+command = ["poetry", "-C", "docker/imagegen", "run", "pytest", "tests", "-q"]
