@@ -53,10 +53,17 @@ class Engine(Protocol):
     def versions(self) -> Mapping[str, str]:
         """Engine and library versions for the provenance."""
 
-    def run(self, plan: JobPlan, on_step: StepCallback, should_stop: StopCheck) -> list[Rendered]:
+    def run(
+        self,
+        plan: JobPlan,
+        on_step: StepCallback,
+        should_stop: StopCheck,
+        on_ready: StepCallback,
+    ) -> list[Rendered]:
         """Load what ``plan`` needs (if not resident) and render its ``n`` candidates.
 
-        ``on_step`` is called once per denoising step and once per post step;
-        ``should_stop`` is polled between steps, and a True answer raises
-        :class:`JobInterrupted`.
+        ``on_ready`` is called once everything the job loads is loaded -- the interactive
+        GPU-seconds cap counts from there, never across a cold load. ``on_step`` is called
+        once per denoising step and once per post step; ``should_stop`` is polled between
+        steps, and a True answer raises :class:`JobInterrupted`.
         """

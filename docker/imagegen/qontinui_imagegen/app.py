@@ -30,7 +30,7 @@ import base64
 import json
 import os
 import time
-from collections.abc import AsyncIterator, Callable, Mapping, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -56,6 +56,8 @@ OUT_OF_BAND_RETRY_S = 300.0
 COMPLETED_EVENT = {"generations": "image_generation.completed", "edits": "image_edit.completed"}
 MEDIA_TYPES = {"png": "image/png", "svg": "image/svg+xml"}
 IMAGE_FIELDS = ("image", "image[]")
+#: How often a non-streaming request checks whether its client is still connected.
+DISCONNECT_POLL_S = 1.0
 
 
 def _sse(event: str, data: Mapping[str, Any]) -> bytes:
@@ -177,7 +179,12 @@ class Facade:
             on_step(min(done, total), total)
 
         try:
-            return self.engine.run(plan, step, self._should_stop(ticket))
+            return self.engine.run(
+                plan,
+                step,
+                self._should_stop(ticket),
+                lambda: ticket.begin_compute(self.monotonic()),
+            )
         except JobInterrupted as error:
             if ticket.cancelled.is_set():
                 raise errors.failed(
@@ -192,6 +199,9 @@ class Facade:
         except EngineOutOfMemory as error:
             self.engine.release()
             raise errors.failed("out_of_memory", f"the card ran out of memory: {error}") from error
+        except Exception:
+            self.engine.release()  # whatever broke, never leave a half-loaded pipeline resident
+            raise
 
     # --- results ----------------------------------------------------------------------------
 
@@ -247,12 +257,32 @@ class Facade:
         except asyncio.CancelledError:
             ticket.cancelled.set()
             raise
+        except Exception as error:  # any other failure must still answer, or both paths hang
+            await events.put(
+                (
+                    "error",
+                    errors.failed(
+                        "engine_error", f"the job failed: {type(error).__name__}: {error}"
+                    ),
+                )
+            )
         finally:
             self.admission.abandon(ticket)
             self.admission.release(ticket)
 
+    def _client_gone(self, ticket: Ticket, task: asyncio.Future[None]) -> None:
+        """The client left: a queued job gives back its place; a running one stops."""
+        ticket.cancelled.set()
+        if ticket.started_at is None:
+            self.admission.abandon(ticket)  # the place is free now, not when the task unwinds
+            task.cancel()
+
     async def respond(
-        self, route: str, body: Mapping[str, Any], inputs: Sequence[InputImage]
+        self,
+        route: str,
+        body: Mapping[str, Any],
+        inputs: Sequence[InputImage],
+        disconnected: Callable[[], Awaitable[bool]] | None = None,
     ) -> Response:
         try:
             self.check_switch()
@@ -266,12 +296,18 @@ class Facade:
         task.add_done_callback(self._tasks.discard)
         if plan.stream:
             return StreamingResponse(
-                self._stream(plan, ticket, events),
+                self._stream(plan, ticket, events, task),
                 media_type="text/event-stream",
                 headers={"Cache-Control": "no-cache"},
             )
         while True:
-            kind, value = await events.get()
+            try:
+                kind, value = await asyncio.wait_for(events.get(), DISCONNECT_POLL_S)
+            except asyncio.TimeoutError:
+                if disconnected is not None and await disconnected():
+                    self._client_gone(ticket, task)
+                    return _refusal(errors.failed("client_gone", "the client went away"))
+                continue
             if kind == "error":
                 return _refusal(value)
             if kind == "done":
@@ -287,7 +323,11 @@ class Facade:
         )
 
     async def _stream(
-        self, plan: JobPlan, ticket: Ticket, events: asyncio.Queue[tuple[str, Any]]
+        self,
+        plan: JobPlan,
+        ticket: Ticket,
+        events: asyncio.Queue[tuple[str, Any]],
+        task: asyncio.Future[None],
     ) -> AsyncIterator[bytes]:
         finished = False
         try:
@@ -324,8 +364,9 @@ class Facade:
                     return
         finally:
             if not finished:
-                # The client stopped listening: stop the job at its next step.
-                ticket.cancelled.set()
+                # The client stopped listening: give back a waiting place, or stop the
+                # running job at its next step.
+                self._client_gone(ticket, task)
 
 
 async def _edit_inputs(request: Request) -> tuple[dict[str, Any], list[InputImage]]:
@@ -400,7 +441,7 @@ def create_app(facade: Facade) -> FastAPI:
             return _refusal(errors.invalid("invalid_json", "the request body is not JSON"))
         if not isinstance(body, dict):
             return _refusal(errors.invalid("invalid_json", "the request body is a JSON object"))
-        return await facade.respond("generations", body, ())
+        return await facade.respond("generations", body, (), request.is_disconnected)
 
     @app.post("/v1/images/edits")
     async def edits(request: Request) -> Response:
@@ -416,6 +457,6 @@ def create_app(facade: Facade) -> FastAPI:
             body, inputs = await _edit_inputs(request)
         except errors.FacadeError as error:
             return _refusal(error)
-        return await facade.respond("edits", body, inputs)
+        return await facade.respond("edits", body, inputs, request.is_disconnected)
 
     return app

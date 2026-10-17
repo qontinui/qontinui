@@ -225,8 +225,10 @@ jobs:
     # 22.04 python3, 3.10), because the facade needs FastAPI, which the library's
     # environment does not carry. Fails on a non-admitted licence, an unpinned weight file,
     # drifted vendored code, a runtime lock that disagrees with the manifest, or a facade
-    # regression. pytest exits non-zero when it collects nothing.
+    # regression. pytest exits non-zero when it collects nothing; each test is bounded at
+    # 60 s (pytest-timeout) and the job at 20 minutes, so a hang fails instead of stalling.
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
 

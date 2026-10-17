@@ -41,6 +41,9 @@ from typing import Any
 from qontinui_imagegen.manifest import MANIFEST_PATH, load_yaml
 
 HASH_CHUNK = 8 * 1024 * 1024
+#: File types that carry weights. One of these beside a model's pinned files is refused:
+#: a loader that globs a folder (diffusers, safetensors shards) would pick it up unverified.
+WEIGHT_SUFFIXES = frozenset({".safetensors", ".bin", ".pt", ".pth", ".ckpt", ".gguf", ".onnx"})
 STAMPS_SCHEMA = 1
 
 
@@ -200,6 +203,14 @@ class WeightVerifier:
                 stamp = self.stamps.files.get(self._key(path))
                 if full or not self._unchanged(stamp, current, str(entry["sha256"])):
                     pending.append((path, entry, current))
+            listed = {base / str(entry["path"]) for entry in component["files"]}
+            if base.is_dir():
+                for path in sorted(base.rglob("*")):
+                    if path.suffix in WEIGHT_SUFFIXES and path not in listed:
+                        problems.append(
+                            f"{path.relative_to(base).as_posix()} is a weight file the "
+                            "manifest does not pin; remove it (unpinned bytes are never loaded)"
+                        )
             if problems:
                 raise WeightsError(model_id, problems)
             self.progress = VerifyProgress(

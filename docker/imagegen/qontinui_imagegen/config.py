@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from datetime import time
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from qontinui_imagegen.manifest import IMAGEGEN_ROOT, load_yaml
 
@@ -34,6 +35,8 @@ SWITCH_ENV = "QONTINUI_IMAGEGEN"
 #: attests a listener, the facade answers ``disabled``: Phase 0 read R-bind as UNKNOWN, and
 #: an UNKNOWN bind is the off-box arm, where the image aliases must not be served.
 LISTENER_ENV = "QONTINUI_IMAGEGEN_LISTENER"
+#: The zone the bulk window is read in, overriding facade.yaml (a container clock is UTC).
+TIMEZONE_ENV = "QONTINUI_IMAGEGEN_TIMEZONE"
 ATTESTED_LISTENERS = frozenset({"loopback"})
 
 TRANSFORMER_STORAGE = frozenset({"fp8", "bf16"})
@@ -64,6 +67,8 @@ class Admission:
     max_interactive_waiters: int
     bulk_window_start: time
     bulk_window_end: time
+    #: IANA zone the window is read in; None = unset, and the window is closed.
+    bulk_window_timezone: str | None = None
 
 
 @dataclass(frozen=True)
@@ -202,8 +207,19 @@ def parse_config(
         "facade.admission",
     )
     window = _require(raw_admission, "bulk_window", "facade.admission")
-    if not isinstance(window, Mapping) or set(window) != {"start", "end"}:
-        raise ConfigError("facade.admission.bulk_window is {start: HH:MM, end: HH:MM}")
+    if not isinstance(window, Mapping) or set(window) != {"start", "end", "timezone"}:
+        raise ConfigError(
+            "facade.admission.bulk_window is {start: HH:MM, end: HH:MM, timezone: <IANA zone "
+            "or null>}"
+        )
+    zone = env.get(TIMEZONE_ENV) or window["timezone"]
+    if zone is not None:
+        if not isinstance(zone, str):
+            raise ConfigError("facade.admission.bulk_window.timezone is an IANA zone name")
+        try:
+            ZoneInfo(zone)
+        except (ZoneInfoNotFoundError, ValueError) as error:
+            raise ConfigError(f"bulk window timezone {zone!r} is not a known zone") from error
     start = _clock(window["start"], "facade.admission.bulk_window.start")
     end = _clock(window["end"], "facade.admission.bulk_window.end")
     if start == end:
@@ -232,6 +248,7 @@ def parse_config(
         max_interactive_waiters=waiters,
         bulk_window_start=start,
         bulk_window_end=end,
+        bulk_window_timezone=zone,
     )
     reserve = _require(document, "vram_desktop_reserve_mib", "facade")
     if isinstance(reserve, bool) or not isinstance(reserve, int) or reserve < 0:

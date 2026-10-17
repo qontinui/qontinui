@@ -29,3 +29,6 @@ pyyaml
 huggingface-hub
 opencv-python-headless
 numpy
+# The IANA zone database for the bulk window's clock (zoneinfo); the CUDA base image
+# does not install the distro tzdata package.
+tzdata

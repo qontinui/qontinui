@@ -35,6 +35,10 @@ class FakeEngine:
     gate: threading.Event | None = None
     started: threading.Event = field(default_factory=threading.Event)
     out_of_memory: bool = False
+    #: Raised from run() as an unexpected engine failure (not a typed one).
+    crash: Exception | None = None
+    #: Called in run() BEFORE on_ready -- a cold load, e.g. advancing a fake clock.
+    load: Callable[[], None] | None = None
     runs: list[JobPlan] = field(default_factory=list)
     releases: int = 0
     _resident: str | None = None
@@ -53,11 +57,20 @@ class FakeEngine:
         return {"engine": self.name, "diffusers": "0.41.0", "torch": "fake"}
 
     def run(
-        self, plan: JobPlan, on_step: Callable[[], None], should_stop: Callable[[], bool]
+        self,
+        plan: JobPlan,
+        on_step: Callable[[], None],
+        should_stop: Callable[[], bool],
+        on_ready: Callable[[], None],
     ) -> list[Rendered]:
         self.runs.append(plan)
         self._resident = plan.resident_key
+        if self.load is not None:
+            self.load()
+        on_ready()
         self.started.set()
+        if self.crash is not None:
+            raise self.crash
         if self.out_of_memory:
             raise EngineOutOfMemory("CUDA out of memory (fake)")
         outputs = []

@@ -33,6 +33,16 @@ class PostRunners:
     def _folder(self, model_id: str) -> Any:
         return component_dir(self.config.weights_root, self.catalogue.components[model_id])
 
+    def prepare(self, plan: Any) -> None:
+        """Load every post-step model ``plan`` uses, so loading is not counted as compute."""
+        if plan.pipeline_kind == "named":
+            self._esrgan(plan.alias)
+        for step in plan.post:
+            if step.op == "upscale":
+                self._esrgan(step.models[0])
+            elif step.op == "matte":
+                self._matte_model(step.runner, step.models[0])
+
     def apply(self, step: PostStep, image: Any) -> Any:
         if step.op == "upscale":
             return self.upscale(step.models[0], image, step.parameters)
@@ -120,34 +130,38 @@ class PostRunners:
 
     # --- matting ---------------------------------------------------------------------------
 
-    def matte(self, runner: str, model_id: str, image: Any) -> Any:
+    def _matte_model(self, runner: str, model_id: str) -> Any:
         import torch
 
+        model = self._models.get(model_id)
+        if model is not None:
+            return model
         if runner == "birefnet":
-            model = self._models.get(model_id)
-            if model is None:
-                from birefnet.birefnet import BiRefNet
+            from birefnet.birefnet import BiRefNet
 
-                model = BiRefNet.from_pretrained(
-                    str(self._folder(model_id)), local_files_only=True, use_safetensors=True
-                )
-                model = model.to(self.config.device).half().eval()
-                self._models[model_id] = model
+            model = BiRefNet.from_pretrained(
+                str(self._folder(model_id)), local_files_only=True, use_safetensors=True
+            )
+            model = model.to(self.config.device).half().eval()
+        elif runner == "ben2":
+            from ben2.BEN2 import BEN_Base
+            from safetensors.torch import load_file
+
+            model = BEN_Base()
+            model.load_state_dict(load_file(str(self._folder(model_id) / "model.safetensors")))
+            model = model.to(self.config.device).eval()
+            if torch.cuda.is_available():
+                model = model.half()  # BEN2's img_transform feeds fp16 on CUDA
+        else:
+            raise ValueError(f"no matte runner {runner!r}")
+        self._models[model_id] = model
+        return model
+
+    def matte(self, runner: str, model_id: str, image: Any) -> Any:
+        model = self._matte_model(runner, model_id)
+        if runner == "birefnet":
             return _birefnet_matte(model, image, self.config.device)
-        if runner == "ben2":
-            model = self._models.get(model_id)
-            if model is None:
-                from ben2.BEN2 import BEN_Base
-                from safetensors.torch import load_file
-
-                model = BEN_Base()
-                model.load_state_dict(load_file(str(self._folder(model_id) / "model.safetensors")))
-                model = model.to(self.config.device).eval()
-                if torch.cuda.is_available():
-                    model = model.half()  # BEN2's img_transform feeds fp16 on CUDA
-                self._models[model_id] = model
-            return model.inference(image.convert("RGB"))
-        raise ValueError(f"no matte runner {runner!r}")
+        return model.inference(image.convert("RGB"))
 
 
 def _birefnet_matte(model: Any, image: Any, device: str) -> Any:

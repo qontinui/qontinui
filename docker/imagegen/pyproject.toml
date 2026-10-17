@@ -23,10 +23,15 @@ pillow = "^12.0"
 pyyaml = "^6.0"
 httpx = "^0.28"
 pytest = "^9.0"
+pytest-timeout = "^2.3"
+tzdata = "*"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+# A test that hangs (an admission bug leaves a request waiting forever) fails at 60 s
+# instead of holding the CI job until its own timeout.
+timeout = 60
 addopts = ["-ra", "--strict-markers"]
 
 [build-system]

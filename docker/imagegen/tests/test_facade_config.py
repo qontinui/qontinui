@@ -158,7 +158,7 @@ def _lock() -> dict[str, tuple[str, set[str]]]:
     return pins
 
 
-def test_the_runtime_lock_installs_exactly_the_manifest_libraries(manifest: dict) -> None:
+def test_the_runtime_lock_pins_every_manifest_library_with_its_wheel_hash(manifest: dict) -> None:
     pins = _lock()
     libraries = [x for x in manifest["components"] if x["kind"] == "library"]
     assert libraries
@@ -188,7 +188,7 @@ def test_the_lock_check_can_fail(
     )
     monkeypatch.setattr(__import__(__name__), "RUNTIME_LOCK", drifted)
     with pytest.raises(AssertionError):
-        test_the_runtime_lock_installs_exactly_the_manifest_libraries(manifest)
+        test_the_runtime_lock_pins_every_manifest_library_with_its_wheel_hash(manifest)
 
 
 # --- the config refuses what it cannot honour ----------------------------------------------------------
@@ -247,3 +247,66 @@ def test_the_catalogue_hashes_every_recipe() -> None:
     catalogue = real_catalogue()
     assert set(catalogue.recipe_hashes) == set(load_recipes(RECIPES_DIR))
     assert len(set(catalogue.recipe_hashes.values())) == len(catalogue.recipe_hashes)
+
+
+# --- the bulk window's clock (M2) and the loopback-only bind (M4) ---------------------------
+
+
+def test_the_bulk_window_reads_its_configured_zone(manifest: dict, document: dict) -> None:
+    from datetime import datetime, timezone
+
+    from qontinui_imagegen.admission import AdmissionController, zone_clock
+
+    config = c.parse_config(document, environ={c.TIMEZONE_ENV: "Asia/Tokyo"}, **_known(manifest))
+    assert config.admission.bulk_window_timezone == "Asia/Tokyo"
+    # 17:30 UTC is 02:30 in Tokyo: inside 00:00-06:00 there, outside it in UTC.
+    instant = datetime(2026, 10, 17, 17, 30, tzinfo=timezone.utc)
+    tokyo = instant.astimezone(__import__("zoneinfo").ZoneInfo("Asia/Tokyo")).replace(tzinfo=None)
+    controller = AdmissionController(config.admission, now=lambda: tokyo)
+    assert controller.in_bulk_window()
+    assert not controller.in_bulk_window(instant.replace(tzinfo=None))
+    assert zone_clock("Asia/Tokyo")() is not None
+
+
+def test_with_no_zone_bulk_is_deferred_not_run_on_utc(manifest: dict, document: dict) -> None:
+    from qontinui_imagegen import errors
+    from qontinui_imagegen.admission import AdmissionController
+
+    config = c.parse_config(document, environ={c.TIMEZONE_ENV: ""}, **_known(manifest))
+    assert config.admission.bulk_window_timezone is None
+    controller = AdmissionController(config.admission)
+    assert not controller.in_bulk_window()
+    with pytest.raises(errors.FacadeError) as raised:
+        controller.admit("bulk")
+    assert (raised.value.error_type, raised.value.code) == (
+        "deferred",
+        "bulk_window_timezone_unset",
+    )
+    assert controller.admit("interactive").priority == "interactive"
+
+
+def test_an_unknown_zone_refuses_to_start(manifest: dict, document: dict) -> None:
+    with pytest.raises(c.ConfigError, match="not a known zone"):
+        c.parse_config(document, environ={c.TIMEZONE_ENV: "Mars/Olympus"}, **_known(manifest))
+
+
+def test_compose_passes_the_bulk_window_zone_through() -> None:
+    service = yaml.safe_load(COMPOSE.read_text(encoding="utf-8"))["services"]["llama-swap"]
+    assert f"{c.TIMEZONE_ENV}=${{{c.TIMEZONE_ENV}:-}}" in service["environment"]
+
+
+@pytest.mark.parametrize("host", ["0.0.0.0", "::", "100.111.28.125", "192.168.1.5", "example.com"])
+def test_serve_refuses_a_non_loopback_host_before_loading_anything(
+    host: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from qontinui_imagegen import serve
+
+    assert serve.main(["--host", host, "--port", "1"]) == 2
+    assert "binds loopback only" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "127.0.0.2", "::1", "localhost"])
+def test_loopback_hosts_are_loopback(host: str) -> None:
+    from qontinui_imagegen import serve
+
+    assert serve._loopback(host)

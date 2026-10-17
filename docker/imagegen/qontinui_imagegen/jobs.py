@@ -366,6 +366,11 @@ def build_plan(
         raise errors.invalid("unexpected_image", "this model takes no input image", "image")
     if priority == "interactive":
         pixels = size[0] * size[1] if size else max(i.width * i.height for i in inputs)
+        if pipeline_kind == "named":
+            # An upscaler's work is its OUTPUT: input pixels times the scale squared.
+            scales: Mapping[str, str] = parameters.get("scale_models") or {}
+            factor = next((int(s) for s, model in scales.items() if model == alias), 1)
+            pixels *= factor * factor
         if pixels > config.admission.interactive_max_pixels:
             raise errors.invalid(
                 "interactive_cap_exceeded",
@@ -404,7 +409,14 @@ def build_plan(
             raise errors.invalid(
                 "seed_unused", f"recipe {recipe_id!r} is deterministic and takes no seed", "seed"
             )
-        seeds = tuple(None for _ in range(n))
+        if n != 1:
+            raise errors.invalid(
+                "n_unsupported",
+                f"recipe {recipe_id!r} is deterministic: every candidate would be the same "
+                "image, so it renders exactly one (n=1)",
+                "n",
+            )
+        seeds = (None,)
 
     post = tuple(
         PostStep(

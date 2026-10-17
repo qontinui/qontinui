@@ -27,9 +27,13 @@ stamp_fields: [size, mtime_ns, inode]
 device: cuda
 
 admission:
-  # Phase 0 threshold T5: <= 120 s per image for the interactive class. With at most one
-  # interactive request waiting behind one running job, wait + job stays under 240 s, well
-  # inside the runner's 300 s vision-client timeout (qontinui-runner vision_ai.rs).
+  # Phase 0 threshold T5: <= 120 s per image for the interactive class. The cap counts
+  # COMPUTE from the moment the pipeline is loaded and its weights verified -- a cold FP8
+  # Z-Image-Turbo load alone took about 214-220 s in Phase 0, so a cap including it would
+  # fail every cold request. A warm interactive job therefore ends inside 120 s; a cold one
+  # takes its load time on top, and a request queued behind it waits for both. Clients size
+  # their timeout for cold load + cap (admission.py says why llama-swap v217 adds a wait of
+  # its own during a cold first request).
   interactive_gpu_seconds_cap: 120
   # Every recipe's largest size preset is 1328x1328 (1,763,584 px); 1536x1536 leaves room
   # for a preset added later without letting an interactive job grow past what T5 measured.
@@ -44,7 +48,12 @@ admission:
   # (operator away) ships only once the facade can read a Windows idle signal (PD10; Phase 0
   # item 10 found none readable from the container), so outside these hours bulk is
   # `deferred`.
-  bulk_window: {start: "00:00", end: "06:00"}
+  # The zone it is read in is explicit: the container's clock is UTC unless told otherwise,
+  # and the window means the box's night. Left null here because the box's zone is a per-box
+  # fact this file cannot know; set QONTINUI_IMAGEGEN_TIMEZONE (docker-compose.yml passes it
+  # through) to the box's IANA zone. Until then bulk work is `deferred`
+  # (bulk_window_timezone_unset) rather than opened on a guessed clock.
+  bulk_window: {start: "00:00", end: "06:00", timezone: null}
 
 # VRAM the facade leaves free for the Windows desktop when it checks before a load:
 # Phase 0 threshold T3 caps peak total VRAM at 30,208 MiB of the card's 32,607, leaving
@@ -81,11 +90,15 @@ aliases:
 models:
   z-image-turbo:
     transformer_storage: fp8
-    placement: resident
+    placement: sequential_text_encoder
     vram_need_mib: 8704
     vram_basis: >-
-      measured: Phase 0 item 5 run 6 peaked at 9,863 MiB total including the 1.4 GiB desktop
-      on this load path; the one completed generation allocated 8,497 MiB at 1024x1024.
+      estimate: Phase 0's recorded load path (text encoder alone in bf16, freed; FP8
+      transformer; pipeline without a text encoder) is this placement. Its larger stage is
+      the bf16 text encoder (8,044,982,000 B = 7.5 GiB) plus activations; the FP8
+      transformer is about 6 GiB. Phase 0 run 6 OBSERVED 9,863 MiB total including the
+      1.4 GiB desktop during the text-encoder stage, but item 5 never thresholded a valid
+      generation on this path, so this is not a measurement.
   flux-1-schnell:
     transformer_storage: fp8
     placement: resident

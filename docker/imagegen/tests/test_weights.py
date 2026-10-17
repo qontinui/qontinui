@@ -213,3 +213,39 @@ def test_the_hub_install_refuses_to_run_offline(
     component = _component(FILES)
     with pytest.raises(OSError, match="HF_HUB_OFFLINE"):
         w.default_fetcher(component, component["files"][0], tmp_path)
+
+
+# --- unpinned weight files beside the pinned ones (L4) -------------------------------------
+
+
+def test_an_unpinned_weight_file_beside_the_pinned_ones_is_refused(tmp_path: Path) -> None:
+    base = _install_files(tmp_path, FILES)
+    (base / "transformer" / "extra.safetensors").write_bytes(b"not pinned")
+    with pytest.raises(w.WeightsError, match="does not pin"):
+        _verifier(tmp_path, _component(FILES)).verify_model("tiny-model")
+    (base / "transformer" / "extra.safetensors").unlink()
+    (base / "notes.txt").write_text("not weights", encoding="utf-8")
+    _verifier(tmp_path, _component(FILES)).verify_model("tiny-model")
+
+
+def test_the_shard_loader_takes_only_pinned_files(tmp_path: Path) -> None:
+    from qontinui_imagegen.engine.diffusers_engine import _shards
+
+    folder = tmp_path / "transformer"
+    folder.mkdir()
+    pinned = {folder / "a.safetensors", folder / "b.safetensors"}
+    for path in pinned:
+        path.write_bytes(b"x")
+    (folder / "x.safetensors.index.json").write_text(
+        '{"weight_map": {"k1": "a.safetensors", "k2": "b.safetensors"}}', encoding="utf-8"
+    )
+    assert _shards(folder, pinned) == sorted(pinned)
+    (folder / "stray.safetensors").write_bytes(b"x")
+    with pytest.raises(RuntimeError, match="unpinned"):
+        _shards(folder, pinned)
+    (folder / "stray.safetensors").unlink()
+    (folder / "x.safetensors.index.json").write_text(
+        '{"weight_map": {"k1": "a.safetensors", "k3": "c.safetensors"}}', encoding="utf-8"
+    )
+    with pytest.raises(RuntimeError, match="does not pin"):
+        _shards(folder, pinned)

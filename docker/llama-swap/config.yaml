@@ -283,6 +283,11 @@ models:
   # "Too many requests" at v217 (proxy/process.go), which clients must not mistake for
   # `deferred` -- they branch on error.type.
   #
+  # Timeouts: at v217 the first request after llama-swap swaps this entry in is proxied
+  # while the process group's lock is held, so a concurrent image request waits inside
+  # llama-swap (no typed `busy`) until it ends; clients size timeouts for cold load + the
+  # facade's 120 s compute cap (README "Image generation").
+  #
   # No group configuration: Phase 0 measured at v217 that a swap does not kill a held
   # request or an SSE stream (rule R-swap PASS) -- Process.Stop() waits for in-flight
   # requests. Never mark this entry persistent: it would pin tens of GB against every alias.

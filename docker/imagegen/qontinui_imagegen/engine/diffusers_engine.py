@@ -79,15 +79,30 @@ def fp8_parameter_names(model: Any, patterns: Sequence[str]) -> set[str]:
     return names
 
 
-def _shards(folder: Path) -> list[Path]:
+def _shards(folder: Path, pinned: set[Path]) -> list[Path]:
+    """The transformer's weight files: exactly the manifest's, never a stray file beside them.
+
+    ``pinned`` holds the manifest-listed files of the component. A ``.safetensors`` file in
+    ``folder`` that is not pinned is refused rather than loaded or ignored: an unlisted file
+    is unverified bytes, and a glob would pick it up.
+    """
+    present = set(folder.glob("*.safetensors"))
+    unlisted = sorted(present - pinned)
+    if unlisted:
+        raise RuntimeError(f"unpinned weight files beside the manifest's: {unlisted}")
     index = sorted(folder.glob("*.safetensors.index.json"))
     if index:
         weight_map = json.loads(index[0].read_text(encoding="utf-8"))["weight_map"]
-        return [folder / name for name in sorted(set(weight_map.values()))]
-    return sorted(folder.glob("*.safetensors"))
+        shards = [folder / name for name in sorted(set(weight_map.values()))]
+    else:
+        shards = sorted(present)
+    missing = [shard for shard in shards if shard not in pinned]
+    if missing or not shards:
+        raise RuntimeError(f"weight files the manifest does not pin: {missing or 'none found'}")
+    return shards
 
 
-def load_fp8_transformer(transformer_cls: Any, folder: Path, device: str) -> Any:
+def load_fp8_transformer(transformer_cls: Any, folder: Path, device: str, pinned: set[Path]) -> Any:
     """Build ``transformer_cls`` from ``folder`` with FP8 storage, tensor by tensor."""
     import torch
     from accelerate import init_empty_weights
@@ -102,7 +117,7 @@ def load_fp8_transformer(transformer_cls: Any, folder: Path, device: str) -> Any
     fp8 = fp8_parameter_names(model, patterns)
     expected = {name for name, _ in model.named_parameters()}
     loaded: set[str] = set()
-    for shard in _shards(folder):
+    for shard in _shards(folder, pinned):
         with safe_open(str(shard), framework="pt", device="cpu") as handle:
             for key in handle.keys():
                 dtype = torch.float8_e4m3fn if key in fp8 else torch.bfloat16
@@ -193,26 +208,36 @@ class DiffusersEngine:
         }
 
     def run(
-        self, plan: JobPlan, on_step: Callable[[], None], should_stop: Callable[[], bool]
+        self,
+        plan: JobPlan,
+        on_step: Callable[[], None],
+        should_stop: Callable[[], bool],
+        on_ready: Callable[[], None],
     ) -> list[Rendered]:
         import torch
 
         try:
-            if plan.pipeline_kind == "diffusers":
-                if self.resident_key() != plan.resident_key:
-                    self.release()
+            if self.resident_key() != plan.resident_key:
+                self.release()
+                if plan.pipeline_kind == "diffusers":
                     self._loaded = self._load(plan)
+                else:
+                    self._loaded = _Loaded(plan.resident_key, None, Path(), None)
+            self.post.prepare(plan)  # post-step models load before the cap's clock starts
+            on_ready()
+            if plan.pipeline_kind == "diffusers":
+                prompt_kwargs = self._prompt_kwargs(plan)  # ONE text-encoder pass per job
                 images = [
-                    (seed, self._generate(plan, seed, on_step, should_stop)) for seed in plan.seeds
+                    (seed, self._generate(plan, seed, prompt_kwargs, on_step, should_stop))
+                    for seed in plan.seeds
                 ]
             else:
-                if self.resident_key() != plan.resident_key:
-                    self.release()
-                    self._loaded = _Loaded(plan.resident_key, None, Path(), None)
                 import io
 
                 from PIL import Image
 
+                if len(plan.seeds) != 1:
+                    raise ValueError("a deterministic named recipe renders exactly one image")
                 source = Image.open(io.BytesIO(plan.inputs[0].data))
                 source.load()
                 images = [(None, self.post.upscale(plan.alias, source, plan.call_parameters))]
@@ -253,7 +278,10 @@ class DiffusersEngine:
             transformer_cls = getattr(diffusers, class_name)
             target = "cpu" if load.placement == "model_cpu_offload" else self.device
             kwargs["transformer"] = load_fp8_transformer(
-                transformer_cls, model_dir / "transformer", target
+                transformer_cls,
+                model_dir / "transformer",
+                target,
+                {model_dir / str(entry["path"]) for entry in component["files"]},
             )
         if load.placement == "sequential_text_encoder":
             for name in ("text_encoder", "text_encoder_2"):
@@ -291,10 +319,25 @@ class DiffusersEngine:
             gc.collect()
             torch.cuda.empty_cache()
 
+    def _prompt_kwargs(self, plan: JobPlan) -> dict[str, Any]:
+        """The prompt arguments every candidate of the job shares, computed once.
+
+        Under the sequential placement this is the one text-encoder load + encode of the job
+        (Phase 0: about 52-55 s for Z-Image's encoder); every seed reuses the embeddings.
+        """
+        assert self._loaded is not None
+        if self._loaded.placement == "sequential_text_encoder":
+            return self._encode_sequentially(plan)
+        kwargs: dict[str, Any] = {"prompt": plan.rendered_prompt}
+        if plan.negative_prompt is not None:
+            kwargs["negative_prompt"] = plan.negative_prompt
+        return kwargs
+
     def _generate(
         self,
         plan: JobPlan,
         seed: int | None,
+        prompt_kwargs: dict[str, Any],
         on_step: Callable[[], None],
         should_stop: Callable[[], bool],
     ) -> Any:
@@ -303,12 +346,7 @@ class DiffusersEngine:
         assert self._loaded is not None and seed is not None
         pipeline = self._loaded.pipeline
         call: dict[str, Any] = dict(plan.call_parameters)
-        if self._loaded.placement == "sequential_text_encoder":
-            call.update(self._encode_sequentially(plan))
-        else:
-            call["prompt"] = plan.rendered_prompt
-            if plan.negative_prompt is not None:
-                call["negative_prompt"] = plan.negative_prompt
+        call.update(prompt_kwargs)
         if plan.size is not None:
             call["width"], call["height"] = plan.size
         if plan.inputs:

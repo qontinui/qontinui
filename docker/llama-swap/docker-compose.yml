@@ -43,6 +43,9 @@ services:
       # refusal. Unset or 1 is on; any other value is treated as off. llama-swap passes its
       # environment to the facade process it starts.
       - QONTINUI_IMAGEGEN=${QONTINUI_IMAGEGEN:-1}
+      # The zone the facade's bulk window (00:00-06:00, the box's night) is read in. The
+      # container clock is UTC; set this to the host's IANA zone. Empty = bulk is deferred.
+      - QONTINUI_IMAGEGEN_TIMEZONE=${QONTINUI_IMAGEGEN_TIMEZONE:-}
       # NOT set here: the image facade's listener attestation (rule R-bind). This file
       # publishes 8100 on every interface, so it must not claim a loopback-only listener;
       # the host-local loopback override (README "Local LLM candidates", step 3) sets it.

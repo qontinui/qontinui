@@ -267,7 +267,9 @@ One entry, `qontinui-imagegen`, serves every image alias (D1.1: one GPU owner). 
   ```
 
   FLUX.1-schnell's repo is gated (auto-approved terms): its install needs
-  `-e HF_TOKEN=<token of an account that accepted them>`.
+  `-e HF_TOKEN` (no value: compose copies it from your shell's environment, so the token
+  never lands on a command line or in shell history), with `HF_TOKEN` exported from an
+  account that accepted them.
 - **Loopback first (rule R-bind):** the facade has no authentication of its own, so it
   serves only when the deployment attests a loopback-only listener —
   `QONTINUI_IMAGEGEN_LISTENER=loopback`, set by the host-local override in step 3 of
@@ -276,6 +278,16 @@ One entry, `qontinui-imagegen`, serves every image alias (D1.1: one GPU owner). 
   answers `disabled` (`listener_not_attested`) rather than open an unauthenticated image
   door to the network. Exposing it beyond the box needs the device-JWT front door
   (security content trigger 2).
+- **Bulk window clock:** the 00:00-06:00 window is read in an explicit zone. Export
+  `QONTINUI_IMAGEGEN_TIMEZONE=<the box's IANA zone>` before `docker compose up` (compose
+  passes it through); unset, bulk work answers `deferred` (`bulk_window_timezone_unset`)
+  instead of using the container's UTC clock.
+- **Timeouts:** the interactive cap (120 s) counts compute only, from the moment the
+  pipeline is loaded. A cold load comes on top (Phase 0: ~214-220 s for FP8 Z-Image-Turbo),
+  and at llama-swap v217 the first request after the facade is swapped in holds the process
+  group's lock, so a second image request waits INSIDE llama-swap -- it gets a slow answer,
+  not a typed `busy`. Size client timeouts for cold load + cap, twice over for a request
+  that may queue behind a cold one.
 - **Machine switch:** `QONTINUI_IMAGEGEN=0` in the environment `docker compose` runs with
   turns image generation off on this machine (the facade answers `disabled`); unset or `1`
   is on. The switch is never the authorization — the loopback bind is.

@@ -550,3 +550,165 @@ def test_status_reports_switch_card_and_aliases() -> None:
     assert status["switch"] == {"enabled": False, "raw": "0", "recognised": True}
     assert status["listener"] == "loopback"
     assert "flux-1-schnell" in status["aliases"] and status["admission"]["running"] is None
+
+
+# --- review round 2 --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_an_unexpected_engine_failure_answers_and_frees_the_card(stream: bool) -> None:
+    """H1: an exception that is not a typed one still answers; it never hangs the request."""
+    engine = FakeEngine(crash=RuntimeError("driver fell over"))
+    facade = make_facade(engine=engine)
+
+    async def go():
+        async with client(facade) as http:
+            return await asyncio.wait_for(
+                http.post(
+                    "/v1/images/generations",
+                    json={"model": "z-image-turbo", "prompt": "x", "stream": stream},
+                ),
+                timeout=10,
+            )
+
+    response = run(go())
+    if stream:
+        name, data = sse_events(response.text)[-1]
+        assert name == "error"
+        error = data["error"]
+    else:
+        assert response.status_code == 500
+        error = response.json()["error"]
+    assert error["type"] == "failed" and error["code"] == "engine_error"
+    assert "driver fell over" in error["message"]
+    assert facade.admission.snapshot()["running"] is None
+    assert engine.releases >= 2  # the VRAM check's release, then the failure's
+    engine.crash = None
+    assert run(_post(facade, model="z-image-turbo", prompt="y")).status_code == 200
+
+
+def test_a_cold_load_does_not_count_against_the_interactive_cap() -> None:
+    """H2: the cap's clock starts when the pipeline is loaded, not at admission."""
+    clock = {"now": 0.0}
+
+    def cold_load() -> None:
+        clock["now"] += 220.0  # Phase 0: a cold FP8 Z-Image-Turbo load took ~214-220 s
+
+    facade = make_facade(engine=FakeEngine(load=cold_load), monotonic=lambda: clock["now"])
+    response = run(_post(facade, model="z-image-turbo", prompt="x"))
+    assert response.status_code == 200, response.text
+
+
+def test_the_cap_still_stops_compute_that_runs_long_after_the_load() -> None:
+    clock = {"now": 0.0}
+    gate = threading.Event()
+    engine = FakeEngine(gate=gate, load=lambda: clock.__setitem__("now", clock["now"] + 220.0))
+    facade = make_facade(engine=engine, monotonic=lambda: clock["now"])
+
+    async def go():
+        async with client(facade) as http:
+            pending = asyncio.ensure_future(
+                http.post("/v1/images/generations", json={"model": "z-image-turbo", "prompt": "a"})
+            )
+            await wait_for(engine.started.is_set)
+            clock["now"] = 220.0 + 121.0
+            return await pending
+
+    response = run(go())
+    assert response.json()["error"]["code"] == "interactive_gpu_seconds_cap"
+
+
+def test_a_deterministic_recipe_refuses_more_than_one_image() -> None:
+    """M5: the upscaler renders one image; n>1 is refused, not silently dropped."""
+    facade = make_facade()
+
+    async def go(n: str):
+        async with client(facade) as http:
+            return await http.post(
+                "/v1/images/edits",
+                data={"model": "real-esrgan-x2plus", "prompt": "unused", "n": n},
+                files=[("image", ("a.png", _png(), "application/octet-stream"))],
+            )
+
+    refused = run(go("2"))
+    assert refused.status_code == 400 and refused.json()["error"]["code"] == "n_unsupported"
+    assert run(go("1")).status_code == 200
+
+
+def test_the_interactive_pixel_cap_counts_an_upscales_output() -> None:
+    """L6: 800x800 is under the 2,359,296 px cap, but 4x it is 10,240,000 px."""
+    facade = make_facade()
+
+    async def go(model: str, size: int):
+        async with client(facade) as http:
+            return await http.post(
+                "/v1/images/edits",
+                data={"model": model, "prompt": "unused"},
+                files=[("image", ("a.png", _png(size, size), "application/octet-stream"))],
+            )
+
+    refused = run(go("real-esrgan-general-x4v3", 800))
+    assert refused.status_code == 400
+    assert refused.json()["error"]["code"] == "interactive_cap_exceeded"
+    assert run(go("real-esrgan-x2plus", 700)).status_code == 200  # 1400x1400 = 1,960,000 px
+
+
+def test_a_non_stream_client_that_leaves_while_queued_gives_back_its_place(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """L2: a disconnected waiter frees the waiting place instead of holding it."""
+    import qontinui_imagegen.app as app_module
+
+    monkeypatch.setattr(app_module, "DISCONNECT_POLL_S", 0.02)
+    gate = threading.Event()
+    engine = FakeEngine(gate=gate)
+    facade = make_facade(engine=engine)
+
+    async def go():
+        async with client(facade) as http:
+            first = asyncio.ensure_future(
+                http.post("/v1/images/generations", json={"model": "z-image-turbo", "prompt": "a"})
+            )
+            await wait_for(engine.started.is_set)
+
+            async def gone() -> bool:
+                return True
+
+            second = await facade.respond(
+                "generations", {"model": "z-image-turbo", "prompt": "b"}, (), gone
+            )
+            waiting = facade.admission.snapshot()["waiting"]
+            third = asyncio.ensure_future(
+                http.post("/v1/images/generations", json={"model": "z-image-turbo", "prompt": "c"})
+            )
+            await wait_for(lambda: facade.admission.snapshot()["waiting"])
+            gate.set()
+            return await first, second, waiting, await third
+
+    first, second, waiting_after_leave, third = run(go())
+    assert first.status_code == 200 and third.status_code == 200
+    assert second.status_code == 500 and b"client_gone" in second.body
+    assert waiting_after_leave is False
+    assert [plan.prompt for plan in engine.runs] == ["a", "c"]
+
+
+def test_a_running_client_that_leaves_stops_its_job(monkeypatch: pytest.MonkeyPatch) -> None:
+    import qontinui_imagegen.app as app_module
+
+    monkeypatch.setattr(app_module, "DISCONNECT_POLL_S", 0.02)
+    gate = threading.Event()
+    engine = FakeEngine(gate=gate)
+    facade = make_facade(engine=engine)
+
+    async def go():
+        async def gone() -> bool:
+            return engine.started.is_set()
+
+        response = await facade.respond(
+            "generations", {"model": "z-image-turbo", "prompt": "a"}, (), gone
+        )
+        await wait_for(lambda: facade.admission.snapshot()["running"] is None)
+        return response
+
+    response = run(go())
+    assert b"client_gone" in response.body
