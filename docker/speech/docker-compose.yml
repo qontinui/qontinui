@@ -1,0 +1,98 @@
+# Speech services for qontinui-studio's narration step (plan
+# 2026-10-09-qontinui-marketing-studio-animated-process-explainers, Phase 5):
+#
+#   tts  Kokoro-82M behind remsky/Kokoro-FastAPI   -> studio STUDIO_TTS_URL
+#        POST /dev/captioned_speech returns base64 audio + per-word timestamps.
+#   asr  Whisper behind speaches (faster-whisper)  -> studio STUDIO_ASR_URL
+#        POST /v1/audio/transcriptions, verbose_json, word timestamps.
+#
+# Licence boundary: Kokoro's Python stack links GPL code (phonemizer-fork,
+# espeak-ng). It runs here as its own container and only its AUDIO enters a
+# render; nothing in qontinui links it. Running these images is fine; do not
+# redistribute them (pushing a derived image is a GPL distribution).
+#
+# CPU on purpose. Both models are small (Kokoro 82M, whisper small.en), and the
+# GPU box's card is time-shared exclusively by docker/llama-swap: a resident
+# speech model there would hold VRAM llama-swap cannot see. Moving either
+# service to a GPU image is a separate decision.
+#
+# Host ports are published on loopback by default (SPEECH_BIND=127.0.0.1).
+# Binding any other interface is a port exposure -- a security-surface change
+# under served policy security-and-autonomy, never a casual override. (On the
+# default bridge, other containers can still reach the container ports.)
+#
+# Deploy from a stable copy of main, never a worktree: README.md "Bring it up"
+# (the model_aliases.json bind mount resolves against this file's directory).
+# The Kokoro weights ship inside the image; the whisper model (~480 MB) is
+# downloaded by `asr-model` into a named volume on first start.
+#
+# Every service names its network (the default bridge, or asr's namespace), so
+# compose creates no project network: a box whose docker address pools are
+# exhausted by ephemeral stacks (merytshost, 2026-10-17) still brings this up.
+
+services:
+  tts:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:v0.9.0@sha256:ee3111d6a2c903ed62f3b4fa19543c6901205ed39fce3c177e895b34a8386b9c
+    container_name: qontinui-speech-tts
+    network_mode: bridge
+    ports:
+      - "${SPEECH_BIND:-127.0.0.1}:${SPEECH_TTS_PORT:-8880}:8880"
+    # No volume: the weights are baked into the image, and a volume over the
+    # model directory would keep serving old weights after an image bump.
+    environment:
+      # torch sizes its pool from the HOST's core count, not the cgroup's
+      # `cpus`, and oversubscribes: on a 48-core box capped at 8 CPUs a
+      # 3-second clip took ~130 s. Keep these equal to `cpus` below.
+      - OMP_NUM_THREADS=8
+      - MKL_NUM_THREADS=8
+    cpus: 8
+    mem_limit: 6g
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8880/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 300s
+    restart: unless-stopped
+
+  asr:
+    image: ghcr.io/speaches-ai/speaches:0.8.3-cpu@sha256:21e3df06d842fb7802ab470dd77c25f0e8c0d22950e8d8c6ae886e851af53ef8
+    container_name: qontinui-speech-asr
+    network_mode: bridge
+    ports:
+      - "${SPEECH_BIND:-127.0.0.1}:${SPEECH_ASR_PORT:-8890}:8000"
+    environment:
+      - ENABLE_UI=false
+      - LOG_LEVEL=info
+      # Same oversubscription guard as tts; keep equal to `cpus` below.
+      - WHISPER__CPU_THREADS=8
+      - OMP_NUM_THREADS=8
+    volumes:
+      - speech-hf-cache:/home/ubuntu/.cache/huggingface
+      # Maps the OpenAI model name `whisper-1` (studio's default
+      # STUDIO_ASR_MODEL) to a CPU-sized model instead of upstream's large-v3.
+      - ./model_aliases.json:/home/ubuntu/speaches/model_aliases.json:ro
+    cpus: 8
+    mem_limit: 6g
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # One-shot: speaches serves only models already in its cache, so fetch the
+  # one `whisper-1` resolves to. Idempotent (201 = already present).
+  asr-model:
+    image: ghcr.io/speaches-ai/speaches:0.8.3-cpu@sha256:21e3df06d842fb7802ab470dd77c25f0e8c0d22950e8d8c6ae886e851af53ef8
+    depends_on:
+      asr:
+        condition: service_healthy
+    # Shares asr's network namespace, so 127.0.0.1:8000 is speaches itself.
+    network_mode: "service:asr"
+    entrypoint: ["curl", "-sf", "--retry", "5", "--retry-all-errors", "--retry-delay", "10", "--max-time", "900", "-X", "POST", "http://127.0.0.1:8000/v1/models/Systran/faster-whisper-small.en"]
+    restart: "no"
+
+volumes:
+  speech-hf-cache:
