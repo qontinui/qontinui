@@ -10,7 +10,10 @@ pinned here is ORDER and COUNT, which is where the engine's own logic lives:
 * the encoder is loaded and run ONCE per job however many candidates it renders, and freed
   before the denoiser runs (M6);
 * ``encode_prompt_kwargs``'s ZImagePipeline branch hands the denoiser embeddings, never the
-  prompt text, with or without classifier-free guidance.
+  prompt text, with or without classifier-free guidance;
+* the ``model_cpu_offload`` placement (Qwen) never holds the text encoder and the
+  transformer on the card together, and finishes every host-to-card move before
+  ``on_ready`` (review round 3b).
 """
 
 from __future__ import annotations
@@ -48,6 +51,10 @@ class Runtime:
     encode_calls: list[dict[str, Any]] = dataclasses.field(default_factory=list)
     denoise_calls: list[dict[str, Any]] = dataclasses.field(default_factory=list)
     denoise_s: float = DENOISE_S
+    #: One host<->card move of a module under model_cpu_offload.
+    move_s: float = 20.0
+    #: Moments the encoder and the transformer were on the card together (must stay empty).
+    co_resident: list[str] = dataclasses.field(default_factory=list)
 
     def advance(self, seconds: float) -> None:
         self.clock["now"] += seconds
@@ -124,6 +131,47 @@ class ResidentPipeline:
         return types.SimpleNamespace(images=[Image.new("RGB", (8, 8))])
 
 
+class Module:
+    """A pipeline component that moves between the host and the card."""
+
+    def __init__(self, rt: Runtime, pipeline: OffloadPipeline, name: str) -> None:
+        self.rt, self.pipeline, self.name, self.device = rt, pipeline, name, "cpu"
+
+    def to(self, device: str) -> Module:
+        if device != self.device:
+            self.rt.events.append(f"{self.name}->{device}")
+            self.rt.advance(self.rt.move_s)
+            self.device = device
+            on_card = {m.name for m in self.pipeline.modules() if m.device != "cpu"}
+            if {"text_encoder", "transformer"} <= on_card:
+                self.rt.co_resident.append(f"after moving {self.name} to {device}")
+        return self
+
+
+class OffloadPipeline(ResidentPipeline):
+    """A Qwen pipeline as _load leaves it under model_cpu_offload: every module on the host."""
+
+    def __init__(self, rt: Runtime) -> None:
+        super().__init__(rt)
+        self.text_encoder = Module(rt, self, "text_encoder")
+        self.transformer = Module(rt, self, "transformer")
+        self.vae = Module(rt, self, "vae")
+
+    def modules(self) -> list[Module]:
+        return [self.text_encoder, self.transformer, self.vae]
+
+    def encode_prompt(self, **kwargs: Any) -> tuple[str, str]:
+        assert self.text_encoder.device == "cuda" and self.transformer.device == "cpu"
+        self.rt.events.append("encode")
+        self.rt.encode_calls.append(kwargs)
+        return "EMBEDS", "MASK"
+
+    def __call__(self, **call: Any) -> Any:
+        assert self.transformer.device == "cuda" and self.vae.device == "cuda"
+        assert self.text_encoder.device == "cpu"
+        return super().__call__(**call)
+
+
 def _facade(rt: Runtime) -> Any:
     """A facade over the real DiffusersEngine, its cold load stubbed (no weights to read)."""
     facade = make_facade(verifier=FakeVerifier(), monotonic=lambda: rt.clock["now"])
@@ -131,11 +179,12 @@ def _facade(rt: Runtime) -> Any:
 
     def load(plan: Any) -> _Loaded:  # what _load builds, minus the weights
         rt.events.append("pipeline_load")
-        return _Loaded(
-            plan.resident_key, ResidentPipeline(rt), Path("/weights/z"), "sequential_text_encoder"
-        )
+        placement = facade.config.models[plan.generator_model].placement
+        pipeline = OffloadPipeline(rt) if placement == "model_cpu_offload" else ResidentPipeline(rt)
+        return _Loaded(plan.resident_key, pipeline, Path("/weights/m"), placement)
 
     engine._load = load  # type: ignore[method-assign]
+    engine.host_memory_mib = lambda: (60_000, 64_000)  # type: ignore[method-assign]
     facade.engine = engine
     return facade
 
@@ -224,3 +273,46 @@ def test_the_z_image_encode_with_guidance_carries_the_negative_embeddings(
     assert out == {"prompt_embeds": "EMBEDS", "negative_prompt_embeds": "NEG"}
     assert runtime.encode_calls[-1]["do_classifier_free_guidance"] is True
     assert runtime.encode_calls[-1]["negative_prompt"] == "blurry"
+
+
+def test_qwen_offload_never_shares_the_card_and_moves_before_the_cap(runtime: Runtime) -> None:
+    """Qwen-Image under model_cpu_offload: encoder on, encode, encoder off, denoiser on, then
+    the cap starts. Four 20 s moves plus 100 s of denoising pass the 120 s cap only because
+    every move precedes ``on_ready``; and the encoder (15.4 GiB) and the FP8 transformer
+    (19.0 GiB) are never on the card together, cold or warm."""
+    facade = _facade(runtime)
+    plan = build_plan(
+        facade.catalogue, "generations", {"model": "qwen-image-2512", "prompt": "a fox", "n": 1}
+    )
+    assert facade.config.models["qwen-image-2512"].placement == "model_cpu_offload"
+    for warm in (False, True):
+        runtime.events.clear()
+        assert len(_run(facade, plan, runtime)) == 1
+        events = runtime.events
+        expected = [
+            *(["pipeline_load"] if not warm else ["transformer->cpu", "vae->cpu"]),
+            "text_encoder->cuda",
+            "encode",
+            "encode",  # the recipe's negative prompt: two encodes, one job, one stage
+            "text_encoder->cpu",
+            "transformer->cuda",
+            "vae->cuda",
+            "ready",
+            "denoise",
+        ]
+        assert [e for e in events if e != "empty_cache"] == expected
+    assert runtime.co_resident == []
+
+
+def test_a_qwen_offload_job_shares_one_encode_across_its_candidates(runtime: Runtime) -> None:
+    runtime.denoise_s = 10.0
+    facade = _facade(runtime)
+    plan = build_plan(
+        facade.catalogue, "generations", {"model": "qwen-image-2512", "prompt": "a fox", "n": 3}
+    )
+    _run(facade, plan, runtime)
+    assert runtime.events.count("text_encoder->cuda") == 1
+    assert runtime.events.count("denoise") == 3
+    for call in runtime.denoise_calls:
+        assert call["prompt_embeds"] == "EMBEDS" and call["negative_prompt_embeds"] == "EMBEDS"
+        assert "prompt" not in call

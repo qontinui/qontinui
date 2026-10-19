@@ -286,8 +286,8 @@ models:
   # Timeouts: at v217 the first request after llama-swap swaps this entry in is proxied
   # while the process group's lock is held, so a concurrent image request waits inside
   # llama-swap (no typed `busy`) until it ends; clients size timeouts for the job's loads
-  # (a cold start, plus a per-job text encoder for most aliases) + the facade's 120 s
-  # compute cap (README "Image generation").
+  # (a cold start, plus per-job text-encoder loads or host<->card moves for the diffusion
+  # aliases) + the facade's 120 s compute cap (README "Image generation").
   #
   # No group configuration: Phase 0 measured at v217 that a swap does not kill a held
   # request or an SSE stream (rule R-swap PASS) -- Process.Stop() waits for in-flight

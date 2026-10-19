@@ -29,11 +29,12 @@ device: cuda
 admission:
   # Phase 0 threshold T5: <= 120 s per image for the interactive class. The cap counts
   # COMPUTE from the moment everything the job loads is loaded and its weights verified --
-  # never a load. Two loads sit outside it: the pipeline's own on a cold start (Phase 0: a
-  # cold FP8 Z-Image-Turbo load took about 214-220 s, so a cap including it would fail every
-  # cold request), and, under the sequential_text_encoder placement (models below), the
-  # text encoder that is loaded per job, warm or cold (Phase 0: 52-55 s for Z-Image's; about
-  # twice that for Qwen's). The encode itself is compute, inside the cap. So a job's wall
+  # never a load. Loads sit outside it: the pipeline's own on a cold start (Phase 0: a cold
+  # FP8 Z-Image-Turbo load took about 214-220 s, so a cap including it would fail every cold
+  # request), and the per-job ones its placement (models below) costs, warm or cold -- the
+  # text encoder sequential_text_encoder loads (Phase 0: 52-55 s for Z-Image's), or the
+  # host<->card moves of model_cpu_offload (Qwen). The encode is compute: inside the cap
+  # under the sequential placement, outside it (between two moves) under offload. So a job's wall
   # time is its loads (load_estimate below says how long) plus at most the cap, and a request
   # queued behind it waits for both. Clients size their timeout for the loads + cap
   # (admission.py says why llama-swap v217 adds a wait of its own during a cold first
@@ -63,13 +64,21 @@ admission:
 # Phase 0 threshold T3 caps peak total VRAM at 30,208 MiB of the card's 32,607, leaving
 # 2,399 MiB; 2,048 is held back for the desktop and the rest is the margin.
 vram_desktop_reserve_mib: 2048
+# The most VRAM the facade may plan to hold at once: checked at startup against every
+# model's weights at its placement and every recipe's models together, so a configuration
+# that could never fit is refused before it serves anything (qontinui_imagegen.jobs,
+# Catalogue._check_card_fit). Estimate: the card's 32,607 MiB total as Phase 0 read it
+# (a nominal 32 GiB card) less the 2,048 MiB desktop reserve above. Phase 0 item 5 is to
+# measure the real peak per model; until then this is arithmetic, not a measurement.
+card_vram_budget_mib: 30559
 
 # How fast weights load from the weights volume. The expected load of a job is the bytes it
 # reads (the manifest's files[].bytes: everything a cold start loads, plus the per-job text
 # encoder under the sequential_text_encoder placement) divided by this rate; the admission
 # controller adds it to the cap when it estimates when a running job ends (busy's
 # Retry-After, /qontinui/status). Past the estimate the end is reported as unknown, never
-# as a guess.
+# as a guess. It is a disk rate: model_cpu_offload's per-job host<->card moves are not in
+# it.
 load_estimate:
   read_mb_per_s: 150
   basis: >-
@@ -98,45 +107,67 @@ aliases:
 #                        meta device and each tensor is cast to float8_e4m3fn as it is read
 #                        from safetensors, never materialised in bf16 (diffusers layerwise
 #                        casting computes in bf16); bf16 = the checkpoint's own dtype.
+#   transformer_checkpoint_dtype  what the transformer's safetensors store (fp32 or bf16):
+#                        file bytes / parameters. The startup fit check rescales the
+#                        manifest's bytes by it to the storage dtype's size on the card.
 #   placement            resident = every component on the GPU for the process's life;
 #                        sequential_text_encoder = Phase 0's path: the text encoder is loaded
 #                        in bf16 per job (a load, outside the interactive cap), encodes once
 #                        for every candidate of the job (inside the cap), and is freed before
 #                        the denoiser runs (lowest VRAM and host memory, pays a text-encoder
 #                        load per job);
-#                        model_cpu_offload = diffusers' offload hooks (components wait in host
-#                        RAM -- the arm for a native host with memory to spare, never the
-#                        24 GB WSL VM).
+#                        model_cpu_offload = every component waits in host RAM; per job the
+#                        text encoder is moved onto the card and encodes, moved off, then
+#                        the transformer and VAE are moved on -- all before the interactive
+#                        cap starts -- so the encoder and the transformer are never on the
+#                        card together. Costs host RAM for the whole model (a pre-load check
+#                        answers a typed refusal when the host cannot hold it) and two
+#                        host<->card moves per job.
+# Which placement fits is arithmetic, checked at startup (card_vram_budget_mib above):
+# sequential_text_encoder holds encoder + transformer + VAE at once on a WARM job (the
+# per-job encoder loads while the transformer stays resident); model_cpu_offload holds the
+# larger of the two stages.
 models:
   z-image-turbo:
     transformer_storage: fp8
+    transformer_checkpoint_dtype: fp32  # 24.62 GB for a 6B transformer: 4 bytes/parameter
     placement: sequential_text_encoder
-    vram_need_mib: 8704
+    vram_need_mib: 15872
     vram_basis: >-
-      estimate: Phase 0's recorded load path (text encoder alone in bf16, freed; FP8
-      transformer; pipeline without a text encoder) is this placement. Its larger stage is
-      the bf16 text encoder (8,044,982,000 B = 7.5 GiB) plus activations; the FP8
-      transformer is about 6 GiB. Phase 0 run 6 OBSERVED 9,863 MiB total including the
-      1.4 GiB desktop during the text-encoder stage, but item 5 never thresholded a valid
-      generation on this path, so this is not a measurement.
+      estimate: on a warm job the per-job bf16 text encoder (7,673 MiB) loads beside the
+      resident FP8 transformer (24.62 GB fp32 / 4 = 5,870 MiB) and VAE (160 MiB): 13,703
+      MiB of weights, plus about 0.7 GiB of CUDA context and 1.5 GiB of 1024x1024
+      activations. It fits, so Z-Image keeps Phase 0's sequential path. Phase 0 run 6
+      OBSERVED 9,863 MiB total including the 1.4 GiB desktop during the text-encoder stage
+      alone, but item 5 never thresholded a valid generation, so this is not a measurement.
   flux-1-schnell:
     transformer_storage: fp8
+    transformer_checkpoint_dtype: bf16  # 23.78 GB for a 12B transformer
     placement: resident
     vram_need_mib: 22528
     vram_basis: >-
       estimate: FP8 transformer 23,782,494,032 B / 2 = 11.1 GiB, T5 encoder 9,524,648,584 B
       = 8.9 GiB, CLIP 0.2 GiB, VAE 0.2 GiB, plus 1.5 GiB of 1024x1024 activations.
+  # Qwen runs under model_cpu_offload, not Phase 0's sequential path: on a warm sequential
+  # job its 15.4 GiB bf16 text encoder (16.58 GB) would load beside the 19.0 GiB FP8
+  # transformer (40.86 GB bf16 / 2) and the VAE -- 34.7 GiB (35,543 MiB) of weights alone,
+  # over the 32 GB card and over card_vram_budget_mib, so no Qwen job could ever finish.
+  # Offload holds one stage at a time: 19,727 MiB (19.3 GiB) at most. Its price is host RAM for the whole
+  # model (34.7 GiB, more than the 24 GB WSL VM holds -- the pre-load check refuses there
+  # with a typed answer) and two host<->card moves per job, outside the interactive cap.
   qwen-image-2512:
     transformer_storage: fp8
-    placement: sequential_text_encoder
+    transformer_checkpoint_dtype: bf16  # 40.86 GB for a 20B transformer
+    placement: model_cpu_offload
     vram_need_mib: 23552
     vram_basis: >-
-      estimate: the larger stage is the FP8 transformer (40,861,027,880 B / 2 = 19.0 GiB)
-      plus the VAE and about 3 GiB of activations at 1328x1328; the bf16 text encoder stage
-      (15.4 GiB) is smaller.
+      estimate: the larger stage is the FP8 transformer (19,485 MiB) plus the VAE (242 MiB)
+      and about 3 GiB of activations at 1328x1328; the bf16 text encoder stage (15,817 MiB)
+      is smaller, and under model_cpu_offload the two are never on the card together.
   qwen-image-edit-2511:
     transformer_storage: fp8
-    placement: sequential_text_encoder
+    transformer_checkpoint_dtype: bf16
+    placement: model_cpu_offload
     vram_need_mib: 24576
     vram_basis: >-
       estimate: as qwen-image-2512, plus the reference images' latents in the sequence.

@@ -132,6 +132,43 @@ class Facade:
 
         return stop
 
+    def _check_host_memory(self, plan: JobPlan) -> None:
+        """Before a cold load of a model_cpu_offload model: can the host hold all of it?
+
+        Such a model keeps every weight in host memory (34.7 GiB for Qwen-Image), and a load
+        past what the host can give is not refused by anything else: inside the WSL VM's
+        container it is OOM-killed, and the kill can take a neighbour on the box with it.
+        """
+        need = self.catalogue.host_need_mib(plan.model_ids)
+        if need == 0:
+            return
+        memory = self.engine.host_memory_mib()
+        if memory is None:
+            raise errors.failed(
+                "host_memory_unreadable",
+                f"this job keeps {need} MiB of weights in host memory, and how much the host "
+                "has could not be read, so the load was not attempted",
+            )
+        available, total = memory
+        if need > total:
+            raise errors.failed(
+                "host_memory_insufficient",
+                f"this job keeps {need} MiB of weights in host memory (model_cpu_offload), "
+                f"more than the {total} MiB this host gives the facade; it cannot run here",
+                need_mib=need,
+                total_mib=total,
+            )
+        if need > available:
+            raise errors.busy(
+                "host_memory_held_by",
+                f"this job keeps {need} MiB of weights in host memory and {available} MiB is "
+                "available; other processes hold the rest",
+                OUT_OF_BAND_RETRY_S,
+                host_memory_held_by="out_of_band",
+                available_mib=available,
+                need_mib=need,
+            )
+
     def execute(
         self, plan: JobPlan, ticket: Ticket, on_step: Callable[[int, int], None]
     ) -> list[Rendered]:
@@ -172,6 +209,7 @@ class Facade:
                     free_mib=free,
                     need_mib=need,
                 )
+            self._check_host_memory(plan)
         total = plan.total_steps
         done = 0
 

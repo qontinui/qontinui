@@ -286,11 +286,18 @@ One entry, `qontinui-imagegen`, serves every image alias (D1.1: one GPU owner). 
   the facade prints a notice saying so at start, and interactive work is served as usual.
 - **Timeouts:** the interactive cap (120 s) counts compute only, from the moment
   everything the job loads is loaded. Loads come on top: a cold start's (Phase 0:
-  ~214-220 s for FP8 Z-Image-Turbo), and, for the `sequential_text_encoder` models
-  (Z-Image-Turbo and both Qwen models), a text-encoder load on EVERY job, warm or cold
-  (Phase 0: 52-55 s for Z-Image's; Qwen's is about twice the size). `facade.yaml`
-  `load_estimate` turns the manifest's bytes into these times, and `busy`'s `Retry-After`
-  and `/qontinui/status` (`expected_end_in_s`) include them. At llama-swap v217 the first
+  ~214-220 s for FP8 Z-Image-Turbo), and per-job loads: Z-Image-Turbo
+  (`sequential_text_encoder`) loads its text encoder on EVERY job, warm or cold (Phase 0:
+  52-55 s), and the Qwen models (`model_cpu_offload`) move their text encoder and then
+  their transformer between host and card on every job. `facade.yaml` `load_estimate`
+  turns the manifest's bytes into disk-load times, and `busy`'s `Retry-After` and
+  `/qontinui/status` (`expected_end_in_s`) include them (the host<->card moves are not
+  estimated).
+- **Qwen needs host memory:** Qwen-Image's 15.4 GiB text encoder and 19.0 GiB FP8
+  transformer cannot share the 32 GB card (34.7 GiB of weights), so they take turns on it
+  and wait in host RAM -- about 35 GiB of it. The 24 GB WSL VM cannot hold that: there a
+  Qwen request answers `failed` (`host_memory_insufficient`) before loading, never an OOM
+  kill. Qwen runs on the native arm, or on a VM given the memory. At llama-swap v217 the first
   request after the facade is swapped in holds the process group's lock, so a second image
   request waits INSIDE llama-swap -- it gets a slow answer, not a typed `busy`. Size client
   timeouts for loads + cap, twice over for a request that may queue behind a cold one.

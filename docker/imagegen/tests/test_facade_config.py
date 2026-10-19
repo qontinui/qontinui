@@ -344,3 +344,81 @@ def test_a_config_without_a_load_estimate_refuses_to_start(manifest: dict, docum
             bad["load_estimate"] = bad_value
         with pytest.raises(c.ConfigError, match="load_estimate"):
             c.parse_config(bad, environ={}, **_known(manifest))
+
+
+# --- what fits on the card (review round 3b) -------------------------------------------------
+
+
+def _catalogue_for(document: dict, manifest: dict):
+    from qontinui_imagegen.jobs import Catalogue
+
+    config = c.parse_config(document, environ={}, **_known(manifest))
+    return Catalogue(config, manifest, load_recipes(RECIPES_DIR))
+
+
+def test_the_shipped_config_fits_the_card_and_qwen_runs_offloaded(
+    manifest: dict, document: dict
+) -> None:
+    """Qwen under model_cpu_offload holds one stage at a time: the 19,485 MiB FP8 transformer
+    + VAE (19,727 MiB), against the 15,817 MiB encoder stage -- under the 30,559 MiB budget."""
+    catalogue = _catalogue_for(document, manifest)  # the startup check passes
+    mib = 1024 * 1024
+    for qwen in ("qwen-image-2512", "qwen-image-edit-2511"):
+        assert catalogue.config.models[qwen].placement == "model_cpu_offload"
+        sizes = catalogue.module_bytes(qwen)
+        assert -(-sizes["transformer"] // mib) == 19485  # 40.86 GB bf16 -> FP8: / 2
+        assert -(-sizes["text_encoder"] // mib) == 15817
+        assert -(-catalogue.card_peak_bytes(qwen) // mib) == 19727
+        assert catalogue.host_need_mib([qwen]) == 35543  # the whole model waits on the host
+    # Z-Image keeps the sequential path: encoder + FP8 transformer + VAE on a warm job.
+    assert -(-catalogue.card_peak_bytes("z-image-turbo") // mib) == 13703
+    assert catalogue.host_need_mib(["z-image-turbo"]) == 0
+
+
+@pytest.mark.parametrize("placement", ["resident", "sequential_text_encoder"])
+def test_a_qwen_config_holding_encoder_and_transformer_together_refuses_to_start(
+    manifest: dict, document: dict, placement: str
+) -> None:
+    """15.4 GiB encoder + 19.0 GiB FP8 transformer + VAE = 35,543 MiB: over the card."""
+    bad = copy.deepcopy(document)
+    bad["models"]["qwen-image-2512"]["placement"] = placement
+    with pytest.raises(c.ConfigError, match=r"qwen-image-2512 .*35543 MiB .*over"):
+        _catalogue_for(bad, manifest)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        # A transformer kept in bf16 instead of FP8 doubles: 38,969 MiB + the VAE.
+        (
+            lambda d: d["models"]["qwen-image-2512"].__setitem__("transformer_storage", "bf16"),
+            "39211 MiB",
+        ),
+        # A declared need below the weights' own peak would let the pre-load check underask.
+        (
+            lambda d: d["models"]["z-image-turbo"].__setitem__("vram_need_mib", 8704),
+            "less than its weights' 13703 MiB",
+        ),
+        # A need the budget can never admit.
+        (lambda d: d.__setitem__("card_vram_budget_mib", 23000), "over card_vram_budget_mib"),
+        # A recipe whose models together outgrow the card (hero = Qwen + the 2x upscaler).
+        (
+            lambda d: d["models"]["real-esrgan-x2plus"].__setitem__("vram_need_mib", 8000),
+            "recipe 'hero'",
+        ),
+    ],
+)
+def test_other_configs_that_cannot_fit_refuse_to_start(
+    manifest: dict, document: dict, mutate, message: str
+) -> None:
+    bad = copy.deepcopy(document)
+    mutate(bad)
+    with pytest.raises(c.ConfigError, match=re.escape(message)):
+        _catalogue_for(bad, manifest)
+
+
+def test_a_diffusion_model_must_name_its_checkpoint_dtype(manifest: dict, document: dict) -> None:
+    bad = copy.deepcopy(document)
+    del bad["models"]["flux-1-schnell"]["transformer_checkpoint_dtype"]
+    with pytest.raises(c.ConfigError, match="transformer_checkpoint_dtype"):
+        c.parse_config(bad, environ={}, **_known(manifest))

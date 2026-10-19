@@ -21,10 +21,23 @@ what makes a 20B Qwen transformer fit the 32 GB card and the 24 GB WSL VM at all
 ``QuantoConfig(float8)`` is deliberately not used: optimum-quanto's marlin-fp8 path
 JIT-compiles a CUDA extension on sm_120 and hangs (Phase 0 finding 1).
 
-``placement`` (facade.yaml) chooses between resident text encoders, Phase 0's sequential
-text encoder (loaded per job, encodes once for every candidate, freed before the denoiser
-runs), and diffusers' model CPU offload. The sequential encoder's per-job LOAD happens
-before ``on_ready``, so the interactive cap never counts it; only the encode is compute.
+``placement`` (facade.yaml) chooses how the text encoder and the transformer share the card:
+
+* ``resident`` -- everything on the card for the process's life;
+* ``sequential_text_encoder`` (Phase 0's path) -- the pipeline is resident without its text
+  encoder, which is loaded per job, encodes once for every candidate, and is freed before
+  the denoiser runs. Its per-job LOAD happens before ``on_ready``, so the interactive cap
+  never counts it; the encode runs after, inside the cap;
+* ``model_cpu_offload`` -- every component waits in host RAM. Per job the text encoder is
+  moved onto the card, encodes, and is moved off; then the transformer and VAE are moved
+  on. The encoder and the transformer are never on the card together, which is what lets
+  Qwen-Image (15.4 GiB encoder + 19.0 GiB FP8 transformer) run on a 32 GB card at all. The
+  moves are loads, so all of this precedes ``on_ready``; the encode, which sits between
+  the two moves, falls outside the cap with them (seconds, against the cap's minutes).
+
+The staging is explicit here rather than diffusers' ``enable_model_cpu_offload`` hooks:
+those move the transformer onto the card lazily inside the pipeline call, which would put
+a ~19 GiB host-to-card copy inside the interactive cap.
 """
 
 from __future__ import annotations
@@ -40,7 +53,13 @@ from typing import Any
 from qontinui_imagegen.config import FacadeConfig
 from qontinui_imagegen.engine import EngineOutOfMemory, JobInterrupted, Rendered
 from qontinui_imagegen.engine.post import PostRunners
-from qontinui_imagegen.jobs import TEXT_ENCODER_DIRS, Catalogue, JobPlan
+from qontinui_imagegen.jobs import (
+    CARD_MODULE_DIRS,
+    DENOISER_DIRS,
+    TEXT_ENCODER_DIRS,
+    Catalogue,
+    JobPlan,
+)
 from qontinui_imagegen.weights import component_dir
 
 
@@ -184,6 +203,9 @@ class DiffusersEngine:
         except (ImportError, RuntimeError):
             return None
 
+    def host_memory_mib(self) -> tuple[int, int] | None:
+        return read_host_memory_mib()
+
     def versions(self) -> Mapping[str, str]:
         import accelerate
         import diffusers
@@ -216,18 +238,7 @@ class DiffusersEngine:
                 else:
                     self._loaded = _Loaded(plan.resident_key, None, Path(), None)
             self.post.prepare(plan)  # post-step models load before the cap's clock starts
-            # The sequential placement's per-job text encoder is a load too: loaded here, so
-            # the cap's clock starts after it, and freed right after its one encode.
-            encoder = self._load_text_encoder(plan)
-            try:
-                on_ready()
-                prompt_kwargs = (  # ONE text-encoder pass per job, shared by every seed
-                    self._prompt_kwargs(plan, encoder) if plan.pipeline_kind == "diffusers" else {}
-                )
-            finally:
-                if encoder is not None:
-                    del encoder
-                    _free_device_memory()
+            prompt_kwargs = self._ready_and_encode(plan, on_ready)  # ONE encode per job
             if plan.pipeline_kind == "diffusers":
                 images = [
                     (seed, self._generate(plan, seed, prompt_kwargs, on_step, should_stop))
@@ -290,30 +301,79 @@ class DiffusersEngine:
                 if (model_dir / name).is_dir():
                     kwargs[name] = None
         pipeline = pipeline_cls.from_pretrained(str(model_dir), **kwargs)
-        if load.placement == "model_cpu_offload":
-            pipeline.enable_model_cpu_offload(device=self.device)
-        else:
-            pipeline.to(self.device)
+        if load.placement != "model_cpu_offload":
+            pipeline.to(self.device)  # offload keeps everything on the host until a job stages it
         pipeline.set_progress_bar_config(disable=True)
         return _Loaded(plan.resident_key, pipeline, model_dir, load.placement)
 
     # --- generation -------------------------------------------------------------------------
 
-    def _load_text_encoder(self, plan: JobPlan) -> Any:
-        """Phase 0's text-encoder stage, its load half: the encoder pipeline in bf16.
+    def _ready_and_encode(self, plan: JobPlan, on_ready: Callable[[], None]) -> dict[str, Any]:
+        """Do the job's remaining loads, call ``on_ready``, and return the prompt arguments.
 
-        None unless the resident pipeline was loaded without its text encoder (the
-        ``sequential_text_encoder`` placement). Phase 0 measured this load at 52-55 s for
-        Z-Image's encoder, every job, warm or cold -- so it runs before ``on_ready``.
+        Every placement calls ``on_ready`` only once nothing is left to load, so the
+        interactive cap never counts a load; the prompt is encoded once per job, and every
+        candidate shares the result.
         """
         if plan.pipeline_kind != "diffusers":
-            return None
+            on_ready()
+            return {}
+        import torch
+
         assert self._loaded is not None
-        if self._loaded.placement != "sequential_text_encoder":
-            return None
+        placement = self._loaded.placement
+        if placement == "model_cpu_offload":
+            pipeline = self._loaded.pipeline
+            self._stage(pipeline, TEXT_ENCODER_DIRS)  # a load: host -> card
+            with torch.no_grad():
+                prompt_kwargs = encode_prompt_kwargs(pipeline, plan, self.device)
+            self._stage(pipeline, DENOISER_DIRS)  # a load: the encoder off, the denoiser on
+            on_ready()
+            return prompt_kwargs
+        if placement == "sequential_text_encoder":
+            encoder = self._load_text_encoder(plan)  # a load, every job: disk -> card
+            try:
+                on_ready()
+                with torch.no_grad():
+                    return encode_prompt_kwargs(encoder, plan, self.device)
+            finally:
+                del encoder  # freed before the denoiser runs
+                _free_device_memory()
+        on_ready()
+        kwargs: dict[str, Any] = {"prompt": plan.rendered_prompt}
+        if plan.negative_prompt is not None:
+            kwargs["negative_prompt"] = plan.negative_prompt
+        return kwargs
+
+    def _stage(self, pipeline: Any, on_card: Sequence[str]) -> None:
+        """Put exactly the ``on_card`` modules on the card: every other one off FIRST.
+
+        Moving off before moving on is what keeps the text encoder and the transformer from
+        ever sharing the card under model_cpu_offload.
+        """
+        modules = {
+            name: module
+            for name in CARD_MODULE_DIRS
+            if (module := getattr(pipeline, name, None)) is not None
+        }
+        for name, module in modules.items():
+            if name not in on_card:
+                module.to("cpu")
+        _free_device_memory()
+        for name in on_card:
+            if name in modules:
+                modules[name].to(self.device)
+
+    def _load_text_encoder(self, plan: JobPlan) -> Any:
+        """The sequential placement's per-job text encoder: the encoder pipeline in bf16.
+
+        Phase 0 measured this load at 52-55 s for Z-Image's encoder, every job, warm or
+        cold -- so it runs before ``on_ready``.
+        """
         import diffusers
         import torch
 
+        assert self._loaded is not None
         pipeline_cls = getattr(diffusers, plan.pipeline)
         return pipeline_cls.from_pretrained(
             str(self._loaded.model_dir),
@@ -322,23 +382,6 @@ class DiffusersEngine:
             torch_dtype=torch.bfloat16,
             local_files_only=True,
         ).to(self.device)
-
-    def _prompt_kwargs(self, plan: JobPlan, encoder: Any) -> dict[str, Any]:
-        """The prompt arguments every candidate of the job shares, computed once.
-
-        With a loaded ``encoder`` (the sequential placement) this is the job's one encode;
-        every seed reuses the embeddings. Otherwise the resident pipeline encodes the prompt
-        itself on each call.
-        """
-        if encoder is not None:
-            import torch
-
-            with torch.no_grad():
-                return encode_prompt_kwargs(encoder, plan, self.device)
-        kwargs: dict[str, Any] = {"prompt": plan.rendered_prompt}
-        if plan.negative_prompt is not None:
-            kwargs["negative_prompt"] = plan.negative_prompt
-        return kwargs
 
     def _generate(
         self,
@@ -375,6 +418,56 @@ class DiffusersEngine:
         if should_stop():
             raise JobInterrupted("stopped during denoising")
         return result.images[0]
+
+
+def read_host_memory_mib(
+    meminfo: Path = Path("/proc/meminfo"), cgroup: Path = Path("/sys/fs/cgroup")
+) -> tuple[int, int] | None:
+    """(available, total) host memory in MiB, or None when it cannot be read.
+
+    Linux (the Docker arm, inside the WSL VM): ``MemAvailable`` / ``MemTotal``, narrowed by
+    a cgroup v2 ``memory.max`` when the container has one -- an over-limit load would be
+    OOM-killed by the cgroup, not refused. Windows (the native arm):
+    ``GlobalMemoryStatusEx``.
+    """
+    if sys.platform == "win32":
+        import ctypes
+
+        class MemoryStatus(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", ctypes.c_ulong),
+                ("dwMemoryLoad", ctypes.c_ulong),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        status = MemoryStatus()
+        status.dwLength = ctypes.sizeof(MemoryStatus)
+        if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):  # type: ignore[attr-defined]
+            return None
+        return int(status.ullAvailPhys // (1024 * 1024)), int(status.ullTotalPhys // (1024 * 1024))
+    try:
+        fields = {}
+        for line in meminfo.read_text(encoding="ascii").splitlines():
+            key, _, rest = line.partition(":")
+            fields[key] = int(rest.split()[0]) * 1024  # kB
+        available, total = fields["MemAvailable"], fields["MemTotal"]
+    except (OSError, KeyError, ValueError, IndexError):
+        return None
+    try:
+        limit = (cgroup / "memory.max").read_text(encoding="ascii").strip()
+        if limit != "max":
+            used = int((cgroup / "memory.current").read_text(encoding="ascii").strip())
+            total = min(total, int(limit))
+            available = min(available, max(0, int(limit) - used))
+    except (OSError, ValueError):
+        pass  # no cgroup v2 limit to narrow by
+    return available // (1024 * 1024), total // (1024 * 1024)
 
 
 def _free_device_memory() -> None:

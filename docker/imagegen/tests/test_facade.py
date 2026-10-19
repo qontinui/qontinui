@@ -500,7 +500,8 @@ def test_vram_held_out_of_band_answers_busy_after_releasing_our_own() -> None:
     error = response.json()["error"]
     assert error["type"] == "busy" and error["code"] == "vram_held_by"
     assert error["vram_held_by"] == "out_of_band"
-    assert error["need_mib"] == 8704 + 2048 and error["free_mib"] == 6_000
+    need = facade.config.models["z-image-turbo"].vram_need_mib + 2048
+    assert error["need_mib"] == need and error["free_mib"] == 6_000
     assert engine.releases == 1 and engine.runs == []
 
 
@@ -835,3 +836,50 @@ def test_the_load_estimate_reproduces_phase_0s_z_image_observation() -> None:
     flux = build_plan(facade.catalogue, "generations", {"model": "flux-1-schnell", "prompt": "a"})
     assert facade.catalogue.expected_load_s(flux, cold=False) == 0.0
     assert facade.catalogue.expected_load_s(flux, cold=True) > 0.0
+
+
+# --- host memory under model_cpu_offload (review round 3b) ----------------------------------
+
+
+@pytest.mark.parametrize(
+    ("host", "status", "code"),
+    [
+        ((20_000, 24_000), 500, "host_memory_insufficient"),  # the 24 GB WSL VM: never fits
+        ((20_000, 64_000), 503, "host_memory_held_by"),  # fits the host, held by others now
+        (None, 500, "host_memory_unreadable"),
+        ((40_000, 64_000), 200, None),
+    ],
+)
+def test_an_offloaded_qwen_load_checks_the_host_can_hold_it(
+    host: tuple[int, int] | None, status: int, code: str | None
+) -> None:
+    """Qwen under model_cpu_offload keeps 35,543 MiB of weights on the host; a load the host
+    cannot hold is a typed answer before it starts, never an OOM kill in the shared VM."""
+    engine = FakeEngine(host_mib=host)
+    facade = make_facade(engine=engine)
+    response = run(_post(facade, model="qwen-image-2512", prompt="x"))
+    assert response.status_code == status, response.text
+    if code is not None:
+        assert response.json()["error"]["code"] == code
+        assert engine.runs == []
+
+
+def test_a_model_kept_on_the_card_needs_no_host_reading() -> None:
+    facade = make_facade(engine=FakeEngine(host_mib=None))
+    assert run(_post(facade, model="z-image-turbo", prompt="x")).status_code == 200
+
+
+def test_host_memory_is_read_from_meminfo_and_narrowed_by_a_cgroup_limit(tmp_path) -> None:
+    from qontinui_imagegen.engine.diffusers_engine import read_host_memory_mib
+
+    meminfo = tmp_path / "meminfo"
+    meminfo.write_text("MemTotal:       25165824 kB\nMemAvailable:   20971520 kB\n")
+    cgroup = tmp_path / "cgroup"
+    cgroup.mkdir()
+    assert read_host_memory_mib(meminfo, cgroup) == (20480, 24576)
+    (cgroup / "memory.max").write_text(f"{16 * 1024**3}\n")
+    (cgroup / "memory.current").write_text(f"{4 * 1024**3}\n")
+    assert read_host_memory_mib(meminfo, cgroup) == (12288, 16384)
+    (cgroup / "memory.max").write_text("max\n")
+    assert read_host_memory_mib(meminfo, cgroup) == (20480, 24576)
+    assert read_host_memory_mib(tmp_path / "absent", cgroup) is None

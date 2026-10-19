@@ -40,6 +40,9 @@ TIMEZONE_ENV = "QONTINUI_IMAGEGEN_TIMEZONE"
 ATTESTED_LISTENERS = frozenset({"loopback"})
 
 TRANSFORMER_STORAGE = frozenset({"fp8", "bf16"})
+#: Bytes per parameter: what a checkpoint stores, and what a transformer is held in.
+CHECKPOINT_BYTES_PER_PARAM = {"fp32": 4, "bf16": 2}
+STORAGE_BYTES_PER_PARAM = {"fp8": 1, "bf16": 2}
 PLACEMENTS = frozenset({"resident", "sequential_text_encoder", "model_cpu_offload"})
 STAMP_FIELDS = frozenset({"size", "mtime_ns", "inode"})
 _CLOCK = re.compile(r"([01]\d|2[0-3]):([0-5]\d)")
@@ -57,6 +60,18 @@ class ModelLoad:
     vram_basis: str
     transformer_storage: str | None = None
     placement: str | None = None
+    #: The dtype the transformer checkpoint's safetensors store (its bytes / parameters).
+    transformer_checkpoint_dtype: str | None = None
+
+    def transformer_bytes_on_card(self, checkpoint_bytes: int) -> int:
+        """The transformer's held size: its checkpoint bytes rescaled to the storage dtype."""
+        if self.transformer_storage is None or self.transformer_checkpoint_dtype is None:
+            return checkpoint_bytes
+        return (
+            checkpoint_bytes
+            * STORAGE_BYTES_PER_PARAM[self.transformer_storage]
+            // CHECKPOINT_BYTES_PER_PARAM[self.transformer_checkpoint_dtype]
+        )
 
 
 @dataclass(frozen=True)
@@ -95,6 +110,8 @@ class FacadeConfig:
     device: str
     admission: Admission
     vram_desktop_reserve_mib: int
+    #: VRAM the facade may plan to hold at once: the card less the desktop reserve.
+    card_vram_budget_mib: int
     aliases: Mapping[str, str]
     load_estimate: LoadEstimate
     models: Mapping[str, ModelLoad] = field(default_factory=dict)
@@ -184,6 +201,7 @@ def parse_config(
             "device",
             "admission",
             "vram_desktop_reserve_mib",
+            "card_vram_budget_mib",
             "load_estimate",
             "aliases",
             "models",
@@ -271,6 +289,9 @@ def parse_config(
     reserve = _require(document, "vram_desktop_reserve_mib", "facade")
     if isinstance(reserve, bool) or not isinstance(reserve, int) or reserve < 0:
         raise ConfigError("facade.vram_desktop_reserve_mib is a non-negative integer")
+    card_budget = _positive_int(
+        _require(document, "card_vram_budget_mib", "facade"), "facade.card_vram_budget_mib"
+    )
     raw_load = _require(document, "load_estimate", "facade")
     if not isinstance(raw_load, Mapping) or set(raw_load) != {"read_mb_per_s", "basis"}:
         raise ConfigError("facade.load_estimate is {read_mb_per_s: <int>, basis: <text>}")
@@ -294,7 +315,17 @@ def parse_config(
             raise ConfigError(f"{where}: {model_id!r} is not a model in the manifest")
         if not isinstance(raw, Mapping):
             raise ConfigError(f"{where} is a mapping")
-        _check_keys(raw, {"vram_need_mib", "vram_basis", "transformer_storage", "placement"}, where)
+        _check_keys(
+            raw,
+            {
+                "vram_need_mib",
+                "vram_basis",
+                "transformer_storage",
+                "transformer_checkpoint_dtype",
+                "placement",
+            },
+            where,
+        )
         basis = _require(raw, "vram_basis", where)
         if not isinstance(basis, str) or not basis.startswith(("measured", "estimate")):
             raise ConfigError(f"{where}.vram_basis starts with 'measured' or 'estimate'")
@@ -308,6 +339,17 @@ def parse_config(
             )
         if placement is not None and placement not in PLACEMENTS:
             raise ConfigError(f"{where}.placement is one of {sorted(PLACEMENTS)}")
+        checkpoint = raw.get("transformer_checkpoint_dtype")
+        if (storage is None) != (checkpoint is None):
+            raise ConfigError(
+                f"{where}: a diffusion model names its transformer_checkpoint_dtype (the "
+                "on-card size check rescales the checkpoint's bytes to the storage dtype)"
+            )
+        if checkpoint is not None and checkpoint not in CHECKPOINT_BYTES_PER_PARAM:
+            raise ConfigError(
+                f"{where}.transformer_checkpoint_dtype is one of "
+                f"{sorted(CHECKPOINT_BYTES_PER_PARAM)}"
+            )
         models[str(model_id)] = ModelLoad(
             vram_need_mib=_positive_int(
                 _require(raw, "vram_need_mib", where), f"{where}.vram_need_mib"
@@ -315,6 +357,7 @@ def parse_config(
             vram_basis=basis,
             transformer_storage=storage,
             placement=placement,
+            transformer_checkpoint_dtype=checkpoint,
         )
 
     raw_aliases = _require(document, "aliases", "facade")
@@ -339,6 +382,7 @@ def parse_config(
         device=device,
         admission=admission,
         vram_desktop_reserve_mib=reserve,
+        card_vram_budget_mib=card_budget,
         aliases=aliases,
         load_estimate=load_estimate,
         models=models,

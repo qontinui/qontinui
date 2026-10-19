@@ -50,6 +50,10 @@ class Engine(Protocol):
     def free_vram_mib(self) -> int | None:
         """Device-wide free VRAM in MiB, or None when it cannot be read."""
 
+    def host_memory_mib(self) -> tuple[int, int] | None:
+        """(available, total) host memory in MiB as this process may use it, or None when
+        it cannot be read. A model_cpu_offload model keeps all its weights there."""
+
     def versions(self) -> Mapping[str, str]:
         """Engine and library versions for the provenance."""
 
@@ -65,8 +69,10 @@ class Engine(Protocol):
         ``on_ready`` is called once everything the job loads is loaded -- the pipeline on a
         cold start, the post-step models, and a per-job text encoder (the
         ``sequential_text_encoder`` placement), warm or cold. The interactive GPU-seconds cap
-        counts from there, so it never spans a load; encoding the prompt is compute and runs
-        after ``on_ready``, once per job however many candidates it renders. ``on_step`` is called
+        counts from there, so it never spans a load. The prompt is encoded once per job
+        however many candidates it renders: after ``on_ready`` where nothing needs loading
+        after it, and before it under ``model_cpu_offload``, where the encode sits between
+        two host-to-card moves (both loads). ``on_step`` is called
         once per denoising step and once per post step; ``should_stop`` is polled between
         steps, and a True answer raises :class:`JobInterrupted`.
         """

@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from qontinui_imagegen import errors
-from qontinui_imagegen.config import FacadeConfig
+from qontinui_imagegen.config import ConfigError, FacadeConfig
 from qontinui_imagegen.manifest import (
     MANIFEST_PATH,
     RECIPES_DIR,
@@ -43,6 +43,12 @@ SEED_LIMIT = 2**63
 #: A diffusers checkpoint's text-encoder folders: what the sequential_text_encoder placement
 #: leaves out of the resident pipeline and loads per job instead.
 TEXT_ENCODER_DIRS = ("text_encoder", "text_encoder_2")
+#: The folders that denoise and decode: what model_cpu_offload holds on the card to render.
+DENOISER_DIRS = ("transformer", "vae")
+#: A diffusers checkpoint's folders that become modules on the card (tokenizers, schedulers
+#: and processors stay on the host).
+CARD_MODULE_DIRS = (*DENOISER_DIRS, *TEXT_ENCODER_DIRS)
+MIB = 1024 * 1024
 #: Roles whose pipeline renders from a prompt alone; the others need input images (edits).
 TEXT_TO_IMAGE_ROLES = frozenset({"text-to-image"})
 INPUT_ROLES = frozenset({"image-edit", "upscale"})
@@ -166,6 +172,7 @@ class Catalogue:
                     f"upscaler {model_id!r} declares no positive integer architecture.netscale"
                 )
             self.upscale_factors[model_id] = netscale
+        self._check_card_fit()
         for recipe_id, recipe in self.recipes.items():
             for step in recipe.get("post") or ():
                 if step.get("op") == "upscale" and (
@@ -199,6 +206,97 @@ class Catalogue:
             if model in self.config.models
         )
 
+    # --- what fits on the card ---------------------------------------------------------------
+
+    def module_bytes(self, model_id: str) -> dict[str, int]:
+        """Held bytes of each on-card module folder: the transformer at its storage dtype.
+
+        A model with no placement (an upscaler, a matting model) is one module of its files'
+        size, under ``"."``.
+        """
+        component = self.components[model_id]
+        load = self.config.models.get(model_id)
+        sizes: dict[str, int] = {}
+        for entry in component.get("files") or ():
+            path = str(entry["path"])
+            folder = path.split("/", 1)[0] if "/" in path else "."
+            if load is not None and load.placement is not None and folder not in CARD_MODULE_DIRS:
+                continue
+            size = int(entry.get("bytes") or 0)
+            if folder == "transformer" and load is not None:
+                size = load.transformer_bytes_on_card(size)
+            sizes[folder] = sizes.get(folder, 0) + size
+        return sizes
+
+    def card_peak_bytes(self, model_id: str) -> int:
+        """The most of ``model_id``'s weights the card holds at once, by its placement.
+
+        resident, and sequential_text_encoder on a WARM job (the per-job encoder is loaded
+        while the transformer stays resident): encoders + transformer + VAE together.
+        model_cpu_offload: the encoder stage or the denoising stage, never both.
+        """
+        sizes = self.module_bytes(model_id)
+        load = self.config.models.get(model_id)
+        encoders = sum(sizes.get(name, 0) for name in TEXT_ENCODER_DIRS)
+        denoiser = sum(sizes.get(name, 0) for name in DENOISER_DIRS)
+        if load is None or load.placement is None:
+            return sum(sizes.values())
+        if load.placement == "model_cpu_offload":
+            return max(encoders, denoiser)
+        return encoders + denoiser
+
+    def host_peak_bytes(self, model_id: str) -> int:
+        """Host memory a model keeps for its life: everything, under model_cpu_offload."""
+        load = self.config.models.get(model_id)
+        if load is None or load.placement != "model_cpu_offload":
+            return 0
+        return sum(self.module_bytes(model_id).values())
+
+    def host_need_mib(self, model_ids: Sequence[str]) -> int:
+        return -(-sum(self.host_peak_bytes(m) for m in model_ids if m in self.components) // MIB)
+
+    def _check_card_fit(self) -> None:
+        """Refuse, at startup, a configuration whose weights cannot fit the card.
+
+        Per model: its weights' peak on the card (``card_peak_bytes``) must fit
+        ``card_vram_budget_mib``, and its declared ``vram_need_mib`` (what the pre-load
+        check asks for, activations included) must cover that peak and fit the budget too.
+        Per recipe: every model it loads is on the card together, so their needs sum.
+        """
+        budget = self.config.card_vram_budget_mib
+        problems: list[str] = []
+        for model_id, load in self.config.models.items():
+            if model_id not in self.components:
+                continue
+            peak = -(-self.card_peak_bytes(model_id) // MIB)
+            where = f"facade.models.{model_id} ({load.placement or 'single module'})"
+            if peak > budget:
+                problems.append(
+                    f"{where}: its weights alone hold {peak} MiB on the card at once, over "
+                    f"card_vram_budget_mib {budget}"
+                )
+            elif load.vram_need_mib < peak:
+                problems.append(
+                    f"{where}: vram_need_mib {load.vram_need_mib} is less than its weights' "
+                    f"{peak} MiB peak on the card"
+                )
+            elif load.vram_need_mib > budget:
+                problems.append(
+                    f"{where}: vram_need_mib {load.vram_need_mib} is over "
+                    f"card_vram_budget_mib {budget}, so no load could ever be admitted"
+                )
+        for recipe_id, recipe in self.recipes.items():
+            post_models = [m for step in recipe["post"] for m in step.get("models") or ()]
+            for generator in recipe["models"]:  # a job loads one generator plus the post models
+                need = self.vram_need_mib([generator, *post_models])
+                if need > budget:
+                    problems.append(
+                        f"recipe {recipe_id!r}: {generator} and its post-step models need "
+                        f"{need} MiB together, over card_vram_budget_mib {budget}"
+                    )
+        if problems:
+            raise ConfigError("the configuration cannot fit the card: " + "; ".join(problems))
+
     def _load_bytes(self, model_id: str) -> tuple[int, int]:
         """(bytes a cold start loads and keeps, bytes loaded again for every job)."""
         component = self.components.get(model_id)
@@ -223,7 +321,9 @@ class Catalogue:
         """How long ``plan``'s loads should take: what the interactive cap does not count.
 
         Every job pays its per-job loads (the sequential placement's text encoder); a cold
-        job also pays everything it keeps resident. The rate is facade.yaml's load_estimate.
+        job also pays everything it keeps resident. The rate is facade.yaml's load_estimate,
+        a DISK rate: model_cpu_offload's per-job host<->card moves are not in it (PCIe
+        copies, unmeasured), so for those models the estimate is short by them.
         """
         total = 0
         for model_id in plan.model_ids:

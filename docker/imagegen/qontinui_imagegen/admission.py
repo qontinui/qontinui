@@ -16,8 +16,10 @@ engine reports everything the job loads loaded and its weights verified
 (Phase 0 measured a cold FP8 Z-Image-Turbo load at about 214-220 s on spaceship -- a cap
 that counted it would fail every cold interactive request), and under the
 ``sequential_text_encoder`` placement every job, warm or cold, loads its text encoder (Phase
-0: 52-55 s for Z-Image's; Qwen's is twice the size). The encode itself is compute, inside
-the cap. So a job's wall time is its loads plus at most the cap, and a waiting request waits
+0: 52-55 s for Z-Image's), while under ``model_cpu_offload`` (Qwen) every job moves its text
+encoder and then its transformer between host and card. The encode is compute: inside the
+cap under the sequential placement, and outside it under offload, where it sits between the
+two moves. So a job's wall time is its loads plus at most the cap, and a waiting request waits
 for that much on top of its own. A client must size its timeout for the loads plus the cap;
 the runner's 300 s vision-client timeout covers a warm job, not a cold one queued behind
 another cold one. At the pinned llama-swap v217 a further wait sits OUTSIDE the facade: the
