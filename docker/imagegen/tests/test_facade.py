@@ -433,6 +433,30 @@ def test_a_stream_reports_running_steps_then_the_completed_image() -> None:
     assert set(provenance.REQUIRED_KEYS) <= set(final["qontinui_provenance"])
 
 
+@pytest.mark.parametrize(
+    "recipe_id",
+    sorted(r for r, recipe in load_recipes(RECIPES_DIR).items() if recipe["post"]),
+)
+def test_progress_totals_count_each_post_step_as_a_step(recipe_id: str) -> None:
+    """steps_per_image = the denoise steps plus one per post step (matte, vectorize, upscale).
+
+    Read from the recipe file, not the plan, so dropping the post term goes red.
+    """
+    recipe = load_recipes(RECIPES_DIR)[recipe_id]
+    expected = recipe["parameters"]["num_inference_steps"] + len(recipe["post"])
+    assert recipe["post"]  # the term under test is non-zero for this recipe
+    facade = make_facade(now=NIGHT)
+    alias = recipe["models"][0]
+    response = run(
+        _post(facade, model=alias, recipe=recipe_id, prompt="x", priority="bulk", stream=True)
+    )
+    assert response.status_code == 200, response.text
+    running = [data for name, data in sse_events(response.text) if name == "qontinui.running"]
+    assert {data["total"] for data in running} == {expected}
+    assert [data["step"] for data in running] == list(range(1, expected + 1))
+    assert facade.engine.runs[-1].steps_per_image == expected
+
+
 def test_a_queued_stream_says_so_first() -> None:
     gate = threading.Event()
     engine = FakeEngine(gate=gate)
