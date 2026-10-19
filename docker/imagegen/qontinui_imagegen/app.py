@@ -20,7 +20,14 @@ Wire:
 * ``GET /health`` is llama-swap's ``checkEndpoint``: 200 when ready, 503 with
   ``{"progress": <0..1>}`` while a weight verification runs (v217 reads only the status;
   later llama-swap versions also read the progress body);
-* ``GET /qontinui/status`` reports the switch, the card and what is resident (read-only).
+* ``GET /qontinui/status`` reports the switch, the card and what is resident (read-only),
+  and ``recipes``: ``{<recipe id>: <sha256 hex>}`` for EVERY recipe the catalogue loaded
+  (those reachable only through a request's ``recipe`` as well as the aliases' defaults).
+  Each value is ``Catalogue.recipe_hashes[id]``, the very string a generated image's
+  ``qontinui_provenance.recipe.hash`` carries, so a client (qontinui-studio's preflight)
+  can compare it with ``recipe_hash`` over the manifest it holds and skip generating when
+  the two disagree. It is computed once at startup from the files on disk, so it is stable
+  for the process's life and changes only when a recipe or a manifest entry it covers does.
 """
 
 from __future__ import annotations
@@ -518,6 +525,8 @@ def create_app(facade: Facade) -> FastAPI:
                 "engine": facade.engine.name,
                 "aliases": list(facade.catalogue.aliases),
                 "verified_models": sorted(facade.verifier.verified),
+                # The hash stamped into qontinui_provenance.recipe.hash, per loaded recipe.
+                "recipes": dict(sorted(facade.catalogue.recipe_hashes.items())),
             }
         )
 

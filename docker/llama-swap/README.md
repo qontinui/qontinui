@@ -309,6 +309,12 @@ One entry, `qontinui-imagegen`, serves every image alias (D1.1: one GPU owner). 
   turns image generation off on this machine (the facade answers `disabled`); unset or `1`
   is on. The switch is never the authorization — the loopback bind is.
 - **Status:** `GET http://127.0.0.1:8100/upstream/qontinui-imagegen/qontinui/status`.
+  Besides the switch, admission and what is resident, it serves `recipes`:
+  `{<recipe id>: <sha256 hex>}` for every recipe the facade loaded, including those reached
+  only through a request's `recipe` field. Each value is the exact hash a generated image's
+  `qontinui_provenance.recipe.hash` carries (`recipe_hash` in
+  `docker/imagegen/qontinui_imagegen/manifest.py`), so a client can check it against the
+  manifest it holds before generating.
 
 ## Services NOT Managed by llama-swap
 

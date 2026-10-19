@@ -12,6 +12,7 @@ import asyncio
 import base64
 import io
 import math
+import re
 import threading
 
 import pytest
@@ -31,6 +32,8 @@ from PIL import Image
 from qontinui_imagegen import marker, provenance
 from qontinui_imagegen.admission import Ticket
 from qontinui_imagegen.engine import HostMemory
+from qontinui_imagegen.jobs import INPUT_ROLES
+from qontinui_imagegen.manifest import RECIPES_DIR, load_recipes
 
 
 def _png(width: int = 16, height: int = 12) -> bytes:
@@ -553,6 +556,64 @@ def test_status_reports_switch_card_and_aliases() -> None:
     assert status["switch"] == {"enabled": False, "raw": "0", "recognised": True}
     assert status["listener"] == "loopback"
     assert "flux-1-schnell" in status["aliases"] and status["admission"]["running"] is None
+
+
+def _status(facade) -> dict:
+    async def go():
+        async with client(facade) as http:
+            return await http.get("/qontinui/status")
+
+    response = run(go())
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def _generate_with_recipe(facade, recipe_id: str) -> dict:
+    """Run one job under ``recipe_id`` (bulk, so no interactive cap) and return its provenance."""
+    recipe = load_recipes(RECIPES_DIR)[recipe_id]
+    alias = recipe["models"][0]
+    role = facade.catalogue.components[alias]["role"]
+
+    async def go():
+        async with client(facade) as http:
+            if role in INPUT_ROLES:
+                return await http.post(
+                    "/v1/images/edits",
+                    data={"model": alias, "recipe": recipe_id, "prompt": "x", "priority": "bulk"},
+                    files=[("image", ("a.png", _png(), "application/octet-stream"))],
+                )
+            return await http.post(
+                "/v1/images/generations",
+                json={"model": alias, "recipe": recipe_id, "prompt": "x", "priority": "bulk"},
+            )
+
+    response = run(go())
+    assert response.status_code == 200, (recipe_id, response.text)
+    record = response.json()["data"][0]["qontinui_provenance"]
+    assert record["recipe"]["id"] == recipe_id
+    return record
+
+
+def test_status_serves_a_hash_for_every_loaded_recipe() -> None:
+    """Every recipe on disk, read independently of the facade -- not only the aliases' ones."""
+    on_disk = set(load_recipes(RECIPES_DIR))
+    facade = make_facade()
+    request_only = on_disk - set(facade.catalogue.config.aliases.values())
+    assert request_only, "no recipe is reachable only by request: this test would not cover one"
+    served = _status(facade)["recipes"]
+    assert set(served) == on_disk
+    assert all(isinstance(h, str) and re.fullmatch(r"[0-9a-f]{64}", h) for h in served.values())
+
+
+def test_status_recipe_hashes_are_the_ones_provenance_stamps() -> None:
+    """Studio compares like with like: the served hash is what a result's provenance carries."""
+    facade = make_facade(now=NIGHT)
+    served = _status(facade)["recipes"]
+    for recipe_id in sorted(load_recipes(RECIPES_DIR)):
+        record = _generate_with_recipe(facade, recipe_id)
+        assert served[recipe_id] == record["recipe"]["hash"], recipe_id
+    # Stable: a second read, after jobs ran, serves the same mapping.
+    assert _status(facade)["recipes"] == served
 
 
 # --- review round 2 --------------------------------------------------------------------------
