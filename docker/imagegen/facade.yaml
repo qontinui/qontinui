@@ -28,12 +28,16 @@ device: cuda
 
 admission:
   # Phase 0 threshold T5: <= 120 s per image for the interactive class. The cap counts
-  # COMPUTE from the moment the pipeline is loaded and its weights verified -- a cold FP8
-  # Z-Image-Turbo load alone took about 214-220 s in Phase 0, so a cap including it would
-  # fail every cold request. A warm interactive job therefore ends inside 120 s; a cold one
-  # takes its load time on top, and a request queued behind it waits for both. Clients size
-  # their timeout for cold load + cap (admission.py says why llama-swap v217 adds a wait of
-  # its own during a cold first request).
+  # COMPUTE from the moment everything the job loads is loaded and its weights verified --
+  # never a load. Two loads sit outside it: the pipeline's own on a cold start (Phase 0: a
+  # cold FP8 Z-Image-Turbo load took about 214-220 s, so a cap including it would fail every
+  # cold request), and, under the sequential_text_encoder placement (models below), the
+  # text encoder that is loaded per job, warm or cold (Phase 0: 52-55 s for Z-Image's; about
+  # twice that for Qwen's). The encode itself is compute, inside the cap. So a job's wall
+  # time is its loads (load_estimate below says how long) plus at most the cap, and a request
+  # queued behind it waits for both. Clients size their timeout for the loads + cap
+  # (admission.py says why llama-swap v217 adds a wait of its own during a cold first
+  # request).
   interactive_gpu_seconds_cap: 120
   # Every recipe's largest size preset is 1328x1328 (1,763,584 px); 1536x1536 leaves room
   # for a preset added later without letting an interactive job grow past what T5 measured.
@@ -60,6 +64,20 @@ admission:
 # 2,399 MiB; 2,048 is held back for the desktop and the rest is the margin.
 vram_desktop_reserve_mib: 2048
 
+# How fast weights load from the weights volume. The expected load of a job is the bytes it
+# reads (the manifest's files[].bytes: everything a cold start loads, plus the per-job text
+# encoder under the sequential_text_encoder placement) divided by this rate; the admission
+# controller adds it to the cap when it estimates when a running job ends (busy's
+# Retry-After, /qontinui/status). Past the estimate the end is reported as unknown, never
+# as a guess.
+load_estimate:
+  read_mb_per_s: 150
+  basis: >-
+    estimate: Phase 0 item 5 OBSERVED (not thresholded) on spaceship's D: bind mount the
+    Z-Image text encoder (8.05 GB) loaded in 52-55 s, 146-155 MB/s, and the FP8 transformer
+    (24.62 GB read and cast per tensor) finished about 160-165 s later, 149-154 MB/s. One
+    model, one volume: replace with item 5's measured rate when it runs.
+
 # Model alias (what a client sends as `model`, and what llama-swap's config.yaml lists as the
 # facade entry's aliases) -> the recipe used when the request names none. Every alias is the
 # primary model of at least one recipe; tests/test_facade_config.py checks this table, the
@@ -82,8 +100,10 @@ aliases:
 #                        casting computes in bf16); bf16 = the checkpoint's own dtype.
 #   placement            resident = every component on the GPU for the process's life;
 #                        sequential_text_encoder = Phase 0's path: the text encoder is loaded
-#                        alone in bf16 per job, encodes, and is freed before the denoiser runs
-#                        (lowest VRAM and host memory, pays a text-encoder load per job);
+#                        in bf16 per job (a load, outside the interactive cap), encodes once
+#                        for every candidate of the job (inside the cap), and is freed before
+#                        the denoiser runs (lowest VRAM and host memory, pays a text-encoder
+#                        load per job);
 #                        model_cpu_offload = diffusers' offload hooks (components wait in host
 #                        RAM -- the arm for a native host with memory to spare, never the
 #                        24 GB WSL VM).

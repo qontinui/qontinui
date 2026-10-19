@@ -310,3 +310,37 @@ def test_loopback_hosts_are_loopback(host: str) -> None:
     from qontinui_imagegen import serve
 
     assert serve._loopback(host)
+
+
+def test_an_upscale_post_step_must_name_an_upscaler_with_a_scale() -> None:
+    """The interactive pixel cap multiplies by every upscale's scale, so the catalogue
+    refuses at startup a recipe whose upscale step has no scale to multiply by."""
+    from qontinui_imagegen.jobs import Catalogue
+
+    good = real_catalogue()
+    assert good.upscale_factors == {"real-esrgan-x2plus": 2, "real-esrgan-general-x4v3": 4}
+    recipes = copy.deepcopy(good.recipes)
+    recipes["hero"]["post"][0]["models"] = ["birefnet"]
+    with pytest.raises(ValueError, match="names one upscaler model"):
+        Catalogue(good.config, good.manifest, recipes)
+    manifest = copy.deepcopy(dict(good.manifest))
+    for component in manifest["components"]:
+        if component["id"] == "real-esrgan-x2plus":
+            del component["architecture"]["netscale"]
+    with pytest.raises(ValueError, match="netscale"):
+        Catalogue(good.config, manifest, good.recipes)
+
+
+def test_a_config_without_a_load_estimate_refuses_to_start(manifest: dict, document: dict) -> None:
+    for bad_value in (
+        None,
+        {"read_mb_per_s": 0, "basis": "estimate: x"},
+        {"read_mb_per_s": 150, "basis": "a hunch"},
+    ):
+        bad = copy.deepcopy(document)
+        if bad_value is None:
+            del bad["load_estimate"]
+        else:
+            bad["load_estimate"] = bad_value
+        with pytest.raises(c.ConfigError, match="load_estimate"):
+            c.parse_config(bad, environ={}, **_known(manifest))

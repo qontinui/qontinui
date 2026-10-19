@@ -254,8 +254,9 @@ One entry, `qontinui-imagegen`, serves every image alias (D1.1: one GPU owner). 
 - **Refusals** are OpenAI-shaped and typed: `busy` (503, a job is running and the one
   waiting place is taken, or VRAM is held out of band), `deferred` (429, bulk work outside
   the 00:00-06:00 bulk window), `disabled` (503, `QONTINUI_IMAGEGEN=0`), `failed` (500,
-  e.g. `weights_unverified`). Branch on `error.type`: llama-swap's own concurrency limit
-  also answers 429, as plain text.
+  e.g. `weights_unverified`). `busy` and `deferred` always carry `retry_after_s` and a
+  `Retry-After` header. Branch on `error.type`: llama-swap's own concurrency limit also
+  answers 429, as plain text.
 - **Weights** are never baked in: mount the volume with
   `QONTINUI_IMAGEGEN_WEIGHTS=<absolute path>` (a stock Hugging Face hub cache under
   `hub/` plus `stamps.json`), then install and verify them with the facade's own tool,
@@ -280,14 +281,19 @@ One entry, `qontinui-imagegen`, serves every image alias (D1.1: one GPU owner). 
   (security content trigger 2).
 - **Bulk window clock:** the 00:00-06:00 window is read in an explicit zone. Export
   `QONTINUI_IMAGEGEN_TIMEZONE=<the box's IANA zone>` before `docker compose up` (compose
-  passes it through); unset, bulk work answers `deferred` (`bulk_window_timezone_unset`)
-  instead of using the container's UTC clock.
-- **Timeouts:** the interactive cap (120 s) counts compute only, from the moment the
-  pipeline is loaded. A cold load comes on top (Phase 0: ~214-220 s for FP8 Z-Image-Turbo),
-  and at llama-swap v217 the first request after the facade is swapped in holds the process
-  group's lock, so a second image request waits INSIDE llama-swap -- it gets a slow answer,
-  not a typed `busy`. Size client timeouts for cold load + cap, twice over for a request
-  that may queue behind a cold one.
+  passes it through); unset, bulk work answers `deferred` (`bulk_window_timezone_unset`,
+  retrying after the window's length, 6 h) instead of using the container's UTC clock,
+  the facade prints a notice saying so at start, and interactive work is served as usual.
+- **Timeouts:** the interactive cap (120 s) counts compute only, from the moment
+  everything the job loads is loaded. Loads come on top: a cold start's (Phase 0:
+  ~214-220 s for FP8 Z-Image-Turbo), and, for the `sequential_text_encoder` models
+  (Z-Image-Turbo and both Qwen models), a text-encoder load on EVERY job, warm or cold
+  (Phase 0: 52-55 s for Z-Image's; Qwen's is about twice the size). `facade.yaml`
+  `load_estimate` turns the manifest's bytes into these times, and `busy`'s `Retry-After`
+  and `/qontinui/status` (`expected_end_in_s`) include them. At llama-swap v217 the first
+  request after the facade is swapped in holds the process group's lock, so a second image
+  request waits INSIDE llama-swap -- it gets a slow answer, not a typed `busy`. Size client
+  timeouts for loads + cap, twice over for a request that may queue behind a cold one.
 - **Machine switch:** `QONTINUI_IMAGEGEN=0` in the environment `docker compose` runs with
   turns image generation off on this machine (the facade answers `disabled`); unset or `1`
   is on. The switch is never the authorization — the loopback bind is.

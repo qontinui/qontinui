@@ -10,19 +10,29 @@ alias would wait behind image work. So bulk work never waits here: it is refused
 ``busy`` while a job runs, and ``deferred`` outside the bulk window, and queues in studio's
 persistent scheduler instead. Only one interactive request may wait.
 
-The interactive GPU-seconds cap bounds COMPUTE, not a cold start: its clock starts when the
-engine reports the job's pipeline loaded and its weights verified (``Ticket.begin_compute``),
-because Phase 0 measured a cold FP8 Z-Image-Turbo load at about 214-220 s on spaceship --
-a cap that counted the load would fail every cold interactive request. So a job's wall time
-is (load, when its pipeline is not resident) + (at most the cap), and a waiting request
-waits for that much on top of its own. A client must size its timeout for a cold load plus
-the cap; the runner's 300 s vision-client timeout covers a warm job, not a cold one queued
-behind another cold one. At the pinned llama-swap v217 a further wait sits OUTSIDE the
-facade: the first request after llama-swap swaps the facade in is proxied while the
-process group's lock is held (``ProcessGroup.ProxyRequest``), so a second request for any
-image alias waits inside llama-swap until that first request ends and never reaches the
-facade to get a typed ``busy``. A client therefore sees, during a cold first request, a
-slow answer rather than a fast refusal, and needs the same cold-load-plus-cap timeout.
+The interactive GPU-seconds cap bounds COMPUTE, never a load: its clock starts when the
+engine reports everything the job loads loaded and its weights verified
+(``Ticket.begin_compute``). Two loads sit before that point. A cold start loads the pipeline
+(Phase 0 measured a cold FP8 Z-Image-Turbo load at about 214-220 s on spaceship -- a cap
+that counted it would fail every cold interactive request), and under the
+``sequential_text_encoder`` placement every job, warm or cold, loads its text encoder (Phase
+0: 52-55 s for Z-Image's; Qwen's is twice the size). The encode itself is compute, inside
+the cap. So a job's wall time is its loads plus at most the cap, and a waiting request waits
+for that much on top of its own. A client must size its timeout for the loads plus the cap;
+the runner's 300 s vision-client timeout covers a warm job, not a cold one queued behind
+another cold one. At the pinned llama-swap v217 a further wait sits OUTSIDE the facade: the
+first request after llama-swap swaps the facade in is proxied while the process group's
+lock is held (``ProcessGroup.ProxyRequest``), so a second request for any image alias waits
+inside llama-swap until that first request ends and never reaches the facade to get a typed
+``busy``. A client therefore sees, during a cold first request, a slow answer rather than a
+fast refusal, and needs the same loads-plus-cap timeout.
+
+When a running job should end is therefore its remaining expected load (``Ticket.begin_load``,
+from facade.yaml's ``load_estimate``) plus the cap while it loads, and its cap deadline once
+it computes. A bulk job has no cap, and a load that overran its estimate has no honest
+remaining time, so both report their end as unknown (``None``); ``busy``'s ``Retry-After``
+then falls back to one cap, stated as a re-ask interval (``retry_after_basis``), never as an
+end estimate.
 
 The bulk window is read on an explicit clock: ``bulk_window.timezone`` in facade.yaml, or
 ``QONTINUI_IMAGEGEN_TIMEZONE``. A container's own clock is UTC unless told otherwise, and
@@ -30,10 +40,17 @@ The bulk window is read on an explicit clock: ``bulk_window.timezone`` in facade
 (``deferred``, code ``bulk_window_timezone_unset``) rather than opened on a guessed zone. A
 presence signal would also open it (D1.3), but none is readable from the facade yet
 (Phase 0 item 10), and an unreadable presence signal means the window is closed (PD10).
+An unset zone is a per-request refusal, not a startup error: interactive work needs no
+window and runs any time (D1.3), and a facade that refused to start would take every image
+alias down over a setting only bulk work reads. Its retry time is the window's own length:
+when no clock says when the window opens, a client that re-asks at least that often cannot
+step over a whole window once the zone is set.
 
-All state changes happen on the event loop's thread with no ``await`` between a check and
-its change, so the controller needs no lock; a finishing job hands the card straight to the
-waiter, so nothing can slip in between.
+All of the controller's own state changes happen on the event loop's thread with no
+``await`` between a check and its change, so it needs no lock; a finishing job hands the
+card straight to the waiter, so nothing can slip in between. The card's thread writes only
+a running ticket's timestamps (``begin_load``, ``begin_compute``), each set once, and the
+event loop reads them as they stand.
 """
 
 from __future__ import annotations
@@ -60,14 +77,33 @@ class Ticket:
     queued: bool = False
     #: When the ticket took the card (monotonic seconds); None while it waits.
     started_at: float | None = None
-    #: When its compute began -- pipeline loaded, weights verified. The cap counts from here.
+    #: When its job began on the card (weight checks, then its loads), and how long those
+    #: loads are expected to take (facade.yaml load_estimate); None until the job begins.
+    load_started_at: float | None = None
+    expected_load_s: float | None = None
+    #: When its compute began -- everything loaded, weights verified. The cap counts from here.
     compute_started_at: float | None = None
     cancelled: threading.Event = field(default_factory=threading.Event)
     turn: asyncio.Event | None = None
 
+    def begin_load(self, now: float, expected_load_s: float) -> None:
+        if self.load_started_at is None:
+            # The estimate first: the event loop reads these without a lock, and a set
+            # load_started_at is what tells it the estimate is there.
+            self.expected_load_s = expected_load_s
+            self.load_started_at = now
+
     def begin_compute(self, now: float) -> None:
         if self.compute_started_at is None:
             self.compute_started_at = now
+
+    @property
+    def phase(self) -> str:
+        if self.compute_started_at is not None:
+            return "computing"
+        if self.load_started_at is not None:
+            return "loading"
+        return "waiting" if self.started_at is None else "starting"
 
     def deadline(self) -> float | None:
         if self.cap_s is None or self.compute_started_at is None:
@@ -109,6 +145,11 @@ class AdmissionController:
             return start <= clock < end
         return clock >= start or clock < end  # a window across midnight
 
+    def window_length_s(self) -> float:
+        start, end = self.settings.bulk_window_start, self.settings.bulk_window_end
+        minutes = (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute)
+        return float((minutes % (24 * 60)) * 60)
+
     def seconds_until_window(self, moment: datetime | None = None) -> float | None:
         current = moment or self.now()
         if current is None:
@@ -125,18 +166,35 @@ class AdmissionController:
 
     # --- the card --------------------------------------------------------------------------
 
-    def _remaining(self, ticket: Ticket | None) -> float:
-        """Seconds until ``ticket``'s job must end, or a whole cap when that is unknown."""
-        if ticket is None:
-            return 0.0
-        deadline = ticket.deadline()
-        if deadline is None:
-            return self.settings.interactive_gpu_seconds_cap
-        return max(1.0, deadline - self.monotonic())
+    def _remaining(self, ticket: Ticket) -> float | None:
+        """Seconds until ``ticket``'s job should end, or None when no estimate holds.
 
-    def _retry_after(self) -> float:
-        waiting = self.settings.interactive_gpu_seconds_cap if self._waiter is not None else 0.0
-        return self._remaining(self._running) + waiting
+        Computing: until its cap deadline. Loading: the rest of its expected load, then a
+        whole cap. Unknown: a bulk job (no cap), a job not yet begun on the card, or a load
+        past its estimate (how much longer it takes is not known).
+        """
+        now = self.monotonic()
+        deadline = ticket.deadline()
+        if deadline is not None:
+            return max(1.0, deadline - now)
+        started, expected = ticket.load_started_at, ticket.expected_load_s
+        if ticket.cap_s is None or started is None or expected is None:
+            return None
+        load_left = started + expected - now
+        if load_left <= 0:
+            return None
+        return load_left + ticket.cap_s
+
+    def _retry_after(self) -> tuple[float, str]:
+        """When to re-ask while the card is busy, and what that number is based on."""
+        cap = self.settings.interactive_gpu_seconds_cap
+        remaining = None if self._running is None else self._remaining(self._running)
+        basis = "estimated_end"
+        if remaining is None:
+            remaining, basis = cap, "reask_interval"  # the running job's end is unknown
+        # A waiter runs next: at least one more cap (its own loads are not known here).
+        waiting = cap if self._waiter is not None else 0.0
+        return remaining + waiting, basis
 
     def _start(self, ticket: Ticket) -> Ticket:
         ticket.started_at = self.monotonic()
@@ -152,20 +210,24 @@ class AdmissionController:
         """
         cap = self.settings.interactive_gpu_seconds_cap if priority == "interactive" else None
         if priority == "bulk" and self.now() is None:
-            raise errors.FacadeError(
-                429,
-                "deferred",
+            raise errors.deferred(
                 "bulk_window_timezone_unset",
                 "bulk work runs only in the bulk window, read on the box's clock, and no "
                 "timezone is configured (facade.yaml bulk_window.timezone or "
-                "QONTINUI_IMAGEGEN_TIMEZONE), so the window is closed",
+                "QONTINUI_IMAGEGEN_TIMEZONE), so the window is closed; retry_after_s is the "
+                "window's length, so a client re-asking that often cannot miss a window "
+                "once the zone is set",
+                self.window_length_s(),
             )
         if priority == "bulk" and not self.in_bulk_window():
+            until = self.seconds_until_window()
+            assert until is not None  # a zone is set: now() answered above
             raise errors.deferred(
+                "outside_bulk_window",
                 "bulk work runs only in the bulk window "
                 f"({self.settings.bulk_window_start:%H:%M}-{self.settings.bulk_window_end:%H:%M} "
                 "box time) while no presence signal is readable",
-                self.seconds_until_window(),
+                until,
             )
         if self._running is None and self._waiter is None:
             return self._start(Ticket(priority, cap))
@@ -174,12 +236,14 @@ class AdmissionController:
             or self._waiter is not None
             or self.settings.max_interactive_waiters == 0
         ):
+            retry_after, basis = self._retry_after()
             raise errors.busy(
                 "card_busy",
                 "an image job is running"
                 + (" and another is waiting" if self._waiter is not None else "")
                 + "; bulk work queues in its scheduler, not here",
-                self._retry_after(),
+                retry_after,
+                retry_after_basis=basis,
             )
         ticket = Ticket(priority, cap, queued=True, turn=asyncio.Event())
         self._waiter = ticket
@@ -206,13 +270,26 @@ class AdmissionController:
             waiter.turn.set()
 
     def snapshot(self) -> dict[str, Any]:
+        """The card as read now. ``None`` for a time means unknown, never zero."""
+        running = self._running
+        if running is None:
+            card = None
+        else:
+            deadline = running.deadline()
+            card = {
+                "priority": running.priority,
+                "phase": running.phase,
+                # The cap's own deadline: None until compute begins (the cap never counts a
+                # load), and for bulk work, which has no cap.
+                "deadline_in_s": None
+                if deadline is None
+                else max(0.0, deadline - self.monotonic()),
+                # When the job should end, loads included; None when no estimate holds.
+                "expected_end_in_s": self._remaining(running),
+            }
         return {
-            "running": None
-            if self._running is None
-            else {
-                "priority": self._running.priority,
-                "deadline_in_s": self._remaining(self._running),
-            },
+            "running": card,
             "waiting": self._waiter is not None,
             "bulk_window_open": self.in_bulk_window(),
+            "bulk_window_timezone": self.settings.bulk_window_timezone,
         }

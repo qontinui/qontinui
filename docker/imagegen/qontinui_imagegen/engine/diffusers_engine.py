@@ -22,7 +22,9 @@ what makes a 20B Qwen transformer fit the 32 GB card and the 24 GB WSL VM at all
 JIT-compiles a CUDA extension on sm_120 and hangs (Phase 0 finding 1).
 
 ``placement`` (facade.yaml) chooses between resident text encoders, Phase 0's sequential
-text encoder (loaded alone per job, encodes, freed), and diffusers' model CPU offload.
+text encoder (loaded per job, encodes once for every candidate, freed before the denoiser
+runs), and diffusers' model CPU offload. The sequential encoder's per-job LOAD happens
+before ``on_ready``, so the interactive cap never counts it; only the encode is compute.
 """
 
 from __future__ import annotations
@@ -38,11 +40,8 @@ from typing import Any
 from qontinui_imagegen.config import FacadeConfig
 from qontinui_imagegen.engine import EngineOutOfMemory, JobInterrupted, Rendered
 from qontinui_imagegen.engine.post import PostRunners
-from qontinui_imagegen.jobs import Catalogue, JobPlan
+from qontinui_imagegen.jobs import TEXT_ENCODER_DIRS, Catalogue, JobPlan
 from qontinui_imagegen.weights import component_dir
-
-#: Pipeline components that encode the prompt: everything the sequential placement frees.
-TEXT_COMPONENTS = ("text_encoder", "text_encoder_2", "tokenizer", "tokenizer_2", "processor")
 
 
 def _skip_patterns(model: Any) -> tuple[str, ...]:
@@ -172,14 +171,7 @@ class DiffusersEngine:
     def release(self) -> None:
         self._loaded = None
         self.post.release()
-        gc.collect()
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except ImportError:
-            pass
+        _free_device_memory()
 
     def free_vram_mib(self) -> int | None:
         try:
@@ -224,9 +216,19 @@ class DiffusersEngine:
                 else:
                     self._loaded = _Loaded(plan.resident_key, None, Path(), None)
             self.post.prepare(plan)  # post-step models load before the cap's clock starts
-            on_ready()
+            # The sequential placement's per-job text encoder is a load too: loaded here, so
+            # the cap's clock starts after it, and freed right after its one encode.
+            encoder = self._load_text_encoder(plan)
+            try:
+                on_ready()
+                prompt_kwargs = (  # ONE text-encoder pass per job, shared by every seed
+                    self._prompt_kwargs(plan, encoder) if plan.pipeline_kind == "diffusers" else {}
+                )
+            finally:
+                if encoder is not None:
+                    del encoder
+                    _free_device_memory()
             if plan.pipeline_kind == "diffusers":
-                prompt_kwargs = self._prompt_kwargs(plan)  # ONE text-encoder pass per job
                 images = [
                     (seed, self._generate(plan, seed, prompt_kwargs, on_step, should_stop))
                     for seed in plan.seeds
@@ -284,7 +286,7 @@ class DiffusersEngine:
                 {model_dir / str(entry["path"]) for entry in component["files"]},
             )
         if load.placement == "sequential_text_encoder":
-            for name in ("text_encoder", "text_encoder_2"):
+            for name in TEXT_ENCODER_DIRS:
                 if (model_dir / name).is_dir():
                     kwargs[name] = None
         pipeline = pipeline_cls.from_pretrained(str(model_dir), **kwargs)
@@ -297,37 +299,42 @@ class DiffusersEngine:
 
     # --- generation -------------------------------------------------------------------------
 
-    def _encode_sequentially(self, plan: JobPlan) -> dict[str, Any]:
-        """Phase 0's text-encoder stage: load the encoder alone in bf16, encode, free it."""
+    def _load_text_encoder(self, plan: JobPlan) -> Any:
+        """Phase 0's text-encoder stage, its load half: the encoder pipeline in bf16.
+
+        None unless the resident pipeline was loaded without its text encoder (the
+        ``sequential_text_encoder`` placement). Phase 0 measured this load at 52-55 s for
+        Z-Image's encoder, every job, warm or cold -- so it runs before ``on_ready``.
+        """
+        if plan.pipeline_kind != "diffusers":
+            return None
+        assert self._loaded is not None
+        if self._loaded.placement != "sequential_text_encoder":
+            return None
         import diffusers
         import torch
 
-        assert self._loaded is not None
         pipeline_cls = getattr(diffusers, plan.pipeline)
-        encoder = pipeline_cls.from_pretrained(
+        return pipeline_cls.from_pretrained(
             str(self._loaded.model_dir),
             transformer=None,
             vae=None,
             torch_dtype=torch.bfloat16,
             local_files_only=True,
         ).to(self.device)
-        try:
-            with torch.no_grad():
-                return encode_prompt_kwargs(encoder, plan, self.device)
-        finally:
-            del encoder
-            gc.collect()
-            torch.cuda.empty_cache()
 
-    def _prompt_kwargs(self, plan: JobPlan) -> dict[str, Any]:
+    def _prompt_kwargs(self, plan: JobPlan, encoder: Any) -> dict[str, Any]:
         """The prompt arguments every candidate of the job shares, computed once.
 
-        Under the sequential placement this is the one text-encoder load + encode of the job
-        (Phase 0: about 52-55 s for Z-Image's encoder); every seed reuses the embeddings.
+        With a loaded ``encoder`` (the sequential placement) this is the job's one encode;
+        every seed reuses the embeddings. Otherwise the resident pipeline encodes the prompt
+        itself on each call.
         """
-        assert self._loaded is not None
-        if self._loaded.placement == "sequential_text_encoder":
-            return self._encode_sequentially(plan)
+        if encoder is not None:
+            import torch
+
+            with torch.no_grad():
+                return encode_prompt_kwargs(encoder, plan, self.device)
         kwargs: dict[str, Any] = {"prompt": plan.rendered_prompt}
         if plan.negative_prompt is not None:
             kwargs["negative_prompt"] = plan.negative_prompt
@@ -368,6 +375,18 @@ class DiffusersEngine:
         if should_stop():
             raise JobInterrupted("stopped during denoising")
         return result.images[0]
+
+
+def _free_device_memory() -> None:
+    """Collect what was just dropped and hand the card's cached blocks back."""
+    gc.collect()
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except ImportError:
+        pass
 
 
 def _pil_inputs(plan: JobPlan) -> list[Any]:

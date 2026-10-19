@@ -9,10 +9,11 @@ plain-text "Too many requests" at v217, when its per-model concurrency limit is 
                "code": ..., "param": ..., "retry_after_s": <seconds or null>, ...}}
 
 ``busy`` (a full queue, or the pre-load VRAM check) is HTTP 503; ``deferred`` (bulk work
-outside the bulk window) is HTTP 429; ``disabled`` (the machine switch) is HTTP 503 with no
-retry time, because only an operator turns it back on; ``failed`` is HTTP 500, and
-``invalid_request_error`` HTTP 400. A refusal that names a retry time also carries it as a
-``Retry-After`` header, rounded up to whole seconds.
+outside the bulk window, including a window that cannot be read) is HTTP 429; both always
+carry a finite retry time, because a scheduler requeues at it (plan Phase 11). ``disabled``
+(the machine switch) is HTTP 503 with no retry time, because only an operator turns it back
+on; ``failed`` is HTTP 500, and ``invalid_request_error`` HTTP 400. A refusal that names a
+retry time also carries it as a ``Retry-After`` header, rounded up to whole seconds.
 """
 
 from __future__ import annotations
@@ -67,8 +68,8 @@ def busy(code: str, message: str, retry_after_s: float, **extra: Any) -> FacadeE
     return FacadeError(503, "busy", code, message, retry_after_s=retry_after_s, extra=extra)
 
 
-def deferred(message: str, retry_after_s: float) -> FacadeError:
-    return FacadeError(429, "deferred", "outside_bulk_window", message, retry_after_s=retry_after_s)
+def deferred(code: str, message: str, retry_after_s: float, **extra: Any) -> FacadeError:
+    return FacadeError(429, "deferred", code, message, retry_after_s=retry_after_s, extra=extra)
 
 
 def disabled(code: str, message: str) -> FacadeError:

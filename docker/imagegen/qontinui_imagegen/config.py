@@ -72,6 +72,22 @@ class Admission:
 
 
 @dataclass(frozen=True)
+class LoadEstimate:
+    """How fast weights load from the volume: the basis of every expected load time.
+
+    The admission controller adds a job's expected load to its cap when it estimates when a
+    running job ends (``busy``'s ``Retry-After``, ``/qontinui/status``): the cap counts
+    compute only, so an end estimate that left the load out would understate it.
+    """
+
+    read_mb_per_s: int
+    basis: str
+
+    def seconds(self, size_bytes: int) -> float:
+        return size_bytes / (self.read_mb_per_s * 1_000_000)
+
+
+@dataclass(frozen=True)
 class FacadeConfig:
     weights_root: Path
     stamps_file: Path
@@ -80,6 +96,7 @@ class FacadeConfig:
     admission: Admission
     vram_desktop_reserve_mib: int
     aliases: Mapping[str, str]
+    load_estimate: LoadEstimate
     models: Mapping[str, ModelLoad] = field(default_factory=dict)
 
 
@@ -167,6 +184,7 @@ def parse_config(
             "device",
             "admission",
             "vram_desktop_reserve_mib",
+            "load_estimate",
             "aliases",
             "models",
         },
@@ -253,6 +271,18 @@ def parse_config(
     reserve = _require(document, "vram_desktop_reserve_mib", "facade")
     if isinstance(reserve, bool) or not isinstance(reserve, int) or reserve < 0:
         raise ConfigError("facade.vram_desktop_reserve_mib is a non-negative integer")
+    raw_load = _require(document, "load_estimate", "facade")
+    if not isinstance(raw_load, Mapping) or set(raw_load) != {"read_mb_per_s", "basis"}:
+        raise ConfigError("facade.load_estimate is {read_mb_per_s: <int>, basis: <text>}")
+    load_basis = raw_load["basis"]
+    if not isinstance(load_basis, str) or not load_basis.startswith(("measured", "estimate")):
+        raise ConfigError("facade.load_estimate.basis starts with 'measured' or 'estimate'")
+    load_estimate = LoadEstimate(
+        read_mb_per_s=_positive_int(
+            raw_load["read_mb_per_s"], "facade.load_estimate.read_mb_per_s"
+        ),
+        basis=load_basis,
+    )
 
     raw_models = _require(document, "models", "facade")
     if not isinstance(raw_models, Mapping):
@@ -310,6 +340,7 @@ def parse_config(
         admission=admission,
         vram_desktop_reserve_mib=reserve,
         aliases=aliases,
+        load_estimate=load_estimate,
         models=models,
     )
 

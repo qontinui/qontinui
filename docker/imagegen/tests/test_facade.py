@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import io
+import math
 import threading
 
 import pytest
@@ -712,3 +713,125 @@ def test_a_running_client_that_leaves_stops_its_job(monkeypatch: pytest.MonkeyPa
 
     response = run(go())
     assert b"client_gone" in response.body
+
+
+# --- review round 3 --------------------------------------------------------------------------
+
+
+def test_bulk_with_no_zone_is_deferred_with_a_finite_retry_after() -> None:
+    """R3-2: the shipped default (no zone) still answers with a retry time and its header."""
+    facade = make_facade(now=None)  # no zone: the box clock cannot be read
+    response = run(_post(facade, model="z-image-turbo", prompt="x", priority="bulk"))
+    assert response.status_code == 429
+    error = response.json()["error"]
+    assert error["type"] == "deferred" and error["code"] == "bulk_window_timezone_unset"
+    # The window's own length (00:00-06:00): a client re-asking that often cannot step
+    # over a whole window once the zone is set.
+    assert error["retry_after_s"] == 6 * 3600
+    assert response.headers["retry-after"] == str(6 * 3600)
+    assert facade.engine.runs == []
+    # Interactive work needs no window and is served.
+    assert run(_post(facade, model="z-image-turbo", prompt="x")).status_code == 200
+
+
+def test_the_interactive_pixel_cap_counts_an_upscale_post_step() -> None:
+    """R3-3: hero renders 1664x928 (1.54 MP) and upscales it 2x: 6.18 MP is past the cap."""
+    facade = make_facade(now=NIGHT)
+    refused = run(_post(facade, model="qwen-image-2512", prompt="x", recipe="hero"))
+    assert refused.status_code == 400
+    error = refused.json()["error"]
+    assert error["code"] == "interactive_cap_exceeded" and "6176768" in error["message"]
+    # The same render without the upscale is under the cap, and bulk work is not capped.
+    assert run(_post(facade, model="qwen-image-2512", prompt="x")).status_code == 200
+    bulk = run(_post(facade, model="qwen-image-2512", prompt="x", recipe="hero", priority="bulk"))
+    assert bulk.status_code == 200
+
+
+def test_a_stream_client_that_leaves_while_queued_gives_back_its_place() -> None:
+    """R3-4: the stream path frees the waiting place the moment its client stops reading."""
+    gate = threading.Event()
+    engine = FakeEngine(gate=gate)
+    facade = make_facade(engine=engine)
+
+    async def go():
+        async with client(facade) as http:
+            first = asyncio.ensure_future(
+                http.post("/v1/images/generations", json={"model": "z-image-turbo", "prompt": "a"})
+            )
+            await wait_for(engine.started.is_set)
+            streaming = await facade.respond(
+                "generations", {"model": "z-image-turbo", "prompt": "b", "stream": True}, ()
+            )
+            body = streaming.body_iterator
+            queued = await body.__anext__()  # the client reads the queued event...
+            await body.aclose()  # ...and goes away
+            waiting_after_leave = facade.admission.snapshot()["waiting"]
+            third = asyncio.ensure_future(
+                http.post("/v1/images/generations", json={"model": "z-image-turbo", "prompt": "c"})
+            )
+            await wait_for(lambda: facade.admission.snapshot()["waiting"])
+            gate.set()
+            return queued, waiting_after_leave, await first, await third
+
+    queued, waiting_after_leave, first, third = run(go())
+    assert queued.startswith(b"event: qontinui.queued")
+    assert waiting_after_leave is False
+    assert first.status_code == 200 and third.status_code == 200
+    assert [plan.prompt for plan in engine.runs] == ["a", "c"]
+
+
+def test_busy_while_loading_counts_the_expected_load_then_says_unknown() -> None:
+    """R3-5: a loading job's end is its remaining expected load plus the cap, not one cap."""
+    clock = {"now": 0.0}
+    loading = threading.Event()
+    engine = FakeEngine(load=lambda: loading.wait(5))
+    facade = make_facade(engine=engine, now=NIGHT, monotonic=lambda: clock["now"])
+    from qontinui_imagegen.jobs import build_plan
+
+    plan = build_plan(facade.catalogue, "generations", {"model": "z-image-turbo", "prompt": "a"})
+    expected = facade.catalogue.expected_load_s(plan, cold=True)
+    bulk = {"model": "z-image-turbo", "prompt": "b", "priority": "bulk"}
+
+    async def go():
+        async with client(facade) as http:
+            first = asyncio.ensure_future(
+                http.post("/v1/images/generations", json={"model": "z-image-turbo", "prompt": "a"})
+            )
+            await wait_for(lambda: bool(engine.runs))  # its load has begun
+            clock["now"] = 10.0
+            during = await http.post("/v1/images/generations", json=bulk)
+            status_during = (await http.get("/qontinui/status")).json()["admission"]["running"]
+            clock["now"] = expected + 50.0  # the load overran its estimate
+            overrun = await http.post("/v1/images/generations", json=bulk)
+            status_overrun = (await http.get("/qontinui/status")).json()["admission"]["running"]
+            loading.set()
+            return during, status_during, overrun, status_overrun, await first
+
+    during, status_during, overrun, status_overrun, first = run(go())
+    assert first.status_code == 200
+    error = during.json()["error"]
+    assert error["code"] == "card_busy" and error["retry_after_basis"] == "estimated_end"
+    assert error["retry_after_s"] == math.ceil(expected - 10.0 + 120.0)
+    assert during.headers["retry-after"] == str(math.ceil(expected - 10.0 + 120.0))
+    assert status_during["phase"] == "loading" and status_during["deadline_in_s"] is None
+    assert status_during["expected_end_in_s"] == pytest.approx(expected - 10.0 + 120.0)
+    # Past the estimate nothing honest says when the load ends: unknown, and busy's
+    # Retry-After is one cap as a re-ask interval, labelled as such.
+    error = overrun.json()["error"]
+    assert error["retry_after_basis"] == "reask_interval" and error["retry_after_s"] == 120
+    assert status_overrun["phase"] == "loading" and status_overrun["expected_end_in_s"] is None
+
+
+def test_the_load_estimate_reproduces_phase_0s_z_image_observation() -> None:
+    """The rate in facade.yaml against the manifest's bytes: Phase 0 observed about 214-220 s
+    for a cold Z-Image-Turbo load and 52-55 s for its text encoder alone; a warm
+    sequential-placement job still pays the encoder, and a resident one pays nothing."""
+    from qontinui_imagegen.jobs import build_plan
+
+    facade = make_facade()
+    zimage = build_plan(facade.catalogue, "generations", {"model": "z-image-turbo", "prompt": "a"})
+    assert 210.0 <= facade.catalogue.expected_load_s(zimage, cold=True) <= 225.0
+    assert 52.0 <= facade.catalogue.expected_load_s(zimage, cold=False) <= 55.0
+    flux = build_plan(facade.catalogue, "generations", {"model": "flux-1-schnell", "prompt": "a"})
+    assert facade.catalogue.expected_load_s(flux, cold=False) == 0.0
+    assert facade.catalogue.expected_load_s(flux, cold=True) > 0.0

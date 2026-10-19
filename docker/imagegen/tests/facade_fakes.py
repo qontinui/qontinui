@@ -37,7 +37,8 @@ class FakeEngine:
     out_of_memory: bool = False
     #: Raised from run() as an unexpected engine failure (not a typed one).
     crash: Exception | None = None
-    #: Called in run() BEFORE on_ready -- a cold load, e.g. advancing a fake clock.
+    #: Called in run() BEFORE on_ready -- a cold load, e.g. advancing a fake clock, or
+    #: waiting on an event to hold the job in its loading phase.
     load: Callable[[], None] | None = None
     runs: list[JobPlan] = field(default_factory=list)
     releases: int = 0
@@ -126,7 +127,7 @@ def make_facade(
     *,
     engine: FakeEngine | None = None,
     verifier: Any = None,
-    now: datetime = DAYTIME,
+    now: datetime | None = DAYTIME,
     environ: Mapping[str, str] | None = None,
     monotonic: Callable[[], float] | None = None,
     catalogue: Catalogue | None = None,

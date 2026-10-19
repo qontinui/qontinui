@@ -58,6 +58,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     recipes = load_recipes(RECIPES_DIR)
     models = {str(c["id"]) for c in manifest["components"] if c.get("kind") == "model"}
     config = load_config(args.config, known_models=models, known_recipes=recipes)
+    if config.admission.bulk_window_timezone is None:
+        # Not a startup error (admission.py says why), but never a silent one either.
+        print(
+            "notice: no bulk-window timezone is set (facade.yaml admission.bulk_window."
+            "timezone or QONTINUI_IMAGEGEN_TIMEZONE), so every bulk request is answered "
+            "`deferred` (bulk_window_timezone_unset); interactive work is served",
+            file=sys.stderr,
+        )
     catalogue = Catalogue(config, manifest, recipes)
     verifier = WeightVerifier(
         config.weights_root,

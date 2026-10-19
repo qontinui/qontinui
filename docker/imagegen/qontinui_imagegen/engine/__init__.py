@@ -62,8 +62,11 @@ class Engine(Protocol):
     ) -> list[Rendered]:
         """Load what ``plan`` needs (if not resident) and render its ``n`` candidates.
 
-        ``on_ready`` is called once everything the job loads is loaded -- the interactive
-        GPU-seconds cap counts from there, never across a cold load. ``on_step`` is called
+        ``on_ready`` is called once everything the job loads is loaded -- the pipeline on a
+        cold start, the post-step models, and a per-job text encoder (the
+        ``sequential_text_encoder`` placement), warm or cold. The interactive GPU-seconds cap
+        counts from there, so it never spans a load; encoding the prompt is compute and runs
+        after ``on_ready``, once per job however many candidates it renders. ``on_step`` is called
         once per denoising step and once per post step; ``should_stop`` is polled between
         steps, and a True answer raises :class:`JobInterrupted`.
         """

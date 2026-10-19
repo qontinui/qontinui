@@ -136,6 +136,8 @@ class Facade:
         self, plan: JobPlan, ticket: Ticket, on_step: Callable[[int, int], None]
     ) -> list[Rendered]:
         """Verify weights, check VRAM, run. Raises :class:`errors.FacadeError` on refusal."""
+        cold = self.engine.resident_key() != plan.resident_key
+        ticket.begin_load(self.monotonic(), self.catalogue.expected_load_s(plan, cold=cold))
         for model_id in plan.model_ids:
             try:
                 self.verifier.verify_model(model_id)
@@ -146,7 +148,7 @@ class Facade:
                     f"served: {'; '.join(error.problems)}",
                     model=error.model,
                 ) from error
-        if self.engine.resident_key() != plan.resident_key:
+        if cold:
             # Only one pipeline is resident at a time: release ours before measuring, so VRAM
             # the facade itself holds is never reported as out of band.
             self.engine.release()

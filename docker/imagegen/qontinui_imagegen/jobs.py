@@ -40,6 +40,9 @@ MAX_INPUT_IMAGES = 4
 MAX_INPUT_BYTES = 50 * 1024 * 1024
 MAX_N = 10
 SEED_LIMIT = 2**63
+#: A diffusers checkpoint's text-encoder folders: what the sequential_text_encoder placement
+#: leaves out of the resident pipeline and loads per job instead.
+TEXT_ENCODER_DIRS = ("text_encoder", "text_encoder_2")
 #: Roles whose pipeline renders from a prompt alone; the others need input images (edits).
 TEXT_TO_IMAGE_ROLES = frozenset({"text-to-image"})
 INPUT_ROLES = frozenset({"image-edit", "upscale"})
@@ -151,6 +154,27 @@ class Catalogue:
         self.recipe_hashes = {
             recipe_id: recipe_hash(recipe, manifest) for recipe_id, recipe in self.recipes.items()
         }
+        #: Output scale of every upscaler: the factor the engine's network applies
+        #: (``architecture.netscale``), checked here so a request never meets a missing one.
+        self.upscale_factors: dict[str, int] = {}
+        for model_id, component in self.components.items():
+            if component.get("role") != "upscale":
+                continue
+            netscale = (component.get("architecture") or {}).get("netscale")
+            if isinstance(netscale, bool) or not isinstance(netscale, int) or netscale < 1:
+                raise ValueError(
+                    f"upscaler {model_id!r} declares no positive integer architecture.netscale"
+                )
+            self.upscale_factors[model_id] = netscale
+        for recipe_id, recipe in self.recipes.items():
+            for step in recipe.get("post") or ():
+                if step.get("op") == "upscale" and (
+                    len(step.get("models") or ()) != 1
+                    or step["models"][0] not in self.upscale_factors
+                ):
+                    raise ValueError(
+                        f"recipe {recipe_id!r}: an upscale post step names one upscaler model"
+                    )
 
     @classmethod
     def load(
@@ -174,6 +198,50 @@ class Catalogue:
             for model in model_ids
             if model in self.config.models
         )
+
+    def _load_bytes(self, model_id: str) -> tuple[int, int]:
+        """(bytes a cold start loads and keeps, bytes loaded again for every job)."""
+        component = self.components.get(model_id)
+        if component is None:
+            return 0, 0
+        load = self.config.models.get(model_id)
+        per_job_dirs = (
+            TEXT_ENCODER_DIRS
+            if load is not None and load.placement == "sequential_text_encoder"
+            else ()
+        )
+        resident = per_job = 0
+        for entry in component.get("files") or ():
+            size = int(entry.get("bytes") or 0)
+            if str(entry["path"]).split("/", 1)[0] in per_job_dirs:
+                per_job += size
+            else:
+                resident += size
+        return resident, per_job
+
+    def expected_load_s(self, plan: JobPlan, *, cold: bool) -> float:
+        """How long ``plan``'s loads should take: what the interactive cap does not count.
+
+        Every job pays its per-job loads (the sequential placement's text encoder); a cold
+        job also pays everything it keeps resident. The rate is facade.yaml's load_estimate.
+        """
+        total = 0
+        for model_id in plan.model_ids:
+            resident, per_job = self._load_bytes(model_id)
+            total += per_job + (resident if cold else 0)
+        return self.config.load_estimate.seconds(total)
+
+    def output_scale(self, alias: str, pipeline_kind: str, post: Sequence[PostStep]) -> int:
+        """How many times wider (and taller) the output is than what the pipeline renders.
+
+        A named upscaler's own scale, times every upscale post step's: the work an
+        interactive cap bounds is the OUTPUT a job makes, not the size it starts from.
+        """
+        factor = self.upscale_factors.get(alias, 1) if pipeline_kind == "named" else 1
+        for step in post:
+            if step.op == "upscale":
+                factor *= self.upscale_factors[step.models[0]]
+        return factor
 
 
 def _field_errors(body: Mapping[str, Any], allowed: frozenset[str]) -> None:
@@ -364,17 +432,24 @@ def build_plan(
             )
     elif inputs:
         raise errors.invalid("unexpected_image", "this model takes no input image", "image")
+    post = tuple(
+        PostStep(
+            op=str(step["op"]),
+            runner=str(step["runner"]),
+            models=tuple(step.get("models") or ()),
+            parameters=dict(step.get("parameters") or {}),
+        )
+        for step in recipe["post"]
+    )
     if priority == "interactive":
+        # The work is the OUTPUT: what the pipeline renders, times the square of every
+        # upscale (a named upscaler's own, and each upscale post step's).
         pixels = size[0] * size[1] if size else max(i.width * i.height for i in inputs)
-        if pipeline_kind == "named":
-            # An upscaler's work is its OUTPUT: input pixels times the scale squared.
-            scales: Mapping[str, str] = parameters.get("scale_models") or {}
-            factor = next((int(s) for s, model in scales.items() if model == alias), 1)
-            pixels *= factor * factor
+        pixels *= catalogue.output_scale(alias, pipeline_kind, post) ** 2
         if pixels > config.admission.interactive_max_pixels:
             raise errors.invalid(
                 "interactive_cap_exceeded",
-                f"{pixels} px exceeds the interactive cap of "
+                f"{pixels} output px exceeds the interactive cap of "
                 f"{config.admission.interactive_max_pixels}; send priority 'bulk'",
                 "size",
             )
@@ -418,15 +493,6 @@ def build_plan(
             )
         seeds = (None,)
 
-    post = tuple(
-        PostStep(
-            op=str(step["op"]),
-            runner=str(step["runner"]),
-            models=tuple(step.get("models") or ()),
-            parameters=dict(step.get("parameters") or {}),
-        )
-        for step in recipe["post"]
-    )
     output_format = "svg" if post and post[-1].op == "vectorize" else "png"
     requested_format = body.get("output_format")
     if requested_format not in (None, output_format):
