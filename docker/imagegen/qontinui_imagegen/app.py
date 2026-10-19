@@ -27,7 +27,9 @@ Wire:
   ``qontinui_provenance.recipe.hash`` carries, so a client (qontinui-studio's preflight)
   can compare it with ``recipe_hash`` over the manifest it holds and skip generating when
   the two disagree. It is computed once at startup from the files on disk, so it is stable
-  for the process's life and changes only when a recipe or a manifest entry it covers does.
+  for the process's life and changes only on a restart after a hashed field of a recipe, or
+  of a manifest entry it references, changes (``description`` and the licence-only fields
+  are not hashed).
 """
 
 from __future__ import annotations

@@ -33,7 +33,13 @@ from qontinui_imagegen import marker, provenance
 from qontinui_imagegen.admission import Ticket
 from qontinui_imagegen.engine import HostMemory
 from qontinui_imagegen.jobs import INPUT_ROLES
-from qontinui_imagegen.manifest import RECIPES_DIR, load_recipes
+from qontinui_imagegen.manifest import (
+    MANIFEST_PATH,
+    RECIPES_DIR,
+    load_recipes,
+    load_yaml,
+    recipe_hash,
+)
 
 
 def _png(width: int = 16, height: int = 12) -> bytes:
@@ -627,6 +633,13 @@ def test_status_serves_a_hash_for_every_loaded_recipe() -> None:
     served = _status(facade)["recipes"]
     assert set(served) == on_disk
     assert all(isinstance(h, str) and re.fullmatch(r"[0-9a-f]{64}", h) for h in served.values())
+    # What a consumer computes from the files on main, not through the Catalogue: if the
+    # facade hashed the wrong thing, the served and the stamped value would still agree.
+    manifest = load_yaml(MANIFEST_PATH)
+    assert served == {
+        recipe_id: recipe_hash(recipe, manifest)
+        for recipe_id, recipe in load_recipes(RECIPES_DIR).items()
+    }
 
 
 def test_status_recipe_hashes_are_the_ones_provenance_stamps() -> None:
