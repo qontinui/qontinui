@@ -20,16 +20,18 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import json
 import sys
 import types
 from pathlib import Path
 from typing import Any
 
 import pytest
-from facade_fakes import FakeVerifier, make_facade
+from facade_fakes import FakeVerifier, make_facade, real_catalogue
 from PIL import Image
 
 from qontinui_imagegen.admission import Ticket
+from qontinui_imagegen.engine import HostMemory
 from qontinui_imagegen.engine.diffusers_engine import (
     DiffusersEngine,
     _Loaded,
@@ -184,7 +186,7 @@ def _facade(rt: Runtime) -> Any:
         return _Loaded(plan.resident_key, pipeline, Path("/weights/m"), placement)
 
     engine._load = load  # type: ignore[method-assign]
-    engine.host_memory_mib = lambda: (60_000, 64_000)  # type: ignore[method-assign]
+    engine.host_memory = lambda: HostMemory(60_000, 64_000, 2_000)  # type: ignore[method-assign]
     facade.engine = engine
     return facade
 
@@ -316,3 +318,63 @@ def test_a_qwen_offload_job_shares_one_encode_across_its_candidates(runtime: Run
     for call in runtime.denoise_calls:
         assert call["prompt_embeds"] == "EMBEDS" and call["negative_prompt_embeds"] == "EMBEDS"
         assert "prompt" not in call
+
+
+def test_the_real_offload_load_puts_nothing_on_the_card(
+    runtime: Runtime, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """R4-6: DiffusersEngine._load itself (not a stub) under model_cpu_offload builds the FP8
+    transformer on the host and leaves every module there; a job stages them later."""
+    import qontinui_imagegen.engine.diffusers_engine as engine_module
+    from qontinui_imagegen.config import WEIGHTS_ROOT_ENV, load_config
+    from qontinui_imagegen.manifest import MANIFEST_PATH, RECIPES_DIR, load_recipes, load_yaml
+    from qontinui_imagegen.weights import component_dir
+
+    manifest = load_yaml(MANIFEST_PATH)
+    recipes = load_recipes(RECIPES_DIR)
+    models = {str(c["id"]) for c in manifest["components"] if c.get("kind") == "model"}
+    config = load_config(
+        environ={WEIGHTS_ROOT_ENV: str(tmp_path)}, known_models=models, known_recipes=recipes
+    )
+    catalogue = real_catalogue(config)
+    model_dir = component_dir(tmp_path, catalogue.components["qwen-image-2512"])
+    model_dir.mkdir(parents=True)
+    (model_dir / "model_index.json").write_text(
+        json.dumps({"transformer": ["diffusers", "QwenImageTransformer2DModel"]})
+    )
+    built: dict[str, Any] = {}
+
+    def fake_fp8(cls: Any, folder: Path, device: str, pinned: set[Path]) -> Any:
+        built["transformer_target"] = device
+        return "FP8-TRANSFORMER"
+
+    class QwenImagePipeline(OffloadPipeline):
+        @classmethod
+        def from_pretrained(cls, path: str, **kwargs: Any) -> QwenImagePipeline:
+            built["kwargs"] = kwargs
+            return cls(runtime)
+
+        def to(self, device: str) -> QwenImagePipeline:  # the whole pipeline at once
+            runtime.events.append(f"pipeline->{device}")
+            for module in self.modules():
+                module.to(device)
+            return self
+
+        def set_progress_bar_config(self, **kwargs: Any) -> None:
+            pass
+
+    diffusers = sys.modules["diffusers"]
+    diffusers.QwenImagePipeline = QwenImagePipeline  # type: ignore[attr-defined]
+    diffusers.QwenImageTransformer2DModel = object  # type: ignore[attr-defined]
+    monkeypatch.setattr(engine_module, "load_fp8_transformer", fake_fp8)
+    engine = DiffusersEngine(catalogue, config)
+    plan = build_plan(catalogue, "generations", {"model": "qwen-image-2512", "prompt": "a"})
+
+    loaded = engine._load(plan)
+
+    assert loaded.placement == "model_cpu_offload"
+    assert built["transformer_target"] == "cpu"  # the FP8 transformer is built on the host
+    assert built["kwargs"]["transformer"] == "FP8-TRANSFORMER"
+    assert "text_encoder" not in built["kwargs"]  # offload keeps its encoder in the pipeline
+    assert not any(event.endswith("->cuda") for event in runtime.events), runtime.events
+    assert {m.device for m in loaded.pipeline.modules()} == {"cpu"}

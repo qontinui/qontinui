@@ -207,6 +207,7 @@ def test_the_lock_check_can_fail(
         (lambda d: d.__setitem__("stamp_fields", ["inode"]), "always size"),
         (lambda d: d.__setitem__("stamps_file", "../stamps.json"), "relative"),
         (lambda d: d.__setitem__("surprise", 1), "unknown keys"),
+        (lambda d: d.__setitem__("host_reserve_mib", -1), "host_reserve_mib"),
     ],
 )
 def test_a_config_it_cannot_honour_refuses_to_start(
@@ -387,34 +388,50 @@ def test_a_qwen_config_holding_encoder_and_transformer_together_refuses_to_start
 
 
 @pytest.mark.parametrize(
-    ("mutate", "message"),
+    ("mutate", "message", "rules"),
     [
         # A transformer kept in bf16 instead of FP8 doubles: 38,969 MiB + the VAE.
         (
             lambda d: d["models"]["qwen-image-2512"].__setitem__("transformer_storage", "bf16"),
-            "39211 MiB",
+            "facade.models.qwen-image-2512 (model_cpu_offload): [weights_over_budget] its "
+            "weights alone hold 39211 MiB on the card at once, over card_vram_budget_mib 30559",
+            {"weights_over_budget"},
         ),
         # A declared need below the weights' own peak would let the pre-load check underask.
         (
             lambda d: d["models"]["z-image-turbo"].__setitem__("vram_need_mib", 8704),
-            "less than its weights' 13703 MiB",
+            "facade.models.z-image-turbo (sequential_text_encoder): [need_below_weights] "
+            "vram_need_mib 8704 is less than its weights' 13703 MiB peak on the card",
+            {"need_below_weights"},
         ),
-        # A need the budget can never admit.
-        (lambda d: d.__setitem__("card_vram_budget_mib", 23000), "over card_vram_budget_mib"),
-        # A recipe whose models together outgrow the card (hero = Qwen + the 2x upscaler).
+        # A need the budget can never admit, though the weights themselves fit (19,727 MiB).
+        # Its recipes then outgrow the budget too, which is the recipe rule's own refusal.
+        (
+            lambda d: d["models"]["qwen-image-2512"].__setitem__("vram_need_mib", 31000),
+            "facade.models.qwen-image-2512 (model_cpu_offload): [need_over_budget] "
+            "vram_need_mib 31000 is over card_vram_budget_mib 30559, so no load could ever "
+            "be admitted",
+            {"need_over_budget", "recipe_over_budget"},
+        ),
+        # A recipe whose models together outgrow the card (hero = Qwen + the 2x upscaler),
+        # though each model alone is admissible.
         (
             lambda d: d["models"]["real-esrgan-x2plus"].__setitem__("vram_need_mib", 8000),
-            "recipe 'hero'",
+            "recipe 'hero': [recipe_over_budget] qwen-image-2512 and its post-step models "
+            "need 31552 MiB together, over card_vram_budget_mib 30559",
+            {"recipe_over_budget"},
         ),
     ],
 )
-def test_other_configs_that_cannot_fit_refuse_to_start(
-    manifest: dict, document: dict, mutate, message: str
+def test_each_card_fit_rule_refuses_with_its_own_message(
+    manifest: dict, document: dict, mutate, message: str, rules: set[str]
 ) -> None:
     bad = copy.deepcopy(document)
     mutate(bad)
-    with pytest.raises(c.ConfigError, match=re.escape(message)):
+    with pytest.raises(c.ConfigError) as raised:
         _catalogue_for(bad, manifest)
+    assert message in str(raised.value)
+    assert set(re.findall(r"\[(\w+)\]", str(raised.value))) == rules
 
 
 def test_a_diffusion_model_must_name_its_checkpoint_dtype(manifest: dict, document: dict) -> None:

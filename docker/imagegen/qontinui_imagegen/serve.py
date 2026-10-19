@@ -17,7 +17,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from qontinui_imagegen.admission import AdmissionController
-from qontinui_imagegen.app import Facade, create_app
+from qontinui_imagegen.app import Facade, create_app, host_memory_notices
 from qontinui_imagegen.config import load_config
 from qontinui_imagegen.jobs import Catalogue
 from qontinui_imagegen.manifest import MANIFEST_PATH, RECIPES_DIR, check, load_recipes, load_yaml
@@ -76,6 +76,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     from qontinui_imagegen.engine.diffusers_engine import DiffusersEngine
 
     engine = DiffusersEngine(catalogue, config)
+    for notice in host_memory_notices(catalogue, engine.host_memory()):
+        print(notice, file=sys.stderr)
     facade = Facade(catalogue, engine, verifier, AdmissionController(config.admission))
     import uvicorn
 

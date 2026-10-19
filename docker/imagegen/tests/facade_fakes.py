@@ -15,7 +15,7 @@ from PIL import Image
 from qontinui_imagegen.admission import AdmissionController
 from qontinui_imagegen.app import Facade, create_app
 from qontinui_imagegen.config import FacadeConfig, load_config
-from qontinui_imagegen.engine import EngineOutOfMemory, JobInterrupted, Rendered
+from qontinui_imagegen.engine import EngineOutOfMemory, HostMemory, JobInterrupted, Rendered
 from qontinui_imagegen.jobs import Catalogue, JobPlan
 from qontinui_imagegen.manifest import MANIFEST_PATH, RECIPES_DIR, load_recipes, load_yaml
 
@@ -32,8 +32,8 @@ class FakeEngine:
 
     name: str = "fake"
     free_mib: int | None = 32_000
-    #: (available, total) host memory in MiB; None = unreadable.
-    host_mib: tuple[int, int] | None = (60_000, 64_000)
+    #: Host memory as the facade reads it; None = unreadable.
+    host: HostMemory | None = field(default_factory=lambda: HostMemory(60_000, 64_000, 2_000))
     gate: threading.Event | None = None
     started: threading.Event = field(default_factory=threading.Event)
     out_of_memory: bool = False
@@ -56,8 +56,8 @@ class FakeEngine:
     def free_vram_mib(self) -> int | None:
         return self.free_mib
 
-    def host_memory_mib(self) -> tuple[int, int] | None:
-        return self.host_mib
+    def host_memory(self) -> HostMemory | None:
+        return self.host
 
     def versions(self) -> Mapping[str, str]:
         return {"engine": self.name, "diffusers": "0.41.0", "torch": "fake"}

@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import gc
 import json
+import os
 import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
@@ -51,7 +52,7 @@ from pathlib import Path
 from typing import Any
 
 from qontinui_imagegen.config import FacadeConfig
-from qontinui_imagegen.engine import EngineOutOfMemory, JobInterrupted, Rendered
+from qontinui_imagegen.engine import EngineOutOfMemory, HostMemory, JobInterrupted, Rendered
 from qontinui_imagegen.engine.post import PostRunners
 from qontinui_imagegen.jobs import (
     CARD_MODULE_DIRS,
@@ -203,8 +204,8 @@ class DiffusersEngine:
         except (ImportError, RuntimeError):
             return None
 
-    def host_memory_mib(self) -> tuple[int, int] | None:
-        return read_host_memory_mib()
+    def host_memory(self) -> HostMemory | None:
+        return read_host_memory()
 
     def versions(self) -> Mapping[str, str]:
         import accelerate
@@ -420,37 +421,74 @@ class DiffusersEngine:
         return result.images[0]
 
 
-def read_host_memory_mib(
-    meminfo: Path = Path("/proc/meminfo"), cgroup: Path = Path("/sys/fs/cgroup")
-) -> tuple[int, int] | None:
-    """(available, total) host memory in MiB, or None when it cannot be read.
+#: cgroup v1 reports "no limit" as a page-rounded LONG_MAX; anything this large is unlimited.
+_CGROUP_V1_UNLIMITED = 1 << 60
 
-    Linux (the Docker arm, inside the WSL VM): ``MemAvailable`` / ``MemTotal``, narrowed by
-    a cgroup v2 ``memory.max`` when the container has one -- an over-limit load would be
-    OOM-killed by the cgroup, not refused. Windows (the native arm):
-    ``GlobalMemoryStatusEx``.
+
+def _stat_field(path: Path, *keys: str) -> int:
+    """The first of ``keys`` present in a cgroup ``memory.stat`` file (bytes)."""
+    fields: dict[str, int] = {}
+    for line in path.read_text(encoding="ascii").splitlines():
+        key, _, value = line.partition(" ")
+        if value:
+            fields[key] = int(value)
+    for key in keys:
+        if key in fields:
+            return fields[key]
+    raise KeyError(f"{path}: none of {keys}")
+
+
+def _cgroup_limit(cgroup: Path) -> tuple[int, int] | None:
+    """(limit, usage) of this container's memory cgroup in bytes, or None when unlimited.
+
+    Usage leaves out the inactive file cache, which the kernel reclaims before it would
+    OOM-kill anything: weight verification reads tens of GB through the page cache just
+    before a load, and counting that cache as used would refuse a load that fits.
+    Raises OSError / ValueError / KeyError when a limit is set but the usage beside it
+    cannot be read -- an unreadable usage under a real limit is not "no limit".
     """
-    if sys.platform == "win32":
-        import ctypes
-
-        class MemoryStatus(ctypes.Structure):
-            _fields_ = [
-                ("dwLength", ctypes.c_ulong),
-                ("dwMemoryLoad", ctypes.c_ulong),
-                ("ullTotalPhys", ctypes.c_ulonglong),
-                ("ullAvailPhys", ctypes.c_ulonglong),
-                ("ullTotalPageFile", ctypes.c_ulonglong),
-                ("ullAvailPageFile", ctypes.c_ulonglong),
-                ("ullTotalVirtual", ctypes.c_ulonglong),
-                ("ullAvailVirtual", ctypes.c_ulonglong),
-                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
-            ]
-
-        status = MemoryStatus()
-        status.dwLength = ctypes.sizeof(MemoryStatus)
-        if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):  # type: ignore[attr-defined]
+    v2_max = cgroup / "memory.max"
+    if v2_max.is_file():
+        raw = v2_max.read_text(encoding="ascii").strip()
+        if raw == "max":
             return None
-        return int(status.ullAvailPhys // (1024 * 1024)), int(status.ullTotalPhys // (1024 * 1024))
+        current = int((cgroup / "memory.current").read_text(encoding="ascii").strip())
+        inactive = _stat_field(cgroup / "memory.stat", "inactive_file")
+        return int(raw), max(0, current - inactive)
+    v1 = cgroup / "memory"
+    v1_limit = v1 / "memory.limit_in_bytes"
+    if v1_limit.is_file():
+        limit = int(v1_limit.read_text(encoding="ascii").strip())
+        if limit >= _CGROUP_V1_UNLIMITED:
+            return None
+        usage = int((v1 / "memory.usage_in_bytes").read_text(encoding="ascii").strip())
+        inactive = _stat_field(v1 / "memory.stat", "total_inactive_file", "inactive_file")
+        return limit, max(0, usage - inactive)
+    return None
+
+
+def _own_rss_mib(statm: Path) -> int:
+    """This process's resident set in MiB; 0 when unreadable (assume none is held yet)."""
+    try:
+        resident_pages = int(statm.read_text(encoding="ascii").split()[1])
+        return resident_pages * os.sysconf("SC_PAGE_SIZE") // (1024 * 1024)
+    except (OSError, ValueError, IndexError):
+        return 0
+
+
+def read_host_memory(
+    meminfo: Path = Path("/proc/meminfo"),
+    cgroup: Path = Path("/sys/fs/cgroup"),
+    statm: Path = Path("/proc/self/statm"),
+) -> HostMemory | None:
+    """Host memory as this process may use it, or None when it cannot be read.
+
+    ``MemAvailable`` / ``MemTotal``, narrowed by the container's memory cgroup limit when it
+    has one (v2 ``memory.max``, or v1 ``memory/memory.limit_in_bytes``): a load past that
+    limit is OOM-killed by the cgroup, never refused, so the limit is the real total. A
+    limit whose usage cannot be read makes the whole reading None (unreadable), never a
+    reading without the limit.
+    """
     try:
         fields = {}
         for line in meminfo.read_text(encoding="ascii").splitlines():
@@ -460,14 +498,18 @@ def read_host_memory_mib(
     except (OSError, KeyError, ValueError, IndexError):
         return None
     try:
-        limit = (cgroup / "memory.max").read_text(encoding="ascii").strip()
-        if limit != "max":
-            used = int((cgroup / "memory.current").read_text(encoding="ascii").strip())
-            total = min(total, int(limit))
-            available = min(available, max(0, int(limit) - used))
-    except (OSError, ValueError):
-        pass  # no cgroup v2 limit to narrow by
-    return available // (1024 * 1024), total // (1024 * 1024)
+        limited = _cgroup_limit(cgroup)
+    except (OSError, KeyError, ValueError):
+        return None
+    if limited is not None:
+        limit, used = limited
+        total = min(total, limit)
+        available = min(available, max(0, limit - used))
+    return HostMemory(
+        available_mib=available // (1024 * 1024),
+        total_mib=total // (1024 * 1024),
+        own_rss_mib=_own_rss_mib(statm),
+    )
 
 
 def _free_device_memory() -> None:

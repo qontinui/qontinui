@@ -112,6 +112,8 @@ class FacadeConfig:
     vram_desktop_reserve_mib: int
     #: VRAM the facade may plan to hold at once: the card less the desktop reserve.
     card_vram_budget_mib: int
+    #: Host memory the facade process itself needs beside the weights it keeps there.
+    host_reserve_mib: int
     aliases: Mapping[str, str]
     load_estimate: LoadEstimate
     models: Mapping[str, ModelLoad] = field(default_factory=dict)
@@ -202,6 +204,7 @@ def parse_config(
             "admission",
             "vram_desktop_reserve_mib",
             "card_vram_budget_mib",
+            "host_reserve_mib",
             "load_estimate",
             "aliases",
             "models",
@@ -292,6 +295,9 @@ def parse_config(
     card_budget = _positive_int(
         _require(document, "card_vram_budget_mib", "facade"), "facade.card_vram_budget_mib"
     )
+    host_reserve = _require(document, "host_reserve_mib", "facade")
+    if isinstance(host_reserve, bool) or not isinstance(host_reserve, int) or host_reserve < 0:
+        raise ConfigError("facade.host_reserve_mib is a non-negative integer")
     raw_load = _require(document, "load_estimate", "facade")
     if not isinstance(raw_load, Mapping) or set(raw_load) != {"read_mb_per_s", "basis"}:
         raise ConfigError("facade.load_estimate is {read_mb_per_s: <int>, basis: <text>}")
@@ -383,6 +389,7 @@ def parse_config(
         admission=admission,
         vram_desktop_reserve_mib=reserve,
         card_vram_budget_mib=card_budget,
+        host_reserve_mib=host_reserve,
         aliases=aliases,
         load_estimate=load_estimate,
         models=models,

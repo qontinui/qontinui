@@ -30,6 +30,7 @@ from PIL import Image
 
 from qontinui_imagegen import marker, provenance
 from qontinui_imagegen.admission import Ticket
+from qontinui_imagegen.engine import HostMemory
 
 
 def _png(width: int = 16, height: int = 12) -> bytes:
@@ -838,48 +839,144 @@ def test_the_load_estimate_reproduces_phase_0s_z_image_observation() -> None:
     assert facade.catalogue.expected_load_s(flux, cold=True) > 0.0
 
 
-# --- host memory under model_cpu_offload (review round 3b) ----------------------------------
+# --- host memory under model_cpu_offload (review rounds 3b and 4) ---------------------------
+
+#: Qwen-Image under model_cpu_offload keeps 35,543 MiB of weights on the host, and the facade
+#: reserves facade.yaml's host_reserve_mib (3,072) beside them: 38,615 MiB in all.
+QWEN_HOST_NEED = 35_543
 
 
 @pytest.mark.parametrize(
     ("host", "status", "code"),
     [
-        ((20_000, 24_000), 500, "host_memory_insufficient"),  # the 24 GB WSL VM: never fits
-        ((20_000, 64_000), 503, "host_memory_held_by"),  # fits the host, held by others now
+        # The 24 GB WSL VM: the weights alone never fit.
+        (HostMemory(20_000, 24_000, 2_000), 500, "host_memory_insufficient"),
+        # The weights fit the total, but not with the facade's own reserve beside them.
+        (HostMemory(37_500, 38_000, 2_000), 500, "host_memory_insufficient"),
+        # Fits in total; free memory is short only because others hold it: busy.
+        (HostMemory(36_000, 64_000, 2_000), 503, "host_memory_held_by"),
+        # The reserve this process does not yet hold is asked of free memory as well.
+        (HostMemory(37_000, 64_000, 0), 503, "host_memory_held_by"),
         (None, 500, "host_memory_unreadable"),
-        ((40_000, 64_000), 200, None),
+        # 35,543 + (3,072 - 2,000 already held) = 36,615 <= 37,000 free.
+        (HostMemory(37_000, 64_000, 2_000), 200, None),
     ],
 )
 def test_an_offloaded_qwen_load_checks_the_host_can_hold_it(
-    host: tuple[int, int] | None, status: int, code: str | None
+    host: HostMemory | None, status: int, code: str | None
 ) -> None:
-    """Qwen under model_cpu_offload keeps 35,543 MiB of weights on the host; a load the host
-    cannot hold is a typed answer before it starts, never an OOM kill in the shared VM."""
-    engine = FakeEngine(host_mib=host)
-    facade = make_facade(engine=engine)
+    """A load the host cannot hold is a typed answer before it starts -- never an OOM kill
+    in the shared VM -- and, being checked before weight verification, it hashes nothing."""
+    engine = FakeEngine(host=host)
+    verifier = FakeVerifier()
+    facade = make_facade(engine=engine, verifier=verifier)
+    assert facade.catalogue.host_need_mib(["qwen-image-2512"]) == QWEN_HOST_NEED
+    assert facade.config.host_reserve_mib == 3_072
     response = run(_post(facade, model="qwen-image-2512", prompt="x"))
     assert response.status_code == status, response.text
     if code is not None:
         assert response.json()["error"]["code"] == code
         assert engine.runs == []
+        assert verifier.verified == set()  # refused before any weight was hashed
 
 
 def test_a_model_kept_on_the_card_needs_no_host_reading() -> None:
-    facade = make_facade(engine=FakeEngine(host_mib=None))
+    facade = make_facade(engine=FakeEngine(host=None))
     assert run(_post(facade, model="z-image-turbo", prompt="x")).status_code == 200
 
 
-def test_host_memory_is_read_from_meminfo_and_narrowed_by_a_cgroup_limit(tmp_path) -> None:
-    from qontinui_imagegen.engine.diffusers_engine import read_host_memory_mib
+# --- reading host memory -------------------------------------------------------------------------
 
-    meminfo = tmp_path / "meminfo"
-    meminfo.write_text("MemTotal:       25165824 kB\nMemAvailable:   20971520 kB\n")
+GIB = 1024**3
+
+
+def _meminfo(tmp_path, total_gib: int = 64, available_gib: int = 48):
+    path = tmp_path / "meminfo"
+    path.write_text(
+        f"MemTotal:       {total_gib * 1024 * 1024} kB\n"
+        f"MemAvailable:   {available_gib * 1024 * 1024} kB\n"
+    )
+    return path
+
+
+def _statm(tmp_path, resident_pages: int = 0):
+    path = tmp_path / "statm"
+    path.write_text(f"100000 {resident_pages} 0 0 0 0 0\n")
+    return path
+
+
+def _read(tmp_path, cgroup):
+    from qontinui_imagegen.engine.diffusers_engine import read_host_memory
+
+    return read_host_memory(_meminfo(tmp_path), cgroup, _statm(tmp_path))
+
+
+def test_host_memory_with_no_cgroup_limit_is_meminfo(tmp_path) -> None:
     cgroup = tmp_path / "cgroup"
     cgroup.mkdir()
-    assert read_host_memory_mib(meminfo, cgroup) == (20480, 24576)
-    (cgroup / "memory.max").write_text(f"{16 * 1024**3}\n")
-    (cgroup / "memory.current").write_text(f"{4 * 1024**3}\n")
-    assert read_host_memory_mib(meminfo, cgroup) == (12288, 16384)
-    (cgroup / "memory.max").write_text("max\n")
-    assert read_host_memory_mib(meminfo, cgroup) == (20480, 24576)
-    assert read_host_memory_mib(tmp_path / "absent", cgroup) is None
+    assert _read(tmp_path, cgroup) == HostMemory(48 * 1024, 64 * 1024, 0)
+    (cgroup / "memory.max").write_text("max\n")  # v2, unlimited
+    assert _read(tmp_path, cgroup) == HostMemory(48 * 1024, 64 * 1024, 0)
+
+
+def test_a_cgroup_v2_limit_narrows_and_leaves_the_page_cache_out(tmp_path) -> None:
+    """R4-1: memory.current counts reclaimable page cache -- verification just read tens of
+    GB through it -- so used = current - inactive_file, or a load that fits waits forever."""
+    cgroup = tmp_path / "cgroup"
+    cgroup.mkdir()
+    (cgroup / "memory.max").write_text(f"{40 * GIB}\n")
+    (cgroup / "memory.current").write_text(f"{38 * GIB}\n")  # 30 GiB of it is file cache
+    (cgroup / "memory.stat").write_text(f"anon {8 * GIB}\ninactive_file {30 * GIB}\n")
+    assert _read(tmp_path, cgroup) == HostMemory(32 * 1024, 40 * 1024, 0)
+
+
+def test_a_cgroup_v1_limit_narrows_and_leaves_the_page_cache_out(tmp_path) -> None:
+    """R4-2: a v1 container's limit is honoured too."""
+    v1 = tmp_path / "cgroup" / "memory"
+    v1.mkdir(parents=True)
+    (v1 / "memory.limit_in_bytes").write_text(f"{40 * GIB}\n")
+    (v1 / "memory.usage_in_bytes").write_text(f"{38 * GIB}\n")
+    (v1 / "memory.stat").write_text(f"cache {30 * GIB}\ntotal_inactive_file {30 * GIB}\n")
+    assert _read(tmp_path, tmp_path / "cgroup") == HostMemory(32 * 1024, 40 * 1024, 0)
+    (v1 / "memory.limit_in_bytes").write_text("9223372036854771712\n")  # v1's "no limit"
+    assert _read(tmp_path, tmp_path / "cgroup") == HostMemory(48 * 1024, 64 * 1024, 0)
+
+
+@pytest.mark.parametrize("missing", ["memory.current", "memory.stat"])
+def test_a_limit_whose_usage_cannot_be_read_is_unreadable_not_unlimited(
+    tmp_path, missing: str
+) -> None:
+    """R4-2: memory.max set but its usage unreadable must not fall back to no limit."""
+    cgroup = tmp_path / "cgroup"
+    cgroup.mkdir()
+    (cgroup / "memory.max").write_text(f"{16 * GIB}\n")
+    (cgroup / "memory.current").write_text(f"{4 * GIB}\n")
+    (cgroup / "memory.stat").write_text(f"inactive_file {1 * GIB}\n")
+    (cgroup / missing).unlink()
+    assert _read(tmp_path, cgroup) is None
+
+
+def test_host_memory_reads_its_own_resident_set(tmp_path) -> None:
+    import os
+
+    from qontinui_imagegen.engine.diffusers_engine import read_host_memory
+
+    cgroup = tmp_path / "cgroup"
+    cgroup.mkdir()
+    pages = 2 * GIB // os.sysconf("SC_PAGE_SIZE")
+    memory = read_host_memory(_meminfo(tmp_path), cgroup, _statm(tmp_path, pages))
+    assert memory is not None and memory.own_rss_mib == 2048
+    assert read_host_memory(tmp_path / "absent", cgroup, _statm(tmp_path)) is None
+
+
+def test_startup_names_every_model_the_host_cannot_hold() -> None:
+    """R4-7: in the 24 GB VM both Qwen models are named at start, before any request."""
+    from qontinui_imagegen.app import host_memory_notices
+
+    catalogue = make_facade().catalogue
+    small = host_memory_notices(catalogue, HostMemory(20_000, 24_000, 2_000))
+    assert [n.split()[1] for n in small] == ["qwen-image-2512", "qwen-image-edit-2511"]
+    assert all("host_memory_insufficient" in n for n in small)
+    assert host_memory_notices(catalogue, HostMemory(60_000, 64_000, 2_000)) == []
+    unreadable = host_memory_notices(catalogue, None)
+    assert len(unreadable) == 2 and all("host_memory_unreadable" in n for n in unreadable)

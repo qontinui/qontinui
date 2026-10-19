@@ -292,15 +292,19 @@ One entry, `qontinui-imagegen`, serves every image alias (D1.1: one GPU owner). 
   their transformer between host and card on every job. `facade.yaml` `load_estimate`
   turns the manifest's bytes into disk-load times, and `busy`'s `Retry-After` and
   `/qontinui/status` (`expected_end_in_s`) include them (the host<->card moves are not
-  estimated).
+  estimated). At llama-swap v217 the first request after the facade is swapped in holds
+  the process group's lock, so a second image request waits INSIDE llama-swap -- it gets a
+  slow answer, not a typed `busy`. Size client timeouts for loads + cap, twice over for a
+  request that may queue behind a cold one.
 - **Qwen needs host memory:** Qwen-Image's 15.4 GiB text encoder and 19.0 GiB FP8
   transformer cannot share the 32 GB card (34.7 GiB of weights), so they take turns on it
-  and wait in host RAM -- about 35 GiB of it. The 24 GB WSL VM cannot hold that: there a
-  Qwen request answers `failed` (`host_memory_insufficient`) before loading, never an OOM
-  kill. Qwen runs on the native arm, or on a VM given the memory. At llama-swap v217 the first
-  request after the facade is swapped in holds the process group's lock, so a second image
-  request waits INSIDE llama-swap -- it gets a slow answer, not a typed `busy`. Size client
-  timeouts for loads + cap, twice over for a request that may queue behind a cold one.
+  and wait in host RAM: 35,543 MiB of weights plus the facade's `host_reserve_mib` (3,072).
+  The 24 GB WSL VM this compose file runs in cannot hold that, so on this deployment a
+  Qwen request answers `failed` (`host_memory_insufficient`) before it hashes or loads
+  anything -- never an OOM kill -- and the facade prints a notice saying so at start.
+  Z-Image-Turbo and FLUX.1-schnell are unaffected. Serving Qwen needs a host that gives
+  the facade about 38 GiB (a larger VM, or another deployment); that is a deployment
+  option outside Phase 10, which ships only this Docker arm.
 - **Machine switch:** `QONTINUI_IMAGEGEN=0` in the environment `docker compose` runs with
   turns image generation off on this machine (the facade answers `disabled`); unset or `1`
   is on. The switch is never the authorization — the loopback bind is.

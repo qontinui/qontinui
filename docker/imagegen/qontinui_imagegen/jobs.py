@@ -262,6 +262,8 @@ class Catalogue:
         ``card_vram_budget_mib``, and its declared ``vram_need_mib`` (what the pre-load
         check asks for, activations included) must cover that peak and fit the budget too.
         Per recipe: every model it loads is on the card together, so their needs sum.
+        Each refusal names its rule in brackets ([weights_over_budget], [need_below_weights],
+        [need_over_budget], [recipe_over_budget]) so an operator and a test can tell them apart.
         """
         budget = self.config.card_vram_budget_mib
         problems: list[str] = []
@@ -272,17 +274,17 @@ class Catalogue:
             where = f"facade.models.{model_id} ({load.placement or 'single module'})"
             if peak > budget:
                 problems.append(
-                    f"{where}: its weights alone hold {peak} MiB on the card at once, over "
-                    f"card_vram_budget_mib {budget}"
+                    f"{where}: [weights_over_budget] its weights alone hold {peak} MiB on the "
+                    f"card at once, over card_vram_budget_mib {budget}"
                 )
             elif load.vram_need_mib < peak:
                 problems.append(
-                    f"{where}: vram_need_mib {load.vram_need_mib} is less than its weights' "
-                    f"{peak} MiB peak on the card"
+                    f"{where}: [need_below_weights] vram_need_mib {load.vram_need_mib} is less "
+                    f"than its weights' {peak} MiB peak on the card"
                 )
             elif load.vram_need_mib > budget:
                 problems.append(
-                    f"{where}: vram_need_mib {load.vram_need_mib} is over "
+                    f"{where}: [need_over_budget] vram_need_mib {load.vram_need_mib} is over "
                     f"card_vram_budget_mib {budget}, so no load could ever be admitted"
                 )
         for recipe_id, recipe in self.recipes.items():
@@ -291,8 +293,9 @@ class Catalogue:
                 need = self.vram_need_mib([generator, *post_models])
                 if need > budget:
                     problems.append(
-                        f"recipe {recipe_id!r}: {generator} and its post-step models need "
-                        f"{need} MiB together, over card_vram_budget_mib {budget}"
+                        f"recipe {recipe_id!r}: [recipe_over_budget] {generator} and its "
+                        f"post-step models need {need} MiB together, over card_vram_budget_mib "
+                        f"{budget}"
                     )
         if problems:
             raise ConfigError("the configuration cannot fit the card: " + "; ".join(problems))

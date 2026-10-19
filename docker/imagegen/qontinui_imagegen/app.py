@@ -46,7 +46,13 @@ from qontinui_imagegen.config import (
     listener_attestation,
     machine_switch,
 )
-from qontinui_imagegen.engine import Engine, EngineOutOfMemory, JobInterrupted, Rendered
+from qontinui_imagegen.engine import (
+    Engine,
+    EngineOutOfMemory,
+    HostMemory,
+    JobInterrupted,
+    Rendered,
+)
 from qontinui_imagegen.jobs import Catalogue, InputImage, JobPlan, build_plan, decode_input
 from qontinui_imagegen.weights import WeightsError, WeightVerifier
 
@@ -66,6 +72,35 @@ def _sse(event: str, data: Mapping[str, Any]) -> bytes:
 
 def _refusal(error: errors.FacadeError) -> JSONResponse:
     return JSONResponse(error.body(), status_code=error.status, headers=error.headers())
+
+
+def host_memory_notices(catalogue: Catalogue, memory: HostMemory | None) -> list[str]:
+    """Startup notices for every model the host cannot hold under model_cpu_offload.
+
+    Not a startup refusal: the other aliases serve, and those models answer the typed
+    ``host_memory_insufficient`` / ``host_memory_unreadable`` per request. A notice makes
+    that discoverable before the first request does.
+    """
+    reserve = catalogue.config.host_reserve_mib
+    notices = []
+    for model_id in sorted(catalogue.config.models):
+        need = catalogue.host_need_mib([model_id])
+        if need == 0:
+            continue
+        if memory is None:
+            notices.append(
+                f"notice: {model_id} keeps {need} MiB of weights in host memory "
+                "(model_cpu_offload) and host memory could not be read, so its requests "
+                "answer `failed` (host_memory_unreadable)"
+            )
+        elif need + reserve > memory.total_mib:
+            notices.append(
+                f"notice: {model_id} keeps {need} MiB of weights in host memory "
+                f"(model_cpu_offload) and the facade needs {reserve} MiB beside them, more "
+                f"than the {memory.total_mib} MiB this host gives it, so its requests answer "
+                "`failed` (host_memory_insufficient)"
+            )
+    return notices
 
 
 class Facade:
@@ -138,35 +173,45 @@ class Facade:
         Such a model keeps every weight in host memory (34.7 GiB for Qwen-Image), and a load
         past what the host can give is not refused by anything else: inside the WSL VM's
         container it is OOM-killed, and the kill can take a neighbour on the box with it.
+
+        The process itself needs ``host_reserve_mib`` beside the weights. Weights plus that
+        reserve past the host's (or the container limit's) total can never fit: ``failed``.
+        Otherwise a shortfall in what is available now is other processes' usage: ``busy``.
+        The part of the reserve this process already holds is already outside "available",
+        so only the rest of it is asked of what is free.
         """
         need = self.catalogue.host_need_mib(plan.model_ids)
         if need == 0:
             return
-        memory = self.engine.host_memory_mib()
+        memory = self.engine.host_memory()
         if memory is None:
             raise errors.failed(
                 "host_memory_unreadable",
                 f"this job keeps {need} MiB of weights in host memory, and how much the host "
                 "has could not be read, so the load was not attempted",
             )
-        available, total = memory
-        if need > total:
+        reserve = self.config.host_reserve_mib
+        if need + reserve > memory.total_mib:
             raise errors.failed(
                 "host_memory_insufficient",
-                f"this job keeps {need} MiB of weights in host memory (model_cpu_offload), "
-                f"more than the {total} MiB this host gives the facade; it cannot run here",
+                f"this job keeps {need} MiB of weights in host memory (model_cpu_offload) and "
+                f"the facade needs {reserve} MiB beside them, more than the "
+                f"{memory.total_mib} MiB this host gives it; it cannot run here",
                 need_mib=need,
-                total_mib=total,
+                reserve_mib=reserve,
+                total_mib=memory.total_mib,
             )
-        if need > available:
+        wanted = need + max(0, reserve - memory.own_rss_mib)
+        if wanted > memory.available_mib:
             raise errors.busy(
                 "host_memory_held_by",
-                f"this job keeps {need} MiB of weights in host memory and {available} MiB is "
-                "available; other processes hold the rest",
+                f"this job needs {wanted} MiB of host memory free ({need} MiB of weights plus "
+                f"the rest of the facade's reserve) and {memory.available_mib} MiB is; other "
+                "processes hold the rest",
                 OUT_OF_BAND_RETRY_S,
                 host_memory_held_by="out_of_band",
-                available_mib=available,
-                need_mib=need,
+                available_mib=memory.available_mib,
+                need_mib=wanted,
             )
 
     def execute(
@@ -175,6 +220,13 @@ class Facade:
         """Verify weights, check VRAM, run. Raises :class:`errors.FacadeError` on refusal."""
         cold = self.engine.resident_key() != plan.resident_key
         ticket.begin_load(self.monotonic(), self.catalogue.expected_load_s(plan, cold=cold))
+        if cold:
+            # Only one pipeline is resident at a time: release ours before measuring, so
+            # memory the facade itself holds -- VRAM or host -- is never out of band. The
+            # host check runs before verification, so a load that can never fit here does
+            # not hash its weights (about 57 GB for a Qwen model) first.
+            self.engine.release()
+            self._check_host_memory(plan)
         for model_id in plan.model_ids:
             try:
                 self.verifier.verify_model(model_id)
@@ -186,9 +238,6 @@ class Facade:
                     model=error.model,
                 ) from error
         if cold:
-            # Only one pipeline is resident at a time: release ours before measuring, so VRAM
-            # the facade itself holds is never reported as out of band.
-            self.engine.release()
             free = self.engine.free_vram_mib()
             if free is None:
                 raise errors.failed(
@@ -209,7 +258,6 @@ class Facade:
                     free_mib=free,
                     need_mib=need,
                 )
-            self._check_host_memory(plan)
         total = plan.total_steps
         done = 0
 

@@ -1,8 +1,8 @@
 # The image facade's configuration (plan 2026-10-13-image-generation-and-visual-judgment,
 # Phase 10). Read by qontinui_imagegen.config; every value is checked at startup and a bad
 # value refuses to start rather than run on a guess. QONTINUI_IMAGEGEN_CONFIG names another
-# file; QONTINUI_IMAGEGEN_WEIGHTS_ROOT overrides weights_root (the packaging differs per arm:
-# a volume mount in the Docker arm, a Windows path in the native arm -- rule R-mem).
+# file; QONTINUI_IMAGEGEN_WEIGHTS_ROOT overrides weights_root (where the weights volume is
+# mounted is a per-deployment fact; this phase ships the Docker arm -- rule R-mem).
 #
 # Where a number below came from is said beside it. "measured" means Phase 0's RESULT block
 # (qontinui-dev-notes plan, 2026-10-15) recorded it; "estimate" means Phase 0 item 5 has not
@@ -71,6 +71,13 @@ vram_desktop_reserve_mib: 2048
 # (a nominal 32 GiB card) less the 2,048 MiB desktop reserve above. Phase 0 item 5 is to
 # measure the real peak per model; until then this is arithmetic, not a measurement.
 card_vram_budget_mib: 30559
+# Host memory the facade process needs beside the weights a model_cpu_offload model keeps on
+# the host: the Python interpreter and its libraries, torch's and the CUDA context's
+# host-side allocations, and allocator slack. The pre-load host check compares a model's
+# weights plus this with what the host (or the container's memory limit) gives. Estimate:
+# a torch + CUDA process typically holds 2-3 GiB before any weights; nothing here measured
+# it, so Phase 0 item 5 is to read the facade's own RSS with no model loaded.
+host_reserve_mib: 3072
 
 # How fast weights load from the weights volume. The expected load of a job is the bytes it
 # reads (the manifest's files[].bytes: everything a cold start loads, plus the per-job text

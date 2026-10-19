@@ -34,6 +34,19 @@ class Rendered:
     svg: str | None = None
 
 
+@dataclass(frozen=True)
+class HostMemory:
+    """Host memory as this process may use it, in MiB (a container's limit applied).
+
+    ``own_rss_mib`` is what this process already holds, so it is already outside
+    ``available_mib``; 0 when it could not be read (the cautious reading).
+    """
+
+    available_mib: int
+    total_mib: int
+    own_rss_mib: int = 0
+
+
 StepCallback = Callable[[], None]
 StopCheck = Callable[[], bool]
 
@@ -50,9 +63,9 @@ class Engine(Protocol):
     def free_vram_mib(self) -> int | None:
         """Device-wide free VRAM in MiB, or None when it cannot be read."""
 
-    def host_memory_mib(self) -> tuple[int, int] | None:
-        """(available, total) host memory in MiB as this process may use it, or None when
-        it cannot be read. A model_cpu_offload model keeps all its weights there."""
+    def host_memory(self) -> HostMemory | None:
+        """Host memory as this process may use it, or None when it cannot be read. A
+        model_cpu_offload model keeps all its weights there."""
 
     def versions(self) -> Mapping[str, str]:
         """Engine and library versions for the provenance."""
