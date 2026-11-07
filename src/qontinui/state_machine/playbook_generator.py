@@ -1,8 +1,24 @@
 """Playbook Generator from Recording Pipeline Results.
 
 Generates markdown playbook files with YAML frontmatter from discovered
-state machines and extracted variables. The output is compatible with
-the Rust playbook_parser.rs in qontinui-runner.
+state machines and extracted variables. Two live consumers in qontinui-runner
+read the output:
+
+- The ``execute_playbook`` workflow step. Its handler
+  (``src-tauri/src/step_executor/handlers/execute_playbook.rs``,
+  ``parse_playbook``) reads the step's inline ``content`` and parses each
+  ``### Step N: <Label>`` block with its ``**Action**``, ``**Transition**``
+  and ``**Variable**`` lines; the frontmatter is not read there. Only
+  ``interactions`` produce ``### Step`` blocks: without them the body just
+  lists the discovered states and transitions, and the step rejects it
+  ("no steps found in playbook content").
+- Project contexts. Saved as a ``.md`` file under ``.qontinui/contexts/``,
+  the playbook is loaded as a project context
+  (``src-tauri/src/context/project_contexts.rs``) from the runner's working
+  directory during workflow generation, or from a session's project path
+  (``src-tauri/src/context/resolution.rs``). The context takes its ``name``,
+  ``category`` and ``tags`` from this frontmatter when the frontmatter
+  parses as YAML.
 
 Example:
     from qontinui.state_machine.playbook_generator import generate_playbook
@@ -46,7 +62,12 @@ def generate_playbook(
         app_url: Application URL for playbook triggers.
 
     Returns:
-        Markdown string with YAML frontmatter, ready for playbook_parser.rs.
+        Markdown string with YAML frontmatter. With ``interactions`` the body
+        has one ``### Step N:`` block per interaction and can be the inline
+        ``content`` of a runner ``execute_playbook`` step; without them it
+        only lists the discovered states and transitions, which that step
+        rejects. Either form can be saved as a ``.qontinui/contexts/``
+        project context.
     """
     variables = variables or []
     interactions = interactions or []
