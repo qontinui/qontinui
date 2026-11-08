@@ -4,13 +4,14 @@ This is the mock execution implementation in model-based GUI automation.
 It returns matches from ActionHistory without any actual image finding.
 
 The lookup order is:
-1. Pattern's local ActionHistory (fastest, no API call)
-2. Runner-based historical data from local database (if enabled)
-3. Generated mock based on state probability (fallback)
+1. Pattern's local ActionHistory
+2. Generated mock based on state probability (fallback)
+
+Mock mode makes no network call: matches come from the pattern's own history
+or are generated.
 """
 
 import logging
-import os
 import random
 
 from ...model.element import Location, Pattern, Region
@@ -21,12 +22,6 @@ from .matches import Matches
 
 logger = logging.getLogger(__name__)
 
-# Flag to enable API-based historical data fetching
-USE_API_HISTORICAL_DATA = (
-    os.getenv("QONTINUI_USE_API_HISTORICAL_DATA", "true").lower() == "true"
-)
-
-
 class MockFindImplementation:
     """Returns pre-recorded matches from ActionHistory.
 
@@ -36,9 +31,8 @@ class MockFindImplementation:
     RealFindImplementation, so the action layer is completely agnostic.
 
     The lookup order is:
-    1. Pattern's local ActionHistory (fastest, no API call)
-    2. Runner-based historical data from local database
-    3. Generated mock based on state probability (fallback)
+    1. Pattern's local ActionHistory
+    2. Generated mock based on state probability (fallback)
     """
 
     def __init__(self) -> None:
@@ -65,7 +59,7 @@ class MockFindImplementation:
     ) -> list[FindResult]:
         """Execute mock find operation for multiple patterns.
 
-        Returns matches from ActionHistory, API, or generates mock matches.
+        Returns matches from ActionHistory, or generates mock matches.
 
         Args:
             patterns: List of patterns to find
@@ -108,13 +102,7 @@ class MockFindImplementation:
             if matches:
                 return self._create_result(pattern, matches, options)
 
-        # 2. Try to get historical data from API
-        if USE_API_HISTORICAL_DATA:
-            api_matches = self._get_matches_from_api(pattern, active_states)
-            if api_matches:
-                return self._create_result(pattern, api_matches, options)
-
-        # 3. No history - generate mock based on state probability
+        # 2. No history - generate mock based on state probability
         matches = self._generate_mock_matches(pattern, options, active_states)
         return self._create_result(pattern, matches, options)
 
@@ -188,63 +176,6 @@ class MockFindImplementation:
             return snapshot.match_list  # type: ignore[no-any-return]
 
         return []
-
-    def _get_matches_from_api(
-        self,
-        pattern: Pattern,
-        active_states: set[str],
-    ) -> list[Match]:
-        """Get historical matches from the runner's local database.
-
-        Args:
-            pattern: Pattern to find historical data for
-            active_states: Currently active states
-
-        Returns:
-            List of matches from API, or empty list
-        """
-        try:
-            from ...mock.historical_data_client import get_historical_data_client
-
-            client = get_historical_data_client()
-
-            # Fetch random historical result matching pattern and context
-            historical = client.get_random_historical_result(
-                pattern_id=pattern.name,
-                action_type="FIND",
-                active_states=list(active_states) if active_states else None,
-                success_only=False,
-            )
-
-            if not historical:
-                return []
-
-            if historical.success and historical.match_x is not None:
-                match = Match(
-                    target=Location(
-                        region=Region(
-                            historical.match_x,
-                            historical.match_y or 0,
-                            historical.match_width or 100,
-                            historical.match_height or 50,
-                        )
-                    ),
-                    score=historical.best_match_score or 0.9,
-                    ocr_text="",
-                )
-                logger.debug(
-                    f"Created match from API: ({historical.match_x}, {historical.match_y})"
-                )
-                return [match]
-
-            return []
-
-        except ImportError:
-            logger.debug("Historical data client not available")
-            return []
-        except Exception as e:
-            logger.warning(f"Error fetching historical data from API: {e}")
-            return []
 
     def _generate_mock_matches(
         self,

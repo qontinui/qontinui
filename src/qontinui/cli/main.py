@@ -238,8 +238,6 @@ def run(
             # Configure historical data source
             if history:
                 os.environ["QONTINUI_HISTORY_FILE"] = history
-            elif cloud_url:
-                os.environ["QONTINUI_WEB_URL"] = cloud_url
 
             click.echo("Running in MOCK mode (integration testing)")
         else:
@@ -464,11 +462,6 @@ def test(
     "--history", type=click.Path(), help="Path to history JSON file (optional)"
 )
 @click.option(
-    "--history-url",
-    help="URL to fetch historical data from (default: QONTINUI_WEB_URL)",
-)
-@click.option("--project-id", help="Project ID for fetching historical data")
-@click.option(
     "--expect-success", is_flag=True, help="Exit with error if any step fails"
 )
 @click.option("--expect-states", help="Comma-separated list of expected final states")
@@ -483,8 +476,6 @@ def integration_test(
     config_path: str,
     workflow: str | None,
     history: str | None,
-    history_url: str | None,
-    project_id: str | None,
     expect_success: bool,
     expect_states: str | None,
     output_dir: str | None,
@@ -499,16 +490,12 @@ def integration_test(
     real GUI automation. This tests the automation logic (state transitions,
     path traversal, action sequences) without needing a live GUI.
 
-    Historical data can come from:
-    - A local JSON file (--history)
-    - The qontinui-web backend API (--history-url or QONTINUI_WEB_URL env var)
+    Historical data comes from a local JSON file (--history); without one,
+    mock mode generates matches.
 
     Example:
         # Using local history file
         qontinui integration-test workflow.json --history baselines/history.json
-
-        # Using qontinui-web backend
-        qontinui integration-test workflow.json --history-url http://localhost:8000
 
         # With CI assertions
         qontinui integration-test workflow.json --expect-success --expect-states Dashboard
@@ -537,23 +524,12 @@ def integration_test(
                 click.echo("Warning: Could not load history file, using empty history")
             os.environ["QONTINUI_HISTORY_FILE"] = history
 
-        if history_url:
-            os.environ["QONTINUI_WEB_URL"] = history_url
-            os.environ["QONTINUI_API_ENABLED"] = "true"
-
-        if project_id:
-            os.environ["QONTINUI_PROJECT_ID"] = project_id
-
         click.echo("Running integration test in MOCK mode")
         click.echo(f"Configuration: {config_path}")
         if history:
             click.echo(f"History source: {history}")
-        elif history_url:
-            click.echo(f"History source: {history_url}")
         else:
-            click.echo(
-                f"History source: {os.getenv('QONTINUI_WEB_URL', 'http://localhost:8000')}"
-            )
+            click.echo("History source: none (generated matches)")
         click.echo()
 
         # Load and validate configuration
