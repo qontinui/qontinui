@@ -1,11 +1,8 @@
-# Trivy ignore list: advisories in poetry.lock that no relock can fix.
+# Trivy ignore list: advisories in the root poetry.lock that no relock can fix.
 # Each entry expires, so Trivy reports it again once the date passes and
-# someone has to check whether a fix exists by then. Everything else that
-# had a fixed release was lifted by floors in pyproject.toml
+# someone has to check whether a fix exists by then. Every other advisory in the
+# root poetry.lock had a fixed release and was lifted by floors in pyproject.toml
 # (plan 2026-11-05-python-bridge-pillow-and-aiohttp-advisories-are-capped-by-qontinui-core).
-
-# accelerate: no release fixes this advisory (OSV and Trivy list none; 1.15.0 is still in range).
-CVE-2026-69112 exp:2027-02-01
 
 # setuptools: torch 2.11.0+cu128 requires setuptools<82, and the cu128 index
 # serves no newer torch. The fixes are in 83.0.0 and 84.1.0.
