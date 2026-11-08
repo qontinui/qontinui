@@ -9,13 +9,16 @@ generates them, so a mock find must never reach the network.
 
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import socket
+from pathlib import Path
 
 import httpx
 import numpy as np
 import pytest
 
+from qontinui.actions.find import mock_find_implementation as mfi
 from qontinui.actions.find.find_options import FindOptions
 from qontinui.actions.find.find_result import FindResult
 from qontinui.actions.find.mock_find_implementation import MockFindImplementation
@@ -32,10 +35,15 @@ def _pattern() -> Pattern:
 
 
 def _find() -> FindResult:
-    """One mock-mode find for one pattern, entered where FindWrapper enters."""
-    return MockFindImplementation._execute_single(
-        MockFindImplementation(), _pattern(), FindOptions(), set()
-    )
+    """One mock-mode find, entered where FindWrapper enters (``execute``)."""
+    return asyncio.run(MockFindImplementation().execute([_pattern()], FindOptions()))[0]
+
+
+def test_imports_this_trees_source() -> None:
+    # A venv whose editable install points at another checkout would make the
+    # tests below observe someone else's code; refuse that loudly.
+    src = Path(__file__).resolve().parents[2] / "src"
+    assert Path(mfi.__file__).resolve().is_relative_to(src)
 
 
 def test_historical_data_client_module_is_gone() -> None:

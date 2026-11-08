@@ -490,8 +490,9 @@ def integration_test(
     real GUI automation. This tests the automation logic (state transitions,
     path traversal, action sequences) without needing a live GUI.
 
-    Historical data comes from a local JSON file (--history); without one,
-    mock mode generates matches.
+    --history names a local JSON history file, which is loaded and validated.
+    Mock find takes matches from each pattern's own history or generates them;
+    it makes no network call.
 
     Example:
         # Using local history file
