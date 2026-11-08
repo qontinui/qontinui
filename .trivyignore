@@ -1,17 +1,21 @@
-# Trivy ignore list: advisories in poetry.lock that no relock can fix.
-# Each entry expires, so Trivy reports it again once the date passes and
-# someone has to check whether a fix exists by then. Everything else that
-# had a fixed release was lifted by floors in pyproject.toml
-# (plan 2026-11-05-python-bridge-pillow-and-aiohttp-advisories-are-capped-by-qontinui-core).
+# Trivy ignore list: residual poetry.lock advisories that the lock cannot fix
+# while the project resolves torch from the pytorch-cu128 index (pyproject.toml
+# [[tool.poetry.source]]). Each entry has a reason and an expiry date, using
+# Trivy's `exp:` syntax. After that date the advisory fails the scan again, so
+# it is re-checked rather than ignored for good.
+#
+# Every entry below goes away by moving the torch source to the cu129 index,
+# which serves torch 2.13.0, or to cu130, which serves 2.14.x. That would also
+# lift the setuptools<82 cap and allow a setuptools>=84.1.0 floor. The move
+# needs a newer NVIDIA driver on the GPU hosts, so it is a separate decision.
 
-# accelerate: no release fixes this advisory (OSV and Trivy list none; 1.15.0 is still in range).
-CVE-2026-69112 exp:2027-02-01
+# torch 2.11.0+cu128: fixed in 2.13.0, which the cu128 index does not serve.
+CVE-2025-3000 exp:2027-02-09
+# The GHSA alias of the CVE above.
+GHSA-rrmf-rvhw-rf47 exp:2027-02-09
 
-# setuptools: torch 2.11.0+cu128 requires setuptools<82, and the cu128 index
-# serves no newer torch. The fixes are in 83.0.0 and 84.1.0.
-CVE-2026-59890 exp:2027-02-01
-GHSA-xmj3-9gf7-h52w exp:2027-02-01
-
-# torch: fixed in 2.13.0, but the pytorch-cu128 index serves only 2.11.0+cu128,
-# and torch must stay +cu128.
-CVE-2025-3000 exp:2027-02-01
+# setuptools 81.0.0: torch 2.11 declares setuptools<82, and the fix is in 83.0.0.
+CVE-2026-59890 exp:2027-02-09
+# setuptools 81.0.0: Windows path escape via namespace_packages.txt, fixed in
+# 84.1.0 and held back by the same torch cap.
+GHSA-xmj3-9gf7-h52w exp:2027-02-09

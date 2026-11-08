@@ -72,7 +72,7 @@ torch = { version = "^2.2", source = "pytorch-cu128", optional = true }
 torchvision = { version = ">=0.26", source = "pytorch-cu128", optional = true }
 # SAM3: Install manually with: pip install git+https://github.com/facebookresearch/sam3.git
 # (Poetry cannot handle git dependencies without proper packaging)
-accelerate = { version = "^1.0", optional = true }  # SAM3 support (torch-carrier)
+accelerate = { version = "^1.15", optional = true }  # SAM3 support (torch-carrier); >=1.15 fixes CVE-2026-69112
 timm = { version = ">=1.0.22", optional = true }  # Required by SAM3 (torch-carrier)
 ultralytics = { version = "^8.0", optional = true }
 easyocr = { version = "^1.7", optional = true }
@@ -151,8 +151,8 @@ respx = "^0.22"
 # group is resolved into poetry.lock, so the floors still bind the locked versions.
 # Floors only, no upper bounds: an upper bound here would be the next cap that
 # holds an advisory back. Not floorable here: setuptools (torch 2.11 requires
-# <82, and the pytorch-cu128 index serves no newer torch) and accelerate (its
-# advisory has no fixed release).
+# <82, and the pytorch-cu128 index serves no newer torch). Those residual
+# advisories are listed, with expiry dates, in .trivyignore.
 [tool.poetry.group.security-floors]
 optional = true
 
