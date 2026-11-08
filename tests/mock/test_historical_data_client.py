@@ -209,10 +209,12 @@ def test_foreign_base_still_gets_explicit_env_token(monkeypatch: pytest.MonkeyPa
 def test_lookalike_base_gets_no_file_token(monkeypatch: pytest.MonkeyPatch, base: str) -> None:
     _write_device_jwt(FILE_TOKEN)
     rec = Recorder()
-    _client(monkeypatch, base, rec).get_random_historical_result()
-    # httpx turns URL userinfo into its own Basic header, so assert on the token.
+    client = _client(monkeypatch, base, rec)
+    # httpx replaces Authorization with its own Basic header for URL userinfo
+    # before the transport sees it, so assert on the resolution, not the wire.
+    assert client._resolve_bearer() is None
+    client.get_random_historical_result()
     assert FILE_TOKEN not in (rec.auth or "")
-    assert not (rec.auth or "").startswith("Bearer ")
 
 
 def test_trailing_slash_api_base_gets_file_token(monkeypatch: pytest.MonkeyPatch) -> None:
