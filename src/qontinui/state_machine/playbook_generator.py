@@ -8,17 +8,20 @@ read the output:
   (``src-tauri/src/step_executor/handlers/execute_playbook.rs``,
   ``parse_playbook``) reads the step's inline ``content`` and parses each
   ``### Step N: <Label>`` block with its ``**Action**``, ``**Transition**``
-  and ``**Variable**`` lines; the frontmatter is not read there. Only
-  ``interactions`` produce ``### Step`` blocks: without them the body just
-  lists the discovered states and transitions, and the step rejects it
-  ("no steps found in playbook content").
+  and ``**Variable**`` lines; the frontmatter is not read there, and the
+  ``**Activates**`` and ``**Exits**`` lines this generator also emits are
+  dropped, so such a step runs as its bare action. Only ``interactions``
+  produce ``### Step`` blocks: without them the body just lists the
+  discovered states and transitions, and the step rejects it
+  ("execute_playbook: no steps found in playbook content").
 - Project contexts. Saved as a ``.md`` file under ``.qontinui/contexts/``,
-  the playbook is loaded as a project context
-  (``src-tauri/src/context/project_contexts.rs``) from the runner's working
-  directory during workflow generation, or from a session's project path
-  (``src-tauri/src/context/resolution.rs``). The context takes its ``name``,
-  ``category`` and ``tags`` from this frontmatter when the frontmatter
-  parses as YAML.
+  the playbook is loaded as a project context from the runner's working
+  directory (``src-tauri/src/context/project_contexts.rs``,
+  ``get_project_contexts``). Workflow generation includes every such
+  context. A session includes it only when its id
+  ``proj-ctx-<file stem>`` is selected, because this generator writes no
+  ``autoInclude``. The context takes its ``name``, ``category`` and
+  ``tags`` from this frontmatter when the frontmatter parses as YAML.
 
 Example:
     from qontinui.state_machine.playbook_generator import generate_playbook
