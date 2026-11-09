@@ -73,10 +73,12 @@
 #    it never supplies a URL). "Upload Trivy results to GitHub Security" needs
 #    the GitHub code-scanning API and a token.
 #
-# 5. secret-scan.yml — its gitleaks step is a `curl … | grep -oP … ` pipeline
-#    into `curl … | tar -xz` (pipes are banned in argv) and then scopes the scan
-#    with `--log-opts=<base.sha>..<head.sha>` taken from the pull_request event
-#    context, which this lane does not have.
+# 5. secret-scan.yml —
+#    its gitleaks fetch (.github/scripts/fetch-gitleaks.sh) downloads a pinned
+#    linux_x64 tarball from github.com at run time (gitleaks is not in the
+#    ci_node tool registry), and its scan step then scopes the scan with
+#    `--log-opts=<base.sha>..<head.sha>` from the pull_request event context,
+#    which this lane does not have.
 #
 # 6. eval-desktop.yml — docker buildx build, `docker run`, and container
 #    teardown. The runner provisions no docker daemon and a user's box may not
