@@ -2,7 +2,19 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - main
+      - develop
+      # coord's merge train lands a PR by pushing the dry-rebased tip to one of
+      # these refs and waiting for check runs on that head. Without them a
+      # candidate push fires no workflow, coord reads "CI never STARTED" and
+      # the proposal goes terminal on its infra budget (qontinui#87). Same
+      # globs as the rest of the fleet (qontinui-schemas candidate-ci.yml,
+      # ui-bridge ci.yml). No paths: filter, deliberately: a fast-forward
+      # candidate adds zero commits, so a filtered trigger would fire nothing.
+      - 'merge-candidate/**'
+      - 'merge-candidate-spec/**'
+      - 'merge-candidate-batch/**'
   pull_request:
     branches: [ main ]
 
