@@ -3,7 +3,7 @@ mss>=9.0.1          # Fast screen capture
 opencv-python>=4.8.0    # Pattern matching and computer vision
 pynput>=1.7.6          # Cross-platform input control
 easyocr>=1.7.0         # OCR engine
-Pillow>=10.0.0         # Image processing
+Pillow>=13.0.0,<14     # Image processing; matches pyproject.toml (Pillow 13 advisory fixes)
 pyautogui>=0.9.54      # Temporary for JSON executor until HAL is complete
 
 # Platform-specific dependencies (install as needed)
