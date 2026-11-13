@@ -398,8 +398,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # TRIVY_FILE_PATTERNS makes Trivy read docker/imagegen/requirements-runtime.txt, the
+      # hash-locked runtime the llama-swap image installs into the image facade's venv. Trivy's
+      # pip analyzer otherwise matches only files named requirements.txt, so the shipped
+      # runtime went unscanned. The action has no input for --file-patterns; its README
+      # passes such flags as TRIVY_* environment variables. The root .trivyignore applies
+      # to this file as to every other (plan
+      # 2026-11-05-dependency-advisory-followups-after-the-pillow-13-lift, Phase 5).
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_FILE_PATTERNS: 'pip:requirements-runtime\.txt'
         with:
           scan-type: 'fs'
           scan-ref: '.'
