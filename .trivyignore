@@ -1,11 +1,12 @@
 # Trivy ignore list: advisories that no relock can fix yet. Trivy reads only this file
 # (.trivyignore in the directory it runs from) unless it is passed another, and ci.yml's
 # `security` job passes none, so these plain-format entries apply REPO-WIDE, to every
-# manifest a scan from the root reads: the root poetry.lock and docker/imagegen's
-# poetry.lock alike, and docker/imagegen/requirements-runtime.txt (the facade runtime, where
-# the setuptools and torch entries below also apply) when a scan reads it -- Trivy's pip
-# analyzer matches only files named requirements.txt, so it needs
-# --file-patterns 'pip:requirements-runtime\.txt'. A `.trivyignore.yaml` would never be read.
+# manifest a scan from the root reads: the root poetry.lock, docker/imagegen's poetry.lock
+# and docker/imagegen/requirements-runtime.txt (the facade runtime, where the setuptools and
+# torch entries below also apply). Trivy's pip analyzer matches only files named
+# requirements.txt, so the `security` job reads that runtime lock through
+# TRIVY_FILE_PATTERNS='pip:requirements-runtime\.txt'; pass the same --file-patterns to a
+# local scan. A `.trivyignore.yaml` would never be read.
 # Each entry expires, so Trivy reports it again once the date passes and someone has to
 # check whether a fix exists by then. Every other advisory in the root poetry.lock had a
 # fixed release and was lifted by floors in pyproject.toml (plan
