@@ -406,7 +406,7 @@ jobs:
       # to this file as to every other (plan
       # 2026-11-05-dependency-advisory-followups-after-the-pillow-13-lift, Phase 5).
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@38b337fff0a2f984d5be173c99e3f633438167ec # master as of 2026-11-13 (Trivy 0.76.2)
         env:
           TRIVY_FILE_PATTERNS: 'pip:requirements-runtime\.txt'
         with:
