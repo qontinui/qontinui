@@ -1,8 +1,9 @@
-# ruff configuration for docker/imagegen: the repository's own (pyproject.toml), except that
-# this code runs on the llama-swap image's Python 3.10 (manifest.yaml `target`), so it is
-# linted for 3.10 rather than the library's 3.12 -- a 3.11+ construct here fails at import.
+# ruff configuration for docker/imagegen: the repository's own (pyproject.toml), linted for the
+# facade venv's Python 3.12 (manifest.yaml `target`; docker/llama-swap/Dockerfile builds that
+# venv on a uv-managed CPython 3.12, not the image's system Python 3.10). Stated rather than
+# inherited so the facade's target is read here, beside the code it governs.
 extend = "../../pyproject.toml"
-target-version = "py310"
+target-version = "py312"
 # Vendored model code is pinned byte-for-byte by sha256 in manifest.yaml, and a lint autofix
 # would break the pin. Restated here because this is the file ruff reads for these paths.
 extend-exclude = ["vendor"]

@@ -1,8 +1,17 @@
-# Trivy ignore list: advisories in the root poetry.lock that no relock can fix.
-# Each entry expires, so Trivy reports it again once the date passes and
-# someone has to check whether a fix exists by then. Every other advisory in the
-# root poetry.lock had a fixed release and was lifted by floors in pyproject.toml
-# (plan 2026-11-05-python-bridge-pillow-and-aiohttp-advisories-are-capped-by-qontinui-core).
+# Trivy ignore list: advisories that no relock can fix yet. Trivy reads only this file
+# (.trivyignore in the directory it runs from) unless it is passed another, and ci.yml's
+# `security` job passes none, so these plain-format entries apply REPO-WIDE, to every
+# manifest a scan from the root reads: the root poetry.lock and docker/imagegen's
+# poetry.lock alike, and docker/imagegen/requirements-runtime.txt (the facade runtime, where
+# the setuptools and torch entries below also apply) when a scan reads it -- Trivy's pip
+# analyzer matches only files named requirements.txt, so it needs
+# --file-patterns 'pip:requirements-runtime\.txt'. A `.trivyignore.yaml` would never be read.
+# Each entry expires, so Trivy reports it again once the date passes and someone has to
+# check whether a fix exists by then. Every other advisory in the root poetry.lock had a
+# fixed release and was lifted by floors in pyproject.toml (plan
+# 2026-11-05-python-bridge-pillow-and-aiohttp-advisories-are-capped-by-qontinui-core); in
+# docker/imagegen, by moving the facade venv to CPython 3.12 and flooring certifi (plan
+# 2026-11-05-dependency-advisory-followups-after-the-pillow-13-lift, Phase 5).
 
 # setuptools: torch 2.11.0+cu128 requires setuptools<82, and the cu128 index
 # serves no newer torch. The fixes are in 83.0.0 and 84.1.0.

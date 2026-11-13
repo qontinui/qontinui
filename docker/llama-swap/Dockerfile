@@ -17,6 +17,10 @@
 # AriaUI's custom model code uses LLAMA_ATTENTION_CLASSES (removed in 4.46+).
 # Solution: AriaUI runs in a separate virtualenv with transformers==4.45.0.
 # vLLM uses the system Python with its own transformers version.
+#
+# The image facade's interpreter: the CPython patch release Stage 3 installs and the runtime
+# stage builds /opt/venvs/imagegen on. Global so the two stages cannot disagree.
+ARG IMAGEGEN_PYTHON=3.12.16
 
 # --- Stage 1: Download llama-swap binary ---
 # PINNED to v217, the version Phase 0 measured (plan 2026-10-13-image-generation-and-visual-
@@ -82,7 +86,40 @@ RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/lib
     install -D -m 0755 /src/build/bin/llama-server /install/bin/llama-server && \
     echo "${LLAMA_CPP_TAG} ${LLAMA_CPP_COMMIT}" > /install/llama-cpp-version
 
-# --- Stage 3: Runtime with CUDA + Python backends ---
+# --- Stage 3: The image facade's interpreter, a uv-managed CPython 3.12 ---
+# The facade venv (/opt/venvs/imagegen, in Stage 4) runs CPython 3.12, not the base image's
+# python3 (3.10), which vLLM, AriaUI and PaddleOCR keep. Pillow 13.0.0 and filelock 4.2.1
+# are the first releases that fix the advisories against the newest ones 3.10 can install
+# (Pillow 12.3.0, filelock 4.1.0), and both require Python >=3.11; Pillow decodes
+# caller-supplied images (plan 2026-11-05-dependency-advisory-followups-after-the-pillow-13-
+# lift, Phase 5). uv is PINNED like llama-swap in Stage 1: the tarball is checked
+# against the release's own uv-x86_64-unknown-linux-gnu.tar.gz.sha256 (read 2026-11-13), and
+# uv checks the CPython archive it downloads against the sha256 it embeds for that build, so
+# UV_VERSION and IMAGEGEN_PYTHON together pin the interpreter's bytes. Bump UV_VERSION,
+# UV_SHA256 and IMAGEGEN_PYTHON together, keeping IMAGEGEN_PYTHON's minor version equal to
+# docker/imagegen/manifest.yaml `target.python`: the runtime lock and the pinned wheels are
+# built for it. Only /opt/python reaches the runtime stage; uv itself does not.
+FROM ubuntu:22.04 AS imagegen-python
+
+ARG UV_VERSION=0.13.7
+ARG UV_SHA256=c5221ff41b7892bfc223543883600125f6a47fe845093e0f5bdff4f359196d83
+ARG IMAGEGEN_PYTHON
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN set -e && \
+    echo "Downloading uv ${UV_VERSION}" && \
+    curl -fsSL -o /tmp/uv.tar.gz \
+        "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz" && \
+    echo "${UV_SHA256}  /tmp/uv.tar.gz" | sha256sum -c - && \
+    tar xzf /tmp/uv.tar.gz -C /tmp && \
+    UV_NO_CACHE=1 /tmp/uv-x86_64-unknown-linux-gnu/uv python install \
+        --install-dir /opt/python --no-bin "${IMAGEGEN_PYTHON}" && \
+    "/opt/python/cpython-${IMAGEGEN_PYTHON}-linux-x86_64-gnu/bin/python3" --version && \
+    rm -rf /tmp/uv.tar.gz /tmp/uv-x86_64-unknown-linux-gnu
+
+# --- Stage 4: Runtime with CUDA + Python backends ---
 FROM nvidia/cuda:12.8.1-devel-ubuntu22.04
 
 # Python + system deps
@@ -180,13 +217,17 @@ COPY --from=llama-cpp-build /install/llama-cpp-version /etc/llama-cpp-version
 
 # --- Image facade virtualenv (plan 2026-10-13-image-generation-and-visual-judgment, Phase 10)
 # FastAPI over diffusers, in its own venv (no system site-packages: the system torch 2.10 and
-# vLLM above are not what the licence manifest pins). Installed from the hash-locked
+# vLLM above are not what the licence manifest pins), on Stage 3's CPython 3.12 rather than
+# the system python3 (docker/imagegen/manifest.yaml `target`). Installed from the hash-locked
 # requirements-runtime.txt, whose library versions and wheel sha256s
 # docker/imagegen/tests/test_facade_config.py checks against docker/imagegen/manifest.yaml.
-# After the weight layers, like llama-server, so a lock change never re-pulls them. The
-# image weights are NOT baked in (PD11): docker-compose.yml mounts them at /weights/imagegen.
+# After the weight layers, like llama-server, so a lock or interpreter change never re-pulls
+# them. The image weights are NOT baked in (PD11): docker-compose.yml mounts them at
+# /weights/imagegen.
+ARG IMAGEGEN_PYTHON
+COPY --from=imagegen-python /opt/python /opt/python
 COPY imagegen/requirements-runtime.txt /tmp/imagegen-requirements.txt
-RUN python3 -m venv /opt/venvs/imagegen && \
+RUN "/opt/python/cpython-${IMAGEGEN_PYTHON}-linux-x86_64-gnu/bin/python3" -m venv /opt/venvs/imagegen && \
     /opt/venvs/imagegen/bin/pip install --no-cache-dir --require-hashes \
         -r /tmp/imagegen-requirements.txt && \
     rm /tmp/imagegen-requirements.txt

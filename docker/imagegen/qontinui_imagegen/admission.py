@@ -62,7 +62,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -118,7 +118,7 @@ def zone_clock(zone: str | None) -> Callable[[], datetime | None]:
     if zone is None:
         return lambda: None
     info = ZoneInfo(zone)
-    return lambda: datetime.now(timezone.utc).astimezone(info).replace(tzinfo=None)
+    return lambda: datetime.now(UTC).astimezone(info).replace(tzinfo=None)
 
 
 class AdmissionController:

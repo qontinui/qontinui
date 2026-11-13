@@ -241,7 +241,9 @@ shell while `COMPOSE_PROJECT_NAME` is still exported).
 Plan `2026-10-13-image-generation-and-visual-judgment` Phase 10 (qontinui-dev-notes).
 One entry, `qontinui-imagegen`, serves every image alias (D1.1: one GPU owner). It runs
 `docker/imagegen` (`python -m qontinui_imagegen.serve`) from its own venv,
-`/opt/venvs/imagegen`, built from the hash-locked `docker/imagegen/requirements-runtime.txt`.
+`/opt/venvs/imagegen`, built from the hash-locked `docker/imagegen/requirements-runtime.txt`
+on a uv-managed CPython 3.12 (the Dockerfile's `imagegen-python` stage), not on the image's
+system Python 3.10 that the other backends use.
 
 - **Wire:** OpenAI `POST /v1/images/generations` (JSON) and `POST /v1/images/edits`
   (multipart), `model` = an alias above, optional `recipe`, `seed`, `negative_prompt`,

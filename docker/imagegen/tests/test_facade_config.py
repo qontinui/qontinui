@@ -254,14 +254,14 @@ def test_the_catalogue_hashes_every_recipe() -> None:
 
 
 def test_the_bulk_window_reads_its_configured_zone(manifest: dict, document: dict) -> None:
-    from datetime import datetime, timezone
+    from datetime import UTC, datetime
 
     from qontinui_imagegen.admission import AdmissionController, zone_clock
 
     config = c.parse_config(document, environ={c.TIMEZONE_ENV: "Asia/Tokyo"}, **_known(manifest))
     assert config.admission.bulk_window_timezone == "Asia/Tokyo"
     # 17:30 UTC is 02:30 in Tokyo: inside 00:00-06:00 there, outside it in UTC.
-    instant = datetime(2026, 10, 17, 17, 30, tzinfo=timezone.utc)
+    instant = datetime(2026, 10, 17, 17, 30, tzinfo=UTC)
     tokyo = instant.astimezone(__import__("zoneinfo").ZoneInfo("Asia/Tokyo")).replace(tzinfo=None)
     controller = AdmissionController(config.admission, now=lambda: tokyo)
     assert controller.in_bulk_window()

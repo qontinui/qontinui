@@ -9,7 +9,7 @@ Phase 11's studio adapter embeds this object verbatim in the asset's sidecar.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from qontinui_imagegen import __version__, marker
@@ -73,7 +73,7 @@ def build(
         )
     runner = catalogue.runners[plan.pipeline]
     code = [catalogue.components[code_id] for code_id in runner["code"]]
-    when = created_at or datetime.now(timezone.utc)
+    when = created_at or datetime.now(UTC)
     return {
         "schema": SCHEMA,
         "job_id": plan.job_id,

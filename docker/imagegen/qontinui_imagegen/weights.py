@@ -34,7 +34,7 @@ import time
 import urllib.request
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -232,7 +232,7 @@ class WeightVerifier:
                     self.stamps.files[self._key(path)] = {
                         "sha256": actual,
                         **_stat_record(path),
-                        "verified_at": datetime.fromtimestamp(self.clock(), timezone.utc).strftime(
+                        "verified_at": datetime.fromtimestamp(self.clock(), UTC).strftime(
                             "%Y-%m-%dT%H:%M:%SZ"
                         ),
                     }
@@ -363,7 +363,7 @@ def install(
         ] = {
             "sha256": actual,
             **_stat_record(path),
-            "verified_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "verified_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         verifier.stamps.write()
         fetched += int(entry["bytes"])
