@@ -256,8 +256,8 @@ disable = ["C0114", "C0115", "C0116"]
 
 [tool.pytest.ini_options]
 # docker/imagegen/tests are NOT collected here: docker/imagegen is its own project
-# (docker/imagegen/pyproject.toml -- the facade needs FastAPI and runs on Python 3.10), and
-# ci.yml's `imagegen` job runs its tests in that environment.
+# (docker/imagegen/pyproject.toml -- the facade needs FastAPI and runs in its own CPython
+# 3.12 venv), and ci.yml's `imagegen` job runs its tests in that environment.
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]

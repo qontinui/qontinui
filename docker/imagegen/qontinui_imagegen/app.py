@@ -400,7 +400,7 @@ class Facade:
         while True:
             try:
                 kind, value = await asyncio.wait_for(events.get(), DISCONNECT_POLL_S)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 if disconnected is not None and await disconnected():
                     self._client_gone(ticket, task)
                     return _refusal(errors.failed("client_gone", "the client went away"))

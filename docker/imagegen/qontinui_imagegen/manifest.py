@@ -54,7 +54,8 @@ Run ``python -m qontinui_imagegen.manifest`` from ``docker/imagegen``: it prints
 violation and exits non-zero when there is one. ``--hashes`` prints each recipe's hash and
 ``--footprint`` the install size counting each sha256 once (see :func:`install_footprint`).
 
-The module is plain Python 3.10 (the llama-swap image's interpreter) plus PyYAML.
+The module is plain Python 3.12 (the facade venv's interpreter, ``target`` in the manifest)
+plus PyYAML.
 """
 
 from __future__ import annotations

@@ -208,11 +208,13 @@ name = "imagegen-install"
 # ci.yml `imagegen` job, "Install the imagegen test environment". docker/imagegen is its
 # own poetry project (the image facade needs FastAPI, which the library env does not
 # carry), installed into its own poetry venv, scoped like the library's.
-# DECLARED ADAPTATION: the Actions job pins Python 3.10 (the llama-swap image's
-# interpreter) with setup-python; this lane uses the poetry on PATH and whatever Python it
-# resolves (3.12, per gap 7). docker/imagegen/pyproject.toml admits 3.10-3.13 and its code
-# is linted for 3.10 (docker/imagegen/ruff.toml), so a 3.11+ construct is still caught by
-# the `lint` step, not here.
+# DECLARED ADAPTATION: the Actions job pins Python 3.12 (the facade venv's interpreter, a
+# uv-managed CPython 3.12 in the llama-swap image; docker/imagegen/manifest.yaml `target`)
+# with setup-python; this lane does not pin it, and uses the poetry on PATH and whatever
+# Python it resolves (3.12, per gap 7). docker/imagegen/pyproject.toml admits 3.12-3.13, so
+# poetry never installs this env into an older interpreter (it looks for a compatible one
+# and fails without it), and the code is linted for 3.12 (docker/imagegen/ruff.toml) by
+# the `lint` step.
 command = ["poetry", "-C", "docker/imagegen", "install", "--no-interaction", "--no-ansi"]
 timeout_secs = 3600
 

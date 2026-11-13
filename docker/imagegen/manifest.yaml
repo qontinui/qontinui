@@ -14,10 +14,14 @@
 # PyTorch cu128 index, wheel members read by HTTP range, and crates.io for the exact crate
 # versions of a lockfile. The entries added on 2026-10-17 -- flux-1-schnell (plan delta
 # 2026-10-17) and the facade runtime (plan Phase 10) -- were read the same way on that day;
-# each entry's licence_read_at and notes say how. licence_read_at is the time the licence text in licence_evidence
-# was read (the last of them, where there are several); re-read it at every upgrade (D2: a
-# licence is a property of a version). To add or upgrade a component: read its licence text
-# the same way, then run `python -m qontinui_imagegen.manifest` from docker/imagegen.
+# each entry's licence_read_at and notes say how. On 2026-11-13 the facade venv moved to
+# CPython 3.12 (plan 2026-11-05-dependency-advisory-followups-after-the-pillow-13-lift, Phase
+# 5): the cp312 wheels of torch, torchvision and vtracer were downloaded, checked against
+# their index sha256s, read and re-pinned, and their notes say what differs from the cp310
+# wheels. licence_read_at is the time the licence text in licence_evidence was read (the
+# last of them, where there are several); re-read it at every upgrade (D2: a licence is a
+# property of a version). To add or upgrade a component: read its licence text the same
+# way, then run `python -m qontinui_imagegen.manifest` from docker/imagegen.
 #
 # Sizing (Phase 0 item 3, Phase 10 deploy step 1): `python -m qontinui_imagegen.manifest
 # --footprint <ids>` counts each sha256 once -- the bytes a CONTENT-ADDRESSED store needs.
@@ -33,13 +37,15 @@ decision_record:
   id: a5ec7670-843b-4556-ab52-7f5f7662ee09
   version: 3
 
-# The packaging the pinned wheels target: Phase 10's Docker arm (the llama-swap image,
-# Ubuntu 22.04 python3). If Phase 0 item 9 picks native Windows (rule R-mem), that arm adds
-# its win_amd64 wheels at the interpreter it measures; an unpinned platform fails closed.
+# The packaging the pinned wheels target: Phase 10's Docker arm (the llama-swap image on
+# Ubuntu 22.04, whose facade venv runs a uv-managed CPython 3.12 rather than the system
+# python3, 3.10: docker/llama-swap/Dockerfile). If Phase 0 item 9 picks native Windows (rule
+# R-mem), that arm adds its win_amd64 wheels at the interpreter it measures; an unpinned
+# platform fails closed.
 target:
   os: linux
   arch: x86_64
-  python: "3.10"
+  python: "3.12"
   cuda: "12.8"
 
 # The runtime contract the facade applies to every load (plan Phase 2 step 4, Phase 10).
@@ -84,9 +90,9 @@ platform:
         cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1;
         cuda-bindings>=12.9.4,<13; nvidia-cudnn-cu12==9.19.0.56; nvidia-cusparselt-cu12==0.7.1;
         nvidia-nccl-cu12==2.28.9; nvidia-nvshmem-cu12==3.4.5
-      source: Requires-Dist of torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl, read 2026-10-13
+      source: Requires-Dist of torch-2.11.0+cu128-cp312-cp312-manylinux_2_28_x86_64.whl, read 2026-11-13 (its METADATA is byte-identical to the cp310 wheel's, read 2026-10-13)
     - name: "NVIDIA nvJPEG runtime that the torchvision 0.26.0+cu128 wheel bundles"
-      source: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl
+      source: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl
       member: torchvision.libs/libnvjpeg.8dd2b5e6.so.12
       sha256: b9aa5c285125216ebfb23e2844d30acffe5714c78b0b726b9bfedcb36c0eb40b
       bytes: 7837264
@@ -94,7 +100,7 @@ platform:
         NVIDIA CUDA EULA, as decision record a5ec7670 v3 classes NVIDIA runtime libraries
         bundled in wheels (the EULA text was not read here)
     - name: "NVIDIA CUDA runtime (libcudart) that the torchvision 0.26.0+cu128 wheel bundles"
-      source: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl
+      source: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl
       member: torchvision.libs/libcudart.e8e8b82a.so.12
       sha256: c3a75b33af334a3486d197dbd1584a2985183ba4688d237a2be5f2f679329920
       bytes: 728800
@@ -102,7 +108,7 @@ platform:
         NVIDIA CUDA EULA, as decision record a5ec7670 v3 classes NVIDIA runtime libraries
         bundled in wheels (the EULA text was not read here)
     - name: "GCC OpenMP runtime (libgomp: GOMP_1.0 to GOMP_5.0 symbol versions, built by gcc 8.5.0 per its annobin notes) that the torch 2.11.0+cu128 wheel bundles"
-      source: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl
+      source: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl
       member: torch/lib/libgomp.so.1
       sha256: 59badd7c550c340a23d217c37232a4bac6e66a99f47aa273a0a0393bc7c68ddb
       bytes: 254337
@@ -750,7 +756,9 @@ components:
     licence_read_at: "2026-10-13T07:40:27Z"
     notes: >-
       Tag v0.8.0 (the repository moved from huggingface/safetensors). cp310 abi3 Linux
-      wheel. Its wheel ships one licence file, its dist-info LICENSE, byte-identical to the
+      wheel: the stable ABI from CPython 3.10 on, so the 3.12 venv installs this same wheel
+      (0.8.0 publishes no Python-version-specific Linux x86_64 wheel; PyPI's JSON API, read
+      2026-11-13). Its wheel ships one licence file, its dist-info LICENSE, byte-identical to the
       LICENSE read here, and bundles no native library, but its extension module
       (safetensors/_safetensors_rust.abi3.so) statically links Rust crates. The repository
       commits no Cargo.lock at the v0.8.0 commit (its git tree, read 2026-10-13T09:18:49Z,
@@ -868,9 +876,9 @@ components:
     licence_url: https://github.com/pytorch/pytorch/blob/70d99e998b4955e0049d13a98d77ae1b14db1f45/LICENSE
     licence_evidence:
       - {url: https://raw.githubusercontent.com/pytorch/pytorch/70d99e998b4955e0049d13a98d77ae1b14db1f45/LICENSE, sha256: bd018feef8825e88181c84eb7e3aa4eafb8f08a20d9fd6ef948569610c4a3e43}
-      - {url: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl, member: "torch-2.11.0+cu128.dist-info/licenses/LICENSE", sha256: a0d7abc10248a062a2f309bf12981524973f2a61aadccf4c5099d96d8c388cf4}
-      - {url: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl, member: "torch-2.11.0+cu128.dist-info/licenses/NOTICE", sha256: c2cc7bf0caec7652c2b460a8a470bea1677f241e4ab8e431df34cf17f5a9fec0}
-    licence_read_at: "2026-10-13T08:46:51Z"
+      - {url: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl, member: "torch-2.11.0+cu128.dist-info/licenses/LICENSE", sha256: a0d7abc10248a062a2f309bf12981524973f2a61aadccf4c5099d96d8c388cf4}
+      - {url: https://download-r2.pytorch.org/whl/cu128/torch-2.11.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl, member: "torch-2.11.0+cu128.dist-info/licenses/NOTICE", sha256: c2cc7bf0caec7652c2b460a8a470bea1677f241e4ab8e431df34cf17f5a9fec0}
+    licence_read_at: "2026-11-13T03:04:30Z"
     notes: >-
       Tag v2.11.0: the newest torch on the cu128 index (Blackwell sm_120) and the version
       qontinui's [ml] extra already locks. METADATA declares only License: BSD-3-Clause, but
@@ -893,7 +901,13 @@ components:
       'associated'); so it is recorded as MIT-CMU (read 2026-10-13T11:50-11:52Z). The rows
       for built code and that section are the spdx above, so BSL-1.0 is a term of 2.11.0
       itself. The wheel also ships torch/lib/libgomp.so.1 (the GCC runtime: platform, above)
-      and needs NVIDIA's cu12 runtime wheels on Linux (platform).
+      and needs NVIDIA's cu12 runtime wheels on Linux (platform). Re-pinned to the cp312
+      wheel on 2026-11-13 (the facade venv's CPython 3.12): its RECORD lists the same 11841
+      files as the cp310 wheel's (read by HTTP range), differing only in torch's own compiled
+      code (torch/_C, libtorch_cpu, libtorch_cuda, libtorch_nvshmem and libtorch_python) and
+      in WHEEL; its METADATA, both licence files and libgomp.so.1 are byte-identical to the
+      cp310 wheel's, so every reading above holds for it (cp312 members read
+      2026-11-13T03:04:30Z).
     bundled:
       licence_files:
         - {member: "torch-2.11.0+cu128.dist-info/licenses/LICENSE", sha256: a0d7abc10248a062a2f309bf12981524973f2a61aadccf4c5099d96d8c388cf4, bytes: 351341}
@@ -937,7 +951,7 @@ components:
             shipped in wheels'. Read 2026-10-13T11:51Z. Recorded as read, not as a term
             (decision record a5ec7670 v3, How a licence is read).
     files:
-      - {path: "torch-2.11.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", sha256: 72d53f3176a69cc20710c4ecb95f7dc4c6ba10c4e4eda45b8396ee79ee40f75a, bytes: 820206653}
+      - {path: "torch-2.11.0+cu128-cp312-cp312-manylinux_2_28_x86_64.whl", sha256: d252cf975fb18c94a85336323ad425f473df56dab35a44b00399bd70c7a3b997, bytes: 820326880}
 
   - id: torchvision
     kind: library
@@ -946,8 +960,8 @@ components:
     licence_url: https://github.com/pytorch/vision/blob/336d36e8db990a905498c73933e35231876e28bc/LICENSE
     licence_evidence:
       - {url: https://raw.githubusercontent.com/pytorch/vision/336d36e8db990a905498c73933e35231876e28bc/LICENSE, sha256: 6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d}
-      - {url: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp310-cp310-manylinux_2_28_x86_64.whl, member: "torchvision-0.26.0+cu128.dist-info/LICENSE", sha256: 6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d}
-    licence_read_at: "2026-10-13T08:50:11Z"
+      - {url: https://download-r2.pytorch.org/whl/cu128/torchvision-0.26.0%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl, member: "torchvision-0.26.0+cu128.dist-info/LICENSE", sha256: 6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d}
+    licence_read_at: "2026-11-13T03:04:30Z"
     notes: >-
       Tag v0.26.0, the release paired with torch 2.11.0 (its METADATA requires torch==2.11.0
       and declares License: BSD; the LICENSE text read is the BSD 3-Clause License). Its
@@ -955,7 +969,11 @@ components:
       into torchvision.libs/ and none ships a licence file: the five under
       bundled.native_libraries are named from the strings compiled into each, with the
       licence each one ships under, and NVIDIA's libnvjpeg and libcudart are platform
-      (above). The spdx is the conjunction.
+      (above). The spdx is the conjunction. Re-pinned to the cp312 wheel on 2026-11-13 (the
+      facade venv's CPython 3.12): its RECORD lists the same 195 files as the cp310 wheel's,
+      differing only in torchvision's own extension modules (torchvision/_C.so and
+      torchvision/image.so) and in WHEEL; its LICENSE and all seven torchvision.libs members
+      are byte-identical to the cp310 wheel's (cp312 members read 2026-11-13T03:04:30Z).
     bundled:
       licence_files:
         - {member: "torchvision-0.26.0+cu128.dist-info/LICENSE", sha256: 6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d, bytes: 1517}
@@ -999,7 +1017,7 @@ components:
           licence_evidence:
             - {url: https://raw.githubusercontent.com/madler/zlib/51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf/LICENSE, sha256: 845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243}
     files:
-      - {path: "torchvision-0.26.0+cu128-cp310-cp310-manylinux_2_28_x86_64.whl", sha256: f44bfc61b9be80bcf52a762d34da363cea3125d10c01f37e271583803c7bb97b, bytes: 8053474}
+      - {path: "torchvision-0.26.0+cu128-cp312-cp312-manylinux_2_28_x86_64.whl", sha256: ccf26b4b659cfce6f2208cb8326071d51c70219a34856dfdf468d1e19af52c0d, bytes: 8057226}
 
   - id: timm
     kind: library
@@ -1027,7 +1045,8 @@ components:
     licence_evidence: {url: https://raw.githubusercontent.com/kornia/kornia/856fd1ae6becd4300646db2b44ea3507e4ab0066/LICENSE, sha256: a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9}
     licence_read_at: "2026-10-13T07:40:29Z"
     notes: >-
-      Tag v0.8.2, the newest release that supports Python 3.10 (0.8.3 requires >=3.11).
+      Tag v0.8.2, pinned as the newest release that supported the facade's earlier Python
+      3.10 (0.8.3 requires >=3.11); a pure-Python wheel, so the move to 3.12 left it as is.
       Imported by the vendored BiRefNet code (kornia.filters.laplacian). Its wheel ships one
       licence file, its dist-info LICENSE, byte-identical to the LICENSE read here (wheel
       members read 2026-10-13T09:14Z), and bundles no native library.
@@ -1067,7 +1086,7 @@ components:
       (cmdapp/src/converter.rs should_key_image), so a matted image traces without its
       background. Its wheel ships its LICENSE twice (at the wheel root and in its
       dist-info), both byte-identical to the LICENSE read here, and bundles no native
-      library, but its extension module (vtracer/vtracer.cpython-310-x86_64-linux-gnu.so)
+      library, but its extension module (vtracer/vtracer.cpython-312-x86_64-linux-gnu.so)
       statically links Rust crates. The repository commits no Cargo.lock at the 0.6.15
       commit (its git tree, read 2026-10-13T09:18:49Z, holds none), so under decision record
       a5ec7670 v3 the crates are read from the Cargo.lock in the published 0.6.15 sdist
@@ -1075,7 +1094,12 @@ components:
       are embedded in it at the lockfile's version and 28 embed no path but are reproduced
       by the resolution; none disagrees (static_dependencies). That lockfile and the sdist's
       cmdapp/Cargo.toml give the package's own Rust crate as 0.6.12 (the Python package is
-      0.6.15), which v3 rules is not a licence fact.
+      0.6.15), which v3 rules is not a licence fact. Re-pinned to the cp312 wheel on
+      2026-11-13 (the facade venv's CPython 3.12): it holds the same nine files as the cp310
+      wheel, differing only in the extension module and WHEEL; both LICENSE files are
+      byte-identical, and the cp312 extension module was cross-checked afresh with the same
+      result as the cp310 one (cross_check; the cp310 module, accd8dbf..., 2638592 bytes,
+      read 2026-10-13T11:26:00Z, gave the same counts).
     bundled:
       licence_files:
         - {member: "LICENSE", sha256: 81ee739f355765c110fc89feff14ffffce829901f96ba811fd0b65a41a8636c7, bytes: 1058}
@@ -1104,7 +1128,7 @@ components:
         0.6.12) are this component's code, not dependencies.
       read_at: "2026-10-13T08:59:41Z"
       cross_check:
-        binary: {member: vtracer/vtracer.cpython-310-x86_64-linux-gnu.so, sha256: accd8dbf1ea0ffd9b3def839d3ae6b4a9e8b92413db143c6fd48645b6f0b8fa3, bytes: 2638592}
+        binary: {member: vtracer/vtracer.cpython-312-x86_64-linux-gnu.so, sha256: 600cec2e7e1f7efcf67918eb01cbd9ec822e167c7e64f94a74df2cf0cb6a7455, bytes: 2638288}
         method: >-
           The extension module was extracted from the pinned wheel (its sha256 checked) and
           byte-scanned for registry source paths, index.crates.io-<16
@@ -1112,7 +1136,7 @@ components:
           lockfile's entries (matched, mismatched); every linked crate the binary embeds no
           path for was compared with the resolution above (not_embedded, each reproduced:
           shipped resolved). unlisted holds embedded crate-versions the lockfile lacks.
-        read_at: "2026-10-13T11:26:00Z"
+        read_at: "2026-11-13T03:04:37Z"
         matched: 23
         mismatched: 0
         not_embedded: 28
@@ -1210,7 +1234,7 @@ components:
         - {name: windows-link, version: "0.2.1", checksum: f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5, licence: "MIT OR Apache-2.0", linked: false}
         - {name: zmij, version: "1.0.21", checksum: b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa, licence: "MIT", linked: false}
     files:
-      - {path: "vtracer-0.6.15-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", sha256: 95db13fa005bc9cacd8f6fd7fcfa2fce47529cf78af35f709993413e140f1f6e, bytes: 1088365}
+      - {path: "vtracer-0.6.15-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", sha256: cd19743a8dc3a67e1284f5f227c1483197ec3988687c53b5a1b3c52912db2a9e, bytes: 1089700}
 
   # --- facade runtime (plan Phase 10) --------------------------------------------------
   - id: fastapi

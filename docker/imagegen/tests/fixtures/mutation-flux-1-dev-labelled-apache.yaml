@@ -13,7 +13,7 @@ decision_record:
 target:
   os: linux
   arch: x86_64
-  python: "3.10"
+  python: "3.12"
   cuda: "12.8"
 runtime:
   env:
