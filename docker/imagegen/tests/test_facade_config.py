@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import copy
 import re
+import tomllib
 from pathlib import Path
 
 import pytest
 import yaml
 from facade_fakes import real_catalogue
+from packaging.tags import Tag, compatible_tags, cpython_tags
+from packaging.utils import parse_wheel_filename
 
 from qontinui_imagegen import config as c
 from qontinui_imagegen.manifest import (
@@ -439,3 +442,226 @@ def test_a_diffusion_model_must_name_its_checkpoint_dtype(manifest: dict, docume
     del bad["models"]["flux-1-schnell"]["transformer_checkpoint_dtype"]
     with pytest.raises(c.ConfigError, match="transformer_checkpoint_dtype"):
         c.parse_config(bad, environ={}, **_known(manifest))
+
+
+def _accepted_tags(python: tuple[int, int], os_name: str, arch: str, glibc: int) -> set[Tag]:
+    """The wheel tags pip accepts on CPython ``python`` for ``os_name``/``arch``.
+
+    ``glibc`` is the minor version of the newest manylinux_2_N the image may use
+    (the runtime lock's --python-platform floor). The platform list mirrors
+    packaging's manylinux rule for x86 (glibc 2.5 floor and the legacy aliases);
+    the interpreter and ABI tags come from packaging's own generators, the code
+    pip vendors.
+    """
+    assert os_name == "linux", (
+        f"only the linux arm defines its wheel tags; add {os_name}'s when its arm lands"
+    )
+    assert arch in {"x86_64", "i686"}, (
+        f"only x86's manylinux floor (glibc 2.5) and legacy aliases are modelled; "
+        f"add {arch}'s when its arm lands"
+    )
+    platforms = [f"manylinux_2_{minor}_{arch}" for minor in range(glibc, 4, -1)]
+    legacy = {17: "manylinux2014", 12: "manylinux2010", 5: "manylinux1"}
+    platforms += [f"{name}_{arch}" for floor, name in legacy.items() if floor <= glibc]
+    platforms.append(f"linux_{arch}")
+    interpreter = f"cp{python[0]}{python[1]}"
+    return {
+        *cpython_tags(python_version=python, abis=[interpreter], platforms=platforms),
+        *compatible_tags(python_version=python, interpreter=interpreter, platforms=platforms),
+    }
+
+
+def _wheel_installs_on(wheel: str, accepted: set[Tag]) -> bool:
+    return not parse_wheel_filename(wheel)[3].isdisjoint(accepted)
+
+
+@pytest.mark.parametrize(
+    ("wheel", "python", "installs"),
+    [
+        ("x-1.0-py3-none-any.whl", (3, 12), True),
+        ("x-1.0-py2.py3-none-any.whl", (3, 12), True),
+        ("x-1.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", (3, 12), True),
+        ("x-1.0-cp312-cp312-manylinux_2_28_x86_64.whl", (3, 12), True),
+        ("x-1.0-cp312-none-manylinux_2_17_x86_64.whl", (3, 12), True),
+        ("x-1.0-cp313-abi3-manylinux_2_17_x86_64.whl", (3, 12), False),
+        ("x-1.0-cp311-cp311-manylinux_2_28_x86_64.whl", (3, 12), False),
+        ("x-1.0-cp311-none-manylinux_2_17_x86_64.whl", (3, 12), False),
+        ("x-1.0-py313-none-any.whl", (3, 12), False),
+        ("x-1.0-cp312-cp312-win_amd64.whl", (3, 12), False),
+        ("x-1.0-cp312-cp312-manylinux_2_28_aarch64.whl", (3, 12), False),
+        ("x-1.0-cp312-cp312-musllinux_1_2_x86_64.whl", (3, 12), False),
+        ("x-1.0-cp312-cp312-manylinux_2_39_x86_64.whl", (3, 12), False),
+        ("x-1.0-cp312-cp311-manylinux_2_28_x86_64.whl", (3, 12), False),
+        ("x-1.0-cp313-cp313t-manylinux_2_28_x86_64.whl", (3, 13), False),
+        ("x-1.0-py3-cp312-any.whl", (3, 12), False),
+        ("x-1.0-cp312-cp312-manylinux_2_29_x86_64.whl", (3, 12), False),
+        ("x-1.0-cp312-cp312-manylinux2014_x86_64.whl", (3, 12), True),
+        ("x-1.0-cp312-cp312-linux_x86_64.whl", (3, 12), True),
+        ("x-1.0-cp312-cp312-manylinux_2_5_x86_64.whl", (3, 12), True),
+        ("x-1.0-cp312-cp312-manylinux2010_x86_64.whl", (3, 12), True),
+        ("x-1.0-cp312-cp312-manylinux1_x86_64.whl", (3, 12), True),
+    ],
+)
+def test_the_wheel_rule_can_fail(wheel: str, python: tuple[int, int], installs: bool) -> None:
+    accepted = _accepted_tags(python, "linux", "x86_64", 28)
+    assert _wheel_installs_on(wheel, accepted) is installs
+
+
+def test_the_wheel_rule_refuses_an_os_it_does_not_model() -> None:
+    with pytest.raises(AssertionError):
+        _accepted_tags((3, 12), "windows", "x86_64", 28)
+
+
+def test_the_wheel_rule_refuses_an_arch_it_does_not_model() -> None:
+    with pytest.raises(AssertionError):
+        _accepted_tags((3, 12), "linux", "aarch64", 28)
+
+
+def _instructions(dockerfile: str) -> list[str]:
+    """The Dockerfile's instructions, one per entry, joined as Docker's parser
+    joins continuations (default ``\\`` escape, no heredocs; an escape directive
+    or a heredoc is refused rather than misread).
+
+    Comment lines and blank lines are dropped first (Docker skips both inside a
+    continuation, and a trailing backslash on a comment continues nothing), then
+    each backslash continuation, trailing spaces or tabs allowed, is joined to
+    the next line with nothing between them.
+    """
+    assert not re.search(r"(?im)^\s*#\s*escape\s*=", dockerfile), (
+        "an escape directive is not modelled"
+    )
+    assert not re.search(r"<<-?\s*[\"']?\w", dockerfile), "a heredoc is not modelled"
+    kept = "\n".join(
+        line
+        for line in dockerfile.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    )
+    joined = re.sub(r"\\[ \t]*\n", "", kept)
+    return [line.strip() for line in joined.splitlines()]
+
+
+def test_instructions_joins_continuations_and_skips_comments_as_docker_does() -> None:
+    text = (
+        "ENV A=1 \\  \n"
+        "    # a comment inside the continuation\n"
+        "\n"
+        "    B=2\n"
+        "# a comment ending in a backslash \\\n"
+        "ARG C=3\n"
+        "ARG IMAGEGEN_\\\n"
+        "PYTHON=3\n"
+    )
+    assert _instructions(text) == ["ENV A=1     B=2", "ARG C=3", "ARG IMAGEGEN_PYTHON=3"]
+
+
+@pytest.mark.parametrize("text", ["# escape=`\nARG A=1\n", "RUN <<EOF\necho hi\nEOF\n"])
+def test_instructions_refuses_what_it_does_not_model(text: str) -> None:
+    with pytest.raises(AssertionError):
+        _instructions(text)
+
+
+def test_the_image_interpreter_matches_the_manifest_target(manifest: dict) -> None:
+    """The facade's Python version is stated in several files; they must agree.
+
+    The Dockerfile's IMAGEGEN_PYTHON (one value, on the global ARG before the first
+    FROM), the manifest's target.python, the runtime lock's --python-version, the
+    CI imagegen job's interpreter and ruff's target-version name the same minor
+    version; the lock's --python-platform names the manifest's arch; and every
+    pinned wheel installs on that interpreter, OS, arch and glibc floor.
+    """
+    text = DOCKERFILE.read_text(encoding="utf-8")
+    # Every ARG/ENV instruction naming the variable (not a ${IMAGEGEN_PYTHON} or
+    # $IMAGEGEN_PYTHON use). Any of them but a bare stage re-declaration gives it
+    # a value, in either ENV spelling.
+    declared = [
+        line
+        for line in _instructions(text)
+        if re.match(r"(?i)(ARG|ENV)\b", line) and re.search(r"(?<![{$])\bIMAGEGEN_PYTHON\b", line)
+    ]
+    valued = [d for d in declared if " ".join(d.split()).upper() != "ARG IMAGEGEN_PYTHON"]
+    assert len(valued) == 1, f"only the global ARG may give IMAGEGEN_PYTHON a value: {valued}"
+    pinned = re.search(r"^ARG IMAGEGEN_PYTHON=(\d+)\.(\d+)\.\d+$", text, re.M)
+    assert pinned, "the Dockerfile must pin IMAGEGEN_PYTHON to a patch release"
+    first_from = re.search(r"(?im)^\s*FROM\s", text)
+    assert first_from and pinned.start() < first_from.start(), (
+        "IMAGEGEN_PYTHON's one value must sit on the global ARG, before the first FROM"
+    )
+    want = (int(pinned.group(1)), int(pinned.group(2)))
+    minor = f"{want[0]}.{want[1]}"
+
+    target = manifest["target"]
+    assert target["python"] == minor
+    header = RUNTIME_LOCK.read_text(encoding="utf-8").split("\n--", 1)[0]
+    assert re.search(rf"--python-version {re.escape(minor)}(\s|$)", header), header
+    platform = re.search(r"--python-platform (\w+?)-manylinux_2_(\d+)\b", header)
+    assert platform, f"the runtime lock names no manylinux --python-platform: {header}"
+    assert platform.group(1) == target["arch"], header
+    glibc = int(platform.group(2))
+
+    ci = yaml.safe_load((DOCKER.parent / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
+    setup = next(
+        step
+        for step in ci["jobs"]["imagegen"]["steps"]
+        if str(step.get("uses", "")).startswith("actions/setup-python")
+    )
+    assert str(setup["with"]["python-version"]) == minor
+    ruff = tomllib.loads((IMAGEGEN_ROOT / "ruff.toml").read_text(encoding="utf-8"))
+    assert ruff["target-version"] == f"py{want[0]}{want[1]}"
+
+    accepted = _accepted_tags(want, target["os"], target["arch"], glibc)
+    for library in (x for x in manifest["components"] if x["kind"] == "library"):
+        for pinned_file in library["files"]:
+            wheel = pinned_file["path"]
+            assert _wheel_installs_on(wheel, accepted), wheel
+
+
+def test_uv_is_pinned_to_a_version_and_checksum() -> None:
+    """The uv that installs the facade interpreter is pinned, downloaded at that
+    version, and checked against its pinned sha256."""
+    _, alias, rest = DOCKERFILE.read_text(encoding="utf-8").partition("AS imagegen-python")
+    assert alias, "the Dockerfile has no imagegen-python stage"
+    uv_stage, stage4, _ = rest.partition("# --- Stage 4")
+    assert stage4, "the imagegen-python stage is not followed by Stage 4"
+    assert re.search(r"^ARG UV_VERSION=\d+\.\d+\.\d+$", uv_stage, re.M), "UV_VERSION is not pinned"
+    assert re.search(r"^ARG UV_SHA256=[0-9a-f]{64}$", uv_stage, re.M), "UV_SHA256 is not a sha256"
+    assert 'echo "${UV_SHA256}  /tmp/uv.tar.gz" | sha256sum -c -' in uv_stage, (
+        "the uv tarball is not checked against UV_SHA256"
+    )
+    # The whole file goes through _instructions once, so its escape-directive
+    # and heredoc refusals see the top of the file; the stage-wide guards below
+    # read the stage's joined instructions, so a keyword split across a
+    # continuation or named in a comment is read as Docker reads it.
+    _instructions(DOCKERFILE.read_text(encoding="utf-8"))
+    instructions = _instructions(uv_stage)
+    stage = "\n".join(instructions)
+    assert "latest" not in stage, "the uv stage must not download 'latest'"
+    # Textual guards, not a shell parse: the stage runs `uv python install` once,
+    # in one RUN where the download, the sha256 check, the extraction and the
+    # extracted uv's install are chained directly by `&&`, in that order, so a
+    # failed check stops the chain; curl is named once in the apt install and
+    # once in that RUN, never wget; the stage extracts once and has no ADD/COPY.
+    assert stage.count("uv python install") == 1, "expected one `uv python install`"
+    runs = [i for i in instructions if "uv python install" in i]
+    assert len(runs) == 1, f"expected one RUN that installs the interpreter: {runs}"
+    chain = (
+        r'curl -fsSL -o /tmp/uv\.tar\.gz\s+"([^"]*)"\s*&&\s*'
+        r'echo "\$\{UV_SHA256\}  /tmp/uv\.tar\.gz" \| sha256sum -c - &&\s*'
+        r"tar xzf /tmp/uv\.tar\.gz -C /tmp &&\s*"
+        r"UV_NO_CACHE=1 /tmp/uv-x86_64-unknown-linux-gnu/uv python install\b"
+    )
+    linked = re.search(chain, runs[0])
+    assert linked, f"the uv download/check/extract/install chain is broken: {runs[0]}"
+    # The URL curl actually downloads is exactly the UV_VERSION release asset.
+    assert linked.group(1) == (
+        "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/"
+        "uv-x86_64-unknown-linux-gnu.tar.gz"
+    ), f"the download ignores UV_VERSION: {linked.group(1)}"
+    apt = [i for i in instructions if "apt-get install" in i]
+    assert len(apt) == 1 and len(re.findall(r"\bcurl\b", apt[0])) == 1, apt
+    assert len(re.findall(r"\bcurl\b", runs[0])) == 1, "a second curl in the install RUN"
+    assert len(re.findall(r"\bcurl\b", stage)) == 2, (
+        "curl named outside the apt install and the download"
+    )
+    assert not re.search(r"\bwget\b", stage), "the uv stage uses wget"
+    assert len(re.findall(r"\btar\s", stage)) == 1, "a second extraction in the uv stage"
+    assert not re.search(r"(?im)^(ADD|COPY)\b", stage), "the uv stage copies files in"
