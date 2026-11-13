@@ -11,7 +11,8 @@
 # check whether a fix exists by then. Every other advisory in the root poetry.lock had a
 # fixed release and was lifted by floors in pyproject.toml (plan
 # 2026-11-05-python-bridge-pillow-and-aiohttp-advisories-are-capped-by-qontinui-core); in
-# docker/imagegen, by moving the facade venv to CPython 3.12 and flooring certifi (plan
+# docker/imagegen, by moving the facade venv to CPython 3.12 and flooring pillow,
+# filelock and certifi (plan
 # 2026-11-05-dependency-advisory-followups-after-the-pillow-13-lift, Phase 5).
 
 # setuptools: torch 2.11.0+cu128 requires setuptools<82, and the cu128 index
