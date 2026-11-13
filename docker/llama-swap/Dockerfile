@@ -126,8 +126,14 @@ RUN python3 -m venv /opt/venvs/aria-ui --system-site-packages && \
 # satisfies the OpenAI chat-completions contract by wrapping PaddleOCR.
 # Isolated venv because paddlepaddle pins incompatible numpy/protobuf versus
 # vLLM. CPU-only paddlepaddle wheel — the container already has CUDA from
-# the base image, so a GPU variant is a `paddlepaddle-gpu==2.6.1.post120`
-# swap when a host needs it.
+# the base image, so a GPU variant is a swap to the `paddlepaddle-gpu`
+# 2.6.2.postNNN build for the host's CUDA (Paddle's own index, see
+# paddleocr/README.md) when a host needs it.
+# Pillow is capped by the interpreter, not by paddleocr (which asks only
+# >=10): this venv runs on the image's system python3 (3.10), and the
+# Pillow 13 advisory fixes need >=3.11. 12.3.0 is the newest Pillow 3.10
+# can take. The venv cannot move to a newer interpreter either, because
+# paddleocr 2.7.0.3 caps PyMuPDF <1.21, which ships no cp311+ wheels.
 # PaddleOCR pulls full opencv-python, which dlopens libGL/libglib at import;
 # the CUDA base image lacks them → `ImportError: libGL.so.1` at runtime.
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -139,7 +145,7 @@ RUN python3 -m venv /opt/venvs/paddleocr --system-site-packages && \
     paddleocr==2.7.0.3 \
     fastapi==0.115.5 \
     "uvicorn[standard]==0.32.1" \
-    Pillow==11.0.0 \
+    Pillow==12.3.0 \
     numpy==1.26.4
 
 # Copy llama-swap binary

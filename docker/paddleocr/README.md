@@ -61,14 +61,22 @@ worth it.
 
 ## GPU variant
 
-The default Dockerfile installs `paddlepaddle==2.6.1` (CPU). For a
-GPU host, rebuild the llama-swap image after swapping the line:
+The paddleocr venv in `../llama-swap/Dockerfile` installs
+`paddlepaddle==2.6.2` (CPU). There is no separate PaddleOCR image. For a
+GPU host, swap that line for the CUDA-specific GPU build and rebuild the
+llama-swap image:
 
 ```diff
--    paddlepaddle==2.6.1 \
-+    paddlepaddle-gpu==2.6.1.post120 \
+-    paddlepaddle==2.6.2 \
++    -f https://www.paddlepaddle.org.cn/packages/stable/cu120/paddlepaddle-gpu/ \
++    paddlepaddle-gpu==2.6.2.post120 \
 ```
 
-The CUDA version must match the host driver — `post120` is for CUDA
-12.0, `post118` for 11.8, etc. PaddleOCR's GPU wheel matrix is
-documented at https://www.paddlepaddle.org.cn/install/quick.
+`cu120` / `post120` is the CUDA 12.0 build. For another CUDA release,
+use that release's index and suffix, and first check that its index
+lists a 2.6.2 wheel: not every CUDA index carries every version. PyPI
+carries only one generic `paddlepaddle-gpu` build. Paddle's GPU builds
+also load cuDNN at runtime, and the llama-swap base image is not a
+`-cudnn` tag, so add cuDNN before relying on the GPU path. PaddleOCR's
+GPU wheel matrix is documented at
+https://www.paddlepaddle.org.cn/install/quick.

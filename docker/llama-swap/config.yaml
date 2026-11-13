@@ -160,8 +160,9 @@ models:
   # the response's message.content to be a JSON array of {bbox, text, confidence}.
   # PaddleOCR isn't a chat model, so docker/paddleocr/serve.py wraps it with a
   # FastAPI façade that satisfies the contract. CPU-only by default; build a
-  # GPU variant by switching the Dockerfile to paddlepaddle-gpu pinned to the
-  # host CUDA before re-running docker compose build.
+  # GPU variant by switching the paddleocr venv in this directory's Dockerfile
+  # to paddlepaddle-gpu pinned to the host CUDA before re-running docker
+  # compose build.
   paddleocr:
     cmd: >
       /opt/venvs/paddleocr/bin/python3 /opt/backends/paddleocr/serve.py
