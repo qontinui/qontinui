@@ -381,14 +381,20 @@ class MouseOperations(IMouseController):
             raise InputControlError("mouse_drag", str(e)) from e
 
     def mouse_scroll(
-        self, clicks: int, x: int | None = None, y: int | None = None
+        self,
+        clicks: int,
+        x: int | None = None,
+        y: int | None = None,
+        horizontal_clicks: int = 0,
     ) -> bool:
         """Scroll mouse wheel.
 
         Args:
-            clicks: Number of scroll clicks (positive=up, negative=down)
+            clicks: Number of vertical scroll clicks (positive=up, negative=down)
             x: X coordinate (None for current position)
             y: Y coordinate (None for current position)
+            horizontal_clicks: Number of horizontal scroll clicks
+                (positive=right, negative=left; 0 for none)
 
         Returns:
             True if successful
@@ -401,10 +407,12 @@ class MouseOperations(IMouseController):
             if x is not None and y is not None:
                 self.mouse_move(x, y)
 
-            # Scroll (negative for down, positive for up)
-            self._mouse.scroll(0, clicks)
+            # pynput scroll(dx, dy): dy positive=up, dx positive=right
+            self._mouse.scroll(horizontal_clicks, clicks)
 
-            logger.debug(f"Mouse scrolled {clicks} clicks")
+            logger.debug(
+                f"Mouse scrolled {clicks} vertical, {horizontal_clicks} horizontal clicks"
+            )
             return True
 
         except (OSError, RuntimeError, ValueError, TypeError) as e:
