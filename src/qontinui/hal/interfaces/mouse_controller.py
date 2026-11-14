@@ -139,14 +139,20 @@ class IMouseController(ABC):
 
     @abstractmethod
     def mouse_scroll(
-        self, clicks: int, x: int | None = None, y: int | None = None
+        self,
+        clicks: int,
+        x: int | None = None,
+        y: int | None = None,
+        horizontal_clicks: int = 0,
     ) -> bool:
         """Scroll mouse wheel.
 
         Args:
-            clicks: Number of scroll clicks (positive=up, negative=down)
+            clicks: Number of vertical scroll clicks (positive=up, negative=down)
             x: X coordinate (None for current position)
             y: Y coordinate (None for current position)
+            horizontal_clicks: Number of horizontal scroll clicks
+                (positive=right, negative=left; 0 for none)
 
         Returns:
             True if successful

@@ -133,14 +133,27 @@ class MockInput(IInputController):
         return True
 
     def mouse_scroll(
-        self, clicks: int, x: int | None = None, y: int | None = None
+        self,
+        clicks: int,
+        x: int | None = None,
+        y: int | None = None,
+        horizontal_clicks: int = 0,
     ) -> bool:
         """Mock scroll mouse wheel (instant)."""
         pos_x = x if x is not None else self._mouse_position.x
         pos_y = y if y is not None else self._mouse_position.y
 
-        logger.debug(f"[MOCK] Mouse scroll {clicks} clicks at ({pos_x}, {pos_y})")
-        self._record_action("mouse_scroll", clicks=clicks, x=pos_x, y=pos_y)
+        logger.debug(
+            f"[MOCK] Mouse scroll {clicks} vertical, {horizontal_clicks} horizontal "
+            f"clicks at ({pos_x}, {pos_y})"
+        )
+        self._record_action(
+            "mouse_scroll",
+            clicks=clicks,
+            x=pos_x,
+            y=pos_y,
+            horizontal_clicks=horizontal_clicks,
+        )
         return True
 
     def get_mouse_position(self) -> MousePosition:
