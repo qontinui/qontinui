@@ -1,11 +1,12 @@
-"""Guard: ``poetry.lock`` locks at most one distribution that installs ``Xlib/``.
+"""Guard: the only locked distribution that installs ``Xlib/`` is ``python-xlib``.
 
 ``python-xlib`` (required by pynput) and the abandoned ``python3-xlib`` fork
 (required by pyautogui / mouseinfo) both install a top-level ``Xlib/``
 package. Poetry installs them concurrently, which tears or mixes the
 package and breaks ``import pynput`` nondeterministically. pyautogui was
 removed from qontinui so that only ``python-xlib`` is locked; this test keeps
-it that way.
+it that way by asserting that the locked ``Xlib/`` installers are a subset of
+``{"python-xlib"}`` and that neither pyautogui nor mouseinfo is locked.
 
 The lock path defaults to the repo's ``poetry.lock`` and can be pointed at
 another lock with ``QONTINUI_XLIB_GUARD_LOCK`` (used to show the guard fails
