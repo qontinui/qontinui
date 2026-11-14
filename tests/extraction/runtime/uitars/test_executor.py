@@ -422,7 +422,11 @@ def _make_hal_mocks(position: tuple[int, int] = (500, 500)) -> tuple[MagicMock, 
     """Mock HAL mouse/keyboard controllers with the pointer at ``position``."""
     mouse = MagicMock(spec=IMouseController)
     mouse.get_mouse_position.return_value = MousePosition(*position)
+    for name in ("click_at", "double_click_at", "move_mouse", "drag", "mouse_scroll"):
+        getattr(mouse, name).return_value = True
     keyboard = MagicMock(spec=IKeyboardController)
+    keyboard.type_text.return_value = True
+    keyboard.hotkey.return_value = True
     return mouse, keyboard
 
 
@@ -724,3 +728,170 @@ class TestExplorerHalAction:
 
         assert await explorer._execute_hal_action("teleport", x=1, y=1) is False
         assert mouse.mock_calls == []
+
+
+class TestScrollUnits:
+    """UI-TARS scroll amounts keep their pyautogui meaning on every platform."""
+
+    @pytest.mark.parametrize(
+        ("platform", "amount", "expected"),
+        [
+            ("linux", 100, 100),
+            ("linux", -3, -3),
+            ("darwin", 5, 5),
+            ("win32", 120, 1),
+            ("win32", -240, -2),
+            ("win32", 100, 1),
+            ("win32", -100, -1),
+            ("win32", 30, 1),
+            ("win32", -1, -1),
+            ("win32", 600, 5),
+            ("win32", 0, 0),
+        ],
+    )
+    def test_scroll_amount_to_clicks(self, platform, amount, expected):
+        from qontinui.extraction.runtime.uitars.hal_dispatch import (
+            scroll_amount_to_clicks,
+        )
+
+        assert scroll_amount_to_clicks(amount, platform=platform) == expected
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("platform", "direction", "expected"),
+        [
+            ("win32", "down", (-2, 0)),
+            ("win32", "right", (0, 2)),
+            ("linux", "down", (-240, 0)),
+            ("linux", "left", (0, -240)),
+        ],
+    )
+    async def test_dispatch_converts_on_running_platform(
+        self, monkeypatch, platform, direction, expected
+    ):
+        from qontinui.extraction.runtime.uitars import hal_dispatch
+
+        monkeypatch.setattr(hal_dispatch.sys, "platform", platform)
+        mouse, keyboard = _make_hal_mocks()
+
+        result = await hal_dispatch.execute_hal_action(
+            "scroll",
+            scroll_direction=direction,
+            scroll_amount=240,
+            mouse=mouse,
+            keyboard=keyboard,
+        )
+
+        assert result is True
+        mouse.mouse_scroll.assert_called_once_with(
+            expected[0], horizontal_clicks=expected[1]
+        )
+
+
+class TestControllerResults:
+    """A controller call reporting failure fails the action."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("kwargs", "method"),
+        [
+            ({"action_type": "click", "x": 1, "y": 2}, "mouse.click_at"),
+            ({"action_type": "double_click", "x": 1, "y": 2}, "mouse.double_click_at"),
+            ({"action_type": "hover", "x": 1, "y": 2}, "mouse.move_mouse"),
+            (
+                {"action_type": "scroll", "scroll_direction": "up", "scroll_amount": 1},
+                "mouse.mouse_scroll",
+            ),
+            ({"action_type": "hotkey", "keys": ["ctrl", "c"]}, "keyboard.hotkey"),
+            ({"action_type": "type", "text": "abc"}, "keyboard.type_text"),
+        ],
+    )
+    async def test_false_from_controller_is_false(self, kwargs, method):
+        from qontinui.extraction.runtime.uitars.hal_dispatch import execute_hal_action
+
+        mouse, keyboard = _make_hal_mocks()
+        owner, name = method.split(".")
+        getattr({"mouse": mouse, "keyboard": keyboard}[owner], name).return_value = False
+
+        assert await execute_hal_action(**kwargs, mouse=mouse, keyboard=keyboard) is False
+
+    @pytest.mark.asyncio
+    async def test_failed_first_step_skips_second_step(self):
+        from qontinui.extraction.runtime.uitars.hal_dispatch import execute_hal_action
+
+        mouse, keyboard = _make_hal_mocks()
+        mouse.click_at.return_value = False
+
+        result = await execute_hal_action(
+            "type", x=1, y=2, text="abc", mouse=mouse, keyboard=keyboard
+        )
+
+        assert result is False
+        keyboard.type_text.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_failed_move_skips_drag(self):
+        from qontinui.extraction.runtime.uitars.hal_dispatch import execute_hal_action
+
+        mouse, keyboard = _make_hal_mocks()
+        mouse.move_mouse.return_value = False
+
+        result = await execute_hal_action(
+            "drag", x=1, y=2, end_x=3, end_y=4, mouse=mouse, keyboard=keyboard
+        )
+
+        assert result is False
+        mouse.drag.assert_not_called()
+
+
+class TestIncompleteActions:
+    """Each caller keeps its historical answer for an action missing its inputs."""
+
+    INCOMPLETE = [
+        ("click", {}),
+        ("double_click", {"x": 1}),
+        ("right_click", {"y": 1}),
+        ("hover", {}),
+        ("drag", {"x": 1, "y": 2}),
+        ("hotkey", {}),
+    ]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(("action_type", "kwargs"), INCOMPLETE)
+    async def test_executor_reports_success(self, action_type, kwargs):
+        mouse, keyboard = _make_hal_mocks()
+        executor = UITARSExecutor(
+            MagicMock(), UITARSSettings(), hal_mouse=mouse, hal_keyboard=keyboard
+        )
+        action = UITARSAction(action_type=UITARSActionType(action_type), **kwargs)
+
+        assert await executor._execute_hal_action(action) is True
+        assert [c[0] for c in mouse.mock_calls] == []
+        assert keyboard.mock_calls == []
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(("action_type", "kwargs"), INCOMPLETE)
+    async def test_explorer_reports_failure(self, action_type, kwargs):
+        from qontinui.extraction.runtime.uitars.explorer import UITARSExplorer
+
+        mouse, keyboard = _make_hal_mocks()
+        explorer = UITARSExplorer(
+            provider=MagicMock(), hal_mouse=mouse, hal_keyboard=keyboard
+        )
+
+        assert await explorer._execute_hal_action(action_type, **kwargs) is False
+        assert mouse.mock_calls == []
+        assert keyboard.mock_calls == []
+
+    @pytest.mark.asyncio
+    async def test_unknown_scroll_direction_is_a_noop_success(self):
+        from qontinui.extraction.runtime.uitars.hal_dispatch import execute_hal_action
+
+        mouse, keyboard = _make_hal_mocks()
+
+        result = await execute_hal_action(
+            "scroll", scroll_direction="sideways", mouse=mouse, keyboard=keyboard
+        )
+
+        assert result is True
+        mouse.mouse_scroll.assert_not_called()
