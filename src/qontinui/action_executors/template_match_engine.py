@@ -50,35 +50,19 @@ class TemplateMatchEngine:
         Returns:
             ActionResult with matches or None if not found
         """
-        import os
-        import tempfile
+        logger.debug("find_images() called")
+        logger.debug(f"  image_ids: {image_ids}")
 
-        from qontinui_schemas.common import utc_now
-
-        def log_debug(msg: str):
-            """Helper to write timestamped debug messages."""
-            try:
-                debug_log = os.path.join(
-                    tempfile.gettempdir(), "qontinui_find_debug.log"
-                )
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] TEMPLATE_MATCH_ENGINE: {msg}\n")
-            except Exception:
-                pass
-
-        log_debug("find_images() called")
-        log_debug(f"  image_ids: {image_ids}")
-        log_debug(f"  similarity: {similarity}")
-        log_debug(f"  strategy: {strategy}")
+        logger.debug(f"  similarity: {similarity}")
+        logger.debug(f"  strategy: {strategy}")
 
         # Load patterns from config
-        log_debug("  Loading patterns from config...")
+        logger.debug("  Loading patterns from config...")
         patterns = self.pattern_loader.load_patterns(image_ids)
-        log_debug(f"  Loaded {len(patterns) if patterns else 0} patterns")
+        logger.debug(f"  Loaded {len(patterns) if patterns else 0} patterns")
 
         if not patterns:
-            log_debug("  ERROR: No patterns loaded!")
+            logger.debug("  ERROR: No patterns loaded!")
             logger.error(f"Could not load patterns for image IDs: {image_ids}")
             return None
 
@@ -86,7 +70,7 @@ class TemplateMatchEngine:
             f"Finding {len(patterns)} patterns with threshold={similarity}, strategy={strategy}"
         )
 
-        log_debug("  Calling find_patterns()...")
+        logger.debug("  Calling find_patterns()...")
         # Find patterns on screen
         result = await self.find_patterns(
             patterns=patterns,
@@ -94,7 +78,7 @@ class TemplateMatchEngine:
             image_ids=image_ids,
             strategy=strategy,
         )
-        log_debug(f"  find_patterns() returned: {result}")
+        logger.debug(f"  find_patterns() returned: {result}")
         return result
 
     async def find_patterns(
@@ -157,32 +141,16 @@ class TemplateMatchEngine:
         Returns:
             ActionResult with matches or None if not found
         """
-        import os
-        import tempfile
+        logger.debug("_find_single_pattern() called")
+        logger.debug(f"  pattern.name: {pattern.name}")
 
-        from qontinui_schemas.common import utc_now
-
-        def log_debug(msg: str):
-            """Helper to write timestamped debug messages."""
-            try:
-                debug_log = os.path.join(
-                    tempfile.gettempdir(), "qontinui_find_debug.log"
-                )
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] TEMPLATE_MATCH_ENGINE: {msg}\n")
-            except Exception:
-                pass
-
-        log_debug("_find_single_pattern() called")
-        log_debug(f"  pattern.name: {pattern.name}")
-        log_debug(f"  threshold: {threshold}")
-        log_debug(f"  image_id: {image_id}")
+        logger.debug(f"  threshold: {threshold}")
+        logger.debug(f"  image_id: {image_id}")
 
         logger.debug(f"Finding pattern: {pattern.name} (threshold={threshold})")
 
         # Use FindAction for template matching
-        log_debug("  Creating FindAction instance...")
+        logger.debug("  Creating FindAction instance...")
         action = FindAction()
 
         # Get monitor_index - first try from StateImage config, then fall back to context
@@ -191,14 +159,14 @@ class TemplateMatchEngine:
             monitors = self.pattern_loader.get_monitors_for_image(image_id)
             if monitors:
                 monitor_index = monitors[0]  # Use first monitor from list
-                log_debug(f"  Using monitor from StateImage config: {monitor_index}")
+                logger.debug(f"  Using monitor from StateImage config: {monitor_index}")
 
         # Fall back to context monitor_index if not set from StateImage
         if monitor_index is None:
             monitor_index = getattr(self.context, "monitor_index", None)
-            log_debug(f"  Using monitor_index from context: {monitor_index}")
+            logger.debug(f"  Using monitor_index from context: {monitor_index}")
 
-        log_debug("  Calling FindAction.find()...")
+        logger.debug("  Calling FindAction.find()...")
         find_result = await action.find(
             pattern=pattern,
             options=FindOptions(
@@ -206,38 +174,40 @@ class TemplateMatchEngine:
             ),
         )
 
-        log_debug(f"  FindAction.find() returned: {find_result}")
-        log_debug(f"  find_result.found: {find_result.found if find_result else 'N/A'}")
-        log_debug(
+        logger.debug(f"  FindAction.find() returned: {find_result}")
+        logger.debug(
+            f"  find_result.found: {find_result.found if find_result else 'N/A'}"
+        )
+        logger.debug(
             f"  find_result.matches: {find_result.matches if find_result else 'N/A'}"
         )
 
         if not find_result.found or not find_result.matches:
-            log_debug(f"  Pattern {pattern.name} not found - returning None")
+            logger.debug(f"  Pattern {pattern.name} not found - returning None")
             logger.debug(f"Pattern {pattern.name} not found")
             return None
 
-        log_debug("  Pattern FOUND! Building ActionResult...")
+        logger.debug("  Pattern FOUND! Building ActionResult...")
         # Convert to ActionResult
         builder = ActionResultBuilder().with_success(True)
 
         for i, model_match in enumerate(find_result.matches):
-            log_debug(f"    Adding match {i}: {model_match}")
+            logger.debug(f"    Adding match {i}: {model_match}")
             find_match = FindMatch(match_object=model_match)
             builder.add_match(find_match)
 
             # Tag with source image ID
             if image_id and not hasattr(model_match.metadata, "source_image_id"):
                 model_match.metadata.source_image_id = image_id
-                log_debug(f"      Tagged with source_image_id: {image_id}")
+                logger.debug(f"      Tagged with source_image_id: {image_id}")
 
         action_result = builder.build()
-        log_debug(f"  ActionResult built: {action_result}")
-        log_debug(f"  ActionResult.success: {action_result.success}")
-        log_debug(f"  ActionResult.matches count: {len(action_result.matches)}")
+        logger.debug(f"  ActionResult built: {action_result}")
+        logger.debug(f"  ActionResult.success: {action_result.success}")
+        logger.debug(f"  ActionResult.matches count: {len(action_result.matches)}")
 
         self.context.update_last_action_result(action_result)
-        log_debug("  Updated context.last_action_result")
+        logger.debug("  Updated context.last_action_result")
 
         logger.debug(
             f"Found {len(action_result.matches)} matches for pattern {pattern.name}"

@@ -56,49 +56,32 @@ class TargetResolver:
         Returns:
             ActionResult with matches or None if not found
         """
-        import os
-        import tempfile
-
-        from qontinui_schemas.common import utc_now
-
-        def log_debug(msg: str):
-            """Helper to write timestamped debug messages."""
-            try:
-                debug_log = os.path.join(
-                    tempfile.gettempdir(), "qontinui_find_debug.log"
-                )
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
-            except Exception:
-                pass
-
-        log_debug(f"resolve() called with target_config type: {type(target_config)}")
-        log_debug(f"  target_config value: {target_config}")
+        logger.debug(f"resolve() called with target_config type: {type(target_config)}")
+        logger.debug(f"  target_config value: {target_config}")
 
         if isinstance(target_config, ImageTarget):
-            log_debug("  Routing to _resolve_image_target()")
+            logger.debug("  Routing to _resolve_image_target()")
             return await self._resolve_image_target(target_config)
         elif isinstance(target_config, CoordinatesTarget):
-            log_debug("  Routing to _resolve_coordinates_target()")
+            logger.debug("  Routing to _resolve_coordinates_target()")
             return self._resolve_coordinates_target(target_config)
         elif isinstance(target_config, RegionTarget):
-            log_debug("  Routing to _resolve_region_target()")
+            logger.debug("  Routing to _resolve_region_target()")
             return self._resolve_region_target(target_config)
         elif isinstance(target_config, LastFindResultTarget):
-            log_debug("  Routing to _resolve_last_find_result()")
+            logger.debug("  Routing to _resolve_last_find_result()")
             return self._resolve_last_find_result()
         elif isinstance(target_config, StateRegionTarget):
-            log_debug("  Routing to _resolve_state_region_target()")
+            logger.debug("  Routing to _resolve_state_region_target()")
             return self._resolve_state_region_target(target_config)
         elif isinstance(target_config, StateLocationTarget):
-            log_debug("  Routing to _resolve_state_location_target()")
+            logger.debug("  Routing to _resolve_state_location_target()")
             return self._resolve_state_location_target(target_config)
         elif isinstance(target_config, StateImageTarget):
-            log_debug("  Routing to _resolve_state_image_target()")
+            logger.debug("  Routing to _resolve_state_image_target()")
             return await self._resolve_state_image_target(target_config)
         else:
-            log_debug("  ERROR: Unsupported target type")
+            logger.debug("  ERROR: Unsupported target type")
             logger.error(f"Unsupported target type: {type(target_config)}")
             return None
 
@@ -117,42 +100,28 @@ class TargetResolver:
         Returns:
             ActionResult with found matches or None
         """
-        import os
-        import tempfile
-
-        from qontinui_schemas.common import utc_now
+        logger.debug("_resolve_image_target() called - USING REGISTRY WITH CASCADE")
 
         from qontinui import registry
 
         from ..actions.find import FindAction
-        from ..actions.find.find_options_builder import CascadeContext, build_find_options
+        from ..actions.find.find_options_builder import (
+            CascadeContext,
+            build_find_options,
+        )
         from ..config.settings import QontinuiSettings
         from ..model.element import Pattern
 
-        def log_debug(msg: str):
-            """Helper to write timestamped debug messages."""
-            try:
-                debug_log = os.path.join(
-                    tempfile.gettempdir(), "qontinui_find_debug.log"
-                )
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
-            except Exception:
-                pass
-
-        log_debug("_resolve_image_target() called - USING REGISTRY WITH CASCADE")
-
         image_ids = target.image_ids
-        log_debug(f"  image_ids: {image_ids}")
-        log_debug(f"  target.search_options: {target.search_options}")
+        logger.debug(f"  image_ids: {image_ids}")
+        logger.debug(f"  target.search_options: {target.search_options}")
 
         # Get project config for cascade
         try:
             project_config = QontinuiSettings()
         except Exception:
             project_config = None
-            log_debug("  Could not load project config, using defaults")
+            logger.debug("  Could not load project config, using defaults")
 
         # Extract search strategy from search_options if provided
         strategy = "FIRST"  # Default strategy
@@ -163,7 +132,7 @@ class TargetResolver:
                 if hasattr(target.search_options.strategy, "value")
                 else target.search_options.strategy
             )
-        log_debug(f"  Resolved strategy: {strategy}")
+        logger.debug(f"  Resolved strategy: {strategy}")
 
         # Expand StateImage IDs to their pattern image IDs
         # This enables multi-pattern StateImages to be searched properly
@@ -174,7 +143,7 @@ class TargetResolver:
             # Check if this is a StateImage with multi-pattern mapping
             pattern_ids = registry.get_state_image_pattern_ids(image_id)
             if pattern_ids:
-                log_debug(
+                logger.debug(
                     f"  Expanding StateImage {image_id} to patterns: {pattern_ids}"
                 )
                 expanded_image_ids.extend(pattern_ids)
@@ -188,7 +157,7 @@ class TargetResolver:
                     )
                     if state_image_meta and state_image_meta.get("monitors"):
                         state_image_monitors = state_image_meta.get("monitors")
-                        log_debug(
+                        logger.debug(
                             f"    Got monitors from StateImage config: {state_image_monitors}"
                         )
                         logger.debug(
@@ -210,46 +179,48 @@ class TargetResolver:
         # Use registry to load patterns (same as IF actions)
         patterns = []
         for image_id in expanded_image_ids:
-            log_debug(f"  Loading pattern for image_id: {image_id}")
+            logger.debug(f"  Loading pattern for image_id: {image_id}")
 
             # Get image from registry
             image = registry.get_image(image_id)
             if image is None:
-                log_debug(f"    Image not found in registry: {image_id}")
+                logger.debug(f"    Image not found in registry: {image_id}")
                 continue
 
             metadata = registry.get_image_metadata(image_id)
             if metadata is None:
-                log_debug(f"    Metadata not found for image: {image_id}")
+                logger.debug(f"    Metadata not found for image: {image_id}")
                 continue
 
             # Get monitors from metadata (set by StateImage config)
             monitors_from_meta = metadata.get("monitors")
             if state_image_monitors is None and monitors_from_meta:
                 state_image_monitors = monitors_from_meta  # type: ignore[assignment]
-                log_debug(
+                logger.debug(
                     f"    Got monitors from StateImage config: {state_image_monitors}"
                 )
 
             file_path = metadata.get("file_path")
             if not file_path:
-                log_debug(f"    No file_path in metadata for image: {image_id}")
+                logger.debug(f"    No file_path in metadata for image: {image_id}")
                 continue
 
-            log_debug(f"    Creating pattern from: {file_path}")
+            logger.debug(f"    Creating pattern from: {file_path}")
             # Create pattern WITHOUT setting similarity - let cascade handle it
             pattern = Pattern.from_file(
                 img_path=file_path,
                 name=metadata.get("name", image_id),
             )
             patterns.append(pattern)
-            log_debug("    Pattern created successfully")
+            logger.debug("    Pattern created successfully")
 
         if not patterns:
-            log_debug("  No patterns loaded from registry")
+            logger.debug("  No patterns loaded from registry")
             return None
 
-        log_debug(f"  Loaded {len(patterns)} patterns, using FindAction with cascade")
+        logger.debug(
+            f"  Loaded {len(patterns)} patterns, using FindAction with cascade"
+        )
 
         # Build FindOptions using cascade for ALL patterns
         # Each pattern gets the same cascaded options
@@ -260,11 +231,11 @@ class TargetResolver:
         if state_image_monitors:
             # StateImage has monitors configured - use the first one
             resolved_monitor = state_image_monitors[0]
-            log_debug(f"  Using monitor from StateImage config: {resolved_monitor}")
+            logger.debug(f"  Using monitor from StateImage config: {resolved_monitor}")
         else:
             # Fall back to ExecutionContext monitor
             resolved_monitor = getattr(self.context, "monitor_index", None)
-            log_debug(f"  Using monitor from ExecutionContext: {resolved_monitor}")
+            logger.debug(f"  Using monitor from ExecutionContext: {resolved_monitor}")
             # Also log to standard logger for visibility
             logger.info(
                 f"[TARGET_RESOLVER] ExecutionContext.monitor_index = {resolved_monitor}"
@@ -274,7 +245,7 @@ class TargetResolver:
             )
 
         if strategy == "BEST" and len(patterns) > 1:
-            log_debug(
+            logger.debug(
                 "  BEST strategy with multiple patterns - finding all and picking best"
             )
             # Find all patterns and pick the one with highest score
@@ -292,21 +263,21 @@ class TargetResolver:
                     monitor_index=resolved_monitor,
                 )
                 options = build_find_options(ctx)
-                log_debug(
+                logger.debug(
                     f"    Finding pattern {pattern.name} with similarity={options.similarity}, monitor={options.monitor_index}"
                 )
 
                 find_result = await action.find(pattern, options)
                 if find_result.found and find_result.matches:
                     score = find_result.matches[0].score
-                    log_debug(f"    Pattern {pattern.name}: score={score}")
+                    logger.debug(f"    Pattern {pattern.name}: score={score}")
                     if score > best_score:
                         best_score = score
                         best_result = find_result
                         best_pattern = pattern
 
             if best_result and best_pattern:
-                log_debug(f"  Best match score: {best_score}")
+                logger.debug(f"  Best match score: {best_score}")
                 # Convert FindResult to ActionResult
                 # Pass monitor_index so coordinate transformation knows which system to use
                 builder = (
@@ -325,10 +296,10 @@ class TargetResolver:
                     builder.add_match(FindMatch(match_object=match_obj))
                 result = builder.build()
             else:
-                log_debug("  No matches found")
+                logger.debug("  No matches found")
                 result = None
         else:
-            log_debug(
+            logger.debug(
                 f"  Using FIRST strategy - trying {len(patterns)} pattern(s) until one matches"
             )
             # Try each pattern until one is found (FIRST = first match wins)
@@ -336,7 +307,9 @@ class TargetResolver:
             matched_pattern = None
 
             for i, pattern in enumerate(patterns):
-                log_debug(f"    Trying pattern {i + 1}/{len(patterns)}: {pattern.name}")
+                logger.debug(
+                    f"    Trying pattern {i + 1}/{len(patterns)}: {pattern.name}"
+                )
 
                 # Build options with cascade for this pattern (monitor already resolved above)
                 ctx = CascadeContext(
@@ -347,14 +320,14 @@ class TargetResolver:
                     monitor_index=resolved_monitor,
                 )
                 options = build_find_options(ctx)
-                log_debug(
+                logger.debug(
                     f"      Using cascaded options: similarity={options.similarity}, timeout={options.timeout}, monitor={options.monitor_index}"
                 )
 
                 find_result = await action.find(pattern, options)
 
                 if find_result.found and find_result.matches:
-                    log_debug(
+                    logger.debug(
                         f"    Pattern '{pattern.name}' found! {len(find_result.matches)} matches - stopping search"
                     )
                     # Convert FindResult to ActionResult
@@ -377,31 +350,31 @@ class TargetResolver:
                     matched_pattern = pattern
                     break  # First match wins - stop searching
                 else:
-                    log_debug(f"    Pattern '{pattern.name}' not found, trying next")
+                    logger.debug(f"    Pattern '{pattern.name}' not found, trying next")
 
             if result is None:
-                log_debug("  No patterns matched")
+                logger.debug("  No patterns matched")
             else:
-                log_debug(
+                logger.debug(
                     f"  Match found with pattern: {matched_pattern.name if matched_pattern else 'unknown'}"
                 )
 
-        log_debug(f"  Final result: {result}")
-        log_debug(f"  result is None: {result is None}")
+        logger.debug(f"  Final result: {result}")
+        logger.debug(f"  result is None: {result is None}")
 
         if result:
-            log_debug(f"  result.success: {result.success}")
-            log_debug(
+            logger.debug(f"  result.success: {result.success}")
+            logger.debug(
                 f"  result.matches count: {len(result.matches) if result.matches else 0}"
             )
             self.context.update_last_action_result(result)
-            log_debug("  Updated context.last_action_result")
+            logger.debug("  Updated context.last_action_result")
             return result
         else:
-            log_debug("  Returning None (no result)")
+            logger.debug("  Returning None (no result)")
             # Clear last_action_result so subsequent actions (e.g., CLICK) don't use stale data
             self.context.update_last_action_result(None)
-            log_debug("  Cleared context.last_action_result (FIND failed)")
+            logger.debug("  Cleared context.last_action_result (FIND failed)")
             return None
 
     def _resolve_coordinates_target(self, target: CoordinatesTarget) -> ActionResult:
@@ -633,28 +606,12 @@ class TargetResolver:
         Returns:
             ActionResult with found matches or None if not found
         """
-        import os
-        import tempfile
+        logger.debug("_resolve_state_image_target() called")
+        logger.debug(f"  state_id: {target.state_id}")
 
-        from qontinui_schemas.common import utc_now
-
-        def log_debug(msg: str) -> None:
-            """Helper to write timestamped debug messages."""
-            try:
-                debug_log = os.path.join(
-                    tempfile.gettempdir(), "qontinui_find_debug.log"
-                )
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] TARGET_RESOLVER: {msg}\n")
-            except Exception:
-                pass
-
-        log_debug("_resolve_state_image_target() called")
-        log_debug(f"  state_id: {target.state_id}")
-        log_debug(f"  image_ids: {target.image_ids}")
-        log_debug(f"  state_name: {target.state_name}")
-        log_debug(f"  image_names: {target.image_names}")
+        logger.debug(f"  image_ids: {target.image_ids}")
+        logger.debug(f"  state_name: {target.state_name}")
+        logger.debug(f"  image_names: {target.image_names}")
 
         # Convert StateImageTarget to ImageTarget and use existing logic
         # The image_ids in StateImageTarget are StateImage IDs
@@ -664,7 +621,7 @@ class TargetResolver:
             search_options=None,
         )
 
-        log_debug(f"  Converted to ImageTarget: {image_target}")
+        logger.debug(f"  Converted to ImageTarget: {image_target}")
 
         # Use the existing image target resolution which handles StateImage expansion
         return await self._resolve_image_target(image_target)

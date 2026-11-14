@@ -7,27 +7,8 @@ GUI automation implementation.
 import logging
 import os
 import sys
-
-# Debug logging helper - writes to file to bypass disabled logging
-import tempfile
 from dataclasses import dataclass
 from typing import Any, cast
-
-_DEBUG_LOG_PATH = os.path.join(tempfile.gettempdir(), "qontinui_navigation_debug.log")
-
-
-def _debug_print(msg: str) -> None:
-    """Write debug message to file to ensure visibility when logging is disabled."""
-    try:
-        from qontinui_schemas.common import utc_now
-
-        with open(_DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
-            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            f.write(f"[{timestamp}] [MULTISTATE_ADAPTER] {msg}\n")
-            f.flush()
-    except Exception:
-        pass
-
 
 # Add multistate to path
 sys.path.insert(
@@ -41,7 +22,9 @@ from multistate.pathfinding.multi_target import SearchStrategy  # noqa: E402
 from multistate.transitions.transition import Transition as MultiTransition  # noqa: E402
 
 from qontinui.model.state.state import State as QontinuiState  # noqa: E402
-from qontinui.model.transition.enhanced_state_transition import TaskSequenceStateTransition
+from qontinui.model.transition.enhanced_state_transition import (
+    TaskSequenceStateTransition,
+)
 from qontinui.model.transition.enhanced_state_transition import (
     TaskSequenceStateTransition as StateTransition,
 )
@@ -109,13 +92,13 @@ class MultiStateAdapter:
         # Generate MultiState ID from Qontinui state
         multistate_id = f"state_{qontinui_state.name.replace(' ', '_').lower()}"
 
-        _debug_print(
+        logger.debug(
             f"register_qontinui_state: name='{qontinui_state.name}', qontinui_id={qontinui_state.id}, multistate_id='{multistate_id}'"
         )
 
         # Check if already registered
         if qontinui_state.id is not None and qontinui_state.id in self.state_mappings:
-            _debug_print("  -> Already registered, returning existing")
+            logger.debug("  -> Already registered, returning existing")
             return self.state_mappings[qontinui_state.id].multistate_state
 
         # Determine if state is blocking (modal dialogs, etc.)
@@ -162,7 +145,7 @@ class MultiStateAdapter:
         Returns:
             Corresponding MultiTransition object
         """
-        _debug_print(
+        logger.debug(
             f"register_qontinui_transition: id={transition.id}, name='{transition.name}', from_states={transition.from_states}, activate={transition.activate}"
         )
 
@@ -176,11 +159,11 @@ class MultiStateAdapter:
             for state_id in transition.from_states:
                 if state_id in self.state_mappings:
                     from_states.add(self.state_mappings[state_id].multistate_id)
-                    _debug_print(
+                    logger.debug(
                         f"  from_state {state_id} -> '{self.state_mappings[state_id].multistate_id}'"
                     )
                 else:
-                    _debug_print(
+                    logger.debug(
                         f"  ERROR: from_state {state_id} NOT in state_mappings!"
                     )
                     logger.error(
@@ -192,11 +175,11 @@ class MultiStateAdapter:
         for state_id in transition.activate:
             if state_id in self.state_mappings:
                 activate_states.add(self.state_mappings[state_id].multistate_id)
-                _debug_print(
+                logger.debug(
                     f"  activate {state_id} -> '{self.state_mappings[state_id].multistate_id}'"
                 )
             else:
-                _debug_print(
+                logger.debug(
                     f"  ERROR: activate state {state_id} NOT in state_mappings!"
                 )
                 logger.error(
@@ -278,22 +261,22 @@ class MultiStateAdapter:
         Returns:
             Sequence of Qontinui transitions to execute, or None if impossible
         """
-        _debug_print(
+        logger.debug(
             f"find_path_to_states called: target_state_ids={target_state_ids}, current_state_ids={current_state_ids}"
         )
 
         # Get current states
         if current_state_ids is None and self.state_memory:
             current_state_ids = self.state_memory.active_states
-            _debug_print(f"Using state_memory.active_states: {current_state_ids}")
+            logger.debug(f"Using state_memory.active_states: {current_state_ids}")
 
         if not current_state_ids:
-            _debug_print("ERROR: No current states for pathfinding")
+            logger.debug("ERROR: No current states for pathfinding")
             logger.warning("No current states for pathfinding")
             return None
 
-        _debug_print(f"State mappings available: {list(self.state_mappings.keys())}")
-        _debug_print(f"Transition mappings count: {len(self.transition_mappings)}")
+        logger.debug(f"State mappings available: {list(self.state_mappings.keys())}")
+        logger.debug(f"Transition mappings count: {len(self.transition_mappings)}")
 
         # Convert to MultiState
         current_multi = set()
@@ -301,11 +284,11 @@ class MultiStateAdapter:
             if state_id in self.state_mappings:
                 mapping = self.state_mappings[state_id]
                 current_multi.add(mapping.multistate_state)
-                _debug_print(
+                logger.debug(
                     f"Current state {state_id} -> multistate '{mapping.multistate_id}'"
                 )
             else:
-                _debug_print(
+                logger.debug(
                     f"ERROR: Current state ID {state_id} NOT in state_mappings!"
                 )
                 logger.error(
@@ -314,7 +297,7 @@ class MultiStateAdapter:
                 )
 
         if not current_multi:
-            _debug_print("ERROR: No valid current states found!")
+            logger.debug("ERROR: No valid current states found!")
             logger.error(
                 f"No valid current states found! Input IDs: {current_state_ids}, "
                 f"Available mappings: {list(self.state_mappings.keys())}"
@@ -326,11 +309,11 @@ class MultiStateAdapter:
             if state_id in self.state_mappings:
                 mapping = self.state_mappings[state_id]
                 target_multi.add(mapping.multistate_state)
-                _debug_print(
+                logger.debug(
                     f"Target state {state_id} -> multistate '{mapping.multistate_id}'"
                 )
             else:
-                _debug_print(
+                logger.debug(
                     f"ERROR: Target state ID {state_id} NOT in state_mappings!"
                 )
                 logger.error(
@@ -339,7 +322,7 @@ class MultiStateAdapter:
                 )
 
         if not target_multi:
-            _debug_print("ERROR: No valid target states for pathfinding")
+            logger.debug("ERROR: No valid target states for pathfinding")
             logger.warning("No valid target states for pathfinding")
             return None
 
@@ -347,7 +330,7 @@ class MultiStateAdapter:
         target_ids = [ms.id for ms in target_multi]
         from_ids = {ms.id for ms in current_multi}
 
-        _debug_print(
+        logger.debug(
             f"Calling manager.find_path_to: from_ids={from_ids}, target_ids={target_ids}"
         )
 
@@ -357,9 +340,9 @@ class MultiStateAdapter:
         )
 
         # Log available transitions for debugging
-        _debug_print(f"Available transitions ({len(self.transition_mappings)}):")
+        logger.debug(f"Available transitions ({len(self.transition_mappings)}):")
         for trans_id, trans in self.transition_mappings.items():
-            _debug_print(
+            logger.debug(
                 f"  {trans_id}: from_states={trans.from_states}, activate={trans.activate}"
             )
             logger.debug(
@@ -369,10 +352,10 @@ class MultiStateAdapter:
 
         path = self.manager.find_path_to(target_ids, from_states=from_ids)
 
-        _debug_print(f"manager.find_path_to returned: {path}")
+        logger.debug(f"manager.find_path_to returned: {path}")
 
         if not path:
-            _debug_print(f"ERROR: No path found from {from_ids} to {target_ids}")
+            logger.debug(f"ERROR: No path found from {from_ids} to {target_ids}")
             logger.info(
                 f"No path found to states: {target_state_ids}. "
                 f"Current multistate IDs: {from_ids}, Target multistate IDs: {target_ids}"
@@ -381,7 +364,7 @@ class MultiStateAdapter:
 
         # Convert path to Qontinui transitions
         # MultiState returns transition objects - we need to extract IDs and look up Qontinui transitions
-        _debug_print(f"Found path with {len(path.transitions_sequence)} transitions")
+        logger.debug(f"Found path with {len(path.transitions_sequence)} transitions")
 
         # Check if target is already reached (path with 0 transitions)
         if len(path.transitions_sequence) == 0:
@@ -389,7 +372,7 @@ class MultiStateAdapter:
                 f"GO_TO_STATE: Target states {target_state_ids} already active - "
                 f"transition skipped (no actions needed)"
             )
-            _debug_print(
+            logger.debug(
                 "Target states already reached - returning empty transition list"
             )
             return []
@@ -404,24 +387,24 @@ class MultiStateAdapter:
                 if hasattr(multi_transition, "id")
                 else str(multi_transition)
             )
-            _debug_print(f"Processing transition: id={multi_transition_id}")
+            logger.debug(f"Processing transition: id={multi_transition_id}")
 
             if multi_transition_id in self.transition_mappings:
-                _debug_print(
+                logger.debug(
                     f"  Found in transition_mappings: {self.transition_mappings[multi_transition_id]}"
                 )
                 qontinui_transitions.append(
                     self.transition_mappings[multi_transition_id]
                 )
             else:
-                _debug_print(
+                logger.debug(
                     f"  ERROR: Transition '{multi_transition_id}' NOT in mappings! Available: {list(self.transition_mappings.keys())}"
                 )
                 logger.warning(
                     f"Transition '{multi_transition_id}' not found in mappings. Available: {list(self.transition_mappings.keys())}"
                 )
 
-        _debug_print(f"Converted to {len(qontinui_transitions)} Qontinui transitions")
+        logger.debug(f"Converted to {len(qontinui_transitions)} Qontinui transitions")
         logger.info(f"Converted to {len(qontinui_transitions)} Qontinui transitions")
         return qontinui_transitions
 

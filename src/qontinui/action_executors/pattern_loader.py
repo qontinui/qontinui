@@ -42,49 +42,33 @@ class PatternLoader:
         Returns:
             List of Pattern objects (may be empty if none found)
         """
-        import os
-        import tempfile
+        logger.debug("load_patterns() called")
+        logger.debug(f"  image_ids: {image_ids}")
 
-        from qontinui_schemas.common import utc_now
-
-        def log_debug(msg: str):
-            """Helper to write timestamped debug messages."""
-            try:
-                debug_log = os.path.join(
-                    tempfile.gettempdir(), "qontinui_find_debug.log"
-                )
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] PATTERN_LOADER: {msg}\n")
-            except Exception:
-                pass
-
-        log_debug("load_patterns() called")
-        log_debug(f"  image_ids: {image_ids}")
-        log_debug(f"  config type: {type(self.config)}")
-        log_debug(f"  config has 'states': {hasattr(self.config, 'states')}")
-        log_debug(f"  config has 'images': {hasattr(self.config, 'images')}")
+        logger.debug(f"  config type: {type(self.config)}")
+        logger.debug(f"  config has 'states': {hasattr(self.config, 'states')}")
+        logger.debug(f"  config has 'images': {hasattr(self.config, 'images')}")
 
         if hasattr(self.config, "states"):
-            log_debug(f"  config.states: {self.config.states}")
-            log_debug(
+            logger.debug(f"  config.states: {self.config.states}")
+            logger.debug(
                 f"  config.states count: {len(self.config.states) if self.config.states else 0}"
             )
 
         if hasattr(self.config, "images"):
-            log_debug(
+            logger.debug(
                 f"  config.images count: {len(self.config.images) if self.config.images else 0}"
             )
 
         patterns = []
 
         for image_id in image_ids:
-            log_debug(f"  Loading pattern for image_id: {image_id}")
+            logger.debug(f"  Loading pattern for image_id: {image_id}")
             loaded_patterns = self.load_pattern(image_id)
-            log_debug(f"    Got {len(loaded_patterns)} patterns")
+            logger.debug(f"    Got {len(loaded_patterns)} patterns")
             patterns.extend(loaded_patterns)
 
-        log_debug(f"  Total patterns loaded: {len(patterns)}")
+        logger.debug(f"  Total patterns loaded: {len(patterns)}")
         logger.debug(f"Loaded {len(patterns)} patterns from {len(image_ids)} image IDs")
         return patterns
 
@@ -140,47 +124,32 @@ class PatternLoader:
         Returns:
             True if ID matches a state image pattern
         """
-        import os
-        import tempfile
-
-        from qontinui_schemas.common import utc_now
-
-        def log_debug(msg: str):
-            """Helper to write timestamped debug messages."""
-            try:
-                debug_log = os.path.join(
-                    tempfile.gettempdir(), "qontinui_find_debug.log"
-                )
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] PATTERN_LOADER: {msg}\n")
-            except Exception:
-                pass
-
-        log_debug(f"_is_state_image_id() checking: {image_id}")
+        logger.debug(f"_is_state_image_id() checking: {image_id}")
 
         if not hasattr(self.config, "states") or not self.config.states:
-            log_debug("  Config has no states or states is empty")
+            logger.debug("  Config has no states or states is empty")
             return False
 
-        log_debug(f"  Checking {len(self.config.states)} states")
+        logger.debug(f"  Checking {len(self.config.states)} states")
 
         # Search all states for this image ID
         for i, state in enumerate(self.config.states):
-            log_debug(f"    State {i}: {state.id if hasattr(state, 'id') else 'no-id'}")
+            logger.debug(
+                f"    State {i}: {state.id if hasattr(state, 'id') else 'no-id'}"
+            )
 
             if not hasattr(state, "state_images") or not state.state_images:
-                log_debug("      No state_images")
+                logger.debug("      No state_images")
                 continue
 
-            log_debug(f"      Has {len(state.state_images)} state_images")
+            logger.debug(f"      Has {len(state.state_images)} state_images")
             for j, state_image in enumerate(state.state_images):
-                log_debug(f"        State image {j}: id={state_image.id}")
+                logger.debug(f"        State image {j}: id={state_image.id}")
                 if state_image.id == image_id:
-                    log_debug("        MATCH! Returning True")
+                    logger.debug("        MATCH! Returning True")
                     return True
 
-        log_debug("  No match found, returning False")
+        logger.debug("  No match found, returning False")
         return False
 
     def _load_state_image_patterns(self, image_id: str) -> list[Pattern]:

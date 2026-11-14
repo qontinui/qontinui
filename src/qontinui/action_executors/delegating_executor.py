@@ -91,9 +91,7 @@ class DelegatingActionExecutor:
         self.data_operations_executor = DataOperationsExecutor(self.variable_context)
 
         # Create action executor callback for control flow
-        async def action_executor_callback(
-            action_id: str, variables: dict
-        ) -> dict:
+        async def action_executor_callback(action_id: str, variables: dict) -> dict:
             """Execute an action by ID with given variable context."""
             # Find the action in config
             for workflow in self.config.workflows:
@@ -276,27 +274,14 @@ class DelegatingActionExecutor:
                 result = await self._delegate_to_executor(action, typed_config)
                 logger.debug(f"Executor returned: {result}")
 
-                # DEBUG: Log delegator result
-                import os
-                import tempfile
-
-                from qontinui_schemas.common import utc_now
-
-                debug_log = os.path.join(
-                    tempfile.gettempdir(), "qontinui_action_success_trace.log"
+                logger.debug(
+                    "DELEGATING EXECUTOR: action=%s id=%s _delegate_to_executor returned %r (type=%s); will return %s",
+                    action.type,
+                    action.id,
+                    result,
+                    type(result),
+                    bool(result),
                 )
-                try:
-                    with open(debug_log, "a", encoding="utf-8") as f:
-                        ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                        f.write(
-                            f"[{ts}] DELEGATING EXECUTOR: action={action.type} id={action.id}\n"
-                        )
-                        f.write(
-                            f"[{ts}]   _delegate_to_executor returned: {result} (type={type(result)})\n"
-                        )
-                        f.write(f"[{ts}]   will return: {True if result else False}\n")
-                except Exception:
-                    pass
 
                 if result:
                     # Add execution details if available

@@ -8,29 +8,10 @@ Extends Qontinui's TransitionExecutor with:
 """
 
 import logging
-import os
-import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
-
-# Debug logging helper - writes to file to bypass disabled logging
-_DEBUG_LOG_PATH = os.path.join(tempfile.gettempdir(), "qontinui_navigation_debug.log")
-
-
-def _debug_print(msg: str) -> None:
-    """Write debug message to file to ensure visibility when logging is disabled."""
-    try:
-        from qontinui_schemas.common import utc_now
-
-        with open(_DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
-            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            f.write(f"[{timestamp}] [TRANSITION_EXECUTOR] {msg}\n")
-            f.flush()
-    except Exception:
-        pass
-
 
 from qontinui.model.transition.enhanced_state_transition import (
     TaskSequenceStateTransition,  # noqa: E402
@@ -250,15 +231,15 @@ class EnhancedTransitionExecutor:
         """
         transition = context.transition
 
-        _debug_print(
+        logger.debug(
             f"_execute_outgoing called for transition '{transition.name}' (id={transition.id})"
         )
-        _debug_print(f"  workflow_executor is None: {self.workflow_executor is None}")
-        _debug_print(
+        logger.debug(f"  workflow_executor is None: {self.workflow_executor is None}")
+        logger.debug(
             f"  transition has workflow_ids attr: {hasattr(transition, 'workflow_ids')}"
         )
         if hasattr(transition, "workflow_ids"):
-            _debug_print(f"  transition.workflow_ids: {transition.workflow_ids}")
+            logger.debug(f"  transition.workflow_ids: {transition.workflow_ids}")
         logger.debug(f"_execute_outgoing called for transition '{transition.name}'")
         logger.debug(f"  workflow_executor is None: {self.workflow_executor is None}")
         logger.debug(
@@ -269,13 +250,13 @@ class EnhancedTransitionExecutor:
 
         # Check if transition has workflows to execute
         if not hasattr(transition, "workflow_ids") or not transition.workflow_ids:
-            _debug_print(
+            logger.debug(
                 f"ERROR: Transition '{transition.name}' (id={transition.id}) has no workflows to execute!"
             )
-            _debug_print(
+            logger.debug(
                 "  This usually means the transition references a workflow ID that doesn't exist in the config."
             )
-            _debug_print(
+            logger.debug(
                 "  Check the 'workflows' array in your config file and ensure all referenced IDs are defined."
             )
             logger.warning(

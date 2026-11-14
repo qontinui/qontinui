@@ -86,39 +86,18 @@ class Click(ActionInterface):
         Returns:
             True if click was successful
         """
-        import os
-        import tempfile
 
-        from qontinui_schemas.common import utc_now
-
-        # Create debug log file
-        debug_log_path = os.path.join(tempfile.gettempdir(), "qontinui_click_debug.log")
-
-        def log_debug(msg: str):
-            """Write to both logger and debug file."""
-            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            log_line = f"[{timestamp}] {msg}\n"
-            logger.debug("[CLICK_DEBUG] %s", msg)
-            try:
-                with open(debug_log_path, "a", encoding="utf-8") as f:
-                    f.write(log_line)
-            except Exception:
-                pass
-
-        log_debug(f"execute() called with target type: {type(target).__name__}")
+        logger.debug(f"execute() called with target type: {type(target).__name__}")
 
         # Initialize ActionResultBuilder with stored ClickOptions
         matches = ActionResultBuilder(self.options)
         if target is None:
-            log_debug("Target is None, returning False")
+            logger.debug("Target is None, returning False")
             return False
-
-        # Store log function for perform() to use
-        self._log_debug = log_debug
 
         # Convert target to ObjectCollection if needed
         if isinstance(target, ObjectCollection):
-            log_debug("Target is ObjectCollection, calling perform()")
+            logger.debug("Target is ObjectCollection, calling perform()")
             await self.perform(matches, target)
         else:
             # Create ObjectCollection from target
@@ -126,22 +105,21 @@ class Click(ActionInterface):
 
             builder = ObjectCollectionBuilder()
             if isinstance(target, Location):
-                log_debug(f"Target is Location: {target}")
+                logger.debug(f"Target is Location: {target}")
                 builder.with_locations(target)
             elif isinstance(target, ModelMatch):
-                log_debug(f"Target is ModelMatch: {target}")
+                logger.debug(f"Target is ModelMatch: {target}")
                 builder.with_match_objects_as_regions(target)
             else:
                 # Assume it's already compatible
-                log_debug("Target is unknown type, assuming compatible")
+                logger.debug("Target is unknown type, assuming compatible")
                 pass
 
             obj_coll = builder.build()
-            log_debug("Built ObjectCollection, calling perform()")
+            logger.debug("Built ObjectCollection, calling perform()")
             await self.perform(matches, obj_coll)
 
-        log_debug(f"execute() returning success={matches.success}")
-        log_debug(f"Debug log written to: {debug_log_path}")
+        logger.debug(f"execute() returning success={matches.success}")
         return matches.success
 
     async def perform(
@@ -173,33 +151,35 @@ class Click(ActionInterface):
         click_options = action_config
         clicked_count = 0
 
-        # Use stored log function if available (from execute())
-        log_func = getattr(self, "_log_debug", lambda msg: None)
-        log_func(f"perform() called with {len(object_collections)} object collections")
+        logger.debug(
+            f"perform() called with {len(object_collections)} object collections"
+        )
 
         # Process all object collections
         for obj_idx, obj_collection in enumerate(object_collections):
-            log_func(f"Processing object collection #{obj_idx + 1}")
-            log_func(f"  - matches: {len(obj_collection.matches)}")
-            log_func(f"  - locations: {len(obj_collection.locations)}")  # type: ignore[attr-defined]
-            log_func(f"  - regions: {len(obj_collection.regions)}")  # type: ignore[attr-defined]
+            logger.debug(f"Processing object collection #{obj_idx + 1}")
+            logger.debug(f"  - matches: {len(obj_collection.matches)}")
+            logger.debug(f"  - locations: {len(obj_collection.locations)}")  # type: ignore[attr-defined]
+            logger.debug(f"  - regions: {len(obj_collection.regions)}")  # type: ignore[attr-defined]
             # Click on any existing matches in the collection (ActionResult objects with match_list)
             for ar_idx, action_result in enumerate(obj_collection.matches):
-                log_func(
+                logger.debug(
                     f"  Processing ActionResult #{ar_idx + 1} with {len(action_result.matches)} matches"
                 )
                 # ActionResult contains a match_list with actual Match objects (from find module)
                 for fm_idx, find_match in enumerate(action_result.matches):
                     location = find_match.target
-                    log_func(f"    Match #{fm_idx + 1}: location={location}")
+                    logger.debug(f"    Match #{fm_idx + 1}: location={location}")
                     if location:  # Only click if match has a target location
-                        log_func(f"    Calling _click() at coordinates: {location}")
+                        logger.debug(f"    Calling _click() at coordinates: {location}")
                         # Use the underlying match_object which is a ModelMatch
                         self._click(location, click_options, find_match.match_object)
                         clicked_count += 1
-                        log_func(f"    Click completed, clicked_count={clicked_count}")
+                        logger.debug(
+                            f"    Click completed, clicked_count={clicked_count}"
+                        )
                     else:
-                        log_func("    Skipping match - no location")
+                        logger.debug("    Skipping match - no location")
                         # Pause between different targets
                         if self.time and clicked_count < self._get_total_targets(
                             object_collections
@@ -367,6 +347,4 @@ class ActionResultFactory:
         Returns:
             New ActionResult instance
         """
-        return (
-            ActionResultBuilder(action_config).with_description(description).build()
-        )
+        return ActionResultBuilder(action_config).with_description(description).build()

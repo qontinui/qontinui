@@ -18,8 +18,6 @@ The runner should NOT create StateMemory, Navigator, or any other state manageme
 from __future__ import annotations
 
 import logging
-import os
-import tempfile
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -30,21 +28,6 @@ if TYPE_CHECKING:
     from qontinui.state_management.state_memory import StateMemory
 
 logger = logging.getLogger(__name__)
-
-_DEBUG_LOG_PATH = os.path.join(tempfile.gettempdir(), "qontinui_navigation_debug.log")
-
-
-def _debug_print(msg: str) -> None:
-    """Write debug message to file to ensure visibility when logging is disabled."""
-    try:
-        from qontinui_schemas.common import utc_now
-
-        with open(_DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
-            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            f.write(f"[{timestamp}] [NAVIGATION_API] {msg}\n")
-            f.flush()
-    except Exception:
-        pass
 
 
 # Global navigation instance
@@ -89,12 +72,12 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
     """
     global _navigator, _state_memory, _state_service, _initialized
 
-    _debug_print("load_configuration() called")
+    logger.debug("load_configuration() called")
     logger.info("Loading qontinui configuration...")
 
     try:
         # Import required modules
-        _debug_print("Importing required modules...")
+        logger.debug("Importing required modules...")
         from qontinui.config.state_loader import load_states_from_config
         from qontinui.config.transition_loader import load_transitions_from_config
         from qontinui.model.state.state_service import StateService
@@ -105,26 +88,26 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
 
         # Step 1: Create StateService
         _state_service = StateService()
-        _debug_print("StateService created")
+        logger.debug("StateService created")
         logger.debug("StateService created")
 
         # Step 2: Load states from config
-        _debug_print("Loading states from config...")
+        logger.debug("Loading states from config...")
         if not load_states_from_config(config_dict, _state_service):
-            _debug_print("ERROR: Failed to load states from configuration")
+            logger.debug("ERROR: Failed to load states from configuration")
             logger.error("Failed to load states from configuration")
             return False
 
         state_count = len(_state_service.get_all_states())
-        _debug_print(f"Loaded {state_count} states")
+        logger.debug(f"Loaded {state_count} states")
         logger.info(f"Loaded {state_count} states from configuration")
 
         # Step 3: Load transitions from config
-        _debug_print("Step 3: Loading transitions from config...")
+        logger.debug("Step 3: Loading transitions from config...")
         transitions_loaded = load_transitions_from_config(config_dict, _state_service)
-        _debug_print(f"load_transitions_from_config returned: {transitions_loaded}")
+        logger.debug(f"load_transitions_from_config returned: {transitions_loaded}")
         if not transitions_loaded:
-            _debug_print("ERROR: Failed to load transitions from configuration!")
+            logger.debug("ERROR: Failed to load transitions from configuration!")
             logger.error("Failed to load transitions from configuration")
             return False
 
@@ -181,37 +164,37 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
                 _navigator.multistate_adapter.register_qontinui_state(state)
                 registered_count += 1
 
-        _debug_print(f"Registered {registered_count} states with multistate adapter")
+        logger.debug(f"Registered {registered_count} states with multistate adapter")
 
         # Step 8: Register all transitions with the multistate adapter
         transition_count = 0
         states_with_transitions = 0
-        _debug_print(
+        logger.debug(
             f"Checking transitions on {len(_state_service.get_all_states())} states"
         )
         for state in _state_service.get_all_states():
-            _debug_print(
+            logger.debug(
                 f"  State '{state.name}' (id={state.id}): {len(state.transitions)} transitions"
             )
             if state.transitions:
                 states_with_transitions += 1
-                _debug_print(
+                logger.debug(
                     f"    State '{state.name}' has {len(state.transitions)} transitions"
                 )
             for transition in state.transitions:
-                _debug_print(
+                logger.debug(
                     f"    Registering transition: {transition.id} from state '{state.name}'"  # type: ignore[attr-defined]
                 )
                 _navigator.multistate_adapter.register_qontinui_transition(transition)  # type: ignore[arg-type]
                 transition_count += 1
 
-        _debug_print(f"Found {states_with_transitions} states with transitions")
-        _debug_print(
+        logger.debug(f"Found {states_with_transitions} states with transitions")
+        logger.debug(
             f"Registered {transition_count} total transitions with multistate adapter"
         )
 
         _initialized = True
-        _debug_print(
+        logger.debug(
             f"Navigation system initialized successfully! _initialized={_initialized}"
         )
 
@@ -221,7 +204,7 @@ def load_configuration(config_dict: dict[str, Any]) -> bool:
         return True
 
     except Exception as e:
-        _debug_print(f"EXCEPTION in load_configuration: {e}")
+        logger.debug(f"EXCEPTION in load_configuration: {e}")
         logger.error(f"Failed to load configuration: {e}", exc_info=True)
         _initialized = False
         return False
@@ -261,26 +244,26 @@ def _find_active_states_visually(states: list[Any]) -> set[int]:
         if state_id is None:
             continue
 
-        _debug_print(
+        logger.debug(
             f"Collecting StateImages for state '{state.name}' (ID: {state_id})"
         )
-        _debug_print(f"  State has {len(state.state_images)} StateImages")
+        logger.debug(f"  State has {len(state.state_images)} StateImages")
 
         for idx, state_image in enumerate(state.state_images):
             image_name = state_image.name or f"image_{idx}"
             try:
                 pattern = state_image.get_pattern()
                 all_state_images.append((state_id, state.name, state_image, pattern))
-                _debug_print(f"  Added StateImage '{image_name}'")
+                logger.debug(f"  Added StateImage '{image_name}'")
             except Exception as e:
-                _debug_print(f"  Error getting pattern for '{image_name}': {e}")
+                logger.debug(f"  Error getting pattern for '{image_name}': {e}")
 
     if not all_state_images:
-        _debug_print("No StateImages found for any target states")
+        logger.debug("No StateImages found for any target states")
         logger.warning("FIND_STATE check: No StateImages found for target states")
         return active_state_ids
 
-    _debug_print(
+    logger.debug(
         f"Performing find_async on {len(all_state_images)} StateImages from {len(states)} states..."
     )
 
@@ -329,7 +312,7 @@ def _find_active_states_visually(states: list[Any]) -> set[int]:
             image_name = state_image.name or f"image_{i}"
 
             if result.found:
-                _debug_print(
+                logger.debug(
                     f"  FOUND! State '{state_name}' is active (StateImage '{image_name}')"
                 )
                 logger.info(
@@ -337,13 +320,13 @@ def _find_active_states_visually(states: list[Any]) -> set[int]:
                 )
                 active_state_ids.add(state_id)
             else:
-                _debug_print(f"  StateImage '{image_name}' not found on screen")
+                logger.debug(f"  StateImage '{image_name}' not found on screen")
 
     except Exception as e:
-        _debug_print(f"Error in find: {e}")
+        logger.debug(f"Error in find: {e}")
         logger.warning(f"Error in parallel find operation: {e}")
 
-    _debug_print(
+    logger.debug(
         f"FIND_STATE check complete: {len(active_state_ids)}/{len(states)} states active"
     )
     logger.info(
@@ -382,32 +365,32 @@ def open_states(state_identifiers: list[str | int]) -> bool:
     Returns:
         True if navigation succeeded and ALL target states were reached, False otherwise
     """
-    _debug_print(f"open_states() called with: {state_identifiers}")
-    _debug_print(
+    logger.debug(f"open_states() called with: {state_identifiers}")
+    logger.debug(
         f"_initialized={_initialized}, _navigator={_navigator is not None}, _state_service={_state_service is not None}"
     )
 
     if not _initialized:
-        _debug_print("ERROR: Navigation system not initialized!")
+        logger.debug("ERROR: Navigation system not initialized!")
         logger.error(
             "Navigation system not initialized - call load_configuration() first"
         )
         return False
 
     if not _navigator:
-        _debug_print("ERROR: Navigator not available!")
+        logger.debug("ERROR: Navigator not available!")
         logger.error("Navigator not available")
         return False
 
     if not _state_service:
-        _debug_print("ERROR: State service not available!")
+        logger.debug("ERROR: State service not available!")
         logger.error(
             "State service not available - state/transition loading from config not yet implemented"
         )
         return False
 
     if not state_identifiers:
-        _debug_print("ERROR: No state identifiers provided!")
+        logger.debug("ERROR: No state identifiers provided!")
         logger.error("No state identifiers provided")
         return False
 
@@ -419,36 +402,36 @@ def open_states(state_identifiers: list[str | int]) -> bool:
             state_id = identifier
             state = _state_service.get_state_by_id(state_id)  # type: ignore[attr-defined]
             if not state:
-                _debug_print(f"ERROR: State ID {state_id} not found!")
+                logger.debug(f"ERROR: State ID {state_id} not found!")
                 logger.error(f"State ID {state_id} not found in state service")
                 return False
         elif isinstance(identifier, str):
             state = _state_service.get_state_by_name(identifier)
             if not state or not state.id:
-                _debug_print(f"ERROR: State '{identifier}' not found!")
+                logger.debug(f"ERROR: State '{identifier}' not found!")
                 logger.error(f"State '{identifier}' not found in state service")
                 return False
             state_id = state.id
-            _debug_print(f"State '{identifier}' -> ID {state_id}")
+            logger.debug(f"State '{identifier}' -> ID {state_id}")
         else:
-            _debug_print(f"ERROR: Invalid state identifier type: {type(identifier)}")
+            logger.debug(f"ERROR: Invalid state identifier type: {type(identifier)}")
             logger.error(f"Invalid state identifier type: {type(identifier)}")
             return False
 
         target_state_ids.append(state_id)
         target_states.append(state)
 
-    _debug_print(f"Target state IDs: {target_state_ids}")
+    logger.debug(f"Target state IDs: {target_state_ids}")
     logger.info(f"Navigating to states: {state_identifiers} (IDs: {target_state_ids})")
 
     # FIND_STATE check: Visually verify if all target states are already active
-    _debug_print("Performing FIND_STATE check for target states...")
+    logger.debug("Performing FIND_STATE check for target states...")
     logger.info("Performing FIND_STATE check for target states")
     active_states_found = _find_active_states_visually(target_states)
 
     if active_states_found and all(s.id in active_states_found for s in target_states):
         state_names = [s.name for s in target_states]
-        _debug_print(f"All target states already visible on screen: {state_names}")
+        logger.debug(f"All target states already visible on screen: {state_names}")
         logger.info(
             f"All target states already active on screen: {state_names} - skipping navigation"
         )
@@ -457,7 +440,7 @@ def open_states(state_identifiers: list[str | int]) -> bool:
     # Log which states are missing
     missing_states = [s for s in target_states if s.id not in active_states_found]
     missing_names = [s.name for s in missing_states]
-    _debug_print(
+    logger.debug(
         f"States not yet visible: {missing_names}. Proceeding with navigation."
     )
     logger.info(f"States not yet active: {missing_names}. Initiating navigation.")
@@ -465,7 +448,7 @@ def open_states(state_identifiers: list[str | int]) -> bool:
     # Get current active states for debugging
     active_states = _state_memory.get_active_state_names() if _state_memory else []
     active_state_ids = list(_state_memory.active_states) if _state_memory else []
-    _debug_print(
+    logger.debug(
         f"Current active states (from memory): {active_states} (IDs: {active_state_ids})"
     )
     logger.info(f"Current active states (from memory): {active_states}")
