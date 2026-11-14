@@ -526,14 +526,38 @@ def test_main_exits_1_when_an_owner_has_nothing_to_check(tmp_path, monkeypatch):
     assert _main(monkeypatch, tmp_path / "poetry.lock", CONTEST) == 1
 
 
+# Rivals that have left qontinui's own poetry.lock but whose contest must stay
+# until every OTHER lock this script runs against has dropped them too.
+# python3-xlib left with pyautogui (plan
+# 2026-11-14-one-xlib-distribution-and-no-tmp-debug-logs-in-the-python-bridge,
+# Phase 2), but the runner bundle checks out qontinui main unpinned and runs this
+# script against python-bridge/poetry.lock, which still locks the fork until that
+# plan's Phase 3 relock; the sibling repos' locks follow in Phase 6, which deletes
+# the Xlib contest and this entry together.
+RIVALS_RETIRING_ELSEWHERE = frozenset({"python3-xlib"})
+
+
 def test_every_contest_is_still_in_the_lock():
     """The repair installs the owner from poetry.lock, so it must be locked. A rival
-    that left the lock means that collision is gone: drop it from the contest."""
+    that left the lock means that collision is gone: drop it from the contest,
+    unless other locks still carry it (RIVALS_RETIRING_ELSEWHERE)."""
     lock = tomllib.loads((REPO_ROOT / "poetry.lock").read_text(encoding="utf-8"))
     locked = {epo.canonical(entry["name"]) for entry in lock["package"]}
     for contest in epo.CONTESTS:
         assert epo.canonical(contest.owner) in locked, contest
         for rival in contest.rivals:
+            if epo.canonical(rival) in RIVALS_RETIRING_ELSEWHERE:
+                continue
             assert epo.canonical(rival) in locked, (
                 f"{rival} left poetry.lock: drop it from {contest}"
             )
+
+
+def test_retiring_rivals_are_still_contested():
+    """An exemption outlives its contest only by mistake: once the contest drops
+    the rival, delete it from RIVALS_RETIRING_ELSEWHERE too."""
+    contested = {
+        epo.canonical(rival) for contest in epo.CONTESTS for rival in contest.rivals
+    }
+    stale = sorted(RIVALS_RETIRING_ELSEWHERE - contested)
+    assert not stale, f"{stale} no longer contested: drop from RIVALS_RETIRING_ELSEWHERE"
