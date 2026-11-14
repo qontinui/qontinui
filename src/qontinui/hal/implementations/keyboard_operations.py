@@ -309,39 +309,45 @@ class KeyboardOperations(IKeyboardController):
         Raises:
             InputControlError: If hotkey fails
         """
+        pressed: list[PynputKey | str] = []
         try:
-            # Convert all keys
-            pynput_keys = [self._get_pynput_key(k) for k in keys]
-
-            # Press all keys
-            for key in pynput_keys:
-                self._keyboard.press(key)
-
-            # Small delay
-            TimeWrapper().wait(seconds=0.05)
-
-            # Release all keys in reverse order
-            for key in reversed(pynput_keys):
-                self._keyboard.release(key)
+            try:
+                pynput_keys = [self._get_pynput_key(k) for k in keys]
+                for key in pynput_keys:
+                    self._keyboard.press(key)
+                    pressed.append(key)
+                TimeWrapper().wait(seconds=0.05)
+            finally:
+                # Whatever happened above, release exactly the keys that went
+                # down, in reverse order, so no modifier is left held.
+                release_error = self._release_in_reverse(pressed)
+            if release_error is not None:
+                raise release_error
 
             logger.debug(f"Hotkey pressed: {'+'.join(str(k) for k in keys)}")
             return True
 
-        except (OSError, RuntimeError, ValueError, TypeError) as e:
+        except Exception as e:
+            # Any failure, including pynput exceptions outside the builtin
+            # hierarchy (e.g. InvalidKeyException), is reported uniformly.
             logger.error(f"Hotkey failed: {e}")
-            # Try to release any pressed keys
-            for orig_key in keys:
-                try:
-                    # Type annotation to clarify for mypy
-                    qontinui_key: str | Key = orig_key
-                    pynput_key: PynputKey | str = self._get_pynput_key(qontinui_key)
-                    self._keyboard.release(pynput_key)
-                except (OSError, RuntimeError, ValueError, TypeError):
-                    # OK to ignore release errors in error handler (a key
-                    # pynput cannot resolve raises ValueError here too, and
-                    # must not mask the InputControlError below)
-                    pass
             raise InputControlError("hotkey", str(e)) from e
+
+    def _release_in_reverse(self, pressed: list[PynputKey | str]) -> Exception | None:
+        """Release ``pressed`` in reverse order, attempting every key.
+
+        Returns:
+            The first release error, or None if every release succeeded
+        """
+        first_error: Exception | None = None
+        for key in reversed(pressed):
+            try:
+                self._keyboard.release(key)
+            except Exception as e:
+                logger.warning(f"Releasing {key} after hotkey failed: {e}")
+                if first_error is None:
+                    first_error = e
+        return first_error
 
     def is_key_pressed(self, key: str | Key) -> bool:
         """Check if key is currently pressed.
