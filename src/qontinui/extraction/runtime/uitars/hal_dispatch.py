@@ -5,16 +5,22 @@ turns one such action into calls on the HAL mouse/keyboard controllers
 (pynput by default), so UI-TARS shares the single input stack the rest of
 qontinui uses.
 
-Two behaviours UI-TARS runs rely on, which pynput does not provide by
-itself, are implemented explicitly here:
+UI-TARS was tuned against pyautogui, which gave every call two behaviours that
+pynput does not have. Both are reproduced here explicitly:
 
-* **Corner abort (failsafe).** Before every input step the pointer position
-  is read; if it sits at the top-left corner ``(0, 0)`` the action is refused
-  with a logged error. Moving the mouse into that corner is how an operator
-  stops an autonomous run.
-* **Pause between compound steps.** A compound action (click then type,
-  move then drag) waits ``COMPOUND_STEP_PAUSE_S`` between its steps so the
-  target UI can react to the first step before the second arrives.
+* **Corner abort (failsafe).** pyautogui 0.9.54 raised ``FailSafeException``
+  when the pointer sat on any of the four corners of the primary screen
+  (``(0, 0)``, ``(0, h-1)``, ``(w-1, 0)``, ``(w-1, h-1)``). Before every
+  input step the pointer position is read and, on a corner, the action is
+  refused with a logged error. Moving the mouse into a corner is how an
+  operator stops an autonomous run. The screen size comes from the HAL
+  screen capture; when it cannot be read, only ``(0, 0)`` is checked and
+  that degradation is logged once.
+* **Pause after every input step.** pyautogui slept ``PAUSE`` (0.1 s) after
+  every call. ``STEP_PAUSE_S`` is slept after each input step, so a compound
+  action (click then type, move then drag) waits between its steps and every
+  input action leaves the UI 0.1 s to react before the caller looks at the
+  screen again.
 """
 
 from __future__ import annotations
@@ -29,11 +35,8 @@ from qontinui.hal.interfaces.mouse_controller import IMouseController
 
 logger = logging.getLogger(__name__)
 
-#: Pause between the steps of a compound action (seconds).
-COMPOUND_STEP_PAUSE_S = 0.1
-
-#: Pointer position that aborts the action (operator failsafe).
-FAILSAFE_CORNER = (0, 0)
+#: Pause after every input step (pyautogui's ``PAUSE``), in seconds.
+STEP_PAUSE_S = 0.1
 
 #: Typing interval per character (seconds).
 TYPE_INTERVAL_S = 0.02
@@ -44,17 +47,36 @@ DEFAULT_SCROLL_AMOUNT = 100
 #: Windows wheel delta of one notch (``WHEEL_DELTA`` in winuser.h).
 WIN32_WHEEL_DELTA = 120
 
+_warned_no_screen_size = False
+
+
+class FailsafeTriggered(RuntimeError):
+    """Raised internally when the pointer sits on a failsafe corner."""
+
+
+def _current_platform() -> str:
+    """Return ``sys.platform`` (a seam for tests)."""
+    return sys.platform
+
 
 def scroll_amount_to_clicks(amount: int, platform: str | None = None) -> int:
     """Convert a UI-TARS scroll amount into HAL ``mouse_scroll`` clicks.
 
     UI-TARS amounts were tuned against pyautogui, whose unit differs by
-    platform. On X11 pyautogui sent ``amount`` wheel-button clicks, which is
-    exactly what pynput's ``scroll`` does, so the amount passes through. On
-    Windows pyautogui passed ``amount`` as the raw wheel delta (120 = one
-    notch), while pynput multiplies by ``WHEEL_DELTA`` itself; passing the
-    amount through would scroll 120x further. There the amount is converted to
-    notches, keeping its sign and scrolling at least one notch.
+    platform:
+
+    * **X11 (linux):** pyautogui sent ``amount`` wheel-button clicks, which is
+      exactly what pynput's ``scroll`` does, so the amount passes through.
+    * **Windows:** pyautogui passed ``amount`` as the raw wheel delta (120 =
+      one notch), while pynput multiplies by ``WHEEL_DELTA`` itself; passing
+      the amount through would scroll 120x further. The amount is converted to
+      notches, keeping its sign and scrolling at least one notch.
+    * **macOS: approximate, unverified.** pyautogui posted ``amount`` *line*
+      units (``kCGScrollEventUnitLine``); pynput posts ``amount * 10`` *pixel*
+      units (``kCGScrollEventUnitPixel``, ``_SCROLL_SPEED = 10``). How many
+      pixels a line is depends on the event source and the receiving
+      application, so no exact conversion exists; the amount passes through
+      and the result matches pyautogui only where a line is about 10 pixels.
 
     Args:
         amount: Signed scroll amount in pyautogui units
@@ -64,30 +86,56 @@ def scroll_amount_to_clicks(amount: int, platform: str | None = None) -> int:
     Returns:
         Signed number of clicks for ``IMouseController.mouse_scroll``
     """
-    platform = sys.platform if platform is None else platform
+    platform = _current_platform() if platform is None else platform
     if platform != "win32" or amount == 0:
         return amount
     notches = max(1, round(abs(amount) / WIN32_WHEEL_DELTA))
     return notches if amount > 0 else -notches
 
 
-class FailsafeTriggered(RuntimeError):
-    """Raised internally when the pointer sits in the failsafe corner."""
+def failsafe_corners(screen_size: tuple[int, int] | None) -> frozenset[tuple[int, int]]:
+    """Return the failsafe corner points for a primary screen of ``screen_size``.
+
+    Args:
+        screen_size: ``(width, height)`` of the primary screen, or None when
+            unknown (then only ``(0, 0)`` is a failsafe point)
+    """
+    if screen_size is None:
+        return frozenset({(0, 0)})
+    width, height = screen_size
+    return frozenset({(0, 0), (0, height - 1), (width - 1, 0), (width - 1, height - 1)})
 
 
-def _check_failsafe(mouse: IMouseController) -> None:
-    """Raise FailsafeTriggered if the pointer is in the failsafe corner."""
+def _resolve_screen_size() -> tuple[int, int] | None:
+    """Read the primary screen size from the HAL screen capture, or None."""
+    global _warned_no_screen_size
+    try:
+        from qontinui.hal.factory import HALFactory
+
+        width, height = HALFactory.get_screen_capture().get_screen_size()
+        return (int(width), int(height))
+    except Exception as e:
+        if not _warned_no_screen_size:
+            _warned_no_screen_size = True
+            logger.warning(
+                f"Screen size unavailable ({e}); the UI-TARS failsafe checks only the (0, 0) corner"
+            )
+        return None
+
+
+def _check_failsafe(mouse: IMouseController, corners: frozenset[tuple[int, int]]) -> None:
+    """Raise FailsafeTriggered if the pointer is on a failsafe corner."""
     pos = mouse.get_mouse_position()
-    if (pos.x, pos.y) == FAILSAFE_CORNER:
+    if (pos.x, pos.y) in corners:
         raise FailsafeTriggered(
-            f"pointer is at the failsafe corner {FAILSAFE_CORNER}; "
+            f"pointer is at the failsafe corner {(pos.x, pos.y)}; "
             "refusing to execute UI-TARS action"
         )
 
 
-async def _pause_between_steps() -> None:
-    """Wait between the steps of a compound action."""
-    await asyncio.sleep(COMPOUND_STEP_PAUSE_S)
+async def _pause_after_step() -> None:
+    """Wait after an input step, as pyautogui's ``PAUSE`` did."""
+    await asyncio.sleep(STEP_PAUSE_S)
 
 
 def _resolve_controllers(
@@ -118,6 +166,7 @@ async def execute_hal_action(
     end_y: int | None = None,
     mouse: IMouseController | None = None,
     keyboard: IKeyboardController | None = None,
+    screen_size: tuple[int, int] | None = None,
     incomplete_action_result: bool = True,
 ) -> bool:
     """Execute one UI-TARS action through the HAL controllers.
@@ -135,6 +184,8 @@ async def execute_hal_action(
         mouse: Mouse controller (defaults to ``HALFactory.get_mouse_controller()``)
         keyboard: Keyboard controller (defaults to
             ``HALFactory.get_keyboard_controller()``)
+        screen_size: Primary screen ``(width, height)`` for the failsafe
+            corners (defaults to the HAL screen capture's size)
         incomplete_action_result: What to return for a pointer action without
             the coordinates it needs, or a hotkey without keys. Nothing is
             executed either way; callers keep their historical answer.
@@ -151,26 +202,35 @@ async def execute_hal_action(
 
     try:
         mouse, keyboard = _resolve_controllers(mouse, keyboard)
+        corners = failsafe_corners(
+            screen_size if screen_size is not None else _resolve_screen_size()
+        )
+
+        async def step(call: object) -> bool:
+            """Pause after an executed step and report its result."""
+            await _pause_after_step()
+            return bool(call)
+
+        def guard() -> None:
+            _check_failsafe(mouse, corners)
 
         if action_type == "click" and x is not None and y is not None:
-            _check_failsafe(mouse)
-            return bool(mouse.click_at(x, y))
+            guard()
+            return await step(mouse.click_at(x, y))
         if action_type == "double_click" and x is not None and y is not None:
-            _check_failsafe(mouse)
-            return bool(mouse.double_click_at(x, y))
+            guard()
+            return await step(mouse.double_click_at(x, y))
         if action_type == "right_click" and x is not None and y is not None:
-            _check_failsafe(mouse)
-            return bool(mouse.click_at(x, y, button=MouseButton.RIGHT))
+            guard()
+            return await step(mouse.click_at(x, y, button=MouseButton.RIGHT))
         if action_type == "type":
             if x is not None and y is not None:
-                _check_failsafe(mouse)
-                if not mouse.click_at(x, y):
+                guard()
+                if not await step(mouse.click_at(x, y)):
                     return False
-                if text:
-                    await _pause_between_steps()
             if text:
-                _check_failsafe(mouse)
-                return bool(keyboard.type_text(text, interval=TYPE_INTERVAL_S))
+                guard()
+                return await step(keyboard.type_text(text, interval=TYPE_INTERVAL_S))
             return True
         if action_type == "scroll":
             amount = scroll_amount_to_clicks(scroll_amount or DEFAULT_SCROLL_AMOUNT)
@@ -184,11 +244,11 @@ async def execute_hal_action(
                 # Historical behaviour: an unknown direction is a no-op success.
                 logger.warning(f"Unknown scroll direction: {scroll_direction}")
                 return True
-            _check_failsafe(mouse)
-            return bool(mouse.mouse_scroll(axes[0], horizontal_clicks=axes[1]))
+            guard()
+            return await step(mouse.mouse_scroll(axes[0], horizontal_clicks=axes[1]))
         if action_type == "hover" and x is not None and y is not None:
-            _check_failsafe(mouse)
-            return bool(mouse.move_mouse(x, y))
+            guard()
+            return await step(mouse.move_mouse(x, y))
         if (
             action_type == "drag"
             and x is not None
@@ -196,15 +256,14 @@ async def execute_hal_action(
             and end_x is not None
             and end_y is not None
         ):
-            _check_failsafe(mouse)
-            if not mouse.move_mouse(x, y):
+            guard()
+            if not await step(mouse.move_mouse(x, y)):
                 return False
-            await _pause_between_steps()
-            _check_failsafe(mouse)
-            return bool(mouse.drag(x, y, end_x, end_y))
+            guard()
+            return await step(mouse.drag(x, y, end_x, end_y))
         if action_type == "hotkey" and keys:
-            _check_failsafe(mouse)
-            return bool(keyboard.hotkey(*keys))
+            guard()
+            return await step(keyboard.hotkey(*keys))
         if action_type in ("click", "double_click", "right_click", "hover", "drag"):
             logger.debug(
                 f"UI-TARS {action_type} action without coordinates "
