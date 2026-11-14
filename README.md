@@ -81,7 +81,7 @@ won.
 Qontinui requires:
 - **[MultiState](https://github.com/jspinak/multistate)** - Multi-state state management
 - **OpenCV** - Image template matching
-- **PyAutoGUI/pynput** - Input control
+- **pynput** - Input control
 
 ## Quick Start
 
@@ -158,7 +158,7 @@ qontinui/
 - ✅ Template-based image matching
 - ✅ Multi-state state management
 - ✅ Process and state machine execution modes
-- ✅ Cross-platform input control (PyAutoGUI, pynput)
+- ✅ Cross-platform input control (pynput, via the HAL)
 - ✅ Hardware abstraction layer for multiple backends
 - ✅ **Self-healing system** with action caching, visual validation, and optional LLM assistance
 - ✅ **AWAS integration** for structured web automation via AI action manifests
@@ -283,7 +283,7 @@ Licensed under the GNU Affero General Public License v3.0 or later (AGPL-3.0-or-
 
 - [Brobot](https://github.com/jspinak/brobot) - The original Java library
 - [MultiState](https://github.com/jspinak/multistate) - Multi-state state management
-- [PyAutoGUI](https://github.com/asweigart/pyautogui) - GUI automation
+- [pynput](https://github.com/moses-palmer/pynput) - Mouse and keyboard input
 - [OpenCV](https://opencv.org/) - Computer vision
 
 ## Related Projects

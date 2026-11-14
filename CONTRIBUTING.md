@@ -179,7 +179,7 @@ Check BROBOT_MIGRATION_TRACKER.md for:
 Qontinui depends on:
 - **[MultiState](https://github.com/jspinak/multistate)** - Multi-state state management
 - **OpenCV** - Image template matching
-- **PyAutoGUI/pynput** - Input control
+- **pynput** - Input control
 
 ## Questions?
 
