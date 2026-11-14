@@ -27,6 +27,9 @@ from qontinui.extraction.runtime.uitars.executor import (  # noqa: E402
     LocalGroundingResult,
     UITARSExecutor,
 )
+from qontinui.extraction.runtime.uitars.hal_dispatch import (  # noqa: E402
+    _resolve_screen_size as _REAL_RESOLVE_SCREEN_SIZE,
+)
 from qontinui.extraction.runtime.uitars.models import (  # noqa: E402
     UITARSAction,
     UITARSActionType,
@@ -418,6 +421,22 @@ class TestHybridGrounder:
         mock_executor.ground_element.assert_not_called()
 
 
+SCREEN_SIZE = (1920, 1080)
+
+
+@pytest.fixture(autouse=True)
+def _pin_dispatch_environment(monkeypatch):
+    """Pin the platform (scroll units) and screen size (failsafe corners).
+
+    Without this, scroll assertions would depend on the OS running the tests
+    and the failsafe on whatever display is attached.
+    """
+    from qontinui.extraction.runtime.uitars import hal_dispatch
+
+    monkeypatch.setattr(hal_dispatch, "_current_platform", lambda: "linux")
+    monkeypatch.setattr(hal_dispatch, "_resolve_screen_size", lambda: SCREEN_SIZE)
+
+
 def _make_hal_mocks(position: tuple[int, int] = (500, 500)) -> tuple[MagicMock, MagicMock]:
     """Mock HAL mouse/keyboard controllers with the pointer at ``position``."""
     mouse = MagicMock(spec=IMouseController)
@@ -595,9 +614,10 @@ class TestExecuteHalAction:
         assert self.keyboard.mock_calls == []
 
     @pytest.mark.asyncio
-    async def test_corner_abort_refuses_action(self, caplog):
-        """Pointer in the (0, 0) failsafe corner refuses the action with an error."""
-        self.mouse.get_mouse_position.return_value = MousePosition(0, 0)
+    @pytest.mark.parametrize("corner", [(0, 0), (0, 1079), (1919, 0), (1919, 1079)])
+    async def test_corner_abort_refuses_action(self, caplog, corner):
+        """Pointer on any of the four screen corners refuses the action."""
+        self.mouse.get_mouse_position.return_value = MousePosition(*corner)
         action = UITARSAction(action_type=UITARSActionType.CLICK, x=100, y=200)
 
         with caplog.at_level("ERROR"):
@@ -606,6 +626,16 @@ class TestExecuteHalAction:
         assert result is False
         self.mouse.click_at.assert_not_called()
         assert "failsafe corner" in caplog.text
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("position", [(1, 0), (0, 1), (1918, 1079), (960, 540)])
+    async def test_near_corner_is_not_a_failsafe_point(self, position):
+        """Only the exact corner pixels abort, as in pyautogui."""
+        self.mouse.get_mouse_position.return_value = MousePosition(*position)
+        action = UITARSAction(action_type=UITARSActionType.CLICK, x=100, y=200)
+
+        assert await self.executor._execute_hal_action(action) is True
+        self.mouse.click_at.assert_called_once_with(100, 200)
 
     @pytest.mark.asyncio
     async def test_corner_abort_between_compound_steps(self):
@@ -619,7 +649,7 @@ class TestExecuteHalAction:
         )
 
         with patch(
-            "qontinui.extraction.runtime.uitars.hal_dispatch._pause_between_steps",
+            "qontinui.extraction.runtime.uitars.hal_dispatch._pause_after_step",
             new=AsyncMock(),
         ):
             result = await self.executor._execute_hal_action(action)
@@ -648,10 +678,10 @@ class TestExecuteHalAction:
             ),
         ],
     )
-    async def test_compound_action_pauses_between_steps(
+    async def test_compound_action_pauses_after_each_step(
         self, action, first_step, second_step
     ):
-        """Compound actions sleep COMPOUND_STEP_PAUSE_S between their two steps."""
+        """Compound actions sleep STEP_PAUSE_S after each of their two steps."""
         from qontinui.extraction.runtime.uitars import hal_dispatch
 
         manager = MagicMock()
@@ -664,9 +694,43 @@ class TestExecuteHalAction:
             result = await self.executor._execute_hal_action(action)
 
         assert result is True
-        assert hal_dispatch.COMPOUND_STEP_PAUSE_S == 0.1
+        assert hal_dispatch.STEP_PAUSE_S == 0.1
         names = [c[0] for c in manager.mock_calls if c[0] != "mouse.get_mouse_position"]
-        assert names == [first_step, "sleep", second_step]
+        assert names == [first_step, "sleep", second_step, "sleep"]
+        assert [c.args for c in sleep.await_args_list] == [(0.1,), (0.1,)]
+
+    @pytest.mark.asyncio
+    async def test_execute_action_settles_before_screenshot_after(self, monkeypatch):
+        """execute_action pauses STEP_PAUSE_S after the input before capturing."""
+        from qontinui.extraction.runtime.uitars import hal_dispatch
+
+        monkeypatch.delenv("QONTINUI_OMNIPARSER_PREFILTER", raising=False)
+        self.mock_provider.infer.return_value = UITARSInferenceResult(
+            thought=UITARSThought(reasoning="click"),
+            action=UITARSAction(action_type=UITARSActionType.CLICK, x=10, y=20),
+            raw_output="",
+            inference_time_ms=1.0,
+        )
+        self.executor._initialized = True
+        self.executor._screen_capture = MagicMock()
+        capture = AsyncMock(return_value=np.zeros((2, 2, 3), dtype=np.uint8))
+        sleep = AsyncMock()
+        manager = MagicMock()
+        manager.attach_mock(self.mouse, "mouse")
+        manager.attach_mock(sleep, "sleep")
+        manager.attach_mock(capture, "capture")
+
+        with (
+            patch.object(hal_dispatch.asyncio, "sleep", new=sleep),
+            patch.object(self.executor, "_capture_screenshot", new=capture),
+        ):
+            result = await self.executor.execute_action(
+                np.zeros((2, 2, 3), dtype=np.uint8), "click"
+            )
+
+        assert result.success is True
+        names = [c[0] for c in manager.mock_calls if c[0] != "mouse.get_mouse_position"]
+        assert names == ["mouse.click_at", "sleep", "capture"]
         sleep.assert_awaited_once_with(0.1)
 
     @pytest.mark.asyncio
@@ -738,7 +802,6 @@ class TestScrollUnits:
         [
             ("linux", 100, 100),
             ("linux", -3, -3),
-            ("darwin", 5, 5),
             ("win32", 120, 1),
             ("win32", -240, -2),
             ("win32", 100, 1),
@@ -756,6 +819,17 @@ class TestScrollUnits:
 
         assert scroll_amount_to_clicks(amount, platform=platform) == expected
 
+    @pytest.mark.parametrize("amount", [5, -12])
+    def test_darwin_passes_through_documenting_current_behaviour(self, amount):
+        """Documents current behaviour, not correctness: on macOS pyautogui
+        scrolled LINE units and pynput scrolls amount*10 PIXEL units, with no
+        exact conversion, so the amount is passed through unconverted."""
+        from qontinui.extraction.runtime.uitars.hal_dispatch import (
+            scroll_amount_to_clicks,
+        )
+
+        assert scroll_amount_to_clicks(amount, platform="darwin") == amount
+
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         ("platform", "direction", "expected"),
@@ -771,7 +845,7 @@ class TestScrollUnits:
     ):
         from qontinui.extraction.runtime.uitars import hal_dispatch
 
-        monkeypatch.setattr(hal_dispatch.sys, "platform", platform)
+        monkeypatch.setattr(hal_dispatch, "_current_platform", lambda: platform)
         mouse, keyboard = _make_hal_mocks()
 
         result = await hal_dispatch.execute_hal_action(
@@ -895,3 +969,73 @@ class TestIncompleteActions:
 
         assert result is True
         mouse.mouse_scroll.assert_not_called()
+
+
+class TestFailsafeScreenSize:
+    """Where the failsafe corners come from."""
+
+    def test_corners_for_a_screen(self):
+        from qontinui.extraction.runtime.uitars.hal_dispatch import failsafe_corners
+
+        assert failsafe_corners((800, 600)) == {(0, 0), (0, 599), (799, 0), (799, 599)}
+
+    def test_unknown_screen_size_checks_only_origin(self):
+        from qontinui.extraction.runtime.uitars.hal_dispatch import failsafe_corners
+
+        assert failsafe_corners(None) == {(0, 0)}
+
+    def test_screen_size_read_from_hal_screen_capture(self):
+        capture = MagicMock()
+        capture.get_screen_size.return_value = (2560, 1440)
+        with patch(
+            "qontinui.hal.factory.HALFactory.get_screen_capture", return_value=capture
+        ):
+            assert _REAL_RESOLVE_SCREEN_SIZE() == (2560, 1440)
+
+    def test_unavailable_screen_size_falls_back_and_warns_once(self, monkeypatch, caplog):
+        from qontinui.extraction.runtime.uitars import hal_dispatch
+
+        monkeypatch.setattr(hal_dispatch, "_warned_no_screen_size", False)
+        with (
+            patch(
+                "qontinui.hal.factory.HALFactory.get_screen_capture",
+                side_effect=RuntimeError("no display"),
+            ),
+            caplog.at_level("WARNING"),
+        ):
+            assert _REAL_RESOLVE_SCREEN_SIZE() is None
+            assert _REAL_RESOLVE_SCREEN_SIZE() is None
+
+        warnings = [r for r in caplog.records if "Screen size unavailable" in r.message]
+        assert len(warnings) == 1
+
+    @pytest.mark.asyncio
+    async def test_without_screen_size_only_origin_aborts(self, monkeypatch):
+        from qontinui.extraction.runtime.uitars import hal_dispatch
+
+        monkeypatch.setattr(hal_dispatch, "_resolve_screen_size", lambda: None)
+        mouse, keyboard = _make_hal_mocks(position=(1919, 1079))
+        assert (
+            await hal_dispatch.execute_hal_action(
+                "click", x=1, y=1, mouse=mouse, keyboard=keyboard
+            )
+            is True
+        )
+        mouse.get_mouse_position.return_value = MousePosition(0, 0)
+        assert (
+            await hal_dispatch.execute_hal_action(
+                "click", x=1, y=1, mouse=mouse, keyboard=keyboard
+            )
+            is False
+        )
+
+    @pytest.mark.asyncio
+    async def test_explicit_screen_size_overrides_resolution(self):
+        from qontinui.extraction.runtime.uitars import hal_dispatch
+
+        mouse, keyboard = _make_hal_mocks(position=(639, 479))
+        result = await hal_dispatch.execute_hal_action(
+            "click", x=1, y=1, mouse=mouse, keyboard=keyboard, screen_size=(640, 480)
+        )
+        assert result is False
+        mouse.click_at.assert_not_called()
