@@ -102,7 +102,7 @@ class PureActions:
     - Actions return results for chaining
     - No retry logic in base actions
 
-    Now uses HAL (Hardware Abstraction Layer) instead of pyautogui directly.
+    Uses the HAL (Hardware Abstraction Layer) for input.
     """
 
     def __init__(self) -> None:

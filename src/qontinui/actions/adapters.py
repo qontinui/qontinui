@@ -1,7 +1,5 @@
 """Backend adapters for action execution following Brobot principles.
 
-NO BACKWARD COMPATIBILITY: PyAutoGUI has been completely replaced with HAL.
-
 This module uses the Facade pattern with composition, delegating to specialized
 adapters for mouse, keyboard, and screen operations following Single Responsibility Principle.
 """
@@ -103,7 +101,7 @@ class ActionAdapter:
 
 
 class HALAdapter(ActionAdapter):
-    """HAL backend adapter with pure actions - REPLACES PyAutoGUIAdapter.
+    """HAL backend adapter with pure actions.
 
     Uses composition to delegate to specialized HAL adapters for each concern.
     """

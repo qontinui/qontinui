@@ -35,7 +35,7 @@
 #
 # When FIND captures monitors[0] (virtual desktop), match coordinates are relative
 # to the virtual desktop origin (-1920, 0 in our example). To convert these to
-# absolute screen coordinates for pyautogui:
+# absolute screen coordinates for the input controllers:
 #
 #     absolute_x = match_x + virtual_desktop_left  # e.g., 65 + (-1920) = -1855
 #     absolute_y = match_y + virtual_desktop_top   # e.g., 1372 + 0 = 1372

@@ -107,7 +107,7 @@ min_y = min(mon["top"] for mon in physical_monitors)
 
 ### 5. MSS Integration
 
-Uses MSS for monitor detection (not pyautogui or platform-specific APIs):
+Uses MSS for monitor detection (not platform-specific APIs):
 ```python
 with mss.mss() as sct:
     self._virtual_desktop = VirtualDesktopInfo.from_mss_monitors(sct.monitors)
@@ -221,9 +221,9 @@ service = CoordinateService.get_instance()
 # Convert FIND match to screen coordinates
 screen_point = service.match_to_screen(match_x=65, match_y=1372)
 
-# Click using pyautogui
-import pyautogui
-pyautogui.click(screen_point.x, screen_point.y)
+# Click through the HAL mouse controller
+from qontinui.hal.factory import HALFactory
+HALFactory.get_mouse_controller().click_at(screen_point.x, screen_point.y)
 
 # Find which monitor contains the point
 monitor_idx = service.get_monitor_at_point(screen_point.x, screen_point.y)

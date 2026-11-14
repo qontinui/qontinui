@@ -1,9 +1,7 @@
 """Pytest configuration and fixtures."""
 
 import os
-import sys
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -21,12 +19,6 @@ try:
 except OSError:
     pass
 
-# Mock modules that may not be available or have DLL issues
-# This allows accessibility tests to run without full qontinui dependencies
-sys.modules["pyautogui"] = MagicMock()
-sys.modules["mouseinfo"] = MagicMock()
-sys.modules["pyscreeze"] = MagicMock()
-
 
 def pytest_configure(config: pytest.Config) -> None:
     """Configure custom pytest markers."""
@@ -40,23 +32,9 @@ def pytest_configure(config: pytest.Config) -> None:
 def mock_display_environment(monkeypatch):
     """Mock display environment for headless testing."""
     monkeypatch.setenv("DISPLAY", ":99")
-    monkeypatch.setenv("PYAUTOGUI_HEADLESS", "1")
 
     # Create mock Xauthority file path
     monkeypatch.setenv("XAUTHORITY", "/tmp/.Xauthority")
-
-
-@pytest.fixture
-def mock_pyautogui():
-    """Provide a mock PyAutoGUI module."""
-    mock = MagicMock()
-    mock.FAILSAFE = True
-    mock.PAUSE = 0.1
-    mock.size.return_value = (1920, 1080)
-    mock.position.return_value = (100, 100)
-    mock.screenshot.return_value = MagicMock()
-
-    return mock
 
 
 @pytest.fixture

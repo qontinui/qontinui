@@ -49,14 +49,6 @@ class MouseButton(Enum):
         except KeyError as e:
             raise ValueError(f"Invalid mouse button: {button}") from e
 
-    def to_pyautogui(self) -> str:
-        """Convert to PyAutoGUI button string.
-
-        Returns:
-            Button string for PyAutoGUI
-        """
-        return self.value.lower()
-
     def is_primary(self) -> bool:
         """Check if this is the primary (left) button.
 

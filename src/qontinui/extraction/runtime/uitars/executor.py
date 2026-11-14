@@ -10,7 +10,6 @@ grounding and action execution. Supports three modes:
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
 import threading
@@ -21,17 +20,18 @@ from typing import TYPE_CHECKING, Any, Protocol
 import numpy as np
 
 from .config import UITARSSettings
+from .hal_dispatch import execute_hal_action
 from .models import (
     ActionResult,
     GroundingResult,
     UITARSAction,
-    UITARSActionType,
     UITARSInferenceRequest,
 )
 from .provider import UITARSProviderBase, create_provider
 
 if TYPE_CHECKING:
-    pass
+    from qontinui.hal.interfaces.keyboard_controller import IKeyboardController
+    from qontinui.hal.interfaces.mouse_controller import IMouseController
 
 logger = logging.getLogger(__name__)
 
@@ -179,15 +179,23 @@ class UITARSExecutor:
         self,
         provider: UITARSProviderBase,
         settings: UITARSSettings,
+        hal_mouse: IMouseController | None = None,
+        hal_keyboard: IKeyboardController | None = None,
     ) -> None:
         """Initialize executor.
 
         Args:
             provider: UI-TARS inference provider
             settings: Configuration settings
+            hal_mouse: Mouse controller for actions (defaults to the HAL
+                factory's controller, resolved at first use)
+            hal_keyboard: Keyboard controller for actions (defaults to the
+                HAL factory's controller, resolved at first use)
         """
         self.provider = provider
         self.settings = settings
+        self._hal_mouse = hal_mouse
+        self._hal_keyboard = hal_keyboard
         self._local_grounder: LocalGrounder | None = None
         self._screen_capture: Any = None
         self._initialized = False
@@ -318,7 +326,7 @@ class UITARSExecutor:
         Uses UI-TARS Thought-Action decomposition to:
         1. Understand the action intent
         2. Ground the target element
-        3. Execute via pyautogui
+        3. Execute through the HAL input controllers
 
         Args:
             screenshot: Current screen (RGB numpy array)
@@ -362,7 +370,7 @@ class UITARSExecutor:
         # Gate LLM-produced click coordinates through the interactability
         # filter (when enabled). If the target point doesn't overlap any
         # YOLO-detected interactive region, reject the action rather than
-        # fire pyautogui at an arbitrary pixel.
+        # fire an input action at an arbitrary pixel.
         gate_rejected: str | None = None
         if result.action.x is not None and result.action.y is not None:
             gate_rejected = _gate_click_coordinate(
@@ -396,7 +404,7 @@ class UITARSExecutor:
             )
 
         # Execute the action
-        success = await self._execute_pyautogui_action(result.action)
+        success = await self._execute_hal_action(result.action)
 
         # Capture after screenshot
         screenshot_after = None
@@ -489,8 +497,8 @@ class UITARSExecutor:
             found_description="No grounding method available",
         )
 
-    async def _execute_pyautogui_action(self, action: UITARSAction) -> bool:
-        """Execute action via pyautogui.
+    async def _execute_hal_action(self, action: UITARSAction) -> bool:
+        """Execute action through the HAL mouse/keyboard controllers.
 
         Args:
             action: UITARSAction to execute
@@ -498,65 +506,20 @@ class UITARSExecutor:
         Returns:
             True if successful
         """
-        try:
-            import pyautogui
-
-            pyautogui.FAILSAFE = True
-
-            action_type = action.action_type
-
-            if action_type == UITARSActionType.CLICK:
-                if action.x is not None and action.y is not None:
-                    pyautogui.click(action.x, action.y)
-            elif action_type == UITARSActionType.DOUBLE_CLICK:
-                if action.x is not None and action.y is not None:
-                    pyautogui.doubleClick(action.x, action.y)
-            elif action_type == UITARSActionType.RIGHT_CLICK:
-                if action.x is not None and action.y is not None:
-                    pyautogui.rightClick(action.x, action.y)
-            elif action_type == UITARSActionType.TYPE:
-                if action.x is not None and action.y is not None:
-                    pyautogui.click(action.x, action.y)
-                if action.text:
-                    pyautogui.typewrite(action.text, interval=0.02)
-            elif action_type == UITARSActionType.SCROLL:
-                scroll_amt = action.scroll_amount or 100
-                if action.scroll_direction == "up":
-                    pyautogui.scroll(scroll_amt)
-                elif action.scroll_direction == "down":
-                    pyautogui.scroll(-scroll_amt)
-                elif action.scroll_direction == "left":
-                    pyautogui.hscroll(-scroll_amt)
-                elif action.scroll_direction == "right":
-                    pyautogui.hscroll(scroll_amt)
-            elif action_type == UITARSActionType.HOVER:
-                if action.x is not None and action.y is not None:
-                    pyautogui.moveTo(action.x, action.y)
-            elif action_type == UITARSActionType.DRAG:
-                if (
-                    action.x is not None
-                    and action.y is not None
-                    and action.end_x is not None
-                    and action.end_y is not None
-                ):
-                    pyautogui.moveTo(action.x, action.y)
-                    pyautogui.drag(action.end_x - action.x, action.end_y - action.y)
-            elif action_type == UITARSActionType.HOTKEY:
-                if action.keys:
-                    pyautogui.hotkey(*action.keys)
-            elif action_type == UITARSActionType.WAIT:
-                await asyncio.sleep(action.duration or 1.0)
-            elif action_type == UITARSActionType.DONE:
-                pass  # No action needed
-            else:
-                logger.warning(f"Unknown action type: {action_type}")
-                return False
-
-            return True
-
-        except Exception as e:
-            logger.error(f"pyautogui action failed: {e}")
-            return False
+        return await execute_hal_action(
+            action.action_type.value,
+            x=action.x,
+            y=action.y,
+            text=action.text,
+            scroll_direction=action.scroll_direction,
+            scroll_amount=action.scroll_amount,
+            keys=action.keys,
+            duration=action.duration,
+            end_x=action.end_x,
+            end_y=action.end_y,
+            mouse=self._hal_mouse,
+            keyboard=self._hal_keyboard,
+        )
 
     async def _capture_screenshot(self) -> np.ndarray[Any, Any] | None:
         """Capture current screenshot.

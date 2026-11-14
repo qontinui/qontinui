@@ -153,11 +153,6 @@ def _create_screen_capture(config: HALConfig) -> IScreenCapture:
 
         return MSSScreenCapture(config)
 
-    elif backend == "pyautogui":
-        from .implementations.pyautogui_capture import PyAutoGUIScreenCapture
-
-        return PyAutoGUIScreenCapture(config)  # type: ignore[no-any-return]
-
     elif backend == "pillow":
         from .implementations.pillow_capture import PillowScreenCapture
 
@@ -223,11 +218,6 @@ def _create_pattern_matcher(config: HALConfig) -> IPatternMatcher:
 
         return OpenCVMatcher(config)  # type: ignore[no-any-return]
 
-    elif backend == "pyautogui":
-        from .implementations.pyautogui_matcher import PyAutoGUIMatcher
-
-        return PyAutoGUIMatcher(config)  # type: ignore[no-any-return]
-
     elif backend == "tensorflow":
         from .implementations.tensorflow_matcher import TensorFlowMatcher
 
@@ -277,11 +267,6 @@ def _create_keyboard_controller(config: HALConfig) -> IKeyboardController:
 
         return KeyboardOperations(keyboard.Controller())
 
-    elif backend == "pyautogui":
-        from .implementations.pyautogui_keyboard import PyAutoGUIKeyboardOperations
-
-        return PyAutoGUIKeyboardOperations()
-
     elif backend == "selenium":
         # Selenium keyboard operations require WebDriver instance
         # This should be configured via SeleniumHAL, not standalone
@@ -317,11 +302,6 @@ def _create_mouse_controller(config: HALConfig) -> IMouseController:
         from .implementations.mouse_operations import MouseOperations
 
         return MouseOperations(mouse.Controller())
-
-    elif backend == "pyautogui":
-        from .implementations.pyautogui_mouse import PyAutoGUIMouseOperations
-
-        return PyAutoGUIMouseOperations()
 
     elif backend == "selenium":
         # Selenium mouse operations require WebDriver instance

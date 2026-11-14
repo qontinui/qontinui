@@ -265,8 +265,9 @@ def _build_runtime(
 ) -> VgaRuntime:
     """Wire a :class:`VgaRuntime` to the default HAL implementations.
 
-    Uses ``pyautogui`` for input + ``mss`` for capture — both are already
-    hard deps of qontinui on all platforms.
+    Uses the HAL factory's mouse/keyboard controllers (pynput by default)
+    for input + ``mss`` for capture — both are hard deps of qontinui on all
+    platforms.
 
     Args:
         shadow_logger: Optional shadow-sample writer. When set, every
@@ -274,15 +275,14 @@ def _build_runtime(
             ``project.vga_shadow_samples`` — the v6 training gate needs
             production-distribution data.
     """
+    from ..hal.factory import HALFactory
     from ..hal.implementations.mss_capture import MSSScreenCapture
-    from ..hal.implementations.pyautogui_keyboard import PyAutoGUIKeyboardOperations
-    from ..hal.implementations.pyautogui_mouse import PyAutoGUIMouseOperations
 
     client = VgaClient()
     return VgaRuntime(
         client=client,
-        hal_mouse=PyAutoGUIMouseOperations(),
-        hal_keyboard=PyAutoGUIKeyboardOperations(),
+        hal_mouse=HALFactory.get_mouse_controller(),
+        hal_keyboard=HALFactory.get_keyboard_controller(),
         hal_capture=MSSScreenCapture(),
         shadow_logger=shadow_logger,
     )

@@ -1,10 +1,10 @@
-# Core HAL dependencies - REPLACING PyAutoGUI
+# Core HAL dependencies
 mss>=9.0.1          # Fast screen capture
 opencv-python>=4.8.0    # Pattern matching and computer vision
 pynput>=1.7.6          # Cross-platform input control
 easyocr>=1.7.0         # OCR engine
 Pillow>=13.0.0,<14     # Image processing; matches pyproject.toml (Pillow 13 advisory fixes)
-pyautogui>=0.9.54      # Temporary for JSON executor until HAL is complete
+pyperclip>=1.11        # Clipboard access (clipboard variables)
 
 # Platform-specific dependencies (install as needed)
 # Windows
@@ -35,6 +35,3 @@ pandas>=2.0.0
 pydantic>=2.0.0
 python-dotenv>=1.0.0
 structlog>=23.1.0
-
-# Removed dependencies
-# pyautogui  # REMOVED - replaced by HAL

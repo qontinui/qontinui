@@ -20,7 +20,7 @@ class Key(Enum):
     of special keyboard keys for use in automation.
 
     Each value is the string that should be sent to the underlying
-    automation library (e.g., pyautogui, pynput) to trigger that key.
+    automation library (e.g., pynput) to trigger that key.
     """
 
     # Navigation keys

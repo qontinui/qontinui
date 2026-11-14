@@ -4,7 +4,7 @@ This module provides the CoordinateService singleton, which is the single source
 of truth for all coordinate translations in Qontinui. It handles conversions
 between different coordinate systems:
 
-- ScreenPoint: Absolute screen coordinates (pyautogui uses these)
+- ScreenPoint: Absolute screen coordinates (input controllers use these)
 - VirtualPoint: Relative to virtual desktop origin (FIND results use these)
 - MonitorPoint: Relative to a specific monitor's origin
 
@@ -119,7 +119,7 @@ class CoordinateService:
 
         This method adds the virtual desktop origin offset to convert from
         virtual-relative coordinates to absolute screen coordinates that
-        pyautogui can use.
+        the input controllers can use.
 
         Args:
             match_x: X coordinate from FIND result (virtual-relative)
@@ -295,7 +295,7 @@ class CoordinateService:
                           If specified, treats (x, y) as monitor-relative.
 
         Returns:
-            ScreenPoint with absolute screen coordinates for pyautogui/input
+            ScreenPoint with absolute screen coordinates for input
 
         Example:
             >>> service = CoordinateService.get_instance()

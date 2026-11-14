@@ -28,10 +28,8 @@ class _MockFinder:
     _MOCK_PREFIXES = (
         "qontinui_schemas",
         "cv2",
-        "pyautogui",
         "screeninfo",
         "mss",
-        "pygetwindow",
         "pynput",
         "Xlib",
         "torch",
