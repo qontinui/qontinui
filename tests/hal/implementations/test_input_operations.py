@@ -6,7 +6,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
-from pynput.keyboard import Controller as PynputController
 from pynput.keyboard import Key as PynputKey
 
 from qontinui.exceptions import InputControlError
@@ -16,6 +15,99 @@ from qontinui.hal.implementations.keyboard_operations import (
     KeyboardOperations,
 )
 from qontinui.hal.implementations.mouse_operations import MouseOperations
+
+
+class _PynputLikeController:
+    """Stub keyboard controller reproducing pynput's key resolution rule.
+
+    pynput's ``Controller._resolve`` raises ``ValueError(key)`` for a string
+    whose length is not 1; Key members and single characters are accepted.
+    Records presses and releases; needs no display.
+    """
+
+    def __init__(self, fail_on_press: object = None, error: Exception | None = None):
+        self.events: list[tuple[str, object]] = []
+        self._fail_on_press = fail_on_press
+        self._error = error
+
+    def _resolve(self, key: object) -> None:
+        if isinstance(key, str) and len(key) != 1:
+            raise ValueError(key)
+
+    def press(self, key: object) -> None:
+        self._resolve(key)
+        if self._error is not None and key == self._fail_on_press:
+            raise self._error
+        self.events.append(("press", key))
+
+    def release(self, key: object) -> None:
+        self._resolve(key)
+        self.events.append(("release", key))
+
+
+class _InvalidKeyLikeError(Exception):
+    """Stands in for pynput's InvalidKeyException (an Exception subclass)."""
+
+
+class TestHotkeyReleases:
+    """hotkey leaves no key held down, whatever fails."""
+
+    def test_success_presses_then_releases_in_reverse(self):
+        controller = _PynputLikeController()
+
+        assert KeyboardOperations(controller).hotkey("ctrl", "shift", "a") is True
+
+        assert controller.events == [
+            ("press", PynputKey.ctrl),
+            ("press", PynputKey.shift),
+            ("press", "a"),
+            ("release", "a"),
+            ("release", PynputKey.shift),
+            ("release", PynputKey.ctrl),
+        ]
+
+    def test_non_valueerror_mid_hotkey_releases_pressed_keys(self):
+        controller = _PynputLikeController(
+            fail_on_press="a", error=_InvalidKeyLikeError("invalid key")
+        )
+
+        with pytest.raises(InputControlError):
+            KeyboardOperations(controller).hotkey("ctrl", "shift", "a", "b")
+
+        assert controller.events == [
+            ("press", PynputKey.ctrl),
+            ("press", PynputKey.shift),
+            ("release", PynputKey.shift),
+            ("release", PynputKey.ctrl),
+        ]
+
+    def test_unresolvable_key_releases_modifiers(self):
+        controller = _PynputLikeController()
+
+        with pytest.raises(InputControlError):
+            KeyboardOperations(controller).hotkey("ctrl", "num0")
+
+        assert controller.events == [
+            ("press", PynputKey.ctrl),
+            ("release", PynputKey.ctrl),
+        ]
+
+    def test_release_failure_still_releases_the_rest(self):
+        controller = _PynputLikeController()
+        original_release = controller.release
+
+        def release(key: object) -> None:
+            if key == PynputKey.shift:
+                raise _InvalidKeyLikeError("stuck")
+            original_release(key)
+
+        controller.release = release  # type: ignore[method-assign]
+
+        with pytest.raises(InputControlError):
+            KeyboardOperations(controller).hotkey("ctrl", "shift", "a")
+
+        assert ("release", "a") in controller.events
+        assert ("release", PynputKey.ctrl) in controller.events
 
 
 class TestMouseScroll:
@@ -94,7 +186,7 @@ class TestPyautoguiKeyAliases:
     )
     def test_keypad_names_fail_loudly(self, name):
         """Keypad names have no pynput key: a hotkey using one raises."""
-        ops = KeyboardOperations(PynputController())
+        ops = KeyboardOperations(_PynputLikeController())
 
         assert ops._get_pynput_key(name) == name
         with pytest.raises(InputControlError):
