@@ -4,8 +4,12 @@ This module provides the registration and lookup mechanism for specialized
 action executors. Each executor registers the action types it handles.
 """
 
+import logging
+
 from ..exceptions import ActionExecutionError
 from .base import ActionExecutorBase, ExecutionContext
+
+logger = logging.getLogger(__name__)
 
 # Global registry mapping action types to executor classes
 _executor_registry: dict[str, type[ActionExecutorBase]] = {}
@@ -85,20 +89,12 @@ def create_executor(action_type: str, context: ExecutionContext) -> ActionExecut
     """
     executor_class = get_executor_class(action_type)
 
-    # DEBUG: Log registry lookup
-    import os
-    import tempfile
-
-    from qontinui_schemas.common import utc_now
-
-    debug_file = os.path.join(tempfile.gettempdir(), "registry_debug.log")
-    with open(debug_file, "a", encoding="utf-8") as f:
-        f.write(f"[{utc_now().isoformat()}] create_executor called\n")
-        f.write(f"[{utc_now().isoformat()}]   action_type: {action_type}\n")
-        f.write(f"[{utc_now().isoformat()}]   executor_class: {executor_class}\n")
-        f.write(
-            f"[{utc_now().isoformat()}]   registry keys: {list(_executor_registry.keys())}\n"
-        )
+    logger.debug(
+        "create_executor: action_type=%s executor_class=%s registry_keys=%s",
+        action_type,
+        executor_class,
+        list(_executor_registry.keys()),
+    )
 
     if executor_class is None:
         raise ActionExecutionError(

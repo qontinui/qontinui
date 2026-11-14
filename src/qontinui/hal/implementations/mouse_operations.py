@@ -1,12 +1,9 @@
 """Mouse input operations."""
 
-import tempfile
 import time
-from pathlib import Path
 
 from pynput import mouse
 from pynput.mouse import Button as PynputButton
-from qontinui_schemas.common import utc_now
 
 from ...exceptions import InputControlError
 from ...logging import get_logger
@@ -14,10 +11,6 @@ from ...wrappers.time_wrapper import TimeWrapper
 from ..interfaces.mouse_controller import IMouseController, MouseButton, MousePosition
 
 logger = get_logger(__name__)
-
-# Best-effort debug log written to the OS temp dir. Errors are swallowed so the
-# HAL degrades gracefully when the path isn't writable.
-_DEBUG_LOG_PATH = Path(tempfile.gettempdir()) / "qontinui_hal_mouse_debug.log"
 
 
 class MouseOperations(IMouseController):
@@ -91,16 +84,6 @@ class MouseOperations(IMouseController):
             else:
                 # Instant movement
                 self._mouse.position = (x, y)
-
-            try:
-                actual_pos = self._mouse.position
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] HAL mouse_move() target=({x}, {y}), actual_after_move={actual_pos}\n"
-                    )
-            except Exception:
-                pass
 
             logger.debug(f"Mouse moved to ({x}, {y})")
             return True
@@ -192,14 +175,7 @@ class MouseOperations(IMouseController):
         Raises:
             InputControlError: If mouse down fails
         """
-        try:
-            with open(_DEBUG_LOG_PATH, "a") as f:
-                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(
-                    f"[{ts}] HAL mouse_down() called: x={x}, y={y}, button={button}\n"
-                )
-        except Exception:
-            pass
+        logger.debug(f"HAL mouse_down() called: x={x}, y={y}, button={button}")
 
         try:
             # Move to position if specified
@@ -209,40 +185,21 @@ class MouseOperations(IMouseController):
             pynput_button = self._get_pynput_button(button)
 
             # Debug: log pynput call
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] HAL mouse_down() calling pynput press with button={pynput_button}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(
+                f"HAL mouse_down() calling pynput press with button={pynput_button}"
+            )
 
             self._mouse.press(pynput_button)
 
             # Debug: log success
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] HAL mouse_down() pynput press completed successfully\n"
-                    )
-            except Exception:
-                pass
+            logger.debug("HAL mouse_down() pynput press completed successfully")
 
             logger.debug(f"Mouse button {button} pressed")
             return True
 
         except (OSError, RuntimeError, ValueError, TypeError) as e:
             # Debug: log exception
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] HAL mouse_down() EXCEPTION: {type(e).__name__}: {e}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(f"HAL mouse_down() EXCEPTION: {type(e).__name__}: {e}")
             logger.error(f"Mouse down failed: {e}")
             raise InputControlError("mouse_down", str(e)) from e
 
@@ -265,14 +222,7 @@ class MouseOperations(IMouseController):
         Raises:
             InputControlError: If mouse up fails
         """
-        try:
-            with open(_DEBUG_LOG_PATH, "a") as f:
-                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(
-                    f"[{ts}] HAL mouse_up() called: x={x}, y={y}, button={button}\n"
-                )
-        except Exception:
-            pass
+        logger.debug(f"HAL mouse_up() called: x={x}, y={y}, button={button}")
 
         try:
             # Move to position if specified
@@ -282,40 +232,21 @@ class MouseOperations(IMouseController):
             pynput_button = self._get_pynput_button(button)
 
             # Debug: log pynput call
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] HAL mouse_up() calling pynput release with button={pynput_button}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(
+                f"HAL mouse_up() calling pynput release with button={pynput_button}"
+            )
 
             self._mouse.release(pynput_button)
 
             # Debug: log success
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] HAL mouse_up() pynput release completed successfully\n"
-                    )
-            except Exception:
-                pass
+            logger.debug("HAL mouse_up() pynput release completed successfully")
 
             logger.debug(f"Mouse button {button} released")
             return True
 
         except (OSError, RuntimeError, ValueError, TypeError) as e:
             # Debug: log exception
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] HAL mouse_up() EXCEPTION: {type(e).__name__}: {e}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(f"HAL mouse_up() EXCEPTION: {type(e).__name__}: {e}")
             logger.error(f"Mouse up failed: {e}")
             raise InputControlError("mouse_up", str(e)) from e
 

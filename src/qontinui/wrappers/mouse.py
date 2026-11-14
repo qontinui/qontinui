@@ -7,13 +7,9 @@ to mock or live implementation based on execution mode.
 from __future__ import annotations
 
 import logging
-import tempfile
 import threading
 import time
-from pathlib import Path
 from typing import TYPE_CHECKING
-
-from qontinui_schemas.common import utc_now
 
 if TYPE_CHECKING:
     from ..hal.interfaces.input_controller import IInputController
@@ -24,10 +20,6 @@ from ..mock.mock_mode_manager import MockModeManager
 from ..reporting import EventType, emit_event
 
 logger = logging.getLogger(__name__)
-
-# Best-effort debug log written to the OS temp dir. Errors are swallowed so the
-# wrapper degrades gracefully when the path isn't writable.
-_DEBUG_LOG_PATH = Path(tempfile.gettempdir()) / "qontinui_mouse_wrapper_debug.log"
 
 
 class Mouse:
@@ -84,14 +76,9 @@ class Mouse:
         """
         is_mock = MockModeManager.is_mock_mode()
 
-        try:
-            with open(_DEBUG_LOG_PATH, "a") as f:
-                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                f.write(
-                    f"[{ts}] Mouse.move() called: x={x}, y={y}, duration={duration}, is_mock={is_mock}\n"
-                )
-        except Exception:
-            pass
+        logger.debug(
+            f"Mouse.move() called: x={x}, y={y}, duration={duration}, is_mock={is_mock}"
+        )
 
         if is_mock:
             result = cls._mock_input.mouse_move(x, y, duration)
@@ -99,23 +86,11 @@ class Mouse:
         else:
             controller = cls._get_controller()
             # Debug: log controller info
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] Mouse.move() calling controller.mouse_move(), controller type: {type(controller).__name__}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(
+                f"Mouse.move() calling controller.mouse_move(), controller type: {type(controller).__name__}"
+            )
             result = controller.mouse_move(x, y, duration)
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] Mouse.move() controller.mouse_move() returned: {result}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(f"Mouse.move() controller.mouse_move() returned: {result}")
             logger.debug(f"[LIVE] Mouse moved to ({x}, {y})")
 
         # Emit event after successful move
@@ -276,38 +251,21 @@ class Mouse:
         Returns:
             True if successful
         """
-        try:
-            with open(_DEBUG_LOG_PATH, "a") as f:
-                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                is_mock = MockModeManager.is_mock_mode()
-                f.write(
-                    f"[{ts}] Mouse.down() called: x={x}, y={y}, button={button}, is_mock={is_mock}\n"
-                )
-        except Exception:
-            pass
+        is_mock = MockModeManager.is_mock_mode()
+        logger.debug(
+            f"Mouse.down() called: x={x}, y={y}, button={button}, is_mock={is_mock}"
+        )
 
-        if MockModeManager.is_mock_mode():
+        if is_mock:
             return cls._mock_input.mouse_down(x, y, button)
         else:
             controller = cls._get_controller()
             # Debug: log controller info
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] Mouse.down() calling controller.mouse_down(), controller type: {type(controller).__name__}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(
+                f"Mouse.down() calling controller.mouse_down(), controller type: {type(controller).__name__}"
+            )
             result = controller.mouse_down(x, y, button)
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] Mouse.down() controller.mouse_down() returned: {result}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(f"Mouse.down() controller.mouse_down() returned: {result}")
             return result
 
     @classmethod
@@ -327,38 +285,21 @@ class Mouse:
         Returns:
             True if successful
         """
-        try:
-            with open(_DEBUG_LOG_PATH, "a") as f:
-                ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                is_mock = MockModeManager.is_mock_mode()
-                f.write(
-                    f"[{ts}] Mouse.up() called: x={x}, y={y}, button={button}, is_mock={is_mock}\n"
-                )
-        except Exception:
-            pass
+        is_mock = MockModeManager.is_mock_mode()
+        logger.debug(
+            f"Mouse.up() called: x={x}, y={y}, button={button}, is_mock={is_mock}"
+        )
 
-        if MockModeManager.is_mock_mode():
+        if is_mock:
             return cls._mock_input.mouse_up(x, y, button)
         else:
             controller = cls._get_controller()
             # Debug: log controller info
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] Mouse.up() calling controller.mouse_up(), controller type: {type(controller).__name__}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(
+                f"Mouse.up() calling controller.mouse_up(), controller type: {type(controller).__name__}"
+            )
             result = controller.mouse_up(x, y, button)
-            try:
-                with open(_DEBUG_LOG_PATH, "a") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] Mouse.up() controller.mouse_up() returned: {result}\n"
-                    )
-            except Exception:
-                pass
+            logger.debug(f"Mouse.up() controller.mouse_up() returned: {result}")
             return result
 
     @classmethod

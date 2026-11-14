@@ -116,30 +116,10 @@ class MouseActionExecutor(ActionExecutorBase):
         Raises:
             ActionExecutionError: If action execution fails critically
         """
-        # File-based debug logging at entry point - NO stderr output (breaks JSON protocol)
-        import os
-        import tempfile
-
-        from qontinui_schemas.common import utc_now
-
-        # Use temp directory for debug logs
-        debug_paths = [
-            os.path.join(tempfile.gettempdir(), "qontinui_mouse_executor_debug.log"),
-        ]
-
-        timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        log_msg = f"[{timestamp}] MouseActionExecutor.execute() called for {action.type} (ID: {action.id})\n"
-
-        for debug_log_path in debug_paths:
-            try:
-                with open(debug_log_path, "a", encoding="utf-8") as f:
-                    f.write(log_msg)
-                    f.write(
-                        f"[{timestamp}]   Typed config type: {type(typed_config).__name__}\n"
-                    )
-                break  # Stop after first successful write
-            except Exception:
-                continue
+        logger.debug(
+            f"MouseActionExecutor.execute() called for {action.type} (ID: {action.id}); "
+            f"typed config type: {type(typed_config).__name__}"
+        )
 
         action_type = action.type
         logger.debug(f"Executing mouse action: {action_type}")
@@ -200,11 +180,6 @@ class MouseActionExecutor(ActionExecutorBase):
         Returns:
             Tuple of (x, y) coordinates or None if not found or current position
         """
-        # File-based debug logging at entry
-        import os
-        import tempfile
-
-        from qontinui_schemas.common import utc_now
 
         from ..config.models.targets import (
             AllResultsTarget,
@@ -216,39 +191,25 @@ class MouseActionExecutor(ActionExecutorBase):
             ResultIndexTarget,
         )
 
-        debug_log_path = os.path.join(
-            tempfile.gettempdir(), "qontinui_get_target_location_debug.log"
-        )
-
-        def log_debug(msg: str):
-            """Write to debug file."""
-            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            log_line = f"[{timestamp}] {msg}\n"
-            try:
-                with open(debug_log_path, "a", encoding="utf-8") as f:
-                    f.write(log_line)
-            except Exception:
-                pass
-
-        log_debug("_get_target_location() called")
-        log_debug(f"  target: {target}")
-        log_debug(f"  target type: {type(target).__name__ if target else 'None'}")
-        log_debug(f"  target is None: {target is None}")
+        logger.debug("_get_target_location() called")
+        logger.debug(f"  target: {target}")
+        logger.debug(f"  target type: {type(target).__name__ if target else 'None'}")
+        logger.debug(f"  target is None: {target is None}")
 
         if target:
-            log_debug(f"  hasattr(target, 'type'): {hasattr(target, 'type')}")
+            logger.debug(f"  hasattr(target, 'type'): {hasattr(target, 'type')}")
             if hasattr(target, "type"):
-                log_debug(f"  target.type: {target.type}")
-            log_debug(
+                logger.debug(f"  target.type: {target.type}")
+            logger.debug(
                 f"  isinstance(target, LastFindResultTarget): {isinstance(target, LastFindResultTarget)}"
             )
-            log_debug(
+            logger.debug(
                 f"  isinstance(target, ImageTarget): {isinstance(target, ImageTarget)}"
             )
-            log_debug(
+            logger.debug(
                 f"  isinstance(target, CoordinatesTarget): {isinstance(target, CoordinatesTarget)}"
             )
-            log_debug(
+            logger.debug(
                 f"  isinstance(target, RegionTarget): {isinstance(target, RegionTarget)}"
             )
 
@@ -350,55 +311,35 @@ class MouseActionExecutor(ActionExecutorBase):
             return (x, y)
 
         elif isinstance(target, LastFindResultTarget):
-            # File-based debug logging for LastFindResultTarget
-            import os
-            import tempfile
-
-            from qontinui_schemas.common import utc_now
-
-            debug_log_path = os.path.join(
-                tempfile.gettempdir(), "qontinui_last_find_result_debug.log"
-            )
-
-            def log_debug(msg: str):
-                """Write to debug file."""
-                timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                log_line = f"[{timestamp}] {msg}\n"
-                logger.info(f"[LAST_FIND_RESULT_DEBUG] {msg}")
-                try:
-                    with open(debug_log_path, "a", encoding="utf-8") as f:
-                        f.write(log_line)
-                except Exception:
-                    pass
-
-            log_debug("Target is LastFindResultTarget")
-            log_debug(f"self.context type: {type(self.context)}")
-            log_debug(
+            logger.debug("Target is LastFindResultTarget")
+            logger.debug(f"self.context type: {type(self.context)}")
+            logger.debug(
                 f"self.context has 'last_action_result': {hasattr(self.context, 'last_action_result')}"
             )
 
             if hasattr(self.context, "last_action_result"):
-                log_debug(
+                logger.debug(
                     f"self.context.last_action_result: {self.context.last_action_result}"
                 )
-                log_debug(
+                logger.debug(
                     f"self.context.last_action_result type: {type(self.context.last_action_result)}"
                 )
-                log_debug(
+                logger.debug(
                     f"self.context.last_action_result is None: {self.context.last_action_result is None}"
                 )
 
                 if self.context.last_action_result:
-                    log_debug(
+                    logger.debug(
                         f"self.context.last_action_result.matches: {self.context.last_action_result.matches}"
                     )
-                    log_debug(
+                    logger.debug(
                         f"matches count: {len(self.context.last_action_result.matches) if self.context.last_action_result.matches else 0}"
                     )
             else:
-                log_debug("ERROR: context does not have 'last_action_result' attribute")
+                logger.debug(
+                    "ERROR: context does not have 'last_action_result' attribute"
+                )
 
-            logger.debug("Target is LastFindResultTarget")
             # Use first match from last action result
             if (
                 self.context.last_action_result
@@ -409,7 +350,7 @@ class MouseActionExecutor(ActionExecutorBase):
                 # using the CoordinateService singleton
                 screen_point = self._match_to_screen_point(match.x, match.y)
                 location = (screen_point.x, screen_point.y)
-                log_debug(
+                logger.debug(
                     f"Using last action result match[0]: raw=({match.x}, {match.y}), "
                     f"screen={location}"
                 )
@@ -419,7 +360,7 @@ class MouseActionExecutor(ActionExecutorBase):
                 )
                 return location
             else:
-                log_debug(
+                logger.debug(
                     "ERROR: LastFindResultTarget requested but no matches in last_action_result"
                 )
                 logger.error(
@@ -608,44 +549,26 @@ class MouseActionExecutor(ActionExecutorBase):
         Returns:
             True if successful
         """
-        # File-based debug logging
-        import os
-        import tempfile
 
-        from qontinui_schemas.common import utc_now
-
-        debug_log_path = os.path.join(
-            tempfile.gettempdir(), "qontinui_mouse_move_debug.log"
-        )
-
-        def log_debug(msg: str):
-            """Write to both logger and debug file."""
-            timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-            log_line = f"[{timestamp}] {msg}\n"
-            logger.info(f"[MOUSE_MOVE_DEBUG] {msg}")
-            try:
-                with open(debug_log_path, "a", encoding="utf-8") as f:
-                    f.write(log_line)
-            except Exception:
-                pass
-
-        log_debug(f"_execute_mouse_move() called for action {action.id}")
-        log_debug(f"Target config: {typed_config.target}")
-        log_debug(f"Target type: {type(typed_config.target).__name__}")
+        logger.debug(f"_execute_mouse_move() called for action {action.id}")
+        logger.debug(f"Target config: {typed_config.target}")
+        logger.debug(f"Target type: {type(typed_config.target).__name__}")
 
         try:
-            log_debug("About to call _get_target_location()")
+            logger.debug("About to call _get_target_location()")
             location = await self._get_target_location(typed_config.target)
-            log_debug(f"_get_target_location() returned: {location}")
+            logger.debug(f"_get_target_location() returned: {location}")
         except Exception as e:
-            log_debug(f"EXCEPTION in _get_target_location(): {type(e).__name__}: {e}")
+            logger.debug(
+                f"EXCEPTION in _get_target_location(): {type(e).__name__}: {e}"
+            )
             import traceback
 
-            log_debug(f"Traceback: {traceback.format_exc()}")
+            logger.debug(f"Traceback: {traceback.format_exc()}")
             raise
 
         if not location:
-            log_debug("ERROR: Failed to get target location for MOUSE_MOVE")
+            logger.debug("ERROR: Failed to get target location for MOUSE_MOVE")
             logger.error("Failed to get target location for MOUSE_MOVE")
             return False
 
@@ -656,23 +579,22 @@ class MouseActionExecutor(ActionExecutorBase):
         # If moveInstantly is True, override duration
         if typed_config.move_instantly:
             duration_seconds = 0.0
-            log_debug("moveInstantly=True, duration set to 0")
+            logger.debug("moveInstantly=True, duration set to 0")
 
-        log_debug(
+        logger.debug(
             f"Moving mouse to {location} (duration: {duration_ms}ms = {duration_seconds}s)"
         )
         logger.info(f"Moving mouse to {location} (duration: {duration_ms}ms)")
         success = self.context.mouse.move(location[0], location[1], duration_seconds)
-        log_debug(f"context.mouse.move() returned: {success}")
+        logger.debug(f"context.mouse.move() returned: {success}")
 
         if success:
-            log_debug(f"SUCCESS: Mouse moved to {location}")
+            logger.debug(f"SUCCESS: Mouse moved to {location}")
             logger.debug(f"[PURE ACTION] Mouse moved to {location}")
         else:
-            log_debug("FAILED: Mouse move failed")
+            logger.debug("FAILED: Mouse move failed")
             logger.error(f"Failed to move mouse to {location}")
 
-        log_debug(f"Debug log written to: {debug_log_path}")
         return success  # type: ignore[no-any-return]
 
     async def _execute_mouse_down(
@@ -805,29 +727,13 @@ class MouseActionExecutor(ActionExecutorBase):
             True if successful
         """
         # DEBUG: Write to file to confirm this method is called
-        import os
-        import tempfile
 
-        from qontinui_schemas.common import utc_now
-
-        debug_log_path = os.path.join(
-            tempfile.gettempdir(), "qontinui_click_executor_debug.log"
-        )
-
-        def debug_write(msg: str) -> None:
-            try:
-                with open(debug_log_path, "a", encoding="utf-8") as f:
-                    timestamp = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{timestamp}] {msg}\n")
-            except Exception:
-                pass
-
-        debug_write(f"_execute_click() called for action {action.id}")
-        debug_write(f"Target: {typed_config.target}")
-        debug_write(f"Mouse button: {typed_config.mouse_button}")
+        logger.debug(f"_execute_click() called for action {action.id}")
+        logger.debug(f"Target: {typed_config.target}")
+        logger.debug(f"Mouse button: {typed_config.mouse_button}")
 
         logger.info("[COMBINED ACTION: CLICK] Starting click action")
-        debug_write("Starting click action")
+        logger.debug("Starting click action")
 
         # Try accessibility-pattern click first when the last FIND came from
         # an accessibility backend (metadata contains a 'ref').
@@ -854,7 +760,7 @@ class MouseActionExecutor(ActionExecutorBase):
             if a11y_result.handled:
                 if a11y_result.wait_after_s > 0:
                     await _asyncio.sleep(a11y_result.wait_after_s)
-                debug_write(
+                logger.debug(
                     f"Accessibility click handled: success={a11y_result.success}, "
                     f"wait={a11y_result.wait_after_s}s"
                 )
@@ -863,18 +769,18 @@ class MouseActionExecutor(ActionExecutorBase):
         # Check if target is None or currentPosition (pure action)
         location = None
         if typed_config.target and typed_config.target.type != "currentPosition":
-            debug_write(f"Getting target location for: {typed_config.target}")
+            logger.debug(f"Getting target location for: {typed_config.target}")
             location = await self._get_target_location(typed_config.target)
-            debug_write(f"Got location: {location}")
+            logger.debug(f"Got location: {location}")
             if not location:
                 logger.error("Failed to get target location for CLICK")
-                debug_write("ERROR: Failed to get target location - returning False")
+                logger.debug("ERROR: Failed to get target location - returning False")
                 return False
         else:
             logger.debug(
                 "No target specified - clicking at current position (pure action)"
             )
-            debug_write("No target - clicking at current position")
+            logger.debug("No target - clicking at current position")
 
         # Get button
         button_value = (
@@ -885,11 +791,11 @@ class MouseActionExecutor(ActionExecutorBase):
         )
         button = self._convert_mouse_button(button_value)
         logger.info(f"[CLICK DEBUG] Converted button: {button}, type: {type(button)}")
-        debug_write(f"Button converted: {button}")
+        logger.debug(f"Button converted: {button}")
 
         # Get click count
         click_count = typed_config.number_of_clicks or 1
-        debug_write(f"Click count: {click_count}")
+        logger.debug(f"Click count: {click_count}")
 
         # Get timing values (convert milliseconds to seconds)
         hold_duration = (
@@ -906,9 +812,8 @@ class MouseActionExecutor(ActionExecutorBase):
         safety_delay = self._get_default_timing("mouse", "safety_release_delay", 0.1)
 
         # Get current position for logging
-        debug_write("Getting current mouse position...")
+        logger.debug("Getting current mouse position...")
         current_pos = self.context.mouse.position()
-        debug_write(f"Current position: ({current_pos.x}, {current_pos.y})")
         logger.debug(f"Current position: ({current_pos.x}, {current_pos.y})")
         logger.debug(
             f"Target: {location}, Button: {button.value}, Count: {click_count}"
@@ -918,61 +823,61 @@ class MouseActionExecutor(ActionExecutorBase):
         # Step 1: Safety - Release all buttons first (if enabled)
         if safety_release:
             logger.debug("Step 1: Release all mouse buttons")
-            debug_write("Step 1: Safety release - calling mouse.up() 3 times")
+            logger.debug("Step 1: Safety release - calling mouse.up() 3 times")
             self.context.mouse.up(button=HALMouseButton.LEFT)
-            debug_write("  - Released LEFT")
+            logger.debug("  - Released LEFT")
             self.context.mouse.up(button=HALMouseButton.RIGHT)
-            debug_write("  - Released RIGHT")
+            logger.debug("  - Released RIGHT")
             self.context.mouse.up(button=HALMouseButton.MIDDLE)
-            debug_write("  - Released MIDDLE")
+            logger.debug("  - Released MIDDLE")
             self.context.time.wait(safety_delay)
-            debug_write("  - Safety delay completed")
+            logger.debug("  - Safety delay completed")
 
         # Step 1.5: Move to target location if specified
         if location:
             logger.debug(f"Step 1.5: Moving to target location: {location}")
-            debug_write(f"Step 1.5: Moving mouse to ({location[0]}, {location[1]})")
+            logger.debug(f"Step 1.5: Moving mouse to ({location[0]}, {location[1]})")
             self.context.mouse.move(location[0], location[1])
-            debug_write("  - Move command issued")
+            logger.debug("  - Move command issued")
             # Small delay after move to ensure GUI registers position
             self.context.time.wait(0.05)
-            debug_write("  - Post-move delay completed")
+            logger.debug("  - Post-move delay completed")
 
         # Step 2: Perform clicks at target/current position
         click_location = location if location else "current position"
         logger.info(
             f"[CLICK DEBUG] Step 2: Perform {click_count} click(s) at {click_location} with button {button}"
         )
-        debug_write(f"Step 2: Starting {click_count} click(s) at {click_location}")
+        logger.debug(f"Step 2: Starting {click_count} click(s) at {click_location}")
         for i in range(click_count):
             logger.info(
                 f"[CLICK DEBUG] Click {i + 1}/{click_count} - Pressing {button}"
             )
-            debug_write(f"  Click {i + 1}/{click_count}")
+            logger.debug(f"  Click {i + 1}/{click_count}")
 
             # Sub-action: MOUSE_DOWN
             logger.info(f"[CLICK DEBUG] Calling mouse.down with button={button}")
-            debug_write(f"    - Calling mouse.down(button={button})")
+            logger.debug(f"    - Calling mouse.down(button={button})")
             self.context.mouse.down(button=button)
-            debug_write("    - mouse.down returned")
+            logger.debug("    - mouse.down returned")
             self.context.time.wait(hold_duration)
-            debug_write("    - hold delay completed")
+            logger.debug("    - hold delay completed")
 
             # Sub-action: MOUSE_UP
             logger.info(f"[CLICK DEBUG] Calling mouse.up with button={button}")
-            debug_write(f"    - Calling mouse.up(button={button})")
+            logger.debug(f"    - Calling mouse.up(button={button})")
             self.context.mouse.up(button=button)
-            debug_write("    - mouse.up returned")
+            logger.debug("    - mouse.up returned")
 
             if i < click_count - 1:
                 self.context.time.wait(release_delay)
-                debug_write("    - inter-click delay completed")
+                logger.debug("    - inter-click delay completed")
 
         # Step 3: Final safety release
         self.context.time.wait(release_delay)
         self.context.mouse.up(button=button)
         logger.debug("Step 3: Final safety release")
-        debug_write("Step 3: Final safety release completed")
+        logger.debug("Step 3: Final safety release completed")
 
         # Step 4: Emit MOUSE_CLICKED event with actual click coordinates
         # This enables coordinate validation by comparing with FIND results
@@ -994,12 +899,14 @@ class MouseActionExecutor(ActionExecutorBase):
                     "action_id": action.id,
                 },
             )
-            debug_write(f"Step 4: Emitted MOUSE_CLICKED event with location={location}")
+            logger.debug(
+                f"Step 4: Emitted MOUSE_CLICKED event with location={location}"
+            )
 
         logger.info(
             f"[COMBINED ACTION: CLICK] Completed {click_count} {button.value}-click(s)"
         )
-        debug_write(f"SUCCESS: Completed {click_count} {button.value}-click(s)")
+        logger.debug(f"SUCCESS: Completed {click_count} {button.value}-click(s)")
         return True
 
     async def _execute_double_click(

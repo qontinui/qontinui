@@ -414,43 +414,6 @@ class RealFindImplementation:
         Returns:
             FindResult with actual matches from screen
         """
-        # File-based debug logging at ENTRY point (only when collect_debug is enabled)
-        import os
-        import tempfile
-
-        from qontinui_schemas.common import utc_now
-
-        _file_debug = options.collect_debug
-        debug_log = (
-            os.path.join(tempfile.gettempdir(), "qontinui_event_emission.log")
-            if _file_debug
-            else ""
-        )
-        if _file_debug:
-            try:
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] RealFindImplementation.execute() ENTRY\n")
-                    f.write(
-                        f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n"
-                    )
-                    f.write(
-                        f"[{ts}]   pattern.pixel_data is None: {pattern.pixel_data is None}\n"
-                    )
-                    if pattern.pixel_data is not None:
-                        f.write(
-                            f"[{ts}]   pattern.pixel_data.shape={pattern.pixel_data.shape}\n"
-                        )
-                    f.write(
-                        f"[{ts}]   FindOptions: similarity={options.similarity}, find_all={options.find_all}\n"
-                    )
-                    f.write(
-                        f"[{ts}]   Self-healing: enable_healing={options.enable_healing}, "
-                        f"use_cache={options.use_cache}, store_in_cache={options.store_in_cache}\n"
-                    )
-            except Exception:
-                pass
-
         logger.debug(
             f"[FIND_DEBUG] RealFindImplementation.execute() ENTRY - pattern.id={pattern.id}, pattern.name={pattern.name}"
         )
@@ -766,30 +729,14 @@ class RealFindImplementation:
             screenshot_timestamp: Unix timestamp when screenshot was captured
             screenshot: Screenshot image data (NumPy array or PIL Image) for encoding
         """
-        # File-based debug logging (only when collect_debug is enabled)
-        import os
-        import tempfile
-
-        from qontinui_schemas.common import utc_now
-
-        _file_debug = options.collect_debug
-        debug_log = (
-            os.path.join(tempfile.gettempdir(), "qontinui_event_emission.log")
-            if _file_debug
-            else ""
+        logger.debug(
+            "_emit_image_recognition_event CALLED: pattern.id=%s, pattern.name=%s, "
+            "matches count=%d, found=%s",
+            pattern.id,
+            pattern.name,
+            len(matches),
+            len(matches) > 0,
         )
-        if _file_debug:
-            try:
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] _emit_image_recognition_event CALLED\n")
-                    f.write(
-                        f"[{ts}]   pattern.id={pattern.id}, pattern.name={pattern.name}\n"
-                    )
-                    f.write(f"[{ts}]   matches count={len(matches)}\n")
-                    f.write(f"[{ts}]   found={len(matches) > 0}\n")
-            except Exception:
-                pass
         # Get template size from pattern
         template_size: tuple[int, int] = (0, 0)
         if hasattr(pattern, "pixel_data") and pattern.pixel_data is not None:
@@ -921,29 +868,13 @@ class RealFindImplementation:
             f"[FIND_DEBUG] Emitting MATCH_ATTEMPTED event for pattern {pattern.id}"
         )
 
-        if _file_debug:
-            try:
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(
-                        f"[{ts}] About to call emit_event(EventType.MATCH_ATTEMPTED, ...)\n"
-                    )
-                    f.write(
-                        f"[{ts}]   EventType.MATCH_ATTEMPTED={EventType.MATCH_ATTEMPTED}\n"
-                    )
-                    f.write(f"[{ts}]   event_data keys={list(event_data.keys())}\n")
-            except Exception:
-                pass
+        logger.debug(
+            "About to call emit_event(%s, ...): event_data keys=%s",
+            EventType.MATCH_ATTEMPTED,
+            list(event_data.keys()),
+        )
 
         emit_event(EventType.MATCH_ATTEMPTED, event_data)
-
-        if _file_debug:
-            try:
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] emit_event() call completed successfully\n")
-            except Exception:
-                pass
 
         logger.info(
             f"[EventTranslator] MATCH_ATTEMPTED event emitted successfully for pattern {pattern.id}"

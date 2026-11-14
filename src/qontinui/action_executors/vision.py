@@ -86,96 +86,69 @@ class VisionActionExecutor(ActionExecutorBase):
         Returns:
             bool: True if image was found
         """
-        # Set up comprehensive debug logging
-        import os
-        import tempfile
 
-        from qontinui_schemas.common import utc_now
-
-        debug_log = os.path.join(tempfile.gettempdir(), "qontinui_find_debug.log")
-
-        def log_debug(msg: str):
-            """Helper to write timestamped debug messages."""
-            try:
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    ts = utc_now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    f.write(f"[{ts}] {msg}\n")
-            except Exception:
-                pass
-
-        log_debug("=" * 80)
-        log_debug(f"FIND ACTION EXECUTION START: {action.id}")
-        log_debug(f"  Action type: {action.type}")
-        log_debug(f"  Action config type: {type(typed_config)}")
-        log_debug(f"  Target type: {type(typed_config.target)}")
-        log_debug(f"  Target config: {typed_config.target}")
+        logger.debug(f"FIND ACTION EXECUTION START: {action.id}")
+        logger.debug(f"  Action type: {action.type}")
+        logger.debug(f"  Action config type: {type(typed_config)}")
+        logger.debug(f"  Target type: {type(typed_config.target)}")
+        logger.debug(f"  Target config: {typed_config.target}")
 
         logger.debug(f"Executing FIND action: {action.id}")
 
         try:
-            log_debug("STEP 1: Calling target_resolver.resolve()")
-            log_debug(f"  Target resolver type: {type(self.target_resolver)}")
-            log_debug(f"  Target config being passed: {typed_config.target}")
+            logger.debug("STEP 1: Calling target_resolver.resolve()")
+            logger.debug(f"  Target resolver type: {type(self.target_resolver)}")
+            logger.debug(f"  Target config being passed: {typed_config.target}")
 
             # Resolve target to ActionResult
             result = await self.target_resolver.resolve(typed_config.target)
 
-            log_debug("STEP 2: Target resolution completed")
-            log_debug(f"  Result is None: {result is None}")
+            logger.debug("STEP 2: Target resolution completed")
+            logger.debug(f"  Result is None: {result is None}")
 
             if result:
-                log_debug(f"  Result type: {type(result)}")
-                log_debug(f"  Result.success: {result.success}")
-                log_debug(f"  Result.matches: {result.matches}")
-                log_debug(
+                logger.debug(f"  Result type: {type(result)}")
+                logger.debug(f"  Result.success: {result.success}")
+                logger.debug(f"  Result.matches: {result.matches}")
+                logger.debug(
                     f"  Result.matches count: {len(result.matches) if result.matches else 0}"
                 )
 
                 if result.matches:
                     for i, match in enumerate(result.matches):
-                        log_debug(f"  Match {i}: {match}")
+                        logger.debug(f"  Match {i}: {match}")
                         if hasattr(match, "score"):
-                            log_debug(f"    Score: {match.score}")
+                            logger.debug(f"    Score: {match.score}")
                         if hasattr(match, "location"):
-                            log_debug(f"    Location: {match.location}")
+                            logger.debug(f"    Location: {match.location}")
             else:
-                log_debug("  Result is None - no matches found")
+                logger.debug("  Result is None - no matches found")
 
             if result and result.success:
-                log_debug("STEP 3: SUCCESS - Result has matches")
+                logger.debug("STEP 3: SUCCESS - Result has matches")
                 logger.info(
                     f"FIND action succeeded: found {len(result.matches)} matches"
                 )
-                log_debug("FIND ACTION RETURNING: True")
-                log_debug("=" * 80 + "\n")
+                logger.debug("FIND ACTION RETURNING: True")
                 return True
             else:
-                log_debug("STEP 3: FAILURE - No matches or result failed")
+                logger.debug("STEP 3: FAILURE - No matches or result failed")
                 logger.warning("FIND action failed: target not found")
-                log_debug("FIND ACTION RETURNING: False")
-                log_debug("=" * 80 + "\n")
+                logger.debug("FIND ACTION RETURNING: False")
                 return False
 
         except Exception as e:
-            log_debug("STEP X: EXCEPTION occurred")
-            log_debug(f"  Exception type: {type(e)}")
-            log_debug(f"  Exception message: {str(e)}")
+            logger.debug("STEP X: EXCEPTION occurred")
+            logger.debug(f"  Exception type: {type(e)}")
+            logger.debug(f"  Exception message: {str(e)}")
 
             error_msg = f"FIND action failed: {e}"
             logger.error(error_msg, exc_info=True)
 
-            import traceback
-
-            log_debug("  Full traceback:")
-            try:
-                with open(debug_log, "a", encoding="utf-8") as f:
-                    traceback.print_exc(file=f)
-            except Exception:
-                pass
+            logger.debug("  Full traceback:", exc_info=True)
 
             self._emit_action_failure(action, error_msg)
-            log_debug("FIND ACTION RETURNING: False (exception)")
-            log_debug("=" * 80 + "\n")
+            logger.debug("FIND ACTION RETURNING: False (exception)")
             return False
 
     async def _execute_vanish(
