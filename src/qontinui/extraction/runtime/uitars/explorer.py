@@ -525,6 +525,9 @@ class UITARSExplorer(RuntimeExtractor):
             end_y=end_y,
             mouse=self._hal_mouse,
             keyboard=self._hal_keyboard,
+            # The explorer has always reported a pointer action without
+            # coordinates (or a hotkey without keys) as a failure.
+            incomplete_action_result=False,
         )
 
     def _build_exploration_prompt(
