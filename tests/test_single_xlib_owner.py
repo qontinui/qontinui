@@ -23,6 +23,9 @@ import pytest
 #: Distributions known to install a top-level ``Xlib/`` package.
 XLIB_DISTRIBUTIONS = frozenset({"python-xlib", "python3-xlib", "xlib"})
 
+#: The one allowed owner: pynput's dependency.
+ALLOWED_XLIB_OWNERS = frozenset({"python-xlib"})
+
 #: Distributions whose return would bring the ``python3-xlib`` fork back.
 FORBIDDEN_DISTRIBUTIONS = frozenset({"pyautogui", "mouseinfo"})
 
@@ -43,11 +46,12 @@ def locked_names() -> set[str]:
     return names
 
 
-def test_at_most_one_xlib_owner_is_locked(locked_names: set[str]) -> None:
-    owners = sorted(locked_names & XLIB_DISTRIBUTIONS)
-    assert len(owners) <= 1, (
-        f"poetry.lock locks {len(owners)} distributions that install Xlib/: "
-        f"{owners}. Only python-xlib may be locked."
+def test_only_python_xlib_owns_xlib(locked_names: set[str]) -> None:
+    owners = locked_names & XLIB_DISTRIBUTIONS
+    assert owners <= ALLOWED_XLIB_OWNERS, (
+        f"poetry.lock locks {sorted(owners)} as Xlib/ installers; only "
+        f"{sorted(ALLOWED_XLIB_OWNERS)} may be locked "
+        f"(offender: {sorted(owners - ALLOWED_XLIB_OWNERS)})."
     )
 
 
