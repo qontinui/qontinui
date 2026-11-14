@@ -9,13 +9,18 @@ UI-TARS was tuned against pyautogui, which gave every call two behaviours that
 pynput does not have. Both are reproduced here explicitly:
 
 * **Corner abort (failsafe).** pyautogui 0.9.54 raised ``FailSafeException``
-  when the pointer sat on any of the four corners of the primary screen
-  (``(0, 0)``, ``(0, h-1)``, ``(w-1, 0)``, ``(w-1, h-1)``). Before every
+  when the pointer sat on any of the four corners ``(0, 0)``, ``(0, h-1)``,
+  ``(w-1, 0)``, ``(w-1, h-1)`` of the rectangle its ``size()`` reported. That
+  rectangle differs by platform: on X11 it is the whole X screen (all
+  monitors, ``width_in_pixels`` x ``height_in_pixels``); on Windows it is the
+  primary monitor (``SM_CXSCREEN`` x ``SM_CYSCREEN``), whose origin is
+  ``(0, 0)``; on macOS the main display, also at ``(0, 0)``. Before every
   input step the pointer position is read and, on a corner, the action is
   refused with a logged error. Moving the mouse into a corner is how an
-  operator stops an autonomous run. The screen size comes from the HAL
-  screen capture; when it cannot be read, only ``(0, 0)`` is checked and
-  that degradation is logged once.
+  operator stops an autonomous run. The rectangle is derived from the HAL
+  screen capture's monitors by :func:`failsafe_rect_from_monitors`; when it
+  cannot be determined, only ``(0, 0)`` is checked and that degradation is
+  logged once.
 * **Pause after every input step.** pyautogui slept ``PAUSE`` (0.1 s) after
   every call. ``STEP_PAUSE_S`` is slept after each input step, so a compound
   action (click then type, move then drag) waits between its steps and every
@@ -28,10 +33,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+from collections.abc import Sequence
 
 from qontinui.hal.interfaces.input_controller import MouseButton
 from qontinui.hal.interfaces.keyboard_controller import IKeyboardController
 from qontinui.hal.interfaces.mouse_controller import IMouseController
+from qontinui.hal.interfaces.screen_capture import Monitor
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +54,10 @@ DEFAULT_SCROLL_AMOUNT = 100
 #: Windows wheel delta of one notch (``WHEEL_DELTA`` in winuser.h).
 WIN32_WHEEL_DELTA = 120
 
-_warned_no_screen_size = False
+_warned_no_failsafe_rect = False
+
+#: ``(left, top, width, height)`` of the failsafe rectangle.
+Rect = tuple[int, int, int, int]
 
 
 class FailsafeTriggered(RuntimeError):
@@ -93,34 +103,72 @@ def scroll_amount_to_clicks(amount: int, platform: str | None = None) -> int:
     return notches if amount > 0 else -notches
 
 
-def failsafe_corners(screen_size: tuple[int, int] | None) -> frozenset[tuple[int, int]]:
-    """Return the failsafe corner points for a primary screen of ``screen_size``.
+def failsafe_rect_from_monitors(monitors: Sequence[Monitor], platform: str) -> Rect | None:
+    """Return the rectangle whose corners pyautogui treated as failsafe points.
+
+    One rule per platform family, matching what pyautogui's ``size()`` read:
+
+    * **linux (X11):** the whole X screen, i.e. the bounding box of every
+      monitor. pyautogui used ``Display.screen().width_in_pixels`` /
+      ``height_in_pixels``, which on a multi-monitor X screen spans all of
+      them.
+    * **everything else (Windows, macOS):** the monitor whose origin is
+      ``(0, 0)``. Windows' ``SM_CXSCREEN``/``SM_CYSCREEN`` and macOS's main
+      display both describe that monitor; the order mss lists monitors in is
+      not used, because it does not reliably put the primary first.
 
     Args:
-        screen_size: ``(width, height)`` of the primary screen, or None when
-            unknown (then only ``(0, 0)`` is a failsafe point)
+        monitors: Physical monitors (``IScreenCapture.get_monitors()``)
+        platform: ``sys.platform`` value
+
+    Returns:
+        ``(left, top, width, height)``, or None when no rectangle can be
+        determined (no monitors, or no monitor at the origin)
     """
-    if screen_size is None:
+    if not monitors:
+        return None
+    if platform.startswith("linux"):
+        left = min(m.x for m in monitors)
+        top = min(m.y for m in monitors)
+        right = max(m.x + m.width for m in monitors)
+        bottom = max(m.y + m.height for m in monitors)
+        return (left, top, right - left, bottom - top)
+    for m in monitors:
+        if (m.x, m.y) == (0, 0):
+            return (0, 0, m.width, m.height)
+    return None
+
+
+def failsafe_corners(rect: Rect | None) -> frozenset[tuple[int, int]]:
+    """Return the four corner pixels of ``rect`` (only ``(0, 0)`` when None)."""
+    if rect is None:
         return frozenset({(0, 0)})
-    width, height = screen_size
-    return frozenset({(0, 0), (0, height - 1), (width - 1, 0), (width - 1, height - 1)})
+    left, top, width, height = rect
+    right, bottom = left + width - 1, top + height - 1
+    return frozenset({(left, top), (left, bottom), (right, top), (right, bottom)})
 
 
-def _resolve_screen_size() -> tuple[int, int] | None:
-    """Read the primary screen size from the HAL screen capture, or None."""
-    global _warned_no_screen_size
+def _resolve_failsafe_rect() -> Rect | None:
+    """Derive the failsafe rectangle from the HAL screen capture, or None."""
+    global _warned_no_failsafe_rect
+    reason: str
     try:
         from qontinui.hal.factory import HALFactory
 
-        width, height = HALFactory.get_screen_capture().get_screen_size()
-        return (int(width), int(height))
+        monitors = HALFactory.get_screen_capture().get_monitors()
+        rect = failsafe_rect_from_monitors(monitors, _current_platform())
+        if rect is not None:
+            return rect
+        reason = f"no monitor at the origin among {len(monitors)}"
     except Exception as e:
-        if not _warned_no_screen_size:
-            _warned_no_screen_size = True
-            logger.warning(
-                f"Screen size unavailable ({e}); the UI-TARS failsafe checks only the (0, 0) corner"
-            )
-        return None
+        reason = str(e)
+    if not _warned_no_failsafe_rect:
+        _warned_no_failsafe_rect = True
+        logger.warning(
+            f"Failsafe screen rectangle unavailable ({reason}); the UI-TARS "
+            "failsafe checks only the (0, 0) corner"
+        )
+    return None
 
 
 def _check_failsafe(mouse: IMouseController, corners: frozenset[tuple[int, int]]) -> None:
@@ -166,7 +214,7 @@ async def execute_hal_action(
     end_y: int | None = None,
     mouse: IMouseController | None = None,
     keyboard: IKeyboardController | None = None,
-    screen_size: tuple[int, int] | None = None,
+    failsafe_rect: Rect | None = None,
     incomplete_action_result: bool = True,
 ) -> bool:
     """Execute one UI-TARS action through the HAL controllers.
@@ -184,8 +232,9 @@ async def execute_hal_action(
         mouse: Mouse controller (defaults to ``HALFactory.get_mouse_controller()``)
         keyboard: Keyboard controller (defaults to
             ``HALFactory.get_keyboard_controller()``)
-        screen_size: Primary screen ``(width, height)`` for the failsafe
-            corners (defaults to the HAL screen capture's size)
+        failsafe_rect: ``(left, top, width, height)`` whose corners abort the
+            action (defaults to :func:`failsafe_rect_from_monitors` over the
+            HAL screen capture's monitors)
         incomplete_action_result: What to return for a pointer action without
             the coordinates it needs, or a hotkey without keys. Nothing is
             executed either way; callers keep their historical answer.
@@ -203,7 +252,7 @@ async def execute_hal_action(
     try:
         mouse, keyboard = _resolve_controllers(mouse, keyboard)
         corners = failsafe_corners(
-            screen_size if screen_size is not None else _resolve_screen_size()
+            failsafe_rect if failsafe_rect is not None else _resolve_failsafe_rect()
         )
 
         async def step(call: object) -> bool:

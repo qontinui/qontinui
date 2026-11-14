@@ -28,7 +28,7 @@ from qontinui.extraction.runtime.uitars.executor import (  # noqa: E402
     UITARSExecutor,
 )
 from qontinui.extraction.runtime.uitars.hal_dispatch import (  # noqa: E402
-    _resolve_screen_size as _REAL_RESOLVE_SCREEN_SIZE,
+    _resolve_failsafe_rect as _REAL_RESOLVE_FAILSAFE_RECT,
 )
 from qontinui.extraction.runtime.uitars.models import (  # noqa: E402
     UITARSAction,
@@ -44,6 +44,7 @@ from qontinui.hal.interfaces.keyboard_controller import (  # noqa: E402
     IKeyboardController,
 )
 from qontinui.hal.interfaces.mouse_controller import IMouseController  # noqa: E402
+from qontinui.hal.interfaces.screen_capture import Monitor  # noqa: E402
 
 
 class MockLocalGrounder:
@@ -421,12 +422,12 @@ class TestHybridGrounder:
         mock_executor.ground_element.assert_not_called()
 
 
-SCREEN_SIZE = (1920, 1080)
+FAILSAFE_RECT = (0, 0, 1920, 1080)
 
 
 @pytest.fixture(autouse=True)
 def _pin_dispatch_environment(monkeypatch):
-    """Pin the platform (scroll units) and screen size (failsafe corners).
+    """Pin the platform (scroll units) and failsafe rectangle (corners).
 
     Without this, scroll assertions would depend on the OS running the tests
     and the failsafe on whatever display is attached.
@@ -434,7 +435,7 @@ def _pin_dispatch_environment(monkeypatch):
     from qontinui.extraction.runtime.uitars import hal_dispatch
 
     monkeypatch.setattr(hal_dispatch, "_current_platform", lambda: "linux")
-    monkeypatch.setattr(hal_dispatch, "_resolve_screen_size", lambda: SCREEN_SIZE)
+    monkeypatch.setattr(hal_dispatch, "_resolve_failsafe_rect", lambda: FAILSAFE_RECT)
 
 
 def _make_hal_mocks(position: tuple[int, int] = (500, 500)) -> tuple[MagicMock, MagicMock]:
@@ -971,49 +972,152 @@ class TestIncompleteActions:
         mouse.mouse_scroll.assert_not_called()
 
 
-class TestFailsafeScreenSize:
-    """Where the failsafe corners come from."""
+def _monitor(index: int, x: int, y: int, width: int, height: int) -> Monitor:
+    return Monitor(index=index, x=x, y=y, width=width, height=height)
 
-    def test_corners_for_a_screen(self):
+
+# mss order on a two-monitor desk where the LEFT monitor is listed first and
+# the primary (origin (0, 0)) second: mss monitors[1] / [2].
+LEFT_THEN_PRIMARY = [
+    _monitor(0, -1920, 0, 1920, 1080),
+    _monitor(1, 0, 0, 2560, 1440),
+]
+# X11: monitors extend right of the origin, the X screen spans both.
+X11_TWO_MONITORS = [
+    _monitor(0, 1920, 0, 2560, 1440),
+    _monitor(1, 0, 0, 1920, 1080),
+]
+
+
+class TestFailsafeRect:
+    """Which rectangle's corners abort, per platform (pyautogui's size())."""
+
+    def test_corners_of_a_rect(self):
         from qontinui.extraction.runtime.uitars.hal_dispatch import failsafe_corners
 
-        assert failsafe_corners((800, 600)) == {(0, 0), (0, 599), (799, 0), (799, 599)}
+        assert failsafe_corners((0, 0, 800, 600)) == {
+            (0, 0),
+            (0, 599),
+            (799, 0),
+            (799, 599),
+        }
 
-    def test_unknown_screen_size_checks_only_origin(self):
+    def test_unknown_rect_checks_only_origin(self):
         from qontinui.extraction.runtime.uitars.hal_dispatch import failsafe_corners
 
         assert failsafe_corners(None) == {(0, 0)}
 
-    def test_screen_size_read_from_hal_screen_capture(self):
+    @pytest.mark.parametrize("platform", ["win32", "darwin"])
+    def test_non_x11_uses_the_monitor_at_the_origin(self, platform):
+        """Windows SM_CXSCREEN / macOS main display: the monitor at (0, 0),
+        even when mss lists another monitor first."""
+        from qontinui.extraction.runtime.uitars.hal_dispatch import (
+            failsafe_rect_from_monitors,
+        )
+
+        assert failsafe_rect_from_monitors(LEFT_THEN_PRIMARY, platform) == (
+            0,
+            0,
+            2560,
+            1440,
+        )
+
+    def test_x11_uses_the_whole_x_screen(self):
+        """X11 width_in_pixels/height_in_pixels: the box around every monitor."""
+        from qontinui.extraction.runtime.uitars.hal_dispatch import (
+            failsafe_rect_from_monitors,
+        )
+
+        assert failsafe_rect_from_monitors(X11_TWO_MONITORS, "linux") == (
+            0,
+            0,
+            4480,
+            1440,
+        )
+
+    def test_no_monitor_at_origin_is_unknown_off_x11(self):
+        from qontinui.extraction.runtime.uitars.hal_dispatch import (
+            failsafe_rect_from_monitors,
+        )
+
+        monitors = [_monitor(0, 100, 100, 800, 600)]
+        assert failsafe_rect_from_monitors(monitors, "win32") is None
+        assert failsafe_rect_from_monitors([], "linux") is None
+
+    def test_rect_resolved_from_hal_monitors(self, monkeypatch):
+        from qontinui.extraction.runtime.uitars import hal_dispatch
+
+        monkeypatch.setattr(hal_dispatch, "_current_platform", lambda: "win32")
         capture = MagicMock()
-        capture.get_screen_size.return_value = (2560, 1440)
+        capture.get_monitors.return_value = LEFT_THEN_PRIMARY
         with patch(
             "qontinui.hal.factory.HALFactory.get_screen_capture", return_value=capture
         ):
-            assert _REAL_RESOLVE_SCREEN_SIZE() == (2560, 1440)
+            assert _REAL_RESOLVE_FAILSAFE_RECT() == (0, 0, 2560, 1440)
 
-    def test_unavailable_screen_size_falls_back_and_warns_once(self, monkeypatch, caplog):
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("position", "aborts"),
+        [((2559, 1439), True), ((0, 1439), True), ((-1920, 0), False), ((-1, 1079), False)],
+    )
+    async def test_multi_monitor_corners_follow_the_primary_on_windows(
+        self, monkeypatch, position, aborts
+    ):
+        """Primary-monitor corners abort; the left monitor's corners do not."""
         from qontinui.extraction.runtime.uitars import hal_dispatch
 
-        monkeypatch.setattr(hal_dispatch, "_warned_no_screen_size", False)
+        monkeypatch.setattr(hal_dispatch, "_current_platform", lambda: "win32")
+        monkeypatch.setattr(
+            hal_dispatch, "_resolve_failsafe_rect", _REAL_RESOLVE_FAILSAFE_RECT
+        )
+        capture = MagicMock()
+        capture.get_monitors.return_value = LEFT_THEN_PRIMARY
+        mouse, keyboard = _make_hal_mocks(position=position)
+        with patch(
+            "qontinui.hal.factory.HALFactory.get_screen_capture", return_value=capture
+        ):
+            result = await hal_dispatch.execute_hal_action(
+                "click", x=5, y=5, mouse=mouse, keyboard=keyboard
+            )
+
+        assert result is (not aborts)
+        assert mouse.click_at.called is (not aborts)
+
+    @pytest.mark.parametrize(
+        "capture_kwargs",
+        [
+            {"side_effect": RuntimeError("no display")},
+            {"return_value": None},  # replaced below by a capture with no origin monitor
+        ],
+    )
+    def test_unavailable_rect_falls_back_and_warns_once(
+        self, monkeypatch, caplog, capture_kwargs
+    ):
+        from qontinui.extraction.runtime.uitars import hal_dispatch
+
+        monkeypatch.setattr(hal_dispatch, "_current_platform", lambda: "win32")
+        monkeypatch.setattr(hal_dispatch, "_warned_no_failsafe_rect", False)
+        if "return_value" in capture_kwargs:
+            capture = MagicMock()
+            capture.get_monitors.return_value = [_monitor(0, 50, 50, 10, 10)]
+            capture_kwargs = {"return_value": capture}
         with (
-            patch(
-                "qontinui.hal.factory.HALFactory.get_screen_capture",
-                side_effect=RuntimeError("no display"),
-            ),
+            patch("qontinui.hal.factory.HALFactory.get_screen_capture", **capture_kwargs),
             caplog.at_level("WARNING"),
         ):
-            assert _REAL_RESOLVE_SCREEN_SIZE() is None
-            assert _REAL_RESOLVE_SCREEN_SIZE() is None
+            assert _REAL_RESOLVE_FAILSAFE_RECT() is None
+            assert _REAL_RESOLVE_FAILSAFE_RECT() is None
 
-        warnings = [r for r in caplog.records if "Screen size unavailable" in r.message]
+        warnings = [
+            r for r in caplog.records if "Failsafe screen rectangle unavailable" in r.message
+        ]
         assert len(warnings) == 1
 
     @pytest.mark.asyncio
-    async def test_without_screen_size_only_origin_aborts(self, monkeypatch):
+    async def test_without_rect_only_origin_aborts(self, monkeypatch):
         from qontinui.extraction.runtime.uitars import hal_dispatch
 
-        monkeypatch.setattr(hal_dispatch, "_resolve_screen_size", lambda: None)
+        monkeypatch.setattr(hal_dispatch, "_resolve_failsafe_rect", lambda: None)
         mouse, keyboard = _make_hal_mocks(position=(1919, 1079))
         assert (
             await hal_dispatch.execute_hal_action(
@@ -1030,12 +1134,75 @@ class TestFailsafeScreenSize:
         )
 
     @pytest.mark.asyncio
-    async def test_explicit_screen_size_overrides_resolution(self):
+    async def test_explicit_rect_overrides_resolution(self):
         from qontinui.extraction.runtime.uitars import hal_dispatch
 
         mouse, keyboard = _make_hal_mocks(position=(639, 479))
         result = await hal_dispatch.execute_hal_action(
-            "click", x=1, y=1, mouse=mouse, keyboard=keyboard, screen_size=(640, 480)
+            "click", x=1, y=1, mouse=mouse, keyboard=keyboard, failsafe_rect=(0, 0, 640, 480)
         )
         assert result is False
         mouse.click_at.assert_not_called()
+
+
+# Every UI-TARS action that performs input, with the inputs it needs.
+INPUT_ACTIONS = [
+    ("click", {"x": 1, "y": 2}),
+    ("double_click", {"x": 1, "y": 2}),
+    ("right_click", {"x": 1, "y": 2}),
+    ("type", {"x": 1, "y": 2, "text": "abc"}),
+    ("type", {"text": "abc"}),
+    ("scroll", {"scroll_direction": "up", "scroll_amount": 3}),
+    ("scroll", {"scroll_direction": "down", "scroll_amount": 3}),
+    ("scroll", {"scroll_direction": "left", "scroll_amount": 3}),
+    ("scroll", {"scroll_direction": "right", "scroll_amount": 3}),
+    ("hover", {"x": 1, "y": 2}),
+    ("drag", {"x": 1, "y": 2, "end_x": 3, "end_y": 4}),
+    ("hotkey", {"keys": ["ctrl", "c"]}),
+]
+INPUT_METHODS = (
+    "click_at",
+    "double_click_at",
+    "move_mouse",
+    "drag",
+    "mouse_scroll",
+    "mouse_move",
+    "mouse_click",
+    "mouse_down",
+    "mouse_up",
+    "mouse_drag",
+)
+
+
+class TestFailsafeCoversEveryInputAction:
+    """Every input-performing action is refused on a corner, touching nothing."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(("action_type", "kwargs"), INPUT_ACTIONS)
+    @pytest.mark.parametrize("corner", [(0, 0), (1919, 1079)])
+    async def test_refused_on_corner(self, action_type, kwargs, corner):
+        from qontinui.extraction.runtime.uitars.hal_dispatch import execute_hal_action
+
+        mouse, keyboard = _make_hal_mocks(position=corner)
+
+        result = await execute_hal_action(
+            action_type, **kwargs, mouse=mouse, keyboard=keyboard
+        )
+
+        assert result is False
+        for name in INPUT_METHODS:
+            getattr(mouse, name).assert_not_called()
+        assert keyboard.mock_calls == []
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(("action_type", "kwargs"), INPUT_ACTIONS)
+    async def test_executed_off_corner(self, action_type, kwargs):
+        """Control: the same actions run when the pointer is not on a corner."""
+        from qontinui.extraction.runtime.uitars.hal_dispatch import execute_hal_action
+
+        mouse, keyboard = _make_hal_mocks(position=(500, 500))
+
+        assert (
+            await execute_hal_action(action_type, **kwargs, mouse=mouse, keyboard=keyboard)
+            is True
+        )
