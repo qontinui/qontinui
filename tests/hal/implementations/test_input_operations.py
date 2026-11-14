@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from pynput.keyboard import Controller as PynputController
 from pynput.keyboard import Key as PynputKey
 
+from qontinui.exceptions import InputControlError
+from qontinui.hal.implementations import keyboard_operations
 from qontinui.hal.implementations.keyboard_operations import (
     PYAUTOGUI_KEY_ALIASES,
     KeyboardOperations,
@@ -41,15 +45,60 @@ class TestMouseScroll:
 class TestPyautoguiKeyAliases:
     """pyautogui key names resolve to the pynput keys they meant."""
 
-    @pytest.mark.parametrize(("name", "attr"), sorted(PYAUTOGUI_KEY_ALIASES.items()))
-    def test_alias_resolves_to_pynput_key(self, name, attr):
-        expected = getattr(PynputKey, attr, None)
-        if expected is None:
-            pytest.skip(f"pynput has no Key.{attr} on this platform")
+    @pytest.mark.parametrize(
+        ("name", "expected"),
+        [
+            ("return", PynputKey.enter),
+            ("esc", PynputKey.esc),
+            ("pgdn", PynputKey.page_down),
+            ("pgup", PynputKey.page_up),
+            ("del", PynputKey.delete),
+            ("command", PynputKey.cmd),
+            ("option", PynputKey.alt),
+            ("control", PynputKey.ctrl),
+            ("winleft", PynputKey.cmd_l),
+            ("capslock", PynputKey.caps_lock),
+            ("prtsc", PynputKey.print_screen),
+            ("f13", PynputKey.f13),
+        ],
+    )
+    def test_literal_alias_pairs(self, name, expected):
         ops = KeyboardOperations(MagicMock())
 
         assert ops._get_pynput_key(name) == expected
         assert ops._get_pynput_key(name.upper()) == expected
+
+    @pytest.mark.parametrize(("name", "attr"), sorted(PYAUTOGUI_KEY_ALIASES.items()))
+    def test_every_alias_names_a_pynput_key_here(self, name, attr):
+        """On this (Linux) platform every alias target exists in pynput."""
+        ops = KeyboardOperations(MagicMock())
+
+        assert ops._get_pynput_key(name) == getattr(PynputKey, attr)
+
+    def test_alias_falls_through_when_platform_lacks_the_key(self, monkeypatch):
+        """A key the platform's pynput lacks resolves to the raw name."""
+        ops = KeyboardOperations(MagicMock())
+        monkeypatch.setattr(keyboard_operations, "PynputKey", SimpleNamespace(esc=PynputKey.esc))
+
+        assert ops._get_pynput_key("insert") == "insert"
+        assert ops._get_pynput_key("esc") == PynputKey.esc
+
+    def test_print_is_not_print_screen(self):
+        """'print' is VK_PRINT on Windows, not Print Screen: no alias."""
+        assert "print" not in PYAUTOGUI_KEY_ALIASES
+        assert KeyboardOperations(MagicMock())._get_pynput_key("print") == "print"
+
+    @pytest.mark.parametrize(
+        "name",
+        ["num0", "num9", "add", "subtract", "multiply", "divide", "decimal", "separator"],
+    )
+    def test_keypad_names_fail_loudly(self, name):
+        """Keypad names have no pynput key: a hotkey using one raises."""
+        ops = KeyboardOperations(PynputController())
+
+        assert ops._get_pynput_key(name) == name
+        with pytest.raises(InputControlError):
+            ops.hotkey(name)
 
     def test_hotkey_presses_aliased_keys(self):
         controller = MagicMock()

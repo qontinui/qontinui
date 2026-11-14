@@ -17,6 +17,19 @@ logger = get_logger(__name__)
 #: not already cover. Resolved with ``getattr`` because some pynput keys exist
 #: only on some platforms (``insert``, ``menu``, ``num_lock``, ... are absent on
 #: macOS); an alias whose key the platform lacks falls through to the raw name.
+#:
+#: Deliberately absent:
+#:
+#: * ``print``: on Windows pyautogui sends ``VK_PRINT`` (the legacy Print key),
+#:   not ``VK_SNAPSHOT`` (Print Screen), so aliasing it to ``print_screen``
+#:   would press a different key.
+#: * The numeric keypad (``num0``-``num9``, ``add``, ``subtract``,
+#:   ``multiply``, ``divide``, ``decimal``, ``separator``): pynput's ``Key``
+#:   has no keypad keys, and the top-row digits / ``+-*/.`` characters are
+#:   different keys to many applications. These names fall through, and
+#:   pynput rejects a multi-character name with ``ValueError``, so a hotkey
+#:   using one fails loudly (``InputControlError``) instead of pressing a
+#:   look-alike key.
 PYAUTOGUI_KEY_ALIASES: dict[str, str] = {
     "esc": "esc",
     "return": "enter",
@@ -38,7 +51,6 @@ PYAUTOGUI_KEY_ALIASES: dict[str, str] = {
     "prtsc": "print_screen",
     "prtscr": "print_screen",
     "prntscrn": "print_screen",
-    "print": "print_screen",
     "pause": "pause",
     "apps": "menu",
     "volumemute": "media_volume_mute",
@@ -324,8 +336,10 @@ class KeyboardOperations(IKeyboardController):
                     qontinui_key: str | Key = orig_key
                     pynput_key: PynputKey | str = self._get_pynput_key(qontinui_key)
                     self._keyboard.release(pynput_key)
-                except (OSError, RuntimeError):
-                    # OK to ignore release errors in error handler
+                except (OSError, RuntimeError, ValueError, TypeError):
+                    # OK to ignore release errors in error handler (a key
+                    # pynput cannot resolve raises ValueError here too, and
+                    # must not mask the InputControlError below)
                     pass
             raise InputControlError("hotkey", str(e)) from e
 
