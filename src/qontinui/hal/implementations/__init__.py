@@ -9,10 +9,6 @@ from .mss_capture import MSSScreenCapture
 # Pattern matcher implementations
 from .opencv_matcher import OpenCVMatcher
 
-# PyAutoGUI implementations
-from .pyautogui_keyboard import PyAutoGUIKeyboardOperations
-from .pyautogui_mouse import PyAutoGUIMouseOperations
-
 
 def __getattr__(name: str):  # noqa: N807
     """Lazy import for optional heavy dependencies (EasyOCR)."""
@@ -30,6 +26,4 @@ __all__ = [
     "EasyOCREngine",
     "KeyboardOperations",
     "MouseOperations",
-    "PyAutoGUIKeyboardOperations",
-    "PyAutoGUIMouseOperations",
 ]

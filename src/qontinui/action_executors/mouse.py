@@ -561,7 +561,7 @@ class MouseActionExecutor(ActionExecutorBase):
         """Convert FIND match coordinates to absolute screen coordinates.
 
         Uses the CoordinateService singleton to convert match coordinates to
-        absolute screen coordinates that pyautogui can use.
+        absolute screen coordinates that the input controllers use.
 
         The transformation depends on how the screenshot was captured:
         - If a specific monitor was captured (monitor_index is not None):

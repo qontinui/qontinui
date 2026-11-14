@@ -173,23 +173,17 @@ class LiveApp:
 
 def _wait_for_window(title_fragment: str, timeout_s: float = 15.0) -> bool:
     """Poll for a visible window whose title contains ``title_fragment``."""
-    try:
-        import pygetwindow as gw
-    except ImportError:
-        # Without pygetwindow we can't verify — just sleep a conservative
-        # amount and hope the app came up. Good enough for a skip-on-fail
-        # live harness.
+    if sys.platform != "win32":
+        # No Win32 window enumeration here — sleep a conservative amount and
+        # hope the app came up. Good enough for a skip-on-fail live harness.
         time.sleep(3.0)
         return True
 
+    from ._win32_windows import find_visible_windows
+
     deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
-        wins = [
-            w
-            for w in gw.getAllWindows()
-            if title_fragment.lower() in (w.title or "").lower()
-        ]
-        if any(w.visible and w.width > 0 for w in wins):
+        if find_visible_windows(title_fragment):
             return True
         time.sleep(0.25)
     return False

@@ -3,7 +3,7 @@
 This module defines immutable coordinate types for different coordinate systems
 used in Qontinui's multi-monitor automation:
 
-1. ScreenPoint - Absolute screen coordinates (pyautogui uses these)
+1. ScreenPoint - Absolute screen coordinates (input controllers use these)
 2. VirtualPoint - Relative to virtual desktop origin (FIND results use these)
 3. MonitorPoint - Relative to a specific monitor's origin
 
@@ -39,7 +39,7 @@ class ScreenPoint:
     """A point in absolute screen coordinates.
 
     Screen coordinates are absolute coordinates in the virtual desktop space.
-    This is what pyautogui and other input automation libraries use.
+    This is what input automation libraries (pynput, the HAL) use.
 
     On multi-monitor systems, these coordinates can be negative for monitors
     positioned left of or above the primary monitor.

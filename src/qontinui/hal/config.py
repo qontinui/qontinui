@@ -141,11 +141,6 @@ class HALConfig:
         default_factory=lambda: os.getenv("QONTINUI_USE_FALLBACK", "true").lower()
         == "true"
     )
-    fallback_to_pyautogui: bool = field(
-        default_factory=lambda: (
-            os.getenv("QONTINUI_FALLBACK_TO_PYAUTOGUI", "false").lower() == "true"
-        )
-    )
 
     # Debug settings
     debug_mode: bool = field(
@@ -234,7 +229,6 @@ class HALConfig:
             "matcher_threads": self.matcher_threads,
             "ocr_gpu_enabled": self.ocr_gpu_enabled,
             "use_fallback": self.use_fallback,
-            "fallback_to_pyautogui": self.fallback_to_pyautogui,
             "debug_mode": self.debug_mode,
             "log_performance": self.log_performance,
             "enable_multi_monitor": self.enable_multi_monitor,

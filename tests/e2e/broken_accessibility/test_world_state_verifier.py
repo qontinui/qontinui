@@ -15,7 +15,7 @@ WSM prompt contract works end-to-end.
 Skip conditions:
 - Not on Windows
 - WSM endpoint not reachable (llama-swap isn't running or model isn't loaded)
-- pyautogui / pygetwindow / mss / PIL not importable
+- pynput / mss / PIL not importable
 
 Run with::
 
@@ -92,33 +92,22 @@ def test_wsm_refuses_wrong_target_click(
         pytest.skip("mspaint scenario only runs on Windows")
 
     try:
-        import pyautogui
+        from pynput.mouse import Button
+        from pynput.mouse import Controller as MouseController
     except ImportError:
-        pytest.skip("pyautogui not available")
-    try:
-        import pygetwindow as gw
-    except ImportError:
-        pytest.skip("pygetwindow not available")
+        pytest.skip("pynput not available")
 
-    # Disable pyautogui failsafe (mouse-in-corner abort) for automated runs.
-    pyautogui.FAILSAFE = False
+    from ._win32_windows import activate, find_visible_windows
 
     app = live_app("mspaint.exe", window_title="Paint")
     # Let the window fully paint before snapshotting.
     time.sleep(1.5)
 
-    wins = [
-        w
-        for w in gw.getAllWindows()
-        if "paint" in (w.title or "").lower() and w.visible and w.width > 0
-    ]
+    wins = find_visible_windows("paint")
     if not wins:
         pytest.skip("No visible Paint window found after launch")
     win = wins[0]
-    try:
-        win.activate()
-    except Exception:
-        pass  # activation is best-effort on some Windows configs
+    activate(win)  # best-effort on some Windows configs
     time.sleep(0.3)
 
     # PRE screenshot: mspaint is open, no action yet.
@@ -134,7 +123,9 @@ def test_wsm_refuses_wrong_target_click(
         canvas_x,
         canvas_y,
     )
-    pyautogui.click(canvas_x, canvas_y)
+    mouse = MouseController()
+    mouse.position = (canvas_x, canvas_y)
+    mouse.click(Button.left)
     time.sleep(0.5)
 
     # POST screenshot.

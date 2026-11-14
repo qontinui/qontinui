@@ -2688,22 +2688,6 @@ server = ["fastapi", "sse-starlette", "uvicorn"]
 tests = ["expecttest", "flake8", "isort (>=4.3.21)", "pre-commit", "yapf (==0.30.0)"]
 
 [[package]]
-name = "mouseinfo"
-version = "0.1.3"
-description = "An application to display XY position and RGB color information for the pixel currently under the mouse. Works on Python 2 and 3."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "MouseInfo-0.1.3.tar.gz", hash = "sha256:2c62fb8885062b8e520a3cce0a297c657adcc08c60952eb05bc8256ef6f7f6e7"},
-]
-
-[package.dependencies]
-pyperclip = "*"
-python3-Xlib = {version = "*", markers = "platform_system == \"Linux\" and python_version >= \"3.0\""}
-rubicon-objc = {version = "*", markers = "platform_system == \"Darwin\""}
-
-[[package]]
 name = "mpmath"
 version = "1.3.0"
 description = "Python library for arbitrary-precision floating-point arithmetic"
@@ -3763,7 +3747,7 @@ version = "13.0.0"
 description = "Python Imaging Library (fork)"
 optional = false
 python-versions = ">=3.11"
-groups = ["main", "dev"]
+groups = ["main"]
 files = [
     {file = "pillow-13.0.0-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:6f38f3f885a09cafc93fd667b1173a92f379e43785d635e7983c893f0da319fb"},
     {file = "pillow-13.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:37290fbef0c73e2d51d594eb78fded7dc7170d1c3ad0a890269e6fd8c8c4e061"},
@@ -4246,27 +4230,6 @@ files = [
 ]
 
 [[package]]
-name = "pyautogui"
-version = "0.9.54"
-description = "PyAutoGUI lets Python control the mouse and keyboard, and other GUI automation tasks. For Windows, macOS, and Linux, on Python 3 and 2."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "PyAutoGUI-0.9.54.tar.gz", hash = "sha256:dd1d29e8fd118941cb193f74df57e5c6ff8e9253b99c7b04f39cfc69f3ae04b2"},
-]
-
-[package.dependencies]
-mouseinfo = "*"
-pygetwindow = ">=0.0.5"
-pymsgbox = "*"
-pyobjc-core = {version = "*", markers = "platform_system == \"Darwin\""}
-pyobjc-framework-quartz = {version = "*", markers = "platform_system == \"Darwin\""}
-pyscreeze = ">=0.1.21"
-python3-Xlib = {version = "*", markers = "platform_system == \"Linux\" and python_version >= \"3.0\""}
-pytweening = ">=1.0.4"
-
-[[package]]
 name = "pyclipper"
 version = "1.4.0"
 description = "Cython wrapper for the C++ translation of the Angus Johnson's Clipper library (ver. 6.4.2)"
@@ -4616,20 +4579,6 @@ files = [
 ]
 
 [[package]]
-name = "pygetwindow"
-version = "0.0.9"
-description = "A simple, cross-platform module for obtaining GUI information on application's windows."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "PyGetWindow-0.0.9.tar.gz", hash = "sha256:17894355e7d2b305cd832d717708384017c1698a90ce24f6f7fbf0242dd0a688"},
-]
-
-[package.dependencies]
-pyrect = "*"
-
-[[package]]
 name = "pygments"
 version = "2.20.0"
 description = "Pygments is a syntax highlighting package written in Python."
@@ -4670,18 +4619,6 @@ spelling = ["pyenchant (>=3.2,<4.0)"]
 testutils = ["gitpython (>3)"]
 
 [[package]]
-name = "pymsgbox"
-version = "2.0.1"
-description = "A simple, cross-platform, pure Python module for JavaScript-like message boxes."
-optional = false
-python-versions = ">=3.4"
-groups = ["main"]
-files = [
-    {file = "pymsgbox-2.0.1-py3-none-any.whl", hash = "sha256:5de8ec19bca2ca7e6c09d39c817c83f17c75cee80275235f43a9931db699f73b"},
-    {file = "pymsgbox-2.0.1.tar.gz", hash = "sha256:98d055c49a511dcc10fa08c3043e7102d468f5e4b3a83c6d3c61df722c7d798d"},
-]
-
-[[package]]
 name = "pynput"
 version = "1.8.2"
 description = "Monitor and control user input devices"
@@ -4707,7 +4644,7 @@ description = "Python<->ObjC Interoperability Module"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "sys_platform == \"darwin\" or platform_system == \"Darwin\""
+markers = "sys_platform == \"darwin\""
 files = [
     {file = "pyobjc_core-12.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:93418e79c1655f66b4352168f8c85c942707cb1d3ea13a1da3e6f6a143bacda7"},
     {file = "pyobjc_core-12.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:c918ebca280925e7fcb14c5c43ce12dcb9574a33cccb889be7c8c17f3bcce8b6"},
@@ -4751,7 +4688,7 @@ description = "Wrappers for the Cocoa frameworks on macOS"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "sys_platform == \"darwin\" or platform_system == \"Darwin\""
+markers = "sys_platform == \"darwin\""
 files = [
     {file = "pyobjc_framework_cocoa-12.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:9b880d3bdcd102809d704b6d8e14e31611443aa892d9f60e8491e457182fdd48"},
     {file = "pyobjc_framework_cocoa-12.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:f52228bcf38da64b77328787967d464e28b981492b33a7675585141e1b0a01e6"},
@@ -4797,7 +4734,7 @@ description = "Wrappers for the Quartz frameworks on macOS"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "sys_platform == \"darwin\" or platform_system == \"Darwin\""
+markers = "sys_platform == \"darwin\""
 files = [
     {file = "pyobjc_framework_quartz-12.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:c6f312ae79ef8b3019dcf4b3374c52035c7c7bc4a09a1748b61b041bb685a0ed"},
     {file = "pyobjc_framework_quartz-12.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:19f99ac49a0b15dd892e155644fe80242d741411a9ed9c119b18b7466048625a"},
@@ -4891,28 +4828,6 @@ packaging = ">=25"
 [package.extras]
 docs = ["furo (>=2025.9.25)", "sphinx-autodoc-typehints (>=3.5.1)"]
 testing = ["covdefaults (>=2.3)", "pytest (>=8.4.2)", "pytest-cov (>=7)", "pytest-mock (>=3.15.1)", "setuptools (>=80.9)"]
-
-[[package]]
-name = "pyrect"
-version = "0.2.0"
-description = "PyRect is a simple module with a Rect class for Pygame-like rectangular areas."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "PyRect-0.2.0.tar.gz", hash = "sha256:f65155f6df9b929b67caffbd57c0947c5ae5449d3b580d178074bffb47a09b78"},
-]
-
-[[package]]
-name = "pyscreeze"
-version = "1.0.1"
-description = "A simple, cross-platform screenshot module for Python 2 and 3."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "pyscreeze-1.0.1.tar.gz", hash = "sha256:cf1662710f1b46aa5ff229ee23f367da9e20af4a78e6e365bee973cad0ead4be"},
-]
 
 [[package]]
 name = "pysocks"
@@ -5202,29 +5117,6 @@ files = [
 
 [package.dependencies]
 six = ">=1.10.0"
-
-[[package]]
-name = "python3-xlib"
-version = "0.15"
-description = "Python3 X Library"
-optional = false
-python-versions = "*"
-groups = ["main"]
-markers = "platform_system == \"Linux\""
-files = [
-    {file = "python3-xlib-0.15.tar.gz", hash = "sha256:dc4245f3ae4aa5949c1d112ee4723901ade37a96721ba9645f2bfa56e5b383f8"},
-]
-
-[[package]]
-name = "pytweening"
-version = "1.2.0"
-description = "A collection of tweening (aka easing) functions."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "pytweening-1.2.0.tar.gz", hash = "sha256:243318b7736698066c5f362ec5c2b6434ecf4297c3c8e7caa8abfe6af4cac71b"},
-]
 
 [[package]]
 name = "pywin32"
@@ -5578,19 +5470,6 @@ docs = ["mercurial (>5.7)", "ryd"]
 jinja2 = ["ruamel.yaml.jinja2 (>=0.2)"]
 libyaml = ["ruamel.yaml.clibz (>=0.3.7) ; platform_python_implementation == \"CPython\""]
 oldlibyaml = ["ruamel.yaml.clib ; platform_python_implementation == \"CPython\""]
-
-[[package]]
-name = "rubicon-objc"
-version = "0.5.4"
-description = "A bridge between an Objective C runtime environment and Python."
-optional = false
-python-versions = ">=3.10"
-groups = ["main"]
-markers = "platform_system == \"Darwin\""
-files = [
-    {file = "rubicon_objc-0.5.4-py3-none-any.whl", hash = "sha256:f7c755388d5709d7079152892137b13bcc6b4bdd796c9f0d9b3a1eb5bea715c4"},
-    {file = "rubicon_objc-0.5.4.tar.gz", hash = "sha256:9ba5eb203df2b2e6c7f2d93f671b583ef5ea0f61b17a3ff44cd9c68673ad7916"},
-]
 
 [[package]]
 name = "ruff"
@@ -6899,21 +6778,6 @@ files = [
 ]
 
 [[package]]
-name = "types-pyautogui"
-version = "0.9.3.20260508"
-description = "Typing stubs for PyAutoGUI"
-optional = false
-python-versions = ">=3.10"
-groups = ["dev"]
-files = [
-    {file = "types_pyautogui-0.9.3.20260508-py3-none-any.whl", hash = "sha256:c6c083cc8a30dd4b60e91d133bf10dcc3893c738078310b28daea05427bd7143"},
-    {file = "types_pyautogui-0.9.3.20260508.tar.gz", hash = "sha256:daf5ed106a907d93dfb4ebebaeebb94c2e93cea73e632f2be5ca68470a23c167"},
-]
-
-[package.dependencies]
-types-PyScreeze = "*"
-
-[[package]]
 name = "types-pynput"
 version = "1.8.1.20260518"
 description = "Typing stubs for pynput"
@@ -6924,21 +6788,6 @@ files = [
     {file = "types_pynput-1.8.1.20260518-py3-none-any.whl", hash = "sha256:1e30024483fdbdaa151ac74205c72854120e5ead7a7d5f719fabcca5db93d4a0"},
     {file = "types_pynput-1.8.1.20260518.tar.gz", hash = "sha256:9ff661760cfad274d7cb110461a198268d60a01ed3362bf88db6559f0a895457"},
 ]
-
-[[package]]
-name = "types-pyscreeze"
-version = "1.0.1.20260518"
-description = "Typing stubs for PyScreeze"
-optional = false
-python-versions = ">=3.10"
-groups = ["dev"]
-files = [
-    {file = "types_pyscreeze-1.0.1.20260518-py3-none-any.whl", hash = "sha256:cb4b47de51ddf2c811bc4435cb49377975cb1140b07816d2f18bc818586278c8"},
-    {file = "types_pyscreeze-1.0.1.20260518.tar.gz", hash = "sha256:882f10f9f0ba17e64a4a2db2633ce398ad5e812a22136ae49b407a7b2303c788"},
-]
-
-[package.dependencies]
-Pillow = ">=10.3.0"
 
 [[package]]
 name = "types-pyyaml"
@@ -7490,4 +7339,4 @@ uitars = ["bitsandbytes", "torch", "transformers"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14.1 || >3.14.1,<3.15"
-content-hash = "5e68ca92d6c7c2795375a46bf11c97e584d85c6b8d95ff5e8d3fd11a18d34268"
+content-hash = "334b337da87168d87f11eb732e7d9b534a0308c79c5cf766ccaa6b1292395423"

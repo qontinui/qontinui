@@ -71,10 +71,6 @@ class HALFactory:
                 from .implementations.mss_capture import MSSScreenCapture
 
                 cls._instances[cache_key] = MSSScreenCapture(config)
-            elif backend == "pyautogui":
-                from .implementations.pyautogui_capture import PyAutoGUIScreenCapture
-
-                cls._instances[cache_key] = PyAutoGUIScreenCapture(config)
             elif backend == "pillow":
                 from .implementations.pillow_capture import PillowScreenCapture
 
@@ -107,10 +103,6 @@ class HALFactory:
                 from .implementations.opencv_matcher import OpenCVMatcher
 
                 cls._instances[cache_key] = OpenCVMatcher(config)
-            elif backend == "pyautogui":
-                from .implementations.pyautogui_matcher import PyAutoGUIMatcher
-
-                cls._instances[cache_key] = PyAutoGUIMatcher(config)
             elif backend == "tensorflow":
                 from .implementations.tensorflow_matcher import TensorFlowMatcher
 
@@ -208,10 +200,6 @@ class HALFactory:
                     cls._instances[cache_key] = KeyboardOperations(
                         keyboard.Controller()
                     )
-                elif backend == "pyautogui":
-                    raise NotImplementedError(
-                        "PyAutoGUI keyboard backend not yet implemented"
-                    )
                 elif backend == "selenium":
                     raise NotImplementedError(
                         "Selenium keyboard backend not yet implemented"
@@ -252,10 +240,6 @@ class HALFactory:
                     from .implementations.mouse_operations import MouseOperations
 
                     cls._instances[cache_key] = MouseOperations(mouse.Controller())
-                elif backend == "pyautogui":
-                    raise NotImplementedError(
-                        "PyAutoGUI mouse backend not yet implemented"
-                    )
                 elif backend == "selenium":
                     raise NotImplementedError(
                         "Selenium mouse backend not yet implemented"

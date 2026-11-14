@@ -10,7 +10,7 @@ Architecture:
     MouseWrapper/KeyboardWrapper (this layer) ← Routes based on ExecutionMode
       ↓
     ├─ if mock → MockMouse/MockKeyboard → No-op (just logging/tracking)
-    └─ if real → HAL Layer → PyAutoGUI/pynput → Real input
+    └─ if real → HAL Layer → pynput → Real input
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ class MouseWrapper(BaseWrapper):
 
         # High-level code doesn't know or care whether this:
         # - MockMouse.click() → Just logs the action
-        # - HAL PyAutoGUI.click() → Actually moves/clicks mouse
+        # - HAL mouse controller click() → Actually moves/clicks mouse
 
     Attributes:
         mock_mouse: MockMouse instance for no-op tracking
@@ -234,7 +234,7 @@ class KeyboardWrapper(BaseWrapper):
 
         # High-level code doesn't know or care whether this:
         # - MockKeyboard.type_text() → Just logs the action
-        # - HAL PyAutoGUI.type_text() → Actually types the text
+        # - HAL keyboard controller type_text() → Actually types the text
 
     Attributes:
         mock_keyboard: MockKeyboard instance for no-op tracking

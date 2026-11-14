@@ -1,7 +1,7 @@
 """Enhanced screen capture using HAL (Hardware Abstraction Layer).
 
-This module has been refactored to use the HAL instead of PyAutoGUI,
-providing better performance and flexibility.
+This module captures the screen through the HAL, providing performance
+and flexibility across backends.
 """
 
 from pathlib import Path

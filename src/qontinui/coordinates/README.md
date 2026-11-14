@@ -10,7 +10,7 @@ This module provides type-safe coordinate abstractions for working with differen
 
 ### 1. ScreenPoint - Absolute Screen Coordinates
 
-What pyautogui and input automation libraries use. Can be negative for monitors positioned left of or above the primary monitor.
+What input automation libraries (pynput, the HAL) use. Can be negative for monitors positioned left of or above the primary monitor.
 
 ```python
 from qontinui.coordinates import ScreenPoint
@@ -81,9 +81,9 @@ match_x, match_y = 65, 1372
 # Convert to absolute screen coordinates
 screen_point = service.match_to_screen(match_x, match_y)
 
-# Now you can click using pyautogui
-import pyautogui
-pyautogui.click(screen_point.x, screen_point.y)
+# Now you can click through the HAL mouse controller
+from qontinui.hal.factory import HALFactory
+HALFactory.get_mouse_controller().click_at(screen_point.x, screen_point.y)
 ```
 
 ### Finding Which Monitor Contains a Point

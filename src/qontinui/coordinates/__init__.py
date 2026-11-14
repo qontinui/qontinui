@@ -8,7 +8,7 @@ across different coordinate systems in multi-monitor setups.
 Qontinui uses three coordinate systems:
 
 1. **ScreenPoint** - Absolute screen coordinates
-   - What pyautogui and input automation libraries use
+   - What input automation libraries (pynput, the HAL) use
    - Can be negative for monitors left of/above primary monitor
    - Example: `ScreenPoint(x=-1855, y=1372)`
 
@@ -98,7 +98,7 @@ FIND match at (65, 1372) in screenshot:
 Convert to screen coordinates:
     ScreenPoint(x=65 + (-1920), y=1372 + 0) = ScreenPoint(-1855, 1372)
 
-Now pyautogui can click at (-1855, 1372) to click the match!
+Now the HAL mouse controller can click at (-1855, 1372) to click the match!
 ```
 
 ## Exports

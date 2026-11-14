@@ -77,15 +77,12 @@ HAS_UITARS = False
 HAS_TRANSFORMERS = False
 HAS_BITSANDBYTES = False
 HAS_MSS = False
-HAS_PYAUTOGUI = False
 
 # Use a broad Exception catch (not just ImportError) because these optional
-# dependencies have transitive imports that can fail in surprising ways. For
-# example, `pyautogui` imports `pyscreeze`, which probes `cv2.__version__` at
-# module load — and in test environments where `cv2` has been replaced by a
-# `MagicMock`, that access raises `AttributeError` rather than `ImportError`.
-# Treating any failure as "dependency unavailable" is the safe behaviour for
-# probing optional capabilities.
+# dependencies have transitive imports that can fail in surprising ways (for
+# example an `AttributeError` when a transitive module such as `cv2` has been
+# replaced by a `MagicMock` in tests). Treating any failure as "dependency
+# unavailable" is the safe behaviour for probing optional capabilities.
 try:
     import transformers  # noqa: F401
 
@@ -107,15 +104,8 @@ try:
 except Exception:
     pass
 
-try:
-    import pyautogui  # noqa: F401
-
-    HAS_PYAUTOGUI = True
-except Exception:
-    pass
-
 # UI-TARS is available if core dependencies are present
-HAS_UITARS = HAS_TRANSFORMERS and HAS_MSS and HAS_PYAUTOGUI
+HAS_UITARS = HAS_TRANSFORMERS and HAS_MSS
 
 if TYPE_CHECKING:
     from .config import UITARSSettings
@@ -222,7 +212,6 @@ __all__ = [
     "HAS_TRANSFORMERS",
     "HAS_BITSANDBYTES",
     "HAS_MSS",
-    "HAS_PYAUTOGUI",
     # Config
     "UITARSSettings",
     # Models

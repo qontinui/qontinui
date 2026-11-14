@@ -24,11 +24,13 @@ from ...web.models import ExtractedElement
 from ..base import DetectedRegion, InteractionAction, RuntimeExtractor, StateChange
 from ..types import ExtractionTarget, RuntimeStateCapture, RuntimeType
 from .config import UITARSSettings
+from .hal_dispatch import execute_hal_action
 from .models import ExplorationTrajectory, UITARSActionType, UITARSInferenceRequest, UITARSStep
 from .provider import UITARSProviderBase, create_provider
 
 if TYPE_CHECKING:
-    pass
+    from qontinui.hal.interfaces.keyboard_controller import IKeyboardController
+    from qontinui.hal.interfaces.mouse_controller import IMouseController
 
 logger = logging.getLogger(__name__)
 
@@ -69,15 +71,23 @@ class UITARSExplorer(RuntimeExtractor):
         self,
         settings: UITARSSettings | None = None,
         provider: UITARSProviderBase | None = None,
+        hal_mouse: IMouseController | None = None,
+        hal_keyboard: IKeyboardController | None = None,
     ) -> None:
         """Initialize UI-TARS explorer.
 
         Args:
             settings: UI-TARS configuration settings
             provider: Pre-initialized provider (optional, created from settings if not provided)
+            hal_mouse: Mouse controller for actions (defaults to the HAL
+                factory's controller, resolved at first use)
+            hal_keyboard: Keyboard controller for actions (defaults to the
+                HAL factory's controller, resolved at first use)
         """
         self.settings = settings or UITARSSettings()
         self._provider = provider
+        self._hal_mouse = hal_mouse
+        self._hal_keyboard = hal_keyboard
         self._connected = False
         self._target: ExtractionTarget | None = None
         self._screen_capture: Any = None
@@ -186,7 +196,7 @@ class UITARSExplorer(RuntimeExtractor):
         screenshot_before = await self._capture_screenshot_array()
 
         # Execute the action
-        await self._execute_pyautogui_action(
+        await self._execute_hal_action(
             action.action_type,
             x=int(action.metadata.get("x", 0)) if action.metadata.get("x") else None,
             y=int(action.metadata.get("y", 0)) if action.metadata.get("y") else None,
@@ -449,7 +459,7 @@ class UITARSExplorer(RuntimeExtractor):
         return img[:, :, [2, 1, 0]]
 
     async def _execute_action(self, action: Any) -> bool:
-        """Execute a UI-TARS action via pyautogui.
+        """Execute a UI-TARS action through the HAL controllers.
 
         Args:
             action: UITARSAction to execute
@@ -458,7 +468,7 @@ class UITARSExplorer(RuntimeExtractor):
             True if action succeeded
         """
         try:
-            return await self._execute_pyautogui_action(
+            return await self._execute_hal_action(
                 action.action_type.value,
                 x=action.x,
                 y=action.y,
@@ -474,7 +484,7 @@ class UITARSExplorer(RuntimeExtractor):
             logger.error(f"Action execution failed: {e}")
             return False
 
-    async def _execute_pyautogui_action(
+    async def _execute_hal_action(
         self,
         action_type: str,
         x: int | None = None,
@@ -487,7 +497,7 @@ class UITARSExplorer(RuntimeExtractor):
         end_x: int | None = None,
         end_y: int | None = None,
     ) -> bool:
-        """Execute action via pyautogui.
+        """Execute action through the HAL mouse/keyboard controllers.
 
         Args:
             action_type: Type of action (click, type, scroll, etc.)
@@ -502,58 +512,20 @@ class UITARSExplorer(RuntimeExtractor):
         Returns:
             True if successful
         """
-        try:
-            import pyautogui
-
-            pyautogui.FAILSAFE = True
-
-            if action_type == "click" and x is not None and y is not None:
-                pyautogui.click(x, y)
-            elif action_type == "double_click" and x is not None and y is not None:
-                pyautogui.doubleClick(x, y)
-            elif action_type == "right_click" and x is not None and y is not None:
-                pyautogui.rightClick(x, y)
-            elif action_type == "type":
-                if x is not None and y is not None:
-                    pyautogui.click(x, y)
-                if text:
-                    pyautogui.typewrite(text, interval=0.02)
-            elif action_type == "scroll":
-                scroll_amt = scroll_amount or 100
-                if scroll_direction == "up":
-                    pyautogui.scroll(scroll_amt)
-                elif scroll_direction == "down":
-                    pyautogui.scroll(-scroll_amt)
-                elif scroll_direction == "left":
-                    pyautogui.hscroll(-scroll_amt)
-                elif scroll_direction == "right":
-                    pyautogui.hscroll(scroll_amt)
-            elif action_type == "hover" and x is not None and y is not None:
-                pyautogui.moveTo(x, y)
-            elif (
-                action_type == "drag"
-                and x is not None
-                and y is not None
-                and end_x is not None
-                and end_y is not None
-            ):
-                pyautogui.moveTo(x, y)
-                pyautogui.drag(end_x - x, end_y - y)
-            elif action_type == "hotkey" and keys:
-                pyautogui.hotkey(*keys)
-            elif action_type == "wait":
-                await asyncio.sleep(duration or 1.0)
-            elif action_type == "done":
-                pass  # No action needed
-            else:
-                logger.warning(f"Unknown action type: {action_type}")
-                return False
-
-            return True
-
-        except Exception as e:
-            logger.error(f"pyautogui action failed: {e}")
-            return False
+        return await execute_hal_action(
+            action_type,
+            x=x,
+            y=y,
+            text=text,
+            scroll_direction=scroll_direction,
+            scroll_amount=scroll_amount,
+            keys=keys,
+            duration=duration,
+            end_x=end_x,
+            end_y=end_y,
+            mouse=self._hal_mouse,
+            keyboard=self._hal_keyboard,
+        )
 
     def _build_exploration_prompt(
         self,

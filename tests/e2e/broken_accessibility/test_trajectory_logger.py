@@ -129,9 +129,9 @@ def test_trajectory_logger_notepad_3_actions(live_app):
             # Move the mouse between captures so screenshots differ
             # (prevents SHA256 exact dedup from dropping records)
             try:
-                import pyautogui
+                from pynput.mouse import Controller as MouseController
 
-                pyautogui.moveTo(100 + i * 150, 100 + i * 100, duration=0)
+                MouseController().position = (100 + i * 150, 100 + i * 100)
             except ImportError:
                 pass
             time.sleep(0.15)
