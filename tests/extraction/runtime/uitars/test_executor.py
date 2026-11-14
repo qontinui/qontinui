@@ -1022,18 +1022,30 @@ class TestFailsafeRect:
             1440,
         )
 
-    def test_x11_uses_the_whole_x_screen(self):
-        """X11 width_in_pixels/height_in_pixels: the box around every monitor."""
+    @pytest.mark.parametrize("platform", ["linux", "freebsd14", "openbsd7", "sunos5"])
+    def test_x11_uses_the_whole_x_screen(self, platform):
+        """X11 width_in_pixels/height_in_pixels anchored at (0, 0), on every
+        platform that is neither Windows nor macOS."""
         from qontinui.extraction.runtime.uitars.hal_dispatch import (
             failsafe_rect_from_monitors,
         )
 
-        assert failsafe_rect_from_monitors(X11_TWO_MONITORS, "linux") == (
+        assert failsafe_rect_from_monitors(X11_TWO_MONITORS, platform) == (
             0,
             0,
             4480,
             1440,
         )
+
+    def test_x11_rect_is_anchored_at_the_origin(self):
+        """Monitors not touching (0, 0) still give a (0, 0)-anchored rectangle
+        reaching max(x + width), max(y + height), as pyautogui's root size does."""
+        from qontinui.extraction.runtime.uitars.hal_dispatch import (
+            failsafe_rect_from_monitors,
+        )
+
+        monitors = [_monitor(0, 100, 50, 800, 600), _monitor(1, 900, 200, 1024, 768)]
+        assert failsafe_rect_from_monitors(monitors, "linux") == (0, 0, 1924, 968)
 
     def test_no_monitor_at_origin_is_unknown_off_x11(self):
         from qontinui.extraction.runtime.uitars.hal_dispatch import (
@@ -1084,20 +1096,20 @@ class TestFailsafeRect:
         assert mouse.click_at.called is (not aborts)
 
     @pytest.mark.parametrize(
-        "capture_kwargs",
+        "cause",
         [
-            {"side_effect": RuntimeError("no display")},
-            {"return_value": None},  # replaced below by a capture with no origin monitor
+            pytest.param("capture_raises", id="screen-capture-raises"),
+            pytest.param("no_origin_monitor", id="no-monitor-at-origin"),
         ],
     )
-    def test_unavailable_rect_falls_back_and_warns_once(
-        self, monkeypatch, caplog, capture_kwargs
-    ):
+    def test_unavailable_rect_falls_back_and_warns_once(self, monkeypatch, caplog, cause):
         from qontinui.extraction.runtime.uitars import hal_dispatch
 
         monkeypatch.setattr(hal_dispatch, "_current_platform", lambda: "win32")
         monkeypatch.setattr(hal_dispatch, "_warned_no_failsafe_rect", False)
-        if "return_value" in capture_kwargs:
+        if cause == "capture_raises":
+            capture_kwargs: dict[str, object] = {"side_effect": RuntimeError("no display")}
+        else:
             capture = MagicMock()
             capture.get_monitors.return_value = [_monitor(0, 50, 50, 10, 10)]
             capture_kwargs = {"return_value": capture}

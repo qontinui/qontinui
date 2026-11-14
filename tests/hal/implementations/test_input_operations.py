@@ -25,7 +25,7 @@ class _PynputLikeController:
     Records presses and releases; needs no display.
     """
 
-    def __init__(self, fail_on_press: object = None, error: Exception | None = None):
+    def __init__(self, fail_on_press: object = None, error: BaseException | None = None):
         self.events: list[tuple[str, object]] = []
         self._fail_on_press = fail_on_press
         self._error = error
@@ -106,8 +106,34 @@ class TestHotkeyReleases:
         with pytest.raises(InputControlError):
             KeyboardOperations(controller).hotkey("ctrl", "shift", "a")
 
-        assert ("release", "a") in controller.events
-        assert ("release", PynputKey.ctrl) in controller.events
+        # shift's release raised (and is not recorded); a and ctrl still go up.
+        assert controller.events == [
+            ("press", PynputKey.ctrl),
+            ("press", PynputKey.shift),
+            ("press", "a"),
+            ("release", "a"),
+            ("release", PynputKey.ctrl),
+        ]
+
+    def test_keyboard_interrupt_releases_and_propagates_unwrapped(self):
+        controller = _PynputLikeController(fail_on_press="a", error=KeyboardInterrupt())
+
+        with pytest.raises(KeyboardInterrupt):
+            KeyboardOperations(controller).hotkey("ctrl", "a")
+
+        assert controller.events == [
+            ("press", PynputKey.ctrl),
+            ("release", PynputKey.ctrl),
+        ]
+
+    def test_input_control_error_chains_the_injected_error(self):
+        injected = _InvalidKeyLikeError("invalid key")
+        controller = _PynputLikeController(fail_on_press="a", error=injected)
+
+        with pytest.raises(InputControlError) as excinfo:
+            KeyboardOperations(controller).hotkey("ctrl", "a")
+
+        assert excinfo.value.__cause__ is injected
 
 
 class TestMouseScroll:

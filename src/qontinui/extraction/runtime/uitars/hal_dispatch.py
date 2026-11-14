@@ -108,11 +108,12 @@ def failsafe_rect_from_monitors(monitors: Sequence[Monitor], platform: str) -> R
 
     One rule per platform family, matching what pyautogui's ``size()`` read:
 
-    * **linux (X11):** the whole X screen, i.e. the bounding box of every
-      monitor. pyautogui used ``Display.screen().width_in_pixels`` /
-      ``height_in_pixels``, which on a multi-monitor X screen spans all of
-      them.
-    * **everything else (Windows, macOS):** the monitor whose origin is
+    * **X11 (any platform that is not Windows or macOS):** the whole X
+      screen. pyautogui used ``Display.screen().width_in_pixels`` /
+      ``height_in_pixels`` and anchored the corners at ``(0, 0)``, so the
+      rectangle is ``(0, 0, max(x + width), max(y + height))`` over all
+      monitors.
+    * **Windows and macOS:** the monitor whose origin is
       ``(0, 0)``. Windows' ``SM_CXSCREEN``/``SM_CYSCREEN`` and macOS's main
       display both describe that monitor; the order mss lists monitors in is
       not used, because it does not reliably put the primary first.
@@ -127,12 +128,10 @@ def failsafe_rect_from_monitors(monitors: Sequence[Monitor], platform: str) -> R
     """
     if not monitors:
         return None
-    if platform.startswith("linux"):
-        left = min(m.x for m in monitors)
-        top = min(m.y for m in monitors)
+    if not platform.startswith(("win", "darwin")):
         right = max(m.x + m.width for m in monitors)
         bottom = max(m.y + m.height for m in monitors)
-        return (left, top, right - left, bottom - top)
+        return (0, 0, right, bottom)
     for m in monitors:
         if (m.x, m.y) == (0, 0):
             return (0, 0, m.width, m.height)
@@ -155,6 +154,7 @@ def _resolve_failsafe_rect() -> Rect | None:
     try:
         from qontinui.hal.factory import HALFactory
 
+        # Monitors as detected when the (cached) HAL screen capture was built.
         monitors = HALFactory.get_screen_capture().get_monitors()
         rect = failsafe_rect_from_monitors(monitors, _current_platform())
         if rect is not None:
