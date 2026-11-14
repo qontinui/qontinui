@@ -12,6 +12,44 @@ from ..interfaces.keyboard_controller import IKeyboardController, Key
 
 logger = get_logger(__name__)
 
+#: Key names pyautogui's ``KEYBOARD_KEYS`` accepts (and UI-TARS emits) mapped
+#: to pynput ``Key`` attribute names, for names the ``Key``-enum map below does
+#: not already cover. Resolved with ``getattr`` because some pynput keys exist
+#: only on some platforms (``insert``, ``menu``, ``num_lock``, ... are absent on
+#: macOS); an alias whose key the platform lacks falls through to the raw name.
+PYAUTOGUI_KEY_ALIASES: dict[str, str] = {
+    "esc": "esc",
+    "return": "enter",
+    "pgdn": "page_down",
+    "pgup": "page_up",
+    "del": "delete",
+    "command": "cmd",
+    "winleft": "cmd_l",
+    "winright": "cmd_r",
+    "option": "alt",
+    "optionleft": "alt_l",
+    "optionright": "alt_r",
+    "control": "ctrl",
+    "insert": "insert",
+    "capslock": "caps_lock",
+    "numlock": "num_lock",
+    "scrolllock": "scroll_lock",
+    "printscreen": "print_screen",
+    "prtsc": "print_screen",
+    "prtscr": "print_screen",
+    "prntscrn": "print_screen",
+    "print": "print_screen",
+    "pause": "pause",
+    "apps": "menu",
+    "volumemute": "media_volume_mute",
+    "volumedown": "media_volume_down",
+    "volumeup": "media_volume_up",
+    "playpause": "media_play_pause",
+    "nexttrack": "media_next",
+    "prevtrack": "media_previous",
+    **{f"f{n}": f"f{n}" for n in range(13, 21)},
+}
+
 
 class KeyboardOperations(IKeyboardController):
     """Handles all keyboard input operations.
@@ -96,6 +134,12 @@ class KeyboardOperations(IKeyboardController):
             for enum_key, pynput_key in self._key_map.items():
                 if enum_key.value == key_lower:  # type: ignore[attr-defined]
                     return cast(PynputKey | str, pynput_key)
+            # pyautogui-style key names (esc, return, pgdn, command, ...)
+            alias = PYAUTOGUI_KEY_ALIASES.get(key_lower)
+            if alias is not None:
+                aliased = getattr(PynputKey, alias, None)
+                if aliased is not None:
+                    return cast(PynputKey, aliased)
             # Return as regular character
             return key
         return key
