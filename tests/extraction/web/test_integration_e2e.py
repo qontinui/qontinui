@@ -107,6 +107,24 @@ ALTERNATIVES: none""",
     return MockLLMClient(responses=responses)
 
 
+async def skip_if_host_cannot_capture(page: Page, screenshot_base64: str) -> None:
+    """Skip when headless Chromium itself cannot capture on this host.
+
+    HybridExtractor retries Chromium's transient ``Page.captureScreenshot``
+    failure ("Unable to capture screenshot") and returns "" only once every
+    attempt failed. An empty capture is a test failure unless a direct
+    ``page.screenshot()`` also fails right now -- then the host's browser,
+    not the extractor, is what cannot capture, and the test skips with the
+    browser's own error as the reason.
+    """
+    if screenshot_base64:
+        return
+    try:
+        await page.screenshot(type="jpeg", full_page=False)
+    except Exception as e:
+        pytest.skip(f"headless Chromium cannot capture a screenshot on this host: {e}")
+
+
 # ============================================================================
 # Test HTML Pages (for local testing without network)
 # ============================================================================
@@ -832,6 +850,7 @@ class TestHybridExtraction:
         )
 
         context = await extractor.extract(page)
+        await skip_if_host_cannot_capture(page, context.screenshot_base64)
 
         # Verify context structure
         assert context.url is not None
@@ -858,6 +877,7 @@ class TestHybridExtraction:
 
         extractor = HybridExtractor()
         context = await extractor.extract(page)
+        await skip_if_host_cannot_capture(page, context.screenshot_base64)
 
         # Convert to LLM message
         message = context.to_llm_message(include_screenshot=True)
@@ -1052,6 +1072,7 @@ class TestRealWebsiteIntegration:
 
         extractor = HybridExtractor()
         context = await extractor.extract(page)
+        await skip_if_host_cannot_capture(page, context.screenshot_base64)
 
         # Verify extraction
         assert "Example Domain" in context.title

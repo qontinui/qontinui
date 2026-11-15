@@ -110,6 +110,10 @@ from .models import InteractiveElement
 
 logger = logging.getLogger(__name__)
 
+# Bounded retry for Chromium's transient "Unable to capture screenshot".
+SCREENSHOT_CAPTURE_ATTEMPTS = 3
+SCREENSHOT_RETRY_DELAY_S = 0.1
+
 
 @dataclass
 class HybridContext:
@@ -418,25 +422,42 @@ class HybridExtractor:
         return context, enriched
 
     async def _take_screenshot(self, page: Page) -> str:
-        """Take a screenshot and encode as base64."""
-        try:
-            if self.screenshot_format == "jpeg":
-                screenshot_bytes = await page.screenshot(
-                    type="jpeg",
-                    quality=self.screenshot_quality,
-                    full_page=False,  # Viewport only for speed
-                )
-            else:
-                screenshot_bytes = await page.screenshot(
-                    type="png",
-                    full_page=False,
+        """Take a screenshot and encode as base64.
+
+        Chromium's ``Page.captureScreenshot`` intermittently answers
+        "Unable to capture screenshot" when no compositor frame is ready
+        (seen on headless CI hosts right after ``set_content``). That is
+        transient, so the capture is retried a bounded number of times
+        before giving up with an empty string.
+        """
+        last_error: Exception | None = None
+        for attempt in range(SCREENSHOT_CAPTURE_ATTEMPTS):
+            if attempt:
+                await asyncio.sleep(SCREENSHOT_RETRY_DELAY_S * attempt)
+            try:
+                if self.screenshot_format == "jpeg":
+                    screenshot_bytes = await page.screenshot(
+                        type="jpeg",
+                        quality=self.screenshot_quality,
+                        full_page=False,  # Viewport only for speed
+                    )
+                else:
+                    screenshot_bytes = await page.screenshot(
+                        type="png",
+                        full_page=False,
+                    )
+                return base64.b64encode(screenshot_bytes).decode("utf-8")
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    "Screenshot attempt %d/%d failed: %s",
+                    attempt + 1,
+                    SCREENSHOT_CAPTURE_ATTEMPTS,
+                    e,
                 )
 
-            return base64.b64encode(screenshot_bytes).decode("utf-8")
-
-        except Exception as e:
-            logger.error(f"Failed to take screenshot: {e}")
-            return ""
+        logger.error(f"Failed to take screenshot: {last_error}")
+        return ""
 
     async def _get_scroll_info(self, page: Page) -> dict[str, int]:
         """Get scroll position information."""

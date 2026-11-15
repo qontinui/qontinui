@@ -366,3 +366,46 @@ class TestStateTracker:
         tracker.clear_history()
 
         assert len(tracker.states) == 0
+
+
+class _FlakyScreenshotPage:
+    """Page stub whose screenshot() fails a set number of times first."""
+
+    def __init__(self, failures: int) -> None:
+        self.failures = failures
+        self.calls = 0
+
+    async def screenshot(self, **kwargs: object) -> bytes:
+        self.calls += 1
+        if self.calls <= self.failures:
+            raise RuntimeError(
+                "Page.screenshot: Protocol error (Page.captureScreenshot): "
+                "Unable to capture screenshot"
+            )
+        return b"jpegbytes"
+
+
+class TestTakeScreenshotRetry:
+    """_take_screenshot retries Chromium's transient capture failure."""
+
+    async def test_transient_failure_is_retried(self, monkeypatch) -> None:
+        from qontinui.extraction.web import hybrid_extractor as he
+
+        monkeypatch.setattr(he, "SCREENSHOT_RETRY_DELAY_S", 0)
+        page = _FlakyScreenshotPage(failures=he.SCREENSHOT_CAPTURE_ATTEMPTS - 1)
+
+        result = await he.HybridExtractor()._take_screenshot(page)  # type: ignore[arg-type]
+
+        assert result == "anBlZ2J5dGVz"  # base64 of b"jpegbytes"
+        assert page.calls == he.SCREENSHOT_CAPTURE_ATTEMPTS
+
+    async def test_persistent_failure_returns_empty(self, monkeypatch) -> None:
+        from qontinui.extraction.web import hybrid_extractor as he
+
+        monkeypatch.setattr(he, "SCREENSHOT_RETRY_DELAY_S", 0)
+        page = _FlakyScreenshotPage(failures=he.SCREENSHOT_CAPTURE_ATTEMPTS)
+
+        result = await he.HybridExtractor()._take_screenshot(page)  # type: ignore[arg-type]
+
+        assert result == ""
+        assert page.calls == he.SCREENSHOT_CAPTURE_ATTEMPTS
