@@ -9,6 +9,7 @@ merge:
   - setup.py
   - '**/alembic/**'
   - '**/migrations/**'
+  - '**/alembic/versions/**'
   auto_merge_categories:
   - docs
   - test
