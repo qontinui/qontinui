@@ -64,13 +64,10 @@ pip install -e .
 ```
 
 Run `scripts/enforce_package_owners.py` after every `poetry install`. Several
-dependencies install the same `Xlib/` and `cv2/` packages, and Poetry's parallel
-install can leave those files mixed between them or torn. The script detects
-that and reinstalls the declared owner (`python-xlib`, `opencv-python-headless`)
-from `poetry.lock`; its docstring explains why. Without it, `import qontinui` can
-fail with `ImportError: this platform is not supported: ...`, followed by either
-`module 'Xlib.X' has no attribute 'FamilyServerInterpreted'` or
-`unexpected indent (__init__.py, line 26)`. `import cv2` can crash. pip installs
+dependencies install the same `cv2/` package, and Poetry's parallel install can
+leave those files mixed between them or torn. The script detects that and
+reinstalls the declared owner (`opencv-python-headless`) from `poetry.lock`; its
+docstring explains why. Without it, `import cv2` can crash. pip installs
 one package at a time, so it cannot tear these files. It also resolves versions
 without `poetry.lock`, so after a pip install run only
 `python scripts/enforce_package_owners.py --check`, which reports which package

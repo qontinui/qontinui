@@ -1,4 +1,4 @@
-"""Tests for scripts/enforce_package_owners.py, the Xlib/cv2 install-race repair."""
+"""Tests for scripts/enforce_package_owners.py, the cv2 install-race repair."""
 
 import base64
 import hashlib
@@ -231,31 +231,31 @@ def test_a_malformed_lock_is_reported_not_raised(damaged_owner, monkeypatch, cap
     )
 
 
-_XLIB_ENTRY = b'[[package]]\nname = "python-xlib"\nversion = "0.33"\n'
+_OWNER_ENTRY = b'[[package]]\nname = "opencv-python-headless"\nversion = "4.12.0.88"\n'
 
 
 @pytest.mark.parametrize(
     ("content", "message"),
     [
-        (b"\xff\xfe" + _XLIB_ENTRY, "is not UTF-8 text"),
+        (b"\xff\xfe" + _OWNER_ENTRY, "is not UTF-8 text"),
         (
-            _XLIB_ENTRY + b'files = [{hash = "sha256:' + b"a" * 64 + b'"}]\n',
-            "the python-xlib 0.33 entry lists an artifact that lacks a file or a hash",
+            _OWNER_ENTRY + b'files = [{hash = "sha256:' + b"a" * 64 + b'"}]\n',
+            "the opencv-python-headless 4.12.0.88 entry lists an artifact that lacks a file or a hash",
         ),
         (
-            _XLIB_ENTRY + b'files = [{file = "x.whl"}]\n',
-            "the python-xlib 0.33 entry lists an artifact that lacks a file or a hash",
+            _OWNER_ENTRY + b'files = [{file = "x.whl"}]\n',
+            "the opencv-python-headless 4.12.0.88 entry lists an artifact that lacks a file or a hash",
         ),
         (
-            _XLIB_ENTRY + b'files = [{file = "x.whl", hash = "sha256:"}]\n',
-            "the python-xlib 0.33 entry locks x.whl with an empty sha256 digest",
+            _OWNER_ENTRY + b'files = [{file = "x.whl", hash = "sha256:"}]\n',
+            "the opencv-python-headless 4.12.0.88 entry locks x.whl with an empty sha256 digest",
         ),
         (
-            _XLIB_ENTRY + b'files = [{file = "x.whl", hash = "shake_128:abcd"}]\n',
+            _OWNER_ENTRY + b'files = [{file = "x.whl", hash = "shake_128:abcd"}]\n',
             "with hash 'shake_128:abcd'; pip accepts only sha256, sha384, sha512",
         ),
         (
-            _XLIB_ENTRY + b'files = [{file = "x.whl", hash = "md5:abcd"}]\n',
+            _OWNER_ENTRY + b'files = [{file = "x.whl", hash = "md5:abcd"}]\n',
             "with hash 'md5:abcd'; pip accepts only sha256, sha384, sha512",
         ),
         # tomllib raises RecursionError on these (the dotted key only on some releases;
@@ -275,15 +275,18 @@ _XLIB_ENTRY = b'[[package]]\nname = "python-xlib"\nversion = "0.33"\n'
     ],
 )
 def test_a_hand_made_lock_fails_the_cli_with_exit_1_and_no_traceback(tmp_path, content, message):
-    """Runs the script itself, as CI does, over an environment whose python-xlib is
-    damaged (a dist-info placed ahead of any real one), so the repair reads the lock."""
+    """Runs the script itself, as CI does, over an environment whose
+    opencv-python-headless is damaged (a dist-info placed ahead of any real one), so
+    the repair reads the lock."""
     site = tmp_path / "site"
-    dist_info = site / "python_xlib-0.33.dist-info"
+    dist_info = site / "opencv_python_headless-4.12.0.88.dist-info"
     dist_info.mkdir(parents=True)
-    (dist_info / "METADATA").write_text("Metadata-Version: 2.1\nName: python-xlib\nVersion: 0.33\n")
-    (dist_info / "RECORD").write_text(f"Xlib/__init__.py,{_record_hash(b'owner')},5\n")
-    (site / "Xlib").mkdir()
-    (site / "Xlib" / "__init__.py").write_bytes(b"rival")
+    (dist_info / "METADATA").write_text(
+        "Metadata-Version: 2.1\nName: opencv-python-headless\nVersion: 4.12.0.88\n"
+    )
+    (dist_info / "RECORD").write_text(f"cv2/__init__.py,{_record_hash(b'owner')},5\n")
+    (site / "cv2").mkdir()
+    (site / "cv2" / "__init__.py").write_bytes(b"rival")
     lock = tmp_path / "poetry.lock"
     lock.write_bytes(content)
     env = {**os.environ, "PYTHONPATH": str(site), "POETRY_CACHE_DIR": str(tmp_path / "cache")}
@@ -301,7 +304,7 @@ def test_a_hand_made_lock_fails_the_cli_with_exit_1_and_no_traceback(tmp_path, c
     reports = [
         line.split("): ", 1)[1]
         for line in result.stdout.splitlines()
-        if line.startswith("Xlib/ (owner python-xlib 0.33") and "): " in line
+        if line.startswith("cv2/ (owner opencv-python-headless 4.12.0.88") and "): " in line
     ]
     assert any(report.startswith(f"{lock}: ") and message in report for report in reports), (
         result.stdout
@@ -526,38 +529,14 @@ def test_main_exits_1_when_an_owner_has_nothing_to_check(tmp_path, monkeypatch):
     assert _main(monkeypatch, tmp_path / "poetry.lock", CONTEST) == 1
 
 
-# Rivals that have left qontinui's own poetry.lock but whose contest must stay
-# until every OTHER lock this script runs against has dropped them too.
-# python3-xlib left with pyautogui (plan
-# 2026-11-14-one-xlib-distribution-and-no-tmp-debug-logs-in-the-python-bridge,
-# Phase 2), but the runner bundle checks out qontinui main unpinned and runs this
-# script against python-bridge/poetry.lock, which still locks the fork until that
-# plan's Phase 3 relock; the sibling repos' locks follow in Phase 6, which deletes
-# the Xlib contest and this entry together.
-RIVALS_RETIRING_ELSEWHERE = frozenset({"python3-xlib"})
-
-
 def test_every_contest_is_still_in_the_lock():
     """The repair installs the owner from poetry.lock, so it must be locked. A rival
-    that left the lock means that collision is gone: drop it from the contest,
-    unless other locks still carry it (RIVALS_RETIRING_ELSEWHERE)."""
+    that left the lock means that collision is gone: drop it from the contest."""
     lock = tomllib.loads((REPO_ROOT / "poetry.lock").read_text(encoding="utf-8"))
     locked = {epo.canonical(entry["name"]) for entry in lock["package"]}
     for contest in epo.CONTESTS:
         assert epo.canonical(contest.owner) in locked, contest
         for rival in contest.rivals:
-            if epo.canonical(rival) in RIVALS_RETIRING_ELSEWHERE:
-                continue
             assert epo.canonical(rival) in locked, (
                 f"{rival} left poetry.lock: drop it from {contest}"
             )
-
-
-def test_retiring_rivals_are_still_contested():
-    """An exemption outlives its contest only by mistake: once the contest drops
-    the rival, delete it from RIVALS_RETIRING_ELSEWHERE too."""
-    contested = {
-        epo.canonical(rival) for contest in epo.CONTESTS for rival in contest.rivals
-    }
-    stale = sorted(RIVALS_RETIRING_ELSEWHERE - contested)
-    assert not stale, f"{stale} no longer contested: drop from RIVALS_RETIRING_ELSEWHERE"

@@ -2,15 +2,20 @@
 
 Some distributions in poetry.lock install the SAME top-level package:
 
-* ``Xlib/`` - ``python-xlib`` (the maintained library; ``pynput`` requires
-  ``python-xlib>=0.17``) and ``python3-xlib`` 0.15, an abandoned 2014 fork that
-  ``pyautogui`` and ``mouseinfo`` still require on Linux.
 * ``cv2/`` - ``opencv-python-headless`` (what qontinui declares) and
   ``opencv-python``, the GUI build ``supervision`` (and the ``ml`` extra's
   ``ultralytics``) require: the same OpenCV version, different binaries. The
   ``omniparser`` extra adds a third, ``opencv-contrib-python`` 4.10.0.84, which
   paddlex (through paddleocr) pins exactly. Making the headless build win
   overrides that pin; paddlex 3.5.2 references no contrib-only ``cv2`` module.
+
+``Xlib/`` was a second contest (``python-xlib`` against ``python3-xlib``, the
+abandoned 2014 fork that ``pyautogui`` required) until plan
+``2026-11-14-one-xlib-distribution-and-no-tmp-debug-logs-in-the-python-bridge``
+removed pyautogui from qontinui and relocked every lock that ran this script, so
+no lock installs two ``Xlib/`` distributions any more. A dependency that brings
+the fork back brings the race back with it: add the contest again rather than
+living with the race.
 
 Poetry installs a lock-version 2.1 lock (this repo's) as one group on a thread
 pool, and its wheel writer only warns ("Installing ... over existing file")
@@ -19,35 +24,18 @@ write the same files at the same time, and the result varies from run to run:
 
 * One distribution wins every file. That imports fine.
 * A whole-file mix: every file is intact, but some come from each distribution.
-  It is the more common failure. For Xlib it is ``AttributeError: module
-  'Xlib.X' has no attribute 'FamilyServerInterpreted'``, python-xlib's code
-  next to the fork's ``X.py``.
+  It is the more common failure.
 * A torn file: both writers had it open, so it holds the later writer's bytes
-  followed by the tail of the earlier, longer copy. For
-  ``Xlib/protocol/__init__.py`` that is ``IndentationError: unexpected indent``
-  at line 26. For ``cv2/cv2.abi3.so`` it is a corrupt shared object, and
-  ``import cv2`` segfaults or aborts.
+  followed by the tail of the earlier, longer copy. For ``cv2/cv2.abi3.so`` it
+  is a corrupt shared object, and ``import cv2`` segfaults or aborts.
 
-pynput reports either Xlib failure as ``ImportError: this platform is not
-supported: (...)``, raised through ``qontinui.__init__`` -> healing -> hal ->
-keyboard_operations, so every test module that imports qontinui errors at
-collection.
+A cached virtualenv is reused as it is, damage included. A minimal local
+reproduction (just the two distributions of a pair, 20 fresh ``poetry install``
+runs with Poetry 2.5.1) left ``import cv2`` failing 11 times.
 
-The odds depend on timing. On a cold cache Poetry first builds python3-xlib from
-its sdist (it publishes no wheel). That delays its writes past python-xlib's,
-the fork cleanly replaces every shared file, and everything imports: qontinui's
-CI passed that way on 2026-10-07 (run 37704199471). With the artifact cache
-warm, the built wheel is reused and both installs start within ~50 ms of each
-other. The tests job of run 38394722804 (2026-10-13) then failed on both
-attempts, once with each Xlib failure. A cached virtualenv is reused as it is,
-damage included. A minimal local reproduction (just the two distributions of a
-pair, 20 fresh ``poetry install`` runs with Poetry 2.5.1) left ``import Xlib``
-broken 6 times and ``import cv2`` failing 11 times.
-
-No install-time setting prevents this. Poetry cannot exclude or override a
-transitive dependency, and ``installer.parallel = false`` installs the group in
-name order, so the abandoned fork would then win every time. So the repair
-happens after the install. For each package below, this script hashes every file
+No install-time setting prevents this: Poetry cannot exclude or override a
+transitive dependency, so every rival stays in the lock. So the repair happens
+after the install. For each package below, this script hashes every file
 the owner's RECORD lists. If any byte differs, it reinstalls exactly the locked
 owner (``pip install --force-reinstall --no-deps --require-hashes`` with
 poetry.lock's hashes) and verifies again. It installs the wheel Poetry already
@@ -101,9 +89,6 @@ class Contest:
 
 
 CONTESTS: tuple[Contest, ...] = (
-    # pyautogui and mouseinfo only use Xlib.display, X, XK and ext.xtest, which
-    # python-xlib provides unchanged; it also ships nine extensions the fork lacks.
-    Contest(package="Xlib", owner="python-xlib", rivals=("python3-xlib",)),
     # qontinui declares the headless build and calls no highgui (window) function.
     # opencv-contrib-python comes only with the omniparser extra (paddleocr ->
     # paddlex[ocr-core] pins 4.10.0.84); the headless build wins over that pin too.
