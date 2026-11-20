@@ -33,9 +33,11 @@ A cached virtualenv is reused as it is, damage included. A minimal local
 reproduction (just the two distributions of a pair, 20 fresh ``poetry install``
 runs with Poetry 2.5.1) left ``import cv2`` failing 11 times.
 
-No install-time setting prevents this: Poetry cannot exclude or override a
-transitive dependency, so every rival stays in the lock. So the repair happens
-after the install. For each package below, this script hashes every file
+Poetry cannot exclude or override a transitive dependency, so every rival stays
+in the lock. A serial install (``installer.parallel = false``) is not relied on
+either: it would make the winner depend on install order rather than on the
+declaration, and that order has not been measured for this lock. So the repair
+happens after the install. For each package below, this script hashes every file
 the owner's RECORD lists. If any byte differs, it reinstalls exactly the locked
 owner (``pip install --force-reinstall --no-deps --require-hashes`` with
 poetry.lock's hashes) and verifies again. It installs the wheel Poetry already

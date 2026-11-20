@@ -136,8 +136,9 @@ jobs:
       # Rationale: see the tests job. Here the step only keeps the venv this job
       # saves to the shared cache healthy, and the cache is saved only on a miss.
       # mypy imports nothing. It does read cv2's stubs, but this extras-free
-      # install's two OpenCV builds ship identical .pyi files. Of the .py files that differ, one is the same
-      # size and the other differs by one token, so a race still leaves valid code.
+      # install's two OpenCV builds ship identical .pyi files. Of the .py files
+      # that differ, one is the same size and the other differs by one token, so
+      # a race still leaves valid code.
       - name: Enforce owners of contested packages (cv2)
         if: steps.poetry-cache.outputs.cache-hit != 'true'
         run: poetry run python scripts/enforce_package_owners.py
@@ -208,8 +209,9 @@ jobs:
       # Poetry's parallel installer interleaves their writes. A run can then mix
       # whole files from more than one, or tear one file (a torn cv2.abi3.so
       # crashes `import cv2`), and a restored venv keeps the damage. Runs on
-      # every cache state, here and in tests-ml: these jobs import cv2. This verifies the declared owner's files by RECORD hash and
-      # reinstalls the locked owner on a mismatch, so it must follow the install.
+      # every cache state, here and in tests-ml: these jobs import cv2. This
+      # verifies the declared owner's files by RECORD hash and reinstalls the
+      # locked owner on a mismatch, so it must follow the install.
       # Why and how: scripts/enforce_package_owners.py.
       - name: Enforce owners of contested packages (cv2)
         run: poetry run python scripts/enforce_package_owners.py

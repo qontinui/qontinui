@@ -136,12 +136,12 @@ def test_bytecode_is_not_held_to_the_record(tmp_path):
 def test_requirement_pins_the_version_with_every_locked_hash(tmp_path):
     lock = _write_lock(
         tmp_path / "poetry.lock",
-        "python-xlib",
+        "fake-owner",
         "0.33",
         [("a.whl", "sha256:aa"), ("a.tar.gz", "sha256:bb")],
     )
-    entry = epo.locked_entry(lock, "Python_Xlib", "0.33")
-    assert epo.requirement_line(entry) == "python-xlib==0.33 --hash=sha256:aa --hash=sha256:bb"
+    entry = epo.locked_entry(lock, "Fake_Owner", "0.33")
+    assert epo.requirement_line(entry) == "fake-owner==0.33 --hash=sha256:aa --hash=sha256:bb"
 
 
 def test_lock_matching_names_a_missing_entry_apart_from_duplicate_ones(tmp_path):
@@ -240,11 +240,13 @@ _OWNER_ENTRY = b'[[package]]\nname = "opencv-python-headless"\nversion = "4.12.0
         (b"\xff\xfe" + _OWNER_ENTRY, "is not UTF-8 text"),
         (
             _OWNER_ENTRY + b'files = [{hash = "sha256:' + b"a" * 64 + b'"}]\n',
-            "the opencv-python-headless 4.12.0.88 entry lists an artifact that lacks a file or a hash",
+            "the opencv-python-headless 4.12.0.88 entry lists an artifact"
+            " that lacks a file or a hash",
         ),
         (
             _OWNER_ENTRY + b'files = [{file = "x.whl"}]\n',
-            "the opencv-python-headless 4.12.0.88 entry lists an artifact that lacks a file or a hash",
+            "the opencv-python-headless 4.12.0.88 entry lists an artifact"
+            " that lacks a file or a hash",
         ),
         (
             _OWNER_ENTRY + b'files = [{file = "x.whl", hash = "sha256:"}]\n',
