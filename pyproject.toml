@@ -65,21 +65,34 @@ aiohttp = "^3.14.4"  # CDP WebSocket for accessibility capture; floor for GHSA f
 # ML-dependent modules import these lazily and raise pointing at
 # `pip install qontinui[ml]` when absent.
 transformers = { version = "^5.10", optional = true }  # floor: save_pretrained path traversal fix
-# torch / torchvision pulled from the PyTorch cu128 wheel index so we get
-# Blackwell (sm_120) CUDA kernels on RTX 5090. The default PyPI torch
-# wheels are built against older CUDA and fall back to CPU on Blackwell.
-torch = { version = "^2.2", source = "pytorch-cu128", optional = true }
-torchvision = { version = ">=0.26", source = "pytorch-cu128", optional = true }
+# torch / torchvision are declared per platform:
+#  - linux / win32: the PyTorch cu128 wheel index, so we get Blackwell (sm_120)
+#    CUDA kernels on RTX 5090 (default PyPI wheels are built against older CUDA
+#    and fall back to CPU on Blackwell). That index has no macOS wheels.
+#  - macOS arm64: plain PyPI, the same 2.11.x / 0.26.x line.
+#  - macOS x86_64: no entry, so no torch/torchvision is installed (and the
+#    torch-carrier packages below carry a marker excluding that platform, or the
+#    resolver would pull a generic torch back in through them). PyPI ships no
+#    x86_64 macOS wheel for torch 2.11 / torchvision 0.26; torch-dependent code
+#    must degrade there (see the lazy imports behind the `ml` extra).
+torch = [
+    { version = "^2.2", source = "pytorch-cu128", markers = "sys_platform == 'linux' or sys_platform == 'win32'", optional = true },
+    { version = "~2.11.0", markers = "sys_platform == 'darwin' and platform_machine == 'arm64'", optional = true },
+]
+torchvision = [
+    { version = ">=0.26", source = "pytorch-cu128", markers = "sys_platform == 'linux' or sys_platform == 'win32'", optional = true },
+    { version = ">=0.26,<0.27", markers = "sys_platform == 'darwin' and platform_machine == 'arm64'", optional = true },
+]
 # SAM3: Install manually with: pip install git+https://github.com/facebookresearch/sam3.git
 # (Poetry cannot handle git dependencies without proper packaging)
-accelerate = { version = "^1.15", optional = true }  # SAM3 support (torch-carrier)
-timm = { version = ">=1.0.22", optional = true }  # Required by SAM3 (torch-carrier)
-ultralytics = { version = "^8.0", optional = true }
-easyocr = { version = "^1.7", optional = true }
-sentence-transformers = { version = "^5.6", optional = true }  # floor: CVE-2026-68770
+accelerate = { version = "^1.15", markers = "sys_platform != 'darwin' or platform_machine == 'arm64'", optional = true }  # SAM3 support (torch-carrier)
+timm = { version = ">=1.0.22", markers = "sys_platform != 'darwin' or platform_machine == 'arm64'", optional = true }  # Required by SAM3 (torch-carrier)
+ultralytics = { version = "^8.0", markers = "sys_platform != 'darwin' or platform_machine == 'arm64'", optional = true }
+easyocr = { version = "^1.7", markers = "sys_platform != 'darwin' or platform_machine == 'arm64'", optional = true }
+sentence-transformers = { version = "^5.6", markers = "sys_platform != 'darwin' or platform_machine == 'arm64'", optional = true }  # floor: CVE-2026-68770
 
 # Optional: UI-TARS quantization support (for local inference on consumer GPUs)
-bitsandbytes = { version = "^0.45", optional = true }
+bitsandbytes = { version = "^0.45", markers = "sys_platform != 'darwin' or platform_machine == 'arm64'", optional = true }
 
 # Optional: PaddleOCR as alternative OCR engine for OmniParser
 paddleocr = { version = ">=2.7", optional = true }
@@ -150,7 +163,7 @@ respx = "^0.22"
 # group is resolved into poetry.lock, so the floors still bind the locked versions.
 # Floors only, no upper bounds: an upper bound here would be the next cap that
 # holds an advisory back. Not floorable here: setuptools (torch 2.11 requires
-# <82, and the pytorch-cu128 index serves no newer torch). accelerate is a direct
+# <82, and the torch line this lock resolves, 2.11.x, requires it). accelerate is a direct
 # dependency, so its floor (^1.15, for CVE-2026-69112) sits on its own line above.
 [tool.poetry.group.security-floors]
 optional = true
